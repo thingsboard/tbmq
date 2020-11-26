@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
-package transport;
+package org.thingsboard.mqtt.broker.auth;
 
-option java_package = "org.thingsboard.mqtt.broker.gen.transport";
-option java_outer_classname = "TransportProtos";
+import com.google.common.util.concurrent.ListenableFuture;
 
-/* Test */
-message PlaceholderMsg {
-  int64 id = 1;
+public interface AuthService {
+    ListenableFuture<String> validateCredentials(String credentials);
 }

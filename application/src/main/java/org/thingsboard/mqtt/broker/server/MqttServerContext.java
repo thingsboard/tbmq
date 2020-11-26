@@ -13,13 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
-package transport;
+package org.thingsboard.mqtt.broker.server;
 
-option java_package = "org.thingsboard.mqtt.broker.gen.transport";
-option java_outer_classname = "TransportProtos";
+import io.netty.handler.ssl.SslHandler;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-/* Test */
-message PlaceholderMsg {
-  int64 id = 1;
+@Component
+public class MqttServerContext {
+
+    @Getter
+    @Autowired(required = false)
+    private MqttSslHandlerProvider sslHandlerProvider;
+
+    @Getter
+    @Value("${server.mqtt.netty.max_payload_size}")
+    private Integer maxPayloadSize;
+
+    @Getter
+    @Setter
+    private SslHandler sslHandler;
+
 }
