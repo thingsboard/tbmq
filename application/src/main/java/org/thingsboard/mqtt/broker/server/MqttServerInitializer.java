@@ -32,9 +32,12 @@ public class MqttServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final MqttServerContext context;
 
+    private final MqttHandlerFactory handlerFactory;
+
     @Autowired
-    public MqttServerInitializer(MqttServerContext context) {
+    public MqttServerInitializer(MqttServerContext context, MqttHandlerFactory handlerFactory) {
         this.context = context;
+        this.handlerFactory = handlerFactory;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class MqttServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttServerHandler handler = new MqttServerHandler();
+        MqttServerHandler handler = handlerFactory.create();
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

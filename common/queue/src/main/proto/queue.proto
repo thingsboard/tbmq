@@ -14,12 +14,36 @@
  * limitations under the License.
  */
 syntax = "proto3";
-package transport;
+package queue;
 
-option java_package = "org.thingsboard.mqtt.broker.gen.transport";
-option java_outer_classname = "TransportProtos";
+option java_package = "org.thingsboard.mqtt.broker.gen.queue";
+option java_outer_classname = "QueueProtos";
 
-/* Test */
-message PlaceholderMsg {
-  int64 id = 1;
+message SessionInfoProto {
+  int64 sessionIdMSB = 1;
+  int64 sessionIdLSB = 2;
+  int64 tenantIdMSB = 3;
+  int64 tenantIdLSB = 4;
+  string clientId = 5;
+  bool persistent = 6;
+}
+
+message PublishMsgProto {
+  SessionInfoProto sessionInfo = 1;
+  bytes payload = 2;
+  bool duplicate = 3;
+  bool retain = 4;
+  int32 qos = 5;
+  string topicName = 6;
+  int32 packetId = 7;
+}
+
+message TopicSubscriptionProto {
+  string topic = 1;
+  int32  qos = 2;
+}
+
+message ClientSessionProto {
+  bool persistent = 1;
+  repeated TopicSubscriptionProto subscriptions = 2;
 }
