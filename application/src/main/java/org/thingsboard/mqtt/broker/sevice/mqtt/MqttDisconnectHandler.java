@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.sevice.mqtt;
 
+import io.netty.channel.ChannelHandlerContext;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
+
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
-public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
+@Slf4j
+public class MqttDisconnectHandler {
 
-    private final MqttMessageGenerator mqttMessageGenerator;
-    private final MqttMessageHandlers messageHandlers;
-
-    @Override
-    public MqttServerHandler create() {
-        return new MqttServerHandler(mqttMessageGenerator, messageHandlers);
+    public void process(ChannelHandlerContext channelCtx, UUID sessionId, SessionDisconnectListener disconnectListener) {
+        channelCtx.close();
+        log.info("[{}] Client disconnected!", sessionId);
+        disconnectListener.onSessionDisconnect();
     }
 }

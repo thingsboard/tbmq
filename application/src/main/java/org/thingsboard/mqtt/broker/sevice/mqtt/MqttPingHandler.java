@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.sevice.mqtt;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
 @AllArgsConstructor
-public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
-
+public class MqttPingHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final MqttMessageHandlers messageHandlers;
 
-    @Override
-    public MqttServerHandler create() {
-        return new MqttServerHandler(mqttMessageGenerator, messageHandlers);
+    public void process(ClientSessionCtx ctx) {
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 }
