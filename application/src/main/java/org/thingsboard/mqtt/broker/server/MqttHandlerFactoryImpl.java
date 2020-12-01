@@ -16,19 +16,26 @@
 package org.thingsboard.mqtt.broker.server;
 
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.MqttMessageConverter;
+import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 @Service
 public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
     private final SubscriptionService subscriptionService;
+    private final MsgDispatcherService msgDispatcherService;
+    private final MqttMessageConverter messageAdaptor;
 
-    public MqttHandlerFactoryImpl(SubscriptionService subscriptionService) {
+
+    public MqttHandlerFactoryImpl(SubscriptionService subscriptionService, MsgDispatcherService msgDispatcherService, MqttMessageConverter messageAdaptor) {
         this.subscriptionService = subscriptionService;
+        this.msgDispatcherService = msgDispatcherService;
+        this.messageAdaptor = messageAdaptor;
     }
 
     @Override
     public MqttServerHandler create() {
-        return null;
+        return new MqttServerHandler(subscriptionService, msgDispatcherService, messageAdaptor);
     }
 }

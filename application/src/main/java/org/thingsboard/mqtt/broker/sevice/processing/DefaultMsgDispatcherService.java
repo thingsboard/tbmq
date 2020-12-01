@@ -23,6 +23,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
@@ -32,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.sevice.subscription.Subscription;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 import javax.annotation.PostConstruct;
@@ -64,25 +66,19 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
 
     @Override
     public void acknowledgePublishMsg(SessionInfoProto sessionInfoProto, MqttPublishMessage publishMessage, TbQueueCallback callback) {
+        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfoProto, publishMessage);
         String topicName = publishMessage.variableHeader().topicName();
-        PublishMsgProto msg = PublishMsgProto.newBuilder()
-                .setSessionInfo(sessionInfoProto)
-                .setPayload(ByteString.copyFrom(publishMessage.content().array()))
-                .setDuplicate(publishMessage.fixedHeader().isDup())
-                .setRetain(publishMessage.fixedHeader().isRetain())
-                .setQos(publishMessage.fixedHeader().qosLevel().value())
-                .setTopicName(topicName)
-                .setPacketId(publishMessage.variableHeader().packetId())
-                .build();
         TopicInfo topicInfo = new TopicInfo(publishMsgProducer.getDefaultTopic());
-        publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(topicName, msg), callback);
+        publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(topicName, publishMsgProto), callback);
     }
 
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto) {
         // todo: persist if required
 
-
+        for (Subscription subscription : subscriptionService.getSubscriptions(publishMsgProto.getTopicName())) {
+            subscription.getListener().onPublishMsg(subscription.getMqttQoS(), publishMsgProto);
+        }
     }
 
 
