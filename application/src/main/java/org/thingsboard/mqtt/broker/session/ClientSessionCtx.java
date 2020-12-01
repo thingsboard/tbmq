@@ -34,8 +34,6 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final UUID sessionId;
     @Getter
-    private volatile UUID clientId;
-    @Getter
     @Setter
     private volatile QueueProtos.SessionInfoProto sessionInfoProto;
     @Getter

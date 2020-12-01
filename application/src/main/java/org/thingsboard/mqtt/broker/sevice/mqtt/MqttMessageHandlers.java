@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.adaptor;
+package org.thingsboard.mqtt.broker.sevice.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.session.SessionContext;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
-public interface MqttMessageConverter {
-
-    Optional<MqttMessage> convertToPublish(int packetId, String topic, MqttQoS mqttQoS, byte[] payloadBytes);
+@Component
+@AllArgsConstructor
+@Getter
+public class MqttMessageHandlers {
+    private final MqttConnectHandler connectHandler;
+    private final MqttDisconnectHandler disconnectHandler;
+    private final MqttSubscribeHandler subscribeHandler;
+    private final MqttUnsubscribeHandler unsubscribeHandler;
+    private final MqttPublishHandler publishHandler;
+    private final MqttPingHandler pingHandler;
 }
