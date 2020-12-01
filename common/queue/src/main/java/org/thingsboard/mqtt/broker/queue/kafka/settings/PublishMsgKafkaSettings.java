@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -29,63 +30,33 @@ import java.util.Properties;
 @Slf4j
 @ConfigurationProperties(prefix = "queue.kafka.publish-msg")
 @Component("publish-msg")
+@Data
 public class PublishMsgKafkaSettings implements TbKafkaSettings {
 
-    @Getter
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
-    @Getter
     private String topic;
 
-
-    @Getter
     private String acks;
 
-    @Getter
     private int retries;
 
-    @Getter
     private int batchSize;
 
-    @Getter
     private long lingerMs;
 
-    @Getter
     private long bufferMemory;
 
-    @Getter
     private short replicationFactor;
 
-    @Getter
     private int maxPollRecords;
 
-    @Getter
     private int maxPollIntervalMs;
 
-    @Getter
     private int maxPartitionFetchBytes;
 
-    @Getter
     private int fetchMaxBytes;
 
-    @Getter
-    @Setter
     private List<TbKafkaProperty> other;
-
-    public Properties toProps() {
-        Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        props.put(ProducerConfig.RETRIES_CONFIG, retries);
-        props.put(ProducerConfig.ACKS_CONFIG, acks);
-        props.put(ProducerConfig.BATCH_SIZE_CONFIG, batchSize);
-        props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMs);
-        props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
-
-        if (other != null) {
-            other.forEach(kv -> props.put(kv.getKey(), kv.getValue()));
-        }
-        return props;
-    }
-
 }

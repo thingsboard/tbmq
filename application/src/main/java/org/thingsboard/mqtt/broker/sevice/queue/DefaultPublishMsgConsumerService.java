@@ -47,23 +47,24 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
 
     @Value("${queue.publish-msg.poll-interval}")
     private long pollDuration;
-    @Value("${queue.publish-msg.pack-processing-timeout}")
-    private long packProcessingTimeout;
 
     private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers;
     private final MsgDispatcherService msgDispatcherService;
+    private final PublishMsgQueueFactory publishMsgQueueFactory;
 
     public DefaultPublishMsgConsumerService(MsgDispatcherService msgDispatcherService,
                                             PublishMsgQueueFactory publishMsgQueueFactory) {
         this.msgDispatcherService = msgDispatcherService;
-        this.publishMsgConsumers = new ArrayList<>(consumersCount);
-        for (int i = 0; i < consumersCount; i++) {
-            publishMsgConsumers.add(publishMsgQueueFactory.createConsumer());
-        }
+        this.publishMsgQueueFactory = publishMsgQueueFactory;
+        this.publishMsgConsumers = new ArrayList<>();
+
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        for (int i = 0; i < consumersCount; i++) {
+            publishMsgConsumers.add(publishMsgQueueFactory.createConsumer());
+        }
         this.consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
         for (TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> publishMsgConsumer : publishMsgConsumers) {
             publishMsgConsumer.subscribe();
@@ -80,6 +81,7 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
                         continue;
                     }
                     msgs.forEach(msg -> msgDispatcherService.processPublishMsg(msg.getValue()));
+                    consumer.commit();
                 } catch (Exception e) {
                     if (!stopped) {
                         log.warn("Failed to process messages from queue.", e);
@@ -99,9 +101,7 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     @PreDestroy
     public void destroy() {
         stopped = true;
-        if (publishMsgConsumers != null) {
-            publishMsgConsumers.forEach(TbQueueConsumer::unsubscribe);
-        }
+        publishMsgConsumers.forEach(TbQueueConsumer::unsubscribe);
         if (consumersExecutor != null) {
             consumersExecutor.shutdownNow();
         }

@@ -48,3 +48,26 @@ server:
       # Type of the key store
       key_store_type: "${MQTT_SSL_KEY_STORE_TYPE:JKS}"
 
+queue:
+  publish-msg:
+    consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
+  kafka:
+    bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
+    topic-properties:
+      publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2}"
+      client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1}"
+      successful-msg-offset: "${TB_KAFKA_SUCCESSFUL_MSG_OFFSET_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1}"
+      retain-msg: "${TB_KAFKA_RETAIN_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1}"
+    publish-msg:
+      topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
+      acks: "${TB_KAFKA_PUBLISH_MSG_ACKS:all}"
+      retries: "${TB_KAFKA_PUBLISH_MSG_RETRIES:1}"
+      batchSize: "${TB_KAFKA_PUBLISH_MSG_BATCH_SIZE:16384}"
+      lingerMs: "${TB_KAFKA_PUBLISH_MSG_LINGER_MS:1}"
+      bufferMemory: "${TB_KAFKA_PUBLISH_MSG_BUFFER_MEMORY:33554432}"
+      replicationFactor: "${TB_KAFKA_PUBLISH_MSG_REPLICATION_FACTOR:1}"
+      maxPollIntervalMs: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_INTERVAL_MS:0}"
+      maxPollRecords: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
+      maxPartitionFetchBytes: "${TB_KAFKA_PUBLISH_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
+      fetchMaxBytes: "${TB_KAFKA_PUBLISH_MSG_FETCH_MAX_BYTES:134217728}"

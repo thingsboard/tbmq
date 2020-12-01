@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.sevice.subscription;
+package org.thingsboard.mqtt.broker.adaptor;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import org.thingsboard.mqtt.broker.session.SessionListener;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.session.SessionContext;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 
-public interface SubscriptionService {
-    ListenableFuture<Void> subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener);
+public interface MqttMessageConverter {
 
-    ListenableFuture<Void> unsubscribe(UUID sessionId, List<String> topics);
-
-    Collection<Subscription> getSubscriptions(String topic);
+    Optional<MqttMessage> convertToPublish(int packetId, String topic, MqttQoS mqttQoS, byte[] payloadBytes);
 }

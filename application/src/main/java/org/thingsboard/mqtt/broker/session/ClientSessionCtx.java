@@ -68,4 +68,8 @@ public class ClientSessionCtx implements SessionContext {
     public void setDisconnected() {
         this.connected = false;
     }
+
+    public void setConnected() {
+        this.connected = true;
+    }
 }

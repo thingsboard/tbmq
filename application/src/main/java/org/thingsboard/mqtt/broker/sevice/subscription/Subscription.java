@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.adaptor;
+package org.thingsboard.mqtt.broker.sevice.subscription;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.session.SessionContext;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.session.SessionListener;
 
-public interface MqttMessageAdaptor {
-
-    QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionContext ctx, MqttPublishMessage inbound) throws AdaptorException;
+@Getter
+@AllArgsConstructor
+public class Subscription {
+    private final MqttQoS mqttQoS;
+    private final SessionListener listener;
 }

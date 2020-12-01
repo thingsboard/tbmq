@@ -39,17 +39,19 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.adaptor.MqttMessageConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
+import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -62,23 +64,24 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
-import static io.netty.handler.codec.mqtt.MqttQoS.FAILURE;
 
 @Slf4j
-public class MqttServerHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
+public class MqttServerHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionListener {
     private static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
 
     private final SubscriptionService subscriptionService;
     private final MsgDispatcherService msgDispatcherService;
+    private final MqttMessageConverter mqttMessageConverter;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
     private volatile InetSocketAddress address;
 
-    MqttServerHandler(SubscriptionService subscriptionService, MsgDispatcherService msgDispatcherService) {
+    MqttServerHandler(SubscriptionService subscriptionService, MsgDispatcherService msgDispatcherService, MqttMessageConverter mqttMessageConverter) {
         this.subscriptionService = subscriptionService;
         this.msgDispatcherService = msgDispatcherService;
+        this.mqttMessageConverter = mqttMessageConverter;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -130,7 +133,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
                 processUnsubscribe(ctx, (MqttUnsubscribeMessage) msg);
                 break;
             case PINGREQ:
-                processPing(ctx, (MqttConnectMessage) msg);
+                processPing(ctx);
                 break;
             case DISCONNECT:
                 processDisconnect(ctx);
@@ -155,7 +158,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         }
     }
 
-    private void processPing(ChannelHandlerContext ctx, MqttConnectMessage msg) {
+    private void processPing(ChannelHandlerContext ctx) {
         ctx.writeAndFlush(new MqttMessage(new MqttFixedHeader(PINGRESP, false, AT_MOST_ONCE, false, 0)));
     }
 
@@ -163,8 +166,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         List<String> topics = mqttMsg.payload().topics();
         log.trace("[{}] Processing unsubscribe [{}], topics - {}", sessionId, mqttMsg.variableHeader().messageId(), topics);
 
-        ListenableFuture<Void> unsubscribeFuture = subscriptionService.unsubscribe(
-                clientSessionCtx.getSessionInfo().getClientInfo().getClientId(), topics);
+        ListenableFuture<Void> unsubscribeFuture = subscriptionService.unsubscribe(sessionId, topics);
 
         // TODO: test this manually
         unsubscribeFuture.addListener(() -> {
@@ -176,11 +178,12 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         List<MqttTopicSubscription> subscriptions = mqttMsg.payload().topicSubscriptions();
         log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, mqttMsg.variableHeader().messageId(), subscriptions);
 
-        ListenableFuture<Void> subscribeFuture = subscriptionService.subscribe(clientSessionCtx.getSessionInfo().getClientInfo().getClientId(), subscriptions);
+        ListenableFuture<Void> subscribeFuture = subscriptionService.subscribe(sessionId, subscriptions, this);
 
         subscribeFuture.addListener(() -> {
             List<Integer> grantedQoSList = subscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
             ctx.writeAndFlush(createSubAckMessage(mqttMsg.variableHeader().messageId(), grantedQoSList));
+            log.trace("[{}] Client subscribed to {}", sessionId, subscriptions);
         }, MoreExecutors.directExecutor());
     }
 
@@ -188,6 +191,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         log.info("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
         String clientId = msg.payload().clientIdentifier();
         // TODO: login and get tenantId if there's such
+        clientSessionCtx.setConnected();
         SessionInfo sessionInfo = SessionInfoCreator.create(sessionId, clientId, !msg.variableHeader().isCleanSession(), null);
         clientSessionCtx.setSessionInfo(sessionInfo);
         clientSessionCtx.setSessionInfoProto(SessionInfoCreator.createProto(sessionInfo));
@@ -299,4 +303,13 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         }
     }
 
+    @Override
+    public void onPublishMsg(MqttQoS mqttQoS, QueueProtos.PublishMsgProto publishMessage) {
+        try {
+            mqttMessageConverter.convertToPublish(clientSessionCtx.nextMsgId(), publishMessage.getTopicName(), mqttQoS, publishMessage.getPayload().toByteArray())
+                    .ifPresent(clientSessionCtx.getChannel()::writeAndFlush);
+        } catch (Exception e) {
+            log.trace("[{}] Failed to convert publish proto msg to MQTT msg", sessionId, e);
+        }
+    }
 }

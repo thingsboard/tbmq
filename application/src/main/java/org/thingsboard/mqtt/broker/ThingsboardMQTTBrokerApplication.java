@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 
 @SpringBootConfiguration
 @EnableAsync
+@EnableConfigurationProperties
 @EnableScheduling
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 public class ThingsboardMQTTBrokerApplication {
