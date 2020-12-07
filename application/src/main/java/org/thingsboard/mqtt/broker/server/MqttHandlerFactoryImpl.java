@@ -19,7 +19,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 @Service
@@ -28,9 +27,10 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
+    private final SubscriptionService subscriptionService;
 
     @Override
     public MqttServerHandler create() {
-        return new MqttServerHandler(mqttMessageGenerator, messageHandlers);
+        return new MqttServerHandler(mqttMessageGenerator, messageHandlers, subscriptionService);
     }
 }

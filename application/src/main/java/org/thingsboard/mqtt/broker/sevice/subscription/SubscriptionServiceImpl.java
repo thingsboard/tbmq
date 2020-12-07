@@ -52,6 +52,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    public void unsubscribe(UUID sessionId) {
+        subscriptions.remove(sessionId);
+    }
+
+    @Override
     public Collection<Subscription> getSubscriptions(String topic) {
         return subscriptions.values().stream().map(subscriptionsByTopic -> subscriptionsByTopic.get(topic)).collect(Collectors.toList());
     }
