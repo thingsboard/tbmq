@@ -28,5 +28,7 @@ public interface SubscriptionService {
 
     ListenableFuture<Void> unsubscribe(UUID sessionId, List<String> topics);
 
+    void unsubscribe(UUID sessionId);
+
     Collection<Subscription> getSubscriptions(String topic);
 }

@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 import java.net.InetSocketAddress;
@@ -45,15 +44,17 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
+    private final SubscriptionService subscriptionService;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
     private volatile InetSocketAddress address;
 
-    MqttServerHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers) {
+    MqttServerHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
+        this.subscriptionService = subscriptionService;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -152,6 +153,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         if (clientSessionCtx.isConnected()) {
             // TODO: add disconnect logic
             clientSessionCtx.setDisconnected();
+            subscriptionService.unsubscribe(sessionId);
         }
     }
 
