@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.constant;
+package org.thingsboard.mqtt.broker.sevice.subscription;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
+import java.util.List;
 
-import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+public interface TopicTrie<T> {
 
-public class BrokerConstants {
-    public static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
+    List<T> get(String topic);
 
-    public static final String TOPIC_DELIMITED = "/";
-    public static final String MULTI_LEVEL_WILDCARD = "#";
-    public static final String SINGLE_LEVEL_WILDCARD = "+";
+    void put(String topicFilter, T val);
+
+    boolean delete(String topicFilter, T val);
+
+    int size();
 }
