@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.session.SessionListener;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,33 +32,48 @@ import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
-    private final ConcurrentMap<UUID, ConcurrentMap<String, Subscription>> subscriptions = new ConcurrentHashMap<>();
+    private final TopicTrie<TopicSubscription> topicTrie = new ConcurrentMapTopicTrie<>();
+    private final Map<UUID, SessionSubscriptionInfo> sessions = new ConcurrentHashMap<>();
 
     @Override
     public ListenableFuture<Void> subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
+        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> new SessionSubscriptionInfo(listener));
         for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptions.computeIfAbsent(sessionId, uuid -> new ConcurrentHashMap<>())
-                    .put(topicSubscription.topicName(), new Subscription(topicSubscription.qualityOfService(), listener));
+            topicTrie.put(topicSubscription.topicName(), new TopicSubscription(sessionId, topicSubscription.qualityOfService()));
+            sessionSubscriptionInfo.getTopicFilters().add(topicSubscription.topicName());
         }
         return Futures.immediateFuture(null);
     }
 
     @Override
     public ListenableFuture<Void> unsubscribe(UUID sessionId, List<String> topics) {
-        ConcurrentMap<String, Subscription> subscriptionsByTopic = subscriptions.get(sessionId);
+        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.get(sessionId);
+        if (sessionSubscriptionInfo == null) {
+            throw new RuntimeException("Cannot find session subscription info.");
+        }
         for (String topic : topics) {
-            subscriptionsByTopic.remove(topic);
+            topicTrie.delete(topic, val -> sessionId.equals(val.getSessionId()));
+            sessionSubscriptionInfo.getTopicFilters().remove(topic);
         }
         return Futures.immediateFuture(null);
     }
 
     @Override
     public void unsubscribe(UUID sessionId) {
-        subscriptions.remove(sessionId);
+        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.remove(sessionId);
+        if (sessionSubscriptionInfo == null) {
+            return;
+        }
+        for (String topicFilter : sessionSubscriptionInfo.getTopicFilters()) {
+            topicTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
+        }
     }
 
     @Override
     public Collection<Subscription> getSubscriptions(String topic) {
-        return subscriptions.values().stream().map(subscriptionsByTopic -> subscriptionsByTopic.get(topic)).collect(Collectors.toList());
+        List<TopicSubscription> topicSubscriptions = topicTrie.get(topic);
+        return topicSubscriptions.stream()
+                .map(topicSubscription -> new Subscription(topicSubscription.getMqttQoS(), sessions.get(topicSubscription.getSessionId()).getListener()))
+                .collect(Collectors.toList());
     }
 }

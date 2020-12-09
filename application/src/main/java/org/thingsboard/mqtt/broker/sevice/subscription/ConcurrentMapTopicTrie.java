@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ConcurrentMapTopicTrie<T> implements TopicTrie<T> {
     private final AtomicInteger size = new AtomicInteger();
@@ -111,19 +113,15 @@ public class ConcurrentMapTopicTrie<T> implements TopicTrie<T> {
     }
 
     @Override
-    public boolean delete(String topicFilter, T val) {
-        if (topicFilter == null || val == null) {
-            throw new IllegalArgumentException("Topic filter or value cannot be null");
+    public void delete(String topicFilter, Predicate<T> deletionFilter) {
+        if (topicFilter == null || deletionFilter == null) {
+            throw new IllegalArgumentException("Topic filter or deletionFilter cannot be null");
         }
         Node<T> x = getNode(root, topicFilter, 0);
-        if (x == null) {
-            return false;
-        } else {
-            boolean removed = x.values.remove(val);
-            if (removed) {
-                size.decrementAndGet();
-            }
-            return removed;
+        if (x != null) {
+            List<T> valuesToDelete = x.values.stream().filter(deletionFilter).collect(Collectors.toList());
+            x.values.removeAll(valuesToDelete);
+            size.getAndSet(size.get() - valuesToDelete.size());
         }
     }
 
