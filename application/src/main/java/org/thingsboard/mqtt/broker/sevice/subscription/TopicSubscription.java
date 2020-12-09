@@ -15,16 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.sevice.subscription;
 
-import java.util.List;
-import java.util.function.Predicate;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public interface TopicTrie<T> {
+import java.util.UUID;
 
-    List<T> get(String topic);
-
-    void put(String topicFilter, T val);
-
-    void delete(String topicFilter, Predicate<T> deletionFilter);
-
-    int size();
+@AllArgsConstructor
+@Getter
+public class TopicSubscription {
+    private final UUID sessionId;
+    private final MqttQoS mqttQoS;
 }

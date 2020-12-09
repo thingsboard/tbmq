@@ -15,16 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.sevice.subscription;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.session.SessionListener;
+
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public interface TopicTrie<T> {
+@Getter
+public class SessionSubscriptionInfo {
+    private final SessionListener listener;
+    private final Queue<String> topicFilters;
 
-    List<T> get(String topic);
-
-    void put(String topicFilter, T val);
-
-    void delete(String topicFilter, Predicate<T> deletionFilter);
-
-    int size();
+    public SessionSubscriptionInfo(SessionListener listener) {
+        this.listener = listener;
+        this.topicFilters = new ConcurrentLinkedQueue<>();
+    }
 }

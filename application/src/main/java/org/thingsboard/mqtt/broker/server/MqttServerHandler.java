@@ -109,6 +109,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
                 messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg, this);
                 break;
             case PINGREQ:
+                // TODO disconnect if there was no ping for a long time
                 messageHandlers.getPingHandler().process(clientSessionCtx);
                 break;
             case PUBACK:
