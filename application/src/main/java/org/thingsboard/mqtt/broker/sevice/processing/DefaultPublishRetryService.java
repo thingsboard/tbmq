@@ -17,9 +17,23 @@ package org.thingsboard.mqtt.broker.sevice.processing;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
 
-public interface PublishRetryService {
-    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId);
+@Service
+@AllArgsConstructor
+public class DefaultPublishRetryService implements PublishRetryService {
 
-    void registerPubRec(String clientId, int packetId);
+    private final SuccessfulPublishService successfulPublishService;
+
+    @Override
+    public void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId) {
+        // TODO schedule resending of messages
+    }
+
+    @Override
+    public void registerPubRec(String clientId, int packetId) {
+        // TODO remove msg from schedule and make it successful
+
+    }
 }

@@ -15,11 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.sevice.processing;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.springframework.stereotype.Service;
 
-public interface PublishRetryService {
-    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId);
-
-    void registerPubRec(String clientId, int packetId);
+@Service
+public class DefaultSuccessfulPublishService implements SuccessfulPublishService {
+    @Override
+    public void confirmSuccessfulPublish(String clientId, int packetId) {
+        // TODO push to Kafka topic
+    }
 }
