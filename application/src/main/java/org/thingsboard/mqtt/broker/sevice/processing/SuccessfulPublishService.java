@@ -15,11 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.sevice.processing;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import java.util.UUID;
 
-public interface PublishRetryService {
-    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId);
-
-    void registerPubRec(String clientId, int packetId);
+public interface SuccessfulPublishService {
+    void confirmSuccessfulPublish(String clientId, int packetId);
 }

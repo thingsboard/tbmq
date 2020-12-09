@@ -28,12 +28,15 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
+import org.thingsboard.mqtt.broker.sevice.processing.PublishRetryService;
+import org.thingsboard.mqtt.broker.sevice.processing.SuccessfulPublishService;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
 import java.net.InetSocketAddress;
@@ -45,16 +48,20 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
     private final SubscriptionService subscriptionService;
+    private final PublishRetryService retryService;
+    private final SuccessfulPublishService successfulPublishService;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
     private volatile InetSocketAddress address;
 
-    MqttServerHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService) {
+    MqttServerHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
+        this.retryService = retryService;
+        this.successfulPublishService = successfulPublishService;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -163,6 +170,18 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
         try {
             MqttPublishMessage pubMsg = mqttMessageGenerator.createPubMsg(clientSessionCtx.nextMsgId(), publishMessage.getTopicName(),
                     mqttQoS, publishMessage.getPayload().toByteArray());
+            String clientId = clientSessionCtx.getSessionInfo().getClientInfo().getClientId();
+            switch (mqttQoS) {
+                case AT_MOST_ONCE:
+                    successfulPublishService.confirmSuccessfulPublish(clientId,
+                            publishMessage.getPacketId());
+                    break;
+                case AT_LEAST_ONCE:
+                    retryService.registerPublishRetry(clientSessionCtx.getChannel(), pubMsg, clientId, publishMessage.getPacketId());
+                    break;
+                default:
+                    throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
+            }
             clientSessionCtx.getChannel().writeAndFlush(pubMsg);
         } catch (Exception e) {
             log.trace("[{}] Failed to send publish msg to MQTT client.", sessionId, e);
