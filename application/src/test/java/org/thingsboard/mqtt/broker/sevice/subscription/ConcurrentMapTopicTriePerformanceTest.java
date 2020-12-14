@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.sevice.subscription;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,11 +28,14 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.Tenant;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -40,19 +44,26 @@ import java.util.stream.IntStream;
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class ConcurrentMapTopicTriePerformanceTest {
-    private static final Random r = new Random();
-
-
     private static final int FIRST_LEVEL_SEGMENTS = 50;
     private static final int SECOND_LEVEL_SEGMENTS = 100;
     private static final int SINGLE_LEVEL_WILDCARDS_PERCENTAGE = 10;
     private static final int MULTIPLE_LEVEL_WILDCARDS_PERCENTAGE = 5;
     private static final int MAX_LEVELS = 8;
+    private static final int MAX_SUBSCRIPTIONS_PER_SESSION = 4;
     private static final int NUMBER_OF_TOPICS = 10000;
     private static final int NUMBER_OF_SUBSCRIBERS = 100_000;
     private static final int NUMBER_OF_MESSAGES = 100_000;
+    private static final int NUMBER_OF_THREADS = 5;
+
 
     private ConcurrentMapTopicTrie<SessionInfo> concurrentMapTopicTrie;
+    private List<SessionInfoSubscriptions> sessionInfoSubscriptionsList = new ArrayList<>();
+
+    @AllArgsConstructor
+    private static class SessionInfoSubscriptions {
+        private final SessionInfo sessionInfo;
+        private final Set<String> topicFilters;
+    }
 
     @Before
     public void before(){
@@ -60,7 +71,7 @@ public class ConcurrentMapTopicTriePerformanceTest {
     }
 
     @Test
-    public void test1000Topics1000000Publish() throws Exception{
+    public void testSingleThread() throws Exception{
         List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
 
         List<String> topicFilters = initializeTopicFilters(levelSuppliers);
@@ -73,6 +84,7 @@ public class ConcurrentMapTopicTriePerformanceTest {
         long startTime = System.currentTimeMillis();
         ListenableFuture<Void> task = Futures.submit(
                 () -> {
+                    ThreadLocalRandom r = ThreadLocalRandom.current();
                     for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
                         String randomTopic = topics.get(r.nextInt(topics.size()));
                         concurrentMapTopicTrie.get(randomTopic);
@@ -86,16 +98,83 @@ public class ConcurrentMapTopicTriePerformanceTest {
 
     }
 
+    @Test
+    public void testMultipleThreads() throws Exception{
+        List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
+
+        List<String> topicFilters = initializeTopicFilters(levelSuppliers);
+        List<String> topics = topicFilters.stream().map(s -> s.replaceAll("[+#]", "test")).collect(Collectors.toList());
+
+        fillTopicTrie(topicFilters);
+
+        ExecutorService subscribeExecutor = Executors.newSingleThreadExecutor();
+        CountDownLatch processingPublishers = new CountDownLatch(NUMBER_OF_THREADS);
+        subscribeExecutor.execute(() -> {
+            simulateSubscribers(topicFilters, processingPublishers);
+        });
+        long startTime = System.currentTimeMillis();
+
+        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
+            executor.execute(() -> {
+                try {
+                    ThreadLocalRandom r = ThreadLocalRandom.current();
+                    for (int j = 0; j < NUMBER_OF_MESSAGES / NUMBER_OF_THREADS; j++) {
+                        String randomTopic = topics.get(r.nextInt(topics.size()));
+                        concurrentMapTopicTrie.get(randomTopic);
+                    }
+                } finally {
+                    processingPublishers.countDown();
+                }
+            });
+        }
+        processingPublishers.await(10, TimeUnit.SECONDS);
+        long endTime = System.currentTimeMillis();
+        System.out.println("All took " + (endTime - startTime) + " ms");
+
+    }
+
+    private void simulateSubscribers(List<String> topicFilters, CountDownLatch processingPublishers) {
+        while (processingPublishers.getCount() > 0) {
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            if (r.nextBoolean()){
+                SessionInfoSubscriptions sessionInfoSubscriptions = this.sessionInfoSubscriptionsList.get(r.nextInt(this.sessionInfoSubscriptionsList.size()));
+                for (String topicFilter : sessionInfoSubscriptions.topicFilters) {
+                    concurrentMapTopicTrie.delete(topicFilter,
+                            sessionInfo -> sessionInfoSubscriptions.sessionInfo.getSessionId().equals(sessionInfo.getSessionId()));
+                }
+            } else {
+                SessionInfo sessionInfo = new SessionInfo(UUID.randomUUID(), r.nextBoolean(),
+                        new ClientInfo(UUID.randomUUID().toString(), new Tenant(UUID.randomUUID())));
+                String randomTopicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
+                concurrentMapTopicTrie.put(randomTopicFilter, sessionInfo);
+            }
+
+            try {
+                Thread.sleep(2);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
     private void fillTopicTrie(List<String> topicFilters) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         for (int i = 0; i < NUMBER_OF_SUBSCRIBERS; i++) {
             SessionInfo sessionInfo = new SessionInfo(UUID.randomUUID(), r.nextBoolean(),
                     new ClientInfo(UUID.randomUUID().toString(), new Tenant(UUID.randomUUID())));
-            String topicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
-            concurrentMapTopicTrie.put(topicFilter, sessionInfo);
+            int subscriptionsCount = r.nextInt(MAX_SUBSCRIPTIONS_PER_SESSION) + 1;
+            SessionInfoSubscriptions sessionInfoSubscriptions = new SessionInfoSubscriptions(sessionInfo, new HashSet<>());
+            for (int j = 0; j < subscriptionsCount; j++) {
+                String topicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
+                concurrentMapTopicTrie.put(topicFilter, sessionInfo);
+                sessionInfoSubscriptions.topicFilters.add(topicFilter);
+            }
+            sessionInfoSubscriptionsList.add(sessionInfoSubscriptions);
         }
     }
 
     private List<String> initializeTopicFilters(List<Supplier<String>> levelSuppliers) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         List<String> topicFilters = new ArrayList<>(NUMBER_OF_TOPICS);
         int singleLevelWildcardsAmount = SINGLE_LEVEL_WILDCARDS_PERCENTAGE * (NUMBER_OF_TOPICS / 100);
         int multipleLevelWildcardsAmount = MULTIPLE_LEVEL_WILDCARDS_PERCENTAGE * (NUMBER_OF_TOPICS / 100);
@@ -122,6 +201,7 @@ public class ConcurrentMapTopicTriePerformanceTest {
     }
 
     private List<Supplier<String>> initializeLevelSuppliers() {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         List<Supplier<String>> levelSuppliers = new ArrayList<>(MAX_LEVELS);
         List<String> firstLevelSegments = IntStream.range(0, FIRST_LEVEL_SEGMENTS).boxed()
                 .map(ignored -> UUID.randomUUID().toString().substring(0, 10))
