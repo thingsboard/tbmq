@@ -148,7 +148,7 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
     }
 
     private String getSegment(String key, int prevDelimiterIndex) {
-        int nextDelimitedIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITED, prevDelimiterIndex);
+        int nextDelimitedIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITER, prevDelimiterIndex);
 
         return nextDelimitedIndex == -1 ?
                 key.substring(prevDelimiterIndex)

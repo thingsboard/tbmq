@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.queue.provider;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -30,7 +29,6 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
 import javax.annotation.PreDestroy;
-import java.nio.charset.StandardCharsets;
 
 @Component
 public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {

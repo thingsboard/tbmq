@@ -43,7 +43,7 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
-public class MqttServerHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionListener, SessionDisconnectListener {
+public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionListener, SessionDisconnectListener {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
@@ -56,7 +56,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
     private final ClientSessionCtx clientSessionCtx;
     private volatile InetSocketAddress address;
 
-    MqttServerHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService) {
+    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
@@ -147,6 +147,7 @@ public class MqttServerHandler extends ChannelInboundHandlerAdapter implements G
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // TODO push msg to the client before closing
         log.error("[{}] Unexpected Exception", sessionId, cause);
         ctx.close();
     }

@@ -16,5 +16,5 @@
 package org.thingsboard.mqtt.broker.server;
 
 public interface MqttHandlerFactory {
-    MqttServerHandler create();
+    MqttSessionHandler create();
 }
