@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.sevice.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;

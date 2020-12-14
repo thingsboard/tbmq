@@ -22,7 +22,7 @@ import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 public class BrokerConstants {
     public static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
 
-    public static final String TOPIC_DELIMITED = "/";
+    public static final String TOPIC_DELIMITER = "/";
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
 }

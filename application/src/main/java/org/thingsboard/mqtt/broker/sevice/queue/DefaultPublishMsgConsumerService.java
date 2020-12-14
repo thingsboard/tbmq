@@ -27,7 +27,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.sevice.processing.MsgDispatcherService;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;

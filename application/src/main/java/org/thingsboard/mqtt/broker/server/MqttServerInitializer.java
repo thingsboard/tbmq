@@ -51,7 +51,7 @@ public class MqttServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttServerHandler handler = handlerFactory.create();
+        MqttSessionHandler handler = handlerFactory.create();
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

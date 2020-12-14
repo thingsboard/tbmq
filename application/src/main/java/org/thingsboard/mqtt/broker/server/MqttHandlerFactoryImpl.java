@@ -34,7 +34,7 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private final SuccessfulPublishService successfulPublishService;
 
     @Override
-    public MqttServerHandler create() {
-        return new MqttServerHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService);
+    public MqttSessionHandler create() {
+        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService);
     }
 }
