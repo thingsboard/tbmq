@@ -15,9 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +29,9 @@ import java.util.Properties;
 @ConfigurationProperties(prefix = "queue.kafka.publish-msg")
 @Component("publish-msg")
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class PublishMsgKafkaSettings implements TbKafkaSettings {
 
     @Value("${queue.kafka.bootstrap.servers}")
