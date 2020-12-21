@@ -93,6 +93,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
             return;
         }
+        // TODO: we can leave order validation as long as we process connection synchronously
         if (!validOrder(msg.fixedHeader().messageType())) {
             log.info("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
             ctx.close();
@@ -130,6 +131,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             case CONNECT:
                 return !clientSessionCtx.isConnected();
             case PUBLISH:
+            case PUBACK:
+            case PUBREC:
+            case PUBREL:
+            case PUBCOMP:
             case SUBSCRIBE:
             case UNSUBSCRIBE:
             case PINGREQ:

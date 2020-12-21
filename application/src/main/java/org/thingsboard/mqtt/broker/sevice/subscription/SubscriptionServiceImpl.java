@@ -60,13 +60,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void unsubscribe(UUID sessionId) {
-        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.remove(sessionId);
+        //TODO: make this transactional?
+        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.get(sessionId);
         if (sessionSubscriptionInfo == null) {
             return;
         }
         for (String topicFilter : sessionSubscriptionInfo.getTopicFilters()) {
             topicTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
         }
+        sessions.remove(sessionId);
     }
 
     @Override
