@@ -1,5 +1,24 @@
+/**
+ * Copyright © 2016-2020 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.thingsboard.mqtt.broker.sevice.integration;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
@@ -28,13 +47,9 @@ import java.util.concurrent.TimeUnit;
 @WebAppConfiguration
 @SpringBootTest(classes = ThingsboardMQTTBrokerApplication.class)
 public abstract class AbstractPubSubIntegrationTest {
-    private static final String SINGLE_LEVELS_TOPIC = "use-case/+/city/store/department/group/+";
-    private static final String MULTI_LEVEL_TOPIC = "use-case/country/city/#";
-
     static final int SUBSCRIBERS_COUNT = 10;
     static final int PUBLISHERS_COUNT = 5;
     static final int PUBLISH_MSGS_COUNT = 100;
-
 
     @ClassRule
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
@@ -57,7 +72,7 @@ public abstract class AbstractPubSubIntegrationTest {
         for (int i = 0; i < PUBLISHERS_COUNT; i++) {
             int finalI = i;
             executor.execute(() -> {
-                initPublishers(subscribersWaiter, finalI);
+                initPublisher(subscribersWaiter, finalI);
                 processingPublishers.countDown();
             });
         }
@@ -69,7 +84,17 @@ public abstract class AbstractPubSubIntegrationTest {
 
     abstract void initSubscriber(Waiter waiter, int subscriberId);
 
-    abstract void initPublishers(Waiter waiter, int publisherId);
+    abstract void initPublisher(Waiter waiter, int publisherId);
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Data
+    static class TestPublishMsg {
+        int publisherId;
+        int sequenceId;
+        boolean isLast;
+    }
 
 
     @TestConfiguration
