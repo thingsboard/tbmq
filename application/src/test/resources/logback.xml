@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.sevice.integration.PublishSubscribeIntegrationTest" level="INFO" />
+    <logger name="org.thingsboard.mqtt.broker.sevice.integration.SimpleTopicPubSubIntegrationTest" level="INFO" />
 
     <root level="WARN">
         <appender-ref ref="console"/>
