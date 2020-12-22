@@ -80,10 +80,5 @@
             <outputDirectory/>
             <lineEnding>windows</lineEnding>
         </file>
-        <file>
-            <source>${pkg.win.dist}/upgrade.bat</source>
-            <outputDirectory/>
-            <lineEnding>windows</lineEnding>
-        </file>
     </files>
 </assembly>

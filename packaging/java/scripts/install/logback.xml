@@ -40,26 +40,9 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.server.install" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="org.thingsboard.server.service.install" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="org.thingsboard.server.ThingsboardInstallApplication" level="ERROR">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="org.apache.tomcat.jdbc.pool" level="ERROR">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="org.thingsboard.server" level="INFO" />
-
     <root level="INFO">
         <appender-ref ref="fileLogAppender"/>
+        <appender-ref ref="STDOUT"/>
     </root>
 
 </configuration>
