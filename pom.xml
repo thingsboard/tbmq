@@ -72,6 +72,7 @@
         <module>common</module>
         <module>dao</module>
         <module>application</module>
+        <module>msa</module>
     </modules>
 
     <profiles>

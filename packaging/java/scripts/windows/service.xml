@@ -10,7 +10,7 @@
     <executable>java</executable>
     <startargument>-Dplatform=windows</startargument>
     <startargument>-Dinstall.data_dir=%BASE%\data</startargument>
-    <startargument>-Xlog:gc+heap+age*=debug,safepoint:%BASE%\logs\gc.log:time,level:filecount=10,filesize=10M</startargument>
+    <startargument>-Xlog:gc*,gc+heap=trace,age*=debug,safepoint:%BASE%\logs\gc.log:time,level:filecount=10,filesize=10M</startargument>
     <startargument>-XX:+HeapDumpOnOutOfMemoryError</startargument>
     <startargument>-XX:-UseBiasedLocking</startargument>
     <startargument>-XX:+UseTLAB</startargument>
