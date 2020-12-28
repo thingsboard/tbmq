@@ -62,4 +62,15 @@ public class ConcurrentMapSubscriptionTrieTest {
                 new HashSet<>(result));
     }
 
+    @Test
+    public void testTopicsWith$(){
+        subscriptionTrie.put("#", "test1");
+        subscriptionTrie.put("+/monitor/Clients", "test2");
+        subscriptionTrie.put("$SYS/#", "test3");
+        subscriptionTrie.put("$SYS/monitor/+", "test4");
+        List<String> result = subscriptionTrie.get("$SYS/monitor/Clients");
+        Assert.assertEquals(Set.of("test3", "test4"),
+                new HashSet<>(result));
+    }
+
 }

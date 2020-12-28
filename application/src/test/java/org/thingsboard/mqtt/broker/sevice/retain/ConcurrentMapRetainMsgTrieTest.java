@@ -71,4 +71,13 @@ public class ConcurrentMapRetainMsgTrieTest {
                 new HashSet<>(result));
     }
 
+    @Test
+    public void testGetWith$(){
+        retainMsgTrie.put("$SYS/monitor/Clients", "test1");
+        Assert.assertTrue(retainMsgTrie.get("#").isEmpty());
+        Assert.assertTrue(retainMsgTrie.get("+/monitor/Clients").isEmpty());
+        Assert.assertEquals(Set.of("test1"), new HashSet<>(retainMsgTrie.get("$SYS/#")));
+        Assert.assertEquals(Set.of("test1"), new HashSet<>(retainMsgTrie.get("$SYS/monitor/+")));
+    }
+
 }

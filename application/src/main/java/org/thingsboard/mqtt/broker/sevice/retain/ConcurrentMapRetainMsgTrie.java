@@ -33,8 +33,13 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
     private static class Node<T> {
         private final AtomicReference<T> value = new AtomicReference<>();
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
+        private String key;
 
         public Node() {
+        }
+
+        public Node(String key) {
+            this.key = key;
         }
     }
 
@@ -69,13 +74,13 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
             String segment = getSegment(topicFilter, topicPosition.prevDelimiterIndex);
             int nextDelimiterIndex = topicPosition.prevDelimiterIndex + segment.length() + 1;
             if (segment.equals(BrokerConstants.MULTI_LEVEL_WILDCARD)) {
-                for (Node<T> childNode : childNodes.values()) {
-                    topicPositions.add(new TopicPosition<>(0, childNode, true));
-                }
+                childNodes.values().stream()
+                        .filter(childNode -> notStartingWith$(topicPosition.prevDelimiterIndex == 0, childNode))
+                        .forEach(childNode -> topicPositions.add(new TopicPosition<>(0, childNode, true)));
             } else if (segment.equals(BrokerConstants.SINGLE_LEVEL_WILDCARD)) {
-                for (Node<T> childNode : childNodes.values()) {
-                    topicPositions.add(new TopicPosition<>(nextDelimiterIndex, childNode, false));
-                }
+                childNodes.values().stream()
+                        .filter(childNode -> notStartingWith$(topicPosition.prevDelimiterIndex == 0, childNode))
+                        .forEach(childNode -> topicPositions.add(new TopicPosition<>(nextDelimiterIndex, childNode, false)));
             } else {
                 Node<T> segmentNode = childNodes.get(segment);
                 if (segmentNode != null) {
@@ -84,6 +89,10 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
             }
         }
         return result;
+    }
+
+    private boolean notStartingWith$(boolean isFirstSegment, Node<T> childNode) {
+        return !isFirstSegment || childNode.key.charAt(0) != '$';
     }
 
     @AllArgsConstructor
@@ -109,7 +118,7 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
             }
         } else {
             String segment = getSegment(topic, prevDelimiterIndex);
-            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>());
+            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>(segment));
             put(nextNode, topic, val, prevDelimiterIndex + segment.length() + 1);
         }
     }

@@ -64,22 +64,30 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
                 continue;
             }
             ConcurrentMap<String, Node<T>> childNodes = topicPosition.node.children;
-            Node<T> multiLevelWildcardSubs = childNodes.get(BrokerConstants.MULTI_LEVEL_WILDCARD);
-            if (multiLevelWildcardSubs != null) {
-                result.addAll(multiLevelWildcardSubs.values);
-            }
             String segment = getSegment(topic, topicPosition.prevDelimiterIndex);
             int nextDelimiterIndex = topicPosition.prevDelimiterIndex + segment.length() + 1;
-            Node<T> singleLevelWildcardSubs = childNodes.get(BrokerConstants.SINGLE_LEVEL_WILDCARD);
-            if (singleLevelWildcardSubs != null) {
-                topicPositions.add(new TopicPosition<>(nextDelimiterIndex, singleLevelWildcardSubs));
+
+            if (notStartingWith$(topic, topicPosition)) {
+                Node<T> multiLevelWildcardSubs = childNodes.get(BrokerConstants.MULTI_LEVEL_WILDCARD);
+                if (multiLevelWildcardSubs != null) {
+                    result.addAll(multiLevelWildcardSubs.values);
+                }
+                Node<T> singleLevelWildcardSubs = childNodes.get(BrokerConstants.SINGLE_LEVEL_WILDCARD);
+                if (singleLevelWildcardSubs != null) {
+                    topicPositions.add(new TopicPosition<>(nextDelimiterIndex, singleLevelWildcardSubs));
+                }
             }
+
             Node<T> segmentNode = childNodes.get(segment);
             if (segmentNode != null) {
                 topicPositions.add(new TopicPosition<>(nextDelimiterIndex, segmentNode));
             }
         }
         return result;
+    }
+
+    private boolean notStartingWith$(String topic, TopicPosition<T> topicPosition) {
+        return topicPosition.prevDelimiterIndex != 0 || topic.charAt(0) != '$';
     }
 
     @AllArgsConstructor
