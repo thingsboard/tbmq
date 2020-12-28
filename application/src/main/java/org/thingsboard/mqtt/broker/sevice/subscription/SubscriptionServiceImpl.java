@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.sevice.subscription;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
@@ -27,19 +26,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
-    private final TopicTrie<TopicSubscription> topicTrie = new ConcurrentMapTopicTrie<>();
+    private final SubscriptionTrie<TopicSubscription> subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
     private final Map<UUID, SessionSubscriptionInfo> sessions = new ConcurrentHashMap<>();
 
     @Override
     public ListenableFuture<Void> subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> new SessionSubscriptionInfo(listener));
         for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
-            topicTrie.put(topicSubscription.topicName(), new TopicSubscription(sessionId, topicSubscription.qualityOfService()));
+            subscriptionTrie.put(topicSubscription.topicName(), new TopicSubscription(sessionId, topicSubscription.qualityOfService()));
             sessionSubscriptionInfo.getTopicFilters().add(topicSubscription.topicName());
         }
         return Futures.immediateFuture(null);
@@ -52,7 +50,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new RuntimeException("Cannot find session subscription info.");
         }
         for (String topic : topics) {
-            topicTrie.delete(topic, val -> sessionId.equals(val.getSessionId()));
+            subscriptionTrie.delete(topic, val -> sessionId.equals(val.getSessionId()));
             sessionSubscriptionInfo.getTopicFilters().remove(topic);
         }
         return Futures.immediateFuture(null);
@@ -66,14 +64,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
         for (String topicFilter : sessionSubscriptionInfo.getTopicFilters()) {
-            topicTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
+            subscriptionTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
         }
         sessions.remove(sessionId);
     }
 
     @Override
     public Collection<Subscription> getSubscriptions(String topic) {
-        List<TopicSubscription> topicSubscriptions = topicTrie.get(topic);
+        List<TopicSubscription> topicSubscriptions = subscriptionTrie.get(topic);
         return topicSubscriptions.stream()
                 .map(topicSubscription -> new Subscription(topicSubscription.getMqttQoS(), sessions.get(topicSubscription.getSessionId()).getListener()))
                 .collect(Collectors.toList());

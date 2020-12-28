@@ -28,24 +28,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class ConcurrentMapTopicTrie<T> implements TopicTrie<T> {
+public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     private final AtomicInteger size = new AtomicInteger();
     private final Node<T> root = new Node<>();
 
     private static class Node<T> {
-        private String key;
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
         private final ConcurrentLinkedQueue<T> values = new ConcurrentLinkedQueue<>();
 
         public Node() {
         }
-
-        public Node(String key) {
-            this.key = key;
-        }
     }
 
-    public ConcurrentMapTopicTrie() {
+    public ConcurrentMapSubscriptionTrie() {
     }
 
     @Override
@@ -107,7 +102,7 @@ public class ConcurrentMapTopicTrie<T> implements TopicTrie<T> {
             x.values.add(val);
         } else {
             String segment = getSegment(key, prevDelimiterIndex);
-            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>(segment));
+            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>());
             put(nextNode, key, val, prevDelimiterIndex + segment.length() + 1);
         }
     }

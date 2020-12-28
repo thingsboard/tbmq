@@ -29,35 +29,35 @@ import java.util.Set;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ConcurrentMapTopicTrieTest {
+public class ConcurrentMapSubscriptionTrieTest {
 
-    private ConcurrentMapTopicTrie<String> concurrentMapTopicTrie;
+    private ConcurrentMapSubscriptionTrie<String> subscriptionTrie;
 
     @Before
     public void before(){
-        this.concurrentMapTopicTrie = new ConcurrentMapTopicTrie<>();
+        this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
     }
 
     @Test
     public void testDelete(){
-        concurrentMapTopicTrie.put("1/2", "test");
-        concurrentMapTopicTrie.delete("1/2", s -> s.equals("test"));
-        List<String> result = concurrentMapTopicTrie.get("1/2");
+        subscriptionTrie.put("1/2", "test");
+        subscriptionTrie.delete("1/2", s -> s.equals("test"));
+        List<String> result = subscriptionTrie.get("1/2");
         Assert.assertEquals(Collections.emptyList(), result);
     }
 
     @Test
     public void testGet(){
-        concurrentMapTopicTrie.put("1/22/3", "test1");
-        concurrentMapTopicTrie.put("1/+/3", "test2");
-        concurrentMapTopicTrie.put("1/#", "test3");
-        concurrentMapTopicTrie.put("1/22/#", "test4");
-        concurrentMapTopicTrie.put("1/+/4", "test5");
-        concurrentMapTopicTrie.put("1/22/4", "test6");
-        concurrentMapTopicTrie.put("#", "test7");
-        concurrentMapTopicTrie.put("+/22/3", "test8");
-        concurrentMapTopicTrie.put("+/22/+", "test9");
-        List<String> result = concurrentMapTopicTrie.get("1/22/3");
+        subscriptionTrie.put("1/22/3", "test1");
+        subscriptionTrie.put("1/+/3", "test2");
+        subscriptionTrie.put("1/#", "test3");
+        subscriptionTrie.put("1/22/#", "test4");
+        subscriptionTrie.put("1/+/4", "test5");
+        subscriptionTrie.put("1/22/4", "test6");
+        subscriptionTrie.put("#", "test7");
+        subscriptionTrie.put("+/22/3", "test8");
+        subscriptionTrie.put("+/22/+", "test9");
+        List<String> result = subscriptionTrie.get("1/22/3");
         Assert.assertEquals(Set.of("test1", "test2", "test3", "test4", "test7", "test8", "test9"),
                 new HashSet<>(result));
     }

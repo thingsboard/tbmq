@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.sevice.subscription;
 import java.util.List;
 import java.util.function.Predicate;
 
-public interface TopicTrie<T> {
+public interface SubscriptionTrie<T> {
 
     List<T> get(String topic);
 

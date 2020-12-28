@@ -32,14 +32,9 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
 
     private static class Node<T> {
         private final AtomicReference<T> value = new AtomicReference<>();
-        private String key;
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
 
         public Node() {
-        }
-
-        public Node(String key) {
-            this.key = key;
         }
     }
 
@@ -114,7 +109,7 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
             }
         } else {
             String segment = getSegment(topic, prevDelimiterIndex);
-            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>(segment));
+            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>());
             put(nextNode, topic, val, prevDelimiterIndex + segment.length() + 1);
         }
     }
