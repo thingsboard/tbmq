@@ -15,41 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.sevice.processing;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.sevice.subscription.Subscription;
 import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -62,6 +42,11 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
                                        PublishMsgQueueFactory publishMsgQueueFactory) {
         this.subscriptionService = subscriptionService;
         this.publishMsgProducer = publishMsgQueueFactory.createProducer();
+    }
+
+    @PreDestroy
+    public void destroy() {
+        publishMsgProducer.stop();
     }
 
     @Override
@@ -80,6 +65,5 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
             subscription.getListener().onPublishMsg(subscription.getMqttQoS(), publishMsgProto);
         }
     }
-
 
 }

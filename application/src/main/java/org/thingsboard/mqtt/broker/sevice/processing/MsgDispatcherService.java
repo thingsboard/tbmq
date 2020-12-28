@@ -15,10 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.sevice.processing;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 
 public interface MsgDispatcherService {
