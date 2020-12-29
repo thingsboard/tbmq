@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.subscription;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 
-@Getter
+import java.util.UUID;
+
 @AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+@Getter
+public class TopicSubscription {
+    private final UUID sessionId;
+    private final MqttQoS mqttQoS;
 }

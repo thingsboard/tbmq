@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import org.thingsboard.mqtt.broker.session.SessionListener;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+public class SessionSubscriptionInfo {
+    private final SessionListener listener;
+    private final Queue<String> topicFilters;
+
+    public SessionSubscriptionInfo(SessionListener listener) {
+        this.listener = listener;
+        this.topicFilters = new ConcurrentLinkedQueue<>();
+    }
 }

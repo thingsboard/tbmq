@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import org.springframework.stereotype.Service;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+@Service
+public class DefaultSuccessfulPublishService implements SuccessfulPublishService {
+    @Override
+    public void confirmSuccessfulPublish(String clientId, int packetId) {
+        // TODO push to Kafka topic
+    }
 }

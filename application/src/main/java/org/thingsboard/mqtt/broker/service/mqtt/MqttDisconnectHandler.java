@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.channel.ChannelHandlerContext;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 
-@Getter
+import java.util.UUID;
+
+@Service
 @AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+@Slf4j
+public class MqttDisconnectHandler {
+
+    public void process(ChannelHandlerContext channelCtx, UUID sessionId, SessionDisconnectListener disconnectListener) {
+        channelCtx.close();
+        log.info("[{}] Client disconnected!", sessionId);
+        disconnectListener.onSessionDisconnect();
+    }
 }

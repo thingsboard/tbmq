@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import org.springframework.stereotype.Component;
 
-@Getter
+@Component
 @AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+@Getter
+public class MqttMessageHandlers {
+    private final MqttConnectHandler connectHandler;
+    private final MqttDisconnectHandler disconnectHandler;
+    private final MqttSubscribeHandler subscribeHandler;
+    private final MqttUnsubscribeHandler unsubscribeHandler;
+    private final MqttPublishHandler publishHandler;
+    private final MqttPingHandler pingHandler;
 }

@@ -22,10 +22,8 @@ option java_outer_classname = "QueueProtos";
 message SessionInfoProto {
   int64 sessionIdMSB = 1;
   int64 sessionIdLSB = 2;
-  int64 tenantIdMSB = 3;
-  int64 tenantIdLSB = 4;
-  string clientId = 5;
-  bool persistent = 6;
+  string clientId = 3;
+  bool persistent = 4;
 }
 
 message PublishMsgProto {

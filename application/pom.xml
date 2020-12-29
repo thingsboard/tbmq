@@ -40,7 +40,7 @@
         <pkg.win.dist>${project.build.directory}/windows</pkg.win.dist>
         <pkg.copyInstallScripts>true</pkg.copyInstallScripts>
         <pkg.implementationTitle>ThingsBoard MQTT Broker</pkg.implementationTitle>
-        <pkg.mainClass>org.thingsboard.mqtt.broker.ThingsboardMQTTBrokerApplication</pkg.mainClass>
+        <pkg.mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</pkg.mainClass>
     </properties>
 
     <dependencies>

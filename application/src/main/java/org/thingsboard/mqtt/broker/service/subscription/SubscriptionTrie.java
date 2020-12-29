@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import java.util.List;
+import java.util.function.Predicate;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+public interface SubscriptionTrie<T> {
+
+    List<T> get(String topic);
+
+    void put(String topicFilter, T val);
+
+    void delete(String topicFilter, Predicate<T> deletionFilter);
+
+    int size();
 }

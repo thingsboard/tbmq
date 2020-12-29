@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+public interface MsgDispatcherService {
+    void acknowledgePublishMsg(SessionInfoProto sessionInfoProto, MqttPublishMessage publishMessage, TbQueueCallback callback);
+    void processPublishMsg(PublishMsgProto publishMsgProto);
 }

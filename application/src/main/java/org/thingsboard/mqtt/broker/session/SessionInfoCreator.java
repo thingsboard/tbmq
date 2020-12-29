@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.session;
 
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.Tenant;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import javax.annotation.Nullable;
@@ -34,25 +33,13 @@ public class SessionInfoCreator {
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
                 .setPersistent(sessionInfo.isPersistent())
                 .setClientId(clientInfo.getClientId());
-        Tenant tenant = clientInfo.getTenant();
-        if (tenant != null) {
-            builder
-                    .setTenantIdMSB(tenant.getTenantId().getMostSignificantBits())
-                    .setTenantIdLSB(tenant.getTenantId().getLeastSignificantBits());
-        }
         return builder.build();
     }
 
-    public static SessionInfo create(UUID sessionId, String clientId, boolean persistent, @Nullable UUID tenantId) {
+    public static SessionInfo create(UUID sessionId, String clientId, boolean persistent) {
         ClientInfo.ClientInfoBuilder clientInfoBuilder = ClientInfo.builder();
         clientInfoBuilder
                 .clientId(clientId);
-        if (tenantId != null) {
-            clientInfoBuilder
-                    .tenant(Tenant.builder()
-                            .tenantId(tenantId)
-                            .build());
-        }
         return SessionInfo.builder()
                 .sessionId(sessionId)
                 .persistent(persistent)

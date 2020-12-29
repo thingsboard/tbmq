@@ -33,11 +33,11 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.PublishRetryService;
-import org.thingsboard.mqtt.broker.sevice.processing.SuccessfulPublishService;
-import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageHandlers;
+import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
+import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 import java.net.InetSocketAddress;
 import java.util.UUID;

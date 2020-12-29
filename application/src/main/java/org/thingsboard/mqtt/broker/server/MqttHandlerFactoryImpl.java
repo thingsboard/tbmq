@@ -17,11 +17,11 @@ package org.thingsboard.mqtt.broker.server;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.sevice.mqtt.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.sevice.processing.PublishRetryService;
-import org.thingsboard.mqtt.broker.sevice.processing.SuccessfulPublishService;
-import org.thingsboard.mqtt.broker.sevice.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageHandlers;
+import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
+import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 @Service
 @AllArgsConstructor

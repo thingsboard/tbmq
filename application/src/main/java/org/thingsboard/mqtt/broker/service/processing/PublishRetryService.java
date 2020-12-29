@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
+public interface PublishRetryService {
+    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId);
+
+    void registerPubRec(String clientId, int packetId);
 }
