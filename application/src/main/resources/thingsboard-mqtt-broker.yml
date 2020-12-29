@@ -14,16 +14,23 @@
 # limitations under the License.
 #
 
-# If you enabled process metrics you should also enable 'web-environment'.
-spring.main.web-environment: "${WEB_APPLICATION_ENABLE:false}"
-# If you enabled process metrics you should set 'web-application-type' to 'servlet' value.
-spring.main.web-application-type: "${WEB_APPLICATION_TYPE:none}"
-
 server:
   # Server bind address (has no effect if web-environment is disabled).
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # Server bind port (has no effect if web-environment is disabled).
   port: "${HTTP_BIND_PORT:8083}"
+  # Server SSL configuration
+  ssl:
+    # Enable/disable SSL support
+    enabled: "${SSL_ENABLED:false}"
+    # Path to the key store that holds the SSL certificate
+    key-store: "${SSL_KEY_STORE:classpath:keystore/keystore.p12}"
+    # Password used to access the key store
+    key-store-password: "${SSL_KEY_STORE_PASSWORD:thingsboard_mqtt_broker}"
+    # Type of the key store
+    key-store-type: "${SSL_KEY_STORE_TYPE:PKCS12}"
+    # Alias that identifies the key in the key store
+    key-alias: "${SSL_KEY_ALIAS:tomcat}"
   # MQTT server parameters
   mqtt:
     bind_address: "${MQTT_BIND_ADDRESS:0.0.0.0}"
@@ -71,3 +78,52 @@ queue:
       maxPollRecords: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
       maxPartitionFetchBytes: "${TB_KAFKA_PUBLISH_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
       fetchMaxBytes: "${TB_KAFKA_PUBLISH_MSG_FETCH_MAX_BYTES:134217728}"
+
+# SQL DAO Configuration
+spring:
+  data:
+    jpa:
+      repositories:
+        enabled: "true"
+  jpa:
+    open-in-view: "false"
+    hibernate:
+      ddl-auto: "none"
+    database-platform: "${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}"
+  datasource:
+    driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker_ce_1_0_0}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
+    hikari:
+      maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
+
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "true"
+spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
+
+# spring CORS configuration
+spring.mvc.cors:
+  mappings:
+    # Intercept path
+    "[/api/**]":
+      #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
+      allowed-origins: "*"
+      #Comma-separated list of methods to allow. '*' allows all methods.
+      allowed-methods: "*"
+      #Comma-separated list of headers to allow in a request. '*' allows all headers.
+      allowed-headers: "*"
+      #How long, in seconds, the response from a pre-flight request can be cached by clients.
+      max-age: "1800"
+      #Set whether credentials are supported. When not set, credentials are not supported.
+      allow-credentials: "true"
+
+# Security parameters
+security:
+  # JWT Token parameters
+  jwt:
+    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)
+    refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}" # Number of seconds (1 week)
+    tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
+    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
+  # Enable/disable case-sensitive username login
+  user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"

@@ -68,6 +68,8 @@
         <concurrentunit.version>0.4.0</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <commons-lang3.version>3.4</commons-lang3.version>
+        <jackson.version>2.11.3</jackson.version>
+        <jaxb.version>2.3.1</jaxb.version>
     </properties>
 
     <modules>
@@ -800,6 +802,11 @@
                 <version>${hsqldb.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
@@ -906,6 +913,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.datastax.oss</groupId>

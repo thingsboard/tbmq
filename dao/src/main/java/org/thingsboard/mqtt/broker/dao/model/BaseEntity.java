@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class Tenant {
-    private final UUID tenantId;
+@Data
+@MappedSuperclass
+public abstract class BaseEntity<D> implements ToData<D> {
+    @Id
+    @Column(name = ModelConstants.ID_PROPERTY, columnDefinition = "uuid")
+    protected UUID id;
+
+    @Column(name = ModelConstants.CREATED_TIME_PROPERTY)
+    protected long createdTime;
+
+    public void setCreatedTime(long createdTime) {
+        if (createdTime > 0) {
+            this.createdTime = createdTime;
+        }
+    }
 }
