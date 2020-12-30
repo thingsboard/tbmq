@@ -19,6 +19,7 @@ server:
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # Server bind port (has no effect if web-environment is disabled).
   port: "${HTTP_BIND_PORT:8083}"
+  log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration
   ssl:
     # Enable/disable SSL support
