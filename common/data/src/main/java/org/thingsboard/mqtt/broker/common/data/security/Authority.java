@@ -17,7 +17,8 @@ package org.thingsboard.mqtt.broker.common.data.security;
 
 public enum Authority {
     
-    ADMIN(0);
+    ADMIN(0),
+    REFRESH_TOKEN(10);
 
     private int code;
 

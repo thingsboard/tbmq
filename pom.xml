@@ -69,6 +69,8 @@
         <commons-lang3.version>3.4</commons-lang3.version>
         <jackson.version>2.11.3</jackson.version>
         <jaxb.version>2.3.1</jaxb.version>
+        <jjwt.version>0.7.0</jjwt.version>
+        <bouncycastle.version>1.64</bouncycastle.version>
     </properties>
 
     <modules>
@@ -806,6 +808,11 @@
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
@@ -922,6 +929,11 @@
                 <groupId>com.datastax.oss</groupId>
                 <artifactId>java-driver-core</artifactId>
                 <version>${cassandra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
