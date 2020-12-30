@@ -26,14 +26,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = TopicsIntegrationTest.class, loader = SpringBootContextLoader.class)
+@DaoSqlTest
 public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     private static final String BASIC_TOPIC = "use-case/country/city/store/department/group/device";

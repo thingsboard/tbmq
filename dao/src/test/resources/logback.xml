@@ -7,10 +7,6 @@
         </encoder>
     </appender>
 
-    <logger name="org.apache.cassandra" level="WARN"/>
-    <logger name="org.cassandraunit" level="WARN" />
-    <logger name="org.apache.cassandra" level="WARN" />
-
     <root level="WARN">
         <appender-ref ref="console"/>
     </root>
