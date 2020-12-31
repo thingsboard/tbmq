@@ -28,6 +28,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -100,30 +101,38 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             return;
         }
         clientSessionCtx.setChannel(ctx);
-        switch (msg.fixedHeader().messageType()) {
-            case CONNECT:
-                messageHandlers.getConnectHandler().process(clientSessionCtx, (MqttConnectMessage) msg);
-                break;
-            case DISCONNECT:
-                messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
-                break;
-            case SUBSCRIBE:
-                messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg, this);
-                break;
-            case UNSUBSCRIBE:
-                messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMessage) msg);
-                break;
-            case PUBLISH:
-                messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg, this);
-                break;
-            case PINGREQ:
-                // TODO disconnect if there was no ping for a long time
-                messageHandlers.getPingHandler().process(clientSessionCtx);
-                break;
-            case PUBACK:
-            default:
-                break;
-        };
+        try {
+            switch (msg.fixedHeader().messageType()) {
+                case CONNECT:
+                    messageHandlers.getConnectHandler().process(clientSessionCtx, (MqttConnectMessage) msg);
+                    break;
+                case DISCONNECT:
+                    messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
+                    break;
+                case SUBSCRIBE:
+                    messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg, this);
+                    break;
+                case UNSUBSCRIBE:
+                    messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMessage) msg);
+                    break;
+                case PUBLISH:
+                    messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg, this);
+                    break;
+                case PINGREQ:
+                    // TODO disconnect if there was no ping for a long time
+                    messageHandlers.getPingHandler().process(clientSessionCtx);
+                    break;
+                case PUBACK:
+                default:
+                    break;
+            }
+            ;
+        } catch (MqttException e) {
+            log.warn("[{}] Failed to process {} msg. Reason - {}.",
+                    sessionId, msg.fixedHeader().messageType(), e.getMessage());
+            ctx.close();
+            onSessionDisconnect();
+        }
     }
 
     private boolean validOrder(MqttMessageType messageType) {

@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
@@ -40,7 +41,7 @@ public class MqttSubscribeHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final SubscriptionService subscriptionService;
 
-    public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) {
+    public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         List<MqttTopicSubscription> subscriptions = msg.payload().topicSubscriptions();
         log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, msg.variableHeader().messageId(), subscriptions);

@@ -23,7 +23,9 @@ import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCredentialsEntity, MqttClientCredentials> implements MqttClientCredentialsDao {
@@ -44,5 +46,12 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
     @Override
     public MqttClientCredentials findByCredentialsId(String credentialsId) {
         return DaoUtil.getData(mqttClientCredentialsRepository.findByCredentialsId(credentialsId));
+    }
+
+    @Override
+    public List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds) {
+        return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
+                .map(DaoUtil::getData)
+                .collect(Collectors.toList());
     }
 }

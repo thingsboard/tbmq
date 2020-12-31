@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.config;
 
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.Dao;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.List;
-
-public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
-    MqttClientCredentials findByCredentialsId(String credentialsId);
-
-    List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds);
+@Configuration
+public class SecurityConfiguration {
+    @Bean
+    protected BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }

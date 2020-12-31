@@ -13,15 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.exception;
 
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.Dao;
+public class MqttException extends RuntimeException {
+    public MqttException() {
+    }
 
-import java.util.List;
+    public MqttException(String message) {
+        super(message);
+    }
 
-public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
-    MqttClientCredentials findByCredentialsId(String credentialsId);
+    public MqttException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds);
+    public MqttException(Throwable cause) {
+        super(cause);
+    }
+
+    public MqttException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

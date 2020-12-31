@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -37,7 +38,7 @@ public class MqttPublishHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgDispatcherService msgDispatcherService;
 
-    public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) {
+    public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) throws MqttException {
         validatePublish(msg);
         String topicName = msg.variableHeader().topicName();
         int msgId = msg.variableHeader().packetId();

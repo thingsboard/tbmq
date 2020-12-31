@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.client;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -27,16 +28,20 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
+
+import java.util.List;
 
 @Service
 @Slf4j
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
-    private static final String USERNAME_CREDENTIALS_ID_PREFIX = "username";
-    private static final String CLIENT_ID_CREDENTIALS_ID_PREFIX = "client_id";
-    private static final String MIXED_CREDENTIALS_ID_PREFIX = "mixed";
+
 
     @Autowired
     private MqttClientCredentialsDao mqttClientCredentialsDao;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -61,17 +66,27 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
     }
 
+    @Override
+    public List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds) {
+        log.trace("Executing findMatchingCredentials [{}]", credentialIds);
+        return mqttClientCredentialsDao.findAllByCredentialsIds(credentialIds);
+    }
+
     private void processSimpleMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getBasicMqttCredentials(mqttClientCredentials);
         if (StringUtils.isEmpty(mqttClientCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }
+        if (mqttCredentials.getPassword() != null) {
+            mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
+            mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
+        }
         if (StringUtils.isEmpty(mqttClientCredentials.getClientId())) {
-            mqttClientCredentials.setCredentialsId(USERNAME_CREDENTIALS_ID_PREFIX + mqttCredentials.getUserName());
+            mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
         } else if (StringUtils.isEmpty(mqttCredentials.getUserName())) {
-            mqttClientCredentials.setCredentialsId(CLIENT_ID_CREDENTIALS_ID_PREFIX + mqttClientCredentials.getClientId());
+            mqttClientCredentials.setCredentialsId(ProtocolUtil.clientIdCredentialsId(mqttClientCredentials.getClientId()));
         } else {
-            mqttClientCredentials.setCredentialsId(MIXED_CREDENTIALS_ID_PREFIX + mqttClientCredentials.getClientId() + "|" + mqttCredentials.getUserName());
+            mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttClientCredentials.getClientId()));
         }
     }
 
