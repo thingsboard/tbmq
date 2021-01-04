@@ -15,9 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class BasicMqttCredentials {
     private String userName;
     private String password;
