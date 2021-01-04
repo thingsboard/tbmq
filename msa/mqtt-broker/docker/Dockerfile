@@ -17,20 +17,29 @@
 FROM thingsboard/openjdk11
 
 
-COPY start-tb-mqtt-broker.sh ${pkg.name}.deb /tmp/
+COPY start-tb-mqtt-broker.sh install-tb-mqtt-broker.sh ${pkg.name}.deb /tmp/
 
 RUN chmod a+x /tmp/*.sh \
-    && mv /tmp/start-tb-mqtt-broker.sh /usr/bin
+    && mv /tmp/start-tb-mqtt-broker.sh /usr/bin \
+    && mv /tmp/install-tb-mqtt-broker.sh /usr/bin
 
 RUN yes | dpkg -i /tmp/${pkg.name}.deb
 RUN rm /tmp/${pkg.name}.deb
 
 RUN systemctl --no-reload disable --now ${pkg.name}.service > /dev/null 2>&1 || :
 
-RUN chown -R ${pkg.user}:${pkg.user} /tmp
+ENV DATA_FOLDER=/data
 
-RUN chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar
+RUN mkdir -p ${DATA_FOLDER} \
+    && chown -R ${pkg.user}:${pkg.user} ${DATA_FOLDER} \
+    && chown -R ${pkg.user}:${pkg.user} /tmp \
+    && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar
 
 USER ${pkg.user}
+
+EXPOSE 8883
+EXPOSE 1883
+
+VOLUME ["/data"]
 
 CMD ["start-tb-mqtt-broker.sh"]

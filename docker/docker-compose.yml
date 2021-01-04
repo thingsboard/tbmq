@@ -18,6 +18,16 @@
 version: '2.2'
 
 services:
+  postgres:
+    restart: always
+    image: "postgres:11.6"
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_DB: thingsboard_mqtt_broker
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./tb-mqtt-broker/postgres:/var/lib/postgresql/data
   zookeeper:
     restart: always
     image: "zookeeper:3.5"
@@ -40,6 +50,7 @@ services:
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
     ports:
       - "1883:1883"
+      - "8883:8883"
     logging:
       driver: "json-file"
       options:
@@ -54,4 +65,5 @@ services:
       - ./tb-mqtt-broker/conf:/config
       - ./tb-mqtt-broker/log:/var/log/thingsboard-mqtt-broker
     depends_on:
+      - postgres
       - kafka

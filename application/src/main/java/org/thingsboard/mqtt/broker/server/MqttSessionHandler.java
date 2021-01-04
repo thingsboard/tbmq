@@ -55,7 +55,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
-    private volatile InetSocketAddress address;
 
     MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
@@ -88,7 +87,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
-        address = (InetSocketAddress) ctx.channel().remoteAddress();
+        InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
             log.info("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
             messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);

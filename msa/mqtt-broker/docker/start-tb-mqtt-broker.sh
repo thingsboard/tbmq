@@ -15,26 +15,29 @@
 # limitations under the License.
 #
 
-jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
+export jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
 
-configfile="/config/${pkg.name}.conf"
+export configfile="/config/${pkg.name}.conf"
 if [ ! -f ${configfile} ]; then
-  configfile=${pkg.installFolder}/conf/${pkg.name}.conf
+  export configfile=${pkg.installFolder}/conf/${pkg.name}.conf
 fi
+export LOADER_PATH=/config,${LOADER_PATH}
 
-logbackfile="/config/logback.xml"
+export logbackfile="/config/logback.xml"
 if [ ! -f ${logbackfile} ]; then
-  logbackfile=${pkg.installFolder}/conf/logback.xml
+  export logbackfile=${pkg.installFolder}/conf/logback.xml
 fi
 
 source "${configfile}"
 
-export LOADER_PATH=/config,${LOADER_PATH}
-
-cd ${pkg.installFolder}/bin
+firstlaunch=${DATA_FOLDER}/.firstlaunch
+if [ ! -f ${firstlaunch} ]; then
+    install-tb-mqtt-broker.sh --loadDemo
+    touch ${firstlaunch}
+fi
 
 echo "Starting '${project.name}' ..."
 
-exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMQTTBrokerApplication \
+exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
                     -Dlogging.config=${logbackfile} \
                     org.springframework.boot.loader.PropertiesLauncher

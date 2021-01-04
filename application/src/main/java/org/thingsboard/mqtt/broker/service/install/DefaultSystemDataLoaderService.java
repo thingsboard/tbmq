@@ -38,6 +38,11 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
     @Autowired
     private UserService userService;
 
+    @Bean
+    protected BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Override
     public void createAdmin() {
         createUser(Authority.ADMIN, "sysadmin@thingsboard.org", "sysadmin");
