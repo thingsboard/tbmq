@@ -31,4 +31,6 @@ public interface UserService {
 	UserCredentials findUserCredentialsByUserId(UUID userId);
 
 	UserCredentials saveUserCredentials(UserCredentials userCredentials);
+
+	void deleteUser(UUID userId);
 }

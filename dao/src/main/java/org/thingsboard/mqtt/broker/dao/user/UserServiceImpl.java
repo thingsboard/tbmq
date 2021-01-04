@@ -112,6 +112,14 @@ public class UserServiceImpl implements UserService {
         return saveUserCredentialsAndPasswordHistory(userCredentials);
     }
 
+    @Override
+    public void deleteUser(UUID userId) {
+        log.trace("Executing deleteUser [{}]", userId);
+        validateId(userId, INCORRECT_USER_ID + userId);
+        UserCredentials userCredentials = userCredentialsDao.findByUserId(userId);
+        userCredentialsDao.removeById(userCredentials.getId());
+        userDao.removeById(userId);
+    }
 
     private UserCredentials saveUserCredentialsAndPasswordHistory(UserCredentials userCredentials) {
         UserCredentials result = userCredentialsDao.save(userCredentials);
