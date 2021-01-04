@@ -121,7 +121,7 @@ spring.mvc.cors:
 # Security parameters
 security:
   mqtt:
-    enable: "${SECURITY_MQTT_ENABLE:false}"
+    enabled: "${SECURITY_MQTT_ENABLED:false}"
   # JWT Token parameters
   jwt:
     tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)

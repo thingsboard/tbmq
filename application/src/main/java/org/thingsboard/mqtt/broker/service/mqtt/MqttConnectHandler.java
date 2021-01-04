@@ -83,12 +83,13 @@ public class MqttConnectHandler {
                 ProtocolUtil.mixedCredentialsId(userName, clientId)
         );
         List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(credentialIds);
-        String password = new String(passwordBytes, StandardCharsets.UTF_8);
+        String password = passwordBytes != null ?
+                new String(passwordBytes, StandardCharsets.UTF_8) : null;
         return matchingCredentials.stream()
                 .map(MqttClientCredentials::getCredentialsValue)
                 .map(credentialsValue -> JacksonUtil.fromString(credentialsValue, BasicMqttCredentials.class))
                 .filter(Objects::nonNull)
                 .anyMatch(basicMqttCredentials -> basicMqttCredentials.getPassword() == null
-                        || passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
+                        || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword())));
     }
 }
