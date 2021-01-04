@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -64,6 +65,12 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 throw t;
             }
         }
+    }
+
+    @Override
+    public void deleteCredentials(UUID id) {
+        log.trace("Executing deleteCredentials [{}]", id);
+        mqttClientCredentialsDao.removeById(id);
     }
 
     @Override

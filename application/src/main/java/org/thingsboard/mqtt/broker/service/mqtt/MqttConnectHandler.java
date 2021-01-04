@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -77,11 +78,16 @@ public class MqttConnectHandler {
     }
 
     private boolean isAuthenticated(String userName, String clientId, byte[] passwordBytes) {
-        List<String> credentialIds = Arrays.asList(
-                ProtocolUtil.usernameCredentialsId(userName),
-                ProtocolUtil.clientIdCredentialsId(clientId),
-                ProtocolUtil.mixedCredentialsId(userName, clientId)
-        );
+        List<String> credentialIds = new ArrayList<>();
+        if (!StringUtils.isEmpty(userName)) {
+            credentialIds.add(ProtocolUtil.usernameCredentialsId(userName));
+        }
+        if (!StringUtils.isEmpty(clientId)) {
+            credentialIds.add(ProtocolUtil.clientIdCredentialsId(userName));
+        }
+        if (!StringUtils.isEmpty(clientId) && !StringUtils.isEmpty(userName)) {
+            credentialIds.add(ProtocolUtil.mixedCredentialsId(userName, clientId));
+        }
         List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(credentialIds);
         String password = passwordBytes != null ?
                 new String(passwordBytes, StandardCharsets.UTF_8) : null;

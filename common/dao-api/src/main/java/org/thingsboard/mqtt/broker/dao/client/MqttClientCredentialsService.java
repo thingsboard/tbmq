@@ -18,9 +18,12 @@ package org.thingsboard.mqtt.broker.dao.client;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface MqttClientCredentialsService {
     MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials);
+
+    void deleteCredentials(UUID id);
 
     List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds);
 }
