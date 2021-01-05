@@ -17,11 +17,17 @@
 version: '2.2'
 
 services:
+  postgres:
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
   tb-mqtt-broker:
     volumes:
       - tb-log-volume:/var/log/thingsboard-mqtt-broker
 
 volumes:
+  postgres-db-volume:
+    external: true
+    name: ${POSTGRES_DATA_VOLUME}
   tb-log-volume:
     external: true
     name: ${TB_LOG_VOLUME}

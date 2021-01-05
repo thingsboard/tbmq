@@ -40,7 +40,7 @@ public class ServerRestartTest extends AbstractContainerTest {
     //TODO: make it readable and not so dependent on Thread.sleep()
     @Test
     public void testBrokerRestart() throws Throwable {
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         DockerComposeExecutor dockerCompose = ContainerTestSuite.dockerManager.getDockerComposeExecutor();
         final int messagesBeforeRestart = 50;
         final int messagesAfterRestart = 50;
@@ -68,7 +68,7 @@ public class ServerRestartTest extends AbstractContainerTest {
             msg.setQos(0);
             pubClient.publish("test", msg);
         }
-        waiter.await(2, TimeUnit.SECONDS);
+        waiter.await(3, TimeUnit.SECONDS);
         pubClient.disconnect();
         subClient.disconnect();
         pubClient.close();
@@ -80,7 +80,7 @@ public class ServerRestartTest extends AbstractContainerTest {
         dockerCompose.withCommand("restart " + containerState.getContainerId());
         dockerCompose.invokeDocker();
 
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         subClient = new MqttClient("tcp://localhost:1883", "black_box_test_sub");
         subClient.connect();
         subClient.subscribe("test", 0, (topic, message) -> {

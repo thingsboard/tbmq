@@ -26,10 +26,12 @@ import java.util.Map;
 
 public class DockerManager extends ExternalResource {
 
+    private final static String POSTGRES_DATA_VOLUME = "tb-postgres-test-data-volume";
     private final static String TB_LOG_VOLUME = "tb-log-test-volume";
 
     private final DockerComposeExecutor dockerCompose;
 
+    private final String postgresDataVolume;
     private final String tbLogVolume;
     private final Map<String, String> env;
 
@@ -40,11 +42,13 @@ public class DockerManager extends ExternalResource {
         String identifier = Base58.randomString(6).toLowerCase();
         String project = identifier + Base58.randomString(6).toLowerCase();
 
+        postgresDataVolume = project + "_" + POSTGRES_DATA_VOLUME;
         tbLogVolume = project + "_" + TB_LOG_VOLUME;
 
         dockerCompose = new DockerComposeExecutor(composeFiles, project);
 
         env = new HashMap<>();
+        env.put("POSTGRES_DATA_VOLUME", postgresDataVolume);
         env.put("TB_LOG_VOLUME", tbLogVolume);
         dockerCompose.withEnv(env);
     }
@@ -60,8 +64,18 @@ public class DockerManager extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         try {
+            dockerCompose.withCommand("volume create " + postgresDataVolume);
+            dockerCompose.invokeDocker();
+
             dockerCompose.withCommand("volume create " + tbLogVolume);
             dockerCompose.invokeDocker();
+
+            dockerCompose.withCommand("up -d postgres");
+            dockerCompose.invokeCompose();
+
+            dockerCompose.withCommand("run --no-deps --rm -e INSTALL_TB=true tb-mqtt-broker");
+            dockerCompose.invokeCompose();
+
         } finally {
             try {
                 dockerCompose.withCommand("down -v");
@@ -74,7 +88,7 @@ public class DockerManager extends ExternalResource {
     protected void after() {
         copyLogs(tbLogVolume, "./target/tb-logs/");
 
-        dockerCompose.withCommand("volume rm -f " + tbLogVolume);
+        dockerCompose.withCommand("volume rm -f " + postgresDataVolume + " " + tbLogVolume);
         dockerCompose.invokeDocker();
     }
 
