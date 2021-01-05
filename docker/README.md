@@ -16,6 +16,12 @@ To be able to change user, **chown** command is used, which requires sudo permis
 $ ./scripts/docker-create-log-folders.sh
 `
 
+Execute the following command to run installation:
+
+`
+$ ./scripts/docker-install-tb-mqtt-broker.sh
+`
+
 ## Running
 
 Execute the following command to start services:
@@ -23,6 +29,11 @@ Execute the following command to start services:
 `
 $ ./scripts/docker-start-services.sh
 `
+
+After a while when all services will be successfully started you can make requests to `http://{your-host-ip}:8083` in you browser (for ex. `http://localhost:8083`).
+
+In case of any issues you can examine service logs for errors.
+For example to see ThingsBoard Mqtt Broker logs execute the following command:
 
 `
 $ docker-compose logs -f tb-mqtt-broker

@@ -50,7 +50,7 @@ services:
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
     ports:
       - "1883:1883"
-      - "8883:8883"
+      - "8083:8083"
     logging:
       driver: "json-file"
       options:

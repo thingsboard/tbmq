@@ -15,29 +15,54 @@
 # limitations under the License.
 #
 
-export jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
+jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
 
-export configfile="/config/${pkg.name}.conf"
+configfile="/config/${pkg.name}.conf"
 if [ ! -f ${configfile} ]; then
-  export configfile=${pkg.installFolder}/conf/${pkg.name}.conf
+  configfile=${pkg.installFolder}/conf/${pkg.name}.conf
 fi
-export LOADER_PATH=/config,${LOADER_PATH}
+LOADER_PATH=/config,${LOADER_PATH}
 
-export logbackfile="/config/logback.xml"
+logbackfile="/config/logback.xml"
 if [ ! -f ${logbackfile} ]; then
-  export logbackfile=${pkg.installFolder}/conf/logback.xml
+  logbackfile=${pkg.installFolder}/conf/logback.xml
 fi
 
 source "${configfile}"
 
-firstlaunch=${DATA_FOLDER}/.firstlaunch
-if [ ! -f ${firstlaunch} ]; then
-    install-tb-mqtt-broker.sh --loadDemo
-    touch ${firstlaunch}
-fi
+if [ "$INSTALL_TB" == "true" ]; then
 
-echo "Starting '${project.name}' ..."
+    echo "Starting '${project.name}' installation ..."
 
-exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
+    exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+                    -Dspring.jpa.hibernate.ddl-auto=none \
+                    -Dinstall.upgrade=false \
                     -Dlogging.config=${logbackfile} \
                     org.springframework.boot.loader.PropertiesLauncher
+
+elif [ "$UPGRADE_TB" == "true" ]; then
+
+    echo "Starting '${project.name}' upgrade ..."
+
+    if [[ -z "${FROM_VERSION// }" ]]; then
+        echo "FROM_VERSION variable is invalid or unspecified!"
+        exit 1
+    else
+        fromVersion="${FROM_VERSION// }"
+    fi
+
+    exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+                    -Dspring.jpa.hibernate.ddl-auto=none \
+                    -Dinstall.upgrade=true \
+                    -Dinstall.upgrade.from_version=${fromVersion} \
+                    -Dlogging.config=${logbackfile} \
+                    org.springframework.boot.loader.PropertiesLauncher
+
+else
+
+    echo "Starting '${project.name}' ..."
+
+    exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
+                        -Dlogging.config=${logbackfile} \
+                        org.springframework.boot.loader.PropertiesLauncher
+fi

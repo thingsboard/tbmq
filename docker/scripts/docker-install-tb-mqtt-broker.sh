@@ -15,12 +15,11 @@
 # limitations under the License.
 #
 
-source "${CONF_FOLDER}/${configfile}"
 
-echo "Starting '${project.name}' installation ..."
+set -e
 
-java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
-                    -Dspring.jpa.hibernate.ddl-auto=none \
-                    -Dinstall.upgrade=false \
-                    -Dlogging.config=${logbackfile} \
-                    org.springframework.boot.loader.PropertiesLauncher
+docker-compose -f docker-compose.yml up -d postgres
+
+docker-compose -f docker-compose.yml run --no-deps --rm -e INSTALL_TB=true tb-mqtt-broker
+
+

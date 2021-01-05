@@ -1,2 +1,2 @@
-tb-mqttt-broker/log/**
+tb-mqtt-broker/log/**
 !.env
