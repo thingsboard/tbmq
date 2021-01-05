@@ -56,7 +56,7 @@ public class ConcurrentMapSubscriptionTriePerformanceTest {
 
 
     private ConcurrentMapSubscriptionTrie<SessionInfo> subscriptionTrie;
-    private List<SessionInfoSubscriptions> sessionInfoSubscriptionsList = new ArrayList<>();
+    private final List<SessionInfoSubscriptions> sessionInfoSubscriptionsList = new ArrayList<>();
 
     @AllArgsConstructor
     private static class SessionInfoSubscriptions {

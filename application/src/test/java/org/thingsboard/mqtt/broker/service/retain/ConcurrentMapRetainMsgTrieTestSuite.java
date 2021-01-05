@@ -29,7 +29,7 @@ import java.util.Set;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ConcurrentMapRetainMsgTrieTest {
+public class ConcurrentMapRetainMsgTrieTestSuite {
 
     private ConcurrentMapRetainMsgTrie<String> retainMsgTrie;
 
