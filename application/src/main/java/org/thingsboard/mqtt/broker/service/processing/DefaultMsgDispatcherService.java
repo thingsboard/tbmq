@@ -51,8 +51,10 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
 
     @Override
     public void acknowledgePublishMsg(SessionInfoProto sessionInfoProto, MqttPublishMessage publishMessage, TbQueueCallback callback) {
-        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfoProto, publishMessage);
+        int msgId = publishMessage.variableHeader().packetId();
         String topicName = publishMessage.variableHeader().topicName();
+        log.trace("[{}] Acknowledging publish msg [topic:[{}], msgId:[{}]]!", sessionInfoProto.getClientId(), topicName, msgId);
+        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfoProto, publishMessage);
         TopicInfo topicInfo = new TopicInfo(publishMsgProducer.getDefaultTopic());
         publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(topicName, publishMsgProto), callback);
     }

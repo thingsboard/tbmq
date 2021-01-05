@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
@@ -40,10 +41,12 @@ public class MqttSubscribeHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final SubscriptionService subscriptionService;
+    private final TopicValidationService topicValidationService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         List<MqttTopicSubscription> subscriptions = msg.payload().topicSubscriptions();
+        validateSubscriptions(subscriptions);
         log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, msg.variableHeader().messageId(), subscriptions);
 
         ListenableFuture<Void> subscribeFuture = subscriptionService.subscribe(sessionId, subscriptions, sessionListener);
@@ -53,6 +56,12 @@ public class MqttSubscribeHandler {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));
             log.trace("[{}] Client subscribed to {}", sessionId, subscriptions);
         }, MoreExecutors.directExecutor());
+    }
+
+    private void validateSubscriptions(List<MqttTopicSubscription> subscriptions) {
+        for (MqttTopicSubscription subscription : subscriptions) {
+            topicValidationService.validateTopicFilter(subscription.topicName());
+        }
     }
 
     private static int getMinSupportedQos(MqttQoS reqQoS) {

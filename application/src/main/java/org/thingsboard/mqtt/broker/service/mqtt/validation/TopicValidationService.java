@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.constant;
+package org.thingsboard.mqtt.broker.service.mqtt.validation;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
+public interface TopicValidationService {
+    void validateTopic(String topic);
 
-import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
-
-public class BrokerConstants {
-    public static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
-
-    public static final char TOPIC_DELIMITER = '/';
-    public static final String MULTI_LEVEL_WILDCARD = "#";
-    public static final String SINGLE_LEVEL_WILDCARD = "+";
+    void validateTopicFilter(String topicFilter);
 }

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -37,17 +38,19 @@ import java.util.UUID;
 public class MqttPublishHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgDispatcherService msgDispatcherService;
+    private final TopicValidationService topicValidationService;
 
     public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) throws MqttException {
         validatePublish(msg);
-        String topicName = msg.variableHeader().topicName();
-        int msgId = msg.variableHeader().packetId();
         UUID sessionId = ctx.getSessionId();
-        log.trace("[{}][{}] Processing publish msg [{}][{}]!", sessionId, ctx.getSessionInfo().getClientInfo().getClientId(), topicName, msgId);
+        int msgId = msg.variableHeader().packetId();
+
+        log.trace("[{}] Processing publish msg: {}", sessionId, msgId);
 
         msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfoProto(), msg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
+                log.trace("[{}] Successfully acknowledged msg: {}", sessionId, msgId);
                 acknowledgeMsg(ctx, msg);
             }
 
@@ -65,6 +68,7 @@ public class MqttPublishHandler {
         if (mqttQoS.value() > BrokerConstants.MAX_SUPPORTED_QOS_LVL.value()) {
             throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
         }
+        topicValidationService.validateTopic(mqttMsg.variableHeader().topicName());
     }
 
     private void acknowledgeMsg(ClientSessionCtx ctx, MqttPublishMessage mqttMsg) {
