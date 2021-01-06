@@ -25,30 +25,15 @@ import java.util.Map;
 
 @Component
 public class TbKafkaTopicConfigs {
-    @Value("${queue.kafka.topic-properties.client-session}")
-    private String clientSessionProperties;
     @Value("${queue.kafka.topic-properties.publish-msg}")
     private String publishMsgProperties;
-    @Value("${queue.kafka.topic-properties.successful-msg-offset}")
-    private String successfulMsgOffsetProperties;
-    @Value("${queue.kafka.topic-properties.retain-msg}")
-    private String retainMsgProperties;
 
     @Getter
-    private Map<String, String> clientSessionConfigs;
-    @Getter
     private Map<String, String> publishMsgConfigs;
-    @Getter
-    private Map<String, String> successfulMsgOffsetConfigs;
-    @Getter
-    private Map<String, String> retainMsgConfigs;
 
     @PostConstruct
     private void init() {
-        clientSessionConfigs = getConfigs(clientSessionProperties);
         publishMsgConfigs = getConfigs(publishMsgProperties);
-        successfulMsgOffsetConfigs = getConfigs(successfulMsgOffsetProperties);
-        retainMsgConfigs = getConfigs(retainMsgProperties);
     }
 
     private Map<String, String> getConfigs(String properties) {
