@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
@@ -51,17 +52,19 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final SubscriptionService subscriptionService;
     private final PublishRetryService retryService;
     private final SuccessfulPublishService successfulPublishService;
+    private final KeepAliveService keepAliveService;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
 
-    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService) {
+    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
         this.retryService = retryService;
         this.successfulPublishService = successfulPublishService;
+        this.keepAliveService = keepAliveService;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -94,14 +97,16 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             return;
         }
         // TODO: we can leave order validation as long as we process connection synchronously
-        if (!validOrder(msg.fixedHeader().messageType())) {
+        MqttMessageType msgType = msg.fixedHeader().messageType();
+        if (!validOrder(msgType)) {
             log.info("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
             ctx.close();
             return;
         }
         clientSessionCtx.setChannel(ctx);
         try {
-            switch (msg.fixedHeader().messageType()) {
+            processKeepAlive(ctx, msg);
+            switch (msgType) {
                 case CONNECT:
                     messageHandlers.getConnectHandler().process(clientSessionCtx, (MqttConnectMessage) msg);
                     break;
@@ -128,9 +133,23 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             ;
         } catch (MqttException e) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
-                    sessionId, msg.fixedHeader().messageType(), e.getMessage());
+                    sessionId, msgType, e.getMessage());
             ctx.close();
             onSessionDisconnect();
+        }
+    }
+
+    private void processKeepAlive(ChannelHandlerContext ctx, MqttMessage msg) throws MqttException {
+        MqttMessageType msgType = msg.fixedHeader().messageType();
+        if (msgType == MqttMessageType.CONNECT) {
+            keepAliveService.registerSession(sessionId, ((MqttConnectMessage) msg).variableHeader().keepAliveTimeSeconds(),
+                    () -> {
+                        log.warn("[{}] Disconnecting client due to inactivity.", sessionId);
+                        ctx.close();
+                        onSessionDisconnect();
+                    });
+        } else {
+            keepAliveService.acknowledgeControlPacket(sessionId);
         }
     }
 
