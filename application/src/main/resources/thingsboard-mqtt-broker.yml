@@ -58,6 +58,7 @@ server:
 
 queue:
   publish-msg:
+    # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
   kafka:
@@ -118,6 +119,7 @@ spring.mvc.cors:
 # Security parameters
 security:
   mqtt:
+    # If enabled each MQTT client connect will be authenticated with clientId and/or username and/or password
     enabled: "${SECURITY_MQTT_ENABLED:false}"
   # JWT Token parameters
   jwt:
@@ -133,4 +135,5 @@ security:
 application:
   mqtt:
     keep-alive:
+      # Schedule monitoring for inactive MQTT clients
       monitoring-delay-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
