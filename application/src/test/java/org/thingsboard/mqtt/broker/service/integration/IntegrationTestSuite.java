@@ -18,7 +18,12 @@ package org.thingsboard.mqtt.broker.service.integration;
 import org.junit.ClassRule;
 import org.junit.extensions.cpsuite.ClasspathSuite;
 import org.junit.runner.RunWith;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.dao.CustomSqlUnit;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.PublishMsgKafkaSettings;
 
 import java.util.Arrays;
 
@@ -33,4 +38,18 @@ public class IntegrationTestSuite {
             Arrays.asList("sql/schema-entities-hsql.sql", "sql/system-data.sql"),
             "sql/hsql/drop-all-tables.sql",
             "sql-test.properties");
+
+    @ClassRule
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
+
+    public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
+        @Override
+        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+            if (bean instanceof PublishMsgKafkaSettings) {
+                PublishMsgKafkaSettings kafkaSettings = (PublishMsgKafkaSettings) bean;
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            return bean;
+        }
+    }
 }

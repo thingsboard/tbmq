@@ -21,11 +21,13 @@ import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.Arrays;
@@ -40,6 +42,7 @@ import java.util.function.Supplier;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = TopicsIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
+@RunWith(SpringRunner.class)
 public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     private static final String BASIC_TOPIC = "use-case/country/city/store/department/group/device";

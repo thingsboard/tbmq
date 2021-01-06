@@ -15,36 +15,27 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.junit.ClassRule;
-import org.junit.runner.RunWith;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.PublishMsgKafkaSettings;
 
 @ActiveProfiles("test")
 @Import(AbstractPubSubIntegrationTest.KafkaTestContainersConfiguration.class)
 @ComponentScan({"org.thingsboard.mqtt.broker"})
-@RunWith(SpringRunner.class)
 @WebAppConfiguration
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 public abstract class AbstractPubSubIntegrationTest {
-    @ClassRule
-    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
+    protected ObjectMapper mapper = new ObjectMapper();
 
     @AllArgsConstructor
     @NoArgsConstructor
@@ -60,19 +51,8 @@ public abstract class AbstractPubSubIntegrationTest {
     @TestConfiguration
     static class KafkaTestContainersConfiguration {
         @Bean
-        ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
-            return new ReplaceKafkaPropertiesBeanPostProcessor();
-        }
-    }
-
-    static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
-        @Override
-        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof PublishMsgKafkaSettings) {
-                PublishMsgKafkaSettings kafkaSettings = (PublishMsgKafkaSettings) bean;
-                kafkaSettings.setServers(kafka.getBootstrapServers());
-            }
-            return bean;
+        IntegrationTestSuite.ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
+            return new IntegrationTestSuite.ReplaceKafkaPropertiesBeanPostProcessor();
         }
     }
 

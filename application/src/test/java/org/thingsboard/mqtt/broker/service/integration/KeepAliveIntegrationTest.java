@@ -24,10 +24,12 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttPingSender;
 import org.eclipse.paho.client.mqttv3.internal.ClientComms;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.concurrent.TimeUnit;
@@ -36,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = KeepAliveIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
+@RunWith(SpringRunner.class)
 public class KeepAliveIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Value("${server.mqtt.bind_address}")
@@ -82,6 +85,6 @@ public class KeepAliveIntegrationTest extends AbstractPubSubIntegrationTest {
             }
         });
 
-        waiter.await(2, TimeUnit.SECONDS);
+        waiter.await(3, TimeUnit.SECONDS);
     }
 }
