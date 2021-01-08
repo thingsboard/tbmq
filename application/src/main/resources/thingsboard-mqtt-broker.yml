@@ -131,9 +131,24 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 
-
 application:
   mqtt:
     keep-alive:
       # Schedule monitoring for inactive MQTT clients
       monitoring-delay-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+
+
+swagger:
+  api_path_regex: "${SWAGGER_API_PATH_REGEX:/api.*}"
+  security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api.*}"
+  non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
+  title: "${SWAGGER_TITLE:ThingsBoard MQTT Broker REST API}"
+  description: "${SWAGGER_DESCRIPTION:}"
+  contact:
+    name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
+    url: "${SWAGGER_CONTACT_URL:http://thingsboard.io}"
+    email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
+  license:
+    title: "${SWAGGER_LICENSE_TITLE:}"
+    url: "${SWAGGER_LICENSE_URL:}"
+  version: "${SWAGGER_VERSION:2.0}"

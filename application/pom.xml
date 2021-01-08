@@ -126,6 +126,14 @@
             <artifactId>hsqldb</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox.ui</groupId>
+            <artifactId>springfox-swagger-ui-rfc6570</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.sun.winsw</groupId>
             <artifactId>winsw</artifactId>
             <classifier>bin</classifier>
