@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,7 +41,7 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile SessionInfo sessionInfo;
 
-    private volatile boolean connected;
+    private final AtomicBoolean connected = new AtomicBoolean(false);
 
     @Getter
     private ChannelHandlerContext channel;
@@ -60,14 +61,17 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public boolean isConnected() {
-        return connected;
+        return connected.get();
     }
 
-    public void setDisconnected() {
-        this.connected = false;
+    /*
+        Returns 'true' if client was connected and 'false' otherwise
+     */
+    public boolean disconnect() {
+        return this.connected.getAndSet(false);
     }
 
     public void setConnected() {
-        this.connected = true;
+        this.connected.getAndSet(true);
     }
 }

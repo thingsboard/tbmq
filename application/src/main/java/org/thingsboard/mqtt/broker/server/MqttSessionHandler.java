@@ -191,7 +191,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void onSessionDisconnect() {
-        if (clientSessionCtx.isConnected()) {
+        if (clientSessionCtx.disconnect()) {
             // TODO: add disconnect logic
             clientSessionCtx.setDisconnected();
             subscriptionService.unsubscribe(sessionId);
