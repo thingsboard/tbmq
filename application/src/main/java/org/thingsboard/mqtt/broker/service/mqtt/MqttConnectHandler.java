@@ -40,10 +40,12 @@ import java.util.UUID;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+// TODO maybe it's better to create handlers for each session and not for the whole system (this way we could always use SessionContext)
 public class MqttConnectHandler {
 
     @Value("${security.mqtt.enabled}")
@@ -54,13 +56,11 @@ public class MqttConnectHandler {
     private final MqttClientCredentialsService clientCredentialsService;
 
     public void process(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
+        validate(ctx, msg);
         UUID sessionId = ctx.getSessionId();
         log.info("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
 
-        String clientId = msg.payload().clientIdentifier();
-        if (StringUtils.isEmpty(clientId)) {
-            clientId = UUID.randomUUID().toString();
-        }
+        String clientId = getClientId(msg);
 
         if (mqttSecurityEnabled && !isAuthenticated(msg.payload().userName(), clientId, msg.payload().passwordInBytes())) {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD));
@@ -74,6 +74,21 @@ public class MqttConnectHandler {
         ctx.setSessionInfoProto(SessionInfoCreator.createProto(sessionInfo));
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
         log.info("[{}] Client connected!", sessionId);
+    }
+
+    private void validate(ClientSessionCtx ctx, MqttConnectMessage msg) {
+        if (!msg.variableHeader().isCleanSession() && StringUtils.isEmpty(msg.payload().clientIdentifier())) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
+            throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
+        }
+    }
+
+    private String getClientId(MqttConnectMessage msg) {
+        String clientId = msg.payload().clientIdentifier();
+        if (StringUtils.isEmpty(clientId)) {
+            clientId = UUID.randomUUID().toString();
+        }
+        return clientId;
     }
 
     private boolean isAuthenticated(String userName, String clientId, byte[] passwordBytes) {
