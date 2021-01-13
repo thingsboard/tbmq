@@ -29,7 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = MqttProtocolValidationIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -47,5 +47,14 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
             Assert.assertFalse(testClient.isConnected());
             throw e;
         }
+    }
+
+    @Test(expected = MqttException.class)
+    public void testDuplicateClientId() throws Throwable {
+        String clientName = "test_client";
+        MqttClient firstClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
+        firstClient.connect();
+        MqttClient secondClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
+        secondClient.connect();
     }
 }
