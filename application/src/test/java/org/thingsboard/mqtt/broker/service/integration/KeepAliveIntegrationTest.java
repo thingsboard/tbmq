@@ -41,24 +41,10 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class KeepAliveIntegrationTest extends AbstractPubSubIntegrationTest {
 
-    @Value("${server.mqtt.bind_address}")
-    private String mqttAddress;
-    @Value("${server.mqtt.bind_port}")
-    private int mqttPort;
-
     @Test
     public void testKeepAlive() throws Throwable {
-        MqttAsyncClient testAsyncClient = new MqttAsyncClient("tcp://" + mqttAddress + ":" + mqttPort, "test_client", null,
-                new MqttPingSender() {
-                    @Override
-                    public void init(ClientComms comms) {}
-                    @Override
-                    public void start() {}
-                    @Override
-                    public void stop() {}
-                    @Override
-                    public void schedule(long delayInMilliseconds) {}
-                });
+        MqttAsyncClient testAsyncClient = new MqttAsyncClient("tcp://" + mqttAddress + ":" + mqttPort, "test_client",
+                null, DisabledMqttPingSender.DISABLED_MQTT_PING_SENDER);
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);
         Waiter waiter = new Waiter();

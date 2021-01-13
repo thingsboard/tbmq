@@ -42,11 +42,6 @@ public class ApplicationRestartIntegrationTest extends AbstractPubSubIntegration
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test";
 
-    @Value("${server.mqtt.bind_address}")
-    private String mqttAddress;
-    @Value("${server.mqtt.bind_port}")
-    private int mqttPort;
-
     @Test
     public void testBrokerRestart() throws Throwable {
         AtomicReference<TestPublishMsg> previousMsg = new AtomicReference<>();

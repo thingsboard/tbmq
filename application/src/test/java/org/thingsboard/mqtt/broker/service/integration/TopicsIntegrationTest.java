@@ -65,13 +65,6 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
             "use-case/be/city/store/department/group/3"
     );
 
-    @Value("${server.mqtt.bind_address}")
-    private String mqttAddress;
-    @Value("${server.mqtt.bind_port}")
-    private int mqttPort;
-
-    private final ObjectMapper mapper = new ObjectMapper();
-
     @Autowired
     private IntegrationTestInitService initPubSubTestService;
 
