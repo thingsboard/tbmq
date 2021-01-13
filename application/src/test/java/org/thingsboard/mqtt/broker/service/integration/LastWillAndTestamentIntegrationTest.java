@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -34,13 +35,17 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.MqttClientConfig;
+import org.thingsboard.mqtt.MqttLastWill;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = LastWillAndTestamentIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -50,7 +55,7 @@ public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrati
 
     @Test(expected = TimeoutException.class)
     public void testNoLastWillOnDisconnect() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
         subClient.connect();
         Waiter waiter = new Waiter();
         subClient.subscribe(TEST_TOPIC, (topic, message) -> {
@@ -58,55 +63,31 @@ public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrati
             waiter.assertNull(topic);
         });
 
-        MqttClient lastWillClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_last_will_client");
+        MqttClient lastWillClient = new MqttClient("tcp://localhost:" + mqttPort, "test_last_will_client");
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
         lastWillClient.connect(connectOptions);
         lastWillClient.disconnect();
-        lastWillClient.close();
-        try {
-            waiter.await(1, TimeUnit.SECONDS);
-        } finally {
-            subClient.disconnect();
-            subClient.close();
-        }
-    }
-
-    @Test
-    public void testLastWillOnClientClose() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_sub_client");
-        subClient.connect();
-
-        Waiter waiter = new Waiter();
-        subClient.subscribe(TEST_TOPIC, (topic, message) -> {
-            waiter.assertEquals(TEST_MESSAGE.getBytes(), message.getPayload());
-            waiter.assertEquals(1, message.getQos());
-            waiter.resume();
-        });
-
-        MqttClient lastWillClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_last_will_client");
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
-        lastWillClient.connect(connectOptions);
-        lastWillClient.close();
         waiter.await(1, TimeUnit.SECONDS);
-        subClient.disconnect();
+
+        lastWillClient.close();
         subClient.close();
     }
 
     @Test
     public void testLastWillOnKeepAliveFail() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
         subClient.connect();
 
         Waiter waiter = new Waiter();
         subClient.subscribe(TEST_TOPIC, (topic, message) -> {
-            waiter.assertEquals(TEST_MESSAGE.getBytes(), message.getPayload());
+            String receivedMsg = new String(message.getPayload(), StandardCharsets.UTF_8);
+            waiter.assertEquals(TEST_MESSAGE, receivedMsg);
             waiter.assertEquals(1, message.getQos());
             waiter.resume();
         });
 
-        MqttAsyncClient lastWillClient = new MqttAsyncClient("tcp://" + mqttAddress + ":" + mqttPort, "test_last_will_client",
+        MqttAsyncClient lastWillClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "test_last_will_client",
                 null, DisabledMqttPingSender.DISABLED_MQTT_PING_SENDER);
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);
@@ -119,21 +100,25 @@ public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrati
 
     @Test
     public void testLastWillOnProtocolError() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
         subClient.connect();
 
         Waiter waiter = new Waiter();
         subClient.subscribe(TEST_TOPIC, (topic, message) -> {
-            waiter.assertEquals(TEST_MESSAGE.getBytes(), message.getPayload());
+            String receivedMsg = new String(message.getPayload(), StandardCharsets.UTF_8);
+            waiter.assertEquals(TEST_MESSAGE, receivedMsg);
             waiter.assertEquals(1, message.getQos());
             waiter.resume();
         });
 
-        MqttClient lastWillClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "test_last_will_client");
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
-        lastWillClient.connect(connectOptions);
-        lastWillClient.connect();
+        // need to use our MQTT client because Eclipse Paho Client validates messages before sending
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId("test_last_will_client");
+        config.setLastWill(new MqttLastWill(TEST_TOPIC, TEST_MESSAGE, false, MqttQoS.AT_LEAST_ONCE));
+        org.thingsboard.mqtt.MqttClient client = org.thingsboard.mqtt.MqttClient.create(config, null);
+        client.connect("localhost", mqttPort).get(1, TimeUnit.SECONDS);
+        client.on("#not_valid_topic#", null);
+
         waiter.await(1, TimeUnit.SECONDS);
         subClient.disconnect();
         subClient.close();

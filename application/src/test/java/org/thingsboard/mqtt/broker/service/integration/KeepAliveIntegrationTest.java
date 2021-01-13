@@ -35,7 +35,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = KeepAliveIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -43,7 +43,7 @@ public class KeepAliveIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Test
     public void testKeepAlive() throws Throwable {
-        MqttAsyncClient testAsyncClient = new MqttAsyncClient("tcp://" + mqttAddress + ":" + mqttPort, "test_client",
+        MqttAsyncClient testAsyncClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "test_client",
                 null, DisabledMqttPingSender.DISABLED_MQTT_PING_SENDER);
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);

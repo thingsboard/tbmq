@@ -91,7 +91,7 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     void initPublisher(Waiter waiter, int publisherId, Supplier<String> topicSupplier) {
         try {
-            MqttClient pubClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "topic_pub_client_"
+            MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "topic_pub_client_"
                     + publisherId + "_" + UUID.randomUUID().toString());
             pubClient.connect();
             for (int j = 0; j < IntegrationTestInitService.PUBLISH_MSGS_COUNT; j++) {
@@ -111,7 +111,7 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     void initSubscriber(Waiter waiter, int subscriberId, String topicFilter) {
         try {
-            MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "topic_sub_client_"
+            MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "topic_sub_client_"
                     + subscriberId + "_" + UUID.randomUUID().toString());
             subClient.connect();
             Map<Integer, TestPublishMsg> previousMsgs = new HashMap<>();

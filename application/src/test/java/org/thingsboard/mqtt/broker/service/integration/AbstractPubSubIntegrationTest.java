@@ -38,8 +38,6 @@ import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 public abstract class AbstractPubSubIntegrationTest {
     protected ObjectMapper mapper = new ObjectMapper();
 
-    @Value("${server.mqtt.bind_address}")
-    protected String mqttAddress;
     @Value("${server.mqtt.bind_port}")
     protected int mqttPort;
 

@@ -56,10 +56,10 @@ public class ApplicationRestartIntegrationTest extends AbstractPubSubIntegration
     }
 
     private void testPubSub(int startSequence, AtomicReference<TestPublishMsg> previousMsg) throws Throwable {
-        MqttClient pubClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "black_box_test_pub");
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "black_box_test_pub");
         pubClient.connect();
 
-        MqttClient subClient = new MqttClient("tcp://" + mqttAddress + ":" + mqttPort, "black_box_test_sub");
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "black_box_test_sub");
         subClient.connect();
 
         Waiter waiter = new Waiter();
