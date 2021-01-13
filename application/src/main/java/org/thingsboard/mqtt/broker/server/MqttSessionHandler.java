@@ -209,6 +209,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         if (clientId != null) {
             clientManager.unregisterClient(clientId);
         }
+        keepAliveService.unregisterSession(sessionId);
     }
 
     private String getClientId(SessionInfo sessionInfo) {

@@ -59,12 +59,20 @@ public class DefaultKeepAliveService implements KeepAliveService {
 
     @Override
     public void registerSession(UUID sessionId, int keepAliveSeconds, Runnable closeSession) throws MqttException {
+        log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
         keepAliveInfoMap.put(sessionId, new KeepAliveInfo(keepAliveSeconds, closeSession,
                 new AtomicLong(System.currentTimeMillis())));
     }
 
     @Override
+    public void unregisterSession(UUID sessionId) {
+        log.trace("[{}] Unregistering keep-alive session", sessionId);
+        keepAliveInfoMap.remove(sessionId);
+    }
+
+    @Override
     public void acknowledgeControlPacket(UUID sessionId) throws MqttException {
+        log.trace("[{}] Acknowledging control packet for session", sessionId);
         KeepAliveInfo keepAliveInfo = keepAliveInfoMap.get(sessionId);
         if (keepAliveInfo == null) {
             log.warn("[{}] Cannot find keepAliveInfo", sessionId);

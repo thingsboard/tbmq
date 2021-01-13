@@ -21,5 +21,8 @@ import java.util.UUID;
 
 public interface KeepAliveService {
     void registerSession(UUID sessionId, int keepAliveSeconds, Runnable closeSession) throws MqttException;
+
+    void unregisterSession(UUID sessionId);
+
     void acknowledgeControlPacket(UUID sessionId) throws MqttException;
 }
