@@ -36,9 +36,6 @@ public class ClientSessionCtx implements SessionContext {
     private final UUID sessionId;
     @Getter
     @Setter
-    private volatile QueueProtos.SessionInfoProto sessionInfoProto;
-    @Getter
-    @Setter
     private volatile SessionInfo sessionInfo;
 
     private final AtomicBoolean connected = new AtomicBoolean(false);

@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.session;
 
-import org.springframework.stereotype.Service;
-
-@Service
-public class DefaultSuccessfulPublishService implements SuccessfulPublishService {
-    @Override
-    public void confirmSuccessfulPublish(String clientId) {
-        // TODO push to Kafka topic
-    }
+public enum DisconnectReason {
+    ON_DISCONNECT_MSG,
+    ON_ERROR
 }

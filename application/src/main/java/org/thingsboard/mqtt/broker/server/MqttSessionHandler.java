@@ -32,7 +32,9 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
+import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -53,18 +55,20 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final PublishRetryService retryService;
     private final SuccessfulPublishService successfulPublishService;
     private final KeepAliveService keepAliveService;
+    private final LastWillService lastWillService;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
 
-    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService) {
+    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService, LastWillService lastWillService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
         this.retryService = retryService;
         this.successfulPublishService = successfulPublishService;
         this.keepAliveService = keepAliveService;
+        this.lastWillService = lastWillService;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -134,8 +138,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         } catch (MqttException e) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
                     sessionId, msgType, e.getMessage());
+            onSessionDisconnect(DisconnectReason.ON_ERROR);
             ctx.close();
-            onSessionDisconnect();
         }
     }
 
@@ -145,8 +149,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             keepAliveService.registerSession(sessionId, ((MqttConnectMessage) msg).variableHeader().keepAliveTimeSeconds(),
                     () -> {
                         log.warn("[{}] Disconnecting client due to inactivity.", sessionId);
+                        onSessionDisconnect(DisconnectReason.ON_ERROR);
                         ctx.close();
-                        onSessionDisconnect();
                     });
         } else {
             keepAliveService.acknowledgeControlPacket(sessionId);
@@ -186,31 +190,32 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void operationComplete(Future<? super Void> future) throws Exception {
-        onSessionDisconnect();
+        onSessionDisconnect(DisconnectReason.ON_ERROR);
     }
 
     @Override
-    public void onSessionDisconnect() {
+    public void onSessionDisconnect(DisconnectReason reason) {
         if (clientSessionCtx.disconnect()) {
             // TODO: add disconnect logic
-            clientSessionCtx.setDisconnected();
             subscriptionService.unsubscribe(sessionId);
+            boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
+            lastWillService.removeLastWill(sessionId, sendLastWill);
         }
     }
 
     @Override
     public void onPublishMsg(MqttQoS mqttQoS, QueueProtos.PublishMsgProto publishMessage) {
+        log.trace("[{}] Sending msg to client, topic - [{}], qos - [{}].", sessionId, publishMessage.getTopicName(), mqttQoS);
         try {
             MqttPublishMessage pubMsg = mqttMessageGenerator.createPubMsg(clientSessionCtx.nextMsgId(), publishMessage.getTopicName(),
                     mqttQoS, publishMessage.getPayload().toByteArray());
             String clientId = clientSessionCtx.getSessionInfo().getClientInfo().getClientId();
             switch (mqttQoS) {
                 case AT_MOST_ONCE:
-                    successfulPublishService.confirmSuccessfulPublish(clientId,
-                            publishMessage.getPacketId());
+                    successfulPublishService.confirmSuccessfulPublish(clientId);
                     break;
                 case AT_LEAST_ONCE:
-                    retryService.registerPublishRetry(clientSessionCtx.getChannel(), pubMsg, clientId, publishMessage.getPacketId());
+                    retryService.registerPublishRetry(clientSessionCtx.getChannel(), pubMsg, clientId);
                     break;
                 default:
                     throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");

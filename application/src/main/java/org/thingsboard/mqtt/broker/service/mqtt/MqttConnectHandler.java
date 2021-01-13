@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
 
@@ -54,6 +55,7 @@ public class MqttConnectHandler {
     private final BCryptPasswordEncoder passwordEncoder;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttClientCredentialsService clientCredentialsService;
+    private final LastWillService lastWillService;
 
     public void process(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
         validate(ctx, msg);
@@ -71,7 +73,9 @@ public class MqttConnectHandler {
         ctx.setConnected();
         SessionInfo sessionInfo = SessionInfoCreator.create(sessionId, clientId, !msg.variableHeader().isCleanSession());
         ctx.setSessionInfo(sessionInfo);
-        ctx.setSessionInfoProto(SessionInfoCreator.createProto(sessionInfo));
+
+        processLastWill(sessionInfo, msg);
+
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
         log.info("[{}] Client connected!", sessionId);
     }
@@ -80,6 +84,20 @@ public class MqttConnectHandler {
         if (!msg.variableHeader().isCleanSession() && StringUtils.isEmpty(msg.payload().clientIdentifier())) {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
             throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
+        }
+    }
+
+    private void processLastWill(SessionInfo sessionInfo, MqttConnectMessage msg) {
+        if (msg.variableHeader().isWillFlag()) {
+
+            PublishMsg publishMsg = PublishMsg.builder()
+                    .topicName(msg.payload().willTopic())
+                    .payload(msg.payload().willMessageInBytes())
+                    .isRetained(msg.variableHeader().isWillRetain())
+                    .qosLevel(msg.variableHeader().willQos())
+                    .build();
+
+            lastWillService.saveLastWillMsg(sessionInfo, publishMsg);
         }
     }
 

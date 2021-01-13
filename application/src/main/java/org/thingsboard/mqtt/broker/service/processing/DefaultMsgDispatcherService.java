@@ -15,17 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
@@ -50,13 +50,11 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     }
 
     @Override
-    public void acknowledgePublishMsg(SessionInfoProto sessionInfoProto, MqttPublishMessage publishMessage, TbQueueCallback callback) {
-        int msgId = publishMessage.variableHeader().packetId();
-        String topicName = publishMessage.variableHeader().topicName();
-        log.trace("[{}] Acknowledging publish msg [topic:[{}], msgId:[{}]]!", sessionInfoProto.getClientId(), topicName, msgId);
-        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfoProto, publishMessage);
+    public void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
+        log.trace("[{}] Acknowledging publish msg [topic:[{}], qos:[{}]].", sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
+        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         TopicInfo topicInfo = new TopicInfo(publishMsgProducer.getDefaultTopic());
-        publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(topicName, publishMsgProto), callback);
+        publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsgProto), callback);
     }
 
     @Override

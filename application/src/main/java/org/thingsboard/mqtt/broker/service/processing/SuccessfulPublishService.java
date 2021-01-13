@@ -16,5 +16,5 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 public interface SuccessfulPublishService {
-    void confirmSuccessfulPublish(String clientId, int packetId);
+    void confirmSuccessfulPublish(String clientId);
 }

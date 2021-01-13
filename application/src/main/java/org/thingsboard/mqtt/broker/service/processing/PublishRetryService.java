@@ -19,7 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
 public interface PublishRetryService {
-    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId);
+    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId);
 
-    void registerPubRec(String clientId, int packetId);
+    void registerPubRec(String clientId);
 }

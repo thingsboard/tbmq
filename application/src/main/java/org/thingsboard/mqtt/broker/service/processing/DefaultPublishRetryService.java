@@ -27,12 +27,12 @@ public class DefaultPublishRetryService implements PublishRetryService {
     private final SuccessfulPublishService successfulPublishService;
 
     @Override
-    public void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId, int packetId) {
+    public void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId) {
         // TODO schedule resending of messages
     }
 
     @Override
-    public void registerPubRec(String clientId, int packetId) {
+    public void registerPubRec(String clientId) {
         // TODO remove msg from schedule and make it successful
 
     }

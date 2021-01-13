@@ -16,5 +16,5 @@
 package org.thingsboard.mqtt.broker.session;
 
 public interface SessionDisconnectListener {
-    void onSessionDisconnect();
+    void onSessionDisconnect(DisconnectReason disconnectReason);
 }

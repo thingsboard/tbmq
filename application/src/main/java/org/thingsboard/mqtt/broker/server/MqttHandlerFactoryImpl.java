@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
+import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
 import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
@@ -34,9 +35,10 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private final PublishRetryService retryService;
     private final SuccessfulPublishService successfulPublishService;
     private final KeepAliveService keepAliveService;
+    private final LastWillService lastWillService;
 
     @Override
     public MqttSessionHandler create() {
-        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService);
+        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService);
     }
 }

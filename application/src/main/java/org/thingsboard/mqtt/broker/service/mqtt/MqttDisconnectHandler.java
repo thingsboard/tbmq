@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 
 import java.util.UUID;
@@ -29,8 +30,8 @@ import java.util.UUID;
 public class MqttDisconnectHandler {
 
     public void process(ChannelHandlerContext channelCtx, UUID sessionId, SessionDisconnectListener disconnectListener) {
+        disconnectListener.onSessionDisconnect(DisconnectReason.ON_DISCONNECT_MSG);
         channelCtx.close();
         log.info("[{}] Client disconnected!", sessionId);
-        disconnectListener.onSessionDisconnect();
     }
 }

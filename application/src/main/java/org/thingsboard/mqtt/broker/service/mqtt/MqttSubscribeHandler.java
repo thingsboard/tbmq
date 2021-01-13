@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -46,7 +47,12 @@ public class MqttSubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         List<MqttTopicSubscription> subscriptions = msg.payload().topicSubscriptions();
-        validateSubscriptions(subscriptions);
+        try {
+            validateSubscriptions(subscriptions);
+        } catch (DataValidationException e) {
+            log.debug("[{}] Not valid topic, reason - {}", sessionId, e.getMessage());
+            throw new MqttException(e);
+        }
         log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, msg.variableHeader().messageId(), subscriptions);
 
         ListenableFuture<Void> subscribeFuture = subscriptionService.subscribe(sessionId, subscriptions, sessionListener);

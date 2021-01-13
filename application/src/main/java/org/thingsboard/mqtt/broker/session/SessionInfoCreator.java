@@ -25,17 +25,6 @@ import java.util.UUID;
 
 public class SessionInfoCreator {
 
-    public static QueueProtos.SessionInfoProto createProto(SessionInfo sessionInfo) {
-        ClientInfo clientInfo = sessionInfo.getClientInfo();
-        QueueProtos.SessionInfoProto.Builder builder = QueueProtos.SessionInfoProto.newBuilder();
-        builder
-                .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
-                .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
-                .setPersistent(sessionInfo.isPersistent())
-                .setClientId(clientInfo.getClientId());
-        return builder.build();
-    }
-
     public static SessionInfo create(UUID sessionId, String clientId, boolean persistent) {
         ClientInfo.ClientInfoBuilder clientInfoBuilder = ClientInfo.builder();
         clientInfoBuilder

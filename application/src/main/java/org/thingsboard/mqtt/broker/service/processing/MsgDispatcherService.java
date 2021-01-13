@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.SessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface MsgDispatcherService {
-    void acknowledgePublishMsg(SessionInfoProto sessionInfoProto, MqttPublishMessage publishMessage, TbQueueCallback callback);
+    void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback);
     void processPublishMsg(PublishMsgProto publishMsgProto);
 }

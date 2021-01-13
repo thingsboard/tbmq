@@ -16,30 +16,33 @@
 package org.thingsboard.mqtt.broker.adaptor;
 
 import com.google.protobuf.ByteString;
-import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 @Slf4j
 public class ProtoConverter {
-    public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(QueueProtos.SessionInfoProto sessionInfoProto, MqttPublishMessage mqttPublishMessage) {
-        byte[] bytes = toBytes(mqttPublishMessage.payload());
+    public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
+        QueueProtos.SessionInfoProto sessionInfoProto = convertToSessionInfoProto(sessionInfo);
         return QueueProtos.PublishMsgProto.newBuilder()
-                .setPacketId(mqttPublishMessage.variableHeader().packetId())
-                .setTopicName(mqttPublishMessage.variableHeader().topicName())
-                .setQos(mqttPublishMessage.fixedHeader().qosLevel().value())
-                .setRetain(mqttPublishMessage.fixedHeader().isRetain())
-                .setDuplicate(mqttPublishMessage.fixedHeader().isDup())
-                .setPayload(ByteString.copyFrom(bytes))
+                .setTopicName(publishMsg.getTopicName())
+                .setQos(publishMsg.getQosLevel())
+                .setRetain(publishMsg.isRetained())
+                .setPayload(ByteString.copyFrom(publishMsg.getPayload()))
                 .setSessionInfo(sessionInfoProto)
                 .build();
     }
 
-    private static byte[] toBytes(ByteBuf inbound) {
-        byte[] bytes = new byte[inbound.readableBytes()];
-        int readerIndex = inbound.readerIndex();
-        inbound.getBytes(readerIndex, bytes);
-        return bytes;
+    public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
+        ClientInfo clientInfo = sessionInfo.getClientInfo();
+        QueueProtos.SessionInfoProto.Builder builder = QueueProtos.SessionInfoProto.newBuilder();
+        builder
+                .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
+                .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
+                .setPersistent(sessionInfo.isPersistent())
+                .setClientId(clientInfo.getClientId());
+        return builder.build();
     }
 }

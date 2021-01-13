@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 
@@ -47,7 +49,7 @@ public class MqttPublishHandler {
 
         log.trace("[{}] Processing publish msg: {}", sessionId, msgId);
 
-        msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfoProto(), msg, new TbQueueCallback() {
+        msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfo(), MqttConverter.convertToPublishMsg(msg), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}] Successfully acknowledged msg: {}", sessionId, msgId);
@@ -57,7 +59,8 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 log.trace("[{}] Failed to publish msg: {}", sessionId, msg, t);
-                disconnectListener.onSessionDisconnect();
+                disconnectListener.onSessionDisconnect(DisconnectReason.ON_ERROR);
+                ctx.getChannel().close();
             }
         });
     }
