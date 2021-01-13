@@ -56,11 +56,13 @@ public class MqttConnectHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttClientCredentialsService clientCredentialsService;
     private final LastWillService lastWillService;
+    private final ClientManager clientManager;
 
     public void process(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
-        validate(ctx, msg);
         UUID sessionId = ctx.getSessionId();
         log.info("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
+
+        validate(ctx, msg);
 
         String clientId = getClientId(msg);
 
@@ -70,6 +72,8 @@ public class MqttConnectHandler {
                     clientId + ", userName: " + msg.payload().userName() + "].");
         }
 
+        registerClient(ctx, clientId);
+
         ctx.setConnected();
         SessionInfo sessionInfo = SessionInfoCreator.create(sessionId, clientId, !msg.variableHeader().isCleanSession());
         ctx.setSessionInfo(sessionInfo);
@@ -78,6 +82,14 @@ public class MqttConnectHandler {
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
         log.info("[{}] Client connected!", sessionId);
+    }
+
+    private void registerClient(ClientSessionCtx ctx, String clientId) {
+        boolean successfullyRegistered = clientManager.registerClient(clientId);
+        if (!successfullyRegistered) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
+            throw new MqttException("Client identifier is already registered in the system!");
+        }
     }
 
     private void validate(ClientSessionCtx ctx, MqttConnectMessage msg) {
@@ -115,9 +127,9 @@ public class MqttConnectHandler {
             credentialIds.add(ProtocolUtil.usernameCredentialsId(userName));
         }
         if (!StringUtils.isEmpty(clientId)) {
-            credentialIds.add(ProtocolUtil.clientIdCredentialsId(userName));
+            credentialIds.add(ProtocolUtil.clientIdCredentialsId(clientId));
         }
-        if (!StringUtils.isEmpty(clientId) && !StringUtils.isEmpty(userName)) {
+        if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(clientId)) {
             credentialIds.add(ProtocolUtil.mixedCredentialsId(userName, clientId));
         }
         List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(credentialIds);

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -36,9 +37,10 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private final SuccessfulPublishService successfulPublishService;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
+    private final ClientManager clientManager;
 
     @Override
     public MqttSessionHandler create() {
-        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService);
+        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService, clientManager);
     }
 }

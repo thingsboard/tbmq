@@ -28,9 +28,11 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -56,12 +58,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final SuccessfulPublishService successfulPublishService;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
+    private final ClientManager clientManager;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
 
-    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService, LastWillService lastWillService) {
+    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService, LastWillService lastWillService, ClientManager clientManager) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
@@ -69,6 +72,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.successfulPublishService = successfulPublishService;
         this.keepAliveService = keepAliveService;
         this.lastWillService = lastWillService;
+        this.clientManager = clientManager;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -201,6 +205,20 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
             lastWillService.removeLastWill(sessionId, sendLastWill);
         }
+        String clientId = getClientId(clientSessionCtx.getSessionInfo());
+        if (clientId != null) {
+            clientManager.unregisterClient(clientId);
+        }
+    }
+
+    private String getClientId(SessionInfo sessionInfo) {
+        if (sessionInfo == null) {
+            return null;
+        }
+        if (sessionInfo.getClientInfo() == null) {
+            return null;
+        }
+        return sessionInfo.getClientInfo().getClientId();
     }
 
     @Override
