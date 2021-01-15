@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -26,4 +27,17 @@ import java.util.UUID;
 public class TopicSubscription {
     private final UUID sessionId;
     private final MqttQoS mqttQoS;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TopicSubscription that = (TopicSubscription) o;
+        return sessionId.equals(that.sessionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sessionId);
+    }
 }

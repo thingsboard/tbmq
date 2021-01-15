@@ -39,6 +39,14 @@ public class ConcurrentMapSubscriptionTrieTestSuite {
     }
 
     @Test
+    public void testSaveSameSession(){
+        subscriptionTrie.put("1/2", "test");
+        Assert.assertEquals(1, subscriptionTrie.get("1/2").size());
+        subscriptionTrie.put("1/2", "test");
+        Assert.assertEquals(1, subscriptionTrie.get("1/2").size());
+    }
+
+    @Test
     public void testDelete(){
         subscriptionTrie.put("1/2", "test");
         subscriptionTrie.delete("1/2", s -> s.equals("test"));

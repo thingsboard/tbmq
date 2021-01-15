@@ -15,14 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
+import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -34,7 +35,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     private static class Node<T> {
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
-        private final ConcurrentLinkedQueue<T> values = new ConcurrentLinkedQueue<>();
+        private final Set<T> values = Sets.newConcurrentHashSet();
 
         public Node() {
         }
@@ -107,11 +108,18 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     private void put(Node<T> x, String key, T val, int prevDelimiterIndex) {
         if (prevDelimiterIndex >= key.length()) {
-            x.values.add(val);
+            addOrReplace(x.values, val);
         } else {
             String segment = getSegment(key, prevDelimiterIndex);
             Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>());
             put(nextNode, key, val, prevDelimiterIndex + segment.length() + 1);
+        }
+    }
+
+    private void addOrReplace(Set<T> values, T val) {
+        if (!values.add(val)) {
+            values.remove(val);
+            values.add(val);
         }
     }
 
