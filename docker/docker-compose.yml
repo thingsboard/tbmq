@@ -40,7 +40,7 @@ services:
     restart: always
     image: "wurstmeister/kafka:2.12-2.3.0"
     ports:
-      - "9092:9092"
+      - "9092"
     env_file:
       - kafka.env
     depends_on:
@@ -56,9 +56,6 @@ services:
       options:
         max-size: "200m"
         max-file: "30"
-    environment:
-      TB_SERVICE_ID: tb-core1
-      TB_SERVICE_TYPE: tb-core
     env_file:
       - tb-mqtt-broker.env
     volumes:
