@@ -25,16 +25,14 @@ import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionListener;
-import org.thingsboard.mqtt.broker.util.AuthUtil;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +43,7 @@ public class MqttSubscribeHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final SubscriptionService subscriptionService;
     private final TopicValidationService topicValidationService;
+    private final AuthorizationRuleService authorizationRuleService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -56,7 +55,7 @@ public class MqttSubscribeHandler {
             throw new MqttException(e);
         }
         try {
-            AuthUtil.validateAuthorizationRule(ctx.getAuthorizationRule(), subscriptions.stream()
+            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), subscriptions.stream()
                     .map(MqttTopicSubscription::topicName)
                     .collect(Collectors.toList())
             );

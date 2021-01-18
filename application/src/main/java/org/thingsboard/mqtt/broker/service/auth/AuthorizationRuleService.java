@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.util;
+package org.thingsboard.mqtt.broker.service.auth;
 
+import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
 import java.util.Collection;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class AuthUtil {
-    public static void validateAuthorizationRule(AuthorizationRule authorizationRule, Collection<String> topics) {
-        if (authorizationRule == null) {
-            return;
-        }
-        Pattern pattern = authorizationRule.getPattern();
-        for (String topic : topics) {
-            Matcher matcher = pattern.matcher(topic);
-            if (!matcher.matches()) {
-                throw new AuthorizationException(topic);
-            }
-        }
-    }
+public interface AuthorizationRuleService {
+    AuthorizationRule parseAuthorizationRule(String sslMqttCredentialsValue) throws AuthenticationException;
+
+    void validateAuthorizationRule(AuthorizationRule authorizationRule, Collection<String> topics) throws AuthorizationException;
 }

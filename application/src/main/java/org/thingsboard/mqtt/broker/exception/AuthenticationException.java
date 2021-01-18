@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
-public class AuthenticationException extends RuntimeException {
+public class AuthenticationException extends Exception {
     public AuthenticationException() {
     }
 

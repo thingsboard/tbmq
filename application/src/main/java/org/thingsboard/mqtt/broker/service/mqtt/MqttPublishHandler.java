@@ -27,13 +27,12 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
-import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.util.AuthUtil;
 
 import java.util.Collections;
 import java.util.UUID;
@@ -45,13 +44,14 @@ public class MqttPublishHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgDispatcherService msgDispatcherService;
     private final TopicValidationService topicValidationService;
+    private final AuthorizationRuleService authorizationRuleService;
 
     public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) throws MqttException {
         validatePublish(msg);
 
         UUID sessionId = ctx.getSessionId();
         try {
-            AuthUtil.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(msg.variableHeader().topicName()));
+            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(msg.variableHeader().topicName()));
         } catch (AuthorizationException e) {
             log.debug("[{}] Client doesn't have permission to publish to the topic {}, reason - {}",
                     sessionId, e.getDeniedTopic(), e.getMessage());

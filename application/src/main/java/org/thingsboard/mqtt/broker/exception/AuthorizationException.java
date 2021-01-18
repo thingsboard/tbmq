@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.exception;
 
 import lombok.Getter;
 
-public class AuthorizationException extends RuntimeException {
+public class AuthorizationException extends Exception {
     @Getter
     private final String deniedTopic;
 

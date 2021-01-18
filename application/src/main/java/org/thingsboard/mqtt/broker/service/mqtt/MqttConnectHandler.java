@@ -22,21 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthService;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
 
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
@@ -52,6 +49,7 @@ public class MqttConnectHandler {
     private final LastWillService lastWillService;
     private final ClientManager clientManager;
     private final AuthService authService;
+    private final AuthorizationRuleService authorizationRuleService;
 
 
     public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
@@ -65,22 +63,7 @@ public class MqttConnectHandler {
         try {
             MqttClientCredentials clientCredentials = authService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), sslHandler);
             if (clientCredentials != null && clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
-                SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(clientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-                if (sslMqttCredentials == null) {
-                    throw new AuthenticationException("Cannot parse SslMqttCredentials.");
-                }
-                Pattern pattern = Pattern.compile(sslMqttCredentials.getPatternRegEx());
-                Matcher commonNameMatcher = pattern.matcher(sslMqttCredentials.getCommonName());
-                if (!commonNameMatcher.find()) {
-                    throw new AuthenticationException("Cannot find string for pattern in common name [" + sslMqttCredentials.getCommonName() + "]");
-                }
-                String mappingKey = commonNameMatcher.group();
-                String authorizationRulePatternRegEx = sslMqttCredentials.getAuthorizationRulesMapping().get(mappingKey);
-                if (authorizationRulePatternRegEx == null) {
-                    throw new AuthenticationException("Cannot find authorization rule pattern for key [" + mappingKey + "]");
-                }
-
-                AuthorizationRule authorizationRule = new AuthorizationRule(Pattern.compile(authorizationRulePatternRegEx));
+                AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(clientCredentials.getCredentialsValue());
                 ctx.setAuthorizationRule(authorizationRule);
             }
         } catch (AuthenticationException e) {

@@ -52,7 +52,7 @@ public class DefaultAuthService implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) {
+    public MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException {
         if (!sslEnabled && !basicSecurityEnabled) {
             return null;
         }
@@ -71,7 +71,7 @@ public class DefaultAuthService implements AuthService {
         throw new AuthenticationException("Could not find basic or ssl credentials!");
     }
 
-    private MqttClientCredentials authWithSSLCredentials(SslHandler sslHandler) {
+    private MqttClientCredentials authWithSSLCredentials(SslHandler sslHandler) throws AuthenticationException {
         X509Certificate[] certificates;
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();

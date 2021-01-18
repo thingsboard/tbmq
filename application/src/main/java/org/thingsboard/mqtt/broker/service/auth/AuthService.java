@@ -17,7 +17,8 @@ package org.thingsboard.mqtt.broker.service.auth;
 
 import io.netty.handler.ssl.SslHandler;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
 public interface AuthService {
-    MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler);
+    MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException;
 }
