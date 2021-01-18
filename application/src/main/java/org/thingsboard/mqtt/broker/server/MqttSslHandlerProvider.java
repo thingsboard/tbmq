@@ -35,26 +35,26 @@ import java.security.KeyStore;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "server.mqtt.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(prefix = "security.mqtt.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
 public class MqttSslHandlerProvider {
 
-    @Value("${server.mqtt.ssl.protocol}")
+    @Value("${security.mqtt.ssl.protocol}")
     private String sslProtocol;
 
-    @Value("${server.mqtt.ssl.key_store}")
+    @Value("${security.mqtt.ssl.key_store}")
     private String keyStoreFile;
-    @Value("${server.mqtt.ssl.key_store_password}")
+    @Value("${security.mqtt.ssl.key_store_password}")
     private String keyStorePassword;
-    @Value("${server.mqtt.ssl.key_password}")
+    @Value("${security.mqtt.ssl.key_password}")
     private String keyPassword;
-    @Value("${server.mqtt.ssl.key_store_type}")
+    @Value("${security.mqtt.ssl.key_store_type}")
     private String keyStoreType;
 
-    @Value("${server.mqtt.ssl.trust_store}")
+    @Value("${security.mqtt.ssl.trust_store}")
     private String trustStoreFile;
-    @Value("${server.mqtt.ssl.trust_store_password}")
+    @Value("${security.mqtt.ssl.trust_store_password}")
     private String trustStorePassword;
-    @Value("${server.mqtt.ssl.trust_store_type}")
+    @Value("${security.mqtt.ssl.trust_store_type}")
     private String trustStoreType;
 
     public SslHandler getSslHandler() {

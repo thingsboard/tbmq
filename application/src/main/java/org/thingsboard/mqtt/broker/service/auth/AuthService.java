@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.auth;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import org.springframework.stereotype.Service;
+import io.netty.handler.ssl.SslHandler;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
-@Service
-public class AuthServiceImpl implements AuthService {
-    @Override
-    public ListenableFuture<String> validateCredentials(String credentials) {
-        return Futures.immediateFuture(null);
-    }
+public interface AuthService {
+    MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler);
 }

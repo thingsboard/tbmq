@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
 import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
@@ -141,7 +142,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 default:
                     break;
             }
-            ;
         } catch (MqttException e) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
                     sessionId, msgType, e.getMessage());
@@ -191,13 +191,18 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         // TODO push msg to the client before closing
-        log.error("[{}] Unexpected Exception", sessionId, cause);
+        if (cause.getCause() instanceof SSLHandshakeException) {
+            log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
+        } else {
+            log.error("[{}] Unexpected Exception", sessionId, cause);
+        }
+        onSessionDisconnect(DisconnectReason.ON_ERROR);
         ctx.close();
     }
 
     @Override
     public void operationComplete(Future<? super Void> future) throws Exception {
-        onSessionDisconnect(DisconnectReason.ON_ERROR);
+        onSessionDisconnect(DisconnectReason.ON_CHANNEL_CLOSED);
     }
 
     @Override

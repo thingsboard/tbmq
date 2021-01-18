@@ -19,6 +19,7 @@ public class ProtocolUtil {
     private static final String USERNAME_CREDENTIALS_ID_PREFIX = "username";
     private static final String CLIENT_ID_CREDENTIALS_ID_PREFIX = "client_id";
     private static final String MIXED_CREDENTIALS_ID_PREFIX = "mixed";
+    private static final String SSL_CREDENTIALS_ID_PREFIX = "ssl";
 
     public static String usernameCredentialsId(String username) {
         return USERNAME_CREDENTIALS_ID_PREFIX + username;
@@ -30,6 +31,11 @@ public class ProtocolUtil {
 
     public static String mixedCredentialsId(String username, String clientId) {
         return MIXED_CREDENTIALS_ID_PREFIX + username + "|" + clientId;
+    }
+
+
+    public static String sslCredentialsId(String commonName) {
+        return SSL_CREDENTIALS_ID_PREFIX + commonName;
     }
 
 
