@@ -17,7 +17,9 @@ package org.thingsboard.mqtt.broker.auth;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AuthServiceImpl implements AuthService {
     @Override
     public ListenableFuture<String> validateCredentials(String credentials) {

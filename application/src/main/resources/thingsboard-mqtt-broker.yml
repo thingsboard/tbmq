@@ -55,6 +55,12 @@ server:
       key_password: "${MQTT_SSL_KEY_PASSWORD:server_key_password}"
       # Type of the key store
       key_store_type: "${MQTT_SSL_KEY_STORE_TYPE:JKS}"
+      # Path to the trust store that holds the SSL certificate
+      trust_store: "${MQTT_SSL_TRUST_STORE:root_truststore.jks}"
+      # Password used to access the trust store
+      trust_store_password: "${MQTT_SSL_TRUST_STORE_PASSWORD:truststore_ks_password}"
+      # Type of the trust store
+      trust_store_type: "${MQTT_SSL_TRUST_STORE_TYPE:JKS}"
 
 queue:
   publish-msg:

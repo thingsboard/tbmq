@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.server;
 
+import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
@@ -40,7 +41,7 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private final ClientManager clientManager;
 
     @Override
-    public MqttSessionHandler create() {
-        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService, clientManager);
+    public MqttSessionHandler create(SslHandler sslHandler) {
+        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService, clientManager, sslHandler);
     }
 }

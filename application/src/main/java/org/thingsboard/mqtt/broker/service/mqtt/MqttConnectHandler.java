@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +36,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +47,7 @@ import java.util.UUID;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 
 @Service
@@ -52,13 +59,17 @@ public class MqttConnectHandler {
     @Value("${security.mqtt.enabled}")
     private Boolean mqttSecurityEnabled;
 
+    @Value("${server.mqtt.ssl.enabled}")
+    private Boolean sslEnabled;
+
     private final BCryptPasswordEncoder passwordEncoder;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttClientCredentialsService clientCredentialsService;
     private final LastWillService lastWillService;
     private final ClientManager clientManager;
 
-    public void process(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
+
+    public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         log.info("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
 
@@ -70,6 +81,12 @@ public class MqttConnectHandler {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD));
             throw new MqttException("Authentication failed for client [clientId: "+
                     clientId + ", userName: " + msg.payload().userName() + "].");
+        }
+        if (sslEnabled) {
+            X509Certificate certificate = getCertificate(sslHandler);
+            if (certificate != null) {
+                processX509CertConnect(ctx, certificate);
+            }
         }
 
         registerClient(ctx, clientId);
@@ -141,5 +158,25 @@ public class MqttConnectHandler {
                 .filter(Objects::nonNull)
                 .anyMatch(basicMqttCredentials -> basicMqttCredentials.getPassword() == null
                         || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword())));
+    }
+
+    private void processX509CertConnect(ClientSessionCtx ctx, X509Certificate cert) {
+        try {
+            cert.checkValidity();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private X509Certificate getCertificate(SslHandler sslHandler) {
+        try {
+            X509Certificate[] certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
+            if (certificates.length > 0) {
+                return certificates[0];
+            }
+        } catch (SSLPeerUnverifiedException e) {
+            log.warn("Failed to get SSL Certificate. Reason - {}.", e.getMessage());
+        }
+        return null;
     }
 }

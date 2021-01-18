@@ -201,6 +201,13 @@
             <artifactId>takari-cpsuite</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.thingsboard</groupId>
+            <artifactId>netty-mqtt</artifactId>
+            <version>3.2.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -274,6 +281,12 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </repository>
+
+        <repository>
+            <id>thingsboard-public-repo</id>
+            <name>ThingsBoard Public Repo</name>
+            <url>https://repo.thingsboard.io/artifactory/libs-release-public</url>
         </repository>
     </repositories>
 </project>

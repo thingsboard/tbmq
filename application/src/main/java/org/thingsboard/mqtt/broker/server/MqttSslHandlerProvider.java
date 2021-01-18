@@ -16,7 +16,11 @@
 package org.thingsboard.mqtt.broker.server;
 
 import com.google.common.io.Resources;
+import io.netty.channel.Channel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,24 +65,30 @@ public class MqttSslHandlerProvider {
     private String keyPassword;
     @Value("${server.mqtt.ssl.key_store_type}")
     private String keyStoreType;
+    @Value("${server.mqtt.ssl.trust_store}")
+    private String trustStoreFile;
+    @Value("${server.mqtt.ssl.trust_store_password}")
+    private String trustStorePassword;
+    @Value("${server.mqtt.ssl.trust_store_type}")
+    private String trustStoreType;
 
     @Autowired
     private AuthService authService;
 
-    public SslHandler getSslHandler() {
+    public SslHandler getSslHandler(Channel ch) {
         try {
-            URL ksUrl = Resources.getResource(keyStoreFile);
-            File ksFile = new File(ksUrl.toURI());
-            URL tsUrl = Resources.getResource(keyStoreFile);
+            URL tsUrl = Resources.getResource(trustStoreFile);
             File tsFile = new File(tsUrl.toURI());
 
             TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            KeyStore trustStore = KeyStore.getInstance(keyStoreType);
+            KeyStore trustStore = KeyStore.getInstance(trustStoreType);
             try (InputStream tsFileInputStream = new FileInputStream(tsFile)) {
-                trustStore.load(tsFileInputStream, keyStorePassword.toCharArray());
+                trustStore.load(tsFileInputStream, trustStorePassword.toCharArray());
             }
             tmFactory.init(trustStore);
 
+            URL ksUrl = Resources.getResource(keyStoreFile);
+            File ksFile = new File(ksUrl.toURI());
             KeyStore ks = KeyStore.getInstance(keyStoreType);
             try (InputStream ksFileInputStream = new FileInputStream(ksFile)) {
                 ks.load(ksFileInputStream, keyStorePassword.toCharArray());
@@ -92,15 +102,21 @@ public class MqttSslHandlerProvider {
             if (StringUtils.isEmpty(sslProtocol)) {
                 sslProtocol = "TLS";
             }
+
+            final SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(kmf);
+            sslContextBuilder.sslProvider(SslProvider.JDK).trustManager(tmFactory);
+//            SslContext sslContext = sslContextBuilder.build();
+//            SSLEngine sslEngine = sslContext.newEngine(ch.alloc());
+
             SSLContext sslContext = SSLContext.getInstance(sslProtocol);
             sslContext.init(km, tm, null);
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);
-            sslEngine.setNeedClientAuth(false);
             sslEngine.setWantClientAuth(true);
             sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
             sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
             sslEngine.setEnableSessionCreation(true);
+//            return new SslHandler(sslEngine, true);
             return new SslHandler(sslEngine);
         } catch (Exception e) {
             log.error("Unable to set up SSL context. Reason: " + e.getMessage(), e);
@@ -151,9 +167,6 @@ public class MqttSslHandlerProvider {
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     log.error(e.getMessage(), e);
                 }
-            }
-            if (credentialsBody == null) {
-                throw new CertificateException("Invalid Device Certificate");
             }
         }
     }

@@ -45,13 +45,13 @@ public class MqttServerInitializer extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = ch.pipeline();
         SslHandler sslHandler = null;
         if (context.getSslHandlerProvider() != null) {
-            sslHandler = context.getSslHandlerProvider().getSslHandler();
+            sslHandler = context.getSslHandlerProvider().getSslHandler(ch);
             pipeline.addLast(sslHandler);
         }
         pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttSessionHandler handler = handlerFactory.create();
+        MqttSessionHandler handler = handlerFactory.create(sslHandler);
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

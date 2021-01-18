@@ -24,6 +24,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -59,12 +60,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
     private final ClientManager clientManager;
+    private final SslHandler sslHandler;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
 
-    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService, LastWillService lastWillService, ClientManager clientManager) {
+    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishRetryService retryService, SuccessfulPublishService successfulPublishService, KeepAliveService keepAliveService, LastWillService lastWillService, ClientManager clientManager, SslHandler sslHandler) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.messageHandlers = messageHandlers;
         this.subscriptionService = subscriptionService;
@@ -73,6 +75,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.keepAliveService = keepAliveService;
         this.lastWillService = lastWillService;
         this.clientManager = clientManager;
+        this.sslHandler = sslHandler;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
     }
@@ -116,7 +119,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             processKeepAlive(ctx, msg);
             switch (msgType) {
                 case CONNECT:
-                    messageHandlers.getConnectHandler().process(clientSessionCtx, (MqttConnectMessage) msg);
+                    messageHandlers.getConnectHandler().process(clientSessionCtx, sslHandler, (MqttConnectMessage) msg);
                     break;
                 case DISCONNECT:
                     messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
