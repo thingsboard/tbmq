@@ -28,9 +28,11 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
+import org.thingsboard.mqtt.broker.util.SslUtil;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +84,13 @@ public class DefaultAuthService implements AuthService {
             return null;
         }
         for (X509Certificate certificate : certificates) {
-            String sslCredentialsId = ProtocolUtil.sslCredentialsId(certificate.getSubjectDN().getName());
+            String commonName = null;
+            try {
+                commonName = SslUtil.parseCommonName(certificate);
+            } catch (CertificateEncodingException e) {
+                throw new AuthenticationException("Couldn't get Common Name from certificate.", e);
+            }
+            String sslCredentialsId = ProtocolUtil.sslCredentialsId(commonName);
             List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(Collections.singletonList(sslCredentialsId));
             if (!matchingCredentials.isEmpty()) {
                 return matchingCredentials.get(0);

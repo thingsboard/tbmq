@@ -24,6 +24,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
@@ -193,7 +194,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         // TODO push msg to the client before closing
         if (cause.getCause() instanceof SSLHandshakeException) {
             log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
-        } else {
+        } else if (cause.getCause() instanceof NotSslRecordException) {
+            log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
+        } else  {
             log.error("[{}] Unexpected Exception", sessionId, cause);
         }
         onSessionDisconnect(DisconnectReason.ON_ERROR);
