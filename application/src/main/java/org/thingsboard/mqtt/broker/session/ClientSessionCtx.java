@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +37,9 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
+    @Getter
+    @Setter
+    private volatile AuthorizationRule authorizationRule;
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
 

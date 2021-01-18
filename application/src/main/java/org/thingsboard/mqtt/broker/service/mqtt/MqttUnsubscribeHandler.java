@@ -15,14 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,12 +38,9 @@ public class MqttUnsubscribeHandler {
         List<String> topics = msg.payload().topics();
         log.trace("[{}] Processing unsubscribe [{}], topics - {}", sessionId, msg.variableHeader().messageId(), topics);
 
-        ListenableFuture<Void> unsubscribeFuture = subscriptionService.unsubscribe(sessionId, topics);
+        subscriptionService.unsubscribe(sessionId, topics);
 
-        // TODO: test this manually
-        unsubscribeFuture.addListener(() -> {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.variableHeader().messageId()));
-        }, MoreExecutors.directExecutor());
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.variableHeader().messageId()));
     }
 
 }

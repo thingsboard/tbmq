@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.SessionListener;
@@ -34,17 +32,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final Map<UUID, SessionSubscriptionInfo> sessions = new ConcurrentHashMap<>();
 
     @Override
-    public ListenableFuture<Void> subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
+    public void subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> new SessionSubscriptionInfo(listener));
         for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
             subscriptionTrie.put(topicSubscription.topicName(), new TopicSubscription(sessionId, topicSubscription.qualityOfService()));
             sessionSubscriptionInfo.getTopicFilters().add(topicSubscription.topicName());
         }
-        return Futures.immediateFuture(null);
     }
 
     @Override
-    public ListenableFuture<Void> unsubscribe(UUID sessionId, List<String> topics) {
+    public void unsubscribe(UUID sessionId, List<String> topics) {
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.get(sessionId);
         if (sessionSubscriptionInfo == null) {
             throw new RuntimeException("Cannot find session subscription info.");
@@ -53,7 +50,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             subscriptionTrie.delete(topic, val -> sessionId.equals(val.getSessionId()));
             sessionSubscriptionInfo.getTopicFilters().remove(topic);
         }
-        return Futures.immediateFuture(null);
     }
 
     @Override

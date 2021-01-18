@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import org.thingsboard.mqtt.broker.session.SessionListener;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
-public interface SubscriptionService {
-    void subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener);
-
-    void unsubscribe(UUID sessionId, List<String> topics);
-
-    void unsubscribe(UUID sessionId);
-
-    Collection<Subscription> getSubscriptions(String topic);
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SslMqttCredentials {
+    private String commonName;
+    private String patternRegEx;
+    private Map<String, String> authorizationRulesMapping;
 }

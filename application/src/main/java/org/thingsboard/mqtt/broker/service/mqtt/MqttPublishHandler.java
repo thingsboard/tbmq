@@ -22,16 +22,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.util.AuthUtil;
 
+import java.util.Collections;
 import java.util.UUID;
 
 @Service
@@ -44,7 +48,15 @@ public class MqttPublishHandler {
 
     public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) throws MqttException {
         validatePublish(msg);
+
         UUID sessionId = ctx.getSessionId();
+        try {
+            AuthUtil.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(msg.variableHeader().topicName()));
+        } catch (AuthorizationException e) {
+            log.debug("[{}] Client doesn't have permission to publish to the topic {}, reason - {}",
+                    sessionId, e.getDeniedTopic(), e.getMessage());
+            throw new MqttException(e);
+        }
         int msgId = msg.variableHeader().packetId();
 
         log.trace("[{}] Processing publish msg: {}", sessionId, msgId);
@@ -64,7 +76,6 @@ public class MqttPublishHandler {
             }
         });
     }
-
 
     private void validatePublish(MqttPublishMessage mqttMsg) {
         MqttQoS mqttQoS = mqttMsg.fixedHeader().qosLevel();

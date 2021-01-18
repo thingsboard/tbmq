@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
@@ -25,14 +23,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionListener;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.util.AuthUtil;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,15 +55,24 @@ public class MqttSubscribeHandler {
             log.debug("[{}] Not valid topic, reason - {}", sessionId, e.getMessage());
             throw new MqttException(e);
         }
+        try {
+            AuthUtil.validateAuthorizationRule(ctx.getAuthorizationRule(), subscriptions.stream()
+                    .map(MqttTopicSubscription::topicName)
+                    .collect(Collectors.toList())
+            );
+        } catch (AuthorizationException e) {
+            log.debug("[{}] Client doesn't have permission to subscribe to the topic {}, reason - {}",
+                    sessionId, e.getDeniedTopic(), e.getMessage());
+            throw new MqttException(e);
+        }
+
         log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, msg.variableHeader().messageId(), subscriptions);
 
-        ListenableFuture<Void> subscribeFuture = subscriptionService.subscribe(sessionId, subscriptions, sessionListener);
+        subscriptionService.subscribe(sessionId, subscriptions, sessionListener);
 
-        subscribeFuture.addListener(() -> {
-            List<Integer> grantedQoSList = subscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));
-            log.trace("[{}] Client subscribed to {}", sessionId, subscriptions);
-        }, MoreExecutors.directExecutor());
+        List<Integer> grantedQoSList = subscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));
+        log.trace("[{}] Client subscribed to {}", sessionId, subscriptions);
     }
 
     private void validateSubscriptions(List<MqttTopicSubscription> subscriptions) {
