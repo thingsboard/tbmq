@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +33,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Service
 public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
-    private final AtomicInteger size = new AtomicInteger();
+    private final AtomicInteger size;
     private final Node<T> root = new Node<>();
+
+    public ConcurrentMapSubscriptionTrie(StatsManager statsManager) {
+        this.size = statsManager.createSubscriptionSizeCounter();
+    }
 
     private static class Node<T> {
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
@@ -41,14 +48,6 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
         public Node() {
         }
-    }
-
-    public ConcurrentMapSubscriptionTrie() {
-    }
-
-    @Override
-    public int size() {
-        return size.get();
     }
 
     @Override

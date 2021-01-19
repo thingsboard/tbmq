@@ -22,9 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,7 +69,9 @@ public class ConcurrentMapSubscriptionTriePerformanceTest {
 
     @Before
     public void before(){
-        this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
+        StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
+        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
+        this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 
     @Test

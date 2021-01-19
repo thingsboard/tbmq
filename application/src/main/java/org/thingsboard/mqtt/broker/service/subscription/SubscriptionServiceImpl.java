@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.SessionListener;
@@ -29,9 +30,11 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
-    private final SubscriptionTrie<TopicSubscription> subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
     private final Map<UUID, SessionSubscriptionInfo> sessions = new ConcurrentHashMap<>();
+
+    private final SubscriptionTrie<TopicSubscription> subscriptionTrie;
 
     @Override
     public void subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {

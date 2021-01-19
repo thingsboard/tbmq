@@ -18,10 +18,14 @@ package org.thingsboard.mqtt.broker.service.stats;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public interface StatsManager {
     TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats);
 
     MessagesStats createMsgDispatcherPublishStats();
 
     MessagesStats createPublishMsgConsumerStats();
+
+    AtomicInteger createSubscriptionSizeCounter();
 }

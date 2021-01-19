@@ -17,7 +17,9 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 public enum StatsType {
     MSG_DISPATCHER_PRODUCER("incomingPublishMsg.published"),
-    PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed");
+    PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed"),
+    SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
+    ;
 
     private final String printName;
 

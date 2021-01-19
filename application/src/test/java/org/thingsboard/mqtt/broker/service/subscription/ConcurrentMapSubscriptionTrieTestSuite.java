@@ -20,12 +20,15 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
@@ -35,7 +38,9 @@ public class ConcurrentMapSubscriptionTrieTestSuite {
 
     @Before
     public void before(){
-        this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
+        StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
+        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
+        this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 
     @Test

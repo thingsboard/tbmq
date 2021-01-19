@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class DefaultStatsManager implements StatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
+    private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
     @Value("${stats.enabled}")
     private Boolean statsEnabled;
@@ -72,6 +74,17 @@ public class DefaultStatsManager implements StatsManager {
         }
     }
 
+    @Override
+    public AtomicInteger createSubscriptionSizeCounter() {
+        if (statsEnabled) {
+            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
+            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge));
+            return sizeGauge;
+        } else {
+            return new AtomicInteger(0);
+        }
+    }
+
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
     public void printStats() {
         if (!statsEnabled) {
@@ -85,8 +98,20 @@ public class DefaultStatsManager implements StatsManager {
             log.info("[{}] Stats: {}", stats.getName(), statsStr);
             stats.reset();
         }
+
+        StringBuilder gaugeLogBuilder = new StringBuilder();
+        for (Gauge gauge : gauges) {
+            gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValue().intValue()).append("] ");
+        }
+        log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
     }
 
+    @AllArgsConstructor
+    @Getter
+    private static class Gauge {
+        private final String name;
+        private final Number value;
+    }
 
     @AllArgsConstructor
     private static class StatsQueueCallback implements TbQueueCallback {
