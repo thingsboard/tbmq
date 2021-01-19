@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     private final AtomicInteger size = new AtomicInteger();
     private final Node<T> root = new Node<>();
@@ -103,7 +105,6 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
             throw new IllegalArgumentException("Topic filter or value cannot be null");
         }
         put(root, topicFilter, val, 0);
-        size.getAndIncrement();
     }
 
     private void put(Node<T> x, String key, T val, int prevDelimiterIndex) {
@@ -120,20 +121,32 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         if (!values.add(val)) {
             values.remove(val);
             values.add(val);
+        } else {
+            size.getAndIncrement();
         }
     }
 
     @Override
-    public void delete(String topicFilter, Predicate<T> deletionFilter) {
+    public boolean delete(String topicFilter, Predicate<T> deletionFilter) {
         if (topicFilter == null || deletionFilter == null) {
             throw new IllegalArgumentException("Topic filter or deletionFilter cannot be null");
         }
         Node<T> x = getNode(root, topicFilter, 0);
         if (x != null) {
             List<T> valuesToDelete = x.values.stream().filter(deletionFilter).collect(Collectors.toList());
-            x.values.removeAll(valuesToDelete);
-            size.getAndSet(size.get() - valuesToDelete.size());
+            if (valuesToDelete.isEmpty()) {
+                return false;
+            }
+            if (valuesToDelete.size() > 1) {
+                log.error("There are more than one value to delete!");
+            }
+            boolean deleted = x.values.removeAll(valuesToDelete);
+            if (deleted) {
+                size.getAndSet(size.get() - valuesToDelete.size());
+            }
+            return deleted;
         }
+        return false;
     }
 
     private Node<T> getNode(Node<T> x, String key, int prevDelimiterIndex) {

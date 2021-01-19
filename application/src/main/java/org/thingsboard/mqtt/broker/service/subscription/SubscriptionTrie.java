@@ -24,7 +24,7 @@ public interface SubscriptionTrie<T> {
 
     void put(String topicFilter, T val);
 
-    void delete(String topicFilter, Predicate<T> deletionFilter);
+    boolean delete(String topicFilter, Predicate<T> deletionFilter);
 
     int size();
 }

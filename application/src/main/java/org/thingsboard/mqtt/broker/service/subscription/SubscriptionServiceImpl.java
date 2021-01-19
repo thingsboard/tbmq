@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
@@ -26,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionTrie<TopicSubscription> subscriptionTrie = new ConcurrentMapSubscriptionTrie<>();
@@ -60,7 +62,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
         for (String topicFilter : sessionSubscriptionInfo.getTopicFilters()) {
-            subscriptionTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
+            boolean successfullyDeleted = subscriptionTrie.delete(topicFilter, val -> sessionId.equals(val.getSessionId()));
+            if (!successfullyDeleted) {
+                log.error("[{}] Couldn't delete subscription for topic {}", sessionId, topicFilter);
+            }
         }
         sessions.remove(sessionId);
     }
