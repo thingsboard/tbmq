@@ -76,6 +76,10 @@
             <artifactId>util</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>stats</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
             <type>test-jar</type>

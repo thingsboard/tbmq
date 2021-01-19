@@ -37,6 +37,7 @@
         <module>queue</module>
         <module>dao-api</module>
         <module>util</module>
+        <module>stats</module>
     </modules>
 
 </project>
