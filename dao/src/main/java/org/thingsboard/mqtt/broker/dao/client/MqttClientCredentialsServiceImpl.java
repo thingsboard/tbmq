@@ -22,7 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -49,8 +49,15 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if(mqttClientCredentials.getCredentialsType() == null){
             throw new DataValidationException("MQTT Client credentials type should be specified");
         }
-        if (mqttClientCredentials.getCredentialsType() == ClientCredentialsType.MQTT_BASIC) {
-            processSimpleMqttCredentials(mqttClientCredentials);
+        switch (mqttClientCredentials.getCredentialsType()) {
+            case MQTT_BASIC:
+                processBasicMqttCredentials(mqttClientCredentials);
+                break;
+            case SSL:
+                processSslMqttCredentials(mqttClientCredentials);
+                break;
+            default:
+                throw new DataValidationException("Unknown credentials type!");
         }
         log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
         credentialsValidator.validate(mqttClientCredentials);
@@ -79,8 +86,8 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         return mqttClientCredentialsDao.findAllByCredentialsIds(credentialIds);
     }
 
-    private void processSimpleMqttCredentials(MqttClientCredentials mqttClientCredentials) {
-        BasicMqttCredentials mqttCredentials = getBasicMqttCredentials(mqttClientCredentials);
+    private void processBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
+        BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
         if (StringUtils.isEmpty(mqttClientCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }
@@ -97,17 +104,33 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
     }
 
-    private BasicMqttCredentials getBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
-        BasicMqttCredentials mqttCredentials;
+    private void processSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
+        SslMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, SslMqttCredentials.class);
+        if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
+            throw new DataValidationException("Parent certificate's common name should be specified!");
+        }
+        if (mqttCredentials.getPatternRegEx() == null) {
+            throw new DataValidationException("Parent regex should be specified!");
+        }
+        if (mqttCredentials.getAuthorizationRulesMapping() == null) {
+            throw new DataValidationException("Authorization rules mapping should be specified!");
+        }
+
+        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
+        mqttClientCredentials.setCredentialsId(credentialsId);
+    }
+
+    private <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
+        T credentials;
         try {
-            mqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), BasicMqttCredentials.class);
-            if (mqttCredentials == null) {
+            credentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), credentialsClassType);
+            if (credentials == null) {
                 throw new IllegalArgumentException();
             }
         } catch (IllegalArgumentException e) {
-            throw new DataValidationException("Invalid credentials body for simple mqtt credentials!");
+            throw new DataValidationException("Invalid credentials body for mqtt credentials!");
         }
-        return mqttCredentials;
+        return credentials;
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =
