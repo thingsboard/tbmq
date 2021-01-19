@@ -49,43 +49,45 @@ public class AuthorizationRuleServiceTestSuite {
     @Test
     public void testSuccessfulCredentialsParse() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "qwer1234-abc-p01.4321.ab.abc",
+                "parent.com",
                 ".*(abc-p01).*",
                 Map.of("abc-p01", "test/.*")
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials));
+        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(
+                JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
     @Test
     public void testSuccessfulCredentialsParse_MultiplePossibleKeys() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "qwer1234-abc-p01.4321.ab.abc",
+                "parent.com",
                 ".*(abc-p01|123-qwe|qqq).*",
                 Map.of("abc-p01", "test/.*")
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials));
+        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(
+                JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
     @Test(expected = AuthenticationException.class)
     public void testNonExistentKey() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "qwer1234-abc-p01.4321.ab.abc",
+                "parent.com",
                 "(.*)(abc-p01|123-qwe|qqq)(.*)",
                 Map.of("not_valid_key", "test/.*")
         );
-        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials));
+        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
     }
 
     @Test(expected = AuthenticationException.class)
     public void testPatternDontMatch() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "qwer1234-abc-p01.4321.ab.abc",
+                "parent.com",
                 "(.*)(not_in_common_name)(.*)",
                 Map.of("key", "test/.*")
         );
-        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials));
+        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
     }
 
     /*

@@ -41,7 +41,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultAuthService implements AuthService {
+public class DefaultAuthenticationService implements AuthenticationService {
 
     @Value("${security.mqtt.basic.enabled}")
     private Boolean basicSecurityEnabled;
@@ -69,6 +69,19 @@ public class DefaultAuthService implements AuthService {
             return authWithSSLCredentials(sslHandler);
         }
         throw new AuthenticationException("Could not find basic or ssl credentials!");
+    }
+
+    @Override
+    public String getClientCertificateCommonName(SslHandler sslHandler) throws AuthenticationException {
+        X509Certificate[] certificates;
+        try {
+            certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
+            return SslUtil.parseCommonName(certificates[0]);
+        } catch (Exception e) {
+            log.error("Failed to get client's certificate common name. Reason - {}.", e.getMessage());
+            throw new AuthenticationException("Failed to get client's certificate common name.", e);
+        }
+
     }
 
     private MqttClientCredentials authWithSSLCredentials(SslHandler sslHandler) throws AuthenticationException {

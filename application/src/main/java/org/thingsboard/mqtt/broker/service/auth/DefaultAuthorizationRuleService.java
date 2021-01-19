@@ -29,15 +29,15 @@ import java.util.regex.Pattern;
 @Service
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
     @Override
-    public AuthorizationRule parseAuthorizationRule(String sslMqttCredentialsValue) throws AuthenticationException {
+    public AuthorizationRule parseAuthorizationRule(String sslMqttCredentialsValue, String clientCommonName) throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslMqttCredentialsValue, SslMqttCredentials.class);
         if (sslMqttCredentials == null) {
             throw new AuthenticationException("Cannot parse SslMqttCredentials.");
         }
         Pattern pattern = Pattern.compile(sslMqttCredentials.getPatternRegEx());
-        Matcher commonNameMatcher = pattern.matcher(sslMqttCredentials.getCommonName());
+        Matcher commonNameMatcher = pattern.matcher(clientCommonName);
         if (!commonNameMatcher.find()) {
-            throw new AuthenticationException("Cannot find string for pattern in common name [" + sslMqttCredentials.getCommonName() + "]");
+            throw new AuthenticationException("Cannot find string for pattern in common name [" + clientCommonName + "]");
         }
         String mappingKey = commonNameMatcher.group(1);
         String authorizationRulePatternRegEx = sslMqttCredentials.getAuthorizationRulesMapping().get(mappingKey);

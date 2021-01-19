@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.auth.AuthService;
+import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
@@ -48,7 +48,7 @@ public class MqttConnectHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final LastWillService lastWillService;
     private final ClientManager clientManager;
-    private final AuthService authService;
+    private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
 
 
@@ -61,13 +61,14 @@ public class MqttConnectHandler {
         String clientId = getClientId(msg);
 
         try {
-            MqttClientCredentials clientCredentials = authService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), sslHandler);
+            MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), sslHandler);
             if (clientCredentials != null && clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
-                AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(clientCredentials.getCredentialsValue());
+                String clientCommonName = authenticationService.getClientCertificateCommonName(sslHandler);
+                AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(clientCredentials.getCredentialsValue(), clientCommonName);
                 ctx.setAuthorizationRule(authorizationRule);
             }
         } catch (AuthenticationException e) {
-            log.trace("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
+            log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
             throw new MqttException("Authentication failed for client [" + clientId + "].");
         }
