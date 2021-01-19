@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.queue;
+package org.thingsboard.mqtt.broker.service.stats;
 
-public interface PublishMsgConsumerService {
+import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+
+public interface StatsManager {
+    TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats);
+
+    MessagesStats createMsgDispatcherPublishStats();
+
+    MessagesStats createPublishMsgConsumerStats();
 }

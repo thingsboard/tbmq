@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.queue;
+package org.thingsboard.mqtt.broker.service.processing;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
@@ -36,6 +38,7 @@ import java.util.concurrent.Executors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultPublishMsgConsumerService implements PublishMsgConsumerService {
 
     private volatile ExecutorService consumersExecutor;
@@ -47,17 +50,11 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     @Value("${queue.publish-msg.poll-interval}")
     private long pollDuration;
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers;
+    private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers = new ArrayList<>();
     private final MsgDispatcherService msgDispatcherService;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
+    private final StatsManager statsManager;
 
-    public DefaultPublishMsgConsumerService(MsgDispatcherService msgDispatcherService,
-                                            PublishMsgQueueFactory publishMsgQueueFactory) {
-        this.msgDispatcherService = msgDispatcherService;
-        this.publishMsgQueueFactory = publishMsgQueueFactory;
-        this.publishMsgConsumers = new ArrayList<>();
-
-    }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -73,17 +70,23 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
 
     private void launchConsumer(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
+            MessagesStats stats = statsManager.createPublishMsgConsumerStats();
             while (!stopped) {
                 try {
                     List<TbProtoQueueMsg<PublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
-                    msgs.forEach(msg -> msgDispatcherService.processPublishMsg(msg.getValue()));
+                    stats.incrementTotal(msgs.size());
+                    for (TbProtoQueueMsg<PublishMsgProto> msg : msgs) {
+                        // cannot track 'failed' messages, because this method shouldn't fail (unless code error)
+                        msgDispatcherService.processPublishMsg(msg.getValue());
+                    }
                     consumer.commit();
+                    stats.incrementSuccessful(msgs.size());
                 } catch (Exception e) {
                     if (!stopped) {
-                        log.warn("Failed to process messages from queue.", e);
+                        log.error("Failed to process messages from queue.", e);
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {

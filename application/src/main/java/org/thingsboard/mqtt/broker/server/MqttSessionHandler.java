@@ -91,7 +91,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 if (message.decoderResult().isSuccess()) {
                     processMqttMsg(ctx, message);
                 } else {
-                    log.error("[{}] Message processing failed: {}", sessionId, message.decoderResult().cause().getMessage());
+                    log.warn("[{}] Message decoding failed: {}", sessionId, message.decoderResult().cause().getMessage());
                     ctx.close();
                 }
             } else {
@@ -105,14 +105,14 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
-            log.info("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
+            log.warn("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
             messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
             return;
         }
         // TODO: we can leave order validation as long as we process connection synchronously
         MqttMessageType msgType = msg.fixedHeader().messageType();
         if (!validOrder(msgType)) {
-            log.info("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
+            log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
             ctx.close();
             return;
         }
@@ -252,7 +252,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             }
             clientSessionCtx.getChannel().writeAndFlush(pubMsg);
         } catch (Exception e) {
-            log.trace("[{}] Failed to send publish msg to MQTT client.", sessionId, e);
+            log.debug("[{}] Failed to send publish msg to MQTT client.", sessionId, e);
         }
     }
 }

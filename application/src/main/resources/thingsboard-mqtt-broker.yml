@@ -144,6 +144,17 @@ application:
       monitoring-delay-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
 
 
+stats:
+  enabled: "${STATS_ENABLED:true}"
+  print-interval-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:60000}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose metrics endpoint (use value 'prometheus' to enable prometheus metrics).
+        include: '${METRICS_ENDPOINTS_EXPOSE:info}'
+
 swagger:
   api_path_regex: "${SWAGGER_API_PATH_REGEX:/api.*}"
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api.*}"
