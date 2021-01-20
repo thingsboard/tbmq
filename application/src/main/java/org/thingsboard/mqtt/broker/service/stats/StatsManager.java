@@ -28,4 +28,8 @@ public interface StatsManager {
     MessagesStats createPublishMsgConsumerStats();
 
     AtomicInteger createSubscriptionSizeCounter();
+
+    AtomicInteger createConnectedClientsCounter();
+
+    AtomicInteger createLastWillCounter();
 }

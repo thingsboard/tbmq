@@ -19,21 +19,36 @@ import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
 public class StandaloneClientManager implements ClientManager {
     private final Set<String> connectedClients = Sets.newConcurrentHashSet();
 
+    private final AtomicInteger connectedClientsCounter;
+
+    public StandaloneClientManager(StatsManager statsManager) {
+        this.connectedClientsCounter = statsManager.createConnectedClientsCounter();
+    }
+
     @Override
     public boolean registerClient(String clientId) throws MqttException {
-        return connectedClients.add(clientId);
+        boolean successfullyAdded = connectedClients.add(clientId);
+        if (successfullyAdded) {
+            connectedClientsCounter.incrementAndGet();
+        }
+        return successfullyAdded;
     }
 
     @Override
     public void unregisterClient(String clientId) {
-        connectedClients.remove(clientId);
+        boolean successfullyRemoved = connectedClients.remove(clientId);
+        if (successfullyRemoved) {
+            connectedClientsCounter.decrementAndGet();
+        }
     }
 }
