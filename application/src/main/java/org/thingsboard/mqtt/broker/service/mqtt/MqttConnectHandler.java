@@ -82,7 +82,7 @@ public class MqttConnectHandler {
         processLastWill(sessionInfo, msg);
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
-        log.info("[{}] Client connected!", sessionId);
+        log.info("[{}] [{}] Client connected!", clientId, sessionId);
     }
 
     private void registerClient(ClientSessionCtx ctx, String clientId) {

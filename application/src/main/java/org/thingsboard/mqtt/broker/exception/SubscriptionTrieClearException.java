@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.exception;
 
-import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
+public class SubscriptionTrieClearException extends Exception {
+    public SubscriptionTrieClearException(String message) {
+        super(message);
+    }
 
-import java.util.List;
-import java.util.function.Predicate;
+    public SubscriptionTrieClearException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-public interface SubscriptionTrie<T> {
+    public SubscriptionTrieClearException(Throwable cause) {
+        super(cause);
+    }
 
-    List<T> get(String topic);
-
-    void put(String topicFilter, T val);
-
-    boolean delete(String topicFilter, Predicate<T> deletionFilter);
-
-    void clearEmptyNodes() throws SubscriptionTrieClearException;
+    public SubscriptionTrieClearException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

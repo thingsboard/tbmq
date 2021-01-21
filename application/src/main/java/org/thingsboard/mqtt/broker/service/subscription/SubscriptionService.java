@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
 import java.util.Collection;
@@ -30,4 +31,6 @@ public interface SubscriptionService {
     void unsubscribe(UUID sessionId);
 
     Collection<Subscription> getSubscriptions(String topic);
+
+    void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
 }

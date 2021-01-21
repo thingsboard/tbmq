@@ -17,7 +17,9 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
@@ -45,6 +47,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
+        log.trace("Executing subscribe [{}] [{}]", sessionId, topicSubscriptions);
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> {
             sessionsCount.incrementAndGet();
             return new SessionSubscriptionInfo(listener);
@@ -57,6 +60,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void unsubscribe(UUID sessionId, List<String> topics) {
+        log.trace("Executing unsubscribe [{}] [{}]", sessionId, topics);
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.get(sessionId);
         if (sessionSubscriptionInfo == null) {
             throw new RuntimeException("Cannot find session subscription info.");
@@ -69,6 +73,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void unsubscribe(UUID sessionId) {
+        log.trace("Executing unsubscribe [{}]", sessionId);
         //TODO: make this transactional?
         SessionSubscriptionInfo sessionSubscriptionInfo = sessions.get(sessionId);
         if (sessionSubscriptionInfo == null) {
@@ -91,4 +96,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .map(topicSubscription -> new Subscription(topicSubscription.getMqttQoS(), sessions.get(topicSubscription.getSessionId()).getListener()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void clearEmptyTopicNodes() throws SubscriptionTrieClearException {
+        log.trace("Executing clearEmptyTopicNodes");
+        subscriptionTrie.clearEmptyNodes();
+    }
+
+    @Scheduled(cron = "${application.mqtt.subscription-trie.clear-nodes-cron}", zone = "${application.mqtt.subscription-trie.clear-nodes-zone}")
+    private void scheduleEmptyNodeClear() {
+        log.info("Start clearing empty nodes in SubscriptionTrie");
+        try {
+            subscriptionTrie.clearEmptyNodes();
+        } catch (SubscriptionTrieClearException e) {
+            log.error("Failed to clear empty nodes. Reason - {}.", e.getMessage());
+        }
+    }
+
 }

@@ -25,6 +25,8 @@
         </encoder>
     </appender>
 
+    <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="DEBUG"/>
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>

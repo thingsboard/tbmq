@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;
@@ -36,12 +37,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SubscriptionTrieTestSuite {
 
     private ConcurrentMapSubscriptionTrie<String> subscriptionTrie;
+    private AtomicInteger subscriptionCounter;
+    private AtomicLong nodesCounter;
 
     @Before
     public void before(){
+        this.subscriptionCounter = new AtomicInteger(0);
+        this.nodesCounter = new AtomicLong(0);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
-        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(new AtomicLong());
+        Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(subscriptionCounter);
+        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(nodesCounter);
         this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 
@@ -88,4 +93,89 @@ public class SubscriptionTrieTestSuite {
                 new HashSet<>(result));
     }
 
+    @Test
+    public void testSubscriptionCount() {
+        for (int i = 0; i < 10; i++) {
+            subscriptionTrie.put(Integer.toString(i), "val");
+        }
+        Assert.assertEquals(10, subscriptionCounter.get());
+        for (int i = 0; i < 9; i++) {
+            subscriptionTrie.delete(Integer.toString(i), s -> true);
+        }
+        Assert.assertEquals(1, subscriptionCounter.get());
+    }
+
+    @Test
+    public void testNodeCount_Basic() {
+        for (int i = 0; i < 10; i++) {
+            subscriptionTrie.put(Integer.toString(i), "val");
+        }
+        Assert.assertEquals(10, nodesCounter.get());
+    }
+
+    @Test
+    public void testNodeCount_TwoValues() {
+        for (int i = 0; i < 10; i++) {
+            subscriptionTrie.put(Integer.toString(i), "val1");
+            subscriptionTrie.put(Integer.toString(i), "val2");
+        }
+        Assert.assertEquals(10, nodesCounter.get());
+    }
+
+    @Test
+    public void testNodeCount_RemoveValues() {
+        for (int i = 0; i < 10; i++) {
+            subscriptionTrie.put(Integer.toString(i), "val1");
+            subscriptionTrie.put(Integer.toString(i), "val2");
+            subscriptionTrie.delete(Integer.toString(i), "val1"::equals);
+            subscriptionTrie.delete(Integer.toString(i), "val2"::equals);
+        }
+        Assert.assertEquals(10, nodesCounter.get());
+    }
+
+    @Test
+    public void testNodeCount_MultipleLevels() {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 3; j++) {
+                subscriptionTrie.put(i + "/" + j, "val");
+            }
+        }
+        // 10 first level + 30 second level
+        Assert.assertEquals(10 + 30, nodesCounter.get());
+    }
+
+    @Test
+    public void testClearTrie_Basic() throws SubscriptionTrieClearException {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 3; j++) {
+                subscriptionTrie.put(i + "/" + j, "val");
+            }
+        }
+
+        subscriptionTrie.delete("0/0", s -> true);
+        subscriptionTrie.delete("0/1", s -> true);
+        subscriptionTrie.delete("0/2", s -> true);
+        subscriptionTrie.delete("1/0", s -> true);
+
+        subscriptionTrie.setWaitForClearLockMs(100);
+        subscriptionTrie.clearEmptyNodes();
+        // should clear 0/0, 0/1, 0/2, 0 and 1/0 nodes
+        Assert.assertEquals(40 - 5, nodesCounter.get());
+    }
+
+    @Test
+    public void testClearTrie_ClearAll() throws SubscriptionTrieClearException {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 3; j++) {
+                subscriptionTrie.put(i + "/" + j, "val");
+                subscriptionTrie.delete(i + "/" + j, s -> true);
+            }
+        }
+        Assert.assertEquals(40, nodesCounter.get());
+
+        subscriptionTrie.setWaitForClearLockMs(100);
+        subscriptionTrie.clearEmptyNodes();
+
+        Assert.assertEquals(0, nodesCounter.get());
+    }
 }

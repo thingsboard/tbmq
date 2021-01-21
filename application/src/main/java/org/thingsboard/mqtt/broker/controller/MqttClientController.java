@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/mqtt/client")
 public class MqttClientController extends BaseController {
 
     @Autowired
@@ -39,7 +39,7 @@ public class MqttClientController extends BaseController {
     private MqttClientService mqttClientService;
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    @RequestMapping(value = "/mqtt/client/credentials", method = RequestMethod.POST)
+    @RequestMapping(value = "/credentials", method = RequestMethod.POST)
     @ResponseBody
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
         checkNotNull(mqttClientCredentials);
@@ -53,7 +53,7 @@ public class MqttClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    @RequestMapping(value = "/mqtt/client", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
     public MqttClient saveMqttClient(@RequestBody MqttClient mqttClient) throws ThingsboardException {
         checkNotNull(mqttClient);
