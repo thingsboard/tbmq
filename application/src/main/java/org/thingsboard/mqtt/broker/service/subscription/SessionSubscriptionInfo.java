@@ -15,19 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
+import com.google.common.collect.Sets;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Set;
 
 @Getter
 public class SessionSubscriptionInfo {
     private final SessionListener listener;
-    private final Queue<String> topicFilters;
+    private final Set<String> topicFilters;
 
     public SessionSubscriptionInfo(SessionListener listener) {
         this.listener = listener;
-        this.topicFilters = new ConcurrentLinkedQueue<>();
+        this.topicFilters = Sets.newConcurrentHashSet();
     }
 }

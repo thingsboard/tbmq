@@ -15,8 +15,26 @@
 # limitations under the License.
 #
 
+CONF_FOLDER=${pkg.installFolder}/conf
+configfile=${pkg.name}.conf
+jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
+installDir=${pkg.installFolder}/data
 
+source "${CONF_FOLDER}/${configfile}"
 
-echo "ThingsBoard installed successfully!"
+run_user=${pkg.user}
+
+su -s /bin/sh -c "java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+                    -Dinstall.data_dir=${installDir} \
+                    -Dspring.jpa.hibernate.ddl-auto=none \
+                    -Dinstall.upgrade=false \
+                    -Dlogging.config=${pkg.installFolder}/bin/install/logback.xml \
+                    org.springframework.boot.loader.PropertiesLauncher" "$run_user"
+
+if [ $? -ne 0 ]; then
+    echo "ThingsBoard MQTT Broker installation failed!"
+else
+    echo "ThingsBoard MQTT Broker installed successfully!"
+fi
 
 exit $?

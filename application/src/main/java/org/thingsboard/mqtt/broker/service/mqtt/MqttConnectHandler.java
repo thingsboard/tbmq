@@ -54,7 +54,7 @@ public class MqttConnectHandler {
 
     public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
-        log.info("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
+        log.debug("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
 
         validate(ctx, msg);
 
