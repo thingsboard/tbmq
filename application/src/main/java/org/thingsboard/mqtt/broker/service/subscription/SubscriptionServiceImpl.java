@@ -16,9 +16,9 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 
 import java.util.Collection;
@@ -26,19 +26,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
+    // TODO probably move to some SessionService
     private final Map<UUID, SessionSubscriptionInfo> sessions = new ConcurrentHashMap<>();
 
     private final SubscriptionTrie<TopicSubscription> subscriptionTrie;
+    private final AtomicInteger sessionsCount;
+
+    public SubscriptionServiceImpl(SubscriptionTrie<TopicSubscription> subscriptionTrie, StatsManager statsManager) {
+        this.subscriptionTrie = subscriptionTrie;
+        this.sessionsCount = statsManager.createSessionsCounter();
+    }
 
     @Override
     public void subscribe(UUID sessionId, List<MqttTopicSubscription> topicSubscriptions, SessionListener listener) {
-        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> new SessionSubscriptionInfo(listener));
+        SessionSubscriptionInfo sessionSubscriptionInfo = sessions.computeIfAbsent(sessionId, uuid -> {
+            sessionsCount.incrementAndGet();
+            return new SessionSubscriptionInfo(listener);
+        });
         for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
             subscriptionTrie.put(topicSubscription.topicName(), new TopicSubscription(sessionId, topicSubscription.qualityOfService()));
             sessionSubscriptionInfo.getTopicFilters().add(topicSubscription.topicName());
@@ -71,6 +81,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             }
         }
         sessions.remove(sessionId);
+        sessionsCount.decrementAndGet();
     }
 
     @Override

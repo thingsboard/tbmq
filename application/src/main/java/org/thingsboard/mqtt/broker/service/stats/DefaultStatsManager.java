@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -104,6 +105,28 @@ public class DefaultStatsManager implements StatsManager {
             return sizeGauge;
         } else {
             return new AtomicInteger(0);
+        }
+    }
+
+    @Override
+    public AtomicInteger createSessionsCounter() {
+        if (statsEnabled) {
+            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), new AtomicInteger(0));
+            gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sizeGauge));
+            return sizeGauge;
+        } else {
+            return new AtomicInteger(0);
+        }
+    }
+
+    @Override
+    public AtomicLong createSubscriptionTrieNodesCounter() {
+        if (statsEnabled) {
+            AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
+            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge));
+            return sizeGauge;
+        } else {
+            return new AtomicLong(0);
         }
     }
 

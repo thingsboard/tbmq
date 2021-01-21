@@ -29,6 +29,7 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -36,10 +37,12 @@ import java.util.stream.Collectors;
 @Service
 public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     private final AtomicInteger size;
+    private final AtomicLong nodesCount;
     private final Node<T> root = new Node<>();
 
     public ConcurrentMapSubscriptionTrie(StatsManager statsManager) {
         this.size = statsManager.createSubscriptionSizeCounter();
+        this.nodesCount = statsManager.createSubscriptionTrieNodesCounter();
     }
 
     private static class Node<T> {
@@ -100,6 +103,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     @Override
     public void put(String topicFilter, T val) {
+        log.trace("Executing put [{}] [{}]", topicFilter, val);
         if (topicFilter == null || val == null) {
             throw new IllegalArgumentException("Topic filter or value cannot be null");
         }
@@ -111,7 +115,10 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
             addOrReplace(x.values, val);
         } else {
             String segment = getSegment(key, prevDelimiterIndex);
-            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>());
+            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> {
+                nodesCount.incrementAndGet();
+                return new Node<>();
+            });
             put(nextNode, key, val, prevDelimiterIndex + segment.length() + 1);
         }
     }
@@ -127,6 +134,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     @Override
     public boolean delete(String topicFilter, Predicate<T> deletionFilter) {
+        log.trace("Executing delete [{}]", topicFilter);
         if (topicFilter == null || deletionFilter == null) {
             throw new IllegalArgumentException("Topic filter or deletionFilter cannot be null");
         }
@@ -141,7 +149,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
             }
             boolean deleted = x.values.removeAll(valuesToDelete);
             if (deleted) {
-                size.getAndSet(size.get() - valuesToDelete.size());
+                size.decrementAndGet();
             }
             return deleted;
         }

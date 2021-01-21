@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public interface StatsManager {
     TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats);
@@ -32,4 +33,8 @@ public interface StatsManager {
     AtomicInteger createConnectedClientsCounter();
 
     AtomicInteger createLastWillCounter();
+
+    AtomicInteger createSessionsCounter();
+
+    AtomicLong createSubscriptionTrieNodesCounter();
 }

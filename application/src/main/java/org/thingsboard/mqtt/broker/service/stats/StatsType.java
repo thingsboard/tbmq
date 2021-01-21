@@ -21,6 +21,8 @@ public enum StatsType {
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
     CONNECTED_CLIENTS("connectedClients"),
     LAST_WILL_CLIENTS("lastWillClients"),
+    CONNECTED_SESSIONS("connectedSessions"),
+    SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     ;
 
     private final String printName;
