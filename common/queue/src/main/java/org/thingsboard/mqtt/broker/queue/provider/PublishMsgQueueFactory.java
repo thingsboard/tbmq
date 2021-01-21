@@ -25,6 +25,6 @@ public interface PublishMsgQueueFactory {
 
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer();
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer();
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id);
 
 }

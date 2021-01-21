@@ -54,11 +54,11 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     }
 
     @Override
-    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer() {
+    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.settings(kafkaSettings);
         consumerBuilder.topic(kafkaSettings.getTopic());
-        consumerBuilder.clientId("publish-msg-consumer");
+        consumerBuilder.clientId("publish-msg-consumer-" + id);
         consumerBuilder.groupId("publish-msg-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(publishMsgAdmin);

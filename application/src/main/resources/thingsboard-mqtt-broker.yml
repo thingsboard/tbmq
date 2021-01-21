@@ -50,7 +50,7 @@ queue:
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
     topic-properties:
-      publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2}"
+      publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       acks: "${TB_KAFKA_PUBLISH_MSG_ACKS:all}"

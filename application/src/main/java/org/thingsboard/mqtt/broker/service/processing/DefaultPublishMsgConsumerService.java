@@ -59,7 +59,7 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationEvent(ApplicationReadyEvent event) {
         for (int i = 0; i < consumersCount; i++) {
-            publishMsgConsumers.add(publishMsgQueueFactory.createConsumer());
+            publishMsgConsumers.add(publishMsgQueueFactory.createConsumer(Integer.toString(i)));
         }
         this.consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
         for (TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> publishMsgConsumer : publishMsgConsumers) {
