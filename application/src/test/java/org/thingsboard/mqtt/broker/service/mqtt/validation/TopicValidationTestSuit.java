@@ -28,7 +28,13 @@ import java.util.Random;
 @RunWith(MockitoJUnitRunner.class)
 public class TopicValidationTestSuit {
 
-    private final TopicValidationService topicValidationService = new DefaultTopicValidationService();
+    private DefaultTopicValidationService topicValidationService;
+
+    @Before
+    public void init() {
+        this.topicValidationService = new DefaultTopicValidationService();
+        this.topicValidationService.setMaxSegmentsCount(10_000);
+    }
 
     @Test(expected = DataValidationException.class)
     public void testMultiWildcardsInTopic() {
@@ -83,9 +89,8 @@ public class TopicValidationTestSuit {
     @Test(expected = DataValidationException.class)
     public void testLargeTopic() {
         String largeTopic = generateLargeTopic();
-        topicValidationService.validateTopicFilter(largeTopic);
+        topicValidationService.validateTopic(largeTopic);
     }
-
 
     @Test(expected = DataValidationException.class)
     public void testLargeFilter() {
@@ -95,8 +100,8 @@ public class TopicValidationTestSuit {
 
     private String generateLargeTopic() {
         Random r = new Random();
-        StringBuilder builder = new StringBuilder(DefaultTopicValidationService.MAX_SIZE + 1);
-        for (int i = 0; i < DefaultTopicValidationService.MAX_SIZE + 1; i++) {
+        StringBuilder builder = new StringBuilder(DefaultTopicValidationService.MAX_SIZE_BYTES + 1);
+        for (int i = 0; i < DefaultTopicValidationService.MAX_SIZE_BYTES + 1; i++) {
             if (i % 10 == 0) {
                 builder.append('/');
             } else {
@@ -106,10 +111,39 @@ public class TopicValidationTestSuit {
         return builder.toString();
     }
 
+
+    @Test(expected = DataValidationException.class)
+    public void testTooManySegmentsTopic() {
+        int maxSegmentsSize = 10;
+        topicValidationService.setMaxSegmentsCount(maxSegmentsSize);
+        String topic = generateManySegmentsTopic(maxSegmentsSize);
+        topicValidationService.validateTopic(topic);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testTooManySegmentsFilter() {
+        int maxSegmentsSize = 10;
+        topicValidationService.setMaxSegmentsCount(maxSegmentsSize);
+        String topic = generateManySegmentsTopic(maxSegmentsSize);
+        topicValidationService.validateTopicFilter(topic);
+    }
+
+
+
+    private String generateManySegmentsTopic(int maxSegmentsSize) {
+        Random r = new Random();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < maxSegmentsSize + 1; i++) {
+            builder.append((char)(r.nextInt(26) + 'a'));
+            builder.append('/');
+        }
+        return builder.toString();
+    }
+
     @Test
-    public void testValidTopicSize() {
+    public void testValidFilterSize() {
         String largeTopic = generateLargeTopic();
-        String normalTopic = largeTopic.substring(0, DefaultTopicValidationService.MAX_SIZE);
+        String normalTopic = largeTopic.substring(0, DefaultTopicValidationService.MAX_SIZE_BYTES);
         topicValidationService.validateTopicFilter(normalTopic);
     }
 

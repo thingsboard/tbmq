@@ -142,6 +142,8 @@ application:
     keep-alive:
       # Schedule monitoring for inactive MQTT clients
       monitoring-delay-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+    topic:
+      max-segments-count: "${APPLICATION_MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
 
 
 stats:

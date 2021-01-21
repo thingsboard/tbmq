@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.validation;
 
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
@@ -24,7 +27,11 @@ import static org.thingsboard.mqtt.broker.constant.BrokerConstants.TOPIC_DELIMIT
 
 @Service
 public class DefaultTopicValidationService implements TopicValidationService {
-    static final int MAX_SIZE = 65535;
+    static final int MAX_SIZE_BYTES = 65535;
+
+    @Setter
+    @Value("${application.mqtt.topic.max-segments-count}")
+    private int maxSegmentsCount;
 
     @Override
     public void validateTopic(String topic) {
@@ -79,8 +86,12 @@ public class DefaultTopicValidationService implements TopicValidationService {
             throw new DataValidationException("Topic Names and Topic Filters must not include the null character (Unicod U+0000).");
 
         }
-        if (topic.length() > MAX_SIZE) {
-            throw new DataValidationException("Topic Names and Topic Filters must not encode to more than " + MAX_SIZE + " bytes.");
+        if (topic.length() > MAX_SIZE_BYTES) {
+            throw new DataValidationException("Topic Names and Topic Filters must not encode to more than " + MAX_SIZE_BYTES + " bytes.");
+        }
+        int segmentsCount = StringUtils.countMatches(topic, TOPIC_DELIMITER);
+        if (segmentsCount > maxSegmentsCount) {
+            throw new DataValidationException("Topic Names and Topic Filters must contain less than " + maxSegmentsCount + " segments.");
         }
     }
 }
