@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,6 +26,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.Arrays;
 
+@Slf4j
 @SpringBootConfiguration
 @EnableAsync
 @EnableConfigurationProperties
@@ -37,7 +39,12 @@ public class ThingsboardMqttBrokerApplication {
     private static final String DEFAULT_SPRING_CONFIG_PARAM = SPRING_CONFIG_NAME_KEY + "=" + "thingsboard-mqtt-broker";
 
     public static void main(String[] args) {
-        SpringApplication.run(ThingsboardMqttBrokerApplication.class, updateArguments(args));
+        try {
+            SpringApplication.run(ThingsboardMqttBrokerApplication.class, updateArguments(args));
+        } catch (Exception e) {
+            log.error("Failed to start application.", e);
+            System.exit(1);
+        }
     }
 
     private static String[] updateArguments(String[] args) {
