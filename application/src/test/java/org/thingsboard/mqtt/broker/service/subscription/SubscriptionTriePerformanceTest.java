@@ -39,13 +39,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ConcurrentMapSubscriptionTriePerformanceTest {
+public class SubscriptionTriePerformanceTest {
     private static final int FIRST_LEVEL_SEGMENTS = 50;
     private static final int SECOND_LEVEL_SEGMENTS = 100;
     private static final int SINGLE_LEVEL_WILDCARDS_PERCENTAGE = 10;
@@ -71,6 +72,7 @@ public class ConcurrentMapSubscriptionTriePerformanceTest {
     public void before(){
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
+        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(new AtomicLong());
         this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 

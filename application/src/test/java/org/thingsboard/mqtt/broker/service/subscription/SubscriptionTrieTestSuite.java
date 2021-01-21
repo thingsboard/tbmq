@@ -29,10 +29,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ConcurrentMapSubscriptionTrieTestSuite {
+public class SubscriptionTrieTestSuite {
 
     private ConcurrentMapSubscriptionTrie<String> subscriptionTrie;
 
@@ -40,6 +41,7 @@ public class ConcurrentMapSubscriptionTrieTestSuite {
     public void before(){
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
+        Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(new AtomicLong());
         this.subscriptionTrie = new ConcurrentMapSubscriptionTrie<>(statsManagerMock);
     }
 
