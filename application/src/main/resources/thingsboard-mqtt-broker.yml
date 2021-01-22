@@ -154,7 +154,7 @@ application:
 
 stats:
   enabled: "${STATS_ENABLED:true}"
-  print-interval-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:60000}"
+  print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
 
 management:
   endpoints:
