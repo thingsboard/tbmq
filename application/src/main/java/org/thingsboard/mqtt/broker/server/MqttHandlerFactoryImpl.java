@@ -23,8 +23,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
-import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgPostProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 @Service
@@ -34,14 +33,13 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
     private final SubscriptionService subscriptionService;
-    private final PublishRetryService retryService;
-    private final SuccessfulPublishService successfulPublishService;
+    private final PublishMsgPostProcessor publishMsgPostProcessor;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
     private final ClientManager clientManager;
 
     @Override
     public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, retryService, successfulPublishService, keepAliveService, lastWillService, clientManager, sslHandler);
+        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, publishMsgPostProcessor, keepAliveService, lastWillService, clientManager, sslHandler);
     }
 }

@@ -15,11 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface PublishRetryService {
-    void registerPublishRetry(ChannelHandlerContext channel, MqttPublishMessage msg, String clientId);
+import java.util.UUID;
 
-    void registerPubRec(String clientId);
+public interface PublishMsgPostProcessor {
+    void processSentMsg(ClientSessionCtx sessionCtx, MqttPublishMessage msg);
+    void processReceivedMsg(UUID sessionId, MqttPubAckMessage msg);
 }
