@@ -68,6 +68,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             return;
         }
         try {
+            log.debug("[{}] Creating topic", topic);
             NewTopic newTopic = new NewTopic(topic, numPartitions, replicationFactor).configs(topicConfigs);
             createTopic(newTopic).values().get(topic).get();
             topics.add(topic);

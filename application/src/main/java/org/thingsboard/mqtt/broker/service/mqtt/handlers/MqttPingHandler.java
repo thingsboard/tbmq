@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
-
-import java.util.UUID;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
 @AllArgsConstructor
-@Slf4j
-public class MqttDisconnectHandler {
+public class MqttPingHandler {
+    private final MqttMessageGenerator mqttMessageGenerator;
 
-    public void process(ChannelHandlerContext channelCtx, UUID sessionId, SessionDisconnectListener disconnectListener) {
-        disconnectListener.onSessionDisconnect(DisconnectReason.ON_DISCONNECT_MSG);
-        channelCtx.close();
-        log.info("[{}] Client disconnected!", sessionId);
+    public void process(ClientSessionCtx ctx) {
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 }

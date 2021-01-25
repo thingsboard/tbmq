@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 

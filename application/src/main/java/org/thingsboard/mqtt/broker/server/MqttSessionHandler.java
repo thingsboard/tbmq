@@ -42,7 +42,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 import org.thingsboard.mqtt.broker.session.SessionListener;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageHandlers;
+import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.processing.PublishRetryService;
 import org.thingsboard.mqtt.broker.service.processing.SuccessfulPublishService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
