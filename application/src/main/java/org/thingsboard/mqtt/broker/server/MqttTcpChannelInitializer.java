@@ -20,38 +20,25 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.ssl.SslHandler;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-/**
- * @author Andrew Shvayka
- */
 @Component
-public class MqttServerInitializer extends ChannelInitializer<SocketChannel> {
+@Qualifier("TcpChannelInitializer")
+@RequiredArgsConstructor
+public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final MqttServerContext context;
-
+    private final MqttTcpServerContext context;
     private final MqttHandlerFactory handlerFactory;
-
-    @Autowired
-    public MqttServerInitializer(MqttServerContext context, MqttHandlerFactory handlerFactory) {
-        this.context = context;
-        this.handlerFactory = handlerFactory;
-    }
 
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        SslHandler sslHandler = null;
-        if (context.getSslHandlerProvider() != null) {
-            sslHandler = context.getSslHandlerProvider().getSslHandler();
-            pipeline.addLast(sslHandler);
-        }
         pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttSessionHandler handler = handlerFactory.create(sslHandler);
+        MqttSessionHandler handler = handlerFactory.create(null);
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

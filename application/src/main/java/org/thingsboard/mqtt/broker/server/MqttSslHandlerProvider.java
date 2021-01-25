@@ -35,7 +35,6 @@ import java.security.KeyStore;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "security.mqtt.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
 public class MqttSslHandlerProvider {
 
     @Value("${security.mqtt.ssl.protocol}")

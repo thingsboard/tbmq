@@ -45,15 +45,13 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
     @Value("${security.mqtt.basic.enabled}")
     private Boolean basicSecurityEnabled;
-    @Value("${security.mqtt.ssl.enabled}")
-    private Boolean sslEnabled;
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException {
-        if (!sslEnabled && !basicSecurityEnabled) {
+        if (!basicSecurityEnabled && sslHandler == null) {
             return null;
         }
         log.trace("[{}] Authorizing client", clientId);
@@ -65,7 +63,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
             }
         }
         // TODO: decide in what order and with what priority to authenticate clients with both BASIC and SSL auth
-        if (sslEnabled) {
+        if (sslHandler != null) {
             return authWithSSLCredentials(sslHandler);
         }
         throw new AuthenticationException("Could not find basic or ssl credentials!");
