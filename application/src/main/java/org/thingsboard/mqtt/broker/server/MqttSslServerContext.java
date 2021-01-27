@@ -27,6 +27,6 @@ public class MqttSslServerContext {
     @Autowired
     private MqttSslHandlerProvider sslHandlerProvider;
 
-    @Value("${server.mqtt.ssl.netty.max_payload_size}")
+    @Value("${listener.ssl.netty.max_payload_size}")
     private Integer maxPayloadSize;
 }

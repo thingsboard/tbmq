@@ -87,7 +87,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
-            log.warn("Failed to get SSL Certificate. Reason - {}.", e.getMessage());
+            log.debug("Client SSL certification is disabled.");
             return null;
         }
         if (certificates.length == 0) {

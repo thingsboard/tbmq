@@ -32,18 +32,18 @@ import javax.annotation.PreDestroy;
 
 @Service
 @Slf4j
-@ConditionalOnProperty(prefix = "security.mqtt.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(prefix = "listener.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
 public class MqttSslServerBootstrap {
-    @Value("${server.mqtt.ssl.bind_address}")
+    @Value("${listener.ssl.bind_address}")
     private String host;
-    @Value("${server.mqtt.ssl.bind_port}")
+    @Value("${listener.ssl.bind_port}")
     private Integer port;
 
-    @Value("${server.mqtt.ssl.netty.leak_detector_level}")
+    @Value("${listener.ssl.netty.leak_detector_level}")
     private String leakDetectorLevel;
-    @Value("${server.mqtt.ssl.netty.boss_group_thread_count}")
+    @Value("${listener.ssl.netty.boss_group_thread_count}")
     private Integer bossGroupThreadCount;
-    @Value("${server.mqtt.ssl.netty.worker_group_thread_count}")
+    @Value("${listener.ssl.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
 
     @Autowired

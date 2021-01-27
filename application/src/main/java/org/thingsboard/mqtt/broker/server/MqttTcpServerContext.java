@@ -22,6 +22,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class MqttTcpServerContext {
     @Getter
-    @Value("${server.mqtt.tcp.netty.max_payload_size}")
+    @Value("${listener.tcp.netty.max_payload_size}")
     private Integer maxPayloadSize;
 }

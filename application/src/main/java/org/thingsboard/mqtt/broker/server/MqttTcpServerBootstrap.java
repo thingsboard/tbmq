@@ -24,6 +24,7 @@ import io.netty.util.ResourceLeakDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -31,17 +32,18 @@ import javax.annotation.PreDestroy;
 
 @Service
 @Slf4j
+@ConditionalOnProperty(prefix = "listener.tcp", value = "enabled", havingValue = "true", matchIfMissing = true)
 public class MqttTcpServerBootstrap {
-    @Value("${server.mqtt.tcp.bind_address}")
+    @Value("${listener.tcp.bind_address}")
     private String host;
-    @Value("${server.mqtt.tcp.bind_port}")
+    @Value("${listener.tcp.bind_port}")
     private Integer port;
 
-    @Value("${server.mqtt.tcp.netty.leak_detector_level}")
+    @Value("${listener.tcp.netty.leak_detector_level}")
     private String leakDetectorLevel;
-    @Value("${server.mqtt.tcp.netty.boss_group_thread_count}")
+    @Value("${listener.tcp.netty.boss_group_thread_count}")
     private Integer bossGroupThreadCount;
-    @Value("${server.mqtt.tcp.netty.worker_group_thread_count}")
+    @Value("${listener.tcp.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
 
     @Autowired

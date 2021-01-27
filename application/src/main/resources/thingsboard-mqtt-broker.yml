@@ -32,29 +32,49 @@ server:
     key-store-type: "${SSL_KEY_STORE_TYPE:PKCS12}"
     # Alias that identifies the key in the key store
     key-alias: "${SSL_KEY_ALIAS:tomcat}"
+
+listener:
   # MQTT server parameters
-  mqtt:
-    tcp:
-      bind_address: "${MQTT_TCP_BIND_ADDRESS:0.0.0.0}"
-      bind_port: "${MQTT_TCP_BIND_PORT:1883}"
-      netty:
-        leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
-        boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
-        worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
-        max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
-    ssl:
-      bind_address: "${MQTT_SSL_BIND_ADDRESS:0.0.0.0}"
-      bind_port: "${MQTT_SSL_BIND_PORT:8883}"
-      netty:
-        leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
-        boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
-        worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
-        max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
+  tcp:
+    enabled: "${LISTENER_TCP_ENABLED:true}"
+    bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
+    bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
+    netty:
+      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
+      worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
+      max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
+  ssl:
+    enabled: "${LISTENER_SSL_ENABLED:true}"
+    bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
+    bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
+    config:
+      # SSL protocol: See http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext
+      protocol: "${LISTENER_SSL_PROTOCOL:TLSv1.2}"
+      # Path to the key store that holds the SSL certificate
+      key_store: "${LISTENER_SSL_KEY_STORE:mqtt_server.jks}"
+      # Password used to access the key store
+      key_store_password: "${LISTENER_SSL_KEY_STORE_PASSWORD:keystore_password}"
+      # Password used to access the key
+      key_password: "${LISTENER_SSL_KEY_PASSWORD:key_password}"
+      # Type of the key store
+      key_store_type: "${LISTENER_SSL_KEY_STORE_TYPE:JKS}"
+      # Path to the trust store that holds the SSL certificate
+      trust_store: "${LISTENER_SSL_TRUST_STORE:root_truststore.jks}"
+      # Password used to access the trust store
+      trust_store_password: "${LISTENER_SSL_TRUST_STORE_PASSWORD:truststore_password}"
+      # Type of the trust store
+      trust_store_type: "${SECURITY_MQTT_SSL_TRUST_STORE_TYPE:JKS}"
+    netty:
+      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
+      worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
+      max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
 
 queue:
   publish-msg:
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
-    consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -117,25 +137,6 @@ security:
     basic:
       # If enabled each MQTT client connect will be authenticated with clientId and/or username and/or password
       enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
-    ssl:
-      # Enable/disable SSL support
-      enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
-      # SSL protocol: See http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext
-      protocol: "${SECURITY_MQTT_SSL_PROTOCOL:TLSv1.2}"
-      # Path to the key store that holds the SSL certificate
-      key_store: "${SECURITY_MQTT_SSL_KEY_STORE:mqttserver.jks}"
-      # Password used to access the key store
-      key_store_password: "${SECURITY_MQTT_SSL_KEY_STORE_PASSWORD:server_ks_password}"
-      # Password used to access the key
-      key_password: "${SECURITY_MQTT_SSL_KEY_PASSWORD:server_key_password}"
-      # Type of the key store
-      key_store_type: "${SECURITY_MQTT_SSL_KEY_STORE_TYPE:JKS}"
-      # Path to the trust store that holds the SSL certificate
-      trust_store: "${SECURITY_MQTT_SSL_TRUST_STORE:root_truststore.jks}"
-      # Password used to access the trust store
-      trust_store_password: "${SECURITY_MQTT_SSL_TRUST_STORE_PASSWORD:truststore_ks_password}"
-      # Type of the trust store
-      trust_store_type: "${SECURITY_MQTT_SSL_TRUST_STORE_TYPE:JKS}"
   # JWT Token parameters
   jwt:
     tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)

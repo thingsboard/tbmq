@@ -38,7 +38,7 @@ import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 public abstract class AbstractPubSubIntegrationTest {
     protected ObjectMapper mapper = new ObjectMapper();
 
-    @Value("${server.mqtt.tcp.bind_port}")
+    @Value("${listener.tcp.bind_port}")
     protected int mqttPort;
 
     @AllArgsConstructor

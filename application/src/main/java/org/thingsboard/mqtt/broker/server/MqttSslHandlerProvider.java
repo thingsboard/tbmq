@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,23 +38,23 @@ import java.security.KeyStore;
 @Component
 public class MqttSslHandlerProvider {
 
-    @Value("${security.mqtt.ssl.protocol}")
+    @Value("${listener.ssl.config.protocol}")
     private String sslProtocol;
 
-    @Value("${security.mqtt.ssl.key_store}")
+    @Value("${listener.ssl.config.key_store}")
     private String keyStoreFile;
-    @Value("${security.mqtt.ssl.key_store_password}")
+    @Value("${listener.ssl.config.key_store_password}")
     private String keyStorePassword;
-    @Value("${security.mqtt.ssl.key_password}")
+    @Value("${listener.ssl.config.key_password}")
     private String keyPassword;
-    @Value("${security.mqtt.ssl.key_store_type}")
+    @Value("${listener.ssl.config.key_store_type}")
     private String keyStoreType;
 
-    @Value("${security.mqtt.ssl.trust_store}")
+    @Value("${listener.ssl.config.trust_store}")
     private String trustStoreFile;
-    @Value("${security.mqtt.ssl.trust_store_password}")
+    @Value("${listener.ssl.config.trust_store_password}")
     private String trustStorePassword;
-    @Value("${security.mqtt.ssl.trust_store_type}")
+    @Value("${listener.ssl.config.trust_store_type}")
     private String trustStoreType;
 
     public SslHandler getSslHandler() {
@@ -67,10 +68,11 @@ public class MqttSslHandlerProvider {
             }
 
             SSLContext sslContext = SSLContext.getInstance(sslProtocol);
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            TrustManager[] trustManagers = tmf != null ? tmf.getTrustManagers() : null;
+            sslContext.init(kmf.getKeyManagers(), trustManagers, null);
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);
-            sslEngine.setNeedClientAuth(true);
+            sslEngine.setNeedClientAuth(tmf != null);
             sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
             sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
             sslEngine.setEnableSessionCreation(true);
@@ -94,6 +96,9 @@ public class MqttSslHandlerProvider {
     }
 
     private TrustManagerFactory initTrustStore() throws Exception {
+        if (StringUtils.isEmpty(trustStoreFile)){
+            return null;
+        }
         URL tsUrl = Resources.getResource(trustStoreFile);
         File tsFile = new File(tsUrl.toURI());
 
