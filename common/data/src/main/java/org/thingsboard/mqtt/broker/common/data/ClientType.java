@@ -15,14 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class ClientInfo {
-    private final String clientId;
-    private final ClientType type;
+public enum ClientType {
+    DEVICE,
+    APPLICATION
 }

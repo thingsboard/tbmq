@@ -17,18 +17,19 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
+import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
 
 @Slf4j
 public abstract class BaseController {
@@ -77,17 +78,12 @@ public abstract class BaseController {
         return reference;
     }
 
-    <T> T checkNotNull(Optional<T> reference) throws ThingsboardException {
-        if (reference.isPresent()) {
-            return reference.get();
+    protected SecurityUser getCurrentUser() throws ThingsboardException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof SecurityUser) {
+            return (SecurityUser) authentication.getPrincipal();
         } else {
-            throw new ThingsboardException("Requested item wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
-        }
-    }
-
-    void checkParameter(String name, String param) throws ThingsboardException {
-        if (StringUtils.isEmpty(param)) {
-            throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+            throw new ThingsboardException("You aren't authorized to perform this operation!", ThingsboardErrorCode.AUTHENTICATION);
         }
     }
 }

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
 
 import javax.persistence.*;
@@ -34,6 +35,10 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
     @Column(name = ModelConstants.MQTT_CLIENT_NAME_PROPERTY)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = ModelConstants.MQTT_CLIENT_TYPE_PROPERTY)
+    private ClientType type;
+
     @Column(name = ModelConstants.MQTT_CLIENT_CREATED_BY_PROPERTY)
     private UUID createdBy;
 
@@ -47,6 +52,7 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
         this.setCreatedTime(mqttClient.getCreatedTime());
         this.clientId = mqttClient.getClientId();
         this.name = mqttClient.getName();
+        this.type = mqttClient.getType();
         this.createdBy = mqttClient.getCreatedBy();
     }
 
@@ -56,6 +62,7 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
         mqttClient.setCreatedTime(createdTime);
         mqttClient.setClientId(clientId);
         mqttClient.setName(name);
+        mqttClient.setType(type);
         mqttClient.setCreatedBy(createdBy);
         return mqttClient;
     }

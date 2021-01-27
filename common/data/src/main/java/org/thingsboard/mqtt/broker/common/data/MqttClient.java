@@ -31,6 +31,9 @@ public class MqttClient extends BaseData {
     private String name;
     @Getter
     @Setter
+    private ClientType type;
+    @Getter
+    @Setter
     private UUID createdBy;
 
     public MqttClient() {

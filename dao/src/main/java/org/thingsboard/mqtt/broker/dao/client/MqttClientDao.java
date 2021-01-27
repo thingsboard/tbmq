@@ -19,4 +19,5 @@ import org.thingsboard.mqtt.broker.common.data.MqttClient;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
 public interface MqttClientDao extends Dao<MqttClient> {
+    MqttClient findByClientId(String clientId);
 }

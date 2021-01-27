@@ -20,6 +20,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
+import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientEntity;
 
 import java.util.UUID;
@@ -37,5 +38,10 @@ public class DefaultMqttClientDao extends AbstractDao<MqttClientEntity, MqttClie
     @Override
     protected CrudRepository<MqttClientEntity, UUID> getCrudRepository() {
         return mqttClientRepository;
+    }
+
+    @Override
+    public MqttClient findByClientId(String clientId) {
+        return DaoUtil.getData(mqttClientRepository.findByClientId(clientId));
     }
 }

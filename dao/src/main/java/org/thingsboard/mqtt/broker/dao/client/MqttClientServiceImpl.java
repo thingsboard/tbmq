@@ -25,6 +25,8 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 
+import java.util.Optional;
+
 @Service
 @Slf4j
 public class MqttClientServiceImpl implements MqttClientService {
@@ -49,6 +51,12 @@ public class MqttClientServiceImpl implements MqttClientService {
         }
     }
 
+    @Override
+    public Optional<MqttClient> getMqttClient(String clientId) {
+        log.trace("Executing getMqttClient [{}]", clientId);
+        return Optional.ofNullable(mqttClientDao.findByClientId(clientId));
+    }
+
     private final DataValidator<MqttClient> mqttClientValidator =
             new DataValidator<>() {
                 @Override
@@ -63,6 +71,12 @@ public class MqttClientServiceImpl implements MqttClientService {
                 protected void validateDataImpl(MqttClient mqttClient) {
                     if (StringUtils.isEmpty(mqttClient.getName()) || mqttClient.getName().trim().length() == 0) {
                         throw new DataValidationException("MQTT client name should be specified!");
+                    }
+                    if (mqttClient.getType() == null) {
+                        throw new DataValidationException("The client type should be specified!");
+                    }
+                    if (mqttClient.getCreatedBy() == null) {
+                        throw new DataValidationException("The ID of the admin that created this client should be specified!");
                     }
                 }
             };

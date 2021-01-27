@@ -21,4 +21,5 @@ import org.thingsboard.mqtt.broker.dao.model.MqttClientEntity;
 import java.util.UUID;
 
 public interface MqttClientRepository extends CrudRepository<MqttClientEntity, UUID> {
+    MqttClientEntity findByClientId(String clientId);
 }

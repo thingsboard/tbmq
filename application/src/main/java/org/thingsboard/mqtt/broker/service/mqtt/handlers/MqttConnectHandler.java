@@ -21,9 +21,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
@@ -34,7 +37,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionInfoCreator;
 
 import java.util.UUID;
 
@@ -53,6 +55,7 @@ public class MqttConnectHandler {
     private final ClientManager clientManager;
     private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final MqttClientService mqttClientService;
 
 
     public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
@@ -78,14 +81,22 @@ public class MqttConnectHandler {
 
         registerClient(ctx, clientId);
 
-        ctx.setConnected();
-        SessionInfo sessionInfo = SessionInfoCreator.create(sessionId, clientId, !msg.variableHeader().isCleanSession());
+        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId);
         ctx.setSessionInfo(sessionInfo);
+        ctx.setConnected();
 
         processLastWill(sessionInfo, msg);
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
         log.info("[{}] [{}] Client connected!", clientId, sessionId);
+    }
+
+    private SessionInfo getSessionInfo(MqttConnectMessage msg, UUID sessionId, String clientId) {
+        ClientInfo clientInfo = mqttClientService.getMqttClient(clientId)
+                .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
+                .orElse(new ClientInfo(clientId, ClientType.DEVICE));
+        boolean isPersistentSession = !msg.variableHeader().isCleanSession();
+        return SessionInfo.builder().sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
     }
 
     private void registerClient(ClientSessionCtx ctx, String clientId) {
