@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/mqtt/client")
 public class MqttClientController extends BaseController {
@@ -47,6 +49,17 @@ public class MqttClientController extends BaseController {
             return checkNotNull(
                 mqttClientCredentialsService.saveCredentials(mqttClientCredentials)
             );
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @RequestMapping(value = "/credentials", method = RequestMethod.GET)
+    @ResponseBody
+    public List<MqttClientCredentials> getAllMqttClientCredentials() throws ThingsboardException {
+        try {
+            return mqttClientCredentialsService.getAllCredentials();
         } catch (Exception e) {
             throw handleException(e);
         }

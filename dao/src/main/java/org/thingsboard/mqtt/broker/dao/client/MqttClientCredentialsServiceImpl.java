@@ -86,6 +86,12 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         return mqttClientCredentialsDao.findAllByCredentialsIds(credentialIds);
     }
 
+    @Override
+    public List<MqttClientCredentials> getAllCredentials() {
+        log.trace("Executing getAllCredentials");
+        return mqttClientCredentialsDao.find();
+    }
+
     private void processBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
         if (StringUtils.isEmpty(mqttClientCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
