@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 public abstract class BaseController {
@@ -89,5 +90,9 @@ public abstract class BaseController {
         if (StringUtils.isEmpty(param)) {
             throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
+    }
+
+    UUID toUUID(String id) {
+        return UUID.fromString(id);
     }
 }

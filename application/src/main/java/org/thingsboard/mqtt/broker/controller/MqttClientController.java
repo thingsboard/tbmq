@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -60,6 +61,16 @@ public class MqttClientController extends BaseController {
     public List<MqttClientCredentials> getAllMqttClientCredentials() throws ThingsboardException {
         try {
             return mqttClientCredentialsService.getAllCredentials();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @RequestMapping(value = "/credentials/{credentialsId}", method = RequestMethod.DELETE)
+    public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
+        try {
+            mqttClientCredentialsService.deleteCredentials(toUUID(strCredentialsId));
         } catch (Exception e) {
             throw handleException(e);
         }
