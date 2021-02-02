@@ -44,27 +44,32 @@ import java.util.List;
 public class DefaultAuthenticationService implements AuthenticationService {
 
     @Value("${security.mqtt.basic.enabled}")
-    private Boolean basicSecurityEnabled;
+    private Boolean basicAuthEnabled;
+    @Value("${security.mqtt.ssl.enabled}")
+    private Boolean sslAuthEnabled;
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException {
-        if (!basicSecurityEnabled && sslHandler == null) {
+        if (!basicAuthEnabled && !sslAuthEnabled) {
             return null;
         }
         log.trace("[{}] Authorizing client", clientId);
-        if (basicSecurityEnabled) {
+        if (basicAuthEnabled) {
             MqttClientCredentials basicCredentials = authWithBasicCredentials(clientId, username, passwordBytes);
             if (basicCredentials != null) {
                 log.trace("[{}] Authenticated with username {}", clientId, username);
                 return basicCredentials;
             }
         }
-        // TODO: decide in what order and with what priority to authenticate clients with both BASIC and SSL auth
-        if (sslHandler != null) {
-            return authWithSSLCredentials(sslHandler);
+        if (sslAuthEnabled) {
+            MqttClientCredentials sslCredentials = authWithSSLCredentials(sslHandler);
+            if (sslCredentials != null) {
+                log.trace("[{}] Authenticated with ssl certificate", clientId);
+                return sslCredentials;
+            }
         }
         throw new AuthenticationException("Could not find basic or ssl credentials!");
     }
@@ -83,6 +88,9 @@ public class DefaultAuthenticationService implements AuthenticationService {
     }
 
     private MqttClientCredentials authWithSSLCredentials(SslHandler sslHandler) throws AuthenticationException {
+        if (sslHandler == null) {
+            throw new AuthenticationException("Couldn't get SslHandler for session.");
+        }
         X509Certificate[] certificates;
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
