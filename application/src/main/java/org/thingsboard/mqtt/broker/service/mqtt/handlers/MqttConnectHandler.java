@@ -65,9 +65,14 @@ public class MqttConnectHandler {
 
         try {
             MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), sslHandler);
-            if (clientCredentials != null && clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
-                String clientCommonName = authenticationService.getClientCertificateCommonName(sslHandler);
-                AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(clientCredentials.getCredentialsValue(), clientCommonName);
+            if (clientCredentials != null) {
+                AuthorizationRule authorizationRule = null;
+                if (clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
+                    String clientCommonName = authenticationService.getClientCertificateCommonName(sslHandler);
+                    authorizationRule = authorizationRuleService.parseSslAuthorizationRule(clientCredentials.getCredentialsValue(), clientCommonName);
+                } else if (clientCredentials.getCredentialsType() == ClientCredentialsType.MQTT_BASIC) {
+                    authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(clientCredentials.getCredentialsValue());
+                }
                 ctx.setAuthorizationRule(authorizationRule);
             }
         } catch (AuthenticationException e) {

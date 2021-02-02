@@ -21,5 +21,6 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
 public interface AuthenticationService {
     MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException;
+
     String getClientCertificateCommonName(SslHandler sslHandler) throws AuthenticationException;
 }

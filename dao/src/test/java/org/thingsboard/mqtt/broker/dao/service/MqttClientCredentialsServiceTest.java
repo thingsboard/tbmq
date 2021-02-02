@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.Collections;
@@ -54,6 +55,16 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         clientCredentials.setClientId("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         clientCredentials.setCredentialsValue("NOT_VALID");
+        mqttClientCredentialsService.saveCredentials(clientCredentials);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testCreateNotValidCredentialsValue_WrongAuthPattern() {
+        MqttClientCredentials clientCredentials = new MqttClientCredentials();
+        clientCredentials.setClientId("TestClient");
+        clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "(not_closed");
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(wrongPatternBasicCred));
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }
 
@@ -129,7 +140,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setClientId(clientId);
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(username, password);
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(username, password, null);
         clientCredentials.setCredentialsValue(mapper.writeValueAsString(basicMqttCredentials));
         return clientCredentials;
     }

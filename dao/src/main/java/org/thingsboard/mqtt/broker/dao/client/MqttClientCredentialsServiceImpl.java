@@ -32,6 +32,8 @@ import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @Service
 @Slf4j
@@ -108,6 +110,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         } else {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttClientCredentials.getClientId()));
         }
+
+        if (mqttCredentials.getAuthorizationRulePattern() != null) {
+            try {
+                Pattern.compile(mqttCredentials.getAuthorizationRulePattern());
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException("Authorization rule pattern should be a valid regex!");
+            }
+        }
     }
 
     private void processSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -118,8 +128,20 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (mqttCredentials.getPatternRegEx() == null) {
             throw new DataValidationException("Parent regex should be specified!");
         }
+        try {
+            Pattern.compile(mqttCredentials.getPatternRegEx());
+        } catch (PatternSyntaxException e) {
+            throw new DataValidationException("Parent regex should be a valid regex!");
+        }
         if (mqttCredentials.getAuthorizationRulesMapping() == null) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
+        }
+        for (String authorizationRulePattern : mqttCredentials.getAuthorizationRulesMapping().values()) {
+            try {
+                Pattern.compile(authorizationRulePattern);
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException("Authorization rule [" + authorizationRulePattern + "] regex should be a valid regex!");
+            }
         }
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
