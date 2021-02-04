@@ -18,15 +18,25 @@ package org.thingsboard.mqtt.broker.adaptor;
 import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.LastPublishCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.PacketIdAndOffset;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
         QueueProtos.SessionInfoProto sessionInfoProto = convertToSessionInfoProto(sessionInfo);
         return QueueProtos.PublishMsgProto.newBuilder()
+                .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
@@ -44,5 +54,54 @@ public class ProtoConverter {
                 .setPersistent(sessionInfo.isPersistent())
                 .setClientId(clientInfo.getClientId());
         return builder.build();
+    }
+
+    public static ClientSession convertToClientSession(QueueProtos.ClientSessionProto clientSessionProto) {
+        Set<TopicSubscription> topicSubscriptions = clientSessionProto.getSubscriptionsList().stream()
+                .map(topicSubscriptionProto -> TopicSubscription.builder()
+                        .qos(topicSubscriptionProto.getQos())
+                        .topic(topicSubscriptionProto.getTopic())
+                        .build())
+                .collect(Collectors.toSet());
+        ClientInfo clientInfo = ClientInfo.builder()
+                .clientId(clientSessionProto.getClientInfo().getClientId())
+                .type(ClientType.valueOf(clientSessionProto.getClientInfo().getClientType()))
+                .build();
+        return ClientSession.builder()
+                .connected(clientSessionProto.getConnected())
+                .clientInfo(clientInfo)
+                .persistent(clientSessionProto.getPersistent())
+                .topicSubscriptions(topicSubscriptions)
+                .build();
+    }
+
+    public static QueueProtos.ClientSessionProto convertToClientSessionProto(ClientSession clientSession) {
+        List<QueueProtos.TopicSubscriptionProto> topicSubscriptionsProto = clientSession.getTopicSubscriptions().stream()
+                .map(topicSubscription -> QueueProtos.TopicSubscriptionProto.newBuilder()
+                        .setQos(topicSubscription.getQos())
+                        .setTopic(topicSubscription.getTopic())
+                        .build())
+                .collect(Collectors.toList());
+        QueueProtos.ClientInfoProto clientInfoProto = QueueProtos.ClientInfoProto.newBuilder()
+                .setClientId(clientSession.getClientInfo().getClientId())
+                .setClientType(clientSession.getClientInfo().getType().toString())
+                .build();
+        return QueueProtos.ClientSessionProto.newBuilder()
+                .setConnected(clientSession.isConnected())
+                .setPersistent(clientSession.isPersistent())
+                .setClientInfo(clientInfoProto)
+                .addAllSubscriptions(topicSubscriptionsProto)
+                .build();
+    }
+
+    public static LastPublishCtx convertToLastPublishCtx(QueueProtos.LastPublishCtxProto publishCtxProto) {
+        return new LastPublishCtx(publishCtxProto.getPacketId(), publishCtxProto.getOffset());
+    }
+
+    public static QueueProtos.LastPublishCtxProto convertToLastPublishCtxProto(PacketIdAndOffset packetIdAndOffset) {
+        return QueueProtos.LastPublishCtxProto.newBuilder()
+                .setPacketId(packetIdAndOffset.getPacketId())
+                .setOffset(packetIdAndOffset.getOffset())
+                .build();
     }
 }

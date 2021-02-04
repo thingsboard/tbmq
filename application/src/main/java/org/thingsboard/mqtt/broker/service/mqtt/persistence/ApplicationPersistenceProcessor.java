@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.UUID;
+public interface ApplicationPersistenceProcessor {
+    void acknowledgeSuccessfulDelivery(String clientId, long offset);
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class SessionInfo {
-    private final UUID sessionId;
-    private final boolean persistent;
-    private final ClientInfo clientInfo;
+    void startConsumingPersistedMsgs(String clientId, ClientSessionCtx clientSessionCtx);
 }

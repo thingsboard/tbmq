@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.retain;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
 import lombok.AllArgsConstructor;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;

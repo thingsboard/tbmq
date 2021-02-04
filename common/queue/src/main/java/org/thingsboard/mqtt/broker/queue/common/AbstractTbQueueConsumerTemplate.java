@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.queue.common;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
-import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> implements TbQueueConsumer<T> {
+public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> implements TbQueueControlledOffsetConsumer<T> {
 
     private volatile boolean subscribed;
     protected volatile boolean stopped = false;
@@ -134,6 +134,16 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
+    public void commit(String topic, int partition, long offset) {
+        consumerLock.lock();
+        try {
+            doCommit(topic, partition, offset);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
     public void unsubscribe() {
         stopped = true;
         consumerLock.lock();
@@ -151,6 +161,8 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     abstract protected void doSubscribe(List<String> topicNames);
 
     abstract protected void doCommit();
+
+    abstract protected void doCommit(String topic, int partition, long offset);
 
     abstract protected void doUnsubscribe();
 

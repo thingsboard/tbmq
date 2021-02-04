@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-@Getter
+@Service
 @AllArgsConstructor
-public class Subscription {
-    private final MqttQoS mqttQoS;
-    private final ClientSession clientSession;
-    private final ClientSessionCtx sessionCtx;
+@Slf4j
+public class MqttPubAckHandler {
+
+    private final PublishMsgDistributor publishMsgDistributor;
+
+    public void process(ClientSessionCtx ctx, MqttPubAckMessage msg) throws MqttException {
+        int packetId = msg.variableHeader().messageId();
+        publishMsgDistributor.acknowledgeSuccessfulDelivery(packetId, ctx);
+    }
 }

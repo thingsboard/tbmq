@@ -24,6 +24,8 @@ public interface TbKafkaSettings {
 
     String getServers();
 
+    void setServers(String servers);
+
     String getTopic();
 
     String getAcks();

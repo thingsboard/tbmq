@@ -15,6 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-public interface SuccessfulPublishService {
-    void confirmSuccessfulPublish(String clientId);
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Collection;
+
+public interface PublishMsgDistributor {
+    void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscribers);
+
+    void startSendingPersistedMessages(ClientSessionCtx clientSessionCtx);
+
+    void clearPersistedMessages(ClientInfo clientInfo);
+
+    void acknowledgeSuccessfulDelivery(int packetId, ClientSessionCtx clientSessionCtx);
 }

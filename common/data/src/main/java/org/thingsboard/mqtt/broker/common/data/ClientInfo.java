@@ -17,11 +17,15 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
 @AllArgsConstructor
 @Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
 public class ClientInfo {
     private final String clientId;
     private final ClientType type;

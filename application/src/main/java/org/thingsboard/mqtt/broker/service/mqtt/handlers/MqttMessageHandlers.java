@@ -29,4 +29,5 @@ public class MqttMessageHandlers {
     private final MqttUnsubscribeHandler unsubscribeHandler;
     private final MqttPublishHandler publishHandler;
     private final MqttPingHandler pingHandler;
+    private final MqttPubAckHandler pubAckHandler;
 }

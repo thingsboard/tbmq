@@ -23,7 +23,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.dao.CustomSqlUnit;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.PublishMsgKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 
 import java.util.Arrays;
 
@@ -45,8 +45,8 @@ public class IntegrationTestSuite {
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof PublishMsgKafkaSettings) {
-                PublishMsgKafkaSettings kafkaSettings = (PublishMsgKafkaSettings) bean;
+            if (bean instanceof TbKafkaSettings) {
+                TbKafkaSettings kafkaSettings = (TbKafkaSettings) bean;
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
             return bean;

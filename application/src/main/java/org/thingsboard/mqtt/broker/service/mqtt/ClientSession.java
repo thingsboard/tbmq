@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.retain;
+package org.thingsboard.mqtt.broker.service.mqtt;
 
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 
-public interface RetainMsgTrie<T> {
+import java.util.Set;
 
-    List<T> get(String topicFilter);
-
-    void put(String topic, T val);
-
-    void delete(String topic);
-
-    int size();
+@AllArgsConstructor
+@Getter
+@Builder(toBuilder = true)
+public class ClientSession {
+    private final boolean persistent;
+    private final boolean connected;
+    private final ClientInfo clientInfo;
+    private final Set<TopicSubscription> topicSubscriptions;
 }

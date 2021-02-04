@@ -28,9 +28,8 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,17 +41,18 @@ import java.util.stream.Collectors;
 public class MqttSubscribeHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final SubscriptionService subscriptionService;
+    private final SubscriptionManager subscriptionManager;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
 
-    public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg, SessionListener sessionListener) throws MqttException {
+    public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
+        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         List<MqttTopicSubscription> subscriptions = msg.payload().topicSubscriptions();
         try {
             validateSubscriptions(subscriptions);
         } catch (DataValidationException e) {
-            log.debug("[{}] Not valid topic, reason - {}", sessionId, e.getMessage());
+            log.debug("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
         }
         try {
@@ -61,14 +61,14 @@ public class MqttSubscribeHandler {
                     .collect(Collectors.toList())
             );
         } catch (AuthorizationException e) {
-            log.debug("[{}] Client doesn't have permission to subscribe to the topic {}, reason - {}",
-                    sessionId, e.getDeniedTopic(), e.getMessage());
+            log.debug("[{}][{}] Client doesn't have permission to subscribe to the topic {}, reason - {}",
+                    clientId, sessionId, e.getDeniedTopic(), e.getMessage());
             throw new MqttException(e);
         }
 
-        log.trace("[{}] Processing subscribe [{}], subscriptions - {}", sessionId, msg.variableHeader().messageId(), subscriptions);
+        log.trace("[{}][{}] Processing subscribe [{}], subscriptions - {}", clientId, sessionId, msg.variableHeader().messageId(), subscriptions);
 
-        subscriptionService.subscribe(sessionId, subscriptions, sessionListener);
+        subscriptionManager.subscribe(clientId, subscriptions);
 
         List<Integer> grantedQoSList = subscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));

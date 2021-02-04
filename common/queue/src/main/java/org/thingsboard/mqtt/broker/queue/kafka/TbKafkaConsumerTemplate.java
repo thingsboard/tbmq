@@ -21,6 +21,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.common.AbstractTbQueueConsumerTemplate;
@@ -31,11 +33,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
-/**
- * Created by ashvayka on 24.09.18.
- */
 @Slf4j
 public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQueueConsumerTemplate<ConsumerRecord<String, byte[]>, T> {
 
@@ -102,6 +102,17 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
+    protected void doCommit(String topic, int partition, long offset) {
+        Map<TopicPartition, OffsetAndMetadata> offsetMap = Map.of(new TopicPartition(topic, partition), new OffsetAndMetadata(offset));
+        consumer.commitAsync(offsetMap, (offsets, exception) -> {
+            if (exception != null) {
+                log.warn("[{}][{}] Failed to commit offset {}.", topic, partition, offset);
+                log.trace("Detailed error stack trace:", exception);
+            }
+        });
+    }
+
+    @Override
     protected void doUnsubscribe() {
         if (consumer != null) {
             consumer.unsubscribe();
@@ -109,4 +120,13 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         }
     }
 
+    @Override
+    public long getOffset(String topic, int partition) {
+        return consumer.position(new TopicPartition(topic, partition));
+    }
+
+    @Override
+    public void seekToTheBeginning() {
+        consumer.seekToBeginning(Collections.emptyList());
+    }
 }

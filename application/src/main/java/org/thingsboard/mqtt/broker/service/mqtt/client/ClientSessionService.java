@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.client;
 
-import io.netty.handler.codec.mqtt.MqttPubAckMessage;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
-import java.util.UUID;
+import java.util.List;
 
-public interface PublishMsgPostProcessor {
-    void processSentMsg(ClientSessionCtx sessionCtx, MqttPublishMessage msg);
-    void processReceivedMsg(UUID sessionId, MqttPubAckMessage msg);
+public interface ClientSessionService {
+    List<String> getPersistedClients();
+
+    ClientSession getClientSession(String clientId);
+
+    void replaceClientSession(String clientId, ClientSession expectedClientSession, ClientSession newClientSession);
+
+    void clearClientSessionFromPersistentStorage(String clientId);
 }

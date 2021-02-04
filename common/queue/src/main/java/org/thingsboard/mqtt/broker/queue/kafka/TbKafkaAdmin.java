@@ -21,6 +21,7 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 
 import java.util.Collections;
@@ -52,10 +53,10 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             log.error("Failed to get all topics.", e);
         }
 
-        String numPartitionsStr = topicConfigs.get("partitions");
+        String numPartitionsStr = topicConfigs.get(QueueConstants.PARTITIONS);
         if (numPartitionsStr != null) {
             numPartitions = Integer.parseInt(numPartitionsStr);
-            topicConfigs.remove("partitions");
+            topicConfigs.remove(QueueConstants.PARTITIONS);
         } else {
             numPartitions = 1;
         }

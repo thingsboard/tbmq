@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client;
 
-import com.google.common.collect.Sets;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.session.SessionListener;
 
-import java.util.Set;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-@Getter
-public class SessionSubscriptionInfo {
-    private final SessionListener listener;
-    private final Set<String> topicFilters;
+public interface ClientSessionManager {
+    void registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx);
 
-    public SessionSubscriptionInfo(SessionListener listener) {
-        this.listener = listener;
-        this.topicFilters = Sets.newConcurrentHashSet();
-    }
+    void unregisterClient(String clientId);
+
+    PersistedClientSession getPersistedClientInfo(String clientId);
 }

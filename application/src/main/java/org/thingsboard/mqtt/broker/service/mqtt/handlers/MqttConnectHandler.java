@@ -31,10 +31,11 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -52,10 +53,11 @@ public class MqttConnectHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final LastWillService lastWillService;
-    private final ClientManager clientManager;
+    private final ClientSessionManager clientSessionManager;
     private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientService mqttClientService;
+    private final PublishMsgDistributor publishMsgDistributor;
 
 
     public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
@@ -66,6 +68,23 @@ public class MqttConnectHandler {
 
         String clientId = getClientId(msg);
 
+        authenticateClient(ctx, sslHandler, msg, clientId);
+
+        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId);
+        tryRegisterClient(sessionInfo, ctx);
+
+        processLastWill(ctx.getSessionInfo(), msg);
+
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
+
+        if (sessionInfo.isPersistent()) {
+            publishMsgDistributor.startSendingPersistedMessages(ctx);
+        }
+
+        log.info("[{}] [{}] Client connected!", clientId, sessionId);
+    }
+
+    private void authenticateClient(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg, String clientId) {
         try {
             MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), sslHandler);
             if (clientCredentials != null && clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
@@ -78,17 +97,6 @@ public class MqttConnectHandler {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
             throw new MqttException("Authentication failed for client [" + clientId + "].");
         }
-
-        registerClient(ctx, clientId);
-
-        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId);
-        ctx.setSessionInfo(sessionInfo);
-        ctx.setConnected();
-
-        processLastWill(sessionInfo, msg);
-
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
-        log.info("[{}] [{}] Client connected!", clientId, sessionId);
     }
 
     private SessionInfo getSessionInfo(MqttConnectMessage msg, UUID sessionId, String clientId) {
@@ -99,11 +107,14 @@ public class MqttConnectHandler {
         return SessionInfo.builder().sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
     }
 
-    private void registerClient(ClientSessionCtx ctx, String clientId) {
-        boolean successfullyRegistered = clientManager.registerClient(clientId);
-        if (!successfullyRegistered) {
+    private void tryRegisterClient(SessionInfo sessionInfo, ClientSessionCtx ctx) {
+        try {
+            clientSessionManager.registerClient(sessionInfo, ctx);
+            ctx.setSessionInfo(sessionInfo);
+            ctx.setConnected();
+        } catch (MqttException e) {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
-            throw new MqttException("Client identifier is already registered in the system!");
+            throw e;
         }
     }
 
@@ -118,6 +129,7 @@ public class MqttConnectHandler {
         if (msg.variableHeader().isWillFlag()) {
 
             PublishMsg publishMsg = PublishMsg.builder()
+                    .packetId(-1)
                     .topicName(msg.payload().willTopic())
                     .payload(msg.payload().willMessageInBytes())
                     .isRetained(msg.variableHeader().isWillRetain())

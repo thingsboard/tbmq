@@ -25,6 +25,7 @@ public class MqttConverter {
     public static PublishMsg convertToPublishMsg(MqttPublishMessage mqttPublishMessage) {
         byte[] payloadBytes = toBytes(mqttPublishMessage.payload());
         return PublishMsg.builder()
+                .packetId(mqttPublishMessage.variableHeader().packetId())
                 .topicName(mqttPublishMessage.variableHeader().topicName())
                 .qosLevel(mqttPublishMessage.fixedHeader().qosLevel().value())
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())

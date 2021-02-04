@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-@Service
-public class DefaultSuccessfulPublishService implements SuccessfulPublishService {
-    @Override
-    public void confirmSuccessfulPublish(String clientId) {
-        // TODO push to Kafka topic
-    }
+public interface ApplicationPublishCtxQueueFactory {
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> createProducer();
+
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> createConsumer();
 }

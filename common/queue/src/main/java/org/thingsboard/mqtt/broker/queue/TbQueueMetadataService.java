@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.queue;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
 
-import java.util.UUID;
+public interface TbQueueMetadataService {
+    long getEndOffset(String topic, int partition);
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class SessionInfo {
-    private final UUID sessionId;
-    private final boolean persistent;
-    private final ClientInfo clientInfo;
+    void deleteTopic(String topic);
+
+    void close();
 }

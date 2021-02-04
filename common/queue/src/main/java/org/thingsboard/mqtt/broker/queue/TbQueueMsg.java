@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import java.util.UUID;
-
 public interface TbQueueMsg {
 
     String getKey();

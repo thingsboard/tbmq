@@ -20,8 +20,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.ssl.NotSslRecordException;
@@ -32,47 +32,39 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgPostProcessor;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
-import org.thingsboard.mqtt.broker.session.SessionListener;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
-public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionListener, SessionDisconnectListener {
+public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionDisconnectListener {
 
-    private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttMessageHandlers messageHandlers;
-    private final SubscriptionService subscriptionService;
-    private final PublishMsgPostProcessor publishMsgPostProcessor;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
-    private final ClientManager clientManager;
+    private final SubscriptionManager subscriptionManager;
+    private final ClientSessionManager clientSessionManager;
     private final SslHandler sslHandler;
 
     private final UUID sessionId;
 
     private final ClientSessionCtx clientSessionCtx;
 
-    MqttSessionHandler(MqttMessageGenerator mqttMessageGenerator, MqttMessageHandlers messageHandlers, SubscriptionService subscriptionService, PublishMsgPostProcessor publishMsgPostProcessor, KeepAliveService keepAliveService, LastWillService lastWillService, ClientManager clientManager, SslHandler sslHandler) {
-        this.mqttMessageGenerator = mqttMessageGenerator;
+    MqttSessionHandler(MqttMessageHandlers messageHandlers, KeepAliveService keepAliveService, LastWillService lastWillService, SubscriptionManager subscriptionManager, ClientSessionManager clientSessionManager, SslHandler sslHandler) {
         this.messageHandlers = messageHandlers;
-        this.subscriptionService = subscriptionService;
-        this.publishMsgPostProcessor = publishMsgPostProcessor;
         this.keepAliveService = keepAliveService;
         this.lastWillService = lastWillService;
-        this.clientManager = clientManager;
+        this.subscriptionManager = subscriptionManager;
+        this.clientSessionManager = clientSessionManager;
         this.sslHandler = sslHandler;
         this.sessionId = UUID.randomUUID();
         this.clientSessionCtx = new ClientSessionCtx(sessionId);
@@ -123,7 +115,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                     messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
                     break;
                 case SUBSCRIBE:
-                    messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg, this);
+                    messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg);
                     break;
                 case UNSUBSCRIBE:
                     messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMessage) msg);
@@ -132,10 +124,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                     messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg, this);
                     break;
                 case PINGREQ:
-                    // TODO disconnect if there was no ping for a long time
                     messageHandlers.getPingHandler().process(clientSessionCtx);
                     break;
                 case PUBACK:
+                    messageHandlers.getPubAckHandler().process(clientSessionCtx, (MqttPubAckMessage) msg);
                 default:
                     break;
             }
@@ -206,41 +198,26 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void onSessionDisconnect(DisconnectReason reason) {
-        if (clientSessionCtx.disconnect()) {
-            // TODO: add disconnect logic
-            subscriptionService.unsubscribe(sessionId);
+        boolean isStateCleared = clientSessionCtx.tryClearState();
+        if (!isStateCleared) {
+            clientSessionCtx.setDisconnected();
             boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
             lastWillService.removeLastWill(sessionId, sendLastWill);
+            String clientId = getClientId(clientSessionCtx.getSessionInfo());
+            keepAliveService.unregisterSession(sessionId);
+            if (clientId != null) {
+                if (!clientSessionCtx.getSessionInfo().isPersistent()) {
+                    subscriptionManager.clearSubscriptions(clientId);
+                }
+                clientSessionManager.unregisterClient(clientId);
+            }
         }
-        String clientId = getClientId(clientSessionCtx.getSessionInfo());
-        if (clientId != null) {
-            clientManager.unregisterClient(clientId);
-        }
-        keepAliveService.unregisterSession(sessionId);
     }
 
     private String getClientId(SessionInfo sessionInfo) {
-        if (sessionInfo == null) {
-            return null;
-        }
-        if (sessionInfo.getClientInfo() == null) {
+        if (sessionInfo == null || sessionInfo.getClientInfo() == null) {
             return null;
         }
         return sessionInfo.getClientInfo().getClientId();
-    }
-
-    @Override
-    public void onPublishMsg(MqttQoS mqttQoS, QueueProtos.PublishMsgProto publishMessage) {
-        log.trace("[{}] Sending msg to client, topic - [{}], qos - [{}].", sessionId, publishMessage.getTopicName(), mqttQoS);
-        try {
-            MqttPublishMessage pubMsg = mqttMessageGenerator.createPubMsg(clientSessionCtx.nextMsgId(), publishMessage.getTopicName(),
-                    mqttQoS, publishMessage.getPayload().toByteArray());
-
-            publishMsgPostProcessor.processSentMsg(clientSessionCtx, pubMsg);
-
-            clientSessionCtx.getChannel().writeAndFlush(pubMsg);
-        } catch (Exception e) {
-            log.debug("[{}] Failed to send publish msg to MQTT client.", sessionId, e);
-        }
     }
 }

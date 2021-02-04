@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.ConcurrentMapRetainMsgTrie;
 
 import java.util.Collections;
 import java.util.HashSet;

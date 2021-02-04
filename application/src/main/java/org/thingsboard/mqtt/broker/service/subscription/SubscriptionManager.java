@@ -15,29 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.util.List;
 
-@AllArgsConstructor
-@Getter
-public class TopicSubscription {
-    private final UUID sessionId;
-    private final MqttQoS mqttQoS;
+public interface SubscriptionManager {
+    void subscribe(String clientId, List<MqttTopicSubscription> topicSubscriptions);
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TopicSubscription that = (TopicSubscription) o;
-        return sessionId.equals(that.sessionId);
-    }
+    void unsubscribe(String clientId, List<String> topicFilters);
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(sessionId);
-    }
+    void clearSubscriptions(String clientId);
 }

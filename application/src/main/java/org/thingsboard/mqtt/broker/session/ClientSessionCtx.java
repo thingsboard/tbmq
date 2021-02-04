@@ -20,15 +20,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.PacketIdAndOffset;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author Andrew Shvayka
- */
 @Slf4j
 public class ClientSessionCtx implements SessionContext {
 
@@ -41,7 +41,14 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile AuthorizationRule authorizationRule;
 
+    @Getter
+    private final AtomicBoolean isProcessingPersistedMsgs = new AtomicBoolean(true);
+
+    @Getter
+    private final Queue<PacketIdAndOffset> packetsInfoQueue = new ConcurrentLinkedQueue<>();
+
     private final AtomicBoolean connected = new AtomicBoolean(false);
+    private final AtomicBoolean cleared = new AtomicBoolean(false);
 
     @Getter
     private ChannelHandlerContext channel;
@@ -57,21 +64,25 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public int nextMsgId() {
-        return msgIdSeq.incrementAndGet();
+        synchronized (this.msgIdSeq) {
+            this.msgIdSeq.compareAndSet(0xffff, 1);
+            return this.msgIdSeq.getAndIncrement();
+        }
     }
 
     public boolean isConnected() {
         return connected.get();
     }
 
-    /*
-        Returns 'true' if client was connected and 'false' otherwise
-     */
-    public boolean disconnect() {
-        return this.connected.getAndSet(false);
+    public void setDisconnected() {
+        this.connected.getAndSet(false);
     }
 
     public void setConnected() {
         this.connected.getAndSet(true);
+    }
+
+    public boolean tryClearState() {
+        return this.cleared.getAndSet(true);
     }
 }

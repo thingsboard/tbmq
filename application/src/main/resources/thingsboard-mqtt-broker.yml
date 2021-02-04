@@ -76,10 +76,21 @@ queue:
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
+  application-persisted-msg:
+    poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
+  application-publish-ctx:
+    poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
+  client-session:
+    poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
+    acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
     topic-properties:
       publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10}"
+      # Configure retention policy according to the persistence requirements for APPLICATION clients
+      application-persistence-msg: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000}"
+      application-publish-ctx: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400}"
+      client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       acks: "${TB_KAFKA_PUBLISH_MSG_ACKS:all}"
@@ -92,6 +103,42 @@ queue:
       maxPollRecords: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
       maxPartitionFetchBytes: "${TB_KAFKA_PUBLISH_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
       fetchMaxBytes: "${TB_KAFKA_PUBLISH_MSG_FETCH_MAX_BYTES:134217728}"
+    application-persistence-msg:
+      topic: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC:persisted_msg}"
+      acks: "${TB_KAFKA_APP_PERSISTENCE_MSG_ACKS:1}"
+      retries: "${TB_KAFKA_APP_PERSISTENCE_MSG_RETRIES:1}"
+      batchSize: "${TB_KAFKA_APP_PERSISTENCE_MSG_BATCH_SIZE:16384}"
+      lingerMs: "${TB_KAFKA_APP_PERSISTENCE_MSG_LINGER_MS:1}"
+      bufferMemory: "${TB_KAFKA_APP_PERSISTENCE_MSG_BUFFER_MEMORY:33554432}"
+      replicationFactor: "${TB_KAFKA_APP_PERSISTENCE_MSG_REPLICATION_FACTOR:1}"
+      maxPollIntervalMs: "${TB_KAFKA_APP_PERSISTENCE_MSG_MAX_POLL_INTERVAL_MS:0}"
+      maxPollRecords: "${TB_KAFKA_APP_PERSISTENCE_MSG_MAX_POLL_RECORDS:8192}"
+      maxPartitionFetchBytes: "${TB_KAFKA_APP_PERSISTENCE_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
+      fetchMaxBytes: "${TB_KAFKA_APP_PERSISTENCE_MSG_FETCH_MAX_BYTES:134217728}"
+    application-publish-ctx:
+      topic: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC:latest_publish_ctx}"
+      acks: "${TB_KAFKA_APP_PUBLISH_CTX_ACKS:1}"
+      retries: "${TB_KAFKA_APP_PUBLISH_CTX_RETRIES:1}"
+      batchSize: "${TB_KAFKA_APP_PUBLISH_CTX_BATCH_SIZE:16384}"
+      lingerMs: "${TB_KAFKA_APP_PUBLISH_CTX_LINGER_MS:1}"
+      bufferMemory: "${TB_KAFKA_APP_PUBLISH_CTX_BUFFER_MEMORY:33554432}"
+      replicationFactor: "${TB_KAFKA_APP_PUBLISH_CTX_REPLICATION_FACTOR:1}"
+      maxPollIntervalMs: "${TB_KAFKA_APP_PUBLISH_CTX_MAX_POLL_INTERVAL_MS:0}"
+      maxPollRecords: "${TB_KAFKA_APP_PUBLISH_CTX_MAX_POLL_RECORDS:8192}"
+      maxPartitionFetchBytes: "${TB_KAFKA_APP_PUBLISH_CTX_MAX_PARTITION_FETCH_BYTES:16777216}"
+      fetchMaxBytes: "${TB_KAFKA_APP_PUBLISH_CTX_FETCH_MAX_BYTES:134217728}"
+    client-session:
+      topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
+      acks: "${TB_KAFKA_CLIENT_SESSION_ACKS:all}"
+      retries: "${TB_KAFKA_CLIENT_SESSION_RETRIES:3}"
+      batchSize: "${TB_KAFKA_CLIENT_SESSION_BATCH_SIZE:16384}"
+      lingerMs: "${TB_KAFKA_CLIENT_SESSION_LINGER_MS:1}"
+      bufferMemory: "${TB_KAFKA_CLIENT_SESSION_BUFFER_MEMORY:33554432}"
+      replicationFactor: "${TB_KAFKA_CLIENT_SESSION_REPLICATION_FACTOR:1}"
+      maxPollIntervalMs: "${TB_KAFKA_CLIENT_SESSION_MAX_POLL_INTERVAL_MS:0}"
+      maxPollRecords: "${TB_KAFKA_CLIENT_SESSION_MAX_POLL_RECORDS:8192}"
+      maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SESSION_MAX_PARTITION_FETCH_BYTES:16777216}"
+      fetchMaxBytes: "${TB_KAFKA_CLIENT_SESSION_FETCH_MAX_BYTES:134217728}"
 
 # SQL DAO Configuration
 spring:

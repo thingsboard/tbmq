@@ -28,12 +28,18 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.PersistedClientSession;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -43,6 +49,8 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     private final SubscriptionService subscriptionService;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
     private final StatsManager statsManager;
+    private final PublishMsgDistributor publishMsgDistributor;
+    private final ClientSessionManager clientSessionManager;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -71,11 +79,17 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
 
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto) {
-        // todo: persist if required
-
-        for (Subscription subscription : subscriptionService.getSubscriptions(publishMsgProto.getTopicName())) {
-            subscription.getListener().onPublishMsg(subscription.getMqttQoS(), publishMsgProto);
-        }
+        // TODO: log time for getting subscriptions
+        Collection<ClientSubscription> clientSubscriptions = subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
+        // TODO: log time for getting clients
+        List<Subscription> msgSubscriptions = clientSubscriptions.stream()
+                .map(clientSubscription -> {
+                    PersistedClientSession persistedClientSession = clientSessionManager.getPersistedClientInfo(clientSubscription.getClientId());
+                    return new Subscription(clientSubscription.getMqttQoS(), persistedClientSession.getClientSession(), persistedClientSession.getClientSessionCtx());
+                })
+                .collect(Collectors.toList());
+        // TODO: log time for persisting and generating MQTT messages
+        publishMsgDistributor.processPublish(publishMsgProto, msgSubscriptions);
     }
 
 }

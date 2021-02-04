@@ -23,6 +23,7 @@ import lombok.Getter;
 @Getter
 @Builder(toBuilder = true)
 public class PublishMsg {
+    private final int packetId;
     private final String topicName;
     private final byte[] payload;
     private final int qosLevel;

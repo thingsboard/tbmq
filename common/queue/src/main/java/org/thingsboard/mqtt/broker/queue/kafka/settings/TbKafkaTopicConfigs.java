@@ -27,13 +27,31 @@ import java.util.Map;
 public class TbKafkaTopicConfigs {
     @Value("${queue.kafka.topic-properties.publish-msg}")
     private String publishMsgProperties;
+    @Value("${queue.kafka.topic-properties.application-persistence-msg}")
+    private String applicationPersistenceMsgProperties;
+    @Value("${queue.kafka.topic-properties.application-publish-ctx}")
+    private String applicationPublishCtxProperties;
+    @Value("${queue.kafka.topic-properties.client-session}")
+    private String clientSessionProperties;
 
     @Getter
     private Map<String, String> publishMsgConfigs;
 
+    @Getter
+    private Map<String, String> applicationPersistenceMsgConfigs;
+
+    @Getter
+    private Map<String, String> applicationPublishCtxConfigs;
+
+    @Getter
+    private Map<String, String> clientSessionConfigs;
+
     @PostConstruct
     private void init() {
         publishMsgConfigs = getConfigs(publishMsgProperties);
+        applicationPersistenceMsgConfigs = getConfigs(applicationPersistenceMsgProperties);
+        applicationPublishCtxConfigs = getConfigs(applicationPublishCtxProperties);
+        clientSessionConfigs = getConfigs(clientSessionProperties);
     }
 
     private Map<String, String> getConfigs(String properties) {

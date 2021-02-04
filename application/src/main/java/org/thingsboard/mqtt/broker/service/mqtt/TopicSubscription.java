@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 
-import java.util.UUID;
+import java.util.Objects;
 
-@Getter
 @AllArgsConstructor
+@Getter
 @Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class SessionInfo {
-    private final UUID sessionId;
-    private final boolean persistent;
-    private final ClientInfo clientInfo;
+public class TopicSubscription {
+    private final String topic;
+    private final int qos;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TopicSubscription that = (TopicSubscription) o;
+        return Objects.equals(topic, that.topic);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(topic);
+    }
 }

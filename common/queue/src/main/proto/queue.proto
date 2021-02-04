@@ -28,11 +28,11 @@ message SessionInfoProto {
 
 message PublishMsgProto {
   SessionInfoProto sessionInfo = 1;
-  bytes payload = 2;
-//  TODO probably will remove retain from here and put all retain logic outside MsgDispatcher
-  bool retain = 3;
-  int32 qos = 4;
-  string topicName = 5;
+  int32 packetId = 2;
+  bytes payload = 3;
+  bool retain = 4;
+  int32 qos = 5;
+  string topicName = 6;
 }
 
 message TopicSubscriptionProto {
@@ -40,7 +40,19 @@ message TopicSubscriptionProto {
   int32  qos = 2;
 }
 
+message ClientInfoProto {
+  string clientId = 1;
+  string clientType = 2;
+}
+
 message ClientSessionProto {
-  bool persistent = 1;
-  repeated TopicSubscriptionProto subscriptions = 2;
+  bool connected = 1;
+  bool persistent = 2;
+  ClientInfoProto clientInfo = 3;
+  repeated TopicSubscriptionProto subscriptions = 4;
+}
+
+message LastPublishCtxProto {
+  int32 packetId = 1;
+  int64 offset = 2;
 }

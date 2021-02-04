@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 
-public interface ClientManager {
-    /**
-     * @return {@code true} if the client is unique and was successfully registred in the system
-     */
-    boolean registerClient(String clientId);
-
-    void unregisterClient(String clientId);
+public interface PersistenceSessionClearer {
+    void clearPersistedSession(ClientInfo clientInfo);
 }

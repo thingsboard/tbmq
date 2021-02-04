@@ -18,28 +18,26 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientManager;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgPostProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 @Service
 @AllArgsConstructor
 public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
-    private final MqttMessageGenerator mqttMessageGenerator;
+    private final SubscriptionManager subscriptionManager;
     private final MqttMessageHandlers messageHandlers;
     private final SubscriptionService subscriptionService;
-    private final PublishMsgPostProcessor publishMsgPostProcessor;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
-    private final ClientManager clientManager;
+    private final ClientSessionManager clientSessionManager;
 
     @Override
     public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(mqttMessageGenerator, messageHandlers, subscriptionService, publishMsgPostProcessor, keepAliveService, lastWillService, clientManager, sslHandler);
+        return new MqttSessionHandler(messageHandlers, keepAliveService, lastWillService, subscriptionManager, clientSessionManager, sslHandler);
     }
 }
