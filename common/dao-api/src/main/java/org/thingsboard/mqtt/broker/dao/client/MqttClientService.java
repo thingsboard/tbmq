@@ -18,9 +18,12 @@ package org.thingsboard.mqtt.broker.dao.client;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface MqttClientService {
     MqttClient saveMqttClient(MqttClient mqttClient);
+
+    void deleteMqttClient(UUID id);
 
     Optional<MqttClient> getMqttClient(String clientId);
 }

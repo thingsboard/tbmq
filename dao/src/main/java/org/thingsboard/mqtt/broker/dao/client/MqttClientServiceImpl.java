@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -49,6 +50,12 @@ public class MqttClientServiceImpl implements MqttClientService {
                 throw t;
             }
         }
+    }
+
+    @Override
+    public void deleteMqttClient(UUID id) {
+        log.trace("Executing deleteMqttClient [{}]", id);
+        mqttClientDao.removeById(id);
     }
 
     @Override
