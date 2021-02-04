@@ -113,7 +113,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    protected void doUnsubscribe() {
+    protected void doUnsubscribeAndClose() {
         if (consumer != null) {
             consumer.unsubscribe();
             consumer.close();

@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.queue;
 
 public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends TbQueueConsumer<T> {
-    void commit(String topic, int partition, long offset);
+    void commit(int partition, long offset);
     long getOffset(String topic, int partition);
     void seekToTheBeginning();
 }

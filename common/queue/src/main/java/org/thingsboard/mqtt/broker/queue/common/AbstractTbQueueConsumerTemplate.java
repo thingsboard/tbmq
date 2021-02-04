@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.queue.common;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 
@@ -25,17 +24,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> implements TbQueueControlledOffsetConsumer<T> {
 
     private volatile boolean subscribed;
     protected volatile boolean stopped = false;
-    protected volatile Set<TopicInfo> topics;
     protected final Lock consumerLock = new ReentrantLock();
 
     @Getter
@@ -49,19 +45,20 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     public void subscribe() {
         consumerLock.lock();
         try {
-            topics = Collections.singleton(new TopicInfo(topic));
-            subscribed = false;
+            List<String> topicNames = Collections.singletonList(topic);
+            doSubscribe(topicNames);
+            subscribed = true;
         } finally {
             consumerLock.unlock();
         }
     }
 
     @Override
-    public void subscribe(Set<TopicInfo> topics) {
+    public void unsubscribeAndClose() {
+        stopped = true;
         consumerLock.lock();
         try {
-            this.topics = topics;
-            subscribed = false;
+            doUnsubscribeAndClose();
         } finally {
             consumerLock.unlock();
         }
@@ -69,7 +66,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public List<T> poll(long durationInMillis) {
-        if (!subscribed && topics == null) {
+        if (!subscribed) {
             try {
                 Thread.sleep(durationInMillis);
             } catch (InterruptedException e) {
@@ -79,18 +76,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
             long pollStartTs = System.currentTimeMillis();
             consumerLock.lock();
             try {
-                if (!subscribed) {
-                    List<String> topicNames = topics.stream().map(TopicInfo::getTopic).collect(Collectors.toList());
-                    doSubscribe(topicNames);
-                    subscribed = true;
-                }
-
-                List<R> records;
-                if (topics.isEmpty()) {
-                    records = Collections.emptyList();
-                } else {
-                    records = doPoll(durationInMillis);
-                }
+                List<R> records = doPoll(durationInMillis);
                 if (!records.isEmpty()) {
                     List<T> result = new ArrayList<>(records.size());
                     records.forEach(record -> {
@@ -134,21 +120,10 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public void commit(String topic, int partition, long offset) {
+    public void commit(int partition, long offset) {
         consumerLock.lock();
         try {
             doCommit(topic, partition, offset);
-        } finally {
-            consumerLock.unlock();
-        }
-    }
-
-    @Override
-    public void unsubscribe() {
-        stopped = true;
-        consumerLock.lock();
-        try {
-            doUnsubscribe();
         } finally {
             consumerLock.unlock();
         }
@@ -164,6 +139,6 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doCommit(String topic, int partition, long offset);
 
-    abstract protected void doUnsubscribe();
+    abstract protected void doUnsubscribeAndClose();
 
 }

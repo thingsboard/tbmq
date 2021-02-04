@@ -95,7 +95,7 @@ public class ApplicationPersistenceSessionHandler implements PersistenceSessionH
                 throw e;
             }
         } while (!messages.isEmpty());
-        consumer.unsubscribe();
+        consumer.unsubscribeAndClose();
     }
 
     @Override

@@ -70,7 +70,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         persistedOffset.getAndSet(offset);
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = persistenceConsumerInfo.consumer;
-        consumer.commit(consumer.getTopic(), 0, offset);
+        consumer.commit(0, offset);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
                 }
             } while (!persistedMsgList.isEmpty());
-            persistenceConsumerInfo.consumer.unsubscribe();
+            persistenceConsumerInfo.consumer.unsubscribeAndClose();
             applicationPersistentConsumers.remove(clientId);
             clientSessionCtx.getIsProcessingPersistedMsgs().getAndSet(true);
         });
@@ -116,7 +116,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     @PreDestroy
     public void destroy() {
         for (PersistenceConsumerInfo persistenceConsumerInfo : applicationPersistentConsumers.values()) {
-            persistenceConsumerInfo.consumer.unsubscribe();
+            persistenceConsumerInfo.consumer.unsubscribeAndClose();
         }
     }
 

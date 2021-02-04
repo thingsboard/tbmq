@@ -15,10 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
-
 import java.util.List;
-import java.util.Set;
 
 public interface TbQueueConsumer<T extends TbQueueMsg> {
 
@@ -26,9 +23,7 @@ public interface TbQueueConsumer<T extends TbQueueMsg> {
 
     void subscribe();
 
-    void subscribe(Set<TopicInfo> topics);
-
-    void unsubscribe();
+    void unsubscribeAndClose();
 
     List<T> poll(long durationInMillis);
 

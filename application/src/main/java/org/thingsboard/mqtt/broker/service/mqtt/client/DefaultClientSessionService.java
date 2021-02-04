@@ -90,7 +90,7 @@ public class DefaultClientSessionService implements ClientSessionService {
             }
         } while (!messages.isEmpty());
 
-        clientSessionConsumer.unsubscribe();
+        clientSessionConsumer.unsubscribeAndClose();
     }
 
     @Override

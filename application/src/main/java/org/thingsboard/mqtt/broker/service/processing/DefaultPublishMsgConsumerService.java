@@ -103,7 +103,7 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     @PreDestroy
     public void destroy() {
         stopped = true;
-        publishMsgConsumers.forEach(TbQueueConsumer::unsubscribe);
+        publishMsgConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
             consumersExecutor.shutdownNow();
         }
