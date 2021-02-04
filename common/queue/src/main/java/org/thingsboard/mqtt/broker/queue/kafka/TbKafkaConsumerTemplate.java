@@ -80,6 +80,11 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
+    protected void doAssignPartition(String topic, int partition) {
+        consumer.assign(Collections.singletonList(new TopicPartition(topic, partition)));
+    }
+
+    @Override
     protected List<ConsumerRecord<String, byte[]>> doPoll(long durationInMillis) {
         ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(durationInMillis));
         if (records.isEmpty()) {
@@ -124,6 +129,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     public long getOffset(String topic, int partition) {
         return consumer.position(new TopicPartition(topic, partition));
     }
+
 
     @Override
     public void seekToTheBeginning() {

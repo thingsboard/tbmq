@@ -54,6 +54,18 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
+    public void assignPartition(int partition) {
+        consumerLock.lock();
+        try {
+            doAssignPartition(topic, partition);
+            subscribed = true;
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+
+    @Override
     public void unsubscribeAndClose() {
         stopped = true;
         consumerLock.lock();
@@ -134,6 +146,8 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     abstract protected T decode(R record) throws IOException;
 
     abstract protected void doSubscribe(List<String> topicNames);
+
+    abstract protected void doAssignPartition(String topic, int partition);
 
     abstract protected void doCommit();
 

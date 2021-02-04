@@ -70,16 +70,14 @@ public class DefaultClientSessionService implements ClientSessionService {
                 messages = clientSessionConsumer.poll(pollDuration);
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionProto> msg : messages) {
                     String clientId = msg.getKey();
-                    ClientSession prevClientSession = ProtoConverter.convertToClientSession(msg.getValue());
-                    ClientSession clientSession = prevClientSession.toBuilder()
-                            .connected(false)
-                            .build();
-                    if (prevClientSession.getClientInfo() == null) {
+                    if (isClientSessionProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
                         log.debug("[{}] Encountered empty ClientSession.", clientId);
                         // TODO test this
                         clientSessionMap.remove(clientId);
                     } else {
+                        ClientSession prevClientSession = ProtoConverter.convertToClientSession(msg.getValue());
+                        ClientSession clientSession = prevClientSession.toBuilder().connected(false).build();
                         clientSessionMap.put(clientId, clientSession);
                     }
                 }
@@ -91,6 +89,10 @@ public class DefaultClientSessionService implements ClientSessionService {
         } while (!messages.isEmpty());
 
         clientSessionConsumer.unsubscribeAndClose();
+    }
+
+    private boolean isClientSessionProtoEmpty(QueueProtos.ClientSessionProto clientSessionProto) {
+        return clientSessionProto.getClientInfo().getClientId().isEmpty() && clientSessionProto.getClientInfo().getClientType().isEmpty();
     }
 
     @Override

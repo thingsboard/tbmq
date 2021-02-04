@@ -80,7 +80,6 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
             PersistenceConsumerInfo persistenceConsumerInfo = getPersistenceConsumerInfo(clientId);
 
             List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> persistedMsgList;
-            persistenceConsumerInfo.consumer.subscribe();
             long currentOffset = persistenceConsumerInfo.persistedOffset.get();
             do {
                 persistedMsgList = persistenceConsumerInfo.consumer.poll(pollDuration);
@@ -107,6 +106,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         return applicationPersistentConsumers.computeIfAbsent(clientId, id -> {
                     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
                     // TODO test if we don't skip any message
+                    consumer.assignPartition(0);
                     long currentOffset = consumer.getOffset(consumer.getTopic(), 0);
                     return new PersistenceConsumerInfo(consumer, new AtomicLong(currentOffset));
                 }
