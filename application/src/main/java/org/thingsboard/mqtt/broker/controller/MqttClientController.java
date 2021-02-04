@@ -58,10 +58,7 @@ public class MqttClientController extends BaseController {
     public MqttClient saveMqttClient(@RequestBody MqttClient mqttClient) throws ThingsboardException {
         checkNotNull(mqttClient);
         try {
-            mqttClient.setCreatedBy(getCurrentUser().getId());
-            return checkNotNull(
-                    mqttClientService.saveMqttClient(mqttClient)
-            );
+            return checkNotNull(mqttClientService.saveMqttClient(mqttClient));
         } catch (Exception e) {
             throw handleException(e);
         }

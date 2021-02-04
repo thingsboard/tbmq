@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS mqtt_client (
     client_id varchar(255),
     name varchar(255),
     type varchar(255),
-    created_by uuid,
     CONSTRAINT mqtt_client_id_unq_key UNIQUE (client_id)
 );
 

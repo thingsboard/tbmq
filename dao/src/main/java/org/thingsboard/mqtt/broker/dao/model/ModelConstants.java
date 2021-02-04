@@ -58,7 +58,6 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CLIENT_ID_PROPERTY = "client_id";
     public static final String MQTT_CLIENT_NAME_PROPERTY = "name";
     public static final String MQTT_CLIENT_TYPE_PROPERTY = "type";
-    public static final String MQTT_CLIENT_CREATED_BY_PROPERTY = "created_by";
 
 
     /**

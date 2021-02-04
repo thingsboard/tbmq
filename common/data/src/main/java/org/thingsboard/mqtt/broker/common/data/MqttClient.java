@@ -32,9 +32,6 @@ public class MqttClient extends BaseData {
     @Getter
     @Setter
     private ClientType type;
-    @Getter
-    @Setter
-    private UUID createdBy;
 
     public MqttClient() {
     }
@@ -47,7 +44,6 @@ public class MqttClient extends BaseData {
         super(mqttClient);
         this.clientId = mqttClient.clientId;
         this.name = mqttClient.name;
-        this.createdBy = mqttClient.createdBy;
     }
 
 
@@ -57,8 +53,6 @@ public class MqttClient extends BaseData {
                 clientId +
                 ", name=" +
                 name +
-                ", createdBy=" +
-                createdBy +
                 ", createdTime=" +
                 createdTime +
                 ", id=" +

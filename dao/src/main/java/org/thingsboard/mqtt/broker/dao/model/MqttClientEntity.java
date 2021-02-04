@@ -39,9 +39,6 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
     @Column(name = ModelConstants.MQTT_CLIENT_TYPE_PROPERTY)
     private ClientType type;
 
-    @Column(name = ModelConstants.MQTT_CLIENT_CREATED_BY_PROPERTY)
-    private UUID createdBy;
-
     public MqttClientEntity() {
     }
 
@@ -53,7 +50,6 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
         this.clientId = mqttClient.getClientId();
         this.name = mqttClient.getName();
         this.type = mqttClient.getType();
-        this.createdBy = mqttClient.getCreatedBy();
     }
 
     @Override
@@ -63,7 +59,6 @@ public class MqttClientEntity extends BaseEntity<MqttClient> {
         mqttClient.setClientId(clientId);
         mqttClient.setName(name);
         mqttClient.setType(type);
-        mqttClient.setCreatedBy(createdBy);
         return mqttClient;
     }
 }

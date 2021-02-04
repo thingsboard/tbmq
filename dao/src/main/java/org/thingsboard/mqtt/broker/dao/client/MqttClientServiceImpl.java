@@ -75,9 +75,6 @@ public class MqttClientServiceImpl implements MqttClientService {
                     if (mqttClient.getType() == null) {
                         throw new DataValidationException("The client type should be specified!");
                     }
-                    if (mqttClient.getCreatedBy() == null) {
-                        throw new DataValidationException("The ID of the admin that created this client should be specified!");
-                    }
                 }
             };
 }
