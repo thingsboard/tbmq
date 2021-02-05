@@ -82,7 +82,7 @@ public class StandaloneClientSessionManager implements ClientSessionManager {
 
         ClientSession newClientSession = clientSession.toBuilder()
                 .connected(false)
-                .topicSubscriptions(clientSession.isPersistent() ? clientSession.getTopicSubscriptions() : Collections.emptySet())
+                .topicSubscriptions(clientSession.isPersistent() ? clientSession.getTopicSubscriptions() : new HashSet<>())
                 .build();
         clientSessionService.replaceClientSession(clientId, clientSession, newClientSession);
     }

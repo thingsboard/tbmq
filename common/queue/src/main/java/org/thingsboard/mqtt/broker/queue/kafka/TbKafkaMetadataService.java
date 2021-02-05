@@ -21,7 +21,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.thingsboard.mqtt.broker.queue.TbQueueMetadataService;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -31,16 +31,14 @@ public class TbKafkaMetadataService implements TbQueueMetadataService {
     private final AdminClient client;
 
     @Builder
-    public TbKafkaMetadataService(TbKafkaSettings settings, String clientId, String groupId) {
-        Properties props = settings.toProps();
+    public TbKafkaMetadataService(TbKafkaAdminSettings adminSettings, String clientId, String groupId) {
+        Properties props = adminSettings.toProps();
         this.client = AdminClient.create(props);
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
         if (groupId != null) {
             props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         }
-        if (settings.getMaxPollIntervalMs() > 0) {
-            props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, settings.getMaxPollIntervalMs());
-        }
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, "100");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         this.consumer = new KafkaConsumer<>(props);

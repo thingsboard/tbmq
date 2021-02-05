@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaMetadataService;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
@@ -41,11 +42,14 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
 
     public static final String TOPIC_PREFIX = "application-";
     private final TbKafkaSettings kafkaSettings;
+    private final TbKafkaAdminSettings kafkaAdminSettings;
     private final TbQueueAdmin queueAdmin;
 
     public KafkaApplicationPersistenceMsgQueueFactory(@Qualifier("application-persistence-msg") TbKafkaSettings kafkaSettings,
-                                                      TbKafkaTopicConfigs kafkaTopicConfigs) {
+                                                      TbKafkaTopicConfigs kafkaTopicConfigs,
+                                                      TbKafkaAdminSettings kafkaAdminSettings) {
         this.kafkaSettings = kafkaSettings;
+        this.kafkaAdminSettings = kafkaAdminSettings;
 
         Map<String, String> applicationPersistenceMsgConfigs = kafkaTopicConfigs.getApplicationPersistenceMsgConfigs();
         String configuredPartitions = applicationPersistenceMsgConfigs.get(QueueConstants.PARTITIONS);
@@ -53,7 +57,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
             log.warn("Application persistent message topic must have only 1 partition.");
         }
         applicationPersistenceMsgConfigs.put(QueueConstants.PARTITIONS, "1");
-        this.queueAdmin = new TbKafkaAdmin(kafkaSettings, applicationPersistenceMsgConfigs);
+        this.queueAdmin = new TbKafkaAdmin(kafkaAdminSettings, applicationPersistenceMsgConfigs);
     }
 
     @Override
@@ -81,7 +85,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     @Override
     public TbQueueMetadataService createMetadataService(String id) {
         return TbKafkaMetadataService.builder()
-                .settings(kafkaSettings)
+                .adminSettings(kafkaAdminSettings)
                 .clientId(id)
                 .groupId(id + "-group")
                 .build();

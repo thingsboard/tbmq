@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
@@ -37,10 +38,11 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     private final TbQueueAdmin publishMsgAdmin;
 
     public KafkaPublishMsgQueueFactory(@Qualifier("publish-msg") TbKafkaSettings kafkaSettings,
-                                       TbKafkaTopicConfigs kafkaTopicConfigs) {
+                                       TbKafkaTopicConfigs kafkaTopicConfigs,
+                                       TbKafkaAdminSettings kafkaAdminSettings) {
         this.kafkaSettings = kafkaSettings;
 
-        this.publishMsgAdmin = new TbKafkaAdmin(kafkaSettings, kafkaTopicConfigs.getPublishMsgConfigs());
+        this.publishMsgAdmin = new TbKafkaAdmin(kafkaAdminSettings, kafkaTopicConfigs.getPublishMsgConfigs());
     }
 
     @Override

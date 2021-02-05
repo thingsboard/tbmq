@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
 import javax.annotation.PreDestroy;
@@ -43,7 +44,8 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     private final TbQueueAdmin clientSessionAdmin;
 
     public KafkaClientSessionQueueFactory(ClientSessionKafkaSettings clientSessionKafkaSettings,
-                                          TbKafkaTopicConfigs kafkaTopicConfigs) {
+                                          TbKafkaTopicConfigs kafkaTopicConfigs,
+                                          TbKafkaAdminSettings kafkaAdminSettings) {
         this.clientSessionKafkaSettings = clientSessionKafkaSettings;
 
         if (!StringUtils.isEmpty(clientSessionKafkaSettings.getAcks()) && !clientSessionKafkaSettings.getAcks().equals(ACKS_ALL_PROPERTY)) {
@@ -58,7 +60,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
         }
         clientSessionConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
 
-        this.clientSessionAdmin = new TbKafkaAdmin(clientSessionKafkaSettings, clientSessionConfigs);
+        this.clientSessionAdmin = new TbKafkaAdmin(kafkaAdminSettings, clientSessionConfigs);
     }
 
     @Override

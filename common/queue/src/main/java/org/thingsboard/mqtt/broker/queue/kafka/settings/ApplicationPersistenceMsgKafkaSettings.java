@@ -50,8 +50,6 @@ public class ApplicationPersistenceMsgKafkaSettings implements TbKafkaSettings {
 
     private long bufferMemory;
 
-    private short replicationFactor;
-
     private int maxPollRecords;
 
     private int maxPollIntervalMs;

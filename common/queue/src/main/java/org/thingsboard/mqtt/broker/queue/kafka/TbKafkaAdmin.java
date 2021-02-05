@@ -22,7 +22,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 
 import java.util.Collections;
 import java.util.Map;
@@ -30,9 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-/**
- * Created by ashvayka on 24.09.18.
- */
 @Slf4j
 public class TbKafkaAdmin implements TbQueueAdmin {
 
@@ -43,8 +40,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     private final short replicationFactor;
 
-    public TbKafkaAdmin(TbKafkaSettings settings, Map<String, String> topicConfigs) {
-        client = AdminClient.create(settings.toProps());
+    public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, Map<String, String> topicConfigs) {
+        client = AdminClient.create(adminSettings.toProps());
         this.topicConfigs = topicConfigs;
 
         try {
@@ -60,7 +57,14 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         } else {
             numPartitions = 1;
         }
-        replicationFactor = settings.getReplicationFactor();
+
+        String replicationFactorStr = topicConfigs.get(QueueConstants.REPLICATION_FACTOR);
+        if (replicationFactorStr != null) {
+            replicationFactor = Short.parseShort(replicationFactorStr);
+            topicConfigs.remove(QueueConstants.REPLICATION_FACTOR);
+        } else {
+            replicationFactor = 1;
+        }
     }
 
     @Override

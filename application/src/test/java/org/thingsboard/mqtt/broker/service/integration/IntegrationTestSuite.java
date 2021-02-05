@@ -23,6 +23,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.dao.CustomSqlUnit;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 
 import java.util.Arrays;
@@ -48,6 +49,10 @@ public class IntegrationTestSuite {
             if (bean instanceof TbKafkaSettings) {
                 TbKafkaSettings kafkaSettings = (TbKafkaSettings) bean;
                 kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaAdminSettings) {
+                TbKafkaAdminSettings kafkaAdminSettings = (TbKafkaAdminSettings) bean;
+                kafkaAdminSettings.setServers(kafka.getBootstrapServers());
             }
             return bean;
         }

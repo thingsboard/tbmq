@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
@@ -42,7 +43,8 @@ public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublis
     private final TbQueueAdmin queueAdmin;
 
     public KafkaApplicationPublishCtxQueueFactory(@Qualifier("application-publish-ctx") TbKafkaSettings kafkaSettings,
-                                                  TbKafkaTopicConfigs kafkaTopicConfigs) {
+                                                  TbKafkaTopicConfigs kafkaTopicConfigs,
+                                                  TbKafkaAdminSettings kafkaAdminSettings) {
         this.kafkaSettings = kafkaSettings;
 
         Map<String, String> applicationPublishCtxConfigs = kafkaTopicConfigs.getApplicationPublishCtxConfigs();
@@ -52,7 +54,7 @@ public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublis
         }
         applicationPublishCtxConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
 
-        this.queueAdmin = new TbKafkaAdmin(kafkaSettings, applicationPublishCtxConfigs);
+        this.queueAdmin = new TbKafkaAdmin(kafkaAdminSettings, applicationPublishCtxConfigs);
     }
 
     @Override

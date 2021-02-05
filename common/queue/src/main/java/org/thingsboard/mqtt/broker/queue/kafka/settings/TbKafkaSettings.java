@@ -38,8 +38,6 @@ public interface TbKafkaSettings {
 
     long getBufferMemory();
 
-    short getReplicationFactor();
-
     int getMaxPollRecords();
 
     int getMaxPollIntervalMs();

@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.constants;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-public class QueueConstants {
-    public static final String REPLICATION_FACTOR = "replication.factor";
-    public static final String PARTITIONS = "partitions";
-    public final static String ACKS_ALL_PROPERTY = "all";
-    public final static String CLEANUP_POLICY_PROPERTY = "cleanup.policy";
-    public final static String COMPACT_POLICY = "compact";
+import org.apache.kafka.clients.producer.ProducerConfig;
+
+import java.util.List;
+import java.util.Properties;
+
+public interface TbKafkaAdminSettings {
+
+    String getServers();
+
+    void setServers(String servers);
+
+    List<TbKafkaProperty> getOther();
+
+    default Properties toProps() {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getServers());
+        if (getOther() != null) {
+            getOther().forEach(kv -> props.put(kv.getKey(), kv.getValue()));
+        }
+        return props;
+    }
+
 }

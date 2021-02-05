@@ -15,48 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Slf4j
-@ConfigurationProperties(prefix = "queue.kafka.client-session")
-@Component("client-session")
 @Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ClientSessionKafkaSettings implements TbKafkaSettings {
-
+@Component
+public class DefaultKafkaAdminSettings implements TbKafkaAdminSettings {
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
-    private String topic;
-
-    private String acks;
-
-    private int retries;
-
-    private int batchSize;
-
-    private long lingerMs;
-
-    private long bufferMemory;
-
-    private int maxPollRecords;
-
-    private int maxPollIntervalMs;
-
-    private int maxPartitionFetchBytes;
-
-    private int fetchMaxBytes;
-
+    @Value("${queue.kafka.admin.other:#{null}}")
     private List<TbKafkaProperty> other;
 }
