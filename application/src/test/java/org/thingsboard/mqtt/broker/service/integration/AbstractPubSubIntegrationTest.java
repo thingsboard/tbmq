@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
 @WebAppConfiguration
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 public abstract class AbstractPubSubIntegrationTest {
-    protected ObjectMapper mapper = new ObjectMapper();
+    protected final ObjectMapper mapper = new ObjectMapper();
 
     @Value("${listener.tcp.bind_port}")
     protected int mqttPort;
@@ -45,7 +45,7 @@ public abstract class AbstractPubSubIntegrationTest {
     @NoArgsConstructor
     @Builder
     @Data
-    protected static class TestPublishMsg {
+    public static class TestPublishMsg {
         public int publisherId;
         public int sequenceId;
         public boolean isLast;

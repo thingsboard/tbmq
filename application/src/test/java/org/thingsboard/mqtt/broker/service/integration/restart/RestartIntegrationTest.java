@@ -16,9 +16,11 @@
 package org.thingsboard.mqtt.broker.service.integration.restart;
 
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,6 +44,8 @@ import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.clearPersistedClient;
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createApplicationClient;
@@ -49,11 +53,14 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLeve
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
 
 @Slf4j
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@ContextConfiguration(classes = AppPersistedSessionRestartIntegrationTest.class, loader = SpringBootContextLoader.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ContextConfiguration(classes = RestartIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
-public class AppPersistedSessionRestartIntegrationTest extends AbstractPubSubIntegrationTest {
+// Fails if separated on different classes
+public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
+    private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
+    private static final String TEST_TOPIC = "test";
     private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
             new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
 
@@ -76,6 +83,17 @@ public class AppPersistedSessionRestartIntegrationTest extends AbstractPubSubInt
     public void clear() throws Exception {
         clearPersistedClient(persistedClient);
         mqttClientService.deleteMqttClient(applicationClient.getId());
+    }
+
+    @Test
+    public void testBrokerRestart_simple() throws Throwable {
+        AtomicReference<AbstractPubSubIntegrationTest.TestPublishMsg> previousMsg = new AtomicReference<>();
+
+        testPubSub(0, previousMsg);
+
+        SpringRestarter.getInstance().restart();
+
+        testPubSub(NUMBER_OF_MSGS_IN_SEQUENCE, previousMsg);
     }
 
     @Test
@@ -120,5 +138,40 @@ public class AppPersistedSessionRestartIntegrationTest extends AbstractPubSubInt
 
     private MqttClient initClient() throws MqttException {
         return new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
+    }
+
+    private void testPubSub(int startSequence, AtomicReference<AbstractPubSubIntegrationTest.TestPublishMsg> previousMsg) throws Throwable {
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "app_restart_test_pub");
+        pubClient.connect();
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "app_restart_test_sub");
+        subClient.connect();
+
+        Waiter waiter = new Waiter();
+
+        subClient.subscribe(TEST_TOPIC, 0, (topic, message) -> {
+            AbstractPubSubIntegrationTest.TestPublishMsg currentMsg = mapper.readValue(message.getPayload(), AbstractPubSubIntegrationTest.TestPublishMsg.class);
+            if (previousMsg.get() != null) {
+                waiter.assertEquals(previousMsg.get().sequenceId + 1, currentMsg.sequenceId);
+            }
+            if (currentMsg.sequenceId == startSequence + NUMBER_OF_MSGS_IN_SEQUENCE - 1) {
+                waiter.resume();
+            }
+            previousMsg.getAndSet(currentMsg);
+        });
+        for (int j = startSequence; j < startSequence + NUMBER_OF_MSGS_IN_SEQUENCE; j++) {
+            MqttMessage msg = new MqttMessage();
+            AbstractPubSubIntegrationTest.TestPublishMsg payload = new AbstractPubSubIntegrationTest.TestPublishMsg(0, j, false);
+            msg.setPayload(mapper.writeValueAsBytes(payload));
+            msg.setQos(0);
+            pubClient.publish(TEST_TOPIC, msg);
+        }
+        waiter.await(1, TimeUnit.SECONDS);
+
+        pubClient.disconnect();
+        pubClient.close();
+
+        subClient.disconnect();
+        subClient.close();
     }
 }
