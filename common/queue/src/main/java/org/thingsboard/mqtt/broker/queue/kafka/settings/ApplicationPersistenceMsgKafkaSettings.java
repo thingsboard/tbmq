@@ -16,47 +16,42 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Slf4j
 @ConfigurationProperties(prefix = "queue.kafka.application-persistence-msg")
 @Component("application-persistence-msg")
-@Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ApplicationPersistenceMsgKafkaSettings implements TbKafkaSettings {
+public class ApplicationPersistenceMsgKafkaSettings extends TbAbstractKafkaSettings {
 
-    @Value("${queue.kafka.bootstrap.servers}")
-    private String servers;
+    @Setter
+    private KafkaProducerSettings producer;
 
-    private String topic;
+    @Setter
+    private KafkaConsumerSettings consumer;
 
-    private String acks;
-
-    private int retries;
-
-    private int batchSize;
-
-    private long lingerMs;
-
-    private long bufferMemory;
-
-    private int maxPollRecords;
-
-    private int maxPollIntervalMs;
-
-    private int maxPartitionFetchBytes;
-
-    private int fetchMaxBytes;
-
+    @Getter
+    @Setter
     private List<TbKafkaProperty> other;
+
+    @Override
+    KafkaProducerSettings getProducerSettings() {
+        return producer;
+    }
+
+    @Override
+    KafkaConsumerSettings getConsumerSettings() {
+        return consumer;
+    }
+
+    @Override
+    public String getTopic() {
+        throw new RuntimeException("It's required to create a separate application persistence msg topic for each APPLICATION client.");
+    }
 }

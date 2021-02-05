@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.queue.provider;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -26,32 +26,26 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
 import javax.annotation.PreDestroy;
 import java.util.Map;
 
-import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.ACKS_ALL_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 
 @Slf4j
 @Component
 public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory {
-    private final ClientSessionKafkaSettings clientSessionKafkaSettings;
+    private final TbKafkaSettings kafkaSettings;
     private final TbQueueAdmin clientSessionAdmin;
 
-    public KafkaClientSessionQueueFactory(ClientSessionKafkaSettings clientSessionKafkaSettings,
+    public KafkaClientSessionQueueFactory(@Qualifier("client-session") TbKafkaSettings kafkaSettings,
                                           TbKafkaTopicConfigs kafkaTopicConfigs,
                                           TbKafkaAdminSettings kafkaAdminSettings) {
-        this.clientSessionKafkaSettings = clientSessionKafkaSettings;
-
-        if (!StringUtils.isEmpty(clientSessionKafkaSettings.getAcks()) && !clientSessionKafkaSettings.getAcks().equals(ACKS_ALL_PROPERTY)) {
-            log.warn("Producer ACKS should be '" + ACKS_ALL_PROPERTY + "'. It's required to not miss subscriptions in case if broker restarts.");
-        }
-        this.clientSessionKafkaSettings.setAcks(ACKS_ALL_PROPERTY);
+        this.kafkaSettings = kafkaSettings;
 
         Map<String, String> clientSessionConfigs = kafkaTopicConfigs.getClientSessionConfigs();
         String configuredLogCleanupPolicy = clientSessionConfigs.get(CLEANUP_POLICY_PROPERTY);
@@ -66,9 +60,9 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> requestBuilder = TbKafkaProducerTemplate.builder();
-        requestBuilder.settings(clientSessionKafkaSettings);
+        requestBuilder.settings(kafkaSettings);
         requestBuilder.clientId("client-session-producer");
-        requestBuilder.defaultTopic(clientSessionKafkaSettings.getTopic());
+        requestBuilder.defaultTopic(kafkaSettings.getTopic());
         requestBuilder.admin(clientSessionAdmin);
         return requestBuilder.build();
     }
@@ -76,8 +70,8 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createConsumer() {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.settings(clientSessionKafkaSettings);
-        consumerBuilder.topic(clientSessionKafkaSettings.getTopic());
+        consumerBuilder.settings(kafkaSettings);
+        consumerBuilder.topic(kafkaSettings.getTopic());
         consumerBuilder.clientId("client-session-consumer");
         consumerBuilder.groupId("client-session-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionProto.parseFrom(msg.getData()), msg.getHeaders()));

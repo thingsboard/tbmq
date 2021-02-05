@@ -16,39 +16,22 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-import java.util.List;
-
-@ConfigurationProperties(prefix = "queue.kafka.client-session")
-@Component("client-session")
+@Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClientSessionKafkaSettings extends TbAbstractKafkaSettings {
-    @Getter
-    @Setter
-    private String topic;
+public class KafkaProducerSettings {
+    private String acks;
 
-    @Setter
-    private KafkaProducerSettings producer;
-    @Setter
-    private KafkaConsumerSettings consumer;
+    private int retries;
 
-    @Getter
-    @Setter
-    private List<TbKafkaProperty> other;
+    private int batchSize;
 
-    @Override
-    KafkaProducerSettings getProducerSettings() {
-        return producer;
-    }
+    private long lingerMs;
 
-    @Override
-    KafkaConsumerSettings getConsumerSettings() {
-        return consumer;
-    }
+    private long bufferMemory;
 }

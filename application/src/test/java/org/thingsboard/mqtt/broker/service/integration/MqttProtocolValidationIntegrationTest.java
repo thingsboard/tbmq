@@ -55,6 +55,10 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
         MqttClient firstClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
         firstClient.connect();
         MqttClient secondClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
-        secondClient.connect();
+        try {
+            secondClient.connect();
+        } finally {
+            firstClient.disconnect();
+        }
     }
 }

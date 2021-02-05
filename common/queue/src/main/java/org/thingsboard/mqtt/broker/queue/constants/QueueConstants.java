@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.queue.constants;
 public class QueueConstants {
     public static final String REPLICATION_FACTOR = "replication.factor";
     public static final String PARTITIONS = "partitions";
-    public final static String ACKS_ALL_PROPERTY = "all";
     public final static String CLEANUP_POLICY_PROPERTY = "cleanup.policy";
     public final static String COMPACT_POLICY = "compact";
 }

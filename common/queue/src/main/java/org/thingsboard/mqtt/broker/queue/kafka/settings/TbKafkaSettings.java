@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
 import java.util.List;
@@ -48,7 +49,7 @@ public interface TbKafkaSettings {
 
     List<TbKafkaProperty> getOther();
 
-    default Properties toProps() {
+    default Properties toProducerProps() {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getServers());
         props.put(ProducerConfig.RETRIES_CONFIG, getRetries());
@@ -57,6 +58,21 @@ public interface TbKafkaSettings {
         props.put(ProducerConfig.LINGER_MS_CONFIG, getLingerMs());
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, getBufferMemory());
 
+        if (getOther() != null) {
+            getOther().forEach(kv -> props.put(kv.getKey(), kv.getValue()));
+        }
+        return props;
+    }
+
+    default Properties toConsumerProps() {
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getServers());
+        if (getMaxPollIntervalMs() > 0) {
+            props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, getMaxPollIntervalMs());
+        }
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, getMaxPollRecords());
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, getMaxPartitionFetchBytes());
+        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, getFetchMaxBytes());
         if (getOther() != null) {
             getOther().forEach(kv -> props.put(kv.getKey(), kv.getValue()));
         }

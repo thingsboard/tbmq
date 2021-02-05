@@ -16,46 +16,37 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.*;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Properties;
 
-@Slf4j
 @ConfigurationProperties(prefix = "queue.kafka.publish-msg")
 @Component("publish-msg")
-@Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PublishMsgKafkaSettings implements TbKafkaSettings {
+public class PublishMsgKafkaSettings extends TbAbstractKafkaSettings {
 
-    @Value("${queue.kafka.bootstrap.servers}")
-    private String servers;
-
+    @Setter
+    @Getter
     private String topic;
 
-    private String acks;
+    @Setter
+    private KafkaProducerSettings producer;
+    @Setter
+    private KafkaConsumerSettings consumer;
 
-    private int retries;
-
-    private int batchSize;
-
-    private long lingerMs;
-
-    private long bufferMemory;
-
-    private int maxPollRecords;
-
-    private int maxPollIntervalMs;
-
-    private int maxPartitionFetchBytes;
-
-    private int fetchMaxBytes;
-
+    @Setter
+    @Getter
     private List<TbKafkaProperty> other;
+
+    @Override
+    KafkaProducerSettings getProducerSettings() {
+        return producer;
+    }
+
+    @Override
+    KafkaConsumerSettings getConsumerSettings() {
+        return consumer;
+    }
 }
