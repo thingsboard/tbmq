@@ -37,9 +37,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.clearPersistedClient;
+import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createApplicationClient;
+import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLevels;
+import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -163,32 +167,5 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertFalse(persistedClientSession.isConnected());
         Assert.assertFalse(persistedClientSession.isPersistent());
         Assert.assertTrue(persistedClientSession.getTopicSubscriptions().isEmpty());
-    }
-
-    private void clearPersistedClient(MqttClient persistedClient) throws Exception {
-        if (persistedClient.isConnected()) {
-            persistedClient.disconnect();
-        }
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(true);
-        persistedClient.connect(connectOptions);
-        persistedClient.disconnect();
-    }
-
-
-    private String[] getTopicNames(Collection<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions.stream().map(TopicSubscription::getTopic).toArray(String[]::new);
-    }
-
-    private int[] getQoSLevels(Collection<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions.stream().map(TopicSubscription::getQos).mapToInt(x -> x).toArray();
-    }
-
-    private org.thingsboard.mqtt.broker.common.data.MqttClient createApplicationClient() {
-        org.thingsboard.mqtt.broker.common.data.MqttClient appClient = new org.thingsboard.mqtt.broker.common.data.MqttClient();
-        appClient.setName("test-application-client");
-        appClient.setClientId("test-application-client");
-        appClient.setType(ClientType.APPLICATION);
-        return appClient;
     }
 }

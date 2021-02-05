@@ -17,10 +17,13 @@ package org.thingsboard.mqtt.broker.service.mqtt.client;
 
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ClientSessionService {
     List<String> getPersistedClients();
+
+    Collection<ClientSession> getPersistedClientSessions();
 
     ClientSession getClientSession(String clientId);
 

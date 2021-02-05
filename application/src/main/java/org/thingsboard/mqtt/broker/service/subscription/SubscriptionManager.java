@@ -20,7 +20,7 @@ import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import java.util.List;
 
 public interface SubscriptionManager {
-    void subscribe(String clientId, List<MqttTopicSubscription> topicSubscriptions);
+    void subscribe(String clientId, List<MqttTopicSubscription> mqttTopicSubscriptions);
 
     void unsubscribe(String clientId, List<String> topicFilters);
 

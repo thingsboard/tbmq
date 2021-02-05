@@ -23,6 +23,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 
+import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,14 +37,27 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     private final ClientSessionService clientSessionService;
     private final SubscriptionService subscriptionService;
 
+    @PostConstruct
+    public void init() {
+        Collection<ClientSession> persistedClientSessions = clientSessionService.getPersistedClientSessions();
+        log.debug("Restoring persisted subscriptions for {} clients.", persistedClientSessions.size());
+        for (ClientSession persistedClientSession : persistedClientSessions) {
+            String clientId = persistedClientSession.getClientInfo().getClientId();
+            subscriptionService.subscribe(clientId, persistedClientSession.getTopicSubscriptions());
+        }
+    }
+
     @Override
-    public void subscribe(String clientId, List<MqttTopicSubscription> topicSubscriptions) {
+    public void subscribe(String clientId, List<MqttTopicSubscription> mqttTopicSubscriptions) {
+        List<TopicSubscription> topicSubscriptions = mqttTopicSubscriptions.stream()
+                .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
+                .collect(Collectors.toList());
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         ClientSession prevClientSession = clientSessionService.getClientSession(clientId);
         ClientSession clientSession = prevClientSession.toBuilder().build();
         Set<TopicSubscription> persistedTopicSubscriptions = clientSession.getTopicSubscriptions();
-        for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
+        for (MqttTopicSubscription topicSubscription : mqttTopicSubscriptions) {
             persistedTopicSubscriptions.add(new TopicSubscription(topicSubscription.topicName(), topicSubscription.qualityOfService().value()));
         }
         clientSessionService.replaceClientSession(clientId, prevClientSession, clientSession);

@@ -19,5 +19,7 @@ public interface TbQueueAdmin {
 
     void createTopicIfNotExists(String topic);
 
+    int getNumberOfPartitions(String topic);
+
     void destroy();
 }

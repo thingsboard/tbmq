@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -25,7 +24,7 @@ import java.util.Objects;
 @Getter
 public class ClientSubscription {
     private final String clientId;
-    private final MqttQoS mqttQoS;
+    private final int qosValue;
 
     @Override
     public boolean equals(Object o) {

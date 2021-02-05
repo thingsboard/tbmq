@@ -64,6 +64,16 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         }
     }
 
+    @Override
+    public void assignAllPartitions() {
+        consumerLock.lock();
+        try {
+            doAssignAllPartitions(topic);
+            subscribed = true;
+        } finally {
+            consumerLock.unlock();
+        }
+    }
 
     @Override
     public void unsubscribeAndClose() {
@@ -148,6 +158,8 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     abstract protected void doSubscribe(List<String> topicNames);
 
     abstract protected void doAssignPartition(String topic, int partition);
+
+    abstract protected void doAssignAllPartitions(String topic);
 
     abstract protected void doCommit();
 

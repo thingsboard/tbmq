@@ -88,6 +88,15 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
+    public int getNumberOfPartitions(String topic) {
+        try {
+            return client.describeTopics(Collections.singletonList(topic)).all().get().get(topic).partitions().size();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void destroy() {
         if (client != null) {
             client.close();

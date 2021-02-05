@@ -15,15 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
+import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 
 import java.util.Collection;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -32,15 +31,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
 
     @Override
-    public void subscribe(String clientId, List<MqttTopicSubscription> topicSubscriptions) {
+    public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
-        for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptionTrie.put(topicSubscription.topicName(), new ClientSubscription(clientId, topicSubscription.qualityOfService()));
+        for (TopicSubscription topicSubscription : topicSubscriptions) {
+            subscriptionTrie.put(topicSubscription.getTopic(), new ClientSubscription(clientId, topicSubscription.getQos()));
         }
     }
 
     @Override
-    public void unsubscribe(String clientId, List<String> topicFilters) {
+    public void unsubscribe(String clientId, Collection<String> topicFilters) {
         log.trace("Executing unsubscribe [{}] [{}]", clientId, topicFilters);
         for (String topicFilter : topicFilters) {
             boolean successfullyDeleted = subscriptionTrie.delete(topicFilter, val -> clientId.equals(val.getClientId()));

@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +63,7 @@ public class DefaultClientSessionService implements ClientSessionService {
 
     @PostConstruct
     public void init() {
-        clientSessionConsumer.subscribe();
+        clientSessionConsumer.assignAllPartitions();
         clientSessionConsumer.seekToTheBeginning();
         List<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> messages;
         do {
@@ -101,6 +102,11 @@ public class DefaultClientSessionService implements ClientSessionService {
                 .filter(entry -> entry.getValue().isPersistent())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<ClientSession> getPersistedClientSessions() {
+        return clientSessionMap.values();
     }
 
     @Override

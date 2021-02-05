@@ -71,7 +71,7 @@ public class ApplicationPersistenceSessionHandler implements PersistenceSessionH
         this.publishCtxProducer = applicationPublishCtxQueueFactory.createProducer();
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> consumer = applicationPublishCtxQueueFactory.createConsumer();
-        consumer.subscribe();
+        consumer.assignAllPartitions();
         consumer.seekToTheBeginning();
         List<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> messages;
         do {
@@ -107,7 +107,7 @@ public class ApplicationPersistenceSessionHandler implements PersistenceSessionH
                     // TODO it's possible that msg was pushed to kafka but was not acknowledged, in this case we'll have wrong offset (less than real)
                     .computeIfAbsent(clientId, id -> applicationPersistenceMsgQueueFactory.createProducer(clientId));
 
-            int minQoSValue = Math.min(subscription.getMqttQoS().value(), publishMsgProto.getQos());
+            int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
 
             LastPublishCtx lastPublishCtx = lastPublishCtxMap.computeIfAbsent(clientId, ignored -> new LastPublishCtx(0, 0));
             PacketIdAndOffset nextPacketIdAndOffset = lastPublishCtx.getNextPacketIdAndOffset();

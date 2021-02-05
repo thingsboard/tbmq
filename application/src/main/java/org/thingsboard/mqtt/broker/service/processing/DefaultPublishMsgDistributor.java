@@ -61,7 +61,7 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
         for (Subscription msgSubscription : msgSubscriptions) {
             ClientSession clientSession = msgSubscription.getClientSession();
             if (!clientSession.isPersistent()
-                    || msgSubscription.getMqttQoS() == MqttQoS.AT_MOST_ONCE
+                    || msgSubscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value()
                     || publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value()) {
                 unPersistedSubscriptions.add(msgSubscription);
                 continue;
@@ -159,8 +159,8 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
                         clientSession.getClientInfo().getType(), clientSession.getClientInfo().getClientId());
                 continue;
             }
-            int packetId = subscription.getMqttQoS() == MqttQoS.AT_MOST_ONCE ? -1 : sessionCtx.nextMsgId();
-            int minQoSValue = Math.min(subscription.getMqttQoS().value(), publishMsgProto.getQos());
+            int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();
+            int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
             MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
             MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, publishMsgProto.getTopicName(),
                     mqttQoS, publishMsgProto.getPayload().toByteArray());

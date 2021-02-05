@@ -45,10 +45,10 @@ public abstract class AbstractPubSubIntegrationTest {
     @NoArgsConstructor
     @Builder
     @Data
-    static class TestPublishMsg {
-        int publisherId;
-        int sequenceId;
-        boolean isLast;
+    protected static class TestPublishMsg {
+        public int publisherId;
+        public int sequenceId;
+        public boolean isLast;
     }
 
 

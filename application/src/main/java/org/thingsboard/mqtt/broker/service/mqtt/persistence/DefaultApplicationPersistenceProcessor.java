@@ -69,20 +69,25 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         }
         persistedOffset.getAndSet(offset);
 
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = persistenceConsumerInfo.consumer;
-        consumer.commit(0, offset);
+        persistenceConsumerInfo.consumer.commit(0, offset);
     }
 
     @Override
     public void startConsumingPersistedMsgs(String clientId, ClientSessionCtx clientSessionCtx) {
         clientSessionCtx.getIsProcessingPersistedMsgs().getAndSet(true);
-        persistedMsgsConsumeExecutor.execute(() -> {
-            PersistenceConsumerInfo persistenceConsumerInfo = getPersistenceConsumerInfo(clientId);
 
+        PersistenceConsumerInfo prevConsumerInfo = applicationPersistentConsumers.remove(clientId);
+        if (prevConsumerInfo != null) {
+            prevConsumerInfo.consumer.unsubscribeAndClose();
+        }
+        PersistenceConsumerInfo newConsumerInfo = getPersistenceConsumerInfo(clientId);
+        long currentCommittedOffset = newConsumerInfo.persistedOffset.get();
+
+        persistedMsgsConsumeExecutor.execute(() -> {
+            long currentOffset = currentCommittedOffset;
             List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> persistedMsgList;
-            long currentOffset = persistenceConsumerInfo.persistedOffset.get();
             do {
-                persistedMsgList = persistenceConsumerInfo.consumer.poll(pollDuration);
+                persistedMsgList = newConsumerInfo.consumer.poll(pollDuration);
                 for (TbProtoQueueMsg<QueueProtos.PublishMsgProto> publishMsgProtoTbProtoQueueMsg : persistedMsgList) {
                     QueueProtos.PublishMsgProto publishMsgProto = publishMsgProtoTbProtoQueueMsg.getValue();
                     MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(publishMsgProto.getPacketId(), publishMsgProto.getTopicName(),
@@ -96,8 +101,6 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
                 }
             } while (!persistedMsgList.isEmpty());
-            persistenceConsumerInfo.consumer.unsubscribeAndClose();
-            applicationPersistentConsumers.remove(clientId);
             clientSessionCtx.getIsProcessingPersistedMsgs().getAndSet(true);
         });
     }

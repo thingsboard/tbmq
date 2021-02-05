@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker.service.integration.restart;
 
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
@@ -21,11 +21,11 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
 
@@ -34,10 +34,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = ApplicationRestartIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = SimpleRestartIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
-public class ApplicationRestartIntegrationTest extends AbstractPubSubIntegrationTest {
+public class SimpleRestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test";
@@ -51,8 +51,6 @@ public class ApplicationRestartIntegrationTest extends AbstractPubSubIntegration
         SpringRestarter.getInstance().restart();
 
         testPubSub(NUMBER_OF_MSGS_IN_SEQUENCE, previousMsg);
-
-
     }
 
     private void testPubSub(int startSequence, AtomicReference<TestPublishMsg> previousMsg) throws Throwable {

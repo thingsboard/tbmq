@@ -81,7 +81,20 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     @Override
     protected void doAssignPartition(String topic, int partition) {
+        admin.createTopicIfNotExists(topic);
         consumer.assign(Collections.singletonList(new TopicPartition(topic, partition)));
+    }
+
+    @Override
+    protected void doAssignAllPartitions(String topic) {
+        admin.createTopicIfNotExists(topic);
+        int numberOfPartitions = admin.getNumberOfPartitions(topic);
+        List<TopicPartition> allTopicPartitions = new ArrayList<>();
+        for (int i = 0; i < numberOfPartitions; i++) {
+            allTopicPartitions.add(new TopicPartition(topic, i));
+        }
+        consumer.assign(allTopicPartitions);
+
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -24,7 +23,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Getter
 @AllArgsConstructor
 public class Subscription {
-    private final MqttQoS mqttQoS;
+    private final int mqttQoSValue;
     private final ClientSession clientSession;
     private final ClientSessionCtx sessionCtx;
 }

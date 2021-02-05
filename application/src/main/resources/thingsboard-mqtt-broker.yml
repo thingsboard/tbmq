@@ -89,8 +89,8 @@ queue:
       publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10}"
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       application-persistence-msg: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000}"
-      application-publish-ctx: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400}"
-      client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400}"
+      application-publish-ctx: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1}"
+      client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       acks: "${TB_KAFKA_PUBLISH_MSG_ACKS:all}"

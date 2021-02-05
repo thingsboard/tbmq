@@ -19,5 +19,6 @@ public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends T
     void commit(int partition, long offset);
     long getOffset(String topic, int partition);
     void assignPartition(int partition);
+    void assignAllPartitions();
     void seekToTheBeginning();
 }

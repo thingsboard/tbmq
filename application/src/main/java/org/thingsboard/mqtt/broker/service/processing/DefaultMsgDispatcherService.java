@@ -85,7 +85,7 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
         List<Subscription> msgSubscriptions = clientSubscriptions.stream()
                 .map(clientSubscription -> {
                     PersistedClientSession persistedClientSession = clientSessionManager.getPersistedClientInfo(clientSubscription.getClientId());
-                    return new Subscription(clientSubscription.getMqttQoS(), persistedClientSession.getClientSession(), persistedClientSession.getClientSessionCtx());
+                    return new Subscription(clientSubscription.getQosValue(), persistedClientSession.getClientSession(), persistedClientSession.getClientSessionCtx());
                 })
                 .collect(Collectors.toList());
         // TODO: log time for persisting and generating MQTT messages
