@@ -26,4 +26,6 @@ public interface MqttClientCredentialsService {
     void deleteCredentials(UUID id);
 
     List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds);
+
+    List<MqttClientCredentials> getAllCredentials();
 }

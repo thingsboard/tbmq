@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -44,50 +45,60 @@ public class AuthorizationRuleServiceTestSuite {
 
 
     /*
-        parseAuthorizationRule tests
+        parseSslAuthorizationRule tests
      */
     @Test
-    public void testSuccessfulCredentialsParse() throws AuthenticationException {
+    public void testSuccessfulCredentialsParse_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
                 ".*(abc-p01).*",
                 Map.of("abc-p01", "test/.*")
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(
+        AuthorizationRule authorizationRule = authorizationRuleService.parseSslAuthorizationRule(
                 JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
     @Test
-    public void testSuccessfulCredentialsParse_MultiplePossibleKeys() throws AuthenticationException {
+    public void testSuccessfulCredentialsParse_Ssl_MultiplePossibleKeys() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
                 ".*(abc-p01|123-qwe|qqq).*",
                 Map.of("abc-p01", "test/.*")
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseAuthorizationRule(
+        AuthorizationRule authorizationRule = authorizationRuleService.parseSslAuthorizationRule(
                 JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
     @Test(expected = AuthenticationException.class)
-    public void testNonExistentKey() throws AuthenticationException {
+    public void testNonExistentKey_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
                 "(.*)(abc-p01|123-qwe|qqq)(.*)",
                 Map.of("not_valid_key", "test/.*")
         );
-        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
+        authorizationRuleService.parseSslAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
     }
 
     @Test(expected = AuthenticationException.class)
-    public void testPatternDontMatch() throws AuthenticationException {
+    public void testPatternDontMatch_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
                 "(.*)(not_in_common_name)(.*)",
                 Map.of("key", "test/.*")
         );
-        authorizationRuleService.parseAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
+        authorizationRuleService.parseSslAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
+    }
+
+    /*
+        parseSslAuthorizationRule tests
+     */
+    @Test
+    public void testSuccessfulCredentialsParse_Basic() throws AuthenticationException {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", null, "test/.*");
+        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(JacksonUtil.toString(basicMqttCredentials));
+        Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
     /*

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,8 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 public abstract class BaseController {
@@ -85,5 +88,9 @@ public abstract class BaseController {
         } else {
             throw new ThingsboardException("You aren't authorized to perform this operation!", ThingsboardErrorCode.AUTHENTICATION);
         }
+    }
+
+    UUID toUUID(String id) {
+        return UUID.fromString(id);
     }
 }

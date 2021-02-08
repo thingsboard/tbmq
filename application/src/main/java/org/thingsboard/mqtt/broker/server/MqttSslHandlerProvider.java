@@ -72,7 +72,7 @@ public class MqttSslHandlerProvider {
             sslContext.init(kmf.getKeyManagers(), trustManagers, null);
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);
-            sslEngine.setNeedClientAuth(tmf != null);
+            sslEngine.setWantClientAuth(tmf != null);
             sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
             sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
             sslEngine.setEnableSessionCreation(true);

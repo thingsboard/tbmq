@@ -25,4 +25,5 @@ import lombok.NoArgsConstructor;
 public class BasicMqttCredentials {
     private String userName;
     private String password;
+    private String authorizationRulePattern;
 }

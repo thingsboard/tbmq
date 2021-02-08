@@ -22,7 +22,9 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 import java.util.Collection;
 
 public interface AuthorizationRuleService {
-    AuthorizationRule parseAuthorizationRule(String sslMqttCredentialsValue, String clientCommonName) throws AuthenticationException;
+    AuthorizationRule parseSslAuthorizationRule(String sslMqttCredentialsValue, String clientCommonName) throws AuthenticationException;
+
+    AuthorizationRule parseBasicAuthorizationRule(String basicMqttCredentialsValue) throws AuthenticationException;
 
     void validateAuthorizationRule(AuthorizationRule authorizationRule, Collection<String> topics) throws AuthorizationException;
 }
