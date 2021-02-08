@@ -83,7 +83,7 @@ public class ApplicationPersistenceSessionHandler implements PersistenceSessionH
                     long endOffset = metadataService.getEndOffset(applicationPersistenceMsgQueueFactory.getTopic(clientId), 0);
                     long lastPublishedOffset = lastPublishCtx.getOffset().get();
                     if (lastPublishedOffset != endOffset) {
-                        log.warn("[{}] Last publish offset differs from endOffset. Last publish end - {}, end offset - {}.",
+                        log.warn("[{}] Last publish offset differs from endOffset. Last publish offset - {}, end offset - {}.",
                                 clientId, lastPublishedOffset, endOffset);
                         lastPublishCtx.getOffset().getAndSet(Math.max(endOffset, lastPublishedOffset));
                     }

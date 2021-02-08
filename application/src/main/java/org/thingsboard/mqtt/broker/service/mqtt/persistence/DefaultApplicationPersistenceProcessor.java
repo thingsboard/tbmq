@@ -92,7 +92,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     QueueProtos.PublishMsgProto publishMsgProto = publishMsgProtoTbProtoQueueMsg.getValue();
                     MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(publishMsgProto.getPacketId(), publishMsgProto.getTopicName(),
                             MqttQoS.valueOf(publishMsgProto.getQos()), publishMsgProto.getPayload().toByteArray());
-                    clientSessionCtx.getPacketsInfoQueue().add(new PacketIdAndOffset(publishMsgProto.getPacketId(), currentOffset++));
+                    clientSessionCtx.getPacketsInfoQueue().add(new PacketIdAndOffset(publishMsgProto.getPacketId(), ++currentOffset));
                     try {
                         clientSessionCtx.getChannel().writeAndFlush(mqttPubMsg);
                     } catch (Exception e) {
@@ -101,7 +101,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
                 }
             } while (!persistedMsgList.isEmpty());
-            clientSessionCtx.getIsProcessingPersistedMsgs().getAndSet(true);
+            clientSessionCtx.getIsProcessingPersistedMsgs().getAndSet(false);
         });
     }
 
