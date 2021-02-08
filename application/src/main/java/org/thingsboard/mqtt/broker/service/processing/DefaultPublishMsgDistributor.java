@@ -154,9 +154,7 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
         for (Subscription subscription : unPersistedSubscriptions) {
             ClientSession clientSession = subscription.getClientSession();
             ClientSessionCtx sessionCtx = subscription.getSessionCtx();
-            if (sessionCtx == null) {
-                log.warn("[{}][{}] Persistent session is not allowed for client.",
-                        clientSession.getClientInfo().getType(), clientSession.getClientInfo().getClientId());
+            if (!clientSession.isConnected()) {
                 continue;
             }
             int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();

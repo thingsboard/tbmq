@@ -74,7 +74,6 @@ public class DefaultClientSessionService implements ClientSessionService {
                     if (isClientSessionProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
                         log.debug("[{}] Encountered empty ClientSession.", clientId);
-                        // TODO test this
                         clientSessionMap.remove(clientId);
                     } else {
                         ClientSession prevClientSession = ProtoConverter.convertToClientSession(msg.getValue());
