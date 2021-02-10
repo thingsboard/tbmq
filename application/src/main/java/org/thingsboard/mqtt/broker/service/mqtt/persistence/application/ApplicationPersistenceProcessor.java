@@ -13,22 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
+public interface ApplicationPersistenceProcessor {
+    void acknowledgeDelivery(String clientId, int packetId);
 
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
+    void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx);
 
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
-    }
+    void clearPersistedMsgs(String clientId);
 }

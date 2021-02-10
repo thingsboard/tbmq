@@ -32,6 +32,6 @@ public class MqttPubAckHandler {
 
     public void process(ClientSessionCtx ctx, MqttPubAckMessage msg) throws MqttException {
         int packetId = msg.variableHeader().messageId();
-        publishMsgDistributor.acknowledgeSuccessfulDelivery(packetId, ctx);
+        publishMsgDistributor.acknowledgeDelivery(packetId, ctx);
     }
 }

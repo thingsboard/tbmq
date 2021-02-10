@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
-
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
-
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
-    }
+@AllArgsConstructor
+public class PublishMsgWithOffset {
+    @Getter
+    private final QueueProtos.PublishMsgProto publishMsgProto;
+    @Getter
+    private final long offset;
 }

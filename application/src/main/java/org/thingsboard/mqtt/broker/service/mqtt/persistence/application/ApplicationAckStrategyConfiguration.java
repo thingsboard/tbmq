@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
-
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
-
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
-    }
+@Component
+@ConfigurationProperties(prefix = "queue.application-persisted-msg.ack-strategy")
+@Data
+public class ApplicationAckStrategyConfiguration {
+    private AckStrategyType type;
+    private int retries;
 }

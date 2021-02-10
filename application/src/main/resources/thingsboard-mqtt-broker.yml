@@ -78,6 +78,7 @@ queue:
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
   application-persisted-msg:
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
+    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
   application-publish-ctx:
     poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
   client-session:

@@ -13,22 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
-
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
-
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
-    }
+public enum AckStrategyType {
+    SKIP_ALL,
+    RETRY_ALL;
 }

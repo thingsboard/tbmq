@@ -25,9 +25,9 @@ import java.util.Collection;
 public interface PublishMsgDistributor {
     void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscribers);
 
-    void startSendingPersistedMessages(ClientSessionCtx clientSessionCtx);
+    void processPersistedMessages(ClientSessionCtx clientSessionCtx);
 
     void clearPersistedMessages(ClientInfo clientInfo);
 
-    void acknowledgeSuccessfulDelivery(int packetId, ClientSessionCtx clientSessionCtx);
+    void acknowledgeDelivery(int packetId, ClientSessionCtx clientSessionCtx);
 }

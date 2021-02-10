@@ -24,7 +24,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.PersistenceSessionCl
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,14 +31,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
-public class StandaloneClientSessionManager implements ClientSessionManager {
+public class DefaultClientSessionManager implements ClientSessionManager {
     private final Map<String, ClientSessionCtx> clientContextMap = new ConcurrentHashMap<>();
 
     private final AtomicInteger connectedClientsCounter;
     private final ClientSessionService clientSessionService;
     private final PersistenceSessionClearer persistenceSessionClearer;
 
-    public StandaloneClientSessionManager(StatsManager statsManager, ClientSessionService clientSessionService, PersistenceSessionClearer persistenceSessionClearer) {
+    public DefaultClientSessionManager(StatsManager statsManager, ClientSessionService clientSessionService, PersistenceSessionClearer persistenceSessionClearer) {
         this.connectedClientsCounter = statsManager.createConnectedClientsCounter();
         this.clientSessionService = clientSessionService;
         this.persistenceSessionClearer = persistenceSessionClearer;

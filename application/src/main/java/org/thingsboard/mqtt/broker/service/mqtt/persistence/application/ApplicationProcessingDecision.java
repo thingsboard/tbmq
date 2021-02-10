@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Data;
 
-public interface ApplicationPersistenceProcessor {
-    void acknowledgeSuccessfulDelivery(String clientId, long offset);
+import java.util.Map;
 
-    void startConsumingPersistedMsgs(String clientId, ClientSessionCtx clientSessionCtx);
+@Data
+public class ApplicationProcessingDecision {
+    private final boolean commit;
+    private final Map<Integer, PublishMsgWithOffset> reprocessMap;
 }

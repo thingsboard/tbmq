@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
+public interface ApplicationSubmitStrategy {
+    void init(List<PublishMsgWithOffset> messagesWithOffset);
 
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
+    ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap();
 
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
-    }
+    void process(Consumer<PublishMsgWithOffset> msgConsumer);
+
+    void update(Map<Integer, PublishMsgWithOffset> reprocessMap);
+
+    void onSuccess(Long offset);
 }

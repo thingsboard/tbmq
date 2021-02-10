@@ -29,7 +29,9 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
@@ -46,6 +48,7 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
+@RequiredArgsConstructor
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionDisconnectListener {
 
     private final MqttMessageHandlers messageHandlers;
@@ -55,20 +58,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientSessionManager clientSessionManager;
     private final SslHandler sslHandler;
 
-    private final UUID sessionId;
-
-    private final ClientSessionCtx clientSessionCtx;
-
-    MqttSessionHandler(MqttMessageHandlers messageHandlers, KeepAliveService keepAliveService, LastWillService lastWillService, SubscriptionManager subscriptionManager, ClientSessionManager clientSessionManager, SslHandler sslHandler) {
-        this.messageHandlers = messageHandlers;
-        this.keepAliveService = keepAliveService;
-        this.lastWillService = lastWillService;
-        this.subscriptionManager = subscriptionManager;
-        this.clientSessionManager = clientSessionManager;
-        this.sslHandler = sslHandler;
-        this.sessionId = UUID.randomUUID();
-        this.clientSessionCtx = new ClientSessionCtx(sessionId);
-    }
+    private final UUID sessionId = UUID.randomUUID();
+    private final ClientSessionCtx clientSessionCtx = new ClientSessionCtx(sessionId);
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -203,21 +194,21 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             clientSessionCtx.setDisconnected();
             boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
             lastWillService.removeLastWill(sessionId, sendLastWill);
-            String clientId = getClientId(clientSessionCtx.getSessionInfo());
+            ClientInfo clientInfo = getClientInfo(clientSessionCtx.getSessionInfo());
             keepAliveService.unregisterSession(sessionId);
-            if (clientId != null) {
+            if (clientInfo != null) {
                 if (!clientSessionCtx.getSessionInfo().isPersistent()) {
-                    subscriptionManager.clearSubscriptions(clientId);
+                    subscriptionManager.clearSubscriptions(clientInfo.getClientId());
                 }
-                clientSessionManager.unregisterClient(clientId);
+                clientSessionManager.unregisterClient(clientInfo.getClientId());
             }
         }
     }
 
-    private String getClientId(SessionInfo sessionInfo) {
+    private ClientInfo getClientInfo(SessionInfo sessionInfo) {
         if (sessionInfo == null || sessionInfo.getClientInfo() == null) {
             return null;
         }
-        return sessionInfo.getClientInfo().getClientId();
+        return sessionInfo.getClientInfo();
     }
 }

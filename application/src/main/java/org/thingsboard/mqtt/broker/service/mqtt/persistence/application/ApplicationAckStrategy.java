@@ -13,15 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-
-import java.util.Collection;
-
-public interface PersistenceSessionHandler {
-    void processMsgPersistenceSessions(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscriptions);
-
-    void clearPersistedMsgs(String clientId);
+public interface ApplicationAckStrategy {
+    ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext);
 }

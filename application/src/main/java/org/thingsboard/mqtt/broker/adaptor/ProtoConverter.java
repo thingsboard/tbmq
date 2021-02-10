@@ -95,13 +95,12 @@ public class ProtoConverter {
     }
 
     public static LastPublishCtx convertToLastPublishCtx(QueueProtos.LastPublishCtxProto publishCtxProto) {
-        return new LastPublishCtx(publishCtxProto.getPacketId(), publishCtxProto.getOffset());
+        return new LastPublishCtx(publishCtxProto.getPacketId());
     }
 
-    public static QueueProtos.LastPublishCtxProto convertToLastPublishCtxProto(PacketIdAndOffset packetIdAndOffset) {
+    public static QueueProtos.LastPublishCtxProto createLastPublishCtxProto(int packetId) {
         return QueueProtos.LastPublishCtxProto.newBuilder()
-                .setPacketId(packetIdAndOffset.getPacketId())
-                .setOffset(packetIdAndOffset.getOffset())
+                .setPacketId(packetId)
                 .build();
     }
 }

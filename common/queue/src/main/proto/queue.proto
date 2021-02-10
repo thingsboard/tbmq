@@ -54,5 +54,4 @@ message ClientSessionProto {
 
 message LastPublishCtxProto {
   int32 packetId = 1;
-  int64 offset = 2;
 }

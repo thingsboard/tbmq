@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-public class LastPublishCtx {
-    private final AtomicInteger packetId;
+import java.util.function.Consumer;
 
-    public LastPublishCtx(int packetId) {
-        this.packetId = new AtomicInteger(packetId);
-    }
-
-    public int getNextPacketId() {
-        synchronized (packetId) {
-            packetId.incrementAndGet();
-            packetId.compareAndSet(0xffff, 1);
-            return packetId.get();
-        }
+@Component
+@Slf4j
+public class ApplicationSubmitStrategyFactory {
+    public ApplicationSubmitStrategy newInstance(String clientId, Consumer<Long> successfulOffsetConsumer) {
+        return new BurstSubmitStrategy(clientId, successfulOffsetConsumer);
     }
 }

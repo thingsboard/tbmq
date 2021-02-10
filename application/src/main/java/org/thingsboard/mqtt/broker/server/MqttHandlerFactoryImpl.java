@@ -31,7 +31,6 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
     private final SubscriptionManager subscriptionManager;
     private final MqttMessageHandlers messageHandlers;
-    private final SubscriptionService subscriptionService;
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
     private final ClientSessionManager clientSessionManager;

@@ -76,9 +76,10 @@ public class MqttConnectHandler {
         processLastWill(ctx.getSessionInfo(), msg);
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
+        ctx.setConnected();
 
         if (sessionInfo.isPersistent()) {
-            publishMsgDistributor.startSendingPersistedMessages(ctx);
+            publishMsgDistributor.processPersistedMessages(ctx);
         }
 
         log.info("[{}] [{}] Client connected!", clientId, sessionId);
@@ -116,7 +117,6 @@ public class MqttConnectHandler {
         try {
             clientSessionManager.registerClient(sessionInfo, ctx);
             ctx.setSessionInfo(sessionInfo);
-            ctx.setConnected();
         } catch (MqttException e) {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
             throw e;

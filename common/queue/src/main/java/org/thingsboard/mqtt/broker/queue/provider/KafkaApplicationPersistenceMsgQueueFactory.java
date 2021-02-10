@@ -79,6 +79,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         consumerBuilder.groupId("application-persistence-msg-consumer-group-" + clientId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
+        consumerBuilder.autoCommit(false);
         return consumerBuilder.build();
     }
 

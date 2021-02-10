@@ -41,12 +41,6 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile AuthorizationRule authorizationRule;
 
-    @Getter
-    private final AtomicBoolean isProcessingPersistedMsgs = new AtomicBoolean(true);
-
-    @Getter
-    private final Queue<PacketIdAndOffset> packetsInfoQueue = new ConcurrentLinkedQueue<>();
-
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean cleared = new AtomicBoolean(false);
 
