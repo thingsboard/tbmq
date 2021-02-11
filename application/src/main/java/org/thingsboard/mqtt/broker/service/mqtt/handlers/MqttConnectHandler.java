@@ -71,11 +71,11 @@ public class MqttConnectHandler {
         authenticateClient(ctx, sslHandler, msg, clientId);
 
         SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId);
-        tryRegisterClient(sessionInfo, ctx);
+        boolean isSessionPresent = tryRegisterClient(sessionInfo, ctx);
 
         processLastWill(ctx.getSessionInfo(), msg);
 
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED));
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED, isSessionPresent));
         ctx.setConnected();
 
         if (sessionInfo.isPersistent()) {
@@ -100,7 +100,7 @@ public class MqttConnectHandler {
             }
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
             throw new MqttException("Authentication failed for client [" + clientId + "].");
         }
     }
@@ -113,19 +113,20 @@ public class MqttConnectHandler {
         return SessionInfo.builder().sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
     }
 
-    private void tryRegisterClient(SessionInfo sessionInfo, ClientSessionCtx ctx) {
+    private boolean tryRegisterClient(SessionInfo sessionInfo, ClientSessionCtx ctx) {
         try {
-            clientSessionManager.registerClient(sessionInfo, ctx);
+            boolean isSessionPresent = clientSessionManager.registerClient(sessionInfo, ctx);
             ctx.setSessionInfo(sessionInfo);
+            return isSessionPresent;
         } catch (MqttException e) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
             throw e;
         }
     }
 
     private void validate(ClientSessionCtx ctx, MqttConnectMessage msg) {
         if (!msg.variableHeader().isCleanSession() && StringUtils.isEmpty(msg.payload().clientIdentifier())) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED));
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
             throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
         }
     }

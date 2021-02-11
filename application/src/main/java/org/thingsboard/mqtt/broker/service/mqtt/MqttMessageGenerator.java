@@ -26,7 +26,7 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import java.util.List;
 
 public interface MqttMessageGenerator {
-    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode);
+    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent);
 
     MqttMessage createUnSubAckMessage(int msgId);
 

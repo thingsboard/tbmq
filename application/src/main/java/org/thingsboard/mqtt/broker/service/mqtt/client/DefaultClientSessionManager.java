@@ -48,7 +48,7 @@ public class DefaultClientSessionManager implements ClientSessionManager {
     }
 
     @Override
-    public void registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx) throws MqttException {
+    public boolean registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx) throws MqttException {
         String clientId = sessionInfo.getClientInfo().getClientId();
         ClientSession prevClientSession = clientSessionService.getClientSession(clientId);
         if (prevClientSession != null && prevClientSession.isConnected()) {
@@ -68,6 +68,7 @@ public class DefaultClientSessionManager implements ClientSessionManager {
         if (prevClientSession != null && prevClientSession.isPersistent() && !sessionInfo.isPersistent()) {
             persistenceSessionClearer.clearPersistedSession(sessionInfo.getClientInfo());
         }
+        return prevClientSession != null && prevClientSession.isPersistent() && clientSession.isPersistent();
     }
 
     @Override
