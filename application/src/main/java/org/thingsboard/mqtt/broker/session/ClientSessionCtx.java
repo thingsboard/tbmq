@@ -47,7 +47,7 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private ChannelHandlerContext channel;
 
-    private final AtomicInteger msgIdSeq = new AtomicInteger(0);
+    private final AtomicInteger msgIdSeq = new AtomicInteger(1);
 
     public ClientSessionCtx(UUID sessionId) {
         this.sessionId = sessionId;

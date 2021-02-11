@@ -15,16 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
-
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
-
 public interface TbQueueProducer<T extends TbQueueMsg> {
 
     void init();
 
-    String getDefaultTopic();
+    String getTopic();
 
-    void send(TopicInfo topic, T msg, TbQueueCallback callback);
+    void send(T msg, TbQueueCallback callback);
 
     void stop();
 }

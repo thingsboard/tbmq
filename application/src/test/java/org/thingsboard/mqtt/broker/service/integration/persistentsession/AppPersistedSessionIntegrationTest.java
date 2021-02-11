@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
@@ -71,7 +72,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
     @After
     public void clear() throws Exception {
-        clearPersistedClient(persistedClient);
+        clearPersistedClient(persistedClient, new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId()));
         mqttClientService.deleteMqttClient(applicationClient.getId());
     }
 
@@ -83,6 +84,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        // need to wait till client is actually stopped
+        Thread.sleep(200);
+        persistedClient.close();
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
         Assert.assertNotNull(persistedClientSession);
@@ -102,6 +106,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        persistedClient.close();
+
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
         persistedClient.connect(connectOptions);
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
@@ -122,6 +129,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        persistedClient.close();
+
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
         persistedClient.connect(connectOptions);
         List<TopicSubscription> newTopicSubscriptions = Arrays.asList(new TopicSubscription("C/1", 1), new TopicSubscription("C/2", 0));
         persistedClient.subscribe(getTopicNames(newTopicSubscriptions), getQoSLevels(newTopicSubscriptions));
@@ -140,6 +150,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        persistedClient.close();
+
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
         connectOptions.setCleanSession(true);
         persistedClient.connect(connectOptions);
 
@@ -158,10 +171,14 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        persistedClient.close();
+
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
         connectOptions.setCleanSession(true);
         persistedClient.connect(connectOptions);
         persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
+        persistedClient.close();
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
         Assert.assertFalse(persistedClientSession.isConnected());

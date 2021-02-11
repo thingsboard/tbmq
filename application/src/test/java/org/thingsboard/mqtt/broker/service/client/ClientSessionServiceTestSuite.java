@@ -67,7 +67,7 @@ public class ClientSessionServiceTestSuite {
             TbQueueCallback callback = invocation.getArgument(2);
             callback.onSuccess(null);
             return null;
-        }).when(mockProducer).send(Mockito.any(), Mockito.any(), Mockito.any());
+        }).when(mockProducer).send(Mockito.any(), Mockito.any());
         this.clientSessionService = new DefaultClientSessionService(clientSessionQueueFactoryMock);
     }
 

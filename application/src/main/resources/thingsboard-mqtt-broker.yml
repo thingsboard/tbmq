@@ -79,6 +79,10 @@ queue:
   application-persisted-msg:
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
+    ack-strategy:
+      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
+      # For RETRY_ALL only
+      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}"
   application-publish-ctx:
     poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
   client-session:
@@ -117,6 +121,9 @@ queue:
         maxPollRecords: "${TB_KAFKA_APP_PERSISTENCE_MSG_MAX_POLL_RECORDS:8192}"
         maxPartitionFetchBytes: "${TB_KAFKA_APP_PERSISTENCE_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
         fetchMaxBytes: "${TB_KAFKA_APP_PERSISTENCE_MSG_FETCH_MAX_BYTES:134217728}"
+      other:
+        - key: "auto.offset.reset"
+          value: "earliest"
     application-publish-ctx:
       topic: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC:latest_publish_ctx}"
       producer:

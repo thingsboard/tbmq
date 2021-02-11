@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -71,10 +70,9 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     public void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
         log.trace("[{}] Acknowledging publish msg [topic:[{}], qos:[{}]].", sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
-        TopicInfo topicInfo = new TopicInfo(publishMsgProducer.getDefaultTopic());
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
-        publishMsgProducer.send(topicInfo, new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsgProto), callback);
+        publishMsgProducer.send(new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsgProto), callback);
     }
 
     @Override

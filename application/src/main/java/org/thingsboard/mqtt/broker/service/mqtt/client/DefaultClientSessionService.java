@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -135,23 +134,21 @@ public class DefaultClientSessionService implements ClientSessionService {
         if (!newClientSession.isPersistent()) {
             return;
         }
-        TopicInfo topicInfo = new TopicInfo(clientSessionProducer.getDefaultTopic());
-        QueueProtos.ClientSessionProto clientSessionProto = ProtoConverter.convertToClientSessionProto(newClientSession);
 
-        tryPersistClientSession(clientId, topicInfo, clientSessionProto);
+        QueueProtos.ClientSessionProto clientSessionProto = ProtoConverter.convertToClientSessionProto(newClientSession);
+        tryPersistClientSession(clientId, clientSessionProto);
     }
 
     @Override
     public void clearClientSessionFromPersistentStorage(String clientId) {
-        TopicInfo topicInfo = new TopicInfo(clientSessionProducer.getDefaultTopic());
         QueueProtos.ClientSessionProto clientSessionProto = QueueProtos.ClientSessionProto.newBuilder().build();
-        tryPersistClientSession(clientId, topicInfo, clientSessionProto);
+        tryPersistClientSession(clientId, clientSessionProto);
     }
 
-    private void tryPersistClientSession(String clientId, TopicInfo topicInfo, QueueProtos.ClientSessionProto clientSessionProto) {
+    private void tryPersistClientSession(String clientId, QueueProtos.ClientSessionProto clientSessionProto) {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSessionProducer.send(topicInfo, new TbProtoQueueMsg<>(clientId, clientSessionProto),
+        clientSessionProducer.send(new TbProtoQueueMsg<>(clientId, clientSessionProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

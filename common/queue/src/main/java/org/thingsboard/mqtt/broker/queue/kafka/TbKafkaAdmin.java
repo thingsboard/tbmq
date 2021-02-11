@@ -17,13 +17,15 @@ package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 
+import javax.annotation.PreDestroy;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -31,51 +33,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
+@Component
 public class TbKafkaAdmin implements TbQueueAdmin {
-
     private final AdminClient client;
-    private final Map<String, String> topicConfigs;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
-    private final int numPartitions;
 
-    private final short replicationFactor;
-
-    public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, Map<String, String> topicConfigs) {
+    public TbKafkaAdmin(TbKafkaAdminSettings adminSettings) {
         client = AdminClient.create(adminSettings.toProps());
-        this.topicConfigs = topicConfigs;
 
         try {
             topics.addAll(client.listTopics().names().get());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to get all topics.", e);
         }
-
-        String numPartitionsStr = topicConfigs.get(QueueConstants.PARTITIONS);
-        if (numPartitionsStr != null) {
-            numPartitions = Integer.parseInt(numPartitionsStr);
-            topicConfigs.remove(QueueConstants.PARTITIONS);
-        } else {
-            numPartitions = 1;
-        }
-
-        String replicationFactorStr = topicConfigs.get(QueueConstants.REPLICATION_FACTOR);
-        if (replicationFactorStr != null) {
-            replicationFactor = Short.parseShort(replicationFactorStr);
-            topicConfigs.remove(QueueConstants.REPLICATION_FACTOR);
-        } else {
-            replicationFactor = 1;
-        }
     }
 
     @Override
-    public void createTopicIfNotExists(String topic) {
+    public void createTopicIfNotExists(String topic, Map<String, String> topicConfigs) {
         if (topics.contains(topic)) {
             return;
         }
         try {
             log.debug("[{}] Creating topic", topic);
-            NewTopic newTopic = new NewTopic(topic, numPartitions, replicationFactor).configs(topicConfigs);
-            createTopic(newTopic).values().get(topic).get();
+            log.trace("Topic configs - {}.", topicConfigs);
+            NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(topicConfigs), extractReplicationFactor(topicConfigs)).configs(topicConfigs);
+            client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
             topics.add(topic);
         } catch (ExecutionException ee) {
             if (ee.getCause() instanceof TopicExistsException) {
@@ -88,7 +70,15 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             log.warn("[{}] Failed to create topic", topic, e);
             throw new RuntimeException(e);
         }
+    }
 
+    @Override
+    public void deleteTopic(String topic) {
+        log.debug("[{}] Deleting topic", topic);
+        DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
+        if (result.values().containsKey(topic)) {
+            topics.remove(topic);
+        }
     }
 
     @Override
@@ -100,14 +90,30 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
-    @Override
+    private int extractPartitionsNumber(Map<String, String> topicConfigs) {
+        String numPartitionsStr = topicConfigs.get(QueueConstants.PARTITIONS);
+        if (numPartitionsStr != null) {
+            topicConfigs.remove(QueueConstants.PARTITIONS);
+            return Integer.parseInt(numPartitionsStr);
+        } else {
+            return 1;
+        }
+    }
+
+    private short extractReplicationFactor(Map<String, String> topicConfigs) {
+        String replicationFactorStr = topicConfigs.get(QueueConstants.REPLICATION_FACTOR);
+        if (replicationFactorStr != null) {
+            topicConfigs.remove(QueueConstants.REPLICATION_FACTOR);
+            return Short.parseShort(replicationFactorStr);
+        } else {
+            return  1;
+        }
+    }
+
+    @PreDestroy
     public void destroy() {
         if (client != null) {
             client.close();
         }
-    }
-
-    public CreateTopicsResult createTopic(NewTopic topic) {
-        return client.createTopics(Collections.singletonList(topic));
     }
 }

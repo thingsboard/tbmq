@@ -22,37 +22,37 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
-import javax.annotation.PreDestroy;
+import java.util.Map;
 
 @Component
 public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
 
     private final TbKafkaSettings kafkaSettings;
-    private final TbQueueAdmin publishMsgAdmin;
+    private final TbQueueAdmin queueAdmin;
+    private final Map<String, String> publishMsgConfigs;
 
     public KafkaPublishMsgQueueFactory(@Qualifier("publish-msg") TbKafkaSettings kafkaSettings,
                                        TbKafkaTopicConfigs kafkaTopicConfigs,
-                                       TbKafkaAdminSettings kafkaAdminSettings) {
+                                       TbQueueAdmin queueAdmin) {
         this.kafkaSettings = kafkaSettings;
-
-        this.publishMsgAdmin = new TbKafkaAdmin(kafkaAdminSettings, kafkaTopicConfigs.getPublishMsgConfigs());
+        this.queueAdmin = queueAdmin;
+        this.publishMsgConfigs = kafkaTopicConfigs.getPublishMsgConfigs();
     }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> requestBuilder = TbKafkaProducerTemplate.builder();
-        requestBuilder.settings(kafkaSettings);
-        requestBuilder.clientId("publish-msg-producer");
-        requestBuilder.defaultTopic(kafkaSettings.getTopic());
-        requestBuilder.admin(publishMsgAdmin);
-        return requestBuilder.build();
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+        producerBuilder.settings(kafkaSettings);
+        producerBuilder.clientId("publish-msg-producer");
+        producerBuilder.topic(kafkaSettings.getTopic());
+        producerBuilder.topicConfigs(publishMsgConfigs);
+        producerBuilder.admin(queueAdmin);
+        return producerBuilder.build();
     }
 
     @Override
@@ -60,18 +60,11 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.settings(kafkaSettings);
         consumerBuilder.topic(kafkaSettings.getTopic());
+        consumerBuilder.topicConfigs(publishMsgConfigs);
         consumerBuilder.clientId("publish-msg-consumer-" + id);
         consumerBuilder.groupId("publish-msg-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
-        consumerBuilder.admin(publishMsgAdmin);
+        consumerBuilder.admin(queueAdmin);
         return consumerBuilder.build();
-    }
-
-
-    @PreDestroy
-    private void destroy() {
-        if (publishMsgAdmin != null) {
-            publishMsgAdmin.destroy();
-        }
     }
 }

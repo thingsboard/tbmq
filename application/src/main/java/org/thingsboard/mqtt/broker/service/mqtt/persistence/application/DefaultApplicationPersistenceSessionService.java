@@ -95,20 +95,26 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
     }
 
     @Override
-    public void clearLastPublishCtx(String clientId) {
+    public void clearPersistedCtx(String clientId) {
         LastPublishCtx removedCtx = lastPublishCtxMap.remove(clientId);
-        if (removedCtx == null) {
+        if (removedCtx != null) {
+            clearLastPublishCtxInQueue(clientId);
+        } else {
             log.trace("[{}] No persisted publish context found.", clientId);
-            return;
         }
-        clearLastPublishCtxInQueue(clientId);
+
+        TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> removedProducer = applicationProducers.remove(clientId);
+        if (removedProducer != null) {
+            removedProducer.stop();
+        } else {
+            log.trace("[{}] No producer found.", clientId);
+        }
     }
 
     private void savePublishMsgProto(String clientId, QueueProtos.PublishMsgProto publishMsgProto) {
         TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer = applicationProducers.computeIfAbsent(clientId,
                 id -> applicationPersistenceMsgQueueFactory.createProducer(clientId));
-        TopicInfo applicationMsgTopicInfo = new TopicInfo(applicationProducer.getDefaultTopic());
-        applicationProducer.send(applicationMsgTopicInfo, new TbProtoQueueMsg<>(publishMsgProto.getTopicName(), publishMsgProto),
+        applicationProducer.send(new TbProtoQueueMsg<>(publishMsgProto.getTopicName(), publishMsgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -125,8 +131,7 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
     }
 
     private void saveLastPublishCtx(String clientId, int packetId) {
-        TopicInfo publishCtxTopicInfo = new TopicInfo(publishCtxProducer.getDefaultTopic());
-        publishCtxProducer.send(publishCtxTopicInfo, new TbProtoQueueMsg<>(clientId, ProtoConverter.createLastPublishCtxProto(packetId)),
+        publishCtxProducer.send(new TbProtoQueueMsg<>(clientId, ProtoConverter.createLastPublishCtxProto(packetId)),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -144,8 +149,7 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
     }
 
     private void clearLastPublishCtxInQueue(String clientId) {
-        TopicInfo topicInfo = new TopicInfo(publishCtxProducer.getDefaultTopic());
-        publishCtxProducer.send(topicInfo, new TbProtoQueueMsg<>(clientId, EMPTY_LAST_PUBLISH_CTX_PROTO),
+        publishCtxProducer.send(new TbProtoQueueMsg<>(clientId, EMPTY_LAST_PUBLISH_CTX_PROTO),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

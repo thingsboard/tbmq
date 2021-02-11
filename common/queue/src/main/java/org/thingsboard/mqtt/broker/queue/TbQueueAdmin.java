@@ -15,11 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import java.util.Map;
+
 public interface TbQueueAdmin {
 
-    void createTopicIfNotExists(String topic);
+    void createTopicIfNotExists(String topic, Map<String, String> topicConfigs);
+
+    void deleteTopic(String topic);
 
     int getNumberOfPartitions(String topic);
-
-    void destroy();
 }

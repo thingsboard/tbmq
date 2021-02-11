@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.queue.provider;
 
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
-import org.thingsboard.mqtt.broker.queue.TbQueueMetadataService;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
@@ -25,8 +24,6 @@ public interface ApplicationPersistenceMsgQueueFactory {
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String clientId);
 
     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String clientId);
-
-    TbQueueMetadataService createMetadataService(String id);
 
     String getTopic(String clientId);
 

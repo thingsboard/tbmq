@@ -23,20 +23,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
-import org.thingsboard.mqtt.broker.queue.TbQueueMetadataService;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,42 +46,58 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DefaultApplicationPersistenceProcessor implements ApplicationPersistenceProcessor {
 
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final ConcurrentMap<String, ApplicationPackProcessingContext> processingContextMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
 
     private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
     private final ApplicationSubmitStrategyFactory submitStrategyFactory;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final TbQueueAdmin queueAdmin;
 
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
-
-    private TbQueueMetadataService metadataService;
-
-
-    @PostConstruct
-    public void init() {
-        this.metadataService = applicationPersistenceMsgQueueFactory.createMetadataService("application-metadata");
-    }
 
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
+    @Value("${queue.application-persisted-msg.stop-processing-timeout-ms:100}")
+    private long stopProcessingTimeout;
 
     @Override
     public void acknowledgeDelivery(String clientId, int packetId) {
         log.trace("Executing acknowledgeDelivery [{}][{}]", clientId, packetId);
         ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
-        processingContext.onSuccess(packetId);
+        if (processingContext == null) {
+            log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
+        } else {
+            processingContext.onSuccess(packetId);
+        }
     }
 
     @Override
     public void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
-        persistedMsgsConsumeExecutor.execute(() -> {
+        log.trace("[{}] Starting persisted messages processing.", clientId);
+        Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
             processPersistedMessages(clientId, clientSessionCtx);
         });
+        processingFutures.put(clientId, future);
+    }
+
+    @Override
+    public void stopProcessingPersistedMessages(String clientId) {
+        log.trace("[{}] Stopping persisted messages processing.", clientId);
+        Future<?> processingFuture = processingFutures.get(clientId);
+        if (processingFuture == null) {
+            log.warn("[{}] Cannot find processing future for client.", clientId);
+        } else {
+            try {
+                processingFuture.get(stopProcessingTimeout, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                log.warn("[{}] Exception stopping future for client. Reason - {}.", clientId, e.getMessage());
+            }
+        }
     }
 
     private void processPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
@@ -98,7 +113,10 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                 }
 
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
-                ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> consumer.commit(0, offset));
+                ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> {
+                    log.trace("[{}] Committing offset {}.", clientId, offset);
+                    consumer.commit(0, offset);
+                });
 
                 AtomicLong msgOffset = new AtomicLong(packetOffset);
                 List<PublishMsgWithOffset> persistedMessagesWithOffset = persistedMessages.stream()
@@ -125,7 +143,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                         }
                     });
 
-                    if (!clientSessionCtx.isConnected()) {
+                    if (clientSessionCtx.isConnected()) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
@@ -137,7 +155,10 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
                 }
 
-                consumer.commit();
+                if (clientSessionCtx.isConnected()) {
+                    log.trace("[{}] Committing all read messages.", clientId);
+                    consumer.commit();
+                }
                 packetOffset += persistedMessages.size();
             } catch (Exception e) {
                 if (clientSessionCtx.isConnected()) {
@@ -158,13 +179,6 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
 
     @Override
     public void clearPersistedMsgs(String clientId) {
-        metadataService.deleteTopic(applicationPersistenceMsgQueueFactory.getTopic(clientId));
-    }
-
-    @PreDestroy
-    public void destroy() {
-        if (metadataService != null) {
-            metadataService.close();
-        }
+        queueAdmin.deleteTopic(applicationPersistenceMsgQueueFactory.getTopic(clientId));
     }
 }

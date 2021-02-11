@@ -22,5 +22,7 @@ public interface ApplicationPersistenceProcessor {
 
     void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx);
 
+    void stopProcessingPersistedMessages(String clientId);
+
     void clearPersistedMsgs(String clientId);
 }

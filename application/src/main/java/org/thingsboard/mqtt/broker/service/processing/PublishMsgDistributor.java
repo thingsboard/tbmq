@@ -27,6 +27,8 @@ public interface PublishMsgDistributor {
 
     void processPersistedMessages(ClientSessionCtx clientSessionCtx);
 
+    void stopProcessingPersistedMessages(ClientInfo clientInfo);
+
     void clearPersistedMessages(ClientInfo clientInfo);
 
     void acknowledgeDelivery(int packetId, ClientSessionCtx clientSessionCtx);

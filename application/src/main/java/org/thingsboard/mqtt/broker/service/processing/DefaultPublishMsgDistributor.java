@@ -79,10 +79,17 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
     }
 
     @Override
+    public void stopProcessingPersistedMessages(ClientInfo clientInfo) {
+        if (clientInfo.getType() == APPLICATION) {
+            applicationPersistenceProcessor.stopProcessingPersistedMessages(clientInfo.getClientId());
+        }
+    }
+
+    @Override
     public void clearPersistedMessages(ClientInfo clientInfo) {
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
-            applicationPersistenceSessionService.clearLastPublishCtx(clientInfo.getClientId());
+            applicationPersistenceSessionService.clearPersistedCtx(clientInfo.getClientId());
         } else {
             log.debug("[{}] Persisted messages are not supported for client type {}.", clientInfo.getClientId(), clientInfo.getType());
         }

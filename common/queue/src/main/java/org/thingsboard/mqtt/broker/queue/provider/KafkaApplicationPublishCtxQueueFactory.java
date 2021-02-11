@@ -23,48 +23,47 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
 
-import javax.annotation.PreDestroy;
 import java.util.Map;
 
-import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
+import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
 
 @Slf4j
 @Component
 public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublishCtxQueueFactory {
     private final TbKafkaSettings kafkaSettings;
     private final TbQueueAdmin queueAdmin;
+    private final Map<String, String> applicationPublishCtxConfigs;
 
     public KafkaApplicationPublishCtxQueueFactory(@Qualifier("application-publish-ctx") TbKafkaSettings kafkaSettings,
                                                   TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                  TbKafkaAdminSettings kafkaAdminSettings) {
+                                                  TbQueueAdmin queueAdmin) {
         this.kafkaSettings = kafkaSettings;
 
-        Map<String, String> applicationPublishCtxConfigs = kafkaTopicConfigs.getApplicationPublishCtxConfigs();
+        this.applicationPublishCtxConfigs = kafkaTopicConfigs.getApplicationPublishCtxConfigs();
         String configuredLogCleanupPolicy = applicationPublishCtxConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Application publish ctx clean-up policy should be " + COMPACT_POLICY + ".");
         }
         applicationPublishCtxConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
 
-        this.queueAdmin = new TbKafkaAdmin(kafkaAdminSettings, applicationPublishCtxConfigs);
+        this.queueAdmin = queueAdmin;
     }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> createProducer() {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> requestBuilder = TbKafkaProducerTemplate.builder();
-        requestBuilder.settings(kafkaSettings);
-        requestBuilder.clientId("application-publish-ctx-producer");
-        requestBuilder.defaultTopic(kafkaSettings.getTopic());
-        requestBuilder.admin(queueAdmin);
-        return requestBuilder.build();
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+        producerBuilder.settings(kafkaSettings);
+        producerBuilder.clientId("application-publish-ctx-producer");
+        producerBuilder.topic(kafkaSettings.getTopic());
+        producerBuilder.topicConfigs(applicationPublishCtxConfigs);
+        producerBuilder.admin(queueAdmin);
+        return producerBuilder.build();
     }
 
     @Override
@@ -72,17 +71,11 @@ public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublis
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.settings(kafkaSettings);
         consumerBuilder.topic(kafkaSettings.getTopic());
+        consumerBuilder.topicConfigs(applicationPublishCtxConfigs);
         consumerBuilder.clientId("application-publish-ctx-consumer");
         consumerBuilder.groupId("application-publish-cxt-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.LastPublishCtxProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         return consumerBuilder.build();
-    }
-
-    @PreDestroy
-    private void destroy() {
-        if (queueAdmin != null) {
-            queueAdmin.destroy();
-        }
     }
 }

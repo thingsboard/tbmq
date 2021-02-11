@@ -45,8 +45,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     public void subscribe() {
         consumerLock.lock();
         try {
-            List<String> topicNames = Collections.singletonList(topic);
-            doSubscribe(topicNames);
+            doSubscribe(topic);
             subscribed = true;
         } finally {
             consumerLock.unlock();
@@ -155,7 +154,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected T decode(R record) throws IOException;
 
-    abstract protected void doSubscribe(List<String> topicNames);
+    abstract protected void doSubscribe(String topic);
 
     abstract protected void doAssignPartition(String topic, int partition);
 

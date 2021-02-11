@@ -23,14 +23,16 @@ import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 import java.util.Collection;
 
 public class TestUtils {
-    public static void clearPersistedClient(MqttClient persistedClient) throws Exception {
+    public static void clearPersistedClient(MqttClient persistedClient, MqttClient newClientToClear) throws Exception {
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
+            persistedClient.close();
         }
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
-        persistedClient.connect(connectOptions);
-        persistedClient.disconnect();
+        newClientToClear.connect(connectOptions);
+        newClientToClear.disconnect();
+        newClientToClear.close();
     }
 
     public static String[] getTopicNames(Collection<TopicSubscription> topicSubscriptions) {

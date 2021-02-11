@@ -42,12 +42,14 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final TbQueueAdmin admin;
     private final KafkaConsumer<String, byte[]> consumer;
     private final TbKafkaDecoder<T> decoder;
+    private final Map<String, String> topicConfigs;
 
     @Builder
     private TbKafkaConsumerTemplate(TbKafkaSettings settings, TbKafkaDecoder<T> decoder,
                                     String clientId, String groupId, String topic,
                                     boolean autoCommit, int autoCommitIntervalMs,
-                                    TbQueueAdmin admin) {
+                                    TbQueueAdmin admin,
+                                    Map<String, String> topicConfigs) {
         super(topic);
         Properties props = settings.toConsumerProps();
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
@@ -61,27 +63,24 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.admin = admin;
         this.consumer = new KafkaConsumer<>(props);
         this.decoder = decoder;
+        this.topicConfigs = topicConfigs;
     }
 
     @Override
-    protected void doSubscribe(List<String> topicNames) {
-        if (!topicNames.isEmpty()) {
-            topicNames.forEach(admin::createTopicIfNotExists);
-            consumer.subscribe(topicNames);
-        } else {
-            consumer.unsubscribe();
-        }
+    protected void doSubscribe(String topic) {
+        admin.createTopicIfNotExists(topic, topicConfigs);
+        consumer.subscribe(Collections.singletonList(topic));
     }
 
     @Override
     protected void doAssignPartition(String topic, int partition) {
-        admin.createTopicIfNotExists(topic);
+        admin.createTopicIfNotExists(topic, topicConfigs);
         consumer.assign(Collections.singletonList(new TopicPartition(topic, partition)));
     }
 
     @Override
     protected void doAssignAllPartitions(String topic) {
-        admin.createTopicIfNotExists(topic);
+        admin.createTopicIfNotExists(topic, topicConfigs);
         int numberOfPartitions = admin.getNumberOfPartitions(topic);
         List<TopicPartition> allTopicPartitions = new ArrayList<>();
         for (int i = 0; i < numberOfPartitions; i++) {

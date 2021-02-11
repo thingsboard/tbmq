@@ -24,49 +24,39 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.common.data.queue.TopicInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 
+import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * Created by ashvayka on 24.09.18.
- */
 @Slf4j
 public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueueProducer<T> {
 
     private final KafkaProducer<String, byte[]> producer;
 
     @Getter
-    private final String defaultTopic;
-
-    @Getter
-    private final TbKafkaSettings settings;
+    private final String topic;
 
     private final TbQueueAdmin admin;
-
-    private final Set<TopicInfo> topics;
+    private final Map<String, String> topicConfigs;
 
     @Builder
-    private TbKafkaProducerTemplate(TbKafkaSettings settings, String defaultTopic, String clientId, TbQueueAdmin admin) {
+    private TbKafkaProducerTemplate(TbKafkaSettings settings, String topic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
         Properties props = settings.toProducerProps();
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         if (!StringUtils.isEmpty(clientId)) {
             props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
         }
-        this.settings = settings;
         this.producer = new KafkaProducer<>(props);
-        this.defaultTopic = defaultTopic;
+        this.topic = topic;
         this.admin = admin;
-        topics = ConcurrentHashMap.newKeySet();
+        this.topicConfigs = topicConfigs;
     }
 
     @Override
@@ -74,13 +64,14 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
     }
 
     @Override
-    public void send(TopicInfo topic, T msg, TbQueueCallback callback) {
-        createTopicIfNotExist(topic);
+    public void send(T msg, TbQueueCallback callback) {
+        admin.createTopicIfNotExists(topic, topicConfigs);
+
         String key = msg.getKey();
         byte[] data = msg.getData();
         ProducerRecord<String, byte[]> record;
         Iterable<Header> headers = msg.getHeaders().getData().entrySet().stream().map(e -> new RecordHeader(e.getKey(), e.getValue())).collect(Collectors.toList());
-        record = new ProducerRecord<>(topic.getTopic(), null, key, data, headers);
+        record = new ProducerRecord<>(topic, null, key, data, headers);
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
                 if (callback != null) {
@@ -94,14 +85,6 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
                 }
             }
         });
-    }
-
-    private void createTopicIfNotExist(TopicInfo topic) {
-        if (topics.contains(topic)) {
-            return;
-        }
-        admin.createTopicIfNotExists(topic.getTopic());
-        topics.add(topic);
     }
 
     @Override

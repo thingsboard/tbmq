@@ -20,5 +20,5 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 public interface ApplicationPersistenceSessionService {
     void processMsgPersistence(String clientId, int subscriptionQoSValue, QueueProtos.PublishMsgProto publishMsgProto);
 
-    void clearLastPublishCtx(String clientId);
+    void clearPersistedCtx(String clientId);
 }
