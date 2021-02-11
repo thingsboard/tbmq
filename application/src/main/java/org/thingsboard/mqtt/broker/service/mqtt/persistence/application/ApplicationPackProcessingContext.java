@@ -54,4 +54,9 @@ public class ApplicationPackProcessingContext {
             log.info("Couldn't find packet {} to acknowledge success.", packetId);
         }
     }
+
+    public void cleanup() {
+        pendingMap.clear();
+        successMap.clear();
+    }
 }

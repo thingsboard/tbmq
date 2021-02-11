@@ -98,6 +98,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                 log.warn("[{}] Exception stopping future for client. Reason - {}.", clientId, e.getMessage());
             }
         }
+        processingContextMap.remove(clientId);
     }
 
     private void processPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
@@ -148,6 +149,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
 
                     ApplicationProcessingDecision decision = ackStrategy.analyze(ctx);
+                    ctx.cleanup();
                     if (decision.isCommit()) {
                         break;
                     } else {
