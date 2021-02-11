@@ -20,7 +20,12 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ClientSessionManager {
-    void registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx);
+    /**
+     * Registers client in the system. Returns if the client had a persisted state.
+     *
+     * @return 'true' if the session was persisted in the system and 'false' otherwise
+     */
+    boolean registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx);
 
     void unregisterClient(String clientId);
 

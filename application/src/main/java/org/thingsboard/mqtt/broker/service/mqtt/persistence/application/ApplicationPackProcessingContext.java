@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +27,6 @@ public class ApplicationPackProcessingContext {
 
     @Getter
     private final ConcurrentMap<Integer, PublishMsgWithOffset> pendingMap;
-    @Getter
-    private final ConcurrentMap<Integer, PublishMsgWithOffset> successMap = new ConcurrentHashMap<>();
 
     private final CountDownLatch processingTimeoutLatch;
     private final ApplicationSubmitStrategy submitStrategy;
@@ -47,7 +44,6 @@ public class ApplicationPackProcessingContext {
     public void onSuccess(Integer packetId) {
         PublishMsgWithOffset msg = pendingMap.remove(packetId);
         if (msg != null) {
-            successMap.put(packetId, msg);
             submitStrategy.onSuccess(msg.getOffset());
             processingTimeoutLatch.countDown();
         } else {
@@ -57,6 +53,5 @@ public class ApplicationPackProcessingContext {
 
     public void cleanup() {
         pendingMap.clear();
-        successMap.clear();
     }
 }

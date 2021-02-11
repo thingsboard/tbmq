@@ -58,25 +58,7 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
     public void init() {
         this.publishCtxProducer = applicationPublishCtxQueueFactory.createProducer();
 
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> consumer = applicationPublishCtxQueueFactory.createConsumer();
-        consumer.assignAllPartitions();
-        consumer.seekToTheBeginning();
-        List<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> messages;
-        do {
-            try {
-                messages = consumer.poll(pollDuration);
-                for (TbProtoQueueMsg<QueueProtos.LastPublishCtxProto> msg : messages) {
-                    String clientId = msg.getKey();
-                    LastPublishCtx lastPublishCtx = ProtoConverter.convertToLastPublishCtx(msg.getValue());
-                    lastPublishCtxMap.put(clientId, lastPublishCtx);
-                }
-                consumer.commit();
-            } catch (Exception e) {
-                log.error("Failed to load persisted publish contexts.", e);
-                throw e;
-            }
-        } while (!messages.isEmpty());
-        consumer.unsubscribeAndClose();
+        loadPersistedLastPublishCtx();
     }
 
     @Override
@@ -96,18 +78,25 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
 
     @Override
     public void clearPersistedCtx(String clientId) {
-        LastPublishCtx removedCtx = lastPublishCtxMap.remove(clientId);
-        if (removedCtx != null) {
-            clearLastPublishCtxInQueue(clientId);
-        } else {
-            log.trace("[{}] No persisted publish context found.", clientId);
-        }
+        clearContext(clientId);
+        clearProducer(clientId);
+    }
 
+    private void clearProducer(String clientId) {
         TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> removedProducer = applicationProducers.remove(clientId);
         if (removedProducer != null) {
             removedProducer.stop();
         } else {
             log.trace("[{}] No producer found.", clientId);
+        }
+    }
+
+    private void clearContext(String clientId) {
+        LastPublishCtx removedCtx = lastPublishCtxMap.remove(clientId);
+        if (removedCtx != null) {
+            clearLastPublishCtxInQueue(clientId);
+        } else {
+            log.trace("[{}] No persisted publish context found.", clientId);
         }
     }
 
@@ -161,6 +150,38 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
                         log.trace("Detailed error:", t);
                     }
                 });
+    }
+
+    private void loadPersistedLastPublishCtx() {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> consumer = applicationPublishCtxQueueFactory.createConsumer();
+        consumer.assignAllPartitions();
+        consumer.seekToTheBeginning();
+        List<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> messages;
+        do {
+            try {
+                messages = consumer.poll(pollDuration);
+                for (TbProtoQueueMsg<QueueProtos.LastPublishCtxProto> msg : messages) {
+                    String clientId = msg.getKey();
+                    if (isLastPublishCtxProtoEmpty(msg.getValue())) {
+                        // this means Kafka log compaction service haven't cleared empty message yet
+                        log.debug("[{}] Encountered empty LastPublishCtx.", clientId);
+                        lastPublishCtxMap.remove(clientId);
+                    } else {
+                        LastPublishCtx lastPublishCtx = ProtoConverter.convertToLastPublishCtx(msg.getValue());
+                        lastPublishCtxMap.put(clientId, lastPublishCtx);
+                    }
+                }
+                consumer.commit();
+            } catch (Exception e) {
+                log.error("Failed to load persisted publish contexts.", e);
+                throw e;
+            }
+        } while (!messages.isEmpty());
+        consumer.unsubscribeAndClose();
+    }
+
+    private boolean isLastPublishCtxProtoEmpty(QueueProtos.LastPublishCtxProto lastPublishCtxProto) {
+        return lastPublishCtxProto.getPacketId() == 0;
     }
 
     @PreDestroy

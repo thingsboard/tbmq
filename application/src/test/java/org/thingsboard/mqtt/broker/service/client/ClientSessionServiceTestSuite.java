@@ -64,7 +64,7 @@ public class ClientSessionServiceTestSuite {
         Mockito.when(clientSessionQueueFactoryMock.createConsumer()).thenReturn(mockConsumer);
         Mockito.when(clientSessionQueueFactoryMock.createProducer()).thenReturn(mockProducer);
         Mockito.doAnswer(invocation -> {
-            TbQueueCallback callback = invocation.getArgument(2);
+            TbQueueCallback callback = invocation.getArgument(1);
             callback.onSuccess(null);
             return null;
         }).when(mockProducer).send(Mockito.any(), Mockito.any());

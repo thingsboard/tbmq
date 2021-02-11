@@ -55,7 +55,6 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     private final MqttMessageGenerator mqttMessageGenerator;
     private final TbQueueAdmin queueAdmin;
 
-
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
     @Value("${queue.application-persisted-msg.poll-interval}")
@@ -131,17 +130,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     submitStrategy.process(msg -> {
                         log.trace("[{}] processing packet: {}", clientId, msg.getPublishMsgProto().getPacketId());
                         QueueProtos.PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
-                        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(publishMsgProto.getPacketId(), publishMsgProto.getTopicName(),
-                                MqttQoS.valueOf(publishMsgProto.getQos()), publishMsgProto.getPayload().toByteArray());
-                        try {
-                            clientSessionCtx.getChannel().writeAndFlush(mqttPubMsg);
-                        } catch (Exception e) {
-                            if (clientSessionCtx.isConnected()) {
-                                log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
-                                        clientId, clientSessionCtx.getSessionId(), e.getMessage());
-                                log.trace("Detailed error:", e);
-                            }
-                        }
+                        sendMsgToClient(clientId, clientSessionCtx, publishMsgProto);
                     });
 
                     if (clientSessionCtx.isConnected()) {
@@ -179,8 +168,23 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
 
     }
 
+    private void sendMsgToClient(String clientId, ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto publishMsgProto) {
+        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(publishMsgProto.getPacketId(), publishMsgProto.getTopicName(),
+                MqttQoS.valueOf(publishMsgProto.getQos()), publishMsgProto.getPayload().toByteArray());
+        try {
+            clientSessionCtx.getChannel().writeAndFlush(mqttPubMsg);
+        } catch (Exception e) {
+            if (clientSessionCtx.isConnected()) {
+                log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
+                        clientId, clientSessionCtx.getSessionId(), e.getMessage());
+                log.trace("Detailed error:", e);
+            }
+        }
+    }
+
     @Override
     public void clearPersistedMsgs(String clientId) {
-        queueAdmin.deleteTopic(applicationPersistenceMsgQueueFactory.getTopic(clientId));
+        String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
+        queueAdmin.deleteTopic(clientTopic);
     }
 }

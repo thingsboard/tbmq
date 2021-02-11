@@ -43,6 +43,7 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
         log.debug("Restoring persisted subscriptions for {} clients.", persistedClientSessions.size());
         for (ClientSession persistedClientSession : persistedClientSessions) {
             String clientId = persistedClientSession.getClientInfo().getClientId();
+            log.trace("[{}] Restoring subscriptions - {}.", clientId, persistedClientSession.getTopicSubscriptions());
             subscriptionService.subscribe(clientId, persistedClientSession.getTopicSubscriptions());
         }
     }
@@ -76,6 +77,7 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void clearSubscriptions(String clientId) {
+        log.trace("[{}] Clearing all subscriptions.", clientId);
         ClientSession prevClientSession = clientSessionService.getClientSession(clientId);
         List<String> unsubscribeTopics = prevClientSession.getTopicSubscriptions().stream()
                 .map(TopicSubscription::getTopic)
