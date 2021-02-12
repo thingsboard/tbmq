@@ -82,7 +82,7 @@ queue:
     ack-strategy:
       type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
-      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}"
+      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   application-publish-ctx:
     poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
   client-session:

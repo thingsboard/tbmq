@@ -73,7 +73,7 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
             if (pendingMap.isEmpty()) {
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
-            if (++retryCount > maxRetries) {
+            if (maxRetries != 0 && ++retryCount > maxRetries) {
                 log.debug("[{}] Skip reprocess due to max retries.", clientId);
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
