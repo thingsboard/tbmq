@@ -120,6 +120,17 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
+    public AtomicInteger createActiveApplicationProcessorsCounter() {
+        if (statsEnabled) {
+            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), new AtomicInteger(0));
+            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), sizeGauge));
+            return sizeGauge;
+        } else {
+            return new AtomicInteger(0);
+        }
+    }
+
+    @Override
     public AtomicLong createSubscriptionTrieNodesCounter() {
         if (statsEnabled) {
             AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));

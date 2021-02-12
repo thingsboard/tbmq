@@ -23,6 +23,7 @@ public enum StatsType {
     LAST_WILL_CLIENTS("lastWillClients"),
     CONNECTED_SESSIONS("connectedSessions"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
+    ACTIVE_APP_PROCESSORS("activeAppProcessors"),
     ;
 
     private final String printName;

@@ -28,8 +28,10 @@ import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -37,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -54,8 +56,10 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final TbQueueAdmin queueAdmin;
+    private final StatsManager statsManager;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
+    private AtomicInteger activeProcessorsCounter;
 
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
@@ -63,6 +67,11 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     private long packProcessingTimeout;
     @Value("${queue.application-persisted-msg.stop-processing-timeout-ms:100}")
     private long stopProcessingTimeout;
+
+    @PostConstruct
+    public void init() {
+        this.activeProcessorsCounter = statsManager.createActiveApplicationProcessorsCounter();
+    }
 
     @Override
     public void acknowledgeDelivery(String clientId, int packetId) {
@@ -82,6 +91,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
             processPersistedMessages(clientId, clientSessionCtx);
         });
         processingFutures.put(clientId, future);
+        activeProcessorsCounter.incrementAndGet();
     }
 
     @Override
@@ -98,6 +108,13 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
             }
         }
         processingContextMap.remove(clientId);
+        activeProcessorsCounter.decrementAndGet();
+    }
+
+    @Override
+    public void clearPersistedMsgs(String clientId) {
+        String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
+        queueAdmin.deleteTopic(clientTopic);
     }
 
     private void processPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
@@ -180,11 +197,5 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                 log.trace("Detailed error:", e);
             }
         }
-    }
-
-    @Override
-    public void clearPersistedMsgs(String clientId) {
-        String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
-        queueAdmin.deleteTopic(clientTopic);
     }
 }

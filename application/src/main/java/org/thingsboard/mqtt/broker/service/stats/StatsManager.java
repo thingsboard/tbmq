@@ -36,5 +36,7 @@ public interface StatsManager {
 
     AtomicInteger createSessionsCounter();
 
+    AtomicInteger createActiveApplicationProcessorsCounter();
+
     AtomicLong createSubscriptionTrieNodesCounter();
 }
