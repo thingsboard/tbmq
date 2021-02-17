@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import lombok.Data;
-
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-@Data
-public class ApplicationProcessingDecision {
-    private final boolean commit;
-    private final Map<Integer, PublishMsgWithOffset> reprocessMap;
+public interface ApplicationSubmitStrategy {
+    void init(List<PublishMsgWithOffset> messagesWithOffset);
+
+    ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap();
+
+    void process(Consumer<PublishMsgWithOffset> msgConsumer);
+
+    void update(Map<Integer, PublishMsgWithOffset> reprocessMap);
+
+    void onSuccess(Long offset);
 }

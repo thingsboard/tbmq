@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-public interface ApplicationAckStrategy {
-    ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext);
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+public interface ApplicationPersistenceProcessor {
+    void acknowledgeDelivery(String clientId, int packetId);
+
+    void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx);
+
+    void stopProcessingPersistedMessages(String clientId);
+
+    void clearPersistedMsgs(String clientId);
 }

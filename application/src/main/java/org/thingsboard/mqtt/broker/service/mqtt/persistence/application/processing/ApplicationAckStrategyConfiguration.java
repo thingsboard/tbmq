@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-public interface ApplicationSubmitStrategy {
-    void init(List<PublishMsgWithOffset> messagesWithOffset);
-
-    ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap();
-
-    void process(Consumer<PublishMsgWithOffset> msgConsumer);
-
-    void update(Map<Integer, PublishMsgWithOffset> reprocessMap);
-
-    void onSuccess(Long offset);
+@Component
+@ConfigurationProperties(prefix = "queue.application-persisted-msg.ack-strategy")
+@Data
+public class ApplicationAckStrategyConfiguration {
+    private AckStrategyType type;
+    private int retries;
 }

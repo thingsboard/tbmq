@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
-@ConfigurationProperties(prefix = "queue.application-persisted-msg.ack-strategy")
+import java.util.Map;
+
 @Data
-public class ApplicationAckStrategyConfiguration {
-    private AckStrategyType type;
-    private int retries;
+public class ApplicationProcessingDecision {
+    private final boolean commit;
+    private final Map<Integer, PublishMsgWithOffset> reprocessMap;
 }
