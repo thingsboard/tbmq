@@ -15,7 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-public interface ApplicationPublishCtxQueueFactory extends QueueFactory<QueueProtos.LastPublishCtxProto> {
+public interface QueueFactory<T extends com.google.protobuf.GeneratedMessageV3> {
+    TbQueueProducer<TbProtoQueueMsg<T>> createProducer();
+
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<T>> createConsumer();
 }

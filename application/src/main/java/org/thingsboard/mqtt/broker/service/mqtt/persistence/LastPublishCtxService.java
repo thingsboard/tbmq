@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.provider;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+public interface LastPublishCtxService {
+    void loadPersistedCtx();
 
-public interface ApplicationPublishCtxQueueFactory extends QueueFactory<QueueProtos.LastPublishCtxProto> {
+    int getNextPacketId(String clientId);
+
+    void saveLastPublishCtx(String clientId, int packetId);
+
+    void clearContext(String clientId);
+
+    void destroy();
 }
