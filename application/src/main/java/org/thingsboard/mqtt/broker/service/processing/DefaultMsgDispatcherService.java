@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -78,9 +79,10 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto) {
         // TODO: log time for getting subscriptions
-        Collection<ClientSubscription> clientSubscriptions = subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         // TODO: log time for getting clients
-        List<Subscription> msgSubscriptions = clientSubscriptions.stream()
+        List<Subscription> msgSubscriptions = clientSubscriptionWithTopicFilters.stream()
+                .map(ValueWithTopicFilter::getValue)
                 .map(clientSubscription -> {
                     PersistedClientSession persistedClientSession = clientSessionManager.getPersistedClientInfo(clientSubscription.getClientId());
                     return new Subscription(clientSubscription.getQosValue(), persistedClientSession.getClientSession(), persistedClientSession.getClientSessionCtx());

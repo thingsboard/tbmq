@@ -62,7 +62,7 @@ public class SubscriptionTrieTestSuite {
     public void testDelete(){
         subscriptionTrie.put("1/2", "test");
         subscriptionTrie.delete("1/2", s -> s.equals("test"));
-        List<String> result = subscriptionTrie.get("1/2");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/2");
         Assert.assertEquals(Collections.emptyList(), result);
     }
 
@@ -77,8 +77,18 @@ public class SubscriptionTrieTestSuite {
         subscriptionTrie.put("#", "test7");
         subscriptionTrie.put("+/22/3", "test8");
         subscriptionTrie.put("+/22/+", "test9");
-        List<String> result = subscriptionTrie.get("1/22/3");
-        Assert.assertEquals(Set.of("test1", "test2", "test3", "test4", "test7", "test8", "test9"),
+        subscriptionTrie.put("1/+/#", "test10");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/22/3");
+        Assert.assertEquals(Set.of(
+                new ValueWithTopicFilter<>("test1", "1/22/3"),
+                new ValueWithTopicFilter<>("test2", "1/+/3"),
+                new ValueWithTopicFilter<>("test3", "1/#"),
+                new ValueWithTopicFilter<>("test4", "1/22/#"),
+                new ValueWithTopicFilter<>("test7", "#"),
+                new ValueWithTopicFilter<>("test8", "+/22/3"),
+                new ValueWithTopicFilter<>("test9", "+/22/+"),
+                new ValueWithTopicFilter<>("test10", "1/+/#")
+                ),
                 new HashSet<>(result));
     }
 
@@ -88,8 +98,10 @@ public class SubscriptionTrieTestSuite {
         subscriptionTrie.put("+/monitor/Clients", "test2");
         subscriptionTrie.put("$SYS/#", "test3");
         subscriptionTrie.put("$SYS/monitor/+", "test4");
-        List<String> result = subscriptionTrie.get("$SYS/monitor/Clients");
-        Assert.assertEquals(Set.of("test3", "test4"),
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("$SYS/monitor/Clients");
+        Assert.assertEquals(Set.of(new ValueWithTopicFilter<>("test3", "$SYS/#"),
+                new ValueWithTopicFilter<>("test4", "$SYS/monitor/+")
+                ),
                 new HashSet<>(result));
     }
 

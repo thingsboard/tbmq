@@ -22,7 +22,10 @@ import java.util.function.Predicate;
 
 public interface SubscriptionTrie<T> {
 
-    List<T> get(String topic);
+    /*
+        ValueWithTopicFilter<T> is required for persistent DEVICE clients to save timestamps per topicFilter
+     */
+    List<ValueWithTopicFilter<T>> get(String topic);
 
     void put(String topicFilter, T val);
 

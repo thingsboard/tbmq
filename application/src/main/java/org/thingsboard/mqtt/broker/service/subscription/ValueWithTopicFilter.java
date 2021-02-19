@@ -15,17 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-import java.util.Collection;
-
-public interface SubscriptionService {
-    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
-
-    void unsubscribe(String clientId, Collection<String> topicFilters);
-
-    Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
-
-    void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
+@AllArgsConstructor
+@Getter
+@EqualsAndHashCode
+public class ValueWithTopicFilter<T> {
+    private final T value;
+    private final String topicFilter;
 }

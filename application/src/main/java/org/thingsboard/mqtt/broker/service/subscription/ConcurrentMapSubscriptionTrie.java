@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,18 +61,18 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     }
 
     @Override
-    public List<T> get(String topic) {
+    public List<ValueWithTopicFilter<T>> get(String topic) {
         if (topic == null) {
             throw new IllegalArgumentException("Topic cannot be null");
         }
-        List<T> result = new ArrayList<>();
+        List<ValueWithTopicFilter<T>> result = new ArrayList<>();
         Stack<TopicPosition<T>> topicPositions = new Stack<>();
-        topicPositions.add(new TopicPosition<>(0, root));
+        topicPositions.add(new TopicPosition<>("", 0, root));
 
         while (!topicPositions.isEmpty()) {
             TopicPosition<T> topicPosition = topicPositions.pop();
             if (topicPosition.prevDelimiterIndex >= topic.length()) {
-                result.addAll(topicPosition.node.values);
+                result.addAll(wrapValuesWithTopicFilter(topicPosition.prevTopicFilter, topicPosition.node.values));
                 continue;
             }
             ConcurrentMap<String, Node<T>> childNodes = topicPosition.node.children;
@@ -82,17 +82,20 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
             if (notStartingWith$(topic, topicPosition)) {
                 Node<T> multiLevelWildcardSubs = childNodes.get(BrokerConstants.MULTI_LEVEL_WILDCARD);
                 if (multiLevelWildcardSubs != null) {
-                    result.addAll(multiLevelWildcardSubs.values);
+                    String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, BrokerConstants.MULTI_LEVEL_WILDCARD);
+                    result.addAll(wrapValuesWithTopicFilter(currentTopicFilter, multiLevelWildcardSubs.values));
                 }
                 Node<T> singleLevelWildcardSubs = childNodes.get(BrokerConstants.SINGLE_LEVEL_WILDCARD);
                 if (singleLevelWildcardSubs != null) {
-                    topicPositions.add(new TopicPosition<>(nextDelimiterIndex, singleLevelWildcardSubs));
+                    String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, BrokerConstants.SINGLE_LEVEL_WILDCARD);
+                    topicPositions.add(new TopicPosition<>(currentTopicFilter, nextDelimiterIndex, singleLevelWildcardSubs));
                 }
             }
 
             Node<T> segmentNode = childNodes.get(segment);
             if (segmentNode != null) {
-                topicPositions.add(new TopicPosition<>(nextDelimiterIndex, segmentNode));
+                String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, segment);
+                topicPositions.add(new TopicPosition<>(currentTopicFilter, nextDelimiterIndex, segmentNode));
             }
         }
         return result;
@@ -100,6 +103,10 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     private boolean notStartingWith$(String topic, TopicPosition<T> topicPosition) {
         return topicPosition.prevDelimiterIndex != 0 || topic.charAt(0) != '$';
+    }
+
+    private List<ValueWithTopicFilter<T>> wrapValuesWithTopicFilter(String topicFilter, Collection<T> values) {
+        return values.stream().map(value -> new ValueWithTopicFilter<>(value, topicFilter)).collect(Collectors.toList());
     }
 
     @Override
@@ -230,6 +237,10 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
                 : key.substring(prevDelimiterIndex, nextDelimitedIndex);
     }
 
+    private String appendSegment(String topicFilter, String segment) {
+        return topicFilter.isEmpty() ? segment : topicFilter + BrokerConstants.TOPIC_DELIMITER + segment;
+    }
+
     private static class Node<T> {
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
         private final Set<T> values = Sets.newConcurrentHashSet();
@@ -254,6 +265,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     @AllArgsConstructor
     private static class TopicPosition<T> {
+        private final String prevTopicFilter;
         private final int prevDelimiterIndex;
         private final Node<T> node;
     }

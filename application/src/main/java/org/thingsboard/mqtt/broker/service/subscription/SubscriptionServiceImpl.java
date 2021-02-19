@@ -50,7 +50,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public Collection<ClientSubscription> getSubscriptions(String topic) {
+    public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
         return subscriptionTrie.get(topic);
     }
 
