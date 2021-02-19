@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -54,7 +54,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
     private final ApplicationSubmitStrategyFactory submitStrategyFactory;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    private final MqttMessageGenerator mqttMessageGenerator;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final TbQueueAdmin queueAdmin;
     private final StatsManager statsManager;
 
@@ -85,10 +85,11 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     }
 
     @Override
-    public void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
+    public void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx) {
+        String clientId = clientSessionCtx.getClientId();
         log.trace("[{}] Starting persisted messages processing.", clientId);
         Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
-            processPersistedMessages(clientId, clientSessionCtx);
+            processPersistedMessages(clientSessionCtx);
         });
         processingFutures.put(clientId, future);
         activeProcessorsCounter.incrementAndGet();
@@ -117,7 +118,8 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         queueAdmin.deleteTopic(clientTopic);
     }
 
-    private void processPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx) {
+    private void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
+        String clientId = clientSessionCtx.getClientId();
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
         consumer.assignPartition(0);
         long packetOffset = consumer.getOffset(consumer.getTopic(), 0);
@@ -128,7 +130,6 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                 if (persistedMessages.isEmpty()) {
                     continue;
                 }
-
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> {
                     log.trace("[{}] Committing offset {}.", clientId, offset);
@@ -147,7 +148,9 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     submitStrategy.process(msg -> {
                         log.trace("[{}] processing packet: {}", clientId, msg.getPublishMsgProto().getPacketId());
                         QueueProtos.PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
-                        sendMsgToClient(clientId, clientSessionCtx, publishMsgProto);
+                        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsgProto.getPacketId(),
+                                publishMsgProto.getTopicName(), MqttQoS.valueOf(publishMsgProto.getQos()),
+                                publishMsgProto.getPayload().toByteArray());
                     });
 
                     if (clientSessionCtx.isConnected()) {
@@ -183,19 +186,5 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         consumer.unsubscribeAndClose();
         log.info("[{}] Application persisted messages consumer stopped.", clientId);
 
-    }
-
-    private void sendMsgToClient(String clientId, ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto publishMsgProto) {
-        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(publishMsgProto.getPacketId(), publishMsgProto.getTopicName(),
-                MqttQoS.valueOf(publishMsgProto.getQos()), publishMsgProto.getPayload().toByteArray());
-        try {
-            clientSessionCtx.getChannel().writeAndFlush(mqttPubMsg);
-        } catch (Exception e) {
-            if (clientSessionCtx.isConnected()) {
-                log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
-                        clientId, clientSessionCtx.getSessionId(), e.getMessage());
-                log.trace("Detailed error:", e);
-            }
-        }
     }
 }

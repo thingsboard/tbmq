@@ -79,4 +79,9 @@ public class ClientSessionCtx implements SessionContext {
     public boolean tryClearState() {
         return this.cleared.getAndSet(true);
     }
+
+    public String getClientId() {
+        return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
+                sessionInfo.getClientInfo().getClientId() : null;
+    }
 }

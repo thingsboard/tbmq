@@ -34,6 +34,8 @@ public class DefaultApplicationLastPublishCtxService implements ApplicationLastP
 
     @Value("${queue.application-publish-ctx.poll-interval}")
     private long pollDuration;
+    @Value("${queue.application-publish-ctx.graceful-shutdown-timout}")
+    private long gracefulShutdownTimeout;
     @Value("${queue.application-publish-ctx.client-threads}")
     private int clientThreadsCount;
 
@@ -45,6 +47,7 @@ public class DefaultApplicationLastPublishCtxService implements ApplicationLastP
                 .name("persisted-application-last-publish-ctx")
                 .clientThreadsCount(clientThreadsCount)
                 .pollDuration(pollDuration)
+                .gracefulShutdownTimeout(gracefulShutdownTimeout)
                 .queueFactory(applicationPublishCtxQueueFactory)
                 .build();
 
@@ -55,7 +58,9 @@ public class DefaultApplicationLastPublishCtxService implements ApplicationLastP
     @PreDestroy
     public void destroy() {
         log.trace("Executing destroy.");
-        lastPublishCtxService.destroy();
+        if (lastPublishCtxService != null) {
+            lastPublishCtxService.destroy();
+        }
     }
 
     @Override

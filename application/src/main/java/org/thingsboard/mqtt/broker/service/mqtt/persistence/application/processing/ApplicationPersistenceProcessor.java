@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 public interface ApplicationPersistenceProcessor {
     void acknowledgeDelivery(String clientId, int packetId);
 
-    void startProcessingPersistedMessages(String clientId, ClientSessionCtx clientSessionCtx);
+    void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
 
     void stopProcessingPersistedMessages(String clientId);
 

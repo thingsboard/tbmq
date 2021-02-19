@@ -43,6 +43,14 @@
             <artifactId>dao-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>stats</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>

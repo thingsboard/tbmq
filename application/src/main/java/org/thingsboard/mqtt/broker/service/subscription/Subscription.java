@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Getter
 @AllArgsConstructor
 public class Subscription {
+    private final String topicFilter;
     private final int mqttQoSValue;
     private final ClientSession clientSession;
     private final ClientSessionCtx sessionCtx;

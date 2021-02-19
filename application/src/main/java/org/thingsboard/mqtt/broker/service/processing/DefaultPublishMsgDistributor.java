@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +23,13 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Collection;
-import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
@@ -42,10 +40,9 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
 
     private final ApplicationPersistenceSessionService applicationPersistenceSessionService;
-
-    private final MqttMessageGenerator mqttMessageGenerator;
-
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
 
     @Override
     public void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscriptions) {
@@ -70,11 +67,10 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
     public void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         ClientType clientType = clientInfo.getType();
-        String clientId = clientInfo.getClientId();
         if (clientType == APPLICATION) {
-            applicationPersistenceProcessor.startProcessingPersistedMessages(clientId, clientSessionCtx);
+            applicationPersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         } else {
-            log.debug("[{}] Persisted messages are not supported for client type {}.", clientId, clientType);
+            log.debug("[{}] Persisted messages are not supported for client type {}.", clientInfo.getClientId(), clientType);
         }
     }
 
@@ -119,15 +115,7 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
         int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();
         int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
         MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
-        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, publishMsgProto.getTopicName(),
+        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
                 mqttQoS, publishMsgProto.getPayload().toByteArray());
-        String clientId = sessionCtx.getSessionInfo().getClientInfo().getClientId();
-        UUID sessionId = sessionCtx.getSessionId();
-        try {
-            sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send publish msg to MQTT client.", clientId, sessionId);
-            log.trace("Detailed error:", e);
-        }
     }
 }

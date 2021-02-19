@@ -86,6 +86,7 @@ queue:
   application-publish-ctx:
     poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
     client-threads: "${TB_APP_PUBLISH_CTX_CLIENT_THREADS:4}"
+    graceful-shutdown-timout: "${TB_APP_PUBLISH_CTX_SHUTDOWN_TIMEOUT:100}"
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"

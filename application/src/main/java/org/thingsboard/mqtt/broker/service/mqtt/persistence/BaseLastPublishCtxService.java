@@ -48,11 +48,13 @@ public class BaseLastPublishCtxService implements LastPublishCtxService {
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.LastPublishCtxProto>> lastPublishCtxProducer;
 
     private final long pollDuration;
+    private final long gracefulShutdownTimeout;
     private final QueueFactory<QueueProtos.LastPublishCtxProto> queueFactory;
 
     @Builder
-    public BaseLastPublishCtxService(String name, int clientThreadsCount, long pollDuration, QueueFactory<QueueProtos.LastPublishCtxProto> queueFactory) {
+    public BaseLastPublishCtxService(String name, int clientThreadsCount, long pollDuration, long gracefulShutdownTimeout, QueueFactory<QueueProtos.LastPublishCtxProto> queueFactory) {
         this.clientExecutors = new ArrayList<>(clientThreadsCount);
+        this.gracefulShutdownTimeout = gracefulShutdownTimeout;
         for (int i = 0; i < clientThreadsCount; i++) {
             clientExecutors.add(Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(name + "-" + i)));
         }
@@ -153,7 +155,9 @@ public class BaseLastPublishCtxService implements LastPublishCtxService {
         if (lastPublishCtxProducer != null) {
             lastPublishCtxProducer.stop();
         }
-        gracefullyStopClientExecutors();
+        if (clientExecutors != null) {
+            gracefullyStopClientExecutors();
+        }
     }
 
     private void gracefullyStopClientExecutors() {
@@ -162,7 +166,7 @@ public class BaseLastPublishCtxService implements LastPublishCtxService {
             log.debug("Shutting down executor #{}", i);
             clientExecutor.shutdown();
             try {
-                if (!clientExecutor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                if (!clientExecutor.awaitTermination(gracefulShutdownTimeout, TimeUnit.MILLISECONDS)) {
                     log.warn("Failed to await termination of executor #{}", i);
                     clientExecutor.shutdownNow();
                 }

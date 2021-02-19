@@ -40,7 +40,7 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     @PostConstruct
     public void init() {
         Collection<ClientSession> persistedClientSessions = clientSessionService.getPersistedClientSessions();
-        log.debug("Restoring persisted subscriptions for {} clients.", persistedClientSessions.size());
+        log.info("Restoring persisted subscriptions for {} clients.", persistedClientSessions.size());
         for (ClientSession persistedClientSession : persistedClientSessions) {
             String clientId = persistedClientSession.getClientInfo().getClientId();
             log.trace("[{}] Restoring subscriptions - {}.", clientId, persistedClientSession.getTopicSubscriptions());
