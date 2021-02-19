@@ -150,6 +150,26 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         }
     }
 
+    @Override
+    public long getOffset(String topic, int partition) {
+        consumerLock.lock();
+        try {
+            return doGetOffset(topic, partition);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public void seekToTheBeginning() {
+        consumerLock.lock();
+        try {
+            doSeekToTheBeginning();
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
     abstract protected List<R> doPoll(long durationInMillis);
 
     abstract protected T decode(R record) throws IOException;
@@ -166,4 +186,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doUnsubscribeAndClose();
 
+    abstract protected long doGetOffset(String topic, int partition);
+
+    abstract protected void doSeekToTheBeginning();
 }

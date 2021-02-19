@@ -49,6 +49,10 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final String groupId;
 
 
+    /*
+        Not thread-safe
+     */
+
     @Builder
     private TbKafkaConsumerTemplate(TbKafkaSettings settings, TbKafkaDecoder<T> decoder,
                                     String clientId, String groupId, String topic,
@@ -147,13 +151,13 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    public long getOffset(String topic, int partition) {
+    public long doGetOffset(String topic, int partition) {
         return consumer.position(new TopicPartition(topic, partition));
     }
 
 
     @Override
-    public void seekToTheBeginning() {
+    public void doSeekToTheBeginning() {
         consumer.seekToBeginning(Collections.emptyList());
     }
 }
