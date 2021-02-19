@@ -15,28 +15,35 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.PersistedClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,8 +56,9 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     private final SubscriptionService subscriptionService;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
     private final StatsManager statsManager;
-    private final PublishMsgDistributor publishMsgDistributor;
+    private final MsgPersistenceManager msgPersistenceManager;
     private final ClientSessionManager clientSessionManager;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -88,8 +96,35 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
                             persistedClientSession.getClientSession(), persistedClientSession.getClientSessionCtx());
                 })
                 .collect(Collectors.toList());
-        // TODO: log time for persisting and generating MQTT messages
-        publishMsgDistributor.processPublish(publishMsgProto, msgSubscriptions);
+
+        List<Subscription> persistentSubscriptions = new ArrayList<>();
+        for (Subscription msgSubscription : msgSubscriptions) {
+            ClientSession clientSession = msgSubscription.getClientSession();
+            if (needToBePersisted(publishMsgProto, msgSubscription, clientSession)) {
+                persistentSubscriptions.add(msgSubscription);
+            } else {
+                trySendMsg(publishMsgProto, msgSubscription);
+            }
+        }
+        msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions);
     }
 
+    private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription, ClientSession clientSession) {
+        return clientSession.isPersistent()
+                && subscription.getMqttQoSValue() != MqttQoS.AT_MOST_ONCE.value()
+                && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
+    }
+
+    private void trySendMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+        ClientSession clientSession = subscription.getClientSession();
+        if (!clientSession.isConnected()) {
+            return;
+        }
+        ClientSessionCtx sessionCtx = subscription.getSessionCtx();
+        int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();
+        int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
+        MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
+        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
+                mqttQoS, publishMsgProto.getPayload().toByteArray());
+    }
 }

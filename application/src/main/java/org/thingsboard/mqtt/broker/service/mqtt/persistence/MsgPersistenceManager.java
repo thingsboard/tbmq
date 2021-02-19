@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -22,8 +22,8 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Collection;
 
-public interface PublishMsgDistributor {
-    void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscribers);
+public interface MsgPersistenceManager {
+    void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions);
 
     void processPersistedMessages(ClientSessionCtx clientSessionCtx);
 
@@ -31,5 +31,5 @@ public interface PublishMsgDistributor {
 
     void clearPersistedMessages(ClientInfo clientInfo);
 
-    void acknowledgeDelivery(int packetId, ClientSessionCtx clientSessionCtx);
+    void acknowledgePersistedMsgDelivery(int packetId, ClientSessionCtx clientSessionCtx);
 }

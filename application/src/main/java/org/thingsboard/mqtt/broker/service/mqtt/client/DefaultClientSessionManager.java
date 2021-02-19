@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.PersistenceSessionClearer;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -38,13 +38,13 @@ public class DefaultClientSessionManager implements ClientSessionManager {
     private final AtomicInteger connectedClientsCounter;
     private final ClientSessionService clientSessionService;
     private final PersistenceSessionClearer persistenceSessionClearer;
-    private final PublishMsgDistributor publishMsgDistributor;
+    private final MsgPersistenceManager msgPersistenceManager;
 
-    public DefaultClientSessionManager(StatsManager statsManager, ClientSessionService clientSessionService, PersistenceSessionClearer persistenceSessionClearer, PublishMsgDistributor publishMsgDistributor) {
+    public DefaultClientSessionManager(StatsManager statsManager, ClientSessionService clientSessionService, PersistenceSessionClearer persistenceSessionClearer, MsgPersistenceManager msgPersistenceManager) {
         this.connectedClientsCounter = statsManager.createConnectedClientsCounter();
         this.clientSessionService = clientSessionService;
         this.persistenceSessionClearer = persistenceSessionClearer;
-        this.publishMsgDistributor = publishMsgDistributor;
+        this.msgPersistenceManager = msgPersistenceManager;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class DefaultClientSessionManager implements ClientSessionManager {
 
         log.trace("[{}] Unregistering client, persistent session - {}", clientId, clientSession.isPersistent());
         if (clientSession.isPersistent()) {
-            publishMsgDistributor.stopProcessingPersistedMessages(clientSession.getClientInfo());
+            msgPersistenceManager.stopProcessingPersistedMessages(clientSession.getClientInfo());
         }
 
         clientContextMap.remove(clientId);

@@ -35,7 +35,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -57,7 +57,7 @@ public class MqttConnectHandler {
     private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientService mqttClientService;
-    private final PublishMsgDistributor publishMsgDistributor;
+    private final MsgPersistenceManager msgPersistenceManager;
 
 
     public void process(ClientSessionCtx ctx, SslHandler sslHandler, MqttConnectMessage msg) throws MqttException {
@@ -79,7 +79,7 @@ public class MqttConnectHandler {
         ctx.setConnected();
 
         if (sessionInfo.isPersistent()) {
-            publishMsgDistributor.processPersistedMessages(ctx);
+            msgPersistenceManager.processPersistedMessages(ctx);
         }
 
         log.info("[{}] [{}] Client connected!", clientId, sessionId);

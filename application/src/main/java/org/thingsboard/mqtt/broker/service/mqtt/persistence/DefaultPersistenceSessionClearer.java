@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 
 @Slf4j
@@ -28,14 +27,14 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 @RequiredArgsConstructor
 public class DefaultPersistenceSessionClearer implements PersistenceSessionClearer {
     private final SubscriptionManager subscriptionManager;
-    private final PublishMsgDistributor publishMsgDistributor;
+    private final MsgPersistenceManager msgPersistenceManager;
     public final ClientSessionService clientSessionService;
 
     @Override
     public void clearPersistedSession(ClientInfo clientInfo) {
         log.debug("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
         subscriptionManager.clearSubscriptions(clientInfo.getClientId());
-        publishMsgDistributor.clearPersistedMessages(clientInfo);
+        msgPersistenceManager.clearPersistedMessages(clientInfo);
         clientSessionService.clearClientSessionFromPersistentStorage(clientInfo.getClientId());
     }
 }

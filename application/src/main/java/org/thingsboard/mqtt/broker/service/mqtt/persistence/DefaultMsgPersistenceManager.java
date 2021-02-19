@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
+public class DefaultMsgPersistenceManager implements MsgPersistenceManager {
 
     private final ApplicationPersistenceSessionService applicationPersistenceSessionService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
@@ -45,16 +45,14 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
     private final PublishMsgDeliveryService publishMsgDeliveryService;
 
     @Override
-    public void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> msgSubscriptions) {
-        for (Subscription msgSubscription : msgSubscriptions) {
+    public void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions) {
+        for (Subscription msgSubscription : persistentSubscriptions) {
             ClientSession clientSession = msgSubscription.getClientSession();
             String clientId = clientSession.getClientInfo().getClientId();
             ClientType clientType = clientSession.getClientInfo().getType();
-            if (isNotPersisted(publishMsgProto, msgSubscription, clientSession)) {
-                processNotPersistedMsg(publishMsgProto, msgSubscription);
-            } else if (clientType == DEVICE) {
+            if (clientType == DEVICE) {
                 // TODO implement device persistence
-                processNotPersistedMsg(publishMsgProto, msgSubscription);
+                trySendMsg(publishMsgProto, msgSubscription);
             } else if (clientType == APPLICATION) {
                 applicationPersistenceSessionService.processMsgPersistence(clientId, msgSubscription.getMqttQoSValue(), publishMsgProto);
             } else {
@@ -92,7 +90,7 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
     }
 
     @Override
-    public void acknowledgeDelivery(int packetId, ClientSessionCtx clientSessionCtx) {
+    public void acknowledgePersistedMsgDelivery(int packetId, ClientSessionCtx clientSessionCtx) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
@@ -100,13 +98,7 @@ public class DefaultPublishMsgDistributor implements PublishMsgDistributor {
         }
     }
 
-    private boolean isNotPersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription, ClientSession clientSession) {
-        return !clientSession.isPersistent()
-                || subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value()
-                || publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
-    }
-
-    private void processNotPersistedMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+    private void trySendMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
         ClientSession clientSession = subscription.getClientSession();
         if (!clientSession.isConnected()) {
             return;

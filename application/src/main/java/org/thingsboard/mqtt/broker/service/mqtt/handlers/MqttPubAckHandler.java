@@ -20,7 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgDistributor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
@@ -28,10 +28,13 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Slf4j
 public class MqttPubAckHandler {
 
-    private final PublishMsgDistributor publishMsgDistributor;
+    private final MsgPersistenceManager msgPersistenceManager;
 
     public void process(ClientSessionCtx ctx, MqttPubAckMessage msg) throws MqttException {
         int packetId = msg.variableHeader().messageId();
-        publishMsgDistributor.acknowledgeDelivery(packetId, ctx);
+        log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), packetId);
+        if (ctx.getSessionInfo().isPersistent()) {
+            msgPersistenceManager.acknowledgePersistedMsgDelivery(packetId, ctx);
+        }
     }
 }

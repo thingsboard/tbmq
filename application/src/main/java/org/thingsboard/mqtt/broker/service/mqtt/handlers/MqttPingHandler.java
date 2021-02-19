@@ -16,16 +16,19 @@
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class MqttPingHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx) {
+        log.trace("[{}][{}] Received PING msg.", ctx.getClientId(), ctx.getSessionId());
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 }
