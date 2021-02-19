@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.common.AbstractTbQueueConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -44,11 +45,15 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final TbKafkaDecoder<T> decoder;
     private final Map<String, String> topicConfigs;
 
+    private final TbKafkaConsumerStatsService statsService;
+    private final String groupId;
+
+
     @Builder
     private TbKafkaConsumerTemplate(TbKafkaSettings settings, TbKafkaDecoder<T> decoder,
                                     String clientId, String groupId, String topic,
                                     boolean autoCommit, int autoCommitIntervalMs,
-                                    TbQueueAdmin admin,
+                                    TbQueueAdmin admin, TbKafkaConsumerStatsService statsService,
                                     Map<String, String> topicConfigs) {
         super(topic);
         Properties props = settings.toConsumerProps();
@@ -60,6 +65,13 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, autoCommitIntervalMs);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+
+        this.statsService = statsService;
+        this.groupId = groupId;
+        if (statsService != null) {
+            statsService.registerClientGroup(groupId);
+        }
+
         this.admin = admin;
         this.consumer = new KafkaConsumer<>(props);
         this.decoder = decoder;
@@ -128,6 +140,9 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         if (consumer != null) {
             consumer.unsubscribe();
             consumer.close();
+        }
+        if (statsService != null) {
+            statsService.unregisterClientGroup(groupId);
         }
     }
 

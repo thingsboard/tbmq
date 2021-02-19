@@ -91,12 +91,22 @@ queue:
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
+    consumer-stats:
+      enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
+      print-interval-ms: "${TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS:60000}"
+      kafka-response-timeout-ms: "${TB_KAFKA_CONSUMER_STATS_RESPONSE_TIMEOUT_MS:1000}"
     topic-properties:
       publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1}"
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       application-persistence-msg: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       application-publish-ctx: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
       client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+    stats-consumer:
+      consumer:
+        maxPollIntervalMs: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_INTERVAL_MS:0}"
+        maxPollRecords: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
+        maxPartitionFetchBytes: "${TB_KAFKA_PUBLISH_MSG_MAX_PARTITION_FETCH_BYTES:16777216}"
+        fetchMaxBytes: "${TB_KAFKA_PUBLISH_MSG_FETCH_MAX_BYTES:134217728}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       producer:
@@ -152,7 +162,6 @@ queue:
         maxPollRecords: "${TB_KAFKA_CLIENT_SESSION_MAX_POLL_RECORDS:8192}"
         maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SESSION_MAX_PARTITION_FETCH_BYTES:16777216}"
         fetchMaxBytes: "${TB_KAFKA_CLIENT_SESSION_FETCH_MAX_BYTES:134217728}"
-
 # SQL DAO Configuration
 spring:
   data:

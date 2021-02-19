@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.util.Map;
 
@@ -39,13 +40,16 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     private final TbKafkaSettings kafkaSettings;
     private final TbQueueAdmin queueAdmin;
     private final Map<String, String> clientSessionConfigs;
+    private final TbKafkaConsumerStatsService consumerStatsService;
 
     public KafkaClientSessionQueueFactory(@Qualifier("client-session") TbKafkaSettings kafkaSettings,
                                           TbKafkaTopicConfigs kafkaTopicConfigs,
-                                          TbQueueAdmin queueAdmin) {
+                                          TbQueueAdmin queueAdmin,
+                                          TbKafkaConsumerStatsService consumerStatsService) {
         this.kafkaSettings = kafkaSettings;
 
         this.clientSessionConfigs = kafkaTopicConfigs.getClientSessionConfigs();
+        this.consumerStatsService = consumerStatsService;
         String configuredLogCleanupPolicy = clientSessionConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Client session clean-up policy should be " + COMPACT_POLICY + ".");
@@ -76,6 +80,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
         consumerBuilder.groupId("client-session-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
+        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 }

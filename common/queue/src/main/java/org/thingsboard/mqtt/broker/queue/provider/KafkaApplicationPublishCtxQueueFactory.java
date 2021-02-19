@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.util.Map;
 
@@ -38,14 +39,17 @@ import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT
 public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublishCtxQueueFactory {
     private final TbKafkaSettings kafkaSettings;
     private final TbQueueAdmin queueAdmin;
+    private final TbKafkaConsumerStatsService consumerStatsService;
     private final Map<String, String> applicationPublishCtxTopicConfigs;
 
     public KafkaApplicationPublishCtxQueueFactory(@Qualifier("application-publish-ctx") TbKafkaSettings kafkaSettings,
                                                   TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                  TbQueueAdmin queueAdmin) {
+                                                  TbQueueAdmin queueAdmin,
+                                                  TbKafkaConsumerStatsService consumerStatsService) {
         this.kafkaSettings = kafkaSettings;
 
         this.applicationPublishCtxTopicConfigs = kafkaTopicConfigs.getApplicationPublishCtxConfigs();
+        this.consumerStatsService = consumerStatsService;
         String configuredLogCleanupPolicy = applicationPublishCtxTopicConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Application publish ctx clean-up policy should be " + COMPACT_POLICY + ".");
@@ -76,6 +80,7 @@ public class KafkaApplicationPublishCtxQueueFactory implements ApplicationPublis
         consumerBuilder.groupId("application-publish-cxt-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.LastPublishCtxProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
+        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 }

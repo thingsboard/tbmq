@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.util.Map;
 
@@ -39,14 +40,17 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private final TbKafkaSettings kafkaSettings;
     private final Map<String, String> applicationPersistenceMsgConfigs;
     private final TbQueueAdmin queueAdmin;
+    private final TbKafkaConsumerStatsService consumerStatsService;
 
     public KafkaApplicationPersistenceMsgQueueFactory(@Qualifier("application-persistence-msg") TbKafkaSettings kafkaSettings,
                                                       TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                      TbQueueAdmin queueAdmin) {
+                                                      TbQueueAdmin queueAdmin,
+                                                      TbKafkaConsumerStatsService consumerStatsService) {
         this.kafkaSettings = kafkaSettings;
         this.queueAdmin = queueAdmin;
 
         this.applicationPersistenceMsgConfigs = kafkaTopicConfigs.getApplicationPersistenceMsgConfigs();
+        this.consumerStatsService = consumerStatsService;
         String configuredPartitions = applicationPersistenceMsgConfigs.get(QueueConstants.PARTITIONS);
         if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
             log.warn("Application persistent message topic must have only 1 partition.");
@@ -76,6 +80,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
+        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.util.Map;
 
@@ -34,14 +35,17 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
 
     private final TbKafkaSettings kafkaSettings;
     private final TbQueueAdmin queueAdmin;
+    private final TbKafkaConsumerStatsService consumerStatsService;
     private final Map<String, String> publishMsgConfigs;
 
     public KafkaPublishMsgQueueFactory(@Qualifier("publish-msg") TbKafkaSettings kafkaSettings,
                                        TbKafkaTopicConfigs kafkaTopicConfigs,
-                                       TbQueueAdmin queueAdmin) {
+                                       TbQueueAdmin queueAdmin,
+                                       TbKafkaConsumerStatsService consumerStatsService) {
         this.kafkaSettings = kafkaSettings;
         this.queueAdmin = queueAdmin;
         this.publishMsgConfigs = kafkaTopicConfigs.getPublishMsgConfigs();
+        this.consumerStatsService = consumerStatsService;
     }
 
     @Override
@@ -65,6 +69,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
         consumerBuilder.groupId("publish-msg-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
+        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 }
