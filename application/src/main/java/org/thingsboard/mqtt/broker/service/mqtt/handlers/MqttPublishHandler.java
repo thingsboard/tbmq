@@ -29,11 +29,11 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 
 import java.util.Collections;
 import java.util.UUID;
@@ -46,8 +46,9 @@ public class MqttPublishHandler {
     private final MsgDispatcherService msgDispatcherService;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final DisconnectService disconnectService;
 
-    public void process(ClientSessionCtx ctx, MqttPublishMessage msg, SessionDisconnectListener disconnectListener) throws MqttException {
+    public void process(ClientSessionCtx ctx, MqttPublishMessage msg) throws MqttException {
         validatePublish(msg);
 
         UUID sessionId = ctx.getSessionId();
@@ -72,8 +73,7 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 log.trace("[{}] Failed to publish msg: {}", sessionId, msg, t);
-                disconnectListener.onSessionDisconnect(DisconnectReason.ON_ERROR);
-                ctx.getChannel().close();
+                disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
             }
         });
     }

@@ -18,25 +18,20 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
-import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionService;
 
 @Service
 @AllArgsConstructor
 public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
-    private final SubscriptionManager subscriptionManager;
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
-    private final LastWillService lastWillService;
-    private final ClientSessionManager clientSessionManager;
+    private final DisconnectService disconnectService;
 
     @Override
     public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(messageHandlers, keepAliveService, lastWillService, subscriptionManager, clientSessionManager, sslHandler);
+        return new MqttSessionHandler(messageHandlers, keepAliveService, disconnectService, sslHandler);
     }
 }

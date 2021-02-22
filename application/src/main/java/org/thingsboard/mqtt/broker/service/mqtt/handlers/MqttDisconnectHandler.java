@@ -15,23 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
-
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class MqttDisconnectHandler {
 
-    public void process(ChannelHandlerContext channelCtx, UUID sessionId, SessionDisconnectListener disconnectListener) {
-        disconnectListener.onSessionDisconnect(DisconnectReason.ON_DISCONNECT_MSG);
-        channelCtx.close();
-        log.info("[{}] Client disconnected!", sessionId);
+    private final DisconnectService disconnectService;
+
+    public void process(ClientSessionCtx sessionCtx) {
+        disconnectService.disconnect(sessionCtx, DisconnectReason.ON_DISCONNECT_MSG);
     }
 }

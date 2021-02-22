@@ -20,20 +20,20 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.PacketIdAndOffset;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 public class ClientSessionCtx implements SessionContext {
 
     @Getter
     private final UUID sessionId;
+    @Getter
+    private final ReentrantLock lock = new ReentrantLock();
     @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
@@ -76,8 +76,15 @@ public class ClientSessionCtx implements SessionContext {
         this.connected.getAndSet(true);
     }
 
+    /*
+        need 'cleared' flag because client can be 'disconnected' but with some state (in case there was some error in the middle of connection)
+     */
     public boolean tryClearState() {
         return this.cleared.getAndSet(true);
+    }
+
+    public boolean isCleared() {
+        return this.cleared.get();
     }
 
     public String getClientId() {

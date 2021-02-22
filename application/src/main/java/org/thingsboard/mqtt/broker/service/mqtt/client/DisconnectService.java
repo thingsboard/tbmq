@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.service.mqtt.client;
 
-public interface SessionDisconnectListener {
-    void onSessionDisconnect(DisconnectReason disconnectReason);
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+
+public interface DisconnectService {
+    void disconnect(ClientSessionCtx sessionCtx, DisconnectReason reason);
+
+    void disconnect(ClientSessionCtx sessionCtx, DisconnectReason reason, boolean needChannelClose);
 }

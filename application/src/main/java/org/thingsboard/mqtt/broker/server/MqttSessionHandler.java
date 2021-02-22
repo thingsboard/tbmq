@@ -31,17 +31,12 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
-import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.SessionDisconnectListener;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
@@ -49,13 +44,11 @@ import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
-public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionDisconnectListener {
+public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
 
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
-    private final LastWillService lastWillService;
-    private final SubscriptionManager subscriptionManager;
-    private final ClientSessionManager clientSessionManager;
+    private final DisconnectService disconnectService;
     private final SslHandler sslHandler;
 
     private final UUID sessionId = UUID.randomUUID();
@@ -64,6 +57,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         log.trace("[{}] Processing msg: {}", sessionId, msg);
+        clientSessionCtx.setChannel(ctx);
         try {
             if (msg instanceof MqttMessage) {
                 MqttMessage message = (MqttMessage) msg;
@@ -71,10 +65,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                     processMqttMsg(ctx, message);
                 } else {
                     log.warn("[{}] Message decoding failed: {}", sessionId, message.decoderResult().cause().getMessage());
-                    ctx.close();
+                    disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
                 }
             } else {
-                ctx.close();
+                log.warn("[{}] Received unknown message", sessionId);
+                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             }
         } finally {
             ReferenceCountUtil.safeRelease(msg);
@@ -84,26 +79,31 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
-            log.warn("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
-            messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
+            log.warn("[{}][{}:{}] Invalid message received", sessionId, address.getHostName(), address.getPort());
+            disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             return;
         }
         // TODO: we can leave order validation as long as we process connection synchronously
         MqttMessageType msgType = msg.fixedHeader().messageType();
         if (!validOrder(msgType)) {
             log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
-            ctx.close();
+            disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             return;
         }
-        clientSessionCtx.setChannel(ctx);
+        clientSessionCtx.getLock().lock();
         try {
+            if (!validOrder(msgType)) {
+                log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
+                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
+                return;
+            }
             processKeepAlive(ctx, msg);
             switch (msgType) {
                 case CONNECT:
                     messageHandlers.getConnectHandler().process(clientSessionCtx, sslHandler, (MqttConnectMessage) msg);
                     break;
                 case DISCONNECT:
-                    messageHandlers.getDisconnectHandler().process(ctx, sessionId, this);
+                    messageHandlers.getDisconnectHandler().process(clientSessionCtx);
                     break;
                 case SUBSCRIBE:
                     messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg);
@@ -112,7 +112,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                     messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMessage) msg);
                     break;
                 case PUBLISH:
-                    messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg, this);
+                    messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg);
                     break;
                 case PINGREQ:
                     messageHandlers.getPingHandler().process(clientSessionCtx);
@@ -125,8 +125,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         } catch (MqttException e) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
                     sessionId, msgType, e.getMessage());
-            onSessionDisconnect(DisconnectReason.ON_ERROR);
-            ctx.close();
+            disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
+        } finally {
+            clientSessionCtx.getLock().unlock();
         }
     }
 
@@ -136,8 +137,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             keepAliveService.registerSession(sessionId, ((MqttConnectMessage) msg).variableHeader().keepAliveTimeSeconds(),
                     () -> {
                         log.warn("[{}] Disconnecting client due to inactivity.", sessionId);
-                        onSessionDisconnect(DisconnectReason.ON_ERROR);
-                        ctx.close();
+                        disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
                     });
         } else {
             keepAliveService.acknowledgeControlPacket(sessionId);
@@ -145,21 +145,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private boolean validOrder(MqttMessageType messageType) {
-        switch (messageType) {
-            case CONNECT:
-                return !clientSessionCtx.isConnected();
-            case PUBLISH:
-            case PUBACK:
-            case PUBREC:
-            case PUBREL:
-            case PUBCOMP:
-            case SUBSCRIBE:
-            case UNSUBSCRIBE:
-            case PINGREQ:
-            case DISCONNECT:
-                return clientSessionCtx.isConnected();
-            default:
-                return false;
+        if (messageType == MqttMessageType.CONNECT) {
+            return !clientSessionCtx.isConnected() && !clientSessionCtx.isCleared();
+        } else {
+            return clientSessionCtx.isConnected();
         }
     }
 
@@ -178,37 +167,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         } else  {
             log.error("[{}] Unexpected Exception", sessionId, cause);
         }
-        onSessionDisconnect(DisconnectReason.ON_ERROR);
-        ctx.close();
+        disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
     }
 
     @Override
-    public void operationComplete(Future<? super Void> future) throws Exception {
-        onSessionDisconnect(DisconnectReason.ON_CHANNEL_CLOSED);
-    }
-
-    @Override
-    public void onSessionDisconnect(DisconnectReason reason) {
-        boolean isStateCleared = clientSessionCtx.tryClearState();
-        if (!isStateCleared) {
-            clientSessionCtx.setDisconnected();
-            boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
-            lastWillService.removeLastWill(sessionId, sendLastWill);
-            ClientInfo clientInfo = getClientInfo(clientSessionCtx.getSessionInfo());
-            keepAliveService.unregisterSession(sessionId);
-            if (clientInfo != null) {
-                if (!clientSessionCtx.getSessionInfo().isPersistent()) {
-                    subscriptionManager.clearSubscriptions(clientInfo.getClientId());
-                }
-                clientSessionManager.unregisterClient(clientInfo.getClientId());
-            }
-        }
-    }
-
-    private ClientInfo getClientInfo(SessionInfo sessionInfo) {
-        if (sessionInfo == null || sessionInfo.getClientInfo() == null) {
-            return null;
-        }
-        return sessionInfo.getClientInfo();
+    public void operationComplete(Future<? super Void> future) {
+        disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_CHANNEL_CLOSED, false);
     }
 }
