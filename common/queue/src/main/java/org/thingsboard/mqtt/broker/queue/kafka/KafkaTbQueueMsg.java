@@ -26,6 +26,8 @@ public class KafkaTbQueueMsg implements TbQueueMsg {
     private final String key;
     private final TbQueueMsgHeaders headers;
     private final byte[] data;
+    private final int partition;
+    private final long offset;
 
     public KafkaTbQueueMsg(ConsumerRecord<String, byte[]> record) {
         this.key = record.key();
@@ -35,6 +37,8 @@ public class KafkaTbQueueMsg implements TbQueueMsg {
         });
         this.headers = headers;
         this.data = record.value();
+        this.partition = record.partition();
+        this.offset = record.offset();
     }
 
     @Override
@@ -51,4 +55,16 @@ public class KafkaTbQueueMsg implements TbQueueMsg {
     public byte[] getData() {
         return data;
     }
+
+    @Override
+    public int getPartition() {
+        return partition;
+    }
+
+    @Override
+    public long getOffset() {
+        return offset;
+    }
+
+
 }

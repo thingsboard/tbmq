@@ -36,7 +36,7 @@ import java.util.Map;
 @Component
 public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
 
-    public static final String TOPIC_PREFIX = "application-";
+    public static final String TOPIC_PREFIX = "application_";
     private final TbKafkaSettings kafkaSettings;
     private final Map<String, String> applicationPersistenceMsgConfigs;
     private final TbQueueAdmin queueAdmin;
@@ -77,7 +77,8 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         consumerBuilder.topicConfigs(applicationPersistenceMsgConfigs);
         consumerBuilder.clientId("application-persistence-msg-consumer-" + clientId);
         consumerBuilder.groupId("application-persistence-msg-consumer-group-" + clientId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
+                msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);

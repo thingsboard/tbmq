@@ -48,14 +48,16 @@ public class KeepAliveIntegrationTest extends AbstractPubSubIntegrationTest {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);
         Waiter waiter = new Waiter();
+        long connectStart = System.currentTimeMillis();
         testAsyncClient.connect(connectOptions, null, new IMqttActionListener() {
             @Override
             public void onSuccess(IMqttToken asyncActionToken) {
                 try {
                     waiter.assertTrue(testAsyncClient.isConnected());
-                    Thread.sleep(1400);
+                    long connectEnd = System.currentTimeMillis();
+                    Thread.sleep(1400 - (connectEnd - connectStart));
                     waiter.assertTrue(testAsyncClient.isConnected());
-                    Thread.sleep(300);
+                    Thread.sleep(500);
                     waiter.assertFalse(testAsyncClient.isConnected());
                 } catch (Exception e){
                     waiter.assertNull(e);

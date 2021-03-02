@@ -21,6 +21,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import java.util.List;
 import java.util.Properties;
 
+// TODO: make one config for all but with PostProcessor which will update some configs if they are present in .yml file
 public interface TbKafkaSettings {
 
     String getServers();

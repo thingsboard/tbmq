@@ -22,4 +22,8 @@ public interface TbQueueMsg {
     TbQueueMsgHeaders getHeaders();
 
     byte[] getData();
+
+    int getPartition();
+
+    long getOffset();
 }

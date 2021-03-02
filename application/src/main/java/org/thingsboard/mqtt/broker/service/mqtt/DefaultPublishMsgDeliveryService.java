@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.SessionState;
 
 @Slf4j
 @Service
@@ -34,7 +35,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         } catch (Exception e) {
-            if (sessionCtx.isConnected()) {
+            if (sessionCtx.getSessionState() == SessionState.CONNECTED) {
                 log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
                         sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
                 log.trace("Detailed error:", e);

@@ -30,8 +30,6 @@ public interface StatsManager {
 
     AtomicInteger createSubscriptionSizeCounter();
 
-    AtomicInteger createConnectedClientsCounter();
-
     AtomicInteger createLastWillCounter();
 
     AtomicInteger createSessionsCounter();

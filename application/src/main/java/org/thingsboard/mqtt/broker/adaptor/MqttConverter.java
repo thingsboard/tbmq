@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.adaptor;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -30,6 +31,15 @@ public class MqttConverter {
                 .qosLevel(mqttPublishMessage.fixedHeader().qosLevel().value())
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())
                 .payload(payloadBytes)
+                .build();
+    }
+    public static PublishMsg convertLastWillToPublishMsg(MqttConnectMessage msg) {
+        return PublishMsg.builder()
+                .packetId(-1)
+                .topicName(msg.payload().willTopic())
+                .payload(msg.payload().willMessageInBytes())
+                .isRetained(msg.variableHeader().isWillRetain())
+                .qosLevel(msg.variableHeader().willQos())
                 .build();
     }
 

@@ -18,16 +18,12 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-
-import java.util.Set;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
 @AllArgsConstructor
 @Getter
 @Builder(toBuilder = true)
 public class ClientSession {
-    private final boolean persistent;
     private final boolean connected;
-    private final ClientInfo clientInfo;
-    private final Set<TopicSubscription> topicSubscriptions;
+    private final SessionInfo sessionInfo;
 }

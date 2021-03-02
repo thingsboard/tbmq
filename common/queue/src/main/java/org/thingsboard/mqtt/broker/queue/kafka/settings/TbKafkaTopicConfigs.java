@@ -33,6 +33,14 @@ public class TbKafkaTopicConfigs {
     private String applicationPublishCtxProperties;
     @Value("${queue.kafka.topic-properties.client-session}")
     private String clientSessionProperties;
+    @Value("${queue.kafka.topic-properties.client-subscriptions}")
+    private String clientSubscriptionsProperties;
+    @Value("${queue.kafka.topic-properties.client-session-event}")
+    private String clientSessionEventProperties;
+    @Value("${queue.kafka.topic-properties.client-session-event-response}")
+    private String clientSessionEventResponseProperties;
+    @Value("${queue.kafka.topic-properties.disconnect-client-command}")
+    private String disconnectClientCommandProperties;
 
     @Getter
     private Map<String, String> publishMsgConfigs;
@@ -46,12 +54,28 @@ public class TbKafkaTopicConfigs {
     @Getter
     private Map<String, String> clientSessionConfigs;
 
+    @Getter
+    private Map<String, String> clientSubscriptionsConfigs;
+
+    @Getter
+    private Map<String, String> clientSessionEventConfigs;
+
+    @Getter
+    private Map<String, String> clientSessionEventResponseConfigs;
+
+    @Getter
+    private Map<String, String> disconnectClientCommandConfigs;
+
     @PostConstruct
     private void init() {
         publishMsgConfigs = getConfigs(publishMsgProperties);
         applicationPersistenceMsgConfigs = getConfigs(applicationPersistenceMsgProperties);
         applicationPublishCtxConfigs = getConfigs(applicationPublishCtxProperties);
         clientSessionConfigs = getConfigs(clientSessionProperties);
+        clientSubscriptionsConfigs = getConfigs(clientSubscriptionsProperties);
+        clientSessionEventConfigs = getConfigs(clientSessionEventProperties);
+        clientSessionEventResponseConfigs = getConfigs(clientSessionEventResponseProperties);
+        disconnectClientCommandConfigs = getConfigs(disconnectClientCommandProperties);
     }
 
     private Map<String, String> getConfigs(String properties) {

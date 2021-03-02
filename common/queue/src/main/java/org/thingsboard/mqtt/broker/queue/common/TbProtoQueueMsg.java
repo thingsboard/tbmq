@@ -27,15 +27,23 @@ public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> i
     private final String key;
     protected final T value;
     private final TbQueueMsgHeaders headers;
+    private final int partition;
+    private final long offset;
 
     public TbProtoQueueMsg(String key, T value) {
         this(key, value, new DefaultTbQueueMsgHeaders());
     }
 
     public TbProtoQueueMsg(String key, T value, TbQueueMsgHeaders headers) {
+        this(key, value, headers, -1, -1);
+    }
+
+    public TbProtoQueueMsg(String key, T value, TbQueueMsgHeaders headers, int partition, long offset) {
         this.key = key;
         this.value = value;
         this.headers = headers;
+        this.partition = partition;
+        this.offset = offset;
     }
 
     @Override
@@ -51,5 +59,15 @@ public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> i
     @Override
     public byte[] getData() {
         return value.toByteArray();
+    }
+
+    @Override
+    public int getPartition() {
+        return partition;
+    }
+
+    @Override
+    public long getOffset() {
+        return offset;
     }
 }

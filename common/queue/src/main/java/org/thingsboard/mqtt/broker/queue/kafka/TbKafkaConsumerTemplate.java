@@ -39,6 +39,7 @@ import java.util.Properties;
 
 @Slf4j
 public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQueueConsumerTemplate<ConsumerRecord<String, byte[]>, T> {
+    private static final long DEFAULT_CLOSE_TIMEOUT = 3000;
 
     private final TbQueueAdmin admin;
     private final KafkaConsumer<String, byte[]> consumer;
@@ -47,6 +48,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     private final TbKafkaConsumerStatsService statsService;
     private final String groupId;
+
+    private final long closeTimeoutMs;
 
 
     /*
@@ -57,6 +60,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private TbKafkaConsumerTemplate(TbKafkaSettings settings, TbKafkaDecoder<T> decoder,
                                     String clientId, String groupId, String topic,
                                     boolean autoCommit, int autoCommitIntervalMs,
+                                    long closeTimeoutMs,
                                     TbQueueAdmin admin, TbKafkaConsumerStatsService statsService,
                                     Map<String, String> topicConfigs) {
         super(topic);
@@ -72,9 +76,11 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
         this.statsService = statsService;
         this.groupId = groupId;
-        if (statsService != null) {
+        if (groupId != null && statsService != null) {
             statsService.registerClientGroup(groupId);
         }
+
+        this.closeTimeoutMs = closeTimeoutMs > 0 ? closeTimeoutMs : DEFAULT_CLOSE_TIMEOUT;
 
         this.admin = admin;
         this.consumer = new KafkaConsumer<>(props);
@@ -143,9 +149,9 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     protected void doUnsubscribeAndClose() {
         if (consumer != null) {
             consumer.unsubscribe();
-            consumer.close();
+            consumer.close(Duration.ofMillis(closeTimeoutMs));
         }
-        if (statsService != null) {
+        if (groupId != null && statsService != null) {
             statsService.unregisterClientGroup(groupId);
         }
     }

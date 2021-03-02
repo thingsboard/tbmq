@@ -90,6 +90,20 @@ queue:
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
+  client-subscriptions:
+    poll-interval: "${TB_CLIENT_SUBSCRIPTIONS_POLL_INTERVAL:100}"
+    acknowledge-wait-timeout-ms: "${TB_CLIENT_SUBSCRIPTIONS_ACK_WAIT_TIMEOUT_MS:500}"
+  client-session-event:
+    consumers-count: "${TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT:2}"
+    client-threads-count: "${TB_CLIENT_SESSION_EVENT_CLIENT_THREADS_COUNT:16}"
+    max-pending-requests: "${TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS:10000}"
+    poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
+  client-session-event-response:
+    poll-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_POLL_INTERVAL:100}"
+    max-request-timeout: "${TB_CLIENT_SESSION_EVENT_RESPONSE_MAX_REQUEST_TIMEOUT:100000}"
+    cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
+  disconnect-client-command:
+    poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
     consumer-stats:
@@ -97,11 +111,15 @@ queue:
       print-interval-ms: "${TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS:60000}"
       kafka-response-timeout-ms: "${TB_KAFKA_CONSUMER_STATS_RESPONSE_TIMEOUT_MS:1000}"
     topic-properties:
-      publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1}"
+      publish-msg: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       application-persistence-msg: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       application-publish-ctx: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
       client-session: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      client-subscriptions: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      client-session-event: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
+      client-session-event-response: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      disconnect-client-command: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
     stats-consumer:
       consumer:
         maxPollIntervalMs: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_INTERVAL_MS:0}"
@@ -152,8 +170,7 @@ queue:
     client-session:
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
       producer:
-        # Should be 'all' so that there's no inconsistency in client's subscriptions
-        acks: "${TB_KAFKA_CLIENT_SESSION_ACKS:all}"
+        acks: "${TB_KAFKA_CLIENT_SESSION_ACKS:1}"
         retries: "${TB_KAFKA_CLIENT_SESSION_RETRIES:3}"
         batchSize: "${TB_KAFKA_CLIENT_SESSION_BATCH_SIZE:16384}"
         lingerMs: "${TB_KAFKA_CLIENT_SESSION_LINGER_MS:1}"
@@ -163,6 +180,64 @@ queue:
         maxPollRecords: "${TB_KAFKA_CLIENT_SESSION_MAX_POLL_RECORDS:8192}"
         maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SESSION_MAX_PARTITION_FETCH_BYTES:16777216}"
         fetchMaxBytes: "${TB_KAFKA_CLIENT_SESSION_FETCH_MAX_BYTES:134217728}"
+      other:
+        - key: "auto.offset.reset"
+          value: "earliest"
+    client-subscriptions:
+      topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:client_subscriptions}"
+      producer:
+        acks: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ACKS:1}"
+        retries: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_RETRIES:3}"
+        batchSize: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_BATCH_SIZE:16384}"
+        lingerMs: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_LINGER_MS:1}"
+        bufferMemory: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_BUFFER_MEMORY:33554432}"
+      consumer:
+        maxPollIntervalMs: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_MAX_POLL_INTERVAL_MS:0}"
+        maxPollRecords: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_MAX_POLL_RECORDS:8192}"
+        maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_MAX_PARTITION_FETCH_BYTES:16777216}"
+        fetchMaxBytes: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_FETCH_MAX_BYTES:134217728}"
+      other:
+        - key: "auto.offset.reset"
+          value: "earliest"
+    client-session-event:
+      topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:client_session_event}"
+      producer:
+        acks: "${TB_KAFKA_CLIENT_SESSION_EVENT_ACKS:1}"
+        retries: "${TB_KAFKA_CLIENT_SESSION_EVENT_RETRIES:1}"
+        batchSize: "${TB_KAFKA_CLIENT_SESSION_EVENT_BATCH_SIZE:16384}"
+        lingerMs: "${TB_KAFKA_CLIENT_SESSION_EVENT_LINGER_MS:1}"
+        bufferMemory: "${TB_KAFKA_CLIENT_SESSION_EVENT_BUFFER_MEMORY:33554432}"
+      consumer:
+        maxPollIntervalMs: "${TB_KAFKA_CLIENT_SESSION_EVENT_MAX_POLL_INTERVAL_MS:0}"
+        maxPollRecords: "${TB_KAFKA_CLIENT_SESSION_EVENT_MAX_POLL_RECORDS:8192}"
+        maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SESSION_EVENT_MAX_PARTITION_FETCH_BYTES:16777216}"
+        fetchMaxBytes: "${TB_KAFKA_CLIENT_SESSION_EVENT_FETCH_MAX_BYTES:134217728}"
+    client-session-event-response:
+      topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC:client_session_event_response}"
+      producer:
+        acks: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ACKS:1}"
+        retries: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_RETRIES:1}"
+        batchSize: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_BATCH_SIZE:16384}"
+        lingerMs: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_LINGER_MS:1}"
+        bufferMemory: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_BUFFER_MEMORY:33554432}"
+      consumer:
+        maxPollIntervalMs: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_MAX_POLL_INTERVAL_MS:0}"
+        maxPollRecords: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_MAX_POLL_RECORDS:8192}"
+        maxPartitionFetchBytes: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_MAX_PARTITION_FETCH_BYTES:16777216}"
+        fetchMaxBytes: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_FETCH_MAX_BYTES:134217728}"
+    disconnect-client-command:
+      topic: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC:disconnect_client_command}"
+      producer:
+        acks: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ACKS:1}"
+        retries: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RETRIES:1}"
+        batchSize: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_BATCH_SIZE:16384}"
+        lingerMs: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_LINGER_MS:1}"
+        bufferMemory: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_BUFFER_MEMORY:33554432}"
+      consumer:
+        maxPollIntervalMs: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_MAX_POLL_INTERVAL_MS:0}"
+        maxPollRecords: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_MAX_POLL_RECORDS:8192}"
+        maxPartitionFetchBytes: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_MAX_PARTITION_FETCH_BYTES:16777216}"
+        fetchMaxBytes: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_FETCH_MAX_BYTES:134217728}"
 # SQL DAO Configuration
 spring:
   data:

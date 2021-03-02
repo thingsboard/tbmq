@@ -18,8 +18,6 @@ package org.thingsboard.mqtt.broker.service.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -29,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class DefaultPublishMsgConsumerService implements PublishMsgConsumerService {
 
-    private volatile ExecutorService consumersExecutor;
+    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
     private volatile boolean stopped = false;
 
     @Value("${queue.publish-msg.consumers-count}")
@@ -56,12 +55,11 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     private final StatsManager statsManager;
 
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void onApplicationEvent(ApplicationReadyEvent event) {
+    @PostConstruct
+    public void init() {
         for (int i = 0; i < consumersCount; i++) {
             publishMsgConsumers.add(publishMsgQueueFactory.createConsumer(Integer.toString(i)));
         }
-        this.consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
         for (TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> publishMsgConsumer : publishMsgConsumers) {
             publishMsgConsumer.subscribe();
             launchConsumer(publishMsgConsumer);
@@ -104,8 +102,6 @@ public class DefaultPublishMsgConsumerService implements PublishMsgConsumerServi
     public void destroy() {
         stopped = true;
         publishMsgConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
-        if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
-        }
+        consumersExecutor.shutdownNow();
     }
 }

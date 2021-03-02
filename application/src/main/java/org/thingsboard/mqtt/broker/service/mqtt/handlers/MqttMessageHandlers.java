@@ -23,8 +23,6 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Getter
 public class MqttMessageHandlers {
-    private final MqttConnectHandler connectHandler;
-    private final MqttDisconnectHandler disconnectHandler;
     private final MqttSubscribeHandler subscribeHandler;
     private final MqttUnsubscribeHandler unsubscribeHandler;
     private final MqttPublishHandler publishHandler;

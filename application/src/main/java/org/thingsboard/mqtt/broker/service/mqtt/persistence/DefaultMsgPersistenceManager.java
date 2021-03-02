@@ -22,12 +22,12 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.SessionState;
 
 import java.util.Collection;
 
@@ -47,9 +47,9 @@ public class DefaultMsgPersistenceManager implements MsgPersistenceManager {
     @Override
     public void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions) {
         for (Subscription msgSubscription : persistentSubscriptions) {
-            ClientSession clientSession = msgSubscription.getClientSession();
-            String clientId = clientSession.getClientInfo().getClientId();
-            ClientType clientType = clientSession.getClientInfo().getType();
+            ClientInfo clientInfo = msgSubscription.getSessionInfo().getClientInfo();
+            String clientId = clientInfo.getClientId();
+            ClientType clientType = clientInfo.getType();
             if (clientType == DEVICE) {
                 // TODO implement device persistence
                 trySendMsg(publishMsgProto, msgSubscription);
@@ -63,12 +63,9 @@ public class DefaultMsgPersistenceManager implements MsgPersistenceManager {
 
     @Override
     public void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
-        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
-        ClientType clientType = clientInfo.getType();
+        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
-        } else {
-            log.debug("[{}] Persisted messages are not supported for client type {}.", clientInfo.getClientId(), clientType);
         }
     }
 
@@ -99,11 +96,10 @@ public class DefaultMsgPersistenceManager implements MsgPersistenceManager {
     }
 
     private void trySendMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
-        ClientSession clientSession = subscription.getClientSession();
-        if (!clientSession.isConnected()) {
+        ClientSessionCtx sessionCtx = subscription.getSessionCtx();
+        if (sessionCtx == null || sessionCtx.getSessionState() != SessionState.CONNECTED) {
             return;
         }
-        ClientSessionCtx sessionCtx = subscription.getSessionCtx();
         int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();
         int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
         MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);

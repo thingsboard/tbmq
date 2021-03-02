@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +22,15 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PreDestroy;
 import java.util.UUID;
@@ -43,7 +47,9 @@ public class DefaultDisconnectService implements DisconnectService {
     private final KeepAliveService keepAliveService;
     private final LastWillService lastWillService;
     private final SubscriptionManager subscriptionManager;
-    private final ClientSessionManager clientSessionManager;
+    private final ClientSessionCtxService clientSessionCtxService;
+    private final MsgPersistenceManager msgPersistenceManager;
+    private final ClientSessionEventService clientSessionEventService;
 
     @Value("${application.disconnect.executor-shutdown-timout-ms:500}")
     private long shutdownTimeout;
@@ -55,38 +61,52 @@ public class DefaultDisconnectService implements DisconnectService {
 
     @Override
     public void disconnect(ClientSessionCtx sessionCtx, DisconnectReason reason, boolean needChannelClose) {
-        boolean isStateCleared = sessionCtx.tryClearState();
-        if (isStateCleared) {
+        SessionState prevSessionState = sessionCtx.updateSessionState(SessionState.DISCONNECTED);
+        if (prevSessionState == SessionState.DISCONNECTED) {
             return;
         }
-        sessionCtx.setDisconnected();
         UUID sessionId = sessionCtx.getSessionId();
-        log.trace("[{}][{}] Init client disconnection.", sessionCtx.getClientId(), sessionId);
+        log.trace("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionId, reason);
         disconnectExecutor.execute(() -> {
-            // TODO: think about adding timeout
-            sessionCtx.getLock().lock();
+            sessionCtx.getProcessingLock().lock();
             try {
-                boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(reason);
-                lastWillService.removeLastWill(sessionId, sendLastWill);
-                keepAliveService.unregisterSession(sessionId);
-                ClientInfo clientInfo = getClientInfo(sessionCtx.getSessionInfo());
-                if (clientInfo != null) {
-                    if (!sessionCtx.getSessionInfo().isPersistent()) {
-                        subscriptionManager.clearSubscriptions(clientInfo.getClientId());
-                    }
-                    clientSessionManager.unregisterClient(clientInfo.getClientId());
-                }
-                if (needChannelClose) {
-                    sessionCtx.getChannel().close();
-                }
-                log.info("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionId);
+                clearClientSession(sessionCtx, reason);
             } catch (Exception e) {
-                log.warn("[{}][{}] Failed to disconnect client. Reason - {}.", sessionCtx.getClientId(), sessionId, e.getMessage());
+                log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionId, e.getMessage());
                 log.trace("Detailed error: ", e);
             } finally {
-                sessionCtx.getLock().unlock();
+                sessionCtx.getProcessingLock().unlock();
             }
+            if (needChannelClose) {
+                try {
+                    sessionCtx.getChannel().close();
+                } catch (Exception e) {
+                    log.debug("[{}][{}] Failed to close channel. Reason - {}.", sessionCtx.getClientId(), sessionId, e.getMessage());
+                }
+            }
+            log.info("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionId);
         });
+    }
+
+    private void clearClientSession(ClientSessionCtx sessionCtx, DisconnectReason disconnectReason) {
+        UUID sessionId = sessionCtx.getSessionId();
+        keepAliveService.unregisterSession(sessionId);
+
+        ClientInfo clientInfo = getClientInfo(sessionCtx.getSessionInfo());
+        if (clientInfo == null) {
+            return;
+        }
+
+        boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(disconnectReason);
+        lastWillService.removeLastWill(sessionId, sendLastWill);
+
+        if (!sessionCtx.getSessionInfo().isPersistent()) {
+            subscriptionManager.clearSubscriptions(clientInfo.getClientId());
+        } else {
+            msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
+        }
+        clientSessionCtxService.unregisterSession(clientInfo.getClientId());
+        clientSessionEventService.disconnect(clientInfo, sessionId);
     }
 
     private ClientInfo getClientInfo(SessionInfo sessionInfo) {

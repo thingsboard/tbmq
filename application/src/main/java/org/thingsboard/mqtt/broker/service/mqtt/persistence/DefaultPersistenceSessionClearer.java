@@ -28,13 +28,11 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 public class DefaultPersistenceSessionClearer implements PersistenceSessionClearer {
     private final SubscriptionManager subscriptionManager;
     private final MsgPersistenceManager msgPersistenceManager;
-    public final ClientSessionService clientSessionService;
 
     @Override
     public void clearPersistedSession(ClientInfo clientInfo) {
         log.debug("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
         subscriptionManager.clearSubscriptions(clientInfo.getClientId());
         msgPersistenceManager.clearPersistedMessages(clientInfo);
-        clientSessionService.clearClientSessionFromPersistentStorage(clientInfo.getClientId());
     }
 }

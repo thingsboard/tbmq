@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;

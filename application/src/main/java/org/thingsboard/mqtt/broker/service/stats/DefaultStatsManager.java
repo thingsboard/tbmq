@@ -87,17 +87,6 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public AtomicInteger createConnectedClientsCounter() {
-        if (statsEnabled) {
-            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.CONNECTED_CLIENTS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.CONNECTED_CLIENTS.getPrintName(), sizeGauge));
-            return sizeGauge;
-        } else {
-            return new AtomicInteger(0);
-        }
-    }
-
-    @Override
     public AtomicInteger createLastWillCounter() {
         if (statsEnabled) {
             AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), new AtomicInteger(0));

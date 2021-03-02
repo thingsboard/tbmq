@@ -19,7 +19,6 @@ public enum StatsType {
     MSG_DISPATCHER_PRODUCER("incomingPublishMsg.published"),
     PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed"),
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
-    CONNECTED_CLIENTS("connectedClients"),
     LAST_WILL_CLIENTS("lastWillClients"),
     CONNECTED_SESSIONS("connectedSessions"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),

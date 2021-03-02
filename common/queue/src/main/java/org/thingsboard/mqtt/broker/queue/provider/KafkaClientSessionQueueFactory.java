@@ -71,16 +71,14 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createConsumer() {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.settings(kafkaSettings);
         consumerBuilder.topic(kafkaSettings.getTopic());
         consumerBuilder.topicConfigs(clientSessionConfigs);
-        consumerBuilder.clientId("client-session-consumer");
-        consumerBuilder.groupId("client-session-consumer-group");
+        consumerBuilder.clientId("client-session-consumer-" + id);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
-        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 }

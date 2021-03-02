@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.subscription;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 
-public interface DisconnectService {
-    void disconnect(ClientSessionCtx sessionCtx, DisconnectReason reason);
+import java.util.Map;
+import java.util.Set;
 
-    void disconnect(ClientSessionCtx sessionCtx, DisconnectReason reason, boolean needChannelClose);
+public interface SubscriptionPersistenceService {
+    Map<String, Set<TopicSubscription>> loadAllClientSubscriptions();
+
+    void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions);
 }

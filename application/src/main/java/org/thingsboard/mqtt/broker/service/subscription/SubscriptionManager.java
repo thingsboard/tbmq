@@ -16,8 +16,10 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 
 import java.util.List;
+import java.util.Set;
 
 public interface SubscriptionManager {
     void subscribe(String clientId, List<MqttTopicSubscription> mqttTopicSubscriptions);
@@ -25,4 +27,6 @@ public interface SubscriptionManager {
     void unsubscribe(String clientId, List<String> topicFilters);
 
     void clearSubscriptions(String clientId);
+
+    Set<TopicSubscription> getClientSubscriptions(String clientId);
 }

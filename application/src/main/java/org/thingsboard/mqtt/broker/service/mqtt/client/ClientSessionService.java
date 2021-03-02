@@ -19,15 +19,15 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
+// TODO: separate READ and WRITE interfaces (only ClientEventProcessor can update ClientSession)
 public interface ClientSessionService {
-    List<String> getPersistedClients();
-
-    Collection<ClientSession> getPersistedClientSessions();
+    Map<String, ClientSession> getPersistedClientSessions();
 
     ClientSession getClientSession(String clientId);
 
-    void replaceClientSession(String clientId, ClientSession expectedClientSession, ClientSession newClientSession);
+    void saveClientSession(String clientId, ClientSession clientSession);
 
-    void clearClientSessionFromPersistentStorage(String clientId);
+    void clearClientSession(String clientId);
 }

@@ -20,39 +20,40 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPubAckMessage;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
-import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.mqtt.client.DisconnectService;
-import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandlers;
-import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.connect.ConnectService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
+import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
-@RequiredArgsConstructor
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
 
-    private final MqttMessageHandlers messageHandlers;
-    private final KeepAliveService keepAliveService;
+    private final MqttMessageHandler messageHandler;
+    private final ConnectService connectService;
     private final DisconnectService disconnectService;
-    private final SslHandler sslHandler;
 
     private final UUID sessionId = UUID.randomUUID();
-    private final ClientSessionCtx clientSessionCtx = new ClientSessionCtx(sessionId);
+    private final ClientSessionCtx clientSessionCtx ;
+
+    public MqttSessionHandler(MqttMessageHandler messageHandler, ConnectService connectService, DisconnectService disconnectService, SslHandler sslHandler) {
+        this.messageHandler = messageHandler;
+        this.connectService = connectService;
+        this.disconnectService = disconnectService;
+        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler);
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -83,73 +84,42 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             return;
         }
-        // TODO: we can leave order validation as long as we process connection synchronously
         MqttMessageType msgType = msg.fixedHeader().messageType();
-        if (!validOrder(msgType)) {
+        if (wrongOrder(msgType)) {
             log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             return;
         }
-        clientSessionCtx.getLock().lock();
+        clientSessionCtx.getConnectionLock().lock();
         try {
-            if (!validOrder(msgType)) {
+            if (wrongOrder(msgType)) {
                 log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
                 return;
             }
-            processKeepAlive(ctx, msg);
-            switch (msgType) {
-                case CONNECT:
-                    messageHandlers.getConnectHandler().process(clientSessionCtx, sslHandler, (MqttConnectMessage) msg);
-                    break;
-                case DISCONNECT:
-                    messageHandlers.getDisconnectHandler().process(clientSessionCtx);
-                    break;
-                case SUBSCRIBE:
-                    messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMessage) msg);
-                    break;
-                case UNSUBSCRIBE:
-                    messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMessage) msg);
-                    break;
-                case PUBLISH:
-                    messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMessage) msg);
-                    break;
-                case PINGREQ:
-                    messageHandlers.getPingHandler().process(clientSessionCtx);
-                    break;
-                case PUBACK:
-                    messageHandlers.getPubAckHandler().process(clientSessionCtx, (MqttPubAckMessage) msg);
-                default:
-                    break;
+            if (msgType == MqttMessageType.CONNECT) {
+                connectService.connect(clientSessionCtx, (MqttConnectMessage) msg);
+            } else if (msgType == MqttMessageType.DISCONNECT) {
+                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_DISCONNECT_MSG);
+            } else if (clientSessionCtx.getSessionState() == SessionState.CONNECTED) {
+                messageHandler.process(clientSessionCtx, msg);
+            } else {
+                clientSessionCtx.getUnprocessedMessages().add(msg);
             }
         } catch (MqttException e) {
-            log.warn("[{}] Failed to process {} msg. Reason - {}.",
+            log.debug("[{}] Failed to process {} msg. Reason - {}.",
                     sessionId, msgType, e.getMessage());
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
         } finally {
-            clientSessionCtx.getLock().unlock();
+            clientSessionCtx.getConnectionLock().unlock();
         }
     }
 
-    private void processKeepAlive(ChannelHandlerContext ctx, MqttMessage msg) throws MqttException {
-        MqttMessageType msgType = msg.fixedHeader().messageType();
-        if (msgType == MqttMessageType.CONNECT) {
-            keepAliveService.registerSession(sessionId, ((MqttConnectMessage) msg).variableHeader().keepAliveTimeSeconds(),
-                    () -> {
-                        log.warn("[{}] Disconnecting client due to inactivity.", sessionId);
-                        disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
-                    });
-        } else {
-            keepAliveService.acknowledgeControlPacket(sessionId);
-        }
-    }
-
-    private boolean validOrder(MqttMessageType messageType) {
-        if (messageType == MqttMessageType.CONNECT) {
-            return !clientSessionCtx.isConnected() && !clientSessionCtx.isCleared();
-        } else {
-            return clientSessionCtx.isConnected();
-        }
+    private boolean wrongOrder(MqttMessageType messageType) {
+        SessionState sessionState = clientSessionCtx.getSessionState();
+        return sessionState == SessionState.DISCONNECTED
+                || (messageType == MqttMessageType.CONNECT && sessionState != SessionState.CREATED)
+                || (messageType != MqttMessageType.CONNECT && sessionState == SessionState.CREATED);
     }
 
     @Override

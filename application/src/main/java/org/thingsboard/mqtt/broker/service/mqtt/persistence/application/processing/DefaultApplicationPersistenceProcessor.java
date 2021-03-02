@@ -30,8 +30,10 @@ import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueue
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,7 +42,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -115,6 +116,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     @Override
     public void clearPersistedMsgs(String clientId) {
         String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
+        log.info("[{}] Clearing persisted topic {} for application.", clientId, clientTopic);
         queueAdmin.deleteTopic(clientTopic);
     }
 
@@ -122,9 +124,8 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         String clientId = clientSessionCtx.getClientId();
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
         consumer.assignPartition(0);
-        long packetOffset = consumer.getOffset(consumer.getTopic(), 0);
 
-        while (clientSessionCtx.isConnected()) {
+        while (isClientConnected(clientSessionCtx)) {
             try {
                 List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> persistedMessages = consumer.poll(pollDuration);
                 if (persistedMessages.isEmpty()) {
@@ -133,16 +134,15 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> {
                     log.trace("[{}] Committing offset {}.", clientId, offset);
-                    consumer.commit(0, offset);
+                    consumer.commit(0, offset + 1);
                 });
 
-                AtomicLong msgOffset = new AtomicLong(packetOffset);
                 List<PublishMsgWithOffset> persistedMessagesWithOffset = persistedMessages.stream()
-                        .map(msg -> new PublishMsgWithOffset(msg.getValue(), msgOffset.incrementAndGet()))
+                        .map(msg -> new PublishMsgWithOffset(msg.getValue(), msg.getOffset()))
                         .collect(Collectors.toList());
                 submitStrategy.init(persistedMessagesWithOffset);
 
-                while (clientSessionCtx.isConnected()) {
+                while (isClientConnected(clientSessionCtx)) {
                     ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy);
                     processingContextMap.put(clientId, ctx);
                     submitStrategy.process(msg -> {
@@ -153,7 +153,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                                 publishMsgProto.getPayload().toByteArray());
                     });
 
-                    if (clientSessionCtx.isConnected()) {
+                    if (isClientConnected(clientSessionCtx)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
@@ -166,13 +166,12 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
                     }
                 }
 
-                if (clientSessionCtx.isConnected()) {
+                if (isClientConnected(clientSessionCtx)) {
                     log.trace("[{}] Committing all read messages.", clientId);
                     consumer.commit();
                 }
-                packetOffset += persistedMessages.size();
             } catch (Exception e) {
-                if (clientSessionCtx.isConnected()) {
+                if (isClientConnected(clientSessionCtx)) {
                     log.warn("[{}] Failed to process messages from queue.", clientId, e);
                     try {
                         Thread.sleep(pollDuration);
@@ -186,5 +185,17 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
         consumer.unsubscribeAndClose();
         log.info("[{}] Application persisted messages consumer stopped.", clientId);
 
+    }
+
+    private boolean isClientConnected(ClientSessionCtx clientSessionCtx) {
+        return clientSessionCtx.getSessionState() == SessionState.CONNECTED;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        for (Future<?> future : processingFutures.values()) {
+            future.cancel(true);
+        }
+        persistedMsgsConsumeExecutor.shutdownNow();
     }
 }

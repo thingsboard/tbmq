@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
+import com.google.common.util.concurrent.SettableFuture;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import java.util.UUID;
 
-public interface ClientSessionManager {
-    /**
-     * Registers client in the system. Returns if the client had a persisted state.
-     *
-     * @return 'true' if the session was persisted in the system and 'false' otherwise
-     */
-    boolean registerClient(SessionInfo sessionInfo, ClientSessionCtx clientSessionCtx);
+public interface DisconnectClientCommandService {
+    SettableFuture<Void> startWaitingForDisconnect(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
 
-    void unregisterClient(String clientId);
+    void clearWaitingFuture(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
 
-    PersistedClientSession getPersistedClientInfo(String clientId);
+    void notifyWaitingSession(String clientId, UUID sessionId);
+
+    void disconnectSession(String clientId, UUID sessionId);
 }

@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +25,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
@@ -33,7 +36,15 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final UUID sessionId;
     @Getter
-    private final ReentrantLock lock = new ReentrantLock();
+    private final SslHandler sslHandler;
+    // Locking netty and connection handler to switch from processing msgs from queue - to processing in netty threads
+    @Getter
+    private final ReentrantLock connectionLock = new ReentrantLock();
+    // Locking msg process and disconnect to prevent race condition
+    @Getter
+    private final ReentrantLock processingLock = new ReentrantLock();
+    @Getter
+    private final ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = new ConcurrentLinkedQueue<>();
     @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
@@ -41,16 +52,16 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile AuthorizationRule authorizationRule;
 
-    private final AtomicBoolean connected = new AtomicBoolean(false);
-    private final AtomicBoolean cleared = new AtomicBoolean(false);
+    private final AtomicReference<SessionState> sessionState = new AtomicReference<>(SessionState.CREATED);
 
     @Getter
     private ChannelHandlerContext channel;
 
     private final AtomicInteger msgIdSeq = new AtomicInteger(1);
 
-    public ClientSessionCtx(UUID sessionId) {
+    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler) {
         this.sessionId = sessionId;
+        this.sslHandler = sslHandler;
     }
 
     public void setChannel(ChannelHandlerContext channel) {
@@ -64,27 +75,12 @@ public class ClientSessionCtx implements SessionContext {
         }
     }
 
-    public boolean isConnected() {
-        return connected.get();
+    public SessionState getSessionState() {
+        return sessionState.get();
     }
 
-    public void setDisconnected() {
-        this.connected.getAndSet(false);
-    }
-
-    public void setConnected() {
-        this.connected.getAndSet(true);
-    }
-
-    /*
-        need 'cleared' flag because client can be 'disconnected' but with some state (in case there was some error in the middle of connection)
-     */
-    public boolean tryClearState() {
-        return this.cleared.getAndSet(true);
-    }
-
-    public boolean isCleared() {
-        return this.cleared.get();
+    public SessionState updateSessionState(SessionState newState) {
+        return sessionState.getAndSet(newState);
     }
 
     public String getClientId() {

@@ -43,22 +43,8 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
         try {
             testClient.connect(connectOptions);
         } catch (MqttException e){
-            // TODO investigate why it's not exception with ReasonCode 2
             Assert.assertFalse(testClient.isConnected());
             throw e;
-        }
-    }
-
-    @Test(expected = MqttException.class)
-    public void testDuplicateClientId() throws Throwable {
-        String clientName = "test_client";
-        MqttClient firstClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
-        firstClient.connect();
-        MqttClient secondClient = new MqttClient("tcp://localhost:" + mqttPort, clientName);
-        try {
-            secondClient.connect();
-        } finally {
-            firstClient.disconnect();
         }
     }
 }

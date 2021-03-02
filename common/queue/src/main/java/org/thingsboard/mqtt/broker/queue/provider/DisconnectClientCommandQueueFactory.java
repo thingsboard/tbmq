@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-@AllArgsConstructor
-@Getter
-public class PersistedClientSession {
-    private final ClientSession clientSession;
-    private final ClientSessionCtx clientSessionCtx;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+
+public interface DisconnectClientCommandQueueFactory {
+
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer();
+
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer();
+
 }
