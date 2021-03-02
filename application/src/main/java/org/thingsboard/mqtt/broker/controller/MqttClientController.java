@@ -88,6 +88,25 @@ public class MqttClientController extends BaseController {
         }
     }
 
-    // TODO: add getAllMqttClients endpoint
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @RequestMapping(value = "", method = RequestMethod.GET)
+    @ResponseBody
+    public List<MqttClient> getAllMqttClients() throws ThingsboardException {
+        try {
+            return mqttClientService.getAllClients();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
+    public void deleteClient(@PathVariable("clientId") String strClientId) throws ThingsboardException {
+        try {
+            mqttClientService.deleteMqttClient(toUUID(strClientId));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
 
 }

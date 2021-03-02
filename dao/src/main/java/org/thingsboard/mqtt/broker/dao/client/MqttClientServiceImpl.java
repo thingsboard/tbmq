@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,6 +63,12 @@ public class MqttClientServiceImpl implements MqttClientService {
     public Optional<MqttClient> getMqttClient(String clientId) {
         log.trace("Executing getMqttClient [{}]", clientId);
         return Optional.ofNullable(mqttClientDao.findByClientId(clientId));
+    }
+
+    @Override
+    public List<MqttClient> getAllClients() {
+        log.trace("Executing getAllClients");
+        return mqttClientDao.find();
     }
 
     private final DataValidator<MqttClient> mqttClientValidator =
