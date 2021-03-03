@@ -24,7 +24,8 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.dao.CustomSqlUnit;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 
 import java.util.Arrays;
 
@@ -46,8 +47,12 @@ public class IntegrationTestSuite {
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof TbKafkaSettings) {
-                TbKafkaSettings kafkaSettings = (TbKafkaSettings) bean;
+            if (bean instanceof TbKafkaConsumerSettings) {
+                TbKafkaConsumerSettings kafkaSettings = (TbKafkaConsumerSettings) bean;
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaProducerSettings) {
+                TbKafkaProducerSettings kafkaSettings = (TbKafkaProducerSettings) bean;
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
             if (bean instanceof TbKafkaAdminSettings) {

@@ -26,18 +26,35 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Setter
 @Component
-public class TbKafkaAdminSettings {
+public class TbKafkaProducerSettings {
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
-    @Value("${queue.kafka.admin.config:#{null}}")
-    private String config;
+    @Value("${queue.kafka.default.producer.acks}")
+    private String acks;
 
-    public Properties toProps() {
+    @Value("${queue.kafka.default.producer.retries}")
+    private int retries;
+
+    @Value("${queue.kafka.default.producer.batch-size}")
+    private int batchSize;
+
+    @Value("${queue.kafka.default.producer.linger-ms}")
+    private long lingerMs;
+
+    @Value("${queue.kafka.default.producer.buffer-memory}")
+    private long bufferMemory;
+
+    public Properties toProps(String customProperties) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        if (config != null) {
-            getConfigs(config).forEach(props::put);
+        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.ACKS_CONFIG, acks);
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, batchSize);
+        props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMs);
+        props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
+        if (customProperties != null) {
+            getConfigs(customProperties).forEach(props::put);
         }
         return props;
     }

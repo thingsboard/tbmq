@@ -26,7 +26,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.common.AbstractTbQueueConsumerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import java.io.IOException;
@@ -57,22 +56,21 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
      */
 
     @Builder
-    private TbKafkaConsumerTemplate(TbKafkaSettings settings, TbKafkaDecoder<T> decoder,
+    private TbKafkaConsumerTemplate(Properties properties, TbKafkaDecoder<T> decoder,
                                     String clientId, String groupId, String topic,
                                     boolean autoCommit, int autoCommitIntervalMs,
                                     long closeTimeoutMs,
                                     TbQueueAdmin admin, TbKafkaConsumerStatsService statsService,
                                     Map<String, String> topicConfigs) {
         super(topic);
-        Properties props = settings.toConsumerProps();
-        props.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
+        properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
         if (groupId != null) {
-            props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+            properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         }
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommit);
-        props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, autoCommitIntervalMs);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommit);
+        properties.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, autoCommitIntervalMs);
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
         this.statsService = statsService;
         this.groupId = groupId;
@@ -83,7 +81,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.closeTimeoutMs = closeTimeoutMs > 0 ? closeTimeoutMs : DEFAULT_CLOSE_TIMEOUT;
 
         this.admin = admin;
-        this.consumer = new KafkaConsumer<>(props);
+        this.consumer = new KafkaConsumer<>(properties);
         this.decoder = decoder;
         this.topicConfigs = topicConfigs;
     }

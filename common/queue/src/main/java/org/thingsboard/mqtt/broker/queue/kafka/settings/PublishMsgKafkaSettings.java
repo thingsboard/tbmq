@@ -15,38 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.*;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
-@ConfigurationProperties(prefix = "queue.kafka.publish-msg")
-@Component("publish-msg")
-@AllArgsConstructor
-@NoArgsConstructor
-public class PublishMsgKafkaSettings extends TbAbstractKafkaSettings {
-
-    @Setter
-    @Getter
+@Getter
+@Component
+public class PublishMsgKafkaSettings {
+    @Value("${queue.kafka.publish-msg.topic}")
     private String topic;
-
-    @Setter
-    private KafkaProducerSettings producer;
-    @Setter
-    private KafkaConsumerSettings consumer;
-
-    @Setter
-    @Getter
-    private List<TbKafkaProperty> other;
-
-    @Override
-    KafkaProducerSettings getProducerSettings() {
-        return producer;
-    }
-
-    @Override
-    KafkaConsumerSettings getConsumerSettings() {
-        return consumer;
-    }
+    @Value("${queue.kafka.publish-msg.topic-properties}")
+    private String topicProperties;
+    @Value("${queue.kafka.publish-msg.producer}")
+    private String producerProperties;
+    @Value("${queue.kafka.publish-msg.consumer}")
+    private String consumerProperties;
 }

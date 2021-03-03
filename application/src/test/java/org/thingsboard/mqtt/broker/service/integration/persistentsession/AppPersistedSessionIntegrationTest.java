@@ -200,9 +200,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         persistedClient.close();
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
+        Assert.assertNull(persistedClientSession);
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
         Assert.assertNull(clientSessionCtx);
-        Assert.assertFalse(persistedClientSession.getSessionInfo().isPersistent());
         Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }

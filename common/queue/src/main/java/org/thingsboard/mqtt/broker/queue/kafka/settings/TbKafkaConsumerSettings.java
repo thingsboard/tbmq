@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.Setter;
-import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -26,19 +26,34 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Setter
 @Component
-public class TbKafkaAdminSettings {
+public class TbKafkaConsumerSettings {
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
-    @Value("${queue.kafka.admin.config:#{null}}")
-    private String config;
+    @Value("${queue.kafka.default.consumer.max-poll-records}")
+    private int maxPollRecords;
 
-    public Properties toProps() {
+    @Value("${queue.kafka.default.consumer.max-poll-interval-ms}")
+    private int maxPollIntervalMs;
+
+    @Value("${queue.kafka.default.consumer.max-partition-fetch-bytes}")
+    private int maxPartitionFetchBytes;
+
+    @Value("${queue.kafka.default.consumer.fetch-max-bytes}")
+    private int fetchMaxBytes;
+
+
+    public Properties toProps(String customProperties) {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        if (config != null) {
-            getConfigs(config).forEach(props::put);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, maxPollIntervalMs);
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+        if (customProperties != null) {
+            getConfigs(customProperties).forEach(props::put);
         }
         return props;
     }
+
 }

@@ -15,40 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
-@ConfigurationProperties(prefix = "queue.kafka.client-session")
-@Component("client-session")
-@AllArgsConstructor
-@NoArgsConstructor
-public class ClientSessionKafkaSettings extends TbAbstractKafkaSettings {
-    @Getter
-    @Setter
+@Getter
+@Component
+public class ClientSessionKafkaSettings {
+    @Value("${queue.kafka.client-session.topic}")
     private String topic;
-
-    @Setter
-    private KafkaProducerSettings producer;
-    @Setter
-    private KafkaConsumerSettings consumer;
-
-    @Getter
-    @Setter
-    private List<TbKafkaProperty> other;
-
-    @Override
-    KafkaProducerSettings getProducerSettings() {
-        return producer;
-    }
-
-    @Override
-    KafkaConsumerSettings getConsumerSettings() {
-        return consumer;
-    }
+    @Value("${queue.kafka.client-session.topic-properties}")
+    private String topicProperties;
+    @Value("${queue.kafka.client-session.producer}")
+    private String producerProperties;
+    @Value("${queue.kafka.client-session.consumer}")
+    private String consumerProperties;
 }

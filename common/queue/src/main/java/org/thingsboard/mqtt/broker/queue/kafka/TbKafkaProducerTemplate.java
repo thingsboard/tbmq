@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
 
 import java.util.Map;
 import java.util.Properties;
@@ -46,14 +45,13 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
     private final Map<String, String> topicConfigs;
 
     @Builder
-    private TbKafkaProducerTemplate(TbKafkaSettings settings, String topic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
-        Properties props = settings.toProducerProps();
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+    private TbKafkaProducerTemplate(Properties properties, String topic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         if (!StringUtils.isEmpty(clientId)) {
-            props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
+            properties.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
         }
-        this.producer = new KafkaProducer<>(props);
+        this.producer = new KafkaProducer<>(properties);
         this.topic = topic;
         this.admin = admin;
         this.topicConfigs = topicConfigs;

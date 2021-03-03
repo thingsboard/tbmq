@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -25,37 +25,41 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
+
+import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClientCommandQueueFactory {
 
-    private final TbKafkaSettings kafkaSettings;
+    private final TbKafkaConsumerSettings consumerSettings;
+    private final TbKafkaProducerSettings producerSettings;
+    private final DisconnectClientCommandKafkaSettings disconnectClientCommandSettings;
     private final TbQueueAdmin queueAdmin;
-    private final Map<String, String> topicConfigs;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
-    public KafkaDisconnectClientCommandQueueFactory(@Qualifier("disconnect-client-command") TbKafkaSettings kafkaSettings,
-                                                    TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                    TbQueueAdmin queueAdmin,
-                                                    TbKafkaConsumerStatsService consumerStatsService) {
-        this.kafkaSettings = kafkaSettings;
-        this.topicConfigs = kafkaTopicConfigs.getDisconnectClientCommandConfigs();
-        this.consumerStatsService = consumerStatsService;
-        this.queueAdmin = queueAdmin;
+    private Map<String, String> topicConfigs;
+
+    @PostConstruct
+    public void init() {
+        this.topicConfigs = getConfigs(disconnectClientCommandSettings.getTopicProperties());
     }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.settings(kafkaSettings);
+        producerBuilder.properties(producerSettings.toProps(disconnectClientCommandSettings.getProducerProperties()));
         producerBuilder.clientId("disconnect-client-command-producer");
-        producerBuilder.topic(kafkaSettings.getTopic());
+        producerBuilder.topic(disconnectClientCommandSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
@@ -64,8 +68,8 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer() {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.settings(kafkaSettings);
-        consumerBuilder.topic(kafkaSettings.getTopic());
+        consumerBuilder.properties(consumerSettings.toProps(disconnectClientCommandSettings.getConsumerProperties()));
+        consumerBuilder.topic(disconnectClientCommandSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("disconnect-client-command-consumer");
         consumerBuilder.groupId("disconnect-client-command-consumer-group");

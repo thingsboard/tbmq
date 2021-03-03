@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -25,47 +25,48 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSubscriptionsKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
+import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptionsQueueFactory {
-    private final TbKafkaSettings kafkaSettings;
+    private final TbKafkaConsumerSettings consumerSettings;
+    private final TbKafkaProducerSettings producerSettings;
+    private final ClientSubscriptionsKafkaSettings clientSubscriptionsSettings;
     private final TbQueueAdmin queueAdmin;
-    private final Map<String, String> clientSubscriptionsConfigs;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
-    public KafkaClientSubscriptionsQueueFactory(@Qualifier("client-subscriptions") TbKafkaSettings kafkaSettings,
-                                                TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                TbQueueAdmin queueAdmin,
-                                                TbKafkaConsumerStatsService consumerStatsService) {
-        this.kafkaSettings = kafkaSettings;
+    private Map<String, String> topicConfigs;
 
-        this.clientSubscriptionsConfigs = kafkaTopicConfigs.getClientSubscriptionsConfigs();
-        this.consumerStatsService = consumerStatsService;
-        String configuredLogCleanupPolicy = clientSubscriptionsConfigs.get(CLEANUP_POLICY_PROPERTY);
+    @PostConstruct
+    public void init() {
+        this.topicConfigs = getConfigs(clientSubscriptionsSettings.getTopicProperties());
+        String configuredLogCleanupPolicy = topicConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Client subscriptions clean-up policy should be " + COMPACT_POLICY + ".");
         }
-        clientSubscriptionsConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
-
-        this.queueAdmin = queueAdmin;
+        topicConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
     }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.settings(kafkaSettings);
+        producerBuilder.properties(producerSettings.toProps(clientSubscriptionsSettings.getProducerProperties()));
         producerBuilder.clientId("client-subscriptions-producer");
-        producerBuilder.topic(kafkaSettings.getTopic());
-        producerBuilder.topicConfigs(clientSubscriptionsConfigs);
+        producerBuilder.topic(clientSubscriptionsSettings.getTopic());
+        producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
@@ -73,12 +74,13 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.settings(kafkaSettings);
-        consumerBuilder.topic(kafkaSettings.getTopic());
-        consumerBuilder.topicConfigs(clientSubscriptionsConfigs);
+        consumerBuilder.properties(consumerSettings.toProps(clientSubscriptionsSettings.getConsumerProperties()));
+        consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
+        consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-subscriptions-consumer-" + id);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSubscriptionsProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
+        consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
     }
 }

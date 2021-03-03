@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -26,45 +26,48 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaTopicConfigs;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationPersistenceMsgKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
+
+import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
-
     public static final String TOPIC_PREFIX = "application_";
-    private final TbKafkaSettings kafkaSettings;
-    private final Map<String, String> applicationPersistenceMsgConfigs;
+
+    private final TbKafkaConsumerSettings consumerSettings;
+    private final TbKafkaProducerSettings producerSettings;
+    private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
     private final TbQueueAdmin queueAdmin;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
-    public KafkaApplicationPersistenceMsgQueueFactory(@Qualifier("application-persistence-msg") TbKafkaSettings kafkaSettings,
-                                                      TbKafkaTopicConfigs kafkaTopicConfigs,
-                                                      TbQueueAdmin queueAdmin,
-                                                      TbKafkaConsumerStatsService consumerStatsService) {
-        this.kafkaSettings = kafkaSettings;
-        this.queueAdmin = queueAdmin;
+    private Map<String, String> topicConfigs;
 
-        this.applicationPersistenceMsgConfigs = kafkaTopicConfigs.getApplicationPersistenceMsgConfigs();
-        this.consumerStatsService = consumerStatsService;
-        String configuredPartitions = applicationPersistenceMsgConfigs.get(QueueConstants.PARTITIONS);
+    @PostConstruct
+    public void init() {
+        this.topicConfigs = getConfigs(applicationPersistenceMsgSettings.getTopicProperties());
+        String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
         if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
             log.warn("Application persistent message topic must have only 1 partition.");
         }
-        applicationPersistenceMsgConfigs.put(QueueConstants.PARTITIONS, "1");
+        topicConfigs.put(QueueConstants.PARTITIONS, "1");
     }
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String clientId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.settings(kafkaSettings);
+        producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("application-persistence-msg-producer-" + clientId);
         producerBuilder.topic(TOPIC_PREFIX + clientId);
-        producerBuilder.topicConfigs(applicationPersistenceMsgConfigs);
+        producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
@@ -72,9 +75,9 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String clientId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.settings(kafkaSettings);
+        consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(TOPIC_PREFIX + clientId);
-        consumerBuilder.topicConfigs(applicationPersistenceMsgConfigs);
+        consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("application-persistence-msg-consumer-" + clientId);
         consumerBuilder.groupId("application-persistence-msg-consumer-group-" + clientId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),

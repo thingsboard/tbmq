@@ -30,6 +30,7 @@ import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -52,6 +53,7 @@ public class TbKafkaConsumerStatsService {
 
     private final TbKafkaAdminSettings adminSettings;
     private final StatsConsumerKafkaSettings statsConsumerSettings;
+    private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaConsumerStatisticConfig statsConfig;
 
     private AdminClient adminClient;
@@ -66,7 +68,7 @@ public class TbKafkaConsumerStatsService {
         this.adminClient = AdminClient.create(adminSettings.toProps());
         this.statsPrintScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("kafka-consumer-stats"));
 
-        Properties consumerProps = statsConsumerSettings.toConsumerProps();
+        Properties consumerProps = consumerSettings.toProps(statsConsumerSettings.getConsumerProperties());
         consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "consumer-stats-loader-client");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer-stats-loader-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");

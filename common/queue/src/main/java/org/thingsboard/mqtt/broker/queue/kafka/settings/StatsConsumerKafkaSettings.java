@@ -15,39 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
-@ConfigurationProperties(prefix = "queue.kafka.stats-consumer")
-@Component("stats-consumer")
-@AllArgsConstructor
-@NoArgsConstructor
-public class StatsConsumerKafkaSettings extends TbAbstractKafkaSettings {
-    @Setter
-    private KafkaConsumerSettings consumer;
-
-    @Getter
-    @Setter
-    private List<TbKafkaProperty> other;
-
-    @Override
-    KafkaProducerSettings getProducerSettings() {
-        return null;
-    }
-
-    @Override
-    KafkaConsumerSettings getConsumerSettings() {
-        return consumer;
-    }
-
-    @Override
-    public String getTopic() {
-        return null;
-    }
+@Getter
+@Component
+public class StatsConsumerKafkaSettings {
+    @Value("${queue.kafka.consumer-stats.consumer-config}")
+    private String consumerProperties;
 }
