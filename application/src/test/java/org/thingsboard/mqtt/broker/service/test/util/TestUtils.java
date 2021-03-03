@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.test.util;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
 

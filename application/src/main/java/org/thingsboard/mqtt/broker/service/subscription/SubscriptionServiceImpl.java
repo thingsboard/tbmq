@@ -20,14 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 
 import java.util.Collection;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubscriptionServiceImpl implements SubscriptionService {
+class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
 
     @Override

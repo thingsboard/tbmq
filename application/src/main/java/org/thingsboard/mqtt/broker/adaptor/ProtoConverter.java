@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.LastPublishCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEvent;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 
@@ -119,9 +119,7 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.LastPublishCtxProto createLastPublishCtxProto(int packetId) {
-        return QueueProtos.LastPublishCtxProto.newBuilder()
-                .setPacketId(packetId)
-                .build();
+        return QueueProtos.LastPublishCtxProto.newBuilder().setPacketId(packetId).build();
     }
 
     public static QueueProtos.ClientSessionEventProto convertToClientSessionEventProto(ClientSessionEvent clientSessionEvent) {

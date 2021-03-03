@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -56,16 +56,11 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     }
 
     @Override
-    public void subscribe(String clientId, List<MqttTopicSubscription> mqttTopicSubscriptions) {
-        List<TopicSubscription> topicSubscriptions = mqttTopicSubscriptions.stream()
-                .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
-                .collect(Collectors.toList());
+    public void subscribe(String clientId, List<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        for (MqttTopicSubscription topicSubscription : mqttTopicSubscriptions) {
-            clientSubscriptions.add(new TopicSubscription(topicSubscription.topicName(), topicSubscription.qualityOfService().value()));
-        }
+        clientSubscriptions.addAll(topicSubscriptions);
         subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }
 
@@ -98,6 +93,15 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
         return clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet());
     }
 
+    @Override
+    public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
+        return subscriptionService.getSubscriptions(topic);
+    }
+
+    @Override
+    public void clearEmptyTopicNodes() throws SubscriptionTrieClearException {
+        subscriptionService.clearEmptyTopicNodes();
+    }
 
     private void loadPersistedClientSubscriptions() {
         log.info("Load persisted client subscriptions.");

@@ -27,7 +27,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
 
 import javax.annotation.PreDestroy;
 import java.util.HashMap;

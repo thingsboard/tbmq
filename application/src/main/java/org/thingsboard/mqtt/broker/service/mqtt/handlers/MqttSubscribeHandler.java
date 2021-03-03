@@ -28,7 +28,9 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionListener;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
@@ -44,19 +46,20 @@ public class MqttSubscribeHandler {
     private final SubscriptionManager subscriptionManager;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final SubscriptionListener subscriptionListener;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
-        List<MqttTopicSubscription> subscriptions = msg.payload().topicSubscriptions();
+        List<MqttTopicSubscription> mqttTopicSubscriptions = msg.payload().topicSubscriptions();
         try {
-            validateSubscriptions(subscriptions);
+            validateSubscriptions(mqttTopicSubscriptions);
         } catch (DataValidationException e) {
             log.debug("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
         }
         try {
-            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), subscriptions.stream()
+            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), mqttTopicSubscriptions.stream()
                     .map(MqttTopicSubscription::topicName)
                     .collect(Collectors.toList())
             );
@@ -66,13 +69,17 @@ public class MqttSubscribeHandler {
             throw new MqttException(e);
         }
 
-        log.trace("[{}][{}] Processing subscribe [{}], subscriptions - {}", clientId, sessionId, msg.variableHeader().messageId(), subscriptions);
+        log.trace("[{}][{}] Processing subscribe [{}], subscriptions - {}", clientId, sessionId, msg.variableHeader().messageId(), mqttTopicSubscriptions);
 
-        subscriptionManager.subscribe(clientId, subscriptions);
+        List<TopicSubscription> topicSubscriptions = mqttTopicSubscriptions.stream()
+                .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
+                .collect(Collectors.toList());
+        subscriptionManager.subscribe(clientId, topicSubscriptions);
+        subscriptionListener.onSubscribe(ctx.getSessionInfo(), topicSubscriptions);
 
-        List<Integer> grantedQoSList = subscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
+        List<Integer> grantedQoSList = mqttTopicSubscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));
-        log.trace("[{}] Client subscribed to {}", sessionId, subscriptions);
+        log.trace("[{}] Client subscribed to {}", sessionId, mqttTopicSubscriptions);
     }
 
     private void validateSubscriptions(List<MqttTopicSubscription> subscriptions) {

@@ -15,18 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import org.thingsboard.mqtt.broker.service.mqtt.TopicSubscription;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 public interface SubscriptionManager {
-    void subscribe(String clientId, List<MqttTopicSubscription> mqttTopicSubscriptions);
+    void subscribe(String clientId, List<TopicSubscription> topicSubscriptions);
 
     void unsubscribe(String clientId, List<String> topicFilters);
 
     void clearSubscriptions(String clientId);
 
     Set<TopicSubscription> getClientSubscriptions(String clientId);
+
+    Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
+
+    void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
 }
