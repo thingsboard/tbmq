@@ -47,6 +47,7 @@ import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,8 +91,9 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     public void processPublishMsg(PublishMsgProto publishMsgProto) {
         // TODO: log time for getting subscriptions
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionManager.getSubscriptions(publishMsgProto.getTopicName());
+        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
         // TODO: log time for getting clients
-        List<Subscription> msgSubscriptions = clientSubscriptionWithTopicFilters.stream()
+        List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
                     String clientId = clientSubscription.getValue().getClientId();
                     ClientSession clientSession = clientSessionService.getClientSession(clientId);
@@ -110,6 +112,14 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
             }
         }
         msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions);
+    }
+
+    private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+        return clientSubscriptionWithTopicFilters.stream()
+                .collect(Collectors.toMap(clientSubscriptionWithTopicFilter -> clientSubscriptionWithTopicFilter.getValue().getClientId(),
+                        Function.identity(),
+                        (first, second) -> first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second))
+                .values();
     }
 
     private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {

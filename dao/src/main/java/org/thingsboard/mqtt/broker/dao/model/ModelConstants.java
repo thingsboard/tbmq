@@ -69,4 +69,19 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY = "credentials_value";
     public static final String MQTT_CLIENT_CREDENTIALS_CLIENT_ID_PROPERTY = MQTT_CLIENT_CLIENT_ID_PROPERTY;
 
+    /**
+     * device_publish_msg constants.
+     */
+    public static final String DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME = "device_publish_msg";
+    public static final String DEVICE_PUBLISH_MSG_TIMESTAMP_PROPERTY = "timestamp";
+    public static final String DEVICE_PUBLISH_MSG_TOPIC_PROPERTY = "topic";
+    public static final String DEVICE_PUBLISH_MSG_QOS_PROPERTY = "qos";
+    public static final String DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY = "payload";
+
+    /**
+     * device_session_ctx constants.
+     */
+    public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
+    public static final String DEVICE_SESSION_CTX_DATA_PROPERTY = "data";
+
 }

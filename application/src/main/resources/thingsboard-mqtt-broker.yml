@@ -104,6 +104,11 @@ queue:
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
+  device-publish-ctx:
+    poll-interval: "${TB_DEVICE_PUBLISH_CTX_POLL_INTERVAL:100}"
+    client-threads: "${TB_DEVICE_PUBLISH_CTX_CLIENT_THREADS:4}"
+    graceful-shutdown-timout: "${TB_DEVICE_PUBLISH_CTX_SHUTDOWN_TIMEOUT:100}"
+
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
     default:
@@ -165,6 +170,11 @@ queue:
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"
+    device-publish-ctx:
+      topic: "${TB_KAFKA_DEVICE_PUBLISH_CTX_TOPIC:device_publish_ctx}"
+      topic-properties: "${TB_KAFKA_DEVICE_PUBLISH_CTX_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      consumer: "${TB_KAFKA_DEVICE_PUBLISH_CTX_CONSUMER_CONFIG:}"
+      producer: "${TB_KAFKA_DEVICE_PUBLISH_CTX_PRODUCER_CONFIG:}"
 
 # SQL DAO Configuration
 spring:
@@ -227,16 +237,21 @@ application:
   mqtt:
     keep-alive:
       # Schedule monitoring for inactive MQTT clients
-      monitoring-delay-ms: "${APPLICATION_MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+      monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
     topic:
-      max-segments-count: "${APPLICATION_MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
+      max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
     subscription-trie:
       # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
       # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.
-      wait-for-clear-lock-ms: "${APPLICATION_MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
+      wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
       # Cron specification when to run clearing empty nodes. Defaults to 'never'
-      clear-nodes-cron: "${APPLICATION_MQTT_SUB_TRIE_CLEAR_NODES_CRON:-}"
-      clear-nodes-zone: "${APPLICATION_MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
+      clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:-}"
+      clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
+    persistent-session:
+      device:
+        distributor-threads-count: "${MQTT_PERSISTENT_SESSION_DEVICE_DISTRIBUTOR_THREADS_COUNT:4}"
+        distributor-threads-shutdown-timeout: "${MQTT_PERSISTENT_SESSION_DEVICE_DISTRIBUTOR_THREADS_SHUTDOWN_TIMEOUT:100}"
+        persisted-messages-limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
 
 stats:
   enabled: "${STATS_ENABLED:true}"

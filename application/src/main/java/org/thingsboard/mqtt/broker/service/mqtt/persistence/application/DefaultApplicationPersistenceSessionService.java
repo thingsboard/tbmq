@@ -78,7 +78,6 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
                     }
                     @Override
                     public void onFailure(Throwable t) {
-                        // TODO do we need to decrement offset counter?
                         log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}. Reason - {}.",
                                 clientId, publishMsgProto.getTopicName(), t.getMessage());
                         log.debug("Detailed error: ", t);

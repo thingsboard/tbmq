@@ -45,6 +45,7 @@ public class ThingsboardMqttBrokerInstallService {
     public void performInstall() {
         try {
             if (isUpgrade) {
+                // TODO: add upgrade code
                 log.warn("Nothing to upgrade yet...");
             } else {
                 log.info("Starting ThingsBoard MQTT Broker Installation...");

@@ -66,6 +66,17 @@ public class JacksonUtil {
             throw new IllegalArgumentException(e);
         }
     }
+
+    public static <T> T toValue(JsonNode jsonNode, Class<T> clazz) {
+        if (jsonNode == null || jsonNode.isEmpty()) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.treeToValue(jsonNode, clazz);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
     
     public static ObjectNode newObjectNode(){
         return OBJECT_MAPPER.createObjectNode();

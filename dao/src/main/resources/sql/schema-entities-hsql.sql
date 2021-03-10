@@ -52,3 +52,16 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     credentials_value varchar,
     CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id)
 );
+
+CREATE TABLE IF NOT EXISTS device_publish_msg (
+    id IDENTITY PRIMARY KEY,
+    timestamp bigint NOT NULL,
+    topic varchar NOT NULL,
+    qos int NOT NULL,
+    payload binary NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS device_session_ctx (
+    client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
+    data varchar
+);
