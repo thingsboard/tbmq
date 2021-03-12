@@ -19,81 +19,103 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultPublishMsgConsumerService implements PublishMsgConsumerService {
+public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService {
 
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
     private volatile boolean stopped = false;
 
     @Value("${queue.publish-msg.consumers-count}")
     private int consumersCount;
-
     @Value("${queue.publish-msg.poll-interval}")
     private long pollDuration;
+    @Value("${queue.publish-msg.pack-processing-timeout}")
+    private long packProcessingTimeout;
 
     private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers = new ArrayList<>();
     private final MsgDispatcherService msgDispatcherService;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
-    private final StatsManager statsManager;
+    private final AckStrategyFactory ackStrategyFactory;
+    private final SubmitStrategyFactory submitStrategyFactory;
 
 
     @PostConstruct
     public void init() {
         for (int i = 0; i < consumersCount; i++) {
-            publishMsgConsumers.add(publishMsgQueueFactory.createConsumer(Integer.toString(i)));
-        }
-        for (TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> publishMsgConsumer : publishMsgConsumers) {
-            publishMsgConsumer.subscribe();
-            launchConsumer(publishMsgConsumer);
+            String consumerId = Integer.toString(i);
+            TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = publishMsgQueueFactory.createConsumer(consumerId);
+            publishMsgConsumers.add(consumer);
+            consumer.subscribe();
+            launchConsumer(consumerId, consumer);
         }
     }
 
-    private void launchConsumer(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
-            MessagesStats stats = statsManager.createPublishMsgConsumerStats();
             while (!stopped) {
                 try {
                     List<TbProtoQueueMsg<PublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
-                    stats.incrementTotal(msgs.size());
-                    for (TbProtoQueueMsg<PublishMsgProto> msg : msgs) {
-                        // cannot track 'failed' messages, because this method shouldn't fail (unless code error)
-                        msgDispatcherService.processPublishMsg(msg.getValue());
+
+                    AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
+                    SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
+                    List<PublishMsgWithId> messagesWithId = msgs.stream()
+                            .map(msg -> new PublishMsgWithId(UUID.randomUUID(), msg.getValue()))
+                            .collect(Collectors.toList());
+                    submitStrategy.init(messagesWithId);
+
+                    while (!stopped) {
+                        PackProcessingContext ctx = new PackProcessingContext(submitStrategy.getPendingMap());
+                        submitStrategy.process(msg -> {
+                            msgDispatcherService.processPublishMsg(msg.getPublishMsgProto(), new BasePublishMsgCallback(msg.getId(), ctx));
+                        });
+
+                        if (!stopped) {
+                            ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
+                        }
+                        ProcessingDecision decision = ackStrategy.analyze(ctx);
+                        ctx.cleanup();
+
+                        if (decision.isCommit()) {
+                            consumer.commit();
+                            break;
+                        } else {
+                            submitStrategy.update(decision.getReprocessMap());
+                        }
                     }
-                    consumer.commit();
-                    stats.incrementSuccessful(msgs.size());
                 } catch (Exception e) {
                     if (!stopped) {
-                        log.error("Failed to process messages from queue.", e);
+                        log.error("[{}] Failed to process messages from queue.", consumerId, e);
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            log.trace("[{}] Failed to wait until the server has capacity to handle new requests", consumerId, e2);
                         }
                     }
                 }
             }
-            log.info("Publish Msg Consumer stopped.");
+            log.info("[{}] Publish Msg Consumer stopped.", consumerId);
         });
     }
 

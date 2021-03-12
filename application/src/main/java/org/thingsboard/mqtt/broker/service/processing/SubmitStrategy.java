@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.provider;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-public interface DevicePublishCtxQueueFactory extends QueueFactory<QueueProtos.LastPublishCtxProto> {
+public interface SubmitStrategy {
+    void init(List<PublishMsgWithId> messages);
+
+    ConcurrentMap<UUID, PublishMsgWithId> getPendingMap();
+
+    void process(Consumer<PublishMsgWithId> msgConsumer);
+
+    void update(Map<UUID, PublishMsgWithId> reprocessMap);
 }

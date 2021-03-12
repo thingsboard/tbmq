@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
-public interface MsgDispatcherService {
-    void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback);
-    void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback);
+public interface DeviceMsgQueueService {
+    void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callbackWrapper);
 }

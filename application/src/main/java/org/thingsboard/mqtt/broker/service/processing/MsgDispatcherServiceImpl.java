@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultMsgDispatcherService implements MsgDispatcherService {
+public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private final SubscriptionManager subscriptionManager;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
@@ -88,7 +88,7 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
     }
 
     @Override
-    public void processPublishMsg(PublishMsgProto publishMsgProto) {
+    public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         // TODO: log time for getting subscriptions
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionManager.getSubscriptions(publishMsgProto.getTopicName());
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
@@ -111,7 +111,12 @@ public class DefaultMsgDispatcherService implements MsgDispatcherService {
                 trySendMsg(publishMsgProto, msgSubscription);
             }
         }
-        msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions);
+        if (!persistentSubscriptions.isEmpty()) {
+            // TODO: process messages one by one (retrying to save message could lead to wrong order)
+            msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
+        } else {
+            callback.onSuccess();
+        }
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {

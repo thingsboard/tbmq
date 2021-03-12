@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence;
+package org.thingsboard.mqtt.broker.service.processing;
 
-public interface LastPublishCtxService {
-    void loadPersistedCtx();
+import lombok.Data;
 
-    int getNextPacketId(String clientId);
+import java.util.Map;
+import java.util.UUID;
 
-    void saveLastPublishCtx(String clientId, int packetId);
-
-    void clearContext(String clientId);
-
-    void destroy();
+@Data
+public class ProcessingDecision {
+    private final boolean commit;
+    private final Map<UUID, PublishMsgWithId> reprocessMap;
 }

@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.kafka.settings;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
 @Component
-public class DevicePublishCtxKafkaSettings {
-    @Value("${queue.kafka.device-publish-ctx.topic}")
-    private String topic;
-    @Value("${queue.kafka.device-publish-ctx.topic-properties}")
-    private String topicProperties;
-    @Value("${queue.kafka.device-publish-ctx.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.device-publish-ctx.consumer}")
-    private String consumerProperties;
+@ConfigurationProperties(prefix = "queue.publish-msg.ack-strategy")
+@Data
+public class AckStrategyConfiguration {
+    private AckStrategyType type;
+    private int retries;
 }

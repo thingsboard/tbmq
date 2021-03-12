@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.provider;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-
-public interface ApplicationPublishCtxQueueFactory extends QueueFactory<QueueProtos.LastPublishCtxProto> {
+public interface AckStrategy {
+    ProcessingDecision analyze(PackProcessingContext processingContext);
 }

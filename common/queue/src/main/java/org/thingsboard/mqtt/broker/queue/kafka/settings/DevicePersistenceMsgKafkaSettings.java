@@ -21,13 +21,13 @@ import org.springframework.stereotype.Component;
 
 @Getter
 @Component
-public class ApplicationPublishCtxKafkaSettings {
-    @Value("${queue.kafka.application-publish-ctx.topic}")
+public class DevicePersistenceMsgKafkaSettings {
+    @Value("${queue.kafka.device-persisted-msg.topic}")
     private String topic;
-    @Value("${queue.kafka.application-publish-ctx.topic-properties}")
+    @Value("${queue.kafka.device-persisted-msg.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.application-publish-ctx.producer}")
+    @Value("${queue.kafka.device-persisted-msg.producer}")
     private String producerProperties;
-    @Value("${queue.kafka.application-publish-ctx.consumer}")
+    @Value("${queue.kafka.device-persisted-msg.consumer}")
     private String consumerProperties;
 }

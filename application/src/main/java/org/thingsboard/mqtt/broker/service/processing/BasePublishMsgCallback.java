@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.processing;
 
-public interface ApplicationLastPublishCtxService {
-    int getNextPacketId(String clientId);
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-    void saveLastPublishCtx(String clientId, int packetId);
+import java.util.UUID;
 
-    void clearContext(String clientId);
+@Slf4j
+@RequiredArgsConstructor
+public class BasePublishMsgCallback implements PublishMsgCallback {
+    private final UUID id;
+    private final PackProcessingContext ctx;
+
+    @Override
+    public void onSuccess() {
+        log.trace("[{}] ON SUCCESS", id);
+        ctx.onSuccess(id);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        log.trace("[{}] ON FAILURE", id, t);
+        ctx.onFailure(id);
+    }
 }

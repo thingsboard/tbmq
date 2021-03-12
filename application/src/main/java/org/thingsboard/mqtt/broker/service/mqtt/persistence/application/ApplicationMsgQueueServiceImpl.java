@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PreDestroy;
 import java.util.Map;
@@ -32,29 +33,34 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultApplicationPersistenceSessionService implements ApplicationPersistenceSessionService {
+public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueService {
     private final Map<String, TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> applicationProducers = new ConcurrentHashMap<>();
 
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    private final ApplicationLastPublishCtxService lastPublishCtxService;
 
     @Override
-    public void processMsgPersistence(String clientId, int subscriptionQoSValue, QueueProtos.PublishMsgProto receivedPublishMsgProto) {
-        // We have to set 'packetId' here and not on the side of the consumer because if the message was sent and not acknowledged, it needs to be sent again with the same 'packetId'
-        int nextPacketId = lastPublishCtxService.getNextPacketId(clientId);
-        int minQoSValue = Math.min(subscriptionQoSValue, receivedPublishMsgProto.getQos());
-        QueueProtos.PublishMsgProto persistedPublishMsgProto = QueueProtos.PublishMsgProto.newBuilder(receivedPublishMsgProto)
-                .setPacketId(nextPacketId)
-                .setQos(minQoSValue)
-                .build();
-
-        lastPublishCtxService.saveLastPublishCtx(clientId, nextPacketId);
-        savePublishMsgProto(clientId, persistedPublishMsgProto);
+    public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
+        TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer = applicationProducers.computeIfAbsent(clientId,
+                id -> applicationPersistenceMsgQueueFactory.createProducer(clientId));
+        applicationProducer.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
+                new TbQueueCallback() {
+                    @Override
+                    public void onSuccess(TbQueueMsgMetadata metadata) {
+                        log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                        callback.onSuccess();
+                    }
+                    @Override
+                    public void onFailure(Throwable t) {
+                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}. Reason - {}.",
+                                clientId, msgProto.getTopicName(), t.getMessage());
+                        log.debug("Detailed error: ", t);
+                        callback.onFailure(t);
+                    }
+                });
     }
 
     @Override
     public void clearPersistedCtx(String clientId) {
-        lastPublishCtxService.clearContext(clientId);
         clearProducer(clientId);
     }
 
@@ -65,24 +71,6 @@ public class DefaultApplicationPersistenceSessionService implements ApplicationP
         } else {
             log.trace("[{}] No producer found.", clientId);
         }
-    }
-
-    private void savePublishMsgProto(String clientId, QueueProtos.PublishMsgProto publishMsgProto) {
-        TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer = applicationProducers.computeIfAbsent(clientId,
-                id -> applicationPersistenceMsgQueueFactory.createProducer(clientId));
-        applicationProducer.send(new TbProtoQueueMsg<>(publishMsgProto.getTopicName(), publishMsgProto),
-                new TbQueueCallback() {
-                    @Override
-                    public void onSuccess(TbQueueMsgMetadata metadata) {
-                        log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
-                    }
-                    @Override
-                    public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}. Reason - {}.",
-                                clientId, publishMsgProto.getTopicName(), t.getMessage());
-                        log.debug("Detailed error: ", t);
-                    }
-                });
     }
 
     @PreDestroy

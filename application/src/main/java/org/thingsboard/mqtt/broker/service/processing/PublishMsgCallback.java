@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.provider;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+public interface PublishMsgCallback {
+    void onSuccess();
 
-public interface QueueFactory<T extends com.google.protobuf.GeneratedMessageV3> {
-    TbQueueProducer<TbProtoQueueMsg<T>> createProducer();
-
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<T>> createConsumer();
+    void onFailure(Throwable t);
 }

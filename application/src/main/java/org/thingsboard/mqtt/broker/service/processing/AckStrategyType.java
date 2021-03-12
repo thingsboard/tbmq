@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
+package org.thingsboard.mqtt.broker.service.processing;
 
-public interface DeviceLastPublishCtxService {
-    int getNextPacketId(String clientId);
-
-    void saveLastPublishCtx(String clientId, int packetId);
-
-    void clearContext(String clientId);
+public enum AckStrategyType {
+    SKIP_ALL,
+    RETRY_ALL;
 }

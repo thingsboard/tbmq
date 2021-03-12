@@ -65,7 +65,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String clientId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
-        producerBuilder.clientId("application-persistence-msg-producer-" + clientId);
+        producerBuilder.clientId("application-persisted-msg-producer-" + clientId);
         producerBuilder.topic(TOPIC_PREFIX + clientId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
@@ -78,8 +78,8 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(TOPIC_PREFIX + clientId);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("application-persistence-msg-consumer-" + clientId);
-        consumerBuilder.groupId("application-persistence-msg-consumer-group-" + clientId);
+        consumerBuilder.clientId("application-persisted-msg-consumer-" + clientId);
+        consumerBuilder.groupId("application-persisted-msg-consumer-group-" + clientId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);

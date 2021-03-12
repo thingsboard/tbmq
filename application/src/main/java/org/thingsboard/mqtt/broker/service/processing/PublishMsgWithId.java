@@ -13,9 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.provider;
+package org.thingsboard.mqtt.broker.service.processing;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-public interface DeviceTopicEventQueueFactory extends QueueFactory<QueueProtos.TimeProto> {
+import java.util.UUID;
+
+@AllArgsConstructor
+public class PublishMsgWithId {
+    @Getter
+    private final UUID id;
+    @Getter
+    private final QueueProtos.PublishMsgProto publishMsgProto;
 }

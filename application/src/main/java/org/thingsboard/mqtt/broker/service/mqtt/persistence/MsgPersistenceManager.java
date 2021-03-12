@@ -17,13 +17,14 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Collection;
 
 public interface MsgPersistenceManager {
-    void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions);
+    void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions, PublishMsgCallback callback);
 
     void processPersistedMessages(ClientSessionCtx clientSessionCtx);
 

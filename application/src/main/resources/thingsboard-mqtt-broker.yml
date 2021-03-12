@@ -76,6 +76,11 @@ queue:
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
+    pack-processing-timeout: "${TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT:10000}"
+    ack-strategy:
+      type: "${TB_PUBLISH_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
+      # For RETRY_ALL only
+      retries: "${TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   application-persisted-msg:
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
@@ -83,10 +88,10 @@ queue:
       type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
-  application-publish-ctx:
-    poll-interval: "${TB_APP_PUBLISH_CTX_POLL_INTERVAL:100}"
-    client-threads: "${TB_APP_PUBLISH_CTX_CLIENT_THREADS:4}"
-    graceful-shutdown-timout: "${TB_APP_PUBLISH_CTX_SHUTDOWN_TIMEOUT:100}"
+  device-persisted-msg:
+    # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
+    consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
+    poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
@@ -104,10 +109,6 @@ queue:
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
-  device-publish-ctx:
-    poll-interval: "${TB_DEVICE_PUBLISH_CTX_POLL_INTERVAL:100}"
-    client-threads: "${TB_DEVICE_PUBLISH_CTX_CLIENT_THREADS:4}"
-    graceful-shutdown-timout: "${TB_DEVICE_PUBLISH_CTX_SHUTDOWN_TIMEOUT:100}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -135,16 +136,16 @@ queue:
       topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
-    application-persistence-msg:
+    application-persisted-msg:
       # Configure retention policy according to the persistence requirements for APPLICATION clients
-      topic-properties: "${TB_KAFKA_APP_PERSISTENCE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-      consumer: "${TB_KAFKA_APP_PERSISTENCE_MSG_CONSUMER_CONFIG:auto.offset.reset:earliest}"
-      producer: "${TB_KAFKA_APP_PERSISTENCE_MSG_PRODUCER_CONFIG:}"
-    application-publish-ctx:
-      topic: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC:latest_publish_ctx}"
-      topic-properties: "${TB_KAFKA_APP_PUBLISH_CTX_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
-      consumer: "${TB_KAFKA_APP_PUBLISH_CTX_CONSUMER_CONFIG:}"
-      producer: "${TB_KAFKA_APP_PUBLISH_CTX_PRODUCER_CONFIG:}"
+      topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
+      consumer: "${TB_KAFKA_APP_PERSISTED_MSG_CONSUMER_CONFIG:auto.offset.reset:earliest}"
+      producer: "${TB_KAFKA_APP_PERSISTED_MSG_PRODUCER_CONFIG:}"
+    device-persisted-msg:
+      topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
+      topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
+      consumer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_CONSUMER_CONFIG:}"
+      producer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_PRODUCER_CONFIG:}"
     client-session:
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
@@ -170,11 +171,6 @@ queue:
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"
-    device-publish-ctx:
-      topic: "${TB_KAFKA_DEVICE_PUBLISH_CTX_TOPIC:device_publish_ctx}"
-      topic-properties: "${TB_KAFKA_DEVICE_PUBLISH_CTX_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      consumer: "${TB_KAFKA_DEVICE_PUBLISH_CTX_CONSUMER_CONFIG:}"
-      producer: "${TB_KAFKA_DEVICE_PUBLISH_CTX_PRODUCER_CONFIG:}"
 
 # SQL DAO Configuration
 spring:

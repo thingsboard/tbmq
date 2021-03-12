@@ -22,10 +22,10 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class ApplicationPersistenceMsgKafkaSettings {
-    @Value("${queue.kafka.application-persistence-msg.topic-properties}")
+    @Value("${queue.kafka.application-persisted-msg.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.application-persistence-msg.producer}")
+    @Value("${queue.kafka.application-persisted-msg.producer}")
     private String producerProperties;
-    @Value("${queue.kafka.application-persistence-msg.consumer}")
+    @Value("${queue.kafka.application-persisted-msg.consumer}")
     private String consumerProperties;
 }

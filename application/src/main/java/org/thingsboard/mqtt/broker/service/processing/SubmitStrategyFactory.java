@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.kafka.settings;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Getter
 @Component
-public class DeviceTopicEventKafkaSettings {
-    @Value("${queue.kafka.device-topic-event.topic}")
-    private String topic;
-    @Value("${queue.kafka.device-topic-event.topic-properties}")
-    private String topicProperties;
-    @Value("${queue.kafka.device-topic-event.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.device-topic-event.consumer}")
-    private String consumerProperties;
+@Slf4j
+public class SubmitStrategyFactory {
+    public SubmitStrategy newInstance(String consumerId) {
+        return new BurstSubmitStrategy(consumerId);
+    }
 }

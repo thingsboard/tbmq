@@ -15,12 +15,26 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public interface MsgDispatcherService {
-    void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback);
-    void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback);
+public class MultiplePublishMsgCallbackWrapper implements PublishMsgCallback {
+    private final AtomicInteger callbackCount;
+    private final PublishMsgCallback callback;
+
+    public MultiplePublishMsgCallbackWrapper(int callbackCount, PublishMsgCallback callback) {
+        this.callbackCount = new AtomicInteger(callbackCount);
+        this.callback = callback;
+    }
+
+    @Override
+    public void onSuccess() {
+        if (callbackCount.decrementAndGet() <= 0) {
+            callback.onSuccess();
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        callback.onFailure(t);
+    }
 }
