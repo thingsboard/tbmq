@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionListener;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -46,7 +45,6 @@ public class MqttSubscribeHandler {
     private final SubscriptionManager subscriptionManager;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
-    private final SubscriptionListener subscriptionListener;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -75,7 +73,6 @@ public class MqttSubscribeHandler {
                 .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
                 .collect(Collectors.toList());
         subscriptionManager.subscribe(clientId, topicSubscriptions);
-        subscriptionListener.onSubscribe(ctx.getSessionInfo(), topicSubscriptions);
 
         List<Integer> grantedQoSList = mqttTopicSubscriptions.stream().map(sub -> getMinSupportedQos(sub.qualityOfService())).collect(Collectors.toList());
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.variableHeader().messageId(), grantedQoSList));

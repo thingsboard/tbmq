@@ -20,7 +20,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionListener;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -34,7 +33,6 @@ public class MqttUnsubscribeHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final SubscriptionManager subscriptionManager;
-    private final SubscriptionListener subscriptionListener;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMessage msg) {
         UUID sessionId = ctx.getSessionId();
@@ -43,7 +41,6 @@ public class MqttUnsubscribeHandler {
         log.trace("[{}][{}] Processing unsubscribe [{}], topic filters - {}", clientId, sessionId, msg.variableHeader().messageId(), topicFilters);
 
         subscriptionManager.unsubscribe(clientId, topicFilters);
-        subscriptionListener.onUnsubscribe(ctx.getSessionInfo(), topicFilters);
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.variableHeader().messageId()));
     }

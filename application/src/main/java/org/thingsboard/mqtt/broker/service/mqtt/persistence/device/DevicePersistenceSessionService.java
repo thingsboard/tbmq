@@ -25,10 +25,6 @@ import java.util.List;
 public interface DevicePersistenceSessionService {
     void processMsgPersistence(List<Subscription> deviceSubscriptions, QueueProtos.PublishMsgProto publishMsgProto);
 
-    void processSubscribe(String clientId, List<TopicSubscription> topicSubscriptions);
-
-    void processUnsubscribe(String clientId, List<String> topicFilters);
-
     void clearPersistedCtx(String clientId);
 
     void acknowledgeDelivery(String clientId, int packetId);

@@ -20,17 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceMsgQueueService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceSessionService;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionListener;
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
@@ -43,7 +40,7 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MsgPersistenceManagerImpl implements MsgPersistenceManager, SubscriptionListener {
+public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     private final ApplicationMsgQueueService applicationMsgQueueService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
@@ -129,20 +126,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager, Subscri
             applicationPersistenceProcessor.acknowledgeDelivery(clientId, packetId);
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceSessionService.acknowledgeDelivery(clientId, packetId);
-        }
-    }
-
-    @Override
-    public void onSubscribe(SessionInfo sessionInfo, List<TopicSubscription> topicSubscriptions) {
-        if (sessionInfo.isPersistent() && sessionInfo.getClientInfo().getType() == DEVICE) {
-            devicePersistenceSessionService.processSubscribe(sessionInfo.getClientInfo().getClientId(), topicSubscriptions);
-        }
-    }
-
-    @Override
-    public void onUnsubscribe(SessionInfo sessionInfo, List<String> topicFilters) {
-        if (sessionInfo.isPersistent() && sessionInfo.getClientInfo().getType() == DEVICE) {
-            devicePersistenceSessionService.processUnsubscribe(sessionInfo.getClientInfo().getClientId(), topicFilters);
         }
     }
 }

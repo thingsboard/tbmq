@@ -79,12 +79,6 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY = "payload";
 
     /**
-     * device_session_ctx constants.
-     */
-    public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
-    public static final String DEVICE_SESSION_CTX_DATA_PROPERTY = "data";
-
-    /**
      * application_session_ctx constants.
      */
     public static final String APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME = "application_session_ctx";

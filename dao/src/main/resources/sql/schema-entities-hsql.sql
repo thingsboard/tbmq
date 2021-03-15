@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     payload binary NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS device_session_ctx (
-    client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS application_session_ctx (
+    client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
     data varchar
 );
