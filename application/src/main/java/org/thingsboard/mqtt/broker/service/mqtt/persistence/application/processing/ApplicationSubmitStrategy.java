@@ -30,4 +30,6 @@ public interface ApplicationSubmitStrategy {
     void update(Map<Integer, PublishMsgWithOffset> reprocessMap);
 
     void onSuccess(Long offset);
+
+    Long getLastCommittedOffset();
 }

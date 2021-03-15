@@ -74,6 +74,11 @@ public class ClientSessionCtx implements SessionContext {
             return this.msgIdSeq.getAndIncrement();
         }
     }
+    public void updateMsgId(int msgId) {
+        synchronized (this.msgIdSeq) {
+            this.msgIdSeq.set(msgId);
+        }
+    }
 
     public SessionState getSessionState() {
         return sessionState.get();

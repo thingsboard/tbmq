@@ -17,15 +17,12 @@ package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PublishMsgWithOffset;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;

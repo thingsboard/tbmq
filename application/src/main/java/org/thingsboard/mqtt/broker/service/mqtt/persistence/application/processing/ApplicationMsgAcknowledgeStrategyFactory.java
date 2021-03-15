@@ -58,7 +58,7 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
             if (log.isTraceEnabled()) {
                 pendingMap.forEach((packetId, msg) ->
                         log.trace("[{}] Timeout message: topic - {}, packetId - {}.",
-                                clientId, msg.getPublishMsgProto().getTopicName(), msg.getPublishMsgProto().getPacketId())
+                                clientId, msg.getPublishMsg().getTopicName(), msg.getPublishMsg().getPacketId())
                 );
             }
             return new ApplicationProcessingDecision(true, Collections.emptyMap());
@@ -86,7 +86,7 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
             if (log.isTraceEnabled()) {
                 pendingMap.forEach((packetId, msg) ->
                         log.trace("[{}] Going to reprocess message: topic - {}, packetId - {}.",
-                                clientId, msg.getPublishMsgProto().getTopicName(), msg.getPublishMsgProto().getPacketId())
+                                clientId, msg.getPublishMsg().getTopicName(), msg.getPublishMsg().getPacketId())
                 );
             }
             return new ApplicationProcessingDecision(false, pendingMap);

@@ -41,6 +41,8 @@ public class ApplicationPackProcessingContext {
         return processingTimeoutLatch.await(packProcessingTimeout, timeUnit);
     }
 
+    // TODO: save only messages with higher offset (InFlightMessagesCtx)
+
     public void onSuccess(Integer packetId) {
         PublishMsgWithOffset msg = pendingMap.remove(packetId);
         if (msg != null) {
@@ -53,5 +55,9 @@ public class ApplicationPackProcessingContext {
 
     public void cleanup() {
         pendingMap.clear();
+    }
+
+    public long getLastCommittedOffset() {
+        return submitStrategy.getLastCommittedOffset();
     }
 }

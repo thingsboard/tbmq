@@ -45,7 +45,7 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
     @Override
     public ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap() {
         return orderedMsgList.stream()
-                .collect(Collectors.toConcurrentMap(msg -> msg.getPublishMsgProto().getPacketId(), Function.identity()));
+                .collect(Collectors.toConcurrentMap(msg -> msg.getPublishMsg().getPacketId(), Function.identity()));
     }
 
     @Override
@@ -60,7 +60,7 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
     public void update(Map<Integer, PublishMsgWithOffset> reprocessMap) {
         List<PublishMsgWithOffset> newOrderedMsgList = new ArrayList<>(reprocessMap.size());
         for (PublishMsgWithOffset msg : orderedMsgList) {
-            if (reprocessMap.containsKey(msg.getPublishMsgProto().getPacketId())) {
+            if (reprocessMap.containsKey(msg.getPublishMsg().getPacketId())) {
                 newOrderedMsgList.add(msg);
             }
         }
@@ -74,5 +74,10 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
             lastCommittedOffset.getAndSet(offset);
             successfulOffsetConsumer.accept(offset);
         }
+    }
+
+    @Override
+    public Long getLastCommittedOffset() {
+        return lastCommittedOffset.get();
     }
 }
