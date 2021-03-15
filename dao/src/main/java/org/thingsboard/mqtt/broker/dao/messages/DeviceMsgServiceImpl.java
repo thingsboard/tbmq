@@ -21,21 +21,14 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     // TODO: clear old messages from DB
 
     @Override
-    public ListenableFuture<Void> save(DevicePublishMsg devicePublishMsg) {
-        log.trace("Saving device publish msg. Timestamp - {}, topic - {}, qos - {}.",
-                devicePublishMsg.getTimestamp(), devicePublishMsg.getTopic(), devicePublishMsg.getQos());
-        return deviceMsgDao.save(devicePublishMsg);
+    public void save(List<DevicePublishMsg> devicePublishMessages) {
+        log.trace("Saving device publish messages - {}.", devicePublishMessages);
+        deviceMsgDao.save(devicePublishMessages);
     }
 
     @Override
-    public List<DevicePublishMsg> findPersistedMessages(List<TopicFilterQuery> topicFilterQueries) {
-        log.trace("Loading persisted messages for topics - {}.", topicFilterQueries);
-        return deviceMsgDao.findPersistedMessages(topicFilterQueries, messagesLimit);
-    }
-
-    @Override
-    public List<String> getAllTopics() {
-        log.trace("Loading all distinct topics.");
-        return deviceMsgDao.getAllTopics();
+    public List<DevicePublishMsg> findPersistedMessages(String clientId) {
+        log.trace("Loading persisted messages for client - {}.", clientId);
+        return deviceMsgDao.findPersistedMessages(clientId, messagesLimit);
     }
 }

@@ -15,15 +15,26 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
+import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgCompositeKey;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
 import java.util.List;
-import java.util.Set;
 
-public interface DeviceMsgRepository {
-    void insert(List<DevicePublishMsgEntity> entities);
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY;
 
-    List<DevicePublishMsgEntity> findByQuery(List<TopicFilterQuery> topicFilterQueries, int limit);
-
-    List<String> findAllTopics();
+public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
+    @Query(value = "SELECT pubMsg FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
+            "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
+            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_TIME_PROPERTY + ", " +
+            "pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " ASC " +
+            "LIMIT :limit",
+            nativeQuery = true)
+    List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
+                                             @Param("limit") int limit);
 }

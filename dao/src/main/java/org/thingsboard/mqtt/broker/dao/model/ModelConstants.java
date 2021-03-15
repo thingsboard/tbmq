@@ -73,10 +73,13 @@ public class ModelConstants {
      * device_publish_msg constants.
      */
     public static final String DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME = "device_publish_msg";
-    public static final String DEVICE_PUBLISH_MSG_TIMESTAMP_PROPERTY = "timestamp";
+    public static final String DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY = "client_id";
+    public static final String DEVICE_PUBLISH_MSG_TIME_PROPERTY = "time";
     public static final String DEVICE_PUBLISH_MSG_TOPIC_PROPERTY = "topic";
     public static final String DEVICE_PUBLISH_MSG_QOS_PROPERTY = "qos";
     public static final String DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY = "payload";
+    public static final String DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY = "serial_number";
+    public static final String DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY = "packet_id";
 
     /**
      * application_session_ctx constants.

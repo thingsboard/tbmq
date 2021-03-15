@@ -24,22 +24,32 @@ import org.thingsboard.mqtt.broker.dao.model.ToData;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 @Data
 @EqualsAndHashCode
 @Entity
 @Table(name = ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME)
+@IdClass(DevicePublishMsgCompositeKey.class)
 public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Id
-    @Column(name = ModelConstants.ID_PROPERTY)
-    private Long id;
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY)
+    private String clientId;
 
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TIMESTAMP_PROPERTY)
-    private Long timestamp;
-
+    @Id
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY)
     private String topic;
+
+    @Id
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY)
+    private Long serialNumber;
+
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY)
+    private Long time;
+
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY)
+    private Integer packetId;
 
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY)
     private Integer qos;
@@ -50,11 +60,11 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     public DevicePublishMsgEntity() {}
 
     public DevicePublishMsgEntity(DevicePublishMsg devicePublishMsg) {
-        if (devicePublishMsg.getId() != null) {
-            this.id = devicePublishMsg.getId();
-        }
-        this.timestamp = devicePublishMsg.getTimestamp();
+        this.clientId = devicePublishMsg.getClientId();
         this.topic = devicePublishMsg.getTopic();
+        this.serialNumber = devicePublishMsg.getSerialNumber();
+        this.time = devicePublishMsg.getTime();
+        this.packetId = devicePublishMsg.getPacketId();
         this.qos = devicePublishMsg.getQos();
         this.payload = devicePublishMsg.getPayload();
     }
@@ -62,11 +72,13 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Override
     public DevicePublishMsg toData() {
         return DevicePublishMsg.builder()
-                .id(id)
-                .timestamp(timestamp)
-                .qos(qos)
+                .clientId(clientId)
                 .topic(topic)
+                .serialNumber(serialNumber)
+                .time(time)
+                .qos(qos)
                 .payload(payload)
+                .packetId(packetId)
                 .build();
     }
 }

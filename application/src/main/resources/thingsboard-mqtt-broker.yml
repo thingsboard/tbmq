@@ -229,6 +229,7 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 
+# TODO: remove 'application'
 application:
   mqtt:
     keep-alive:
@@ -245,8 +246,6 @@ application:
       clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
     persistent-session:
       device:
-        distributor-threads-count: "${MQTT_PERSISTENT_SESSION_DEVICE_DISTRIBUTOR_THREADS_COUNT:4}"
-        distributor-threads-shutdown-timeout: "${MQTT_PERSISTENT_SESSION_DEVICE_DISTRIBUTOR_THREADS_SHUTDOWN_TIMEOUT:100}"
         persisted-messages-limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
 
 stats:

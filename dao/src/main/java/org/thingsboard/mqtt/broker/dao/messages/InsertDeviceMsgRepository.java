@@ -13,21 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.messages;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
-@Data
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-public class DevicePublishMsg {
-    private String clientId;
-    private String topic;
-    private Long serialNumber;
-    private Long time;
-    private Integer qos;
-    private Integer packetId;
-    private byte[] payload;
+import java.util.List;
+
+public interface InsertDeviceMsgRepository {
+    void insert(List<DevicePublishMsgEntity> entities);
 }

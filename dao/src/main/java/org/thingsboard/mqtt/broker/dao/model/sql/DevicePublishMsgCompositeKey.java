@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.model.sql;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.Transient;
+import java.io.Serializable;
 
 @Data
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-public class DevicePublishMsg {
+@NoArgsConstructor
+@AllArgsConstructor
+public class DevicePublishMsgCompositeKey implements Serializable {
+
+    @Transient
+    private static final long serialVersionUID = -205513485186605469L;
+
     private String clientId;
     private String topic;
     private Long serialNumber;
-    private Long time;
-    private Integer qos;
-    private Integer packetId;
-    private byte[] payload;
 }
