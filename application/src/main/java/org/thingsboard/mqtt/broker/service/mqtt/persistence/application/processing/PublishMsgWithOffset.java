@@ -17,12 +17,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 @AllArgsConstructor
 public class PublishMsgWithOffset {
     @Getter
-    private final QueueProtos.PublishMsgProto publishMsgProto;
+    private final PublishMsg publishMsg;
     @Getter
     private final long offset;
 }

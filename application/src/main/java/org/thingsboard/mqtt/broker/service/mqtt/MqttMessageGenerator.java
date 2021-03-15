@@ -34,7 +34,7 @@ public interface MqttMessageGenerator {
 
     MqttPubAckMessage createPubAckMsg(int requestId);
 
-    MqttPublishMessage createPubMsg(int packetId, String topic, MqttQoS mqttQoS, byte[] payloadBytes);
+    MqttPublishMessage createPubMsg(int packetId, String topic, MqttQoS mqttQoS, boolean isDup, byte[] payloadBytes);
 
     MqttMessage createPingRespMsg();
 }

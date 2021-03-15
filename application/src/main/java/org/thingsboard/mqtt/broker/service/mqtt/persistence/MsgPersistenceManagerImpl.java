@@ -83,7 +83,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager, Subscri
 
     private QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {
         int minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
-        return QueueProtos.PublishMsgProto.newBuilder(publishMsgProto)
+        return publishMsgProto.toBuilder()
                 .setPacketId(0)
                 .setQos(minQoSValue)
                 .build();

@@ -112,6 +112,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             }
         }
         if (!persistentSubscriptions.isEmpty()) {
+            // TODO: convert Proto msg to PublishMsg
             // TODO: process messages one by one (retrying to save message could lead to wrong order)
             msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
         } else {
@@ -142,6 +143,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
         MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
         publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
-                mqttQoS, publishMsgProto.getPayload().toByteArray());
+                mqttQoS, false, publishMsgProto.getPayload().toByteArray());
     }
 }

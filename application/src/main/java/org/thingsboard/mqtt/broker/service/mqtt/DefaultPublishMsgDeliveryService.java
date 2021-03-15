@@ -30,8 +30,8 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final MqttMessageGenerator mqttMessageGenerator;
 
     @Override
-    public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, MqttQoS qos, byte[] payload) {
-        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, topic, qos, payload);
+    public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, MqttQoS qos, boolean isDup, byte[] payload) {
+        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, topic, qos, isDup, payload);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         } catch (Exception e) {

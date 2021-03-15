@@ -48,6 +48,16 @@ public class ProtoConverter {
                 .build();
     }
 
+    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
+        return PublishMsg.builder()
+                .packetId(publishMsgProto.getPacketId())
+                .topicName(publishMsgProto.getTopicName())
+                .qosLevel(publishMsgProto.getQos())
+                .isRetained(publishMsgProto.getRetain())
+                .payload(publishMsgProto.getPayload().toByteArray())
+                .build();
+    }
+
     public static ClientSession convertToClientSession(QueueProtos.ClientSessionProto clientSessionProto) {
         return ClientSession.builder()
                 .connected(clientSessionProto.getConnected())

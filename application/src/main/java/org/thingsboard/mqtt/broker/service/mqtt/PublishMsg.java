@@ -28,5 +28,6 @@ public class PublishMsg {
     private final byte[] payload;
     private final int qosLevel;
     private final boolean isRetained;
+    private final boolean isDup;
 
 }

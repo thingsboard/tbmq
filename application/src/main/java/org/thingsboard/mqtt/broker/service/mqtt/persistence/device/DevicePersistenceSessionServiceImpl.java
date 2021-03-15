@@ -213,14 +213,14 @@ public class DevicePersistenceSessionServiceImpl implements DevicePersistenceSes
         inFlightMessagesService.msgPublished(clientId, publishedMsgInfo);
 
         int minQoSValue = Math.min(subscriptionQoS, msgQoS);
-        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, msgTopic, MqttQoS.valueOf(minQoSValue), payload);
+        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, msgTopic, MqttQoS.valueOf(minQoSValue), false, payload);
 
         topicEventService.saveTopicEvent(clientId, subscriptionTopicFilter, TopicEventType.PUBLISHED, timestamp);
     }
 
     private void resendMsg(int packetId, int subscriptionQoS, String msgTopic, int msgQoS, byte[] payload, ClientSessionCtx sessionCtx) {
         int minQoSValue = Math.min(subscriptionQoS, msgQoS);
-        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, msgTopic, MqttQoS.valueOf(minQoSValue), payload);
+        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, msgTopic, MqttQoS.valueOf(minQoSValue), true, payload);
     }
 
     private DevicePublishMsg createDeviceMsg(long publishTimestamp, QueueProtos.PublishMsgProto publishMsgProto) {
