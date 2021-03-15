@@ -21,10 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.ApplicationPublishedMsgInfo;
-import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -38,10 +35,7 @@ import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -54,7 +48,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultApplicationPersistenceProcessor implements ApplicationPersistenceProcessor {
+public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
     private final ConcurrentMap<String, ApplicationPackProcessingContext> processingContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
@@ -65,8 +59,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final TbQueueAdmin queueAdmin;
     private final StatsManager statsManager;
-    // TODO: move 'session-connected' logic to separate service
-    private final ApplicationSessionCtxService sessionCtxService;
+    private final ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
     private AtomicInteger activeProcessorsCounter;
@@ -119,42 +112,25 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
             }
         }
         ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
-        if (processingContext != null) {
-            long lastCommittedOffset = processingContext.getLastCommittedOffset();
-            Collection<ApplicationPublishedMsgInfo> publishedMsgInfos = processingContext.getPendingMap().entrySet().stream()
-                    .filter(entry -> entry.getValue().getOffset() > lastCommittedOffset)
-                    .map(entry -> ApplicationPublishedMsgInfo.builder()
-                            .packetId(entry.getKey())
-                            .offset(entry.getValue().getOffset())
-                            .build())
-                    .collect(Collectors.toList());
-            ApplicationSessionCtx applicationSessionCtx = ApplicationSessionCtx.builder()
-                    .clientId(clientId)
-                    .publishedMsgInfos(publishedMsgInfos)
-                    .build();
-            sessionCtxService.saveApplicationSessionCtx(applicationSessionCtx);
-        }
+        unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
         activeProcessorsCounter.decrementAndGet();
     }
 
     @Override
     public void clearPersistedMsgs(String clientId) {
         String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
-        log.info("[{}] Clearing persisted topic {} for application.", clientId, clientTopic);
+        log.debug("[{}] Clearing persisted topic {} for application.", clientId, clientTopic);
         queueAdmin.deleteTopic(clientTopic);
-        log.info("[{}] Clearing application session context.", clientId);
-        sessionCtxService.deleteApplicationSessionCtx(clientId);
+        log.debug("[{}] Clearing application session context.", clientId);
+        unacknowledgedPersistedMsgCtxService.clearContext(clientId);
     }
 
     private void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
         String clientId = clientSessionCtx.getClientId();
 
-        Map<Long, Integer> messagesToResend = sessionCtxService.findApplicationSessionCtx(clientId).stream()
-                .flatMap(applicationSessionCtx -> applicationSessionCtx.getPublishedMsgInfos().stream())
-                .collect(Collectors.toMap(ApplicationPublishedMsgInfo::getOffset, ApplicationPublishedMsgInfo::getPacketId));
-        long lastOffset = messagesToResend.keySet().stream().max(Long::compareTo).orElse(-1L);
-        int lastPacketId = lastOffset != -1 ? messagesToResend.get(lastOffset) : 1;
-        clientSessionCtx.updateMsgId(lastPacketId);
+        ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
+
+        clientSessionCtx.updateMsgId(persistedMsgCtx.getLastPacketId());
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
         consumer.assignPartition(0);
@@ -173,13 +149,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
 
                 List<PublishMsgWithOffset> messagesToPublish = persistedMessages.stream()
                         .map(msg -> {
-                            Integer msgPacketId = null;
-                            if (!messagesToResend.isEmpty()) {
-                                msgPacketId = messagesToResend.get(msg.getOffset());
-                                if (msgPacketId == null) {
-                                    messagesToResend.clear();
-                                }
-                            }
+                            Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
                             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.nextMsgId();
                             boolean isDup = msgPacketId != null;
                             QueueProtos.PublishMsgProto persistedMsgProto = msg.getValue();
@@ -247,21 +217,7 @@ public class DefaultApplicationPersistenceProcessor implements ApplicationPersis
             future.cancel(true);
             log.debug("[{}] Saving processing context before shutting down.", clientId);
             ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
-            if (processingContext != null) {
-                long lastCommittedOffset = processingContext.getLastCommittedOffset();
-                Collection<ApplicationPublishedMsgInfo> publishedMsgInfos = processingContext.getPendingMap().entrySet().stream()
-                        .filter(entry -> entry.getValue().getOffset() > lastCommittedOffset)
-                        .map(entry -> ApplicationPublishedMsgInfo.builder()
-                                .packetId(entry.getKey())
-                                .offset(entry.getValue().getOffset())
-                                .build())
-                        .collect(Collectors.toList());
-                ApplicationSessionCtx applicationSessionCtx = ApplicationSessionCtx.builder()
-                        .clientId(clientId)
-                        .publishedMsgInfos(publishedMsgInfos)
-                        .build();
-                sessionCtxService.saveApplicationSessionCtx(applicationSessionCtx);
-            }
+            unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
         });
         persistedMsgsConsumeExecutor.shutdownNow();
     }

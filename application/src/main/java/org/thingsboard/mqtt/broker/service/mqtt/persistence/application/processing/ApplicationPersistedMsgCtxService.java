@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+public interface ApplicationPersistedMsgCtxService {
+    ApplicationPersistedMsgCtx loadPersistedMsgCtx(String clientId);
 
-import java.util.Collection;
+    void saveContext(String clientId, ApplicationPackProcessingContext processingContext);
 
-@Data
-@ToString
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-public class ApplicationSessionCtx {
-    private String clientId;
-    private Collection<ApplicationPublishedMsgInfo> publishedMsgInfos;
+    void clearContext(String clientId);
 }
