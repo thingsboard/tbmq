@@ -59,7 +59,7 @@ class SubscriptionServiceImpl implements SubscriptionService {
         subscriptionTrie.clearEmptyNodes();
     }
 
-    @Scheduled(cron = "${application.mqtt.subscription-trie.clear-nodes-cron}", zone = "${application.mqtt.subscription-trie.clear-nodes-zone}")
+    @Scheduled(cron = "${mqtt.subscription-trie.clear-nodes-cron}", zone = "${mqtt.subscription-trie.clear-nodes-zone}")
     private void scheduleEmptyNodeClear() {
         log.info("Start clearing empty nodes in SubscriptionTrie");
         try {

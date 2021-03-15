@@ -30,7 +30,7 @@ public class DefaultTopicValidationService implements TopicValidationService {
     static final int MAX_SIZE_BYTES = 65535;
 
     @Setter
-    @Value("${application.mqtt.topic.max-segments-count}")
+    @Value("${mqtt.topic.max-segments-count}")
     private int maxSegmentsCount;
 
     @Override

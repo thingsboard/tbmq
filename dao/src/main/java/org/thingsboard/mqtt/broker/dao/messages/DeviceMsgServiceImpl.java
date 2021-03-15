@@ -13,7 +13,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgServiceImpl implements DeviceMsgService {
-    @Value("${application.mqtt.persistent-session.device.persisted-messages-limit}")
+    @Value("${mqtt.persistent-session.device.persisted-messages-limit}")
     private int messagesLimit;
 
     private final DeviceMsgDao deviceMsgDao;

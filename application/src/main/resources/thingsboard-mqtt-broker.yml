@@ -229,24 +229,22 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 
-# TODO: remove 'application'
-application:
-  mqtt:
-    keep-alive:
-      # Schedule monitoring for inactive MQTT clients
-      monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
-    topic:
-      max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
-    subscription-trie:
-      # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
-      # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.
-      wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
-      # Cron specification when to run clearing empty nodes. Defaults to 'never'
-      clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:-}"
-      clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
-    persistent-session:
-      device:
-        persisted-messages-limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
+mqtt:
+  keep-alive:
+    # Schedule monitoring for inactive MQTT clients
+    monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+  topic:
+    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
+  subscription-trie:
+    # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
+    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.
+    wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
+    # Cron specification when to run clearing empty nodes. Defaults to 'never'
+    clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:-}"
+    clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
+  persistent-session:
+    device:
+      persisted-messages-limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
 
 stats:
   enabled: "${STATS_ENABLED:true}"

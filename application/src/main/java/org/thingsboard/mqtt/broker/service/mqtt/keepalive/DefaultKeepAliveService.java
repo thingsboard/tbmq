@@ -36,7 +36,7 @@ public class DefaultKeepAliveService implements KeepAliveService {
 
     private final Map<UUID, KeepAliveInfo> keepAliveInfoMap = new ConcurrentHashMap<>();
 
-    @Scheduled(fixedRateString = "${application.mqtt.keep-alive.monitoring-delay-ms}")
+    @Scheduled(fixedRateString = "${mqtt.keep-alive.monitoring-delay-ms}")
     private void processKeepAlive() {
         for (Iterator<Map.Entry<UUID, KeepAliveInfo>> it = keepAliveInfoMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<UUID, KeepAliveInfo> entry = it.next();
