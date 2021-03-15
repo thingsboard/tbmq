@@ -72,14 +72,21 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
 );
 
 CREATE TABLE IF NOT EXISTS device_publish_msg (
-    id bigserial PRIMARY KEY,
-    timestamp bigint NOT NULL,
+    client_id varchar(255) NOT NULL,
+    serial_number bigint NOT NULL,
     topic varchar NOT NULL,
+    timestamp bigint NOT NULL,
+    packet_id int,
     qos int NOT NULL,
     payload bytea NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
+    data varchar
+);
+
+CREATE TABLE IF NOT EXISTS application_session_ctx (
+    client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
     data varchar
 );
