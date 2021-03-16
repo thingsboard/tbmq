@@ -82,6 +82,11 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, topic, serial_number)
 );
 
+CREATE TABLE IF NOT EXISTS device_session_ctx (
+    client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
+    serial_number bigint
+);
+
 CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
     data varchar

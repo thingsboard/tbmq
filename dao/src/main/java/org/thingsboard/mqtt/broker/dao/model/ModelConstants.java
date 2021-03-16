@@ -82,9 +82,17 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY = "packet_id";
 
     /**
+     * device_session_ctx constants.
+     */
+    public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
+    public static final String DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY = "last_serial_number";
+
+    /**
      * application_session_ctx constants.
      */
     public static final String APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME = "application_session_ctx";
+    public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
     public static final String APPLICATION_SESSION_CTX_DATA_PROPERTY = "data";
 
 }

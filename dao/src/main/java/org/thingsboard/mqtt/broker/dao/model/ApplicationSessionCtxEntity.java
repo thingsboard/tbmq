@@ -40,7 +40,7 @@ import java.util.List;
 @Table(name = ModelConstants.APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME)
 public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx> {
     @Id
-    @Column(name = ModelConstants.MQTT_CLIENT_CLIENT_ID_PROPERTY)
+    @Column(name = ModelConstants.APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;
 
     @Type(type = "json")

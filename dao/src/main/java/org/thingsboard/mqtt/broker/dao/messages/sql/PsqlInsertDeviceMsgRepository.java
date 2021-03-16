@@ -32,7 +32,7 @@ import java.util.List;
 @Slf4j
 @PsqlDao
 @Repository
-public class PsqlDeviceMsgRepository implements InsertDeviceMsgRepository {
+public class PsqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
 
     private static final String INSERT = "INSERT INTO " + ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " (" +
             ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + ", " +

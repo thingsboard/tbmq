@@ -1,0 +1,49 @@
+/**
+ * Copyright © 2016-2020 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.thingsboard.mqtt.broker.dao.client.device;
+
+import com.google.common.collect.Lists;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
+import org.thingsboard.mqtt.broker.dao.DaoUtil;
+import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DefaultDeviceSessionCtxDao implements DeviceSessionCtxDao {
+    private final DeviceSessionCtxRepository deviceSessionCtxRepository;
+    private final InsertDeviceSessionCtxRepository insertDeviceSessionCtxRepository;
+
+    // TODO: clear serial numbers when no message is stored for device (check once a day for example)
+
+    @Override
+    public void save(List<DeviceSessionCtx> deviceSessionCtxList) {
+        List<DeviceSessionCtxEntity> entities = deviceSessionCtxList.stream().map(DeviceSessionCtxEntity::new).collect(Collectors.toList());
+        insertDeviceSessionCtxRepository.saveOrUpdate(entities);
+    }
+
+    @Override
+    public List<DeviceSessionCtx> findAll(List<String> clientIds) {
+        List<DeviceSessionCtxEntity> entities = Lists.newArrayList(deviceSessionCtxRepository.findAllByClientId(clientIds));
+        return DaoUtil.convertDataList(entities);
+    }
+}
