@@ -53,7 +53,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY)
     private Integer qos;
 
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY)
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY, columnDefinition="BINARY")
     private byte[] payload;
 
     public DevicePublishMsgEntity() {}

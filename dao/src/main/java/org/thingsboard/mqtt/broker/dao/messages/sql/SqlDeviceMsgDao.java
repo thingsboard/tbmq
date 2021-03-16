@@ -32,9 +32,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-@PsqlDao
 @RequiredArgsConstructor
-public class PsqlDeviceMsgDao implements DeviceMsgDao {
+public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     private final InsertDeviceMsgRepository insertDeviceMsgRepository;
     private final DeviceMsgRepository deviceMsgRepository;
