@@ -44,7 +44,7 @@ public class DefaultDeviceSessionCtxDao implements DeviceSessionCtxDao {
 
     @Override
     public Collection<DeviceSessionCtx> findAll(Collection<String> clientIds) {
-        List<DeviceSessionCtxEntity> entities = Lists.newArrayList(deviceSessionCtxRepository.findAllByClientId(clientIds));
+        List<DeviceSessionCtxEntity> entities = Lists.newArrayList(deviceSessionCtxRepository.findAllByClientIdIn(clientIds));
         return DaoUtil.convertDataList(entities);
     }
 }

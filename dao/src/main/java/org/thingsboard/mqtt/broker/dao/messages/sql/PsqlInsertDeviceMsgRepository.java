@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
@@ -32,6 +33,7 @@ import java.util.List;
 @Slf4j
 @PsqlDao
 @Repository
+@Transactional
 public class PsqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
 
     private static final String INSERT = "INSERT INTO " + ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " (" +

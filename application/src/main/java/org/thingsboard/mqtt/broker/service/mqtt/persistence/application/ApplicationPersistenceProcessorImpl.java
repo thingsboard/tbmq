@@ -178,7 +178,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         log.trace("[{}] processing packet: {}", clientId, msg.getPublishMsg().getPacketId());
                         PublishMsg publishMsg = msg.getPublishMsg();
                         publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.getPacketId(),
-                                publishMsg.getTopicName(), MqttQoS.valueOf(publishMsg.getPacketId()),
+                                publishMsg.getTopicName(), MqttQoS.valueOf(publishMsg.getQosLevel()),
                                 publishMsg.isDup(), publishMsg.getPayload());
                     });
 

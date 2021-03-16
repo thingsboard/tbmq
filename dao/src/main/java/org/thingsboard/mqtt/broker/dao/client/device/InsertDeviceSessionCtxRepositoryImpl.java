@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.dao.client.device;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
 
 import java.sql.PreparedStatement;
@@ -28,6 +30,8 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSIO
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY;
 
+@Repository
+@Transactional
 public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSessionCtxRepository {
     private static final String INSERT = "INSERT INTO " + DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.messages;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgCompositeKey;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
@@ -29,7 +30,7 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLIS
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY;
 
 public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
-    @Query(value = "SELECT pubMsg FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
+    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
             "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
             "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_TIME_PROPERTY + ", " +
             "pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " ASC " +
@@ -38,7 +39,9 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
     List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
                                              @Param("limit") int limit);
 
+    @Transactional
     void removeAllByClientId(String clientId);
 
+    @Transactional
     void removeAllByClientIdAndPacketId(String clientId, int packetId);
 }

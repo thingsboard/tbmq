@@ -16,12 +16,12 @@
 package org.thingsboard.mqtt.broker.dao.client.device;
 
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
 
 import java.util.Collection;
 
+@Repository
 public interface DeviceSessionCtxRepository extends CrudRepository<DeviceSessionCtxEntity, String> {
-    DeviceSessionCtxEntity findByClientId(String clientId);
-
-    Collection<DeviceSessionCtxEntity> findAllByClientId(Collection<String> clientIds);
+    Collection<DeviceSessionCtxEntity> findAllByClientIdIn(Collection<String> clientIds);
 }

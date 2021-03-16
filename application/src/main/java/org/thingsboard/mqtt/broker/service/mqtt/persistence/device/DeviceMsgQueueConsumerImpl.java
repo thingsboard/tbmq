@@ -129,7 +129,9 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         String clientId = devicePublishMsg.getClientId();
                         ClientSessionCtx sessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
                         if (sessionCtx != null && sessionCtx.getSessionState() == SessionState.CONNECTED) {
-                            msgDeliveryService.sendPublishMsgToClient(sessionCtx, sessionCtx.nextMsgId(), devicePublishMsg.getTopic(),
+                            int packetId = sessionCtx.nextMsgId();
+                            deviceMsgService.updatePacketId(clientId, devicePublishMsg.getSerialNumber(), packetId);
+                            msgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, devicePublishMsg.getTopic(),
                                     MqttQoS.valueOf(devicePublishMsg.getQos()), false, devicePublishMsg.getPayload());
                         }
                     }

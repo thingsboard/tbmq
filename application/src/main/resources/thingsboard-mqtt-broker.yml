@@ -92,6 +92,10 @@ queue:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
+    ack-strategy:
+      type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
+      # For RETRY_ALL only
+      retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
