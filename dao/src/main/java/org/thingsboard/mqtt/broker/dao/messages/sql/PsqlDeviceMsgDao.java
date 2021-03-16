@@ -55,4 +55,22 @@ public class PsqlDeviceMsgDao implements DeviceMsgDao {
         log.trace("Finding device publish messages, clientId - {}, limit - {}", clientId, messageLimit);
         return DaoUtil.convertDataList(deviceMsgRepository.findByClientId(clientId, messageLimit));
     }
+
+    @Override
+    public void removePersistedMessages(String clientId) {
+        log.trace("Removing device publish messages, clientId - {}", clientId);
+        deviceMsgRepository.removeAllByClientId(clientId);
+    }
+
+    @Override
+    public void removePersistedMessage(String clientId, int packetId) {
+        log.trace("Removing device publish message, clientId - {}, packetId - {}", clientId, packetId);
+        deviceMsgRepository.removeAllByClientIdAndPacketId(clientId, packetId);
+    }
+
+    @Override
+    public void updatePacketId(String clientId, Long serialNumber, int packetId) {
+        log.trace("Updating packetId, clientId - {}, serialNumber - {}, packetId - {}", clientId, serialNumber, packetId);
+        insertDeviceMsgRepository.updatePacketId(clientId, serialNumber, packetId);
+    }
 }

@@ -43,6 +43,11 @@ public class PsqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository 
             ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY + ") " +
             "VALUES (?, ?, ?, ?, ?, ?);";
 
+    private static final String UPDATE_PACKET_ID = "UPDATE " + ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " " +
+            "SET " + ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY + " = ? " +
+            "WHERE " + ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = ? AND " +
+            ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " = ?;";
+
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -65,6 +70,15 @@ public class PsqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository 
             public int getBatchSize() {
                 return entities.size();
             }
+        });
+    }
+
+    @Override
+    public void updatePacketId(String clientId, Long serialNumber, int packetId) {
+        jdbcTemplate.update(UPDATE_PACKET_ID, ps -> {
+            ps.setInt(1, packetId);
+            ps.setString(2, clientId);
+            ps.setLong(3, serialNumber);
         });
     }
 }

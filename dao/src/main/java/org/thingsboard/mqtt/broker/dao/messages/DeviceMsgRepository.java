@@ -37,4 +37,8 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
             nativeQuery = true)
     List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
                                              @Param("limit") int limit);
+
+    void removeAllByClientId(String clientId);
+
+    void removeAllByClientIdAndPacketId(String clientId, int packetId);
 }

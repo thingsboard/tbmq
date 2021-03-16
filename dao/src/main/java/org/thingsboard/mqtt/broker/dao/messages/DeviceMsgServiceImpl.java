@@ -18,7 +18,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     private final DeviceMsgDao deviceMsgDao;
 
-    // TODO: clear old messages from DB
+    // TODO: schedule clear old messages from DB
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages) {
@@ -28,7 +28,26 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     @Override
     public List<DevicePublishMsg> findPersistedMessages(String clientId) {
-        log.trace("Loading persisted messages for client - {}.", clientId);
+        log.trace("[{}] Loading persisted messages.", clientId);
         return deviceMsgDao.findPersistedMessages(clientId, messagesLimit);
+    }
+
+    @Override
+    public void removePersistedMessages(String clientId) {
+        log.trace("[{}] Removing persisted messages.", clientId);
+        deviceMsgDao.removePersistedMessages(clientId);
+    }
+
+    @Override
+    public void removePersistedMessage(String clientId, int packetId) {
+        log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
+        deviceMsgDao.removePersistedMessage(clientId, packetId);
+
+    }
+
+    @Override
+    public void updatePacketId(String clientId, Long serialNumber, int packetId) {
+        log.trace("[{}][{}] Setting packet id {} for persisted message.", clientId, serialNumber, packetId);
+        deviceMsgDao.updatePacketId(clientId, serialNumber, packetId);
     }
 }
