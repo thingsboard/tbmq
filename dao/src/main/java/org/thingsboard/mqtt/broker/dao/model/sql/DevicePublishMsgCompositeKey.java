@@ -31,6 +31,5 @@ public class DevicePublishMsgCompositeKey implements Serializable {
     private static final long serialVersionUID = -205513485186605469L;
 
     private String clientId;
-    private String topic;
     private Long serialNumber;
 }

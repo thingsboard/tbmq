@@ -2,10 +2,10 @@ package org.thingsboard.mqtt.broker.dao.client.device;
 
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface DeviceSessionCtxDao {
-    void save(List<DeviceSessionCtx> deviceSessionCtxList);
+    void save(Collection<DeviceSessionCtx> deviceSessionContexts);
 
-    List<DeviceSessionCtx> findAll(List<String> clientIds);
+    Collection<DeviceSessionCtx> findAll(Collection<String> clientIds);
 }

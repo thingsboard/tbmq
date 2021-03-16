@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,13 +37,13 @@ public class DefaultDeviceSessionCtxDao implements DeviceSessionCtxDao {
     // TODO: clear serial numbers when no message is stored for device (check once a day for example)
 
     @Override
-    public void save(List<DeviceSessionCtx> deviceSessionCtxList) {
+    public void save(Collection<DeviceSessionCtx> deviceSessionCtxList) {
         List<DeviceSessionCtxEntity> entities = deviceSessionCtxList.stream().map(DeviceSessionCtxEntity::new).collect(Collectors.toList());
         insertDeviceSessionCtxRepository.saveOrUpdate(entities);
     }
 
     @Override
-    public List<DeviceSessionCtx> findAll(List<String> clientIds) {
+    public Collection<DeviceSessionCtx> findAll(Collection<String> clientIds) {
         List<DeviceSessionCtxEntity> entities = Lists.newArrayList(deviceSessionCtxRepository.findAllByClientId(clientIds));
         return DaoUtil.convertDataList(entities);
     }

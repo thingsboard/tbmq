@@ -38,12 +38,11 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     private String clientId;
 
     @Id
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY)
-    private String topic;
-
-    @Id
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY)
     private Long serialNumber;
+
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY)
+    private String topic;
 
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY)
     private Long time;
