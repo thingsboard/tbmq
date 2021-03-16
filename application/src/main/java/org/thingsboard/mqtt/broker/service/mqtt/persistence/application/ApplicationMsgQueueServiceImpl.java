@@ -60,7 +60,7 @@ public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueServic
     }
 
     @Override
-    public void clearPersistedCtx(String clientId) {
+    public void clearQueueContext(String clientId) {
         clearProducer(clientId);
     }
 

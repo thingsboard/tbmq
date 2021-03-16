@@ -21,5 +21,5 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 public interface ApplicationMsgQueueService {
     void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback);
 
-    void clearPersistedCtx(String clientId);
+    void clearQueueContext(String clientId);
 }

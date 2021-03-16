@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface ApplicationPersistenceProcessor {
+// TODO: group this interface with ApplicationPersistenceProcessor
+public interface DevicePersistenceProcessor {
     void acknowledgeDelivery(String clientId, int packetId);
 
     void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);

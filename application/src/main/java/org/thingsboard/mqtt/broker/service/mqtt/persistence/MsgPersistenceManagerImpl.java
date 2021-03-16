@@ -22,9 +22,9 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceMsgQueueService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -46,7 +46,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     private final DeviceMsgQueueService deviceMsgQueueService;
-    private final DevicePersistenceSessionService devicePersistenceSessionService;
+    private final DevicePersistenceProcessor devicePersistenceProcessor;
 
     // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
 
@@ -92,7 +92,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         } else if (clientType == DEVICE) {
-            devicePersistenceSessionService.startProcessingPersistedMessages(clientSessionCtx);
+            devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         }
     }
 
@@ -101,7 +101,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.stopProcessingPersistedMessages(clientInfo.getClientId());
         } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceSessionService.stopProcessingPersistedMessages(clientInfo.getClientId());
+            devicePersistenceProcessor.stopProcessingPersistedMessages(clientInfo.getClientId());
             // TODO: stop select query if it's running
         } else {
             log.warn("[{}] Persisted messages are not supported for client type {}.", clientInfo.getClientId(), clientInfo.getType());
@@ -112,9 +112,9 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     public void clearPersistedMessages(ClientInfo clientInfo) {
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
-            applicationMsgQueueService.clearPersistedCtx(clientInfo.getClientId());
+            applicationMsgQueueService.clearQueueContext(clientInfo.getClientId());
         } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceSessionService.clearPersistedCtx(clientInfo.getClientId());
+            devicePersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
         }
     }
 
@@ -125,7 +125,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.acknowledgeDelivery(clientId, packetId);
         } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceSessionService.acknowledgeDelivery(clientId, packetId);
+            devicePersistenceProcessor.acknowledgeDelivery(clientId, packetId);
         }
     }
 }
