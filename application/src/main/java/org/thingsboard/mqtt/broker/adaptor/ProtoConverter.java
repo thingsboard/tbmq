@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -166,5 +167,14 @@ public class ProtoConverter {
                .setSessionIdMSB(sessionId.getMostSignificantBits())
                .setSessionIdLSB(sessionId.getLeastSignificantBits())
                .build();
+    }
+
+    public static DevicePublishMsg toDevicePublishMsg(QueueProtos.DevicePublishMsgProto devicePublishMsgProto) {
+        return DevicePublishMsg.builder()
+                .clientId(devicePublishMsgProto.getClientId())
+                .topic(devicePublishMsgProto.getMsg().getTopicName())
+                .qos(devicePublishMsgProto.getMsg().getQos())
+                .payload(devicePublishMsgProto.getMsg().getPayload().toByteArray())
+                .build();
     }
 }
