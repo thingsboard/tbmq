@@ -26,5 +26,5 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class DeviceSessionCtx {
     private String clientId;
-    private Long serialNumber;
+    private Long lastSerialNumber;
 }

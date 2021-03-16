@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
 
 CREATE TABLE IF NOT EXISTS device_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
-    serial_number bigint
+    last_serial_number bigint
 );
 
 CREATE TABLE IF NOT EXISTS application_session_ctx (

@@ -34,20 +34,20 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
     private String clientId;
 
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY)
-    private Long serialNumber;
+    private Long lastSerialNumber;
 
     public DeviceSessionCtxEntity() {}
 
     public DeviceSessionCtxEntity(DeviceSessionCtx deviceSessionCtx) {
         this.clientId = deviceSessionCtx.getClientId();
-        this.serialNumber = deviceSessionCtx.getSerialNumber();
+        this.lastSerialNumber = deviceSessionCtx.getLastSerialNumber();
     }
 
     @Override
     public DeviceSessionCtx toData() {
         return DeviceSessionCtx.builder()
                 .clientId(clientId)
-                .serialNumber(serialNumber)
+                .lastSerialNumber(lastSerialNumber)
                 .build();
     }
 }

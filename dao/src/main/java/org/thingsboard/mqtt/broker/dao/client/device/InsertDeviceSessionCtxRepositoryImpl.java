@@ -47,8 +47,8 @@ public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSession
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 DeviceSessionCtxEntity deviceSessionCtxEntity = entities.get(i);
                 ps.setString(1, deviceSessionCtxEntity.getClientId());
-                ps.setLong(2, deviceSessionCtxEntity.getSerialNumber());
-                ps.setLong(3, deviceSessionCtxEntity.getSerialNumber());
+                ps.setLong(2, deviceSessionCtxEntity.getLastSerialNumber());
+                ps.setLong(3, deviceSessionCtxEntity.getLastSerialNumber());
             }
 
             @Override
