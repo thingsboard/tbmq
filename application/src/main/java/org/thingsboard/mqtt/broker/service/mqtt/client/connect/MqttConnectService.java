@@ -155,7 +155,12 @@ public class MqttConnectService implements ConnectService {
                 persistenceSessionClearer.clearPersistedSession(sessionInfo.getClientInfo());
             }
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED, isPrevSessionPersistent && isCurrentSessionPersistent));
+            ctx.updateSessionState(SessionState.CONNECTED);
             log.info("[{}] [{}] Client connected!", clientId, sessionId);
+
+            if (ctx.getSessionInfo().isPersistent()) {
+                msgPersistenceManager.processPersistedMessages(ctx);
+            }
 
             processQueuedMessages(ctx);
         } catch (Exception e) {
@@ -176,7 +181,7 @@ public class MqttConnectService implements ConnectService {
                 wasConnectionLocked = true;
                 // TODO: check if netty isn't blocked too much time
                 processQueuedMqttMessages(ctx);
-                ctx.updateSessionState(SessionState.CONNECTED);
+                ctx.getIsProcessingQueuedMessages().getAndSet(false);
             } catch (Exception e) {
                 log.warn("[{}][{}] Failed to process msg. Reason - {}.",
                         ctx.getClientId(), ctx.getSessionId(), e.getMessage());
@@ -186,10 +191,6 @@ public class MqttConnectService implements ConnectService {
                 if (wasConnectionLocked) {
                     ctx.getConnectionLock().unlock();
                 }
-            }
-
-            if (ctx.getSessionInfo().isPersistent()) {
-                msgPersistenceManager.processPersistedMessages(ctx);
             }
         });
     }

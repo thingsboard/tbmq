@@ -35,7 +35,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         } catch (Exception e) {
-            if (sessionCtx.getSessionState() == SessionState.CONNECTED) {
+            if (sessionCtx.getSessionState() != SessionState.DISCONNECTED) {
                 log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
                         sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
                 log.trace("Detailed error:", e);

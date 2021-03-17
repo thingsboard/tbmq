@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,6 +44,8 @@ public class ClientSessionCtx implements SessionContext {
     // Locking msg process and disconnect to prevent race condition
     @Getter
     private final ReentrantLock processingLock = new ReentrantLock();
+    @Getter
+    private final AtomicBoolean isProcessingQueuedMessages = new AtomicBoolean(true);
     @Getter
     private final ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = new ConcurrentLinkedQueue<>();
     @Getter
