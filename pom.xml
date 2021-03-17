@@ -734,6 +734,11 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>
+                <artifactId>actor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker.common</groupId>
                 <artifactId>util</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -64,6 +64,10 @@
             <artifactId>netty-codec-mqtt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>actor</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
         </dependency>

@@ -176,6 +176,14 @@ queue:
       consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"
 
+# Actor system parameters
+actors:
+  system:
+    throughput: "${ACTORS_SYSTEM_THROUGHPUT:5}"
+    scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
+    max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
+    persisted-device-dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
+
 # SQL DAO Configuration
 spring:
   data:
