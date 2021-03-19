@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
-
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+@Getter
+@RequiredArgsConstructor
+public class PacketIdAndSerialNumber {
+    private final AtomicInteger packetId;
+    private final AtomicLong serialNumber;
 }

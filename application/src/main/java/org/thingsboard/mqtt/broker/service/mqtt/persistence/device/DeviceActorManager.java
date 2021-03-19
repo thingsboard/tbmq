@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.List;
+public interface DeviceActorManager {
+    void notifyClientConnected(ClientSessionCtx clientSessionCtx);
 
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
+    void notifyClientDisconnected(String clientId);
 
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
+    void notifyPacketAcknowledged(String clientId, int packetId);
 
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+    void sendMsgToActor(DevicePublishMsg devicePublishMsg);
 }

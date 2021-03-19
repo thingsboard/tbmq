@@ -47,4 +47,9 @@ public class DefaultDeviceSessionCtxDao implements DeviceSessionCtxDao {
         List<DeviceSessionCtxEntity> entities = Lists.newArrayList(deviceSessionCtxRepository.findAllByClientIdIn(clientIds));
         return DaoUtil.convertDataList(entities);
     }
+
+    @Override
+    public void removeById(String clientId) {
+        deviceSessionCtxRepository.deleteById(clientId);
+    }
 }

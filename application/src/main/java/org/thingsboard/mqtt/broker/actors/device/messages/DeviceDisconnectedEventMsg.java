@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-import java.util.List;
-
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
-
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+public class DeviceDisconnectedEventMsg implements TbActorMsg {
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.DEVICE_DISCONNECTED_EVENT_MSG;
+    }
 }

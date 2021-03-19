@@ -44,6 +44,12 @@ public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
         return deviceSessionCtxDao.findAll(clientIds);
     }
 
+    @Override
+    public void removeDeviceSessionContext(String clientId) {
+        log.trace("Executing removeDeviceSessionContext [{}]", clientId);
+        deviceSessionCtxDao.removeById(clientId);
+    }
+
     private void validate(DeviceSessionCtx deviceSessionCtx) {
         if (StringUtils.isEmpty(deviceSessionCtx.getClientId())) {
             throw new DataValidationException("Client ID should be specified!");

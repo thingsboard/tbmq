@@ -21,6 +21,4 @@ import java.util.List;
 
 public interface InsertDeviceMsgRepository {
     void insert(List<DevicePublishMsgEntity> entities);
-
-    void updatePacketId(String clientId, Long serialNumber, int packetId);
 }

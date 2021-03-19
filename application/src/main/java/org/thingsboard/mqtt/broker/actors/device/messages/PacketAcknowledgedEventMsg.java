@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-import java.util.List;
+@RequiredArgsConstructor
+@Getter
+public class PacketAcknowledgedEventMsg implements TbActorMsg {
+    private final int packetId;
 
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
-
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.PACKET_ACKNOWLEDGED_EVENT_MSG;
+    }
 }

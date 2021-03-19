@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import java.util.Collection;
+import java.util.Map;
 
-import java.util.List;
+public interface DevicePacketIdAndSerialNumberService {
+    Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Collection<String> clientIds);
 
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
-
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+    void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers);
 }

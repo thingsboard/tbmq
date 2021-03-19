@@ -19,4 +19,11 @@ public interface TbActorMsg {
 
     MsgType getMsgType();
 
+    /**
+     * Executed when the target TbActor is stopped or destroyed.
+     * Implementation should cleanup the resources.
+     */
+    default void onTbActorStopped() {
+    }
+
 }

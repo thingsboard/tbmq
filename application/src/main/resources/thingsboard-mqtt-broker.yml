@@ -40,6 +40,7 @@ listener:
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
     netty:
+      # TODO: update TCP_NETTY_LEAK_DETECTOR_LVL
       leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
@@ -182,7 +183,9 @@ actors:
     throughput: "${ACTORS_SYSTEM_THROUGHPUT:5}"
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
-    persisted-device-dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
+  persisted-device:
+    dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
+    wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:10}"
 
 # SQL DAO Configuration
 spring:

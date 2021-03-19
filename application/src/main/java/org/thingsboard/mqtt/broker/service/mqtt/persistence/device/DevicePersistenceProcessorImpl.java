@@ -15,68 +15,42 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import javax.annotation.PostConstruct;
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DevicePersistenceProcessorImpl implements DevicePersistenceProcessor {
 
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final DeviceMsgService deviceMsgService;
-
-    @PostConstruct
-    public void init() {
-    }
+    private final DeviceSessionCtxService deviceSessionCtxService;
+    private final DeviceActorManager deviceActorManager;
 
     @Override
     public void clearPersistedMsgs(String clientId) {
+        // TODO: think about moving this code (could do async but delete only if msg.time < currentTime)
         deviceMsgService.removePersistedMessages(clientId);
+        deviceSessionCtxService.removeDeviceSessionContext(clientId);
     }
 
     @Override
     public void acknowledgeDelivery(String clientId, int packetId) {
-        deviceMsgService.removePersistedMessage(clientId, packetId);
+        deviceActorManager.notifyPacketAcknowledged(clientId, packetId);
     }
 
     @Override
     public void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx) {
-        // TODO: move this to Device Actor
-        String clientId = clientSessionCtx.getClientId();
-        List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
-        for (DevicePublishMsg persistedMessage : persistedMessages) {
-            Integer persistedPacketId = persistedMessage.getPacketId();
-            boolean isDup = persistedPacketId != null;
-            int packetId;
-            if (persistedPacketId != null) {
-                // TODO: change this after Actors implementation
-                clientSessionCtx.updateMsgId(persistedPacketId);
-                packetId = persistedPacketId;
-            } else {
-                packetId = clientSessionCtx.nextMsgId();
-                // TODO: think about making this batch-update
-                deviceMsgService.updatePacketId(clientId, persistedMessage.getSerialNumber(), packetId);
-            }
-            publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, packetId,
-                    persistedMessage.getTopic(), MqttQoS.valueOf(persistedMessage.getQos()), isDup,
-                    persistedMessage.getPayload());
-
-        }
+        deviceActorManager.notifyClientConnected(clientSessionCtx);
     }
 
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
-        // TODO: think how to properly stop processing in actor architecture
+        deviceActorManager.notifyClientDisconnected(clientId);
     }
 
 }

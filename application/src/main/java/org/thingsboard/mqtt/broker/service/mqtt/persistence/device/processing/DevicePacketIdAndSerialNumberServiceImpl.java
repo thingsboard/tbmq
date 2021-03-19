@@ -24,28 +24,33 @@ import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DeviceMsgSerialNumberServiceImpl implements DeviceMsgSerialNumberService {
+public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdAndSerialNumberService {
 
     // TODO: cache last serial number for client, if none - get from DB
     private final DeviceSessionCtxService deviceSessionCtxService;
 
     @Override
-    public Map<String, Long> getLastSerialNumbers(Collection<String> clientIds) {
+    public Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Collection<String> clientIds) {
         return deviceSessionCtxService.findAllContexts(clientIds).stream()
-                .collect(Collectors.toMap(DeviceSessionCtx::getClientId, DeviceSessionCtx::getLastSerialNumber));
+                .collect(Collectors.toMap(DeviceSessionCtx::getClientId,
+                        deviceSessionCtx -> new PacketIdAndSerialNumber(new AtomicInteger(deviceSessionCtx.getLastPacketId()),
+                                new AtomicLong(deviceSessionCtx.getLastSerialNumber()))));
     }
 
     @Override
-    public void saveLastSerialNumbers(Map<String, Long> clientsLastSerialNumbers) {
-        List<DeviceSessionCtx> deviceSessionContexts = clientsLastSerialNumbers.entrySet().stream()
+    public void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers) {
+        List<DeviceSessionCtx> deviceSessionContexts = clientsLastPacketIdAndSerialNumbers.entrySet().stream()
                 .map(entry -> DeviceSessionCtx.builder()
                         .clientId(entry.getKey())
-                        .lastSerialNumber(entry.getValue())
+                        .lastSerialNumber(entry.getValue().getSerialNumber().get())
+                        .lastPacketId(entry.getValue().getPacketId().get())
                         .build())
                 .collect(Collectors.toList());
         deviceSessionCtxService.saveDeviceSessionContexts(deviceSessionContexts);

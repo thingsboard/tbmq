@@ -139,6 +139,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
 
+        // TODO: make consistent with logic for devices
         clientSessionCtx.updateMsgId(persistedMsgCtx.getLastPacketId());
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);

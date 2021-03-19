@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import java.util.Collection;
-import java.util.Map;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
-public interface DeviceMsgSerialNumberService {
-    Map<String, Long> getLastSerialNumbers(Collection<String> clientIds);
+@Getter
+@RequiredArgsConstructor
+public class IncomingPublishMsg implements TbActorMsg {
+    private final DevicePublishMsg publishMsg;
 
-    void saveLastSerialNumbers(Map<String, Long> clientsLastSerialNumbers);
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.INCOMING_PUBLISH_MSG;
+    }
 }

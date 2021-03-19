@@ -27,6 +27,4 @@ public interface DeviceMsgService {
     void removePersistedMessages(String clientId);
 
     void removePersistedMessage(String clientId, int packetId);
-
-    void updatePacketId(String clientId, Long serialNumber, int packetId);
 }

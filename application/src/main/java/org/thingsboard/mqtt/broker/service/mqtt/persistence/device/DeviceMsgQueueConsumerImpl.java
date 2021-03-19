@@ -15,7 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,15 +29,12 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgSerialNumberService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingContext;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceProcessingDecision;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionState;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.PacketIdAndSerialNumber;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -46,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,9 +66,8 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
     private final DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
     private final DeviceMsgService deviceMsgService;
-    private final DeviceMsgSerialNumberService serialNumberService;
-    private final ClientSessionCtxService clientSessionCtxService;
-    private final PublishMsgDeliveryService msgDeliveryService;
+    private final DevicePacketIdAndSerialNumberService serialNumberService;
+    private final DeviceActorManager deviceActorManager;
 
 
     @PostConstruct
@@ -92,23 +90,17 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         continue;
                     }
 
-                    Map<String, AtomicLong> lastSerialNumbers = getSerialNumbersMap(msgs);
-
+                    Set<String> clientIds = msgs.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
+                    Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers = serialNumberService.getLastPacketIdAndSerialNumber(clientIds);
                     List<DevicePublishMsg> devicePublishMessages = toDevicePublishMsgs(msgs,
-                            clientId -> {
-                                AtomicLong clientLastSerialNumber = lastSerialNumbers.computeIfAbsent(clientId, id -> new AtomicLong(0));
-                                return clientLastSerialNumber.incrementAndGet();
-                            });
-
-                    Map<String, Long> newSerialNumbers = lastSerialNumbers.entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().get()));
+                            clientId -> getPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, clientId));
 
                     DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages);
                     while (!stopped) {
                         try {
                             // TODO: think if we need transaction here
-                            serialNumberService.saveLastSerialNumbers(newSerialNumbers);
+                            serialNumberService.saveLastSerialNumbers(lastPacketIdAndSerialNumbers);
                             deviceMsgService.save(devicePublishMessages);
                             ctx.onSuccess();
                         } catch (Exception e) {
@@ -122,18 +114,8 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         }
                     }
 
-                    // TODO: push to DEVICE actor after saving in DB
-                    // TODO: add logic for saving packetId after sending to client
-                    // TODO: add logic for deleting device's message after acknowledge
                     for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
-                        String clientId = devicePublishMsg.getClientId();
-                        ClientSessionCtx sessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
-                        if (sessionCtx != null && sessionCtx.getSessionState() == SessionState.CONNECTED) {
-                            int packetId = sessionCtx.nextMsgId();
-                            deviceMsgService.updatePacketId(clientId, devicePublishMsg.getSerialNumber(), packetId);
-                            msgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, devicePublishMsg.getTopic(),
-                                    MqttQoS.valueOf(devicePublishMsg.getQos()), false, devicePublishMsg.getPayload());
-                        }
+                        deviceActorManager.sendMsgToActor(devicePublishMsg);
                     }
                 } catch (Exception e) {
                     if (!stopped) {
@@ -150,21 +132,35 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         });
     }
 
-    private Map<String, AtomicLong> getSerialNumbersMap(List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs) {
-        Set<String> clientIds = msgs.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
-        return serialNumberService.getLastSerialNumbers(clientIds).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> new AtomicLong(entry.getValue())));
+    private PacketIdAndSerialNumberDto getPacketIdAndSerialNumberDto(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String clientId) {
+        PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
+                new PacketIdAndSerialNumber(new AtomicInteger(1), new AtomicLong(0)));
+        AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
+        packetIdAtomic.incrementAndGet();
+        packetIdAtomic.compareAndSet(0xffff, 1);
+        return new PacketIdAndSerialNumberDto(packetIdAtomic.get(), packetIdAndSerialNumber.getSerialNumber().incrementAndGet());
     }
 
+    @Getter
+    @AllArgsConstructor
+    private static class PacketIdAndSerialNumberDto {
+        private final int packetId;
+        private final long serialNumber;
+    }
     private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs,
-                                                       Function<String, Long> getSerialNumberFunction) {
+                                                       Function<String, PacketIdAndSerialNumberDto> getPacketIdAndSerialNumberFunc
+                                                       ) {
         return msgs.stream()
                 .map(TbProtoQueueMsg::getValue)
                 .map(ProtoConverter::toDevicePublishMsg)
-                .map(devicePublishMsg -> devicePublishMsg.toBuilder()
-                        .serialNumber(getSerialNumberFunction.apply(devicePublishMsg.getClientId()))
-                        .time(System.currentTimeMillis())
-                        .build())
+                .map(devicePublishMsg -> {
+                    PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getPacketIdAndSerialNumberFunc.apply(devicePublishMsg.getClientId());
+                    return devicePublishMsg.toBuilder()
+                            .serialNumber(packetIdAndSerialNumberDto.getSerialNumber())
+                            .packetId(packetIdAndSerialNumberDto.getPacketId())
+                            .time(System.currentTimeMillis())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

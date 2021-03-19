@@ -28,6 +28,7 @@ import java.util.List;
 
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY;
 
 @Repository
@@ -35,10 +36,12 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSIO
 public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSessionCtxRepository {
     private static final String INSERT = "INSERT INTO " + DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +
-            DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + ") " +
-            "VALUES (?, ?) " +
+            DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + ", " +
+            DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY + ") " +
+            "VALUES (?, ?, ?) " +
             "ON CONFLICT (" + DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY + ") " +
-            "DO UPDATE SET " + DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + " = ?;";
+            "DO UPDATE SET " + DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + " = ?, " +
+            DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY + " = ?;";
 
 
     @Autowired
@@ -52,7 +55,9 @@ public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSession
                 DeviceSessionCtxEntity deviceSessionCtxEntity = entities.get(i);
                 ps.setString(1, deviceSessionCtxEntity.getClientId());
                 ps.setLong(2, deviceSessionCtxEntity.getLastSerialNumber());
-                ps.setLong(3, deviceSessionCtxEntity.getLastSerialNumber());
+                ps.setInt(3, deviceSessionCtxEntity.getLastPacketId());
+                ps.setLong(4, deviceSessionCtxEntity.getLastSerialNumber());
+                ps.setInt(5, deviceSessionCtxEntity.getLastPacketId());
             }
 
             @Override

@@ -17,11 +17,32 @@ package org.thingsboard.mqtt.broker.actors;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
 @Getter
 @Component
 @RequiredArgsConstructor
 public class ActorSystemContext {
     private final TbActorSystem actorSystem;
+    private final DeviceMsgService deviceMsgService;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
+
+    private final DeviceActorConfiguration deviceActorConfiguration;
+
+    public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
+        log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
+        if (delayInMs > 0) {
+            actorSystem.getScheduler().schedule(() -> ctx.tell(msg), delayInMs, TimeUnit.MILLISECONDS);
+        } else {
+            ctx.tell(msg);
+        }
+    }
 }

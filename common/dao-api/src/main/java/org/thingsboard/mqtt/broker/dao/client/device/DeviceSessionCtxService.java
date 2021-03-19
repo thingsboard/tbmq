@@ -24,4 +24,6 @@ public interface DeviceSessionCtxService {
     void saveDeviceSessionContexts(Collection<DeviceSessionCtx> deviceSessionContexts);
 
     Collection<DeviceSessionCtx> findAllContexts(Collection<String> clientIds);
+
+    void removeDeviceSessionContext(String clientId);
 }

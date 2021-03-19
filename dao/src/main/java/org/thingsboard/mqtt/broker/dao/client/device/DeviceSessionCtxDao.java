@@ -23,4 +23,6 @@ public interface DeviceSessionCtxDao {
     void save(Collection<DeviceSessionCtx> deviceSessionContexts);
 
     Collection<DeviceSessionCtx> findAll(Collection<String> clientIds);
+
+    void removeById(String clientId);
 }

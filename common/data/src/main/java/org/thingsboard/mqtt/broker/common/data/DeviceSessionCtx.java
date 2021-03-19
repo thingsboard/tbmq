@@ -27,4 +27,5 @@ import lombok.ToString;
 public class DeviceSessionCtx {
     private String clientId;
     private Long lastSerialNumber;
+    private Integer lastPacketId;
 }

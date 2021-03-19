@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-import java.util.List;
+import java.util.UUID;
 
-public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
+@Getter
+@RequiredArgsConstructor
+public class StopDeviceActorCommandMsg implements TbActorMsg {
+    private final UUID commandUUID;
 
-    List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
-
-    void removePersistedMessages(String clientId);
-
-    void removePersistedMessage(String clientId, int packetId);
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.STOP_DEVICE_ACTOR_COMMAND_MSG;
+    }
 }

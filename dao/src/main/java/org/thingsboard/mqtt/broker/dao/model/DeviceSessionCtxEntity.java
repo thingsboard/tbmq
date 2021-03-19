@@ -36,11 +36,15 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY)
     private Long lastSerialNumber;
 
+    @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY)
+    private Integer lastPacketId;
+
     public DeviceSessionCtxEntity() {}
 
     public DeviceSessionCtxEntity(DeviceSessionCtx deviceSessionCtx) {
         this.clientId = deviceSessionCtx.getClientId();
         this.lastSerialNumber = deviceSessionCtx.getLastSerialNumber();
+        this.lastPacketId = deviceSessionCtx.getLastPacketId();
     }
 
     @Override
@@ -48,6 +52,7 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
         return DeviceSessionCtx.builder()
                 .clientId(clientId)
                 .lastSerialNumber(lastSerialNumber)
+                .lastPacketId(lastPacketId)
                 .build();
     }
 }

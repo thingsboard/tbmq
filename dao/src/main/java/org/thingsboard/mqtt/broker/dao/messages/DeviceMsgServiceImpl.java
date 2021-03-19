@@ -58,10 +58,4 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         deviceMsgDao.removePersistedMessage(clientId, packetId);
 
     }
-
-    @Override
-    public void updatePacketId(String clientId, Long serialNumber, int packetId) {
-        log.trace("[{}][{}] Setting packet id {} for persisted message.", clientId, serialNumber, packetId);
-        deviceMsgDao.updatePacketId(clientId, serialNumber, packetId);
-    }
 }

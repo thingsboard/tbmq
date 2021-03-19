@@ -87,6 +87,7 @@ public class ModelConstants {
     public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
     public static final String DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
     public static final String DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY = "last_serial_number";
+    public static final String DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY = "last_packet_id";
 
     /**
      * application_session_ctx constants.

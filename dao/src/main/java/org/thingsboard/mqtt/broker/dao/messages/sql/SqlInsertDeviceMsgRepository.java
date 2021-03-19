@@ -39,16 +39,11 @@ public class SqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
             ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + ", " +
+            ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY + ") " +
-            "VALUES (?, ?, ?, ?, ?, ?);";
-
-    private static final String UPDATE_PACKET_ID = "UPDATE " + ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " " +
-            "SET " + ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY + " = ? " +
-            "WHERE " + ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = ? AND " +
-            ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " = ?;";
-
+            "VALUES (?, ?, ?, ?, ?, ?, ?);";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -62,24 +57,16 @@ public class SqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
                 ps.setString(1, devicePublishMsgEntity.getClientId());
                 ps.setString(2, devicePublishMsgEntity.getTopic());
                 ps.setLong(3, devicePublishMsgEntity.getSerialNumber());
-                ps.setLong(4, devicePublishMsgEntity.getTime());
-                ps.setInt(5, devicePublishMsgEntity.getQos());
-                ps.setBytes(6, devicePublishMsgEntity.getPayload());
+                ps.setInt(4, devicePublishMsgEntity.getPacketId());
+                ps.setLong(5, devicePublishMsgEntity.getTime());
+                ps.setInt(6, devicePublishMsgEntity.getQos());
+                ps.setBytes(7, devicePublishMsgEntity.getPayload());
             }
 
             @Override
             public int getBatchSize() {
                 return entities.size();
             }
-        });
-    }
-
-    @Override
-    public void updatePacketId(String clientId, Long serialNumber, int packetId) {
-        jdbcTemplate.update(UPDATE_PACKET_ID, ps -> {
-            ps.setInt(1, packetId);
-            ps.setString(2, clientId);
-            ps.setLong(3, serialNumber);
         });
     }
 }
