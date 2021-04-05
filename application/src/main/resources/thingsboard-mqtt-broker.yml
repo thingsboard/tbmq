@@ -40,8 +40,8 @@ listener:
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
     netty:
-      # TODO: update TCP_NETTY_LEAK_DETECTOR_LVL
-      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # TODO: update default to DISABLED after testing stage
+      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:SIMPLE}"
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
@@ -67,7 +67,8 @@ listener:
       # Type of the trust store
       trust_store_type: "${SECURITY_MQTT_SSL_TRUST_STORE_TYPE:JKS}"
     netty:
-      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # TODO: update default to DISABLED after testing stage
+      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:SIMPLE}"
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"

@@ -59,11 +59,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         log.trace("[{}] Processing msg: {}", sessionId, msg);
         clientSessionCtx.setChannel(ctx);
+        boolean releaseMessage = true;
         try {
             if (msg instanceof MqttMessage) {
                 MqttMessage message = (MqttMessage) msg;
                 if (message.decoderResult().isSuccess()) {
-                    processMqttMsg(ctx, message);
+                    releaseMessage = processMqttMsg(ctx, message);
                 } else {
                     log.warn("[{}] Message decoding failed: {}", sessionId, message.decoderResult().cause().getMessage());
                     disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
@@ -73,29 +74,31 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             }
         } finally {
-            ReferenceCountUtil.safeRelease(msg);
+            if (releaseMessage) {
+                ReferenceCountUtil.safeRelease(msg);
+            }
         }
     }
 
-    private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
+    private boolean processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
             log.warn("[{}][{}:{}] Invalid message received", sessionId, address.getHostName(), address.getPort());
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
-            return;
+            return true;
         }
         MqttMessageType msgType = msg.fixedHeader().messageType();
         if (wrongOrder(msgType)) {
             log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
-            return;
+            return true;
         }
         clientSessionCtx.getConnectionLock().lock();
         try {
             if (wrongOrder(msgType)) {
                 log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
-                return;
+                return true;
             }
             if (msgType == MqttMessageType.CONNECT) {
                 connectService.connect(clientSessionCtx, (MqttConnectMessage) msg);
@@ -104,6 +107,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             } else if (clientSessionCtx.getSessionState() == SessionState.CONNECTED) {
                 if (clientSessionCtx.getIsProcessingQueuedMessages().get()) {
                     clientSessionCtx.getUnprocessedMessages().add(msg);
+                    return false;
                 } else {
                     messageHandler.process(clientSessionCtx, msg);
                 }
@@ -117,6 +121,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         } finally {
             clientSessionCtx.getConnectionLock().unlock();
         }
+        return true;
     }
 
     private boolean wrongOrder(MqttMessageType messageType) {

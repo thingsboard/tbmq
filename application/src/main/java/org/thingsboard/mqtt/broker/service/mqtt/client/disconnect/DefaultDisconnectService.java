@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +36,7 @@ import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PreDestroy;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -89,6 +92,8 @@ public class DefaultDisconnectService implements DisconnectService {
     }
 
     private void clearClientSession(ClientSessionCtx sessionCtx, DisconnectReason disconnectReason) {
+        releaseUnprocessedMessages(sessionCtx.getUnprocessedMessages());
+
         UUID sessionId = sessionCtx.getSessionId();
         keepAliveService.unregisterSession(sessionId);
 
@@ -114,6 +119,13 @@ public class DefaultDisconnectService implements DisconnectService {
             return null;
         }
         return sessionInfo.getClientInfo();
+    }
+
+    private void releaseUnprocessedMessages(ConcurrentLinkedQueue<MqttMessage> unprocessedMessages) {
+        while (!unprocessedMessages.isEmpty()) {
+            MqttMessage msg = unprocessedMessages.poll();
+            ReferenceCountUtil.safeRelease(msg);
+        }
     }
 
     @PreDestroy

@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -199,7 +200,11 @@ public class MqttConnectService implements ConnectService {
         ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = ctx.getUnprocessedMessages();
         while (!unprocessedMessages.isEmpty()) {
             MqttMessage msg = unprocessedMessages.poll();
-            mqttMessageHandler.process(ctx, msg);
+            try {
+                mqttMessageHandler.process(ctx, msg);
+            } finally {
+                ReferenceCountUtil.safeRelease(msg);
+            }
         }
     }
 

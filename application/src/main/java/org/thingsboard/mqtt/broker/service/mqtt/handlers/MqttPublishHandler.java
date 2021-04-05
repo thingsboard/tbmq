@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -60,19 +61,20 @@ public class MqttPublishHandler {
             throw new MqttException(e);
         }
         int msgId = msg.variableHeader().packetId();
+        MqttQoS msgQoS = msg.fixedHeader().qosLevel();
 
         log.trace("[{}] Processing publish msg: {}", sessionId, msgId);
-
-        msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfo(), MqttConverter.convertToPublishMsg(msg), new TbQueueCallback() {
+        PublishMsg publishMsg = MqttConverter.convertToPublishMsg(msg);
+        msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}] Successfully acknowledged msg: {}", sessionId, msgId);
-                acknowledgeMsg(ctx, msg);
+                acknowledgeMsg(ctx, msgId, msgQoS);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.trace("[{}] Failed to publish msg: {}", sessionId, msg, t);
+                log.trace("[{}] Failed to publish msg: {}", sessionId, publishMsg, t);
                 disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
             }
         });
@@ -86,13 +88,12 @@ public class MqttPublishHandler {
         topicValidationService.validateTopic(mqttMsg.variableHeader().topicName());
     }
 
-    private void acknowledgeMsg(ClientSessionCtx ctx, MqttPublishMessage mqttMsg) {
-        MqttQoS mqttQoS = mqttMsg.fixedHeader().qosLevel();
+    private void acknowledgeMsg(ClientSessionCtx ctx, int packetId, MqttQoS mqttQoS) {
         switch (mqttQoS) {
             case AT_MOST_ONCE:
                 break;
             case AT_LEAST_ONCE:
-                ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(mqttMsg.variableHeader().packetId()));
+                ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId));
                 break;
             default:
                 throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
