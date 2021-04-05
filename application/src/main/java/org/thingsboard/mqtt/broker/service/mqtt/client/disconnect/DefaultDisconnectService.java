@@ -92,7 +92,7 @@ public class DefaultDisconnectService implements DisconnectService {
     }
 
     private void clearClientSession(ClientSessionCtx sessionCtx, DisconnectReason disconnectReason) {
-        releaseUnprocessedMessages(sessionCtx.getUnprocessedMessages());
+        sessionCtx.getUnprocessedMessagesQueue().release();
 
         UUID sessionId = sessionCtx.getSessionId();
         keepAliveService.unregisterSession(sessionId);
@@ -119,13 +119,6 @@ public class DefaultDisconnectService implements DisconnectService {
             return null;
         }
         return sessionInfo.getClientInfo();
-    }
-
-    private void releaseUnprocessedMessages(ConcurrentLinkedQueue<MqttMessage> unprocessedMessages) {
-        while (!unprocessedMessages.isEmpty()) {
-            MqttMessage msg = unprocessedMessages.poll();
-            ReferenceCountUtil.safeRelease(msg);
-        }
     }
 
     @PreDestroy

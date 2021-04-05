@@ -139,7 +139,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         if (sessionCtx == null || sessionCtx.getSessionState() != SessionState.CONNECTED) {
             return;
         }
-        int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.nextMsgId();
+        int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.getMsgIdSeq().nextMsgId();
         int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
         MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
         publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),

@@ -177,12 +177,11 @@ public class MqttConnectService implements ConnectService {
         queuedMessagesExecutor.execute(() -> {
             boolean wasConnectionLocked = false;
             try {
-                processQueuedMqttMessages(ctx);
+                ctx.getUnprocessedMessagesQueue().process(msg -> mqttMessageHandler.process(ctx, msg));
                 ctx.getConnectionLock().lock();
                 wasConnectionLocked = true;
-                // TODO: check if netty isn't blocked too much time
-                processQueuedMqttMessages(ctx);
-                ctx.getIsProcessingQueuedMessages().getAndSet(false);
+                ctx.getUnprocessedMessagesQueue().process(msg -> mqttMessageHandler.process(ctx, msg));
+                ctx.getUnprocessedMessagesQueue().finishProcessing();
             } catch (Exception e) {
                 log.warn("[{}][{}] Failed to process msg. Reason - {}.",
                         ctx.getClientId(), ctx.getSessionId(), e.getMessage());
@@ -194,18 +193,6 @@ public class MqttConnectService implements ConnectService {
                 }
             }
         });
-    }
-
-    private void processQueuedMqttMessages(ClientSessionCtx ctx) {
-        ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = ctx.getUnprocessedMessages();
-        while (!unprocessedMessages.isEmpty()) {
-            MqttMessage msg = unprocessedMessages.poll();
-            try {
-                mqttMessageHandler.process(ctx, msg);
-            } finally {
-                ReferenceCountUtil.safeRelease(msg);
-            }
-        }
     }
 
     private void authenticateClient(ClientSessionCtx ctx, MqttConnectMessage msg, String clientId) {

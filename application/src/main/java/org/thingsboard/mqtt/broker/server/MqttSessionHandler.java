@@ -105,8 +105,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             } else if (msgType == MqttMessageType.DISCONNECT) {
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_DISCONNECT_MSG);
             } else if (clientSessionCtx.getSessionState() == SessionState.CONNECTED) {
-                if (clientSessionCtx.getIsProcessingQueuedMessages().get()) {
-                    clientSessionCtx.getUnprocessedMessages().add(msg);
+                if (clientSessionCtx.getUnprocessedMessagesQueue().isProcessing()) {
+                    clientSessionCtx.getUnprocessedMessagesQueue().queueMessage(msg);
                     return false;
                 } else {
                     messageHandler.process(clientSessionCtx, msg);

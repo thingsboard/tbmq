@@ -45,22 +45,23 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final ReentrantLock processingLock = new ReentrantLock();
     @Getter
-    private final AtomicBoolean isProcessingQueuedMessages = new AtomicBoolean(true);
-    @Getter
-    private final ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = new ConcurrentLinkedQueue<>();
-    @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
     @Getter
     @Setter
     private volatile AuthorizationRule authorizationRule;
 
+    @Getter
+    private final UnprocessedMessagesQueue unprocessedMessagesQueue = new UnprocessedMessagesQueue();
+
     private final AtomicReference<SessionState> sessionState = new AtomicReference<>(SessionState.CREATED);
 
     @Getter
     private ChannelHandlerContext channel;
 
-    private final AtomicInteger msgIdSeq = new AtomicInteger(1);
+    @Getter
+    private final MsgIdSequence msgIdSeq = new MsgIdSequence();
+
 
     public ClientSessionCtx(UUID sessionId, SslHandler sslHandler) {
         this.sessionId = sessionId;
@@ -69,18 +70,6 @@ public class ClientSessionCtx implements SessionContext {
 
     public void setChannel(ChannelHandlerContext channel) {
         this.channel = channel;
-    }
-
-    public int nextMsgId() {
-        synchronized (this.msgIdSeq) {
-            this.msgIdSeq.compareAndSet(0xffff, 1);
-            return this.msgIdSeq.getAndIncrement();
-        }
-    }
-    public void updateMsgId(int msgId) {
-        synchronized (this.msgIdSeq) {
-            this.msgIdSeq.set(msgId);
-        }
     }
 
     public SessionState getSessionState() {

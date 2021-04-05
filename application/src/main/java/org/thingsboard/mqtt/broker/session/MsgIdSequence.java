@@ -15,8 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public interface SessionContext {
-    UUID getSessionId();
+public class MsgIdSequence {
+    private final AtomicInteger msgIdSeq = new AtomicInteger(1);
+
+    public int nextMsgId() {
+        synchronized (this.msgIdSeq) {
+            this.msgIdSeq.compareAndSet(0xffff, 1);
+            return this.msgIdSeq.getAndIncrement();
+        }
+    }
+
+    public void updateMsgId(int msgId) {
+        synchronized (this.msgIdSeq) {
+            this.msgIdSeq.set(msgId);
+        }
+    }
 }

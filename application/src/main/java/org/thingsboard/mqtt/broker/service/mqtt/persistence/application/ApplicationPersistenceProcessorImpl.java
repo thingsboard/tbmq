@@ -140,7 +140,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
 
         // TODO: make consistent with logic for devices
-        clientSessionCtx.updateMsgId(persistedMsgCtx.getLastPacketId());
+        clientSessionCtx.getMsgIdSeq().updateMsgId(persistedMsgCtx.getLastPacketId());
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
         consumer.assignPartition(0);
@@ -160,7 +160,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 List<PublishMsgWithOffset> messagesToPublish = persistedMessages.stream()
                         .map(msg -> {
                             Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
-                            int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.nextMsgId();
+                            int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
                             boolean isDup = msgPacketId != null;
                             QueueProtos.PublishMsgProto persistedMsgProto = msg.getValue();
                             PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
