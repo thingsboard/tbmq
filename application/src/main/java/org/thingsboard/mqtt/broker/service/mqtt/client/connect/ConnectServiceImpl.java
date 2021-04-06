@@ -19,8 +19,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -44,11 +42,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
-import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.PersistenceSessionClearer;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -56,7 +52,6 @@ import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PreDestroy;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -67,9 +62,8 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MqttConnectService implements ConnectService {
+public class ConnectServiceImpl implements ConnectService {
     private final ExecutorService connectHandlerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("connect-handler-executor"));
-    private final ExecutorService queuedMessagesExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("unprocessed-messages-executor"));
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final LastWillService lastWillService;
@@ -77,13 +71,12 @@ public class MqttConnectService implements ConnectService {
     private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientService mqttClientService;
-    private final MsgPersistenceManager msgPersistenceManager;
     private final ClientSessionEventService clientSessionEventService;
     private final ClientSessionService clientSessionService;
     private final PersistenceSessionClearer persistenceSessionClearer;
     private final KeepAliveService keepAliveService;
     private final DisconnectService disconnectService;
-    private final MqttMessageHandler mqttMessageHandler;
+    private final PostConnectService postConnectService;
 
     @Override
     public void connect(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
@@ -97,20 +90,18 @@ public class MqttConnectService implements ConnectService {
         authenticateClient(ctx, msg, clientId);
 
         ctx.updateSessionState(SessionState.CONNECTING);
+        ctx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
 
-        keepAliveService.registerSession(sessionId, msg.variableHeader().keepAliveTimeSeconds(),
-                () -> disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR));
+        keepAliveService.registerSession(sessionId, msg.variableHeader().keepAliveTimeSeconds(), () -> disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR));
 
-        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId);
-        ctx.setSessionInfo(sessionInfo);
         ClientSession prevSession = clientSessionService.getClientSession(clientId);
         boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
 
-        ListenableFuture<Boolean> connectFuture = clientSessionEventService.connect(sessionInfo);
+        ListenableFuture<Boolean> connectFuture = clientSessionEventService.connect(ctx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
             public void onSuccess(@Nullable Boolean successfulConnection) {
-                onConnectSuccess(msg, ctx, successfulConnection, isPrevSessionPersistent);
+                onConnectFinish(msg, ctx, successfulConnection, isPrevSessionPersistent);
             }
 
             @Override
@@ -130,7 +121,7 @@ public class MqttConnectService implements ConnectService {
         }
     }
 
-    private void onConnectSuccess(MqttConnectMessage msg, ClientSessionCtx ctx, Boolean wasConnectionSuccessful, boolean isPrevSessionPersistent) {
+    private void onConnectFinish(MqttConnectMessage msg, ClientSessionCtx ctx, Boolean wasConnectionSuccessful, boolean isPrevSessionPersistent) {
         UUID sessionId = ctx.getSessionId();
         SessionInfo sessionInfo = ctx.getSessionInfo();
         String clientId = ctx.getClientId();
@@ -159,40 +150,13 @@ public class MqttConnectService implements ConnectService {
             ctx.updateSessionState(SessionState.CONNECTED);
             log.info("[{}] [{}] Client connected!", clientId, sessionId);
 
-            if (ctx.getSessionInfo().isPersistent()) {
-                msgPersistenceManager.processPersistedMessages(ctx);
-            }
-
-            processQueuedMessages(ctx);
+            postConnectService.process(ctx);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to finish client connection. Reason - {}.",
                     ctx.getClientId(), ctx.getSessionId(), e.getMessage());
             log.trace("Detailed error: ", e);
             disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
         }
-    }
-
-    // TODO: move this code to ConnectPostprocessService
-    private void processQueuedMessages(ClientSessionCtx ctx) {
-        queuedMessagesExecutor.execute(() -> {
-            boolean wasConnectionLocked = false;
-            try {
-                ctx.getUnprocessedMessagesQueue().process(msg -> mqttMessageHandler.process(ctx, msg));
-                ctx.getConnectionLock().lock();
-                wasConnectionLocked = true;
-                ctx.getUnprocessedMessagesQueue().process(msg -> mqttMessageHandler.process(ctx, msg));
-                ctx.getUnprocessedMessagesQueue().finishProcessing();
-            } catch (Exception e) {
-                log.warn("[{}][{}] Failed to process msg. Reason - {}.",
-                        ctx.getClientId(), ctx.getSessionId(), e.getMessage());
-                log.trace("Detailed error: ", e);
-                disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
-            } finally {
-                if (wasConnectionLocked) {
-                    ctx.getConnectionLock().unlock();
-                }
-            }
-        });
     }
 
     private void authenticateClient(ClientSessionCtx ctx, MqttConnectMessage msg, String clientId) {
@@ -242,6 +206,5 @@ public class MqttConnectService implements ConnectService {
     public void destroy() {
         log.debug("Shutting down executors");
         connectHandlerExecutor.shutdownNow();
-        queuedMessagesExecutor.shutdownNow();
     }
 }

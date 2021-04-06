@@ -15,14 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -36,7 +33,6 @@ import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PreDestroy;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultDisconnectService implements DisconnectService {
+public class DisconnectServiceImpl implements DisconnectService {
     private final ExecutorService disconnectExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-executor"));
 
     private final KeepAliveService keepAliveService;
@@ -92,12 +88,13 @@ public class DefaultDisconnectService implements DisconnectService {
     }
 
     private void clearClientSession(ClientSessionCtx sessionCtx, DisconnectReason disconnectReason) {
+        UUID sessionId = sessionCtx.getSessionId();
+
         sessionCtx.getUnprocessedMessagesQueue().release();
 
-        UUID sessionId = sessionCtx.getSessionId();
         keepAliveService.unregisterSession(sessionId);
 
-        ClientInfo clientInfo = getClientInfo(sessionCtx.getSessionInfo());
+        ClientInfo clientInfo = sessionCtx.getSessionInfo() != null ? sessionCtx.getSessionInfo().getClientInfo() : null;
         if (clientInfo == null) {
             return;
         }
@@ -112,13 +109,6 @@ public class DefaultDisconnectService implements DisconnectService {
         }
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());
         clientSessionEventService.disconnect(clientInfo, sessionId);
-    }
-
-    private ClientInfo getClientInfo(SessionInfo sessionInfo) {
-        if (sessionInfo == null || sessionInfo.getClientInfo() == null) {
-            return null;
-        }
-        return sessionInfo.getClientInfo();
     }
 
     @PreDestroy

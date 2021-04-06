@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultDisconnectClientCommandService implements DisconnectClientCommandService {
+public class DisconnectClientCommandServiceImpl implements DisconnectClientCommandService {
     private final ConcurrentMap<String, SessionDisconnectFuture> awaitingClientDisconnectMap = new ConcurrentHashMap<>();
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
 
