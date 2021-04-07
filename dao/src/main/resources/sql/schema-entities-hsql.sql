@@ -74,3 +74,8 @@ CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
     data varchar
 );
+
+CREATE TABLE IF NOT EXISTS generic_client_session_ctx (
+    client_id varchar(255) NOT NULL CONSTRAINT generic_client_session_ctx_pkey PRIMARY KEY,
+    data varchar
+);

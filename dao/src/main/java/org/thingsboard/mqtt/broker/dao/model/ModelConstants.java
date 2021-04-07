@@ -96,4 +96,11 @@ public class ModelConstants {
     public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
     public static final String APPLICATION_SESSION_CTX_DATA_PROPERTY = "data";
 
+    /**
+     * generic_client_session_ctx constants.
+     */
+    public static final String GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME = "generic_client_session_ctx";
+    public static final String GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String GENERIC_CLIENT_SESSION_CTX_DATA_PROPERTY = "data";
+
 }
