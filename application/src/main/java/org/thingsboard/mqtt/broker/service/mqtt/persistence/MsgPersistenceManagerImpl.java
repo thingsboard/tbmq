@@ -42,6 +42,8 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 @RequiredArgsConstructor
 public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
+    private final GenericClientSessionCtxManager genericClientSessionCtxManager;
+
     private final ApplicationMsgQueueService applicationMsgQueueService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
@@ -88,6 +90,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
+        genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
@@ -109,7 +112,13 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
+    public void saveAwaitingQoS2Packets(ClientSessionCtx clientSessionCtx) {
+        genericClientSessionCtxManager.saveAwaitingQoS2Packets(clientSessionCtx);
+    }
+
+    @Override
     public void clearPersistedMessages(ClientInfo clientInfo) {
+        genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientInfo.getClientId());
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
             applicationMsgQueueService.clearQueueContext(clientInfo.getClientId());
@@ -119,7 +128,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void acknowledgePersistedMsgDelivery(int packetId, ClientSessionCtx clientSessionCtx) {
+    public void processPubAck(int packetId, ClientSessionCtx clientSessionCtx) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
@@ -127,5 +136,15 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.acknowledgeDelivery(clientId, packetId);
         }
+    }
+
+    @Override
+    public void processIncomingPublish(int packetId, ClientSessionCtx ctx) {
+        genericClientSessionCtxManager.processIncomingPublish(packetId, ctx);
+    }
+
+    @Override
+    public void processPubRel(int packetId, ClientSessionCtx clientSessionCtx) {
+        genericClientSessionCtxManager.processPubRel(packetId, clientSessionCtx);
     }
 }

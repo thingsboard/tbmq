@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.constant;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 
-import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.EXACTLY_ONCE;
 
 public class BrokerConstants {
-    public static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
+    public static final MqttQoS MAX_SUPPORTED_QOS_LVL = EXACTLY_ONCE;
 
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";

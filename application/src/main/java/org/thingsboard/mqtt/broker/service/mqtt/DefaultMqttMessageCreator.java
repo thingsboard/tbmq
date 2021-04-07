@@ -38,6 +38,8 @@ import java.util.List;
 import static io.netty.handler.codec.mqtt.MqttMessageType.CONNACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PINGRESP;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PUBACK;
+import static io.netty.handler.codec.mqtt.MqttMessageType.PUBCOMP;
+import static io.netty.handler.codec.mqtt.MqttMessageType.PUBREC;
 import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
@@ -80,6 +82,12 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         return new MqttPubAckMessage(mqttFixedHeader, mqttMsgIdVariableHeader);
     }
 
+    @Override
+    public MqttMessage createPubRecMsg(int requestId) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBREC, false, AT_MOST_ONCE, false, 0);
+        return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(requestId));
+    }
+
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
@@ -95,5 +103,11 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     @Override
     public MqttMessage createPingRespMsg() {
         return new MqttMessage(new MqttFixedHeader(PINGRESP, false, AT_MOST_ONCE, false, 0));
+    }
+
+    @Override
+    public MqttMessage createPubCompMsg(int msgId) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBCOMP, false, AT_MOST_ONCE, false, 0);
+        return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
     }
 }

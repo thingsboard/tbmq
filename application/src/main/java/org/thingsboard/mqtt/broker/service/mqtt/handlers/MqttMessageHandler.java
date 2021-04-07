@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
@@ -59,6 +60,9 @@ public class MqttMessageHandler {
                     break;
                 case PUBACK:
                     messageHandlers.getPubAckHandler().process(clientSessionCtx, (MqttPubAckMessage) msg);
+                    break;
+                case PUBREL:
+                    messageHandlers.getPubRelHandler().process(clientSessionCtx, ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId());
                     break;
                 default:
                     throw new MqttException("Processing of " + msgType + " message is not allowed.");

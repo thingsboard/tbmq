@@ -26,11 +26,17 @@ import java.util.Collection;
 public interface MsgPersistenceManager {
     void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions, PublishMsgCallback callback);
 
+    void processIncomingPublish(int packetId, ClientSessionCtx ctx);
+
+    void processPubAck(int packetId, ClientSessionCtx clientSessionCtx);
+
+    void processPubRel(int packetId, ClientSessionCtx clientSessionCtx);
+
     void processPersistedMessages(ClientSessionCtx clientSessionCtx);
+
+    void saveAwaitingQoS2Packets(ClientSessionCtx clientSessionCtx);
 
     void stopProcessingPersistedMessages(ClientInfo clientInfo);
 
     void clearPersistedMessages(ClientInfo clientInfo);
-
-    void acknowledgePersistedMsgDelivery(int packetId, ClientSessionCtx clientSessionCtx);
 }

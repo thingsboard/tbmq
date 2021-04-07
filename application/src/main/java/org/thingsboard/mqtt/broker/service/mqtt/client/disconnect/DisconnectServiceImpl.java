@@ -106,6 +106,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             subscriptionManager.clearSubscriptions(clientInfo.getClientId());
         } else {
             msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
+            msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
         }
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());
         clientSessionEventService.disconnect(clientInfo, sessionId);
