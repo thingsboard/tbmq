@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,5 +59,10 @@ public class DefaultClientSessionCtxService implements ClientSessionCtxService {
     @Override
     public ClientSessionCtx getClientSessionCtx(String clientId) {
         return clientContextMap.get(clientId);
+    }
+
+    @Override
+    public Collection<ClientSessionCtx> getAllClientSessionCtx() {
+        return clientContextMap.values();
     }
 }

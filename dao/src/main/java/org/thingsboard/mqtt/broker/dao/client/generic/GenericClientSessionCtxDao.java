@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.dao.client.generic;
 
-
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 
 import java.util.Collection;
+import java.util.List;
 
-public interface ClientSessionCtxService {
-    void registerSession(ClientSessionCtx clientSessionCtx);
+public interface GenericClientSessionCtxDao {
+    GenericClientSessionCtx save(GenericClientSessionCtx genericClientSessionCtx);
 
-    void unregisterSession(String clientId);
+    GenericClientSessionCtx find(String clientId);
 
-    ClientSessionCtx getClientSessionCtx(String clientId);
+    List<GenericClientSessionCtx> find();
 
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+    void remove(String clientId);
+
+    void saveAll(Collection<GenericClientSessionCtx> genericClientSessionContexts);
 }

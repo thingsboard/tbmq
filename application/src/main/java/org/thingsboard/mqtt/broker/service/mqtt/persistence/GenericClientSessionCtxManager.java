@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
-import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.List;
+public interface GenericClientSessionCtxManager {
+    void resendPersistedPubRelMessages(ClientSessionCtx clientSessionCtx);
 
-public interface GenericClientSessionCtxDao {
-    GenericClientSessionCtx save(GenericClientSessionCtx genericClientSessionCtx);
+    void processIncomingPublish(int packetId, ClientSessionCtx ctx);
 
-    GenericClientSessionCtx find(String clientId);
+    void processPubRel(int packetId, ClientSessionCtx ctx);
 
-    List<GenericClientSessionCtx> find();
+    void saveAwaitingQoS2Packets(ClientSessionCtx ctx);
 
-    void remove(String clientId);
-
+    void clearAwaitingQoS2Packets(String clientId);
 }

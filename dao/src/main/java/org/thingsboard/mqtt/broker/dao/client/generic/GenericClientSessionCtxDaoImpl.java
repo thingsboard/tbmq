@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.dao.client.generic;
 
 import com.google.common.collect.Lists;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class GenericClientSessionCtxDaoImpl implements GenericClientSessionCtxDao {
-    @Autowired
-    private GenericClientSessionCtxRepository genericClientSessionCtxRepository;
+    private final GenericClientSessionCtxRepository genericClientSessionCtxRepository;
+    private final InsertGenericClientSessionCtxRepository insertGenericClientSessionCtxRepository;
+
+    @Override
+    public void saveAll(Collection<GenericClientSessionCtx> genericClientSessionContexts) {
+        List<GenericClientSessionCtxEntity> entities = genericClientSessionContexts.stream().map(GenericClientSessionCtxEntity::new).collect(Collectors.toList());
+        insertGenericClientSessionCtxRepository.saveOrUpdate(entities);
+    }
 
     @Override
     public GenericClientSessionCtx save(GenericClientSessionCtx genericClientSessionCtx) {

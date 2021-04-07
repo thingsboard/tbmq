@@ -57,7 +57,7 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
     public GenericClientSessionCtx toData() {
         Set<Integer> qos2PublishPacketIds;
         try {
-            qos2PublishPacketIds = JacksonUtil.OBJECT_MAPPER.readValue(this.data.binaryValue(), new TypeReference<>() {});
+            qos2PublishPacketIds = Set.of(JacksonUtil.OBJECT_MAPPER.treeToValue(this.data, Integer[].class));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }

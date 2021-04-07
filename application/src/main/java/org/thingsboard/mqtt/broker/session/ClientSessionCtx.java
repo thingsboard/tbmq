@@ -62,6 +62,9 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
 
+    @Getter
+    private final IncomingMessagesCtx incomingMessagesCtx = new IncomingMessagesCtx();
+
 
     public ClientSessionCtx(UUID sessionId, SslHandler sslHandler) {
         this.sessionId = sessionId;

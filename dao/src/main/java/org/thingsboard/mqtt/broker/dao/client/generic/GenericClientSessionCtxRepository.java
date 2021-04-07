@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.dao.client.generic;
 
+import org.springframework.data.repository.CrudRepository;
+import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import java.util.Collection;
-
-public interface ClientSessionCtxService {
-    void registerSession(ClientSessionCtx clientSessionCtx);
-
-    void unregisterSession(String clientId);
-
-    ClientSessionCtx getClientSessionCtx(String clientId);
-
-    Collection<ClientSessionCtx> getAllClientSessionCtx();
+public interface GenericClientSessionCtxRepository extends CrudRepository<GenericClientSessionCtxEntity, String> {
+    GenericClientSessionCtxEntity findByClientId(String clientId);
 }

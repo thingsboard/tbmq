@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.dao.client.generic;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
+import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @Service
@@ -30,6 +32,13 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
 
     @Autowired
     private GenericClientSessionCtxDao genericClientSessionCtxDao;
+
+    @Override
+    public void saveAllGenericClientSessionCtx(Collection<GenericClientSessionCtx> genericClientSessionContexts) {
+        log.trace("Executing saveAllGenericClientSessionCtx [{}]", genericClientSessionContexts);
+        genericClientSessionContexts.forEach(this::validate);
+        genericClientSessionCtxDao.saveAll(genericClientSessionContexts);
+    }
 
     @Override
     public GenericClientSessionCtx saveGenericClientSessionCtx(GenericClientSessionCtx genericClientSessionCtx) {
