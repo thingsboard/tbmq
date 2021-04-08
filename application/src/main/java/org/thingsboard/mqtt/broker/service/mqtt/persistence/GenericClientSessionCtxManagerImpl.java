@@ -46,15 +46,10 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
                 .map(GenericClientSessionCtx::getQos2PublishPacketIds)
                 .orElse(Collections.emptySet());
         IncomingMessagesCtx incomingMessagesCtx = clientSessionCtx.getIncomingMessagesCtx();
-        incomingMessagesCtx.setAwaitingPacketIds(awaitingQoS2PacketIds);
+        incomingMessagesCtx.loadPersistedPackets(awaitingQoS2PacketIds);
         for (Integer packetId : awaitingQoS2PacketIds) {
             clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId));
         }
-    }
-
-    @Override
-    public void processIncomingPublish(int packetId, ClientSessionCtx ctx) {
-        ctx.getIncomingMessagesCtx().await(packetId);
     }
 
     @Override
@@ -93,9 +88,13 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     }
 
     private GenericClientSessionCtx toGenericClientSessionCtx(ClientSessionCtx ctx) {
+        Set<Integer> qos2PublishPacketIds = ctx.getIncomingMessagesCtx().getAwaitingPacketIds().stream()
+                .filter(qoS2PacketInfo -> qoS2PacketInfo.getPersisted().get())
+                .map(IncomingMessagesCtx.QoS2PacketInfo::getPacketId)
+                .collect(Collectors.toSet());
         return GenericClientSessionCtx.builder()
                 .clientId(ctx.getClientId())
-                .qos2PublishPacketIds(ctx.getIncomingMessagesCtx().getAwaitingPacketIds())
+                .qos2PublishPacketIds(qos2PublishPacketIds)
                 .build();
     }
 }

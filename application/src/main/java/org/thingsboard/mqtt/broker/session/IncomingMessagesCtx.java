@@ -15,31 +15,56 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import com.google.common.collect.Sets;
+import lombok.Getter;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class IncomingMessagesCtx {
-    private final Set<Integer> awaitingQoS2PacketIds = Sets.newConcurrentHashSet();
+    private final ConcurrentMap<Integer, QoS2PacketInfo> awaitingQoS2Packets = new ConcurrentHashMap<>();
 
-    public void setAwaitingPacketIds(Set<Integer> awaitingPacketIds) {
-        awaitingQoS2PacketIds.addAll(awaitingPacketIds);
+    public void loadPersistedPackets(Set<Integer> awaitingPacketIds) {
+        Map<Integer, QoS2PacketInfo> newAwaitingPackets = awaitingPacketIds.stream()
+                .collect(Collectors.toMap(Function.identity(), id -> new QoS2PacketInfo(id, true)));
+        awaitingQoS2Packets.putAll(newAwaitingPackets);
     }
 
     public void await(int packetId) {
-        awaitingQoS2PacketIds.add(packetId);
+        awaitingQoS2Packets.put(packetId, new QoS2PacketInfo(packetId));
     }
 
     public boolean complete(int packetId) {
-        return awaitingQoS2PacketIds.remove(packetId);
+        return awaitingQoS2Packets.remove(packetId) != null;
     }
 
-    public boolean isAwaiting(int packetId) {
-        return awaitingQoS2PacketIds.contains(packetId);
+    public QoS2PacketInfo getAwaitingPacket(int packetId) {
+        return awaitingQoS2Packets.get(packetId);
     }
 
-    public Set<Integer> getAwaitingPacketIds() {
-        return new HashSet<>(awaitingQoS2PacketIds);
+    public Collection<QoS2PacketInfo> getAwaitingPacketIds() {
+        return awaitingQoS2Packets.values();
+    }
+
+    @Getter
+    public static class QoS2PacketInfo {
+        private final int packetId;
+        private final AtomicBoolean persisted = new AtomicBoolean(false);
+        private final AtomicInteger packetsToReply = new AtomicInteger(0);
+
+        public QoS2PacketInfo(int packetId) {
+            this.packetId = packetId;
+        }
+
+        public QoS2PacketInfo(int packetId, boolean isPersisted) {
+            this.packetId = packetId;
+            this.persisted.set(isPersisted);
+        }
     }
 }

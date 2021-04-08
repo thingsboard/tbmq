@@ -139,11 +139,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processIncomingPublish(int packetId, ClientSessionCtx ctx) {
-        genericClientSessionCtxManager.processIncomingPublish(packetId, ctx);
-    }
-
-    @Override
     public void processPubRel(int packetId, ClientSessionCtx clientSessionCtx) {
         genericClientSessionCtxManager.processPubRel(packetId, clientSessionCtx);
     }

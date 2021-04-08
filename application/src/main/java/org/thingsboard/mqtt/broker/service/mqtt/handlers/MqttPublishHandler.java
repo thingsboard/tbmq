@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationServic
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import java.util.Collections;
 import java.util.UUID;
@@ -66,10 +67,8 @@ public class MqttPublishHandler {
         int msgId = msg.variableHeader().packetId();
         MqttQoS msgQoS = msg.fixedHeader().qosLevel();
 
-        if (msgQoS == MqttQoS.EXACTLY_ONCE && ctx.getIncomingMessagesCtx().isAwaiting(msgId)) {
-            log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
-            acknowledgePacket(ctx, msgId, msgQoS);
-            return;
+        if (msgQoS == MqttQoS.EXACTLY_ONCE) {
+            if (preprocessQoS2Msg(msgId, ctx)) return;
         }
         log.trace("[{}][{}] Processing publish msg: {}", clientId, sessionId, msgId);
         PublishMsg publishMsg = MqttConverter.convertToPublishMsg(msg);
@@ -88,6 +87,31 @@ public class MqttPublishHandler {
         });
     }
 
+    // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
+    private boolean preprocessQoS2Msg(int msgId, ClientSessionCtx ctx) {
+        String clientId = ctx.getClientId();
+        UUID sessionId = ctx.getSessionId();
+        IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
+        if (awaitingPacketInfo != null) {
+            int currentPacketsToReply = awaitingPacketInfo.getPacketsToReply().get();
+            if (awaitingPacketInfo.getPersisted().get() || currentPacketsToReply == 0) {
+                log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
+                acknowledgePacket(ctx, msgId, MqttQoS.EXACTLY_ONCE);
+            } else {
+                log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+                int actualPacketsToReply = awaitingPacketInfo.getPacketsToReply().compareAndExchange(currentPacketsToReply, currentPacketsToReply + 1);
+                if (actualPacketsToReply != currentPacketsToReply) {
+                    // it means that packet was successfully stored
+                    acknowledgePacket(ctx, msgId, MqttQoS.EXACTLY_ONCE);
+                }
+            }
+            return true;
+        } else {
+            ctx.getIncomingMessagesCtx().await(msgId);
+        }
+        return false;
+    }
+
     private void acknowledgePacket(ClientSessionCtx ctx, int packetId, MqttQoS mqttQoS) {
         switch (mqttQoS) {
             case AT_MOST_ONCE:
@@ -96,10 +120,19 @@ public class MqttPublishHandler {
                 ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId));
                 break;
             case EXACTLY_ONCE:
+                int packetsToReply = 1;
                 if (ctx.getSessionInfo().isPersistent()) {
-                    msgPersistenceManager.processIncomingPublish(packetId, ctx);
+                    IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(packetId);
+                    if (awaitingPacketInfo == null) {
+                        log.warn("[{}][{}] Couldn't find awaiting packet info for packet {}.", ctx.getClientId(), ctx.getSessionId(), packetId);
+                    } else {
+                        packetsToReply += awaitingPacketInfo.getPacketsToReply().getAndSet(0);
+                        awaitingPacketInfo.getPersisted().getAndSet(true);
+                    }
                 }
-                ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId));
+                for (int i = 0; i < packetsToReply; i++) {
+                    ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId));
+                }
                 break;
             default:
                 throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");

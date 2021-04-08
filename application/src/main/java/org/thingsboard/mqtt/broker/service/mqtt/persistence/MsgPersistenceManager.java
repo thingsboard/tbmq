@@ -26,8 +26,6 @@ import java.util.Collection;
 public interface MsgPersistenceManager {
     void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions, PublishMsgCallback callback);
 
-    void processIncomingPublish(int packetId, ClientSessionCtx ctx);
-
     void processPubAck(int packetId, ClientSessionCtx clientSessionCtx);
 
     void processPubRel(int packetId, ClientSessionCtx clientSessionCtx);
