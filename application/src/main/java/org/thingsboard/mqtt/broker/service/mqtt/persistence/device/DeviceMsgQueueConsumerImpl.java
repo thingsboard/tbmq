@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -158,6 +159,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     return devicePublishMsg.toBuilder()
                             .serialNumber(packetIdAndSerialNumberDto.getSerialNumber())
                             .packetId(packetIdAndSerialNumberDto.getPacketId())
+                            .packetType(PersistedPacketType.PUBLISH)
                             .time(System.currentTimeMillis())
                             .build();
                 })

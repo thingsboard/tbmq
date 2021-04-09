@@ -86,7 +86,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void acknowledgeDelivery(String clientId, int packetId) {
+    public void processPubAck(String clientId, int packetId) {
         log.trace("Executing acknowledgeDelivery [{}][{}]", clientId, packetId);
         ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
         if (processingContext == null) {

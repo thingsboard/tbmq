@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     topic varchar NOT NULL,
     time bigint NOT NULL,
     packet_id int,
+    packet_type varchar(255),
     qos int NOT NULL,
     payload BINARY NOT NULL,
     CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, serial_number)

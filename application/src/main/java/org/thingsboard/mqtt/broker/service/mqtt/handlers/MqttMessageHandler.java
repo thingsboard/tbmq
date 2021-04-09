@@ -61,8 +61,14 @@ public class MqttMessageHandler {
                 case PUBACK:
                     messageHandlers.getPubAckHandler().process(clientSessionCtx, (MqttPubAckMessage) msg);
                     break;
+                case PUBREC:
+                    messageHandlers.getPubRecHandler().process(clientSessionCtx, ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId());
+                    break;
                 case PUBREL:
                     messageHandlers.getPubRelHandler().process(clientSessionCtx, ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId());
+                    break;
+                case PUBCOMP:
+                    messageHandlers.getPubCompHandler().process(clientSessionCtx, ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId());
                     break;
                 default:
                     throw new MqttException("Processing of " + msgType + " message is not allowed.");

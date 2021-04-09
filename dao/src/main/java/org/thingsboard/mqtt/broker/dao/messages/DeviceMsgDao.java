@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.messages;
 
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
 import java.util.List;
 
@@ -27,4 +28,6 @@ public interface DeviceMsgDao {
     void removePersistedMessages(String clientId);
 
     void removePersistedMessage(String clientId, int packetId);
+
+    void updatePacketType(String clientId, int packetId, PersistedPacketType packetType);
 }

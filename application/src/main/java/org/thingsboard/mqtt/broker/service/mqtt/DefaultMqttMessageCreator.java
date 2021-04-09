@@ -40,8 +40,10 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.PINGRESP;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PUBCOMP;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PUBREC;
+import static io.netty.handler.codec.mqtt.MqttMessageType.PUBREL;
 import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 
 
@@ -110,4 +112,11 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBCOMP, false, AT_MOST_ONCE, false, 0);
         return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
     }
+
+    @Override
+    public MqttMessage createPubRelMsg(int msgId) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBREL, false, AT_LEAST_ONCE, false, 0);
+        return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
+    }
+
 }

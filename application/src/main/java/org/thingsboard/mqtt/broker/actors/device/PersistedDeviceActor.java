@@ -20,6 +20,8 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
@@ -42,11 +44,17 @@ public class PersistedDeviceActor extends ContextAwareActor {
             case DEVICE_DISCONNECTED_EVENT_MSG:
                 processor.processDeviceDisconnect(ctx);
                 break;
+            case INCOMING_PUBLISH_MSG:
+                processor.process((IncomingPublishMsg) msg);
+                break;
             case PACKET_ACKNOWLEDGED_EVENT_MSG:
                 processor.processPacketAcknowledge((PacketAcknowledgedEventMsg) msg);
                 break;
-            case INCOMING_PUBLISH_MSG:
-                processor.process((IncomingPublishMsg) msg);
+            case PACKET_RECEIVED_EVENT_MSG:
+                processor.processPacketReceived((PacketReceivedEventMsg) msg);
+                break;
+            case PACKET_COMPLETED_EVENT_MSG:
+                processor.processPacketComplete((PacketCompletedEventMsg) msg);
                 break;
             case STOP_DEVICE_ACTOR_COMMAND_MSG:
                 processor.processActorStop(ctx, (StopDeviceActorCommandMsg) msg);

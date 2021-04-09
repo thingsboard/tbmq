@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,21 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         } catch (Exception e) {
             if (sessionCtx.getSessionState() != SessionState.DISCONNECTED) {
-                log.debug("[{}][{}] Failed to send publish msg to MQTT client. Reason - {}.",
+                log.debug("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
+                        sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
+                log.trace("Detailed error:", e);
+            }
+        }
+    }
+
+    @Override
+    public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
+        MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
+        try {
+            sessionCtx.getChannel().writeAndFlush(mqttPubRelMsg);
+        } catch (Exception e) {
+            if (sessionCtx.getSessionState() != SessionState.DISCONNECTED) {
+                log.debug("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
                         sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
                 log.trace("Detailed error:", e);
             }

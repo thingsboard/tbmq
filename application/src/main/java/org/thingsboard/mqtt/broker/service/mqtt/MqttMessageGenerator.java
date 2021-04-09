@@ -41,4 +41,6 @@ public interface MqttMessageGenerator {
     MqttMessage createPingRespMsg();
 
     MqttMessage createPubCompMsg(int msgId);
+
+    MqttMessage createPubRelMsg(int msgId);
 }

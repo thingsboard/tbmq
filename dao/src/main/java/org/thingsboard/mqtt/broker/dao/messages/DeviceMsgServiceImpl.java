@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
 import java.util.List;
 
@@ -56,6 +57,11 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     public void removePersistedMessage(String clientId, int packetId) {
         log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
         deviceMsgDao.removePersistedMessage(clientId, packetId);
+    }
 
+    @Override
+    public void updatePacketReceived(String clientId, int packetId) {
+        log.trace("[{}] Updating packet type to PUBREL for packetId {}.", clientId, packetId);
+        deviceMsgDao.updatePacketType(clientId, packetId, PersistedPacketType.PUBREL);
     }
 }

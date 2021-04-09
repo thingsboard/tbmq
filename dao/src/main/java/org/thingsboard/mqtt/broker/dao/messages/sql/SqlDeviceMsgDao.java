@@ -19,12 +19,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgDao;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
-import org.thingsboard.mqtt.broker.dao.util.PsqlDao;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -65,5 +65,15 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     public void removePersistedMessage(String clientId, int packetId) {
         log.trace("Removing device publish message, clientId - {}, packetId - {}", clientId, packetId);
         deviceMsgRepository.removeAllByClientIdAndPacketId(clientId, packetId);
+    }
+
+    @Override
+    public void updatePacketType(String clientId, int packetId, PersistedPacketType packetType) {
+        log.trace("Updating packet type for device publish message, clientId - {}, packetId - {}, packetType - {}.", clientId, packetId, packetType);
+        int rowsUpdated = insertDeviceMsgRepository.updatePacketType(clientId, packetId, packetType);
+        if (rowsUpdated != 1) {
+            log.info("While trying to update packet type {} rows were affected instead of 1 row. ClientId - {}, packetId - {}, packetType - {}.",
+                    rowsUpdated, clientId, packetId, packetType);
+        }
     }
 }

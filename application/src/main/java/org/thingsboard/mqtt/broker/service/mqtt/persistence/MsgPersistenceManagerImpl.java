@@ -132,14 +132,36 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
-            applicationPersistenceProcessor.acknowledgeDelivery(clientId, packetId);
+            applicationPersistenceProcessor.processPubAck(clientId, packetId);
         } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.acknowledgeDelivery(clientId, packetId);
+            devicePersistenceProcessor.processPubAck(clientId, packetId);
+        }
+    }
+
+    @Override
+    public void processPubRec(int packetId, ClientSessionCtx clientSessionCtx) {
+        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
+        String clientId = clientInfo.getClientId();
+        if (clientInfo.getType() == APPLICATION) {
+            log.info("Not implemented yet.");
+        } else if (clientInfo.getType() == DEVICE) {
+            devicePersistenceProcessor.processPubRec(clientId, packetId);
         }
     }
 
     @Override
     public void processPubRel(int packetId, ClientSessionCtx clientSessionCtx) {
         genericClientSessionCtxManager.processPubRel(packetId, clientSessionCtx);
+    }
+
+    @Override
+    public void processPubComp(int packetId, ClientSessionCtx clientSessionCtx) {
+        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
+        String clientId = clientInfo.getClientId();
+        if (clientInfo.getType() == APPLICATION) {
+            log.info("Not implemented yet.");
+        } else if (clientInfo.getType() == DEVICE) {
+            devicePersistenceProcessor.processPubComp(clientId, packetId);
+        }
     }
 }

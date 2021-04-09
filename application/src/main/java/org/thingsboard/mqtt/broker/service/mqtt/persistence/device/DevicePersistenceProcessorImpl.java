@@ -39,8 +39,19 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     @Override
-    public void acknowledgeDelivery(String clientId, int packetId) {
+    public void processPubAck(String clientId, int packetId) {
         deviceActorManager.notifyPacketAcknowledged(clientId, packetId);
+    }
+
+    @Override
+    public void processPubRec(String clientId, int packetId) {
+        deviceActorManager.notifyPacketReceived(clientId, packetId);
+
+    }
+
+    @Override
+    public void processPubComp(String clientId, int packetId) {
+        deviceActorManager.notifyPacketCompleted(clientId, packetId);
     }
 
     @Override

@@ -19,11 +19,15 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 // TODO: group this interface with ApplicationPersistenceProcessor
 public interface DevicePersistenceProcessor {
-    void acknowledgeDelivery(String clientId, int packetId);
-
     void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
 
     void stopProcessingPersistedMessages(String clientId);
 
     void clearPersistedMsgs(String clientId);
+
+    void processPubAck(String clientId, int packetId);
+
+    void processPubRec(String clientId, int packetId);
+
+    void processPubComp(String clientId, int packetId);
 }

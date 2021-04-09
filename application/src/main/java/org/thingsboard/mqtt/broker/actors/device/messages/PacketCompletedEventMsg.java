@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-public interface ApplicationPersistenceProcessor {
-    void processPubAck(String clientId, int packetId);
+@RequiredArgsConstructor
+@Getter
+public class PacketCompletedEventMsg implements TbActorMsg {
+    private final int packetId;
 
-    void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
-
-    void stopProcessingPersistedMessages(String clientId);
-
-    void clearPersistedMsgs(String clientId);
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.PACKET_COMPLETED_EVENT_MSG;
+    }
 }

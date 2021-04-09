@@ -22,6 +22,8 @@ import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -45,9 +47,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     private final String clientId;
 
+    // works only if Actor wasn't deleted
     private final Set<Integer> inFlightPacketIds = new HashSet<>();
     private ClientSessionCtx sessionCtx;
-    private Long lastSentSerialNumber = 0L;
+    private Long lastPersistedMsgSentSerialNumber = 0L;
     private UUID stopActorCommandUUID;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
@@ -72,15 +75,25 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     private void processPersistedMsg(DevicePublishMsg persistedMessage) {
-        // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
-        boolean isDup = inFlightPacketIds.contains(persistedMessage.getPacketId());
-        if (!isDup) {
-            inFlightPacketIds.add(persistedMessage.getPacketId());
+        switch (persistedMessage.getPacketType()) {
+            case PUBLISH:
+                // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
+                boolean isDup = inFlightPacketIds.contains(persistedMessage.getPacketId());
+                if (!isDup) {
+                    inFlightPacketIds.add(persistedMessage.getPacketId());
+                }
+                lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
+                publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, persistedMessage.getPacketId(),
+                        persistedMessage.getTopic(), MqttQoS.valueOf(persistedMessage.getQos()), isDup,
+                        persistedMessage.getPayload());
+                break;
+            case PUBREL:
+                publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, persistedMessage.getPacketId());
+                break;
+            default:
+                break;
         }
-        lastSentSerialNumber = persistedMessage.getSerialNumber();
-        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, persistedMessage.getPacketId(),
-                persistedMessage.getTopic(), MqttQoS.valueOf(persistedMessage.getQos()), isDup,
-                persistedMessage.getPayload());
+
     }
 
     public void processDeviceDisconnect(TbActorCtx actorCtx) {
@@ -96,7 +109,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.trace("[{}] Client is not connected, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             return;
         }
-        if (publishMsg.getSerialNumber() <= lastSentSerialNumber) {
+        if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
             log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             return;
         }
@@ -109,6 +122,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
         inFlightPacketIds.remove(msg.getPacketId());
+    }
+
+    public void processPacketReceived(PacketReceivedEventMsg msg) {
+        deviceMsgService.updatePacketReceived(clientId, msg.getPacketId());
+        inFlightPacketIds.remove(msg.getPacketId());
+        publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
+    }
+
+    public void processPacketComplete(PacketCompletedEventMsg msg) {
+        deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
     }
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {

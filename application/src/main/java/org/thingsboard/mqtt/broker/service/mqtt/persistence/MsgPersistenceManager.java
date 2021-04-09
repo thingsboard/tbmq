@@ -28,6 +28,10 @@ public interface MsgPersistenceManager {
 
     void processPubAck(int packetId, ClientSessionCtx clientSessionCtx);
 
+    void processPubRec(int packetId, ClientSessionCtx clientSessionCtx);
+
+    void processPubComp(int packetId, ClientSessionCtx clientSessionCtx);
+
     void processPubRel(int packetId, ClientSessionCtx clientSessionCtx);
 
     void processPersistedMessages(ClientSessionCtx clientSessionCtx);

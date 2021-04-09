@@ -29,5 +29,6 @@ public class DevicePublishMsg {
     private Long time;
     private Integer qos;
     private Integer packetId;
+    private PersistedPacketType packetType;
     private byte[] payload;
 }

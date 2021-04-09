@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.common.data;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-public interface ApplicationPersistenceProcessor {
-    void processPubAck(String clientId, int packetId);
-
-    void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
-
-    void stopProcessingPersistedMessages(String clientId);
-
-    void clearPersistedMsgs(String clientId);
+public enum PersistedPacketType {
+    PUBLISH,
+    PUBREL
 }

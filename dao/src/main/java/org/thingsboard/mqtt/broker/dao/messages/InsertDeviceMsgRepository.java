@@ -15,10 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
 import java.util.List;
 
 public interface InsertDeviceMsgRepository {
     void insert(List<DevicePublishMsgEntity> entities);
+
+    int updatePacketType(String clientId, int packetId, PersistedPacketType packetType);
 }

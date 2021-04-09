@@ -21,10 +21,10 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
-import org.thingsboard.mqtt.broker.dao.util.PsqlDao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -40,10 +40,16 @@ public class SqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
             ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY + ", " +
+            ModelConstants.DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY + ", " +
             ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY + ") " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?);";
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+
+    private static final String UPDATE_PACKET_TYPE = "UPDATE " + ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " SET " +
+            ModelConstants.DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY + "=?  WHERE " +
+            ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + "=? AND " +
+            ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY + "=?;";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -58,15 +64,25 @@ public class SqlInsertDeviceMsgRepository implements InsertDeviceMsgRepository {
                 ps.setString(2, devicePublishMsgEntity.getTopic());
                 ps.setLong(3, devicePublishMsgEntity.getSerialNumber());
                 ps.setInt(4, devicePublishMsgEntity.getPacketId());
-                ps.setLong(5, devicePublishMsgEntity.getTime());
-                ps.setInt(6, devicePublishMsgEntity.getQos());
-                ps.setBytes(7, devicePublishMsgEntity.getPayload());
+                ps.setString(5, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(6, devicePublishMsgEntity.getTime());
+                ps.setInt(7, devicePublishMsgEntity.getQos());
+                ps.setBytes(8, devicePublishMsgEntity.getPayload());
             }
 
             @Override
             public int getBatchSize() {
                 return entities.size();
             }
+        });
+    }
+
+    @Override
+    public int updatePacketType(String clientId, int packetId, PersistedPacketType packetType) {
+        return jdbcTemplate.update(UPDATE_PACKET_TYPE, ps -> {
+            ps.setString(1, packetType.toString());
+            ps.setString(2, clientId);
+            ps.setInt(3, packetId);
         });
     }
 }

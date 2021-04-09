@@ -27,6 +27,8 @@ import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMs
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceDisconnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -64,6 +66,17 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     }
 
     @Override
+    public void sendMsgToActor(DevicePublishMsg devicePublishMsg) {
+        String clientId = devicePublishMsg.getClientId();
+        TbActorRef deviceActorRef = actorSystem.getActor(new TbStringActorId(clientId));
+        if (deviceActorRef == null) {
+            log.trace("[{}] No active actor for device.", clientId);
+        } else {
+            deviceActorRef.tell(new IncomingPublishMsg(devicePublishMsg));
+        }
+    }
+
+    @Override
     public void notifyPacketAcknowledged(String clientId, int packetId) {
         TbActorRef deviceActorRef = actorSystem.getActor(new TbStringActorId(clientId));
         if (deviceActorRef == null) {
@@ -74,13 +87,22 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     }
 
     @Override
-    public void sendMsgToActor(DevicePublishMsg devicePublishMsg) {
-        String clientId = devicePublishMsg.getClientId();
+    public void notifyPacketReceived(String clientId, int packetId) {
         TbActorRef deviceActorRef = actorSystem.getActor(new TbStringActorId(clientId));
         if (deviceActorRef == null) {
-            log.trace("[{}] No actor for device.", clientId);
+            log.warn("[{}] Cannot find device actor for packet received event, packetId - {}.", clientId, packetId);
         } else {
-            deviceActorRef.tell(new IncomingPublishMsg(devicePublishMsg));
+            deviceActorRef.tell(new PacketReceivedEventMsg(packetId));
+        }
+    }
+
+    @Override
+    public void notifyPacketCompleted(String clientId, int packetId) {
+        TbActorRef deviceActorRef = actorSystem.getActor(new TbStringActorId(clientId));
+        if (deviceActorRef == null) {
+            log.warn("[{}] Cannot find device actor for packet completed event, packetId - {}.", clientId, packetId);
+        } else {
+            deviceActorRef.tell(new PacketCompletedEventMsg(packetId));
         }
     }
 }

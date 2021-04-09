@@ -18,11 +18,14 @@ package org.thingsboard.mqtt.broker.dao.model.sql;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
@@ -50,6 +53,10 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY)
     private Integer packetId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY)
+    private PersistedPacketType packetType;
+
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY)
     private Integer qos;
 
@@ -64,6 +71,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.serialNumber = devicePublishMsg.getSerialNumber();
         this.time = devicePublishMsg.getTime();
         this.packetId = devicePublishMsg.getPacketId();
+        this.packetType = devicePublishMsg.getPacketType();
         this.qos = devicePublishMsg.getQos();
         this.payload = devicePublishMsg.getPayload();
     }
@@ -78,6 +86,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
                 .qos(qos)
                 .payload(payload)
                 .packetId(packetId)
+                .packetType(packetType)
                 .build();
     }
 }
