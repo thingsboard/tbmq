@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -39,16 +39,20 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
-    private final GenericClientSessionCtxManager genericClientSessionCtxManager;
+    @Autowired
+    private GenericClientSessionCtxManager genericClientSessionCtxManager;
 
-    private final ApplicationMsgQueueService applicationMsgQueueService;
-    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    @Autowired
+    private ApplicationMsgQueueService applicationMsgQueueService;
+    @Autowired
+    private ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
-    private final DeviceMsgQueueService deviceMsgQueueService;
-    private final DevicePersistenceProcessor devicePersistenceProcessor;
+    @Autowired
+    private DeviceMsgQueueService deviceMsgQueueService;
+    @Autowired
+    private DevicePersistenceProcessor devicePersistenceProcessor;
 
     // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
 
@@ -143,7 +147,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
-            log.info("Not implemented yet.");
+            applicationPersistenceProcessor.processPubRec(clientSessionCtx, packetId);
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.processPubRec(clientId, packetId);
         }
@@ -159,7 +163,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
-            log.info("Not implemented yet.");
+            applicationPersistenceProcessor.processPubComp(clientId, packetId);
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.processPubComp(clientId, packetId);
         }

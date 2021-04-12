@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
@@ -72,7 +71,7 @@ public class MqttPublishHandler {
         }
         log.trace("[{}][{}] Processing publish msg: {}", clientId, sessionId, msgId);
         PublishMsg publishMsg = MqttConverter.convertToPublishMsg(msg);
-        msgDispatcherService.acknowledgePublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
+        msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);

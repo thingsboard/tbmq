@@ -15,9 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
+import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -26,15 +30,32 @@ import java.util.concurrent.TimeUnit;
 public class ApplicationPackProcessingContext {
 
     @Getter
-    private final ConcurrentMap<Integer, PublishMsgWithOffset> pendingMap;
+    private final ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>();
+    @Getter
+    private final ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>();
 
     private final CountDownLatch processingTimeoutLatch;
     private final ApplicationSubmitStrategy submitStrategy;
+    // TODO: wrap in separate class
+    @Getter
+    private final Collection<PersistedPubRelMsg> newPubRelPackets;
 
-    public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy) {
+    public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets) {
+        this.newPubRelPackets = newPubRelPackets;
         this.submitStrategy = submitStrategy;
-        this.pendingMap = submitStrategy.getPendingMap();
-        this.processingTimeoutLatch = new CountDownLatch(pendingMap.size());
+        for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
+            switch (persistedMsg.getPacketType()) {
+                case PUBLISH:
+                    publishPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPublishMsg) persistedMsg);
+                    break;
+                case PUBREL:
+                    pubRelPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPubRelMsg) persistedMsg);
+                    break;
+                default:
+                    break;
+            }
+        }
+        this.processingTimeoutLatch = new CountDownLatch(publishPendingMsgMap.size() + pubRelPendingMsgMap.size());
     }
 
     public boolean await(long packProcessingTimeout, TimeUnit timeUnit) throws InterruptedException {
@@ -43,21 +64,45 @@ public class ApplicationPackProcessingContext {
 
     // TODO: save only messages with higher offset (InFlightMessagesCtx)
 
-    public void onSuccess(Integer packetId) {
-        PublishMsgWithOffset msg = pendingMap.remove(packetId);
-        if (msg != null) {
-            submitStrategy.onSuccess(msg.getOffset());
-            processingTimeoutLatch.countDown();
-        } else {
-            log.info("Couldn't find packet {} to acknowledge success.", packetId);
+    public void onPubAck(Integer packetId) {
+        onPublishMsgSuccess(packetId);
+    }
+
+    public void onPubRec(Integer packetId) {
+        // TODO: think what to do if PUBREC came after PackContext timeout
+        Long packetOffset = onPublishMsgSuccess(packetId);
+        if (packetOffset != null) {
+            newPubRelPackets.add(new PersistedPubRelMsg(packetId, packetOffset));
         }
     }
 
-    public void cleanup() {
-        pendingMap.clear();
+    private Long onPublishMsgSuccess(Integer packetId) {
+        PersistedPublishMsg msg = publishPendingMsgMap.remove(packetId);
+        if (msg != null) {
+            submitStrategy.onSuccess(msg.getPacketOffset());
+            processingTimeoutLatch.countDown();
+            return msg.getPacketOffset();
+        } else {
+            log.info("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
+            return null;
+        }
+    }
+
+    public void onPubComp(Integer packetId) {
+        PersistedPubRelMsg msg = pubRelPendingMsgMap.remove(packetId);
+        if (msg != null) {
+            processingTimeoutLatch.countDown();
+        } else {
+            log.info("Couldn't find packet {} to complete delivery.", packetId);
+        }
     }
 
     public long getLastCommittedOffset() {
         return submitStrategy.getLastCommittedOffset();
+    }
+
+    public void clear() {
+        publishPendingMsgMap.clear();
+        pubRelPendingMsgMap.clear();
     }
 }

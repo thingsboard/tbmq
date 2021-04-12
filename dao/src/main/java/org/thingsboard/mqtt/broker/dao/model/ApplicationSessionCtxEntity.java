@@ -21,7 +21,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
-import org.thingsboard.mqtt.broker.common.data.ApplicationPublishedMsgInfo;
+import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
@@ -44,26 +44,36 @@ public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx
     private String clientId;
 
     @Type(type = "json")
-    @Column(name = ModelConstants.APPLICATION_SESSION_CTX_DATA_PROPERTY)
-    private JsonNode data;
+    @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY)
+    private JsonNode publishMsgInfos;
+    @Type(type = "json")
+    @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY)
+    private JsonNode pubRelMsgInfos;
 
     public ApplicationSessionCtxEntity() {}
 
     public ApplicationSessionCtxEntity(ApplicationSessionCtx applicationSessionCtx) {
         this.clientId = applicationSessionCtx.getClientId();
-        this.data = JacksonUtil.toJsonNode(JacksonUtil.toString(applicationSessionCtx.getPublishedMsgInfos()));
+        this.publishMsgInfos = JacksonUtil.toJsonNode(JacksonUtil.toString(applicationSessionCtx.getPublishMsgInfos()));
+        this.pubRelMsgInfos = JacksonUtil.toJsonNode(JacksonUtil.toString(applicationSessionCtx.getPubRelMsgInfos()));
     }
 
     @Override
     public ApplicationSessionCtx toData() {
-        ArrayNode publishedMsgInfoJsonArray = (ArrayNode) this.data;
-        List<ApplicationPublishedMsgInfo> publishedMsgInfos = new ArrayList<>(publishedMsgInfoJsonArray.size());
-        for (JsonNode publishedMsgInfoJson : publishedMsgInfoJsonArray) {
-            publishedMsgInfos.add(JacksonUtil.toValue(publishedMsgInfoJson, ApplicationPublishedMsgInfo.class));
+        ArrayNode publishMsgInfoJsonArray = (ArrayNode) this.publishMsgInfos;
+        List<ApplicationMsgInfo> publishMsgInfos = new ArrayList<>(publishMsgInfoJsonArray.size());
+        for (JsonNode publishMsgInfoJson : publishMsgInfoJsonArray) {
+            publishMsgInfos.add(JacksonUtil.toValue(publishMsgInfoJson, ApplicationMsgInfo.class));
+        }
+        ArrayNode pubRelMsgInfoJsonArray = (ArrayNode) this.pubRelMsgInfos;
+        List<ApplicationMsgInfo> pubRelMsgInfos = new ArrayList<>(publishMsgInfoJsonArray.size());
+        for (JsonNode pubRelMsgInfoJson : pubRelMsgInfoJsonArray) {
+            pubRelMsgInfos.add(JacksonUtil.toValue(pubRelMsgInfoJson, ApplicationMsgInfo.class));
         }
         return ApplicationSessionCtx.builder()
                 .clientId(clientId)
-                .publishedMsgInfos(publishedMsgInfos)
+                .publishMsgInfos(publishMsgInfos)
+                .pubRelMsgInfos(pubRelMsgInfos)
                 .build();
     }
 }

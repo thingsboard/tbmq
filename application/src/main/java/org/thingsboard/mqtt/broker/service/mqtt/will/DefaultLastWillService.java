@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.will;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -25,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import javax.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,11 +37,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
-    private final MsgDispatcherService msgDispatcherService;
-    private final AtomicInteger lastWillCounter;
+    @Autowired
+    private MsgDispatcherService msgDispatcherService;
+    @Autowired
+    private StatsManager statsManager;
 
-    public DefaultLastWillService(MsgDispatcherService msgDispatcherService, StatsManager statsManager) {
-        this.msgDispatcherService = msgDispatcherService;
+    private AtomicInteger lastWillCounter;
+
+    @PostConstruct
+    public void init() {
         this.lastWillCounter = statsManager.createLastWillCounter();
     }
 
@@ -68,7 +74,7 @@ public class DefaultLastWillService implements LastWillService {
         lastWillMessages.remove(sessionId);
         lastWillCounter.decrementAndGet();
         if (sendMsg) {
-            msgDispatcherService.acknowledgePublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
+            msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
                     new TbQueueCallback() {
                         @Override
                         public void onSuccess(TbQueueMsgMetadata metadata) {

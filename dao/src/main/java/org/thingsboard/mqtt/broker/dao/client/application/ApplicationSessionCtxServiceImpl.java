@@ -54,7 +54,7 @@ public class ApplicationSessionCtxServiceImpl implements ApplicationSessionCtxSe
         if (StringUtils.isEmpty(applicationSessionCtx.getClientId())) {
             throw new DataValidationException("Client ID should be specified!");
         }
-        if (applicationSessionCtx.getPublishedMsgInfos() == null) {
+        if (applicationSessionCtx.getPublishMsgInfos() == null) {
             throw new DataValidationException("Published messages infos should be specified!");
         }
     }

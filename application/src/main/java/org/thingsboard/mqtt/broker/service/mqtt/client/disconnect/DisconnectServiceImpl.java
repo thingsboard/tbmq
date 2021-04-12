@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -39,16 +39,21 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DisconnectServiceImpl implements DisconnectService {
     private final ExecutorService disconnectExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-executor"));
 
-    private final KeepAliveService keepAliveService;
-    private final LastWillService lastWillService;
-    private final SubscriptionManager subscriptionManager;
-    private final ClientSessionCtxService clientSessionCtxService;
-    private final MsgPersistenceManager msgPersistenceManager;
-    private final ClientSessionEventService clientSessionEventService;
+    @Autowired
+    private KeepAliveService keepAliveService;
+    @Autowired
+    private LastWillService lastWillService;
+    @Autowired
+    private SubscriptionManager subscriptionManager;
+    @Autowired
+    private ClientSessionCtxService clientSessionCtxService;
+    @Autowired
+    private MsgPersistenceManager msgPersistenceManager;
+    @Autowired
+    private ClientSessionEventService clientSessionEventService;
 
     @Value("${application.disconnect.executor-shutdown-timout-ms:500}")
     private long shutdownTimeout;

@@ -73,7 +73,8 @@ CREATE TABLE IF NOT EXISTS device_session_ctx (
 
 CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
-    data varchar
+    publish_msg_infos varchar,
+    pubrel_msg_infos varchar
 );
 
 CREATE TABLE IF NOT EXISTS generic_client_session_ctx (

@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
+package org.thingsboard.mqtt.broker.common.data;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-
-import java.util.Map;
-import java.util.Set;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
-public class ApplicationProcessingDecision {
-    private final boolean commit;
-    private final Map<Integer, PersistedMsg> reprocessMap;
+@Builder
+@ToString
+@EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApplicationMsgInfo {
+    private Long offset;
+    private int packetId;
 }

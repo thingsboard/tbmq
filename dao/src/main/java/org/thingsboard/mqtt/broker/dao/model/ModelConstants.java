@@ -95,7 +95,8 @@ public class ModelConstants {
      */
     public static final String APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME = "application_session_ctx";
     public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
-    public static final String APPLICATION_SESSION_CTX_DATA_PROPERTY = "data";
+    public static final String APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY = "publish_msg_infos";
+    public static final String APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY = "pubrel_msg_infos";
 
     /**
      * generic_client_session_ctx constants.

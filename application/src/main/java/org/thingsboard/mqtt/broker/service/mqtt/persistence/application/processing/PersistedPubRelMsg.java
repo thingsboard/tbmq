@@ -13,22 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
-@Data
-@Builder
-@ToString
 @EqualsAndHashCode
-@NoArgsConstructor
 @AllArgsConstructor
-public class ApplicationPublishedMsgInfo {
-    private Long offset;
-    private int packetId;
+@Builder(toBuilder = true)
+public class PersistedPubRelMsg implements PersistedMsg {
+    private final int packetId;
+    private final long offset;
+
+    @Override
+    public long getPacketOffset() {
+        return offset;
+    }
+
+    @Override
+    public int getPacketId() {
+        return packetId;
+    }
+
+    @Override
+    public PersistedPacketType getPacketType() {
+        return PersistedPacketType.PUBREL;
+    }
 }

@@ -18,15 +18,14 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategyConfiguration;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingContext;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PublishMsgWithOffset;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -51,14 +50,19 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
         @Override
         public ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext) {
-            ConcurrentMap<Integer, PublishMsgWithOffset> pendingMap = new ConcurrentHashMap<>(processingContext.getPendingMap());
-            if (!pendingMap.isEmpty()) {
-                log.debug("[{}] Skip reprocess for {} timeout messages.", clientId, pendingMap.size());
+            ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPublishPendingMsgMap());
+            ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPubRelPendingMsgMap());
+            if (!publishPendingMsgMap.isEmpty() || !pubRelPendingMsgMap.isEmpty()) {
+                log.debug("[{}] Skip reprocess for {} PUBLISH and {} PUBREL timeout messages.", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap);
             }
             if (log.isTraceEnabled()) {
-                pendingMap.forEach((packetId, msg) ->
-                        log.trace("[{}] Timeout message: topic - {}, packetId - {}.",
-                                clientId, msg.getPublishMsg().getTopicName(), msg.getPublishMsg().getPacketId())
+                publishPendingMsgMap.forEach((packetId, msg) ->
+                        log.trace("[{}] Timeout PUBLISH message: topic - {}, packetId - {}.",
+                                clientId, msg.getPublishMsg().getTopicName(), msg.getPacketId())
+                );
+                pubRelPendingMsgMap.forEach((packetId, msg) ->
+                        log.trace("[{}] Timeout PUBREL message: packetId - {}.",
+                                clientId, msg.getPacketId())
                 );
             }
             return new ApplicationProcessingDecision(true, Collections.emptyMap());
@@ -74,22 +78,38 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
         @Override
         public ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext) {
-            ConcurrentMap<Integer, PublishMsgWithOffset> pendingMap = new ConcurrentHashMap<>(processingContext.getPendingMap());
-            if (pendingMap.isEmpty()) {
+            ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPublishPendingMsgMap());
+            ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPubRelPendingMsgMap());
+            if (publishPendingMsgMap.isEmpty() && pubRelPendingMsgMap.isEmpty()) {
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
             if (maxRetries != 0 && ++retryCount > maxRetries) {
                 log.debug("[{}] Skip reprocess due to max retries.", clientId);
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
-            log.debug("[{}] Going to reprocess {} messages", clientId, pendingMap.size());
+            log.debug("[{}] Going to reprocess {} PUBLISH and {} PUBREL messages", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap.size());
             if (log.isTraceEnabled()) {
-                pendingMap.forEach((packetId, msg) ->
-                        log.trace("[{}] Going to reprocess message: topic - {}, packetId - {}.",
-                                clientId, msg.getPublishMsg().getTopicName(), msg.getPublishMsg().getPacketId())
+                publishPendingMsgMap.forEach((packetId, msg) ->
+                        log.trace("[{}] Going to reprocess PUBLISH message: topic - {}, packetId - {}.",
+                                clientId, msg.getPublishMsg().getTopicName(), msg.getPacketId())
+                );
+                pubRelPendingMsgMap.forEach((packetId, msg) ->
+                        log.trace("[{}] Going to reprocess PUBREL message: packetId - {}.",
+                                clientId, msg.getPacketId())
                 );
             }
-            return new ApplicationProcessingDecision(false, pendingMap);
+            Map<Integer, PersistedPublishMsg> publishPendingDuplicatedMsgMap = publishPendingMsgMap.values().stream()
+                    .map(persistedPublishMsg -> persistedPublishMsg.toBuilder()
+                            .publishMsg(persistedPublishMsg.getPublishMsg().toBuilder()
+                                    .isDup(true)
+                                    .build())
+                            .build())
+                    .collect(Collectors.toMap(PersistedPublishMsg::getPacketId, Function.identity()));
+
+            Map<Integer, PersistedMsg> pendingMsgMap = new HashMap<>();
+            pendingMsgMap.putAll(publishPendingDuplicatedMsgMap);
+            pendingMsgMap.putAll(pubRelPendingMsgMap);
+            return new ApplicationProcessingDecision(false, pendingMsgMap);
         }
     }
 }

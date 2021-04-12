@@ -15,27 +15,37 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
 @RequiredArgsConstructor
 public class ApplicationPersistedMsgCtx {
-    private final Map<Long, Integer> messagesToResend;
+    private final Map<Long, Integer> publishMsgIds;
+    @Getter
+    private final Map<Long, Integer> pubRelMsgIds;
 
     public Integer getMsgPacketId(Long msgOffset) {
         Integer msgPacketId = null;
-        if (!messagesToResend.isEmpty()) {
-            msgPacketId = messagesToResend.get(msgOffset);
+        if (!publishMsgIds.isEmpty()) {
+            msgPacketId = publishMsgIds.get(msgOffset);
             if (msgPacketId == null) {
-                messagesToResend.clear();
+                publishMsgIds.clear();
             }
         }
         return msgPacketId;
     }
 
     public int getLastPacketId() {
-        long lastOffset = messagesToResend.keySet().stream().max(Long::compareTo).orElse(-1L);
-        return lastOffset != -1 ? messagesToResend.get(lastOffset) : 1;
+        long lastPublishOffset = publishMsgIds.keySet().stream().max(Long::compareTo).orElse(-1L);
+        if (lastPublishOffset != -1) {
+            return publishMsgIds.get(lastPublishOffset);
+        }
+        long lastPubRelOffset = pubRelMsgIds.keySet().stream().max(Long::compareTo).orElse(-1L);
+        if (lastPubRelOffset != -1) {
+            return pubRelMsgIds.get(lastPubRelOffset);
+        }
+        return 1;
     }
 }

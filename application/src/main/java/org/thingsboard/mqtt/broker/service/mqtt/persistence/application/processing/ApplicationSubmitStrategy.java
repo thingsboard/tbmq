@@ -21,13 +21,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 public interface ApplicationSubmitStrategy {
-    void init(List<PublishMsgWithOffset> messagesWithOffset);
+    void init(long lastCommittedOffset, List<PersistedMsg> orderedMessages);
 
-    ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap();
+    ConcurrentMap<Integer, PersistedMsg> getPendingMap();
 
-    void process(Consumer<PublishMsgWithOffset> msgConsumer);
+    void process(Consumer<PersistedMsg> msgConsumer);
 
-    void update(Map<Integer, PublishMsgWithOffset> reprocessMap);
+    void update(Map<Integer, PersistedMsg> reprocessMap);
 
     void onSuccess(Long offset);
 

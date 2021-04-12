@@ -33,38 +33,37 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
     private final String clientId;
     private final Consumer<Long> successfulOffsetConsumer;
 
-    private List<PublishMsgWithOffset> orderedMsgList;
+    private List<PersistedMsg> orderedMessages;
     private AtomicLong lastCommittedOffset;
 
     @Override
-    public void init(List<PublishMsgWithOffset> messagesWithOffset) {
-        this.orderedMsgList = new ArrayList<>(messagesWithOffset);
-        this.lastCommittedOffset = new AtomicLong(this.orderedMsgList.get(0).getOffset() - 1);
+    public void init(long lastCommittedOffset, List<PersistedMsg> orderedMessages) {
+        this.orderedMessages = new ArrayList<>(orderedMessages);
+        this.lastCommittedOffset = new AtomicLong(lastCommittedOffset);
     }
 
     @Override
-    public ConcurrentMap<Integer, PublishMsgWithOffset> getPendingMap() {
-        return orderedMsgList.stream()
-                .collect(Collectors.toConcurrentMap(msg -> msg.getPublishMsg().getPacketId(), Function.identity()));
+    public ConcurrentMap<Integer, PersistedMsg> getPendingMap() {
+        return orderedMessages.stream().collect(Collectors.toConcurrentMap(PersistedMsg::getPacketId, Function.identity()));
     }
 
     @Override
-    public void process(Consumer<PublishMsgWithOffset> msgConsumer) {
+    public void process(Consumer<PersistedMsg> msgConsumer) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}] processing [{}] persisted messages.", clientId, orderedMsgList.size());
+            log.debug("[{}] processing [{}] persisted messages.", clientId, orderedMessages.size());
         }
-        orderedMsgList.forEach(msgConsumer::accept);
+        orderedMessages.forEach(msgConsumer::accept);
     }
 
     @Override
-    public void update(Map<Integer, PublishMsgWithOffset> reprocessMap) {
-        List<PublishMsgWithOffset> newOrderedMsgList = new ArrayList<>(reprocessMap.size());
-        for (PublishMsgWithOffset msg : orderedMsgList) {
-            if (reprocessMap.containsKey(msg.getPublishMsg().getPacketId())) {
-                newOrderedMsgList.add(msg);
+    public void update(Map<Integer, PersistedMsg> reprocessMap) {
+        List<PersistedMsg> newOrderedMessages = new ArrayList<>(reprocessMap.size());
+        for (PersistedMsg msg : orderedMessages) {
+            if (reprocessMap.containsKey(msg.getPacketId())) {
+                newOrderedMessages.add(msg);
             }
         }
-        orderedMsgList = newOrderedMsgList;
+        orderedMessages = newOrderedMessages;
     }
 
     @Override

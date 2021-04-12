@@ -27,9 +27,13 @@ public class MsgIdSequence {
         }
     }
 
-    public void updateMsgId(int msgId) {
+    public void updateMsgIdSequence(int lastMsgId) {
         synchronized (this.msgIdSeq) {
-            this.msgIdSeq.set(msgId);
+            if (lastMsgId >= 0xffff) {
+                this.msgIdSeq.set(1);
+            } else {
+                this.msgIdSeq.set(lastMsgId + 1);
+            }
         }
     }
 }

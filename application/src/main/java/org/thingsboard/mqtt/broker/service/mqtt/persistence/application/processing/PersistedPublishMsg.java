@@ -16,13 +16,30 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 @AllArgsConstructor
-public class PublishMsgWithOffset {
+@Builder(toBuilder = true)
+public class PersistedPublishMsg implements PersistedMsg {
     @Getter
     private final PublishMsg publishMsg;
-    @Getter
     private final long offset;
+
+    @Override
+    public long getPacketOffset() {
+        return offset;
+    }
+
+    @Override
+    public int getPacketId() {
+        return publishMsg.getPacketId();
+    }
+
+    @Override
+    public PersistedPacketType getPacketType() {
+        return PersistedPacketType.PUBLISH;
+    }
 }

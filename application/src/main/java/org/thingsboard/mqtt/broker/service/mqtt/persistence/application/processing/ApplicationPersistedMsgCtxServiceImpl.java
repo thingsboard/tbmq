@@ -15,16 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
+import com.google.common.collect.Streams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.ApplicationPublishedMsgInfo;
+import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -34,28 +37,43 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
 
     @Override
     public ApplicationPersistedMsgCtx loadPersistedMsgCtx(String clientId) {
-        Map<Long, Integer> messagesToResend = sessionCtxService.findApplicationSessionCtx(clientId).stream()
-                .flatMap(applicationSessionCtx -> applicationSessionCtx.getPublishedMsgInfos().stream())
-                .collect(Collectors.toMap(ApplicationPublishedMsgInfo::getOffset, ApplicationPublishedMsgInfo::getPacketId));
-        return new ApplicationPersistedMsgCtx(messagesToResend);
+        ApplicationSessionCtx applicationSessionCtx = sessionCtxService.findApplicationSessionCtx(clientId).orElse(null);
+        if (applicationSessionCtx == null) {
+            return new ApplicationPersistedMsgCtx(Collections.emptyMap(), Collections.emptyMap());
+        }
+        Map<Long, Integer> publishMsgIds = applicationSessionCtx.getPublishMsgInfos().stream()
+                .collect(Collectors.toMap(ApplicationMsgInfo::getOffset, ApplicationMsgInfo::getPacketId));
+        Map<Long, Integer> pubRelMsgIds = applicationSessionCtx.getPubRelMsgInfos().stream()
+                .collect(Collectors.toMap(ApplicationMsgInfo::getOffset, ApplicationMsgInfo::getPacketId));
+        return new ApplicationPersistedMsgCtx(publishMsgIds, pubRelMsgIds);
     }
 
     @Override
     public void saveContext(String clientId, ApplicationPackProcessingContext processingContext) {
         if (processingContext == null) {
+            log.debug("[{}] No pack processing context found.", clientId);
             return;
         }
         long lastCommittedOffset = processingContext.getLastCommittedOffset();
-        Collection<ApplicationPublishedMsgInfo> publishedMsgInfos = processingContext.getPendingMap().entrySet().stream()
-                .filter(entry -> entry.getValue().getOffset() > lastCommittedOffset)
-                .map(entry -> ApplicationPublishedMsgInfo.builder()
-                        .packetId(entry.getKey())
-                        .offset(entry.getValue().getOffset())
+        Collection<ApplicationMsgInfo> publishMsgInfos = processingContext.getPublishPendingMsgMap().values().stream()
+                .filter(publishMsg -> publishMsg.getPacketOffset() > lastCommittedOffset)
+                .map(publishMsg -> ApplicationMsgInfo.builder()
+                        .packetId(publishMsg.getPacketId())
+                        .offset(publishMsg.getPacketOffset())
+                        .build())
+                .collect(Collectors.toList());
+        Stream<PersistedPubRelMsg> pubRelMsgStream = Streams.concat(processingContext.getPubRelPendingMsgMap().values().stream(),
+                processingContext.getNewPubRelPackets().stream());
+        Collection<ApplicationMsgInfo> pubRelMsgInfos = pubRelMsgStream
+                .map(publishMsg -> ApplicationMsgInfo.builder()
+                        .packetId(publishMsg.getPacketId())
+                        .offset(publishMsg.getPacketOffset())
                         .build())
                 .collect(Collectors.toList());
         ApplicationSessionCtx sessionCtx = ApplicationSessionCtx.builder()
                 .clientId(clientId)
-                .publishedMsgInfos(publishedMsgInfos)
+                .publishMsgInfos(publishMsgInfos)
+                .pubRelMsgInfos(pubRelMsgInfos)
                 .build();
         log.trace("[{}] Saving application session context - {}.", clientId, sessionCtx);
         sessionCtxService.saveApplicationSessionCtx(sessionCtx);

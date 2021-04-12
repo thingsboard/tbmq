@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
+import com.google.common.collect.Sets;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingContext;
@@ -37,13 +39,19 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PublishMsgWithOffset;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -56,19 +64,27 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
     private final ConcurrentMap<String, ApplicationPackProcessingContext> processingContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
 
-    private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
-    private final ApplicationSubmitStrategyFactory submitStrategyFactory;
-    private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
-    private final TbQueueAdmin queueAdmin;
-    private final StatsManager statsManager;
-    private final ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
+    @Autowired
+    private ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
+    @Autowired
+    private ApplicationSubmitStrategyFactory submitStrategyFactory;
+    @Autowired
+    private ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
+    @Autowired
+    private PublishMsgDeliveryService publishMsgDeliveryService;
+    @Autowired
+    private TbQueueAdmin queueAdmin;
+    @Autowired
+    private StatsManager statsManager;
+    @Autowired
+    private ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
+    @Autowired
+    private DisconnectService disconnectService;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
     private AtomicInteger activeProcessorsCounter;
@@ -77,7 +93,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
-    @Value("${queue.application-persisted-msg.stop-processing-timeout-ms:100}")
+    @Value("${queue.application-persisted-msg.stop-processing-timeout-ms:200}")
     private long stopProcessingTimeout;
 
     @PostConstruct
@@ -87,12 +103,36 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubAck(String clientId, int packetId) {
-        log.trace("Executing acknowledgeDelivery [{}][{}]", clientId, packetId);
+        log.trace("[{}] Acknowledged packet {}", clientId, packetId);
         ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
         if (processingContext == null) {
             log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
         } else {
-            processingContext.onSuccess(packetId);
+            processingContext.onPubAck(packetId);
+        }
+    }
+
+    @Override
+    public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
+        String clientId = clientSessionCtx.getClientId();
+        log.trace("[{}] Received packet {}", clientId, packetId);
+        ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
+        if (processingContext == null) {
+            log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
+            publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+        } else {
+            processingContext.onPubRec(packetId);
+        }
+    }
+
+    @Override
+    public void processPubComp(String clientId, int packetId) {
+        log.trace("[{}] Completed packet {}", clientId, packetId);
+        ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
+        if (processingContext == null) {
+            log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
+        } else {
+            processingContext.onPubComp(packetId);
         }
     }
 
@@ -101,7 +141,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         String clientId = clientSessionCtx.getClientId();
         log.trace("[{}] Starting persisted messages processing.", clientId);
         Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
-            processPersistedMessages(clientSessionCtx);
+            try {
+                processPersistedMessages(clientSessionCtx);
+            } catch (Exception e) {
+                log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
+                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
+            }
         });
         processingFutures.put(clientId, future);
         activeProcessorsCounter.incrementAndGet();
@@ -115,9 +160,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.warn("[{}] Cannot find processing future for client.", clientId);
         } else {
             try {
+                // TODO: clear processingTimeoutLatch to unblock processing of persisted messages
                 processingFuture.get(stopProcessingTimeout, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                log.warn("[{}] Exception stopping future for client. Reason - {}.", clientId, e.getMessage());
+                log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             }
         }
         ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
@@ -139,16 +185,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
 
-        // TODO: make consistent with logic for devices
-        clientSessionCtx.getMsgIdSeq().updateMsgId(persistedMsgCtx.getLastPacketId());
+        // TODO: make consistent with logic for DEVICES
+        clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
         consumer.assignPartition(0);
 
+        Collection<PersistedPubRelMsg> persistedPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
+                .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
+                .collect(Collectors.toList());
+
         while (isClientConnected(clientSessionCtx)) {
             try {
-                List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> persistedMessages = consumer.poll(pollDuration);
-                if (persistedMessages.isEmpty()) {
+                List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
+                if (publishProtoMessages.isEmpty() && persistedPubRelMessages.isEmpty()) {
                     continue;
                 }
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
@@ -157,7 +207,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     consumer.commit(0, offset + 1);
                 });
 
-                List<PublishMsgWithOffset> messagesToPublish = persistedMessages.stream()
+                List<PersistedPublishMsg> persistedPublishMessages = publishProtoMessages.stream()
                         .map(msg -> {
                             Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
                             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
@@ -167,20 +217,38 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                     .packetId(packetId)
                                     .isDup(isDup)
                                     .build();
-                            return new PublishMsgWithOffset(publishMsg, msg.getOffset());
+                            return new PersistedPublishMsg(publishMsg, msg.getOffset());
                         })
+                        .sorted(Comparator.comparingLong(PersistedPublishMsg::getPacketOffset))
                         .collect(Collectors.toList());
-                submitStrategy.init(messagesToPublish);
+                List<PersistedMsg> persistedMessages = new ArrayList<>();
+                persistedMessages.addAll(persistedPublishMessages);
+                persistedMessages.addAll(persistedPubRelMessages.stream()
+                        .sorted(Comparator.comparingLong(PersistedMsg::getPacketOffset))
+                        .collect(Collectors.toList()));
+                long lastCommittedOffset = !persistedPublishMessages.isEmpty() ?
+                        persistedPublishMessages.get(0).getPacketOffset() - 1 : -1;
+                submitStrategy.init(lastCommittedOffset, persistedMessages);
 
+                // TODO: refactor this
+                persistedPubRelMessages = Sets.newConcurrentHashSet();
                 while (isClientConnected(clientSessionCtx)) {
-                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy);
+                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, persistedPubRelMessages);
                     processingContextMap.put(clientId, ctx);
                     submitStrategy.process(msg -> {
-                        log.trace("[{}] processing packet: {}", clientId, msg.getPublishMsg().getPacketId());
-                        PublishMsg publishMsg = msg.getPublishMsg();
-                        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.getPacketId(),
-                                publishMsg.getTopicName(), MqttQoS.valueOf(publishMsg.getQosLevel()),
-                                publishMsg.isDup(), publishMsg.getPayload());
+                        log.trace("[{}] processing packet: {}", clientId, msg.getPacketId());
+                        switch (msg.getPacketType()) {
+                            case PUBLISH:
+                                PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
+                                publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.getPacketId(),
+                                        publishMsg.getTopicName(), MqttQoS.valueOf(publishMsg.getQosLevel()),
+                                        publishMsg.isDup(), publishMsg.getPayload());
+                                break;
+                            case PUBREL:
+                                publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, msg.getPacketId());
+                                break;
+                        }
+
                     });
 
                     if (isClientConnected(clientSessionCtx)) {
@@ -188,8 +256,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     }
 
                     ApplicationProcessingDecision decision = ackStrategy.analyze(ctx);
-                    ctx.cleanup();
                     if (decision.isCommit()) {
+                        ctx.clear();
                         break;
                     } else {
                         submitStrategy.update(decision.getReprocessMap());

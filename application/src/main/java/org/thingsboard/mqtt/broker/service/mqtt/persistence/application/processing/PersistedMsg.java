@@ -15,13 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
-import java.util.Map;
-import java.util.Set;
+public interface PersistedMsg {
+    long getPacketOffset();
 
-@Data
-public class ApplicationProcessingDecision {
-    private final boolean commit;
-    private final Map<Integer, PersistedMsg> reprocessMap;
+    int getPacketId();
+
+    PersistedPacketType getPacketType();
 }

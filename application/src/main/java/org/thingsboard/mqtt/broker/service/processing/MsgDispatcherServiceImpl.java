@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -52,16 +53,22 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
-    private final SubscriptionManager subscriptionManager;
-    private final PublishMsgQueueFactory publishMsgQueueFactory;
-    private final StatsManager statsManager;
-    private final MsgPersistenceManager msgPersistenceManager;
-    private final ClientSessionService clientSessionService;
-    private final ClientSessionCtxService clientSessionCtxService;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    @Autowired
+    private SubscriptionManager subscriptionManager;
+    @Autowired
+    private PublishMsgQueueFactory publishMsgQueueFactory;
+    @Autowired
+    private StatsManager statsManager;
+    @Autowired
+    private MsgPersistenceManager msgPersistenceManager;
+    @Autowired
+    private ClientSessionService clientSessionService;
+    @Autowired
+    private ClientSessionCtxService clientSessionCtxService;
+    @Autowired
+    private PublishMsgDeliveryService publishMsgDeliveryService;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -79,8 +86,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     @Override
-    public void acknowledgePublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
-        log.trace("[{}] Acknowledging publish msg [topic:[{}], qos:[{}]].", sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
+    public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
+        log.trace("[{}] Persisting publish msg [topic:[{}], qos:[{}]].", sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
