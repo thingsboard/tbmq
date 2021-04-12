@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
@@ -143,7 +144,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
         } else if (cause.getCause() instanceof NotSslRecordException) {
             log.warn("[{}] NotSslRecordException: {}", sessionId, cause.getCause().getMessage());
-        } else  {
+        } else if (cause instanceof IOException) {
+            log.warn("[{}] IOException: {}", sessionId, cause.getMessage());
+        } else {
             log.error("[{}] Unexpected Exception", sessionId, cause);
         }
         disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
