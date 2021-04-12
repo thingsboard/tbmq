@@ -32,6 +32,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, MqttQoS qos, boolean isDup, byte[] payload) {
+        if (sessionCtx.getSessionState() == SessionState.DISCONNECTED) {
+            log.trace("[{}][{}] Session is already disconnected.",  sessionCtx.getClientId(), sessionCtx.getSessionId());
+            return;
+        }
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, topic, qos, isDup, payload);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
@@ -46,6 +50,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
+        if (sessionCtx.getSessionState() == SessionState.DISCONNECTED) {
+            log.trace("[{}][{}] Session is already disconnected.",  sessionCtx.getClientId(), sessionCtx.getSessionId());
+            return;
+        }
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubRelMsg);

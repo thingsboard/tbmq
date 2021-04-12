@@ -160,8 +160,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.warn("[{}] Cannot find processing future for client.", clientId);
         } else {
             try {
-                // TODO: clear processingTimeoutLatch to unblock processing of persisted messages
-                processingFuture.get(stopProcessingTimeout, TimeUnit.MILLISECONDS);
+                processingFuture.cancel(true);
             } catch (Exception e) {
                 log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             }
