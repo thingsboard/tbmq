@@ -43,21 +43,21 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
     private String clientId;
 
     @Type(type = "json")
-    @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_DATA_PROPERTY)
-    private JsonNode data;
+    @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY)
+    private JsonNode qos2PublishPacketIds;
 
     public GenericClientSessionCtxEntity() {}
 
     public GenericClientSessionCtxEntity(GenericClientSessionCtx genericClientSessionCtx) {
         this.clientId = genericClientSessionCtx.getClientId();
-        this.data = JacksonUtil.toJsonNode(JacksonUtil.toString(genericClientSessionCtx.getQos2PublishPacketIds()));
+        this.qos2PublishPacketIds = JacksonUtil.toJsonNode(JacksonUtil.toString(genericClientSessionCtx.getQos2PublishPacketIds()));
     }
 
     @Override
     public GenericClientSessionCtx toData() {
         Set<Integer> qos2PublishPacketIds;
         try {
-            qos2PublishPacketIds = Set.of(JacksonUtil.OBJECT_MAPPER.treeToValue(this.data, Integer[].class));
+            qos2PublishPacketIds = Set.of(JacksonUtil.OBJECT_MAPPER.treeToValue(this.qos2PublishPacketIds, Integer[].class));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }

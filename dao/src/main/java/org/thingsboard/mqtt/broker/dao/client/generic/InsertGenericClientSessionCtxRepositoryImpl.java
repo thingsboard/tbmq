@@ -28,17 +28,17 @@ import java.util.List;
 
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME;
-import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_DATA_PROPERTY;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY;
 
 @Repository
 @Transactional
 public class InsertGenericClientSessionCtxRepositoryImpl implements InsertGenericClientSessionCtxRepository {
     private static final String INSERT = "INSERT INTO " + GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +
-            GENERIC_CLIENT_SESSION_CTX_DATA_PROPERTY + ") " +
+            GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY + ") " +
             "VALUES (?, ?) " +
             "ON CONFLICT (" + GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY + ") " +
-            "DO UPDATE SET " + GENERIC_CLIENT_SESSION_CTX_DATA_PROPERTY + " = ?;";
+            "DO UPDATE SET " + GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY + " = ?;";
 
 
     @Autowired
@@ -51,8 +51,8 @@ public class InsertGenericClientSessionCtxRepositoryImpl implements InsertGeneri
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 GenericClientSessionCtxEntity genericClientSessionCtxEntity = entities.get(i);
                 ps.setString(1, genericClientSessionCtxEntity.getClientId());
-                ps.setString(2, genericClientSessionCtxEntity.getData().toString());
-                ps.setString(3, genericClientSessionCtxEntity.getData().toString());
+                ps.setString(2, genericClientSessionCtxEntity.getQos2PublishPacketIds().toString());
+                ps.setString(3, genericClientSessionCtxEntity.getQos2PublishPacketIds().toString());
             }
 
             @Override
