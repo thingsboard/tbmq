@@ -33,6 +33,7 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
 
     @Override
     public void clearPersistedMsgs(String clientId) {
+        // TODO: think about marking messages as 'deleted' and clear them once a day
         // TODO: think about moving this code (could do async but delete only if msg.time < currentTime)
         deviceMsgService.removePersistedMessages(clientId);
         deviceSessionCtxService.removeDeviceSessionContext(clientId);

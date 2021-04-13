@@ -15,13 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.device;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
 
 import java.util.Collection;
 
 @Repository
-public interface DeviceSessionCtxRepository extends CrudRepository<DeviceSessionCtxEntity, String> {
+public interface DeviceSessionCtxRepository extends PagingAndSortingRepository<DeviceSessionCtxEntity, String> {
     Collection<DeviceSessionCtxEntity> findAllByClientIdIn(Collection<String> clientIds);
+
+    Page<DeviceSessionCtxEntity> findAll(Pageable pageable);
 }

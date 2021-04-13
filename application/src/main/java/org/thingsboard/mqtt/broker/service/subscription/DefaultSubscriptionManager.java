@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 // not thread-safe for operations with the same 'clientId'
 public class DefaultSubscriptionManager implements SubscriptionManager {
-    private final ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     private final ClientSessionService clientSessionService;
     private final SubscriptionPersistenceService subscriptionPersistenceService;
@@ -46,7 +46,7 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @PostConstruct
     public void init() {
-        loadPersistedClientSubscriptions();
+        this.clientSubscriptionsMap = loadPersistedClientSubscriptions();
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
@@ -103,17 +103,19 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
         subscriptionService.clearEmptyTopicNodes();
     }
 
-    private void loadPersistedClientSubscriptions() {
+    private ConcurrentMap<String, Set<TopicSubscription>> loadPersistedClientSubscriptions() {
         log.info("Load persisted client subscriptions.");
         Map<String, Set<TopicSubscription>> allClientSubscriptions = subscriptionPersistenceService.loadAllClientSubscriptions();
         Map<String, ClientSession> persistedClientSessions = clientSessionService.getPersistedClientSessions();
+        ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptions = new ConcurrentHashMap<>();
         allClientSubscriptions.forEach((clientId, topicSubscriptions) -> {
             if (persistedClientSessions.containsKey(clientId)) {
-                this.clientSubscriptionsMap.put(clientId, new HashSet<>(topicSubscriptions));
+                clientSubscriptions.put(clientId, new HashSet<>(topicSubscriptions));
             } else {
                 log.debug("[{}] Clearing not persistent client subscriptions.", clientId);
                 subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
             }
         });
+        return clientSubscriptions;
     }
 }

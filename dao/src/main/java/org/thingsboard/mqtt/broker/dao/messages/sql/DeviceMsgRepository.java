@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.dao.messages.sql;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -37,11 +37,26 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
             "LIMIT :limit",
             nativeQuery = true)
     List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
-                                             @Param("limit") int limit);
+                                                @Param("limit") int limit);
+
+    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
+            "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
+            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " DESC " +
+            "OFFSET :offset " +
+            "LIMIT 1",
+            nativeQuery = true)
+    DevicePublishMsgEntity findEntityByClientIdAfterOffset(@Param("clientId") String clientId,
+                                                           @Param("offset") int offset);
 
     @Transactional
     void removeAllByClientId(String clientId);
 
     @Transactional
     void removeAllByClientIdAndPacketId(String clientId, int packetId);
+
+    @Transactional
+    int removeAllByTimeLessThan(long earliestAcceptableTime);
+
+    @Transactional
+    int removeAllByClientIdAndSerialNumberLessThan(String clientId, long earliestAcceptableSerialNumber);
 }

@@ -22,11 +22,9 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgDao;
-import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,10 +35,6 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     private final InsertDeviceMsgRepository insertDeviceMsgRepository;
     private final DeviceMsgRepository deviceMsgRepository;
-
-    @PostConstruct
-    public void init() {
-    }
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages) {
