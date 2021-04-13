@@ -87,6 +87,7 @@ public class ModelConstants {
      */
     public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
     public static final String DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY = "last_serial_number";
     public static final String DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY = "last_packet_id";
 
@@ -95,6 +96,7 @@ public class ModelConstants {
      */
     public static final String APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME = "application_session_ctx";
     public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String APPLICATION_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY = "publish_msg_infos";
     public static final String APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY = "pubrel_msg_infos";
 
@@ -103,6 +105,7 @@ public class ModelConstants {
      */
     public static final String GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME = "generic_client_session_ctx";
     public static final String GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY = "qos2_publish_packet_ids";
 
 }

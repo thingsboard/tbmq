@@ -33,6 +33,9 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;
 
+    @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY)
+    private long lastUpdatedTime;
+
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY)
     private Long lastSerialNumber;
 
@@ -43,6 +46,7 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
 
     public DeviceSessionCtxEntity(DeviceSessionCtx deviceSessionCtx) {
         this.clientId = deviceSessionCtx.getClientId();
+        this.lastUpdatedTime = deviceSessionCtx.getLastUpdatedTime();
         this.lastSerialNumber = deviceSessionCtx.getLastSerialNumber();
         this.lastPacketId = deviceSessionCtx.getLastPacketId();
     }
@@ -51,6 +55,7 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
     public DeviceSessionCtx toData() {
         return DeviceSessionCtx.builder()
                 .clientId(clientId)
+                .lastUpdatedTime(lastUpdatedTime)
                 .lastSerialNumber(lastSerialNumber)
                 .lastPacketId(lastPacketId)
                 .build();

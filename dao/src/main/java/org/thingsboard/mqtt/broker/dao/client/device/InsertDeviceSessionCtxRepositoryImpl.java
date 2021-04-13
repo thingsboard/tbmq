@@ -30,18 +30,21 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSIO
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY;
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY;
 
 @Repository
 @Transactional
 public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSessionCtxRepository {
     private static final String INSERT = "INSERT INTO " + DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +
+            DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY + ", " +
             DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + ", " +
             DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY + ") " +
-            "VALUES (?, ?, ?) " +
+            "VALUES (?, ?, ?, ?) " +
             "ON CONFLICT (" + DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY + ") " +
             "DO UPDATE SET " + DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY + " = ?, " +
-            DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY + " = ?;";
+            DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY + " = ?, " +
+            DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY + " = ?;";
 
 
     @Autowired
@@ -54,10 +57,12 @@ public class InsertDeviceSessionCtxRepositoryImpl implements InsertDeviceSession
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 DeviceSessionCtxEntity deviceSessionCtxEntity = entities.get(i);
                 ps.setString(1, deviceSessionCtxEntity.getClientId());
-                ps.setLong(2, deviceSessionCtxEntity.getLastSerialNumber());
-                ps.setInt(3, deviceSessionCtxEntity.getLastPacketId());
-                ps.setLong(4, deviceSessionCtxEntity.getLastSerialNumber());
-                ps.setInt(5, deviceSessionCtxEntity.getLastPacketId());
+                ps.setLong(2, deviceSessionCtxEntity.getLastUpdatedTime());
+                ps.setLong(3, deviceSessionCtxEntity.getLastSerialNumber());
+                ps.setInt(4, deviceSessionCtxEntity.getLastPacketId());
+                ps.setLong(5, deviceSessionCtxEntity.getLastSerialNumber());
+                ps.setInt(6, deviceSessionCtxEntity.getLastPacketId());
+                ps.setLong(7, deviceSessionCtxEntity.getLastUpdatedTime());
             }
 
             @Override

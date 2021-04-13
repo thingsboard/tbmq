@@ -42,6 +42,9 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
     @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;
 
+    @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY)
+    private long lastUpdatedTime;
+
     @Type(type = "json")
     @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY)
     private JsonNode qos2PublishPacketIds;
@@ -50,6 +53,7 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
 
     public GenericClientSessionCtxEntity(GenericClientSessionCtx genericClientSessionCtx) {
         this.clientId = genericClientSessionCtx.getClientId();
+        this.lastUpdatedTime = genericClientSessionCtx.getLastUpdatedTime();
         this.qos2PublishPacketIds = JacksonUtil.toJsonNode(JacksonUtil.toString(genericClientSessionCtx.getQos2PublishPacketIds()));
     }
 
@@ -63,6 +67,7 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
         }
         return GenericClientSessionCtx.builder()
                 .clientId(clientId)
+                .lastUpdatedTime(lastUpdatedTime)
                 .qos2PublishPacketIds(qos2PublishPacketIds)
                 .build();
     }

@@ -28,5 +28,6 @@ import java.util.Set;
 @EqualsAndHashCode
 public class GenericClientSessionCtx {
     private String clientId;
+    private long lastUpdatedTime;
     private Set<Integer> qos2PublishPacketIds;
 }

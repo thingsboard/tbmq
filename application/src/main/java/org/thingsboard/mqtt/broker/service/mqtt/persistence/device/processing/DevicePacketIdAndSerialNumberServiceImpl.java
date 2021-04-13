@@ -49,6 +49,7 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
         List<DeviceSessionCtx> deviceSessionContexts = clientsLastPacketIdAndSerialNumbers.entrySet().stream()
                 .map(entry -> DeviceSessionCtx.builder()
                         .clientId(entry.getKey())
+                        .lastUpdatedTime(System.currentTimeMillis())
                         .lastSerialNumber(entry.getValue().getSerialNumber().get())
                         .lastPacketId(entry.getValue().getPacketId().get())
                         .build())

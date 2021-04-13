@@ -72,6 +72,7 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
                 .collect(Collectors.toList());
         ApplicationSessionCtx sessionCtx = ApplicationSessionCtx.builder()
                 .clientId(clientId)
+                .lastUpdatedTime(System.currentTimeMillis())
                 .publishMsgInfos(publishMsgInfos)
                 .pubRelMsgInfos(pubRelMsgInfos)
                 .build();

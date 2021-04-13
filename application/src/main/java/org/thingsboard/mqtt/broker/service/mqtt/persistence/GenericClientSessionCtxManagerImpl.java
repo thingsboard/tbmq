@@ -94,6 +94,7 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
                 .collect(Collectors.toSet());
         return GenericClientSessionCtx.builder()
                 .clientId(ctx.getClientId())
+                .lastUpdatedTime(System.currentTimeMillis())
                 .qos2PublishPacketIds(qos2PublishPacketIds)
                 .build();
     }

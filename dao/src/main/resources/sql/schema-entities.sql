@@ -85,17 +85,20 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
 
 CREATE TABLE IF NOT EXISTS device_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
+    last_updated_time bigint NOT NULL,
     last_serial_number bigint,
     last_packet_id int
 );
 
 CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
+    last_updated_time bigint NOT NULL,
     publish_msg_infos varchar,
     pubrel_msg_infos varchar
 );
 
 CREATE TABLE IF NOT EXISTS generic_client_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT generic_client_session_ctx_pkey PRIMARY KEY,
+    last_updated_time bigint NOT NULL,
     qos2_publish_packet_ids varchar
 );
