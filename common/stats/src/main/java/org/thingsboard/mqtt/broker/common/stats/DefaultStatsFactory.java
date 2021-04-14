@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.ToDoubleFunction;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.SUCCESSFUL_MSGS;
@@ -74,6 +75,11 @@ public class DefaultStatsFactory implements StatsFactory {
     @Override
     public <T extends Number> T createGauge(String key, T number, String... tags) {
         return meterRegistry.gauge(key, Tags.of(tags), number);
+    }
+
+    @Override
+    public <T> T createGauge(String key, T stateObject, ToDoubleFunction<T> valueFunction, String... tags) {
+        return meterRegistry.gauge(key, Tags.of(tags), stateObject, valueFunction);
     }
 
     @Override

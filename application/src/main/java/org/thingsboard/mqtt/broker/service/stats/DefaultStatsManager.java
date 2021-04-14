@@ -30,9 +30,11 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -79,7 +81,7 @@ public class DefaultStatsManager implements StatsManager {
     public AtomicInteger createSubscriptionSizeCounter() {
         if (statsEnabled) {
             AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge));
+            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
             return sizeGauge;
         } else {
             return new AtomicInteger(0);
@@ -90,7 +92,7 @@ public class DefaultStatsManager implements StatsManager {
     public AtomicInteger createLastWillCounter() {
         if (statsEnabled) {
             AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), sizeGauge));
+            gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), sizeGauge::get));
             return sizeGauge;
         } else {
             return new AtomicInteger(0);
@@ -98,13 +100,10 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public AtomicInteger createSessionsCounter() {
+    public void registerSessionsStats(Map<?, ?> sessionsMap) {
         if (statsEnabled) {
-            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sizeGauge));
-            return sizeGauge;
-        } else {
-            return new AtomicInteger(0);
+            statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
+            gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
         }
     }
 
@@ -112,7 +111,7 @@ public class DefaultStatsManager implements StatsManager {
     public AtomicInteger createActiveApplicationProcessorsCounter() {
         if (statsEnabled) {
             AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), sizeGauge));
+            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), sizeGauge::get));
             return sizeGauge;
         } else {
             return new AtomicInteger(0);
@@ -123,7 +122,7 @@ public class DefaultStatsManager implements StatsManager {
     public AtomicLong createSubscriptionTrieNodesCounter() {
         if (statsEnabled) {
             AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
-            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge));
+            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
             return sizeGauge;
         } else {
             return new AtomicLong(0);
@@ -146,7 +145,7 @@ public class DefaultStatsManager implements StatsManager {
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {
-            gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValue().intValue()).append("] ");
+            gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
     }
@@ -155,7 +154,7 @@ public class DefaultStatsManager implements StatsManager {
     @Getter
     private static class Gauge {
         private final String name;
-        private final Number value;
+        private final Supplier<Number> valueSupplier;
     }
 
     @AllArgsConstructor

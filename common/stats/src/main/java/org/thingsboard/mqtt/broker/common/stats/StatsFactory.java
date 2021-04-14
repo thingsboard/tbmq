@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.common.stats;
 
 import io.micrometer.core.instrument.Timer;
 
+import java.util.function.ToDoubleFunction;
+
 // TODO move this to some separate library (or use ThingsBoard stats library)
 public interface StatsFactory {
     StatsCounter createStatsCounter(String key, String statsName);
@@ -24,6 +26,8 @@ public interface StatsFactory {
     DefaultCounter createDefaultCounter(String key, String... tags);
 
     <T extends Number> T createGauge(String key, T number, String... tags);
+
+    <T> T createGauge(String key, T stateObject, ToDoubleFunction<T> valueFunction, String... tags);
 
     MessagesStats createMessagesStats(String key);
 

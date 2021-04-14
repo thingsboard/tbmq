@@ -36,24 +36,20 @@ public class DefaultClientSessionCtxService implements ClientSessionCtxService {
 
     private final StatsManager statsManager;
 
-    private AtomicInteger sessionsCounter;
-
     @PostConstruct
     public void init() {
-        this.sessionsCounter = statsManager.createSessionsCounter();
+        statsManager.registerSessionsStats(clientContextMap);
     }
 
     @Override
     public void registerSession(ClientSessionCtx clientSessionCtx) throws MqttException {
         String clientId = clientSessionCtx.getSessionInfo().getClientInfo().getClientId();
         clientContextMap.put(clientId, clientSessionCtx);
-        sessionsCounter.incrementAndGet();
     }
 
     @Override
     public void unregisterSession(String clientId) {
         clientContextMap.remove(clientId);
-        sessionsCounter.decrementAndGet();
     }
 
     @Override
