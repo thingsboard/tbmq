@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -87,47 +88,59 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     @Override
     public List<T> poll(long durationInMillis) {
+        if (stopped) {
+            log.error("Poll invoked but consumer stopped for topic {}.", topic);
+            return Collections.emptyList();
+        }
+        long startNanos = System.nanoTime();
         if (!subscribed) {
+            sleep(startNanos, durationInMillis);
+            return Collections.emptyList();
+        }
+
+        List<R> records;
+        consumerLock.lock();
+        try {
+            records = doPoll(durationInMillis);
+        } finally {
+            consumerLock.unlock();
+        }
+
+        if (records.isEmpty()) {
+            sleep(startNanos, durationInMillis);
+            return Collections.emptyList();
+        }
+
+        return decodeRecords(records);
+    }
+
+    private List<T> decodeRecords(List<R> records) {
+        List<T> result = new ArrayList<>(records.size());
+        records.forEach(record -> {
             try {
-                Thread.sleep(durationInMillis);
-            } catch (InterruptedException e) {
-                log.debug("Failed to await subscription", e);
-            }
-        } else {
-            long pollStartTs = System.currentTimeMillis();
-            consumerLock.lock();
-            try {
-                List<R> records = doPoll(durationInMillis);
-                if (!records.isEmpty()) {
-                    List<T> result = new ArrayList<>(records.size());
-                    records.forEach(record -> {
-                        try {
-                            if (record != null) {
-                                result.add(decode(record));
-                            }
-                        } catch (IOException e) {
-                            log.error("Failed decode record: [{}]", record);
-                            throw new RuntimeException("Failed to decode record: ", e);
-                        }
-                    });
-                    return result;
-                } else {
-                    long pollDuration = System.currentTimeMillis() - pollStartTs;
-                    if (pollDuration < durationInMillis) {
-                        try {
-                            Thread.sleep(durationInMillis - pollDuration);
-                        } catch (InterruptedException e) {
-                            if (!stopped) {
-                                log.error("Failed to wait.", e);
-                            }
-                        }
-                    }
+                if (record != null) {
+                    result.add(decode(record));
                 }
-            } finally {
-                consumerLock.unlock();
+            } catch (IOException e) {
+                log.error("Failed decode record: [{}]", record);
+                throw new RuntimeException("Failed to decode record: ", e);
+            }
+        });
+        return result;
+    }
+
+    private void sleep(final long startNanos, final long durationInMillis) {
+        long durationNanos = TimeUnit.MILLISECONDS.toNanos(durationInMillis);
+        long spentNanos = System.nanoTime() - startNanos;
+        if (spentNanos < durationNanos) {
+            try {
+                Thread.sleep(Math.max(TimeUnit.NANOSECONDS.toMillis(durationNanos - spentNanos), 1));
+            } catch (InterruptedException e) {
+                if (!stopped) {
+                    log.error("Failed to wait", e);
+                }
             }
         }
-        return Collections.emptyList();
     }
 
     @Override
