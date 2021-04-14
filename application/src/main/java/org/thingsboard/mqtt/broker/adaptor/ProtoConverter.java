@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.LastPublishCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEvent;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
@@ -59,17 +60,20 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static ClientSession convertToClientSession(QueueProtos.ClientSessionProto clientSessionProto) {
-        return ClientSession.builder()
+    public static ClientSessionInfo convertToClientSessionInfo(QueueProtos.ClientSessionInfoProto clientSessionProto) {
+        ClientSession clientSession = ClientSession.builder()
                 .connected(clientSessionProto.getConnected())
                 .sessionInfo(convertToSessionInfo(clientSessionProto.getSessionInfo()))
                 .build();
+        return new ClientSessionInfo(clientSession, clientSessionProto.getLastUpdatedTime());
     }
 
-    public static QueueProtos.ClientSessionProto convertToClientSessionProto(ClientSession clientSession) {
-        return QueueProtos.ClientSessionProto.newBuilder()
+    public static QueueProtos.ClientSessionInfoProto convertToClientSessionInfoProto(ClientSessionInfo clientSessionInfo) {
+        ClientSession clientSession = clientSessionInfo.getClientSession();
+        return QueueProtos.ClientSessionInfoProto.newBuilder()
                 .setConnected(clientSession.isConnected())
                 .setSessionInfo(convertToSessionInfoProto(clientSession.getSessionInfo()))
+                .setLastUpdatedTime(clientSessionInfo.getLastUpdateTime())
                 .build();
     }
 

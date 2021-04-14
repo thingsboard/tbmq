@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 
 import javax.annotation.PostConstruct;
@@ -106,10 +105,10 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     private ConcurrentMap<String, Set<TopicSubscription>> loadPersistedClientSubscriptions() {
         log.info("Load persisted client subscriptions.");
         Map<String, Set<TopicSubscription>> allClientSubscriptions = subscriptionPersistenceService.loadAllClientSubscriptions();
-        Map<String, ClientSession> persistedClientSessions = clientSessionService.getPersistedClientSessions();
+        Set<String> persistedClientIds = clientSessionService.getPersistedClientSessionInfos().keySet();
         ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptions = new ConcurrentHashMap<>();
         allClientSubscriptions.forEach((clientId, topicSubscriptions) -> {
-            if (persistedClientSessions.containsKey(clientId)) {
+            if (persistedClientIds.contains(clientId)) {
                 clientSubscriptions.put(clientId, new HashSet<>(topicSubscriptions));
             } else {
                 log.debug("[{}] Clearing not persistent client subscriptions.", clientId);

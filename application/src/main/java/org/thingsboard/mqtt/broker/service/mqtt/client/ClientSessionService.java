@@ -23,9 +23,11 @@ import java.util.Map;
 
 // TODO: separate READ and WRITE interfaces (only ClientEventProcessor can update ClientSession)
 public interface ClientSessionService {
-    Map<String, ClientSession> getPersistedClientSessions();
+    Map<String, ClientSessionInfo> getPersistedClientSessionInfos();
 
     ClientSession getClientSession(String clientId);
+
+    ClientSessionInfo getClientSessionInfo(String clientId);
 
     void saveClientSession(String clientId, ClientSession clientSession);
 

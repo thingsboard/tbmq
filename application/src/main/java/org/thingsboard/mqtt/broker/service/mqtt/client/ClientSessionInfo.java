@@ -15,12 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
-import java.util.Map;
-
-public interface ClientSessionPersistenceService {
-    Map<String, ClientSessionInfo> loadAllClientSessionInfos();
-
-    void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
+@Builder(toBuilder = true)
+@Getter
+@RequiredArgsConstructor
+public class ClientSessionInfo {
+    private final ClientSession clientSession;
+    private final long lastUpdateTime;
 }

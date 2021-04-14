@@ -35,26 +35,32 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DefaultClientSessionService implements ClientSessionService {
-    private static final QueueProtos.ClientSessionProto EMPTY_CLIENT_SESSION_PROTO = QueueProtos.ClientSessionProto.newBuilder().build();
+    private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
+    private static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
 
-    private final Map<String, ClientSession> clientSessionMap = new ConcurrentHashMap<>();
+    private Map<String, ClientSessionInfo> clientSessionMap;
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
 
     @PostConstruct
     public void init() {
-        loadPersistedClientSessions();
+        this.clientSessionMap = loadPersistedClientSessions();
     }
 
     @Override
-    public Map<String, ClientSession> getPersistedClientSessions() {
+    public Map<String, ClientSessionInfo> getPersistedClientSessionInfos() {
         return clientSessionMap.entrySet().stream()
-                .filter(entry -> entry.getValue().getSessionInfo().isPersistent())
+                .filter(entry -> entry.getValue().getClientSession().getSessionInfo().isPersistent())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override
     public ClientSession getClientSession(String clientId) {
+        return clientSessionMap.getOrDefault(clientId, EMPTY_CLIENT_SESSION_INFO).getClientSession();
+    }
+
+    @Override
+    public ClientSessionInfo getClientSessionInfo(String clientId) {
         return clientSessionMap.get(clientId);
     }
 
@@ -66,31 +72,45 @@ public class DefaultClientSessionService implements ClientSessionService {
             throw new MqttException("Key clientId should be equals to ClientSession's clientId");
         }
 
-        clientSessionMap.put(clientId, clientSession);
+        ClientSessionInfo clientSessionInfo = new ClientSessionInfo(clientSession, System.currentTimeMillis());
+        clientSessionMap.put(clientId, clientSessionInfo);
 
-        QueueProtos.ClientSessionProto clientSessionProto = ProtoConverter.convertToClientSessionProto(clientSession);
-        clientSessionPersistenceService.persistClientSession(clientId, clientSessionProto);
+        QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, clientSessionInfoProto);
     }
 
     @Override
     public void clearClientSession(String clientId) {
-        ClientSession removedClientSession = clientSessionMap.remove(clientId);
-        if (removedClientSession == null) {
-            log.warn("[{}] No client session found.", clientId);
+        ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
+        if (removedClientSessionInfo == null) {
+            log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSession(clientId, EMPTY_CLIENT_SESSION_PROTO);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
-    private void loadPersistedClientSessions() {
+    private Map<String, ClientSessionInfo> loadPersistedClientSessions() {
         log.info("Load persisted client sessions.");
-        Map<String, ClientSession> allClientSessions = clientSessionPersistenceService.loadAllClientSessions();
-        allClientSessions.forEach((clientId, clientSession) -> {
-            if (clientSession.getSessionInfo().isPersistent()) {
-                this.clientSessionMap.put(clientId, clientSession);
+        Map<String, ClientSessionInfo> allClientSessions = clientSessionPersistenceService.loadAllClientSessionInfos();
+        Map<String, ClientSessionInfo> persistedClientSessions = new ConcurrentHashMap<>();
+        allClientSessions.forEach((clientId, clientSessionInfo) -> {
+            if (clientSessionInfo.getClientSession().getSessionInfo().isPersistent()) {
+                clientSessionInfo = markDisconnected(clientSessionInfo);
+                persistedClientSessions.put(clientId, clientSessionInfo);
             } else {
                 log.debug("[{}] Clearing not persistent client session.", clientId);
-                clientSessionPersistenceService.persistClientSession(clientId, EMPTY_CLIENT_SESSION_PROTO);
+                clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
             }
         });
+        return persistedClientSessions;
+    }
+
+    private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.toBuilder()
+                .clientSession(
+                        clientSessionInfo.getClientSession().toBuilder()
+                                .connected(true)
+                                .build()
+                )
+                .build();
     }
 }

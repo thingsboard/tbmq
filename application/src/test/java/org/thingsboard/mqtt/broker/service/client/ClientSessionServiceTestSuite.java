@@ -82,7 +82,7 @@ public class ClientSessionServiceTestSuite {
         clientSessionService.saveClientSession("persistent_2", persistentSession2);
         clientSessionService.saveClientSession("not_persistent", notPersistentSession);
 
-        Set<String> persistedClients = clientSessionService.getPersistedClientSessions().keySet();
+        Set<String> persistedClients = clientSessionService.getPersistedClientSessionInfos().keySet();
         Assert.assertEquals(2, persistedClients.size());
         Assert.assertTrue(persistedClients.contains("persistent_1") && persistedClients.contains("persistent_2"));
     }

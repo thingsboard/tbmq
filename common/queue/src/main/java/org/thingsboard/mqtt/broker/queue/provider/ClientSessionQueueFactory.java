@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ClientSessionQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> createConsumer(String id);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String id);
 
 }

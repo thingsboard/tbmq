@@ -27,7 +27,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import javax.annotation.PreDestroy;
 import java.util.HashMap;
@@ -47,7 +46,7 @@ public class DefaultClientSessionPersistenceService implements ClientSessionPers
     private long ackTimeoutMs;
 
     private final ClientSessionQueueFactory clientSessionQueueFactory;
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> clientSessionProducer;
+    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
 
     public DefaultClientSessionPersistenceService(ClientSessionQueueFactory clientSessionQueueFactory) {
         this.clientSessionQueueFactory = clientSessionQueueFactory;
@@ -55,24 +54,24 @@ public class DefaultClientSessionPersistenceService implements ClientSessionPers
     }
 
     @Override
-    public Map<String, ClientSession> loadAllClientSessions() {
+    public Map<String, ClientSessionInfo> loadAllClientSessionInfos() {
         log.info("Loading client sessions.");
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> clientSessionConsumer = clientSessionQueueFactory.createConsumer(UUID.randomUUID().toString());
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionConsumer = clientSessionQueueFactory.createConsumer(UUID.randomUUID().toString());
         clientSessionConsumer.assignAllPartitions();
-        List<TbProtoQueueMsg<QueueProtos.ClientSessionProto>> messages;
-        Map<String, ClientSession> allClientSessions = new HashMap<>();
+        List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages;
+        Map<String, ClientSessionInfo> allClientSessions = new HashMap<>();
         do {
             try {
+                // TODO: think how to migrate data inside of the Kafka (in case of any changes to the protocol)
                 messages = clientSessionConsumer.poll(pollDuration);
-                for (TbProtoQueueMsg<QueueProtos.ClientSessionProto> msg : messages) {
+                for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
                     String clientId = msg.getKey();
-                    if (isClientSessionProtoEmpty(msg.getValue())) {
+                    if (isClientSessionInfoProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        log.debug("[{}] Encountered empty ClientSession.", clientId);
+                        log.debug("[{}] Encountered empty ClientSessionInfo.", clientId);
                         allClientSessions.remove(clientId);
                     } else {
-                        ClientSession prevClientSession = ProtoConverter.convertToClientSession(msg.getValue());
-                        ClientSession clientSession = prevClientSession.toBuilder().connected(false).build();
+                        ClientSessionInfo clientSession = ProtoConverter.convertToClientSessionInfo(msg.getValue());
                         allClientSessions.put(clientId, clientSession);
                     }
                 }
@@ -88,11 +87,11 @@ public class DefaultClientSessionPersistenceService implements ClientSessionPers
     }
 
     @Override
-    public void persistClientSession(String clientId, QueueProtos.ClientSessionProto clientSessionProto) {
+    public void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         // TODO: think if we need waiting for the result here
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSessionProducer.send(new TbProtoQueueMsg<>(clientId, clientSessionProto),
+        clientSessionProducer.send(new TbProtoQueueMsg<>(clientId, clientSessionInfoProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -124,9 +123,9 @@ public class DefaultClientSessionPersistenceService implements ClientSessionPers
         }
     }
 
-    private boolean isClientSessionProtoEmpty(QueueProtos.ClientSessionProto clientSessionProto) {
-        return clientSessionProto.getSessionInfo().getClientInfo().getClientId().isEmpty()
-                && clientSessionProto.getSessionInfo().getClientInfo().getClientType().isEmpty();
+    private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+        return clientSessionInfoProto.getSessionInfo().getClientInfo().getClientId().isEmpty()
+                && clientSessionInfoProto.getSessionInfo().getClientInfo().getClientType().isEmpty();
     }
 
     @PreDestroy

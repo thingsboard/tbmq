@@ -45,9 +45,10 @@ message ClientInfoProto {
   string clientType = 2;
 }
 
-message ClientSessionProto {
+message ClientSessionInfoProto {
   bool connected = 1;
   SessionInfoProto sessionInfo = 2;
+  int64 lastUpdatedTime = 3;
 }
 
 message ClientSessionEventProto {
