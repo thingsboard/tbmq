@@ -47,8 +47,6 @@ public class DisconnectServiceImpl implements DisconnectService {
     @Autowired
     private LastWillService lastWillService;
     @Autowired
-    private SubscriptionManager subscriptionManager;
-    @Autowired
     private ClientSessionCtxService clientSessionCtxService;
     @Autowired
     private MsgPersistenceManager msgPersistenceManager;
@@ -107,9 +105,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         boolean sendLastWill = !DisconnectReason.ON_DISCONNECT_MSG.equals(disconnectReason);
         lastWillService.removeLastWill(sessionId, sendLastWill);
 
-        if (!sessionCtx.getSessionInfo().isPersistent()) {
-            subscriptionManager.clearSubscriptions(clientInfo.getClientId());
-        } else {
+        if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
             msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
         }

@@ -108,7 +108,7 @@ public class DefaultClientSessionService implements ClientSessionService {
         return clientSessionInfo.toBuilder()
                 .clientSession(
                         clientSessionInfo.getClientSession().toBuilder()
-                                .connected(true)
+                                .connected(false)
                                 .build()
                 )
                 .build();

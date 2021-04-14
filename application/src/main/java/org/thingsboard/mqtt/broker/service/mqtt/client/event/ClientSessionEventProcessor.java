@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -67,6 +68,7 @@ public class ClientSessionEventProcessor {
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ClientSessionService clientSessionService;
     private final DisconnectClientCommandService disconnectClientCommandService;
+    private final SubscriptionManager subscriptionManager;
 
     @Value("${queue.client-session-event.consumers-count}")
     private int consumersCount;
@@ -136,7 +138,11 @@ public class ClientSessionEventProcessor {
                 case DISCONNECTED:
                     processDisconnected(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo());
                     return null;
+                case TRY_CLEAR_SESSION_REQUEST:
+                    processTryClearSessionRequest(clientSessionEvent.getClientInfo());
+                    return null;
                 default:
+                    log.error("Type {} is not supported.", clientSessionEvent.getEventType());
                     throw new RuntimeException("Type " + clientSessionEvent.getEventType() + " is not supported.");
             }
         });
@@ -161,6 +167,7 @@ public class ClientSessionEventProcessor {
             clientSessionService.saveClientSession(clientId, disconnectedClientSession);
         } else {
             clientSessionService.clearClientSession(clientId);
+            subscriptionManager.clearSubscriptions(clientId);
         }
 
     }
@@ -202,6 +209,18 @@ public class ClientSessionEventProcessor {
 
         } else {
             saveClientSession(sessionId, clientInfo, isPersistent, requestHeaders);
+        }
+    }
+
+    private void processTryClearSessionRequest(ClientInfo clientInfo) {
+        String clientId = clientInfo.getClientId();
+        ClientSession clientSession = clientSessionService.getClientSession(clientId);
+        if (clientSession.isConnected()) {
+            log.info("[{}} Is connected now, ignoring {}.", clientId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
+        } else {
+            log.debug("[{}} Clearing client session.", clientId);
+            clientSessionService.clearClientSession(clientId);
+            subscriptionManager.clearSubscriptions(clientId);
         }
     }
 

@@ -259,14 +259,20 @@ mqtt:
     # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
     clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
+  client-session-cleanup:
+    # Cron specification when to run clearing old and not active client sessions. Defaults to 'every day at 1 o'clock'
+    cron: "${MQTT_CLIENT_SESSION_CLEANUP_CRON:0 0 1 * * *}"
+    zone: "${MQTT_CLIENT_SESSION_CLEANUP_ZONE:UTC}"
+    # Specify TTL of persisted inactive sessions in seconds. The current value corresponds to one week
+    inactive-session-ttl: "${MQTT_CLIENT_SESSION_CLEANUP_INACTIVE_SESSION_TTL:604800}"
   persistent-session:
     device:
       persisted-messages:
         limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
         # Specify TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
-        # Cron specification when to run clearing persisted device messages. Defaults to 'every day at 1 o'clock'
-        clean-up-cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 1 * * *}"
+        # Cron specification when to run clearing persisted device messages. Defaults to 'every day at 2 o'clock'
+        clean-up-cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
         clean-up-zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
         sql:
           session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_SESSION_CTX_PAGE_SIZE:1000}"

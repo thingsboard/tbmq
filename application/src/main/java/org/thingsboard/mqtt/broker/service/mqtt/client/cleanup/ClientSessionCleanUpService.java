@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-
-import java.util.UUID;
-
-public interface ClientSessionEventService {
-    ListenableFuture<Boolean> connect(SessionInfo sessionInfo);
-
-    void disconnect(ClientInfo clientInfo, UUID sessionId);
-
-    void tryClear(SessionInfo sessionInfo);
+public interface ClientSessionCleanUpService {
+    void removeClientSession(String clientId);
 }

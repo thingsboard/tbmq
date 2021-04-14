@@ -48,6 +48,7 @@ import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -104,10 +105,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .map(clientSubscription -> {
                     String clientId = clientSubscription.getValue().getClientId();
                     ClientSession clientSession = clientSessionService.getClientSession(clientId);
+                    if (clientSession == null) {
+                        log.info("[{}] Client session not found for existent client subscription.", clientId);
+                        return null;
+                    }
                     ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
                     return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
                             clientSession.getSessionInfo(), clientSessionCtx);
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         List<Subscription> persistentSubscriptions = new ArrayList<>();

@@ -18,4 +18,5 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 public enum ClientSessionEventType {
     CONNECTION_REQUEST,
     DISCONNECTED,
+    TRY_CLEAR_SESSION_REQUEST,
 }

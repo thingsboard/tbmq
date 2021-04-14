@@ -77,7 +77,7 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
         log.trace("[{}] Clearing all subscriptions.", clientId);
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
-            log.trace("[{}] There were no active subscriptions for client.", clientId);
+            log.debug("[{}] There were no active subscriptions for client.", clientId);
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()
