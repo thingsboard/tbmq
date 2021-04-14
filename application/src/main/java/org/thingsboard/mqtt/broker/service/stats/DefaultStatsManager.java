@@ -108,13 +108,10 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public AtomicInteger createActiveApplicationProcessorsCounter() {
+    public void registerActiveApplicationProcessorsCounter(Map<?, ?> processingFuturesMap) {
         if (statsEnabled) {
-            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), sizeGauge::get));
-            return sizeGauge;
-        } else {
-            return new AtomicInteger(0);
+            statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
+            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
         }
     }
 

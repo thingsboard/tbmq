@@ -86,7 +86,6 @@ queue:
   application-persisted-msg:
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
-    stop-processing-timeout-ms: "${TB_APP_PERSISTED_MSG_STOP_PROCESSING_TIMEOUT:200}"
     ack-strategy:
       type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only

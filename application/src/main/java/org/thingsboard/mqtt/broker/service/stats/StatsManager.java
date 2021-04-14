@@ -35,7 +35,7 @@ public interface StatsManager {
 
     void registerSessionsStats(Map<?, ?> sessionsMap);
 
-    AtomicInteger createActiveApplicationProcessorsCounter();
+    void registerActiveApplicationProcessorsCounter(Map<?, ?> processingFuturesMap);
 
     AtomicLong createSubscriptionTrieNodesCounter();
 }

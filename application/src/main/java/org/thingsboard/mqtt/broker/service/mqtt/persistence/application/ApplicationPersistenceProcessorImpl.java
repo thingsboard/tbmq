@@ -87,18 +87,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private DisconnectService disconnectService;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
-    private AtomicInteger activeProcessorsCounter;
 
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
-    @Value("${queue.application-persisted-msg.stop-processing-timeout-ms:200}")
-    private long stopProcessingTimeout;
 
     @PostConstruct
     public void init() {
-        this.activeProcessorsCounter = statsManager.createActiveApplicationProcessorsCounter();
+        statsManager.registerActiveApplicationProcessorsCounter(processingFutures);
     }
 
     @Override
@@ -149,13 +146,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
         });
         processingFutures.put(clientId, future);
-        activeProcessorsCounter.incrementAndGet();
     }
 
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
         log.trace("[{}] Stopping persisted messages processing.", clientId);
-        Future<?> processingFuture = processingFutures.get(clientId);
+        Future<?> processingFuture = processingFutures.remove(clientId);
         if (processingFuture == null) {
             log.warn("[{}] Cannot find processing future for client.", clientId);
         } else {
@@ -167,7 +163,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
         ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
         unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
-        activeProcessorsCounter.decrementAndGet();
     }
 
     @Override
