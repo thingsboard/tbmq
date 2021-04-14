@@ -32,8 +32,7 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLIS
 public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
     @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
             "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
-            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_TIME_PROPERTY + ", " +
-            "pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " ASC " +
+            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " DESC " +
             "LIMIT :limit",
             nativeQuery = true)
     List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
