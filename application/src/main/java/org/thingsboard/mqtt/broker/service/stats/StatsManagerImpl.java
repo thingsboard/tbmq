@@ -137,11 +137,29 @@ public class StatsManagerImpl implements StatsManager {
     }
 
     @Override
-    public void registerSessionsStats(Map<?, ?> sessionsMap) {
+    public void registerActiveSessionsStats(Map<?, ?> sessionsMap) {
         log.trace("Registering SessionsStats.");
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
             gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
+        }
+    }
+
+    @Override
+    public void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap) {
+        log.trace("Registering AllClientSessionsStats.");
+        if (statsEnabled) {
+            statsFactory.createGauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap, Map::size);
+            gauges.add(new Gauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap::size));
+        }
+    }
+
+    @Override
+    public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
+        log.trace("Registering ClientSubscriptionsStats.");
+        if (statsEnabled) {
+            statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
+            gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
         }
     }
 

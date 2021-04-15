@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.DefaultClientSessionService;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Set;
 import java.util.UUID;
@@ -55,7 +56,8 @@ public class ClientSessionServiceTestSuite {
     @Before
     public void init() {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
-        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock);
+        StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
+        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, statsManagerMock);
     }
 
     @Test

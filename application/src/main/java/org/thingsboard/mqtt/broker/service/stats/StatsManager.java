@@ -39,7 +39,11 @@ public interface StatsManager {
 
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 
-    void registerSessionsStats(Map<?, ?> sessionsMap);
+    void registerActiveSessionsStats(Map<?, ?> sessionsMap);
+
+    void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap);
+
+    void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 

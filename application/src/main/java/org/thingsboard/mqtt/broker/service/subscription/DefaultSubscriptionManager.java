@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import java.util.Collection;
@@ -42,10 +43,12 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     private final ClientSessionService clientSessionService;
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
+    private final StatsManager statsManager;
 
     @PostConstruct
     public void init() {
         this.clientSubscriptionsMap = loadPersistedClientSubscriptions();
+        statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {

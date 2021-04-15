@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
@@ -41,10 +42,12 @@ public class DefaultClientSessionService implements ClientSessionService {
     private Map<String, ClientSessionInfo> clientSessionMap;
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
+    private final StatsManager statsManager;
 
     @PostConstruct
     public void init() {
         this.clientSessionMap = loadPersistedClientSessions();
+        statsManager.registerAllClientSessionsStats(clientSessionMap);
     }
 
     @Override

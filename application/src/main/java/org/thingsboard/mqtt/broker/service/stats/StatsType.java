@@ -21,6 +21,8 @@ public enum StatsType {
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
     LAST_WILL_CLIENTS("lastWillClients"),
     CONNECTED_SESSIONS("connectedSessions"),
+    ALL_CLIENT_SESSIONS("allClientSessions"),
+    CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     ACTIVE_APP_PROCESSORS("activeAppProcessors"),
     APP_PROCESSOR("activeAppProcessors"),

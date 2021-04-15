@@ -26,7 +26,6 @@ import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
@@ -38,7 +37,7 @@ public class DefaultClientSessionCtxService implements ClientSessionCtxService {
 
     @PostConstruct
     public void init() {
-        statsManager.registerSessionsStats(clientContextMap);
+        statsManager.registerActiveSessionsStats(clientContextMap);
     }
 
     @Override
