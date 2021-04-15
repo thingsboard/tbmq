@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class DeviceMsgAcknowledgeStrategyFactory {
             case SKIP_ALL:
                 return new SkipStrategy(consumerId);
             case RETRY_ALL:
-                return new RetryStrategy(consumerId, ackStrategyConfiguration.getRetries());
+                return new RetryStrategy(consumerId, ackStrategyConfiguration);
             default:
                 throw new RuntimeException("DeviceAckStrategy with type " + ackStrategyConfiguration.getType() + " is not supported!");
         }
@@ -55,10 +57,16 @@ public class DeviceMsgAcknowledgeStrategyFactory {
         }
     }
 
-    @RequiredArgsConstructor
     private static class RetryStrategy implements DeviceAckStrategy {
         private final String consumerId;
         private final int maxRetries;
+        private final int pauseBetweenRetries;
+
+        public RetryStrategy(String consumerId, DeviceAckStrategyConfiguration configuration) {
+            this.consumerId = consumerId;
+            this.maxRetries = configuration.getRetries();
+            this.pauseBetweenRetries = configuration.getPauseBetweenRetries();
+        }
 
         private int retryCount;
 
@@ -77,6 +85,13 @@ public class DeviceMsgAcknowledgeStrategyFactory {
                         log.trace("[{}] Going to reprocess message: clientId - {}, topic - {}.",
                                 consumerId, msg.getClientId(), msg.getTopic())
                 );
+            }
+            if (pauseBetweenRetries > 0) {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(pauseBetweenRetries));
+                } catch (InterruptedException e) {
+                    log.error("[{}] Failed to pause for retry.", consumerId);
+                }
             }
             return new DeviceProcessingDecision(false);
         }

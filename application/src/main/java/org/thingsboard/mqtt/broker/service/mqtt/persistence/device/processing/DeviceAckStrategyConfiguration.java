@@ -25,4 +25,5 @@ import org.springframework.stereotype.Component;
 public class DeviceAckStrategyConfiguration {
     private AckStrategyType type;
     private int retries;
+    private int pauseBetweenRetries;
 }

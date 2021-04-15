@@ -95,9 +95,10 @@ queue:
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
     ack-strategy:
-      type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
+      type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
-      retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
+      retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}" # Number of retries, 0 is unlimited
+      pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:3}" # Time in seconds to wait in consumer thread before retries
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
