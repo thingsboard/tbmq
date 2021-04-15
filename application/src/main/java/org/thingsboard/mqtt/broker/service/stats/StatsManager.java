@@ -29,6 +29,8 @@ public interface StatsManager {
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
 
+    DeviceProcessorStats createDeviceProcessorStats(String consumerId);
+
     ApplicationProcessorStats createApplicationProcessorStats(String clientId);
 
     void clearApplicationProcessorStats(String clientId);

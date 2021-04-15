@@ -37,6 +37,7 @@ public class StatsConstantNames {
     public static final String FAILED_ITERATIONS = "failedIterations";
 
     public static final String CLIENT_ID_TAG = "clientId";
+    public static final String CONSUMER_ID_TAG = "consumerId";
 
 
     public static final String STATS_NAME_TAG = "statsName";

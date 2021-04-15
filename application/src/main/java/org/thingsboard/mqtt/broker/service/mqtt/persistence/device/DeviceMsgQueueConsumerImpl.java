@@ -36,6 +36,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.De
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.PacketIdAndSerialNumber;
+import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -69,6 +71,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DeviceMsgService deviceMsgService;
     private final DevicePacketIdAndSerialNumberService serialNumberService;
     private final DeviceActorManager deviceActorManager;
+    private final StatsManager statsManager;
 
 
     @PostConstruct
@@ -83,6 +86,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     }
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer) {
+        DeviceProcessorStats stats = statsManager.createDeviceProcessorStats(consumerId);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
@@ -105,10 +109,13 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             deviceMsgService.save(devicePublishMessages);
                             ctx.onSuccess();
                         } catch (Exception e) {
-                            log.warn("[{}] Failed to save device messages.", consumerId);
+                            log.warn("[{}] Failed to save device messages. Exception - {}, reason - {}.", consumerId, e.getClass().getSimpleName(), e.getMessage());
                         }
 
                         DeviceProcessingDecision decision = ackStrategy.analyze(ctx);
+
+                        stats.log(devicePublishMessages.size(), ctx.isSuccessful(), decision.isCommit());
+
                         if (decision.isCommit()) {
                             consumer.commit();
                             break;

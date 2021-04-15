@@ -46,6 +46,7 @@ public class StatsManagerImpl implements StatsManager {
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
     private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
+    private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
 
     @Value("${stats.enabled}")
@@ -81,6 +82,18 @@ public class StatsManagerImpl implements StatsManager {
             return stats;
         } else {
             return StubPublishMsgConsumerStats.STUB_PUBLISH_MSG_CONSUMER_STATS;
+        }
+    }
+
+    @Override
+    public DeviceProcessorStats createDeviceProcessorStats(String consumerId) {
+        log.trace("Creating DeviceProcessorStats, consumerId - {}.", consumerId);
+        if (statsEnabled) {
+            DeviceProcessorStats stats = new DefaultDeviceProcessorStats(consumerId, statsFactory);
+            managedDeviceProcessorStats.add(stats);
+            return stats;
+        } else {
+            return StubDeviceProcessorStats.STUB_DEVICE_PROCESSOR_STATS;
         }
     }
 
@@ -172,6 +185,14 @@ public class StatsManagerImpl implements StatsManager {
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
             log.info("[{}][{}] Stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(), statsStr);
+            stats.reset();
+        }
+
+        for (DeviceProcessorStats stats : managedDeviceProcessorStats) {
+            String statsStr = stats.getStatsCounters().stream()
+                    .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                    .collect(Collectors.joining(" "));
+            log.info("[{}][{}] Stats: {}", StatsType.DEVICE_PROCESSOR.getPrintName(), stats.getConsumerId(), statsStr);
             stats.reset();
         }
 
