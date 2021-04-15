@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectServ
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingContext;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
@@ -42,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
+import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -156,6 +158,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         } else {
             try {
                 processingFuture.cancel(true);
+                statsManager.clearApplicationProcessorStats(clientId);
             } catch (Exception e) {
                 log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             }
@@ -176,6 +179,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
         String clientId = clientSessionCtx.getClientId();
+
+        ApplicationProcessorStats stats = statsManager.createApplicationProcessorStats(clientId);
 
         ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
 
@@ -228,6 +233,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 persistedPubRelMessages = Sets.newConcurrentHashSet();
                 while (isClientConnected(clientSessionCtx)) {
                     ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, persistedPubRelMessages);
+                    int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
+                    int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);
                     submitStrategy.process(msg -> {
                         log.trace("[{}] processing packet: {}", clientId, msg.getPacketId());
@@ -249,7 +256,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
-                    ApplicationProcessingDecision decision = ackStrategy.analyze(ctx);
+                    ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
+                    ApplicationProcessingDecision decision = ackStrategy.analyze(result);
+
+                    stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
+
                     if (decision.isCommit()) {
                         ctx.clear();
                         break;

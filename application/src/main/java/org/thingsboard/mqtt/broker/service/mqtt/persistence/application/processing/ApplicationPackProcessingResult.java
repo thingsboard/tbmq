@@ -15,6 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-public interface ApplicationAckStrategy {
-    ApplicationProcessingDecision analyze(ApplicationPackProcessingResult processingResult);
+import lombok.Getter;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class ApplicationPackProcessingResult {
+    @Getter
+    private final Map<Integer, PersistedPublishMsg> publishPendingMap;
+    @Getter
+    private final Map<Integer, PersistedPubRelMsg> pubRelPendingMap;
+
+    public ApplicationPackProcessingResult(ApplicationPackProcessingContext ctx) {
+        this.publishPendingMap = new HashMap<>(ctx.getPublishPendingMsgMap());
+        this.pubRelPendingMap = new HashMap<>(ctx.getPubRelPendingMsgMap());
+    }
 }

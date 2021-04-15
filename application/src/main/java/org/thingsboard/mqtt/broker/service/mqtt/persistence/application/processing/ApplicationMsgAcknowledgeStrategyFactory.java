@@ -22,8 +22,6 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,9 +47,9 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
         private final String clientId;
 
         @Override
-        public ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext) {
-            ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPublishPendingMsgMap());
-            ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPubRelPendingMsgMap());
+        public ApplicationProcessingDecision analyze(ApplicationPackProcessingResult result) {
+            Map<Integer, PersistedPublishMsg> publishPendingMsgMap = result.getPublishPendingMap();
+            Map<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = result.getPubRelPendingMap();
             if (!publishPendingMsgMap.isEmpty() || !pubRelPendingMsgMap.isEmpty()) {
                 log.debug("[{}] Skip reprocess for {} PUBLISH and {} PUBREL timeout messages.", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap);
             }
@@ -77,9 +75,9 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
         private int retryCount;
 
         @Override
-        public ApplicationProcessingDecision analyze(ApplicationPackProcessingContext processingContext) {
-            ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPublishPendingMsgMap());
-            ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>(processingContext.getPubRelPendingMsgMap());
+        public ApplicationProcessingDecision analyze(ApplicationPackProcessingResult result) {
+            Map<Integer, PersistedPublishMsg> publishPendingMsgMap = result.getPublishPendingMap();
+            Map<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = result.getPubRelPendingMap();
             if (publishPendingMsgMap.isEmpty() && pubRelPendingMsgMap.isEmpty()) {
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }

@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,13 +43,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StatsManagerImpl implements StatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
-    private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
+
+    private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
+    private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
 
     @Value("${stats.enabled}")
     private Boolean statsEnabled;
-
-    private final AtomicInteger publishConsumerId = new AtomicInteger(0);
+    @Value("${stats.application-processor.enabled}")
+    private Boolean applicationProcessorStatsEnabled;
 
     private final StatsFactory statsFactory;
 
@@ -59,6 +62,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public MessagesStats createMsgDispatcherPublishStats() {
+        log.trace("Creating MsgDispatcherPublishStats.");
         if (statsEnabled) {
             MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
             managedStats.add(stats);
@@ -70,6 +74,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId) {
+        log.trace("Creating PublishMsgConsumerStats, consumerId - {}.", consumerId);
         if (statsEnabled) {
             PublishMsgConsumerStats stats = new DefaultPublishMsgConsumerStats(consumerId, statsFactory);
             managedPublishMsgConsumerStats.add(stats);
@@ -80,7 +85,26 @@ public class StatsManagerImpl implements StatsManager {
     }
 
     @Override
+    public ApplicationProcessorStats createApplicationProcessorStats(String clientId) {
+        log.trace("Creating ApplicationProcessorStats, clientId - {}.", clientId);
+        if (statsEnabled && applicationProcessorStatsEnabled) {
+            ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
+            managedApplicationProcessorStats.put(clientId, stats);
+            return stats;
+        } else {
+            return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
+        }
+    }
+
+    @Override
+    public void clearApplicationProcessorStats(String clientId) {
+        log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
+        managedApplicationProcessorStats.remove(clientId);
+    }
+
+    @Override
     public AtomicInteger createSubscriptionSizeCounter() {
+        log.trace("Creating SubscriptionSizeCounter.");
         if (statsEnabled) {
             AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
             gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
@@ -92,6 +116,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public void registerLastWillStats(Map<?, ?> lastWillMsgsMap) {
+        log.trace("Registering LastWillStats.");
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap, Map::size);
             gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap::size));
@@ -100,6 +125,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public void registerSessionsStats(Map<?, ?> sessionsMap) {
+        log.trace("Registering SessionsStats.");
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
             gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
@@ -108,6 +134,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+        log.trace("Registering ActiveApplicationProcessorsStats.");
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
             gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
@@ -116,6 +143,7 @@ public class StatsManagerImpl implements StatsManager {
 
     @Override
     public AtomicLong createSubscriptionTrieNodesCounter() {
+        log.trace("Creating SubscriptionTrieNodesCounter.");
         if (statsEnabled) {
             AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
             gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
@@ -143,8 +171,18 @@ public class StatsManagerImpl implements StatsManager {
             String statsStr = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}] ConsumerId - {}, Stats: {}", StatsType.PUBLISH_MSG_CONSUMER, stats.getConsumerId(), statsStr);
+            log.info("[{}][{}] Stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(), statsStr);
             stats.reset();
+        }
+
+        if (applicationProcessorStatsEnabled) {
+            for (ApplicationProcessorStats stats : managedApplicationProcessorStats.values()) {
+                String statsStr = stats.getStatsCounters().stream()
+                        .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                        .collect(Collectors.joining(" "));
+                log.info("[{}][{}] Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), statsStr);
+                stats.reset();
+            }
         }
 
         StringBuilder gaugeLogBuilder = new StringBuilder();

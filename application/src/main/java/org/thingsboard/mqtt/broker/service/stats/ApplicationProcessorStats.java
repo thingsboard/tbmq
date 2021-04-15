@@ -15,24 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-public enum StatsType {
-    MSG_DISPATCHER_PRODUCER("incomingPublishMsg.published"),
-    PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed"),
-    SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
-    LAST_WILL_CLIENTS("lastWillClients"),
-    CONNECTED_SESSIONS("connectedSessions"),
-    SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
-    ACTIVE_APP_PROCESSORS("activeAppProcessors"),
-    APP_PROCESSOR("activeAppProcessors"),
-    ;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
-    private final String printName;
+import java.util.List;
 
-    StatsType(String printName) {
-        this.printName = printName;
-    }
+public interface ApplicationProcessorStats {
+    String getClientId();
 
-    public String getPrintName() {
-        return printName;
-    }
+    void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

@@ -279,6 +279,8 @@ mqtt:
 stats:
   enabled: "${STATS_ENABLED:true}"
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
+  application-processor:
+    enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
 
 management:
   endpoints:

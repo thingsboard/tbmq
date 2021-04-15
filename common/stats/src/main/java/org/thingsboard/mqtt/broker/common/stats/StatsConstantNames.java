@@ -24,8 +24,19 @@ public class StatsConstantNames {
     public static final String TMP_TIMEOUT = "tmpTimeout";
     public static final String TMP_FAILED = "tmpFailed";
 
+    public static final String SUCCESSFUL_PUBLISH_MSGS = "successfulPublishMsgs";
+    public static final String SUCCESSFUL_PUBREL_MSGS = "successfulPubRelMsgs";
+    public static final String TIMEOUT_PUBLISH_MSGS = "timeoutPublishMsgs";
+    public static final String TIMEOUT_PUBREL_MSGS = "timeoutPubRelMsgs";
+
+    public static final String TMP_TIMEOUT_PUBLISH = "tmpTimeoutPublish";
+    public static final String TMP_TIMEOUT_PUBREL = "tmpTimeoutPubRel";
+
+
     public static final String SUCCESSFUL_ITERATIONS = "successfulIterations";
     public static final String FAILED_ITERATIONS = "failedIterations";
+
+    public static final String CLIENT_ID_TAG = "clientId";
 
 
     public static final String STATS_NAME_TAG = "statsName";

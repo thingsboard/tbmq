@@ -16,24 +16,23 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
-import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
 import java.util.Collections;
 import java.util.List;
 
-public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
+public class StubApplicationProcessorStats implements ApplicationProcessorStats {
+    public static StubApplicationProcessorStats STUB_APPLICATION_PROCESSOR_STATS = new StubApplicationProcessorStats();
 
-    public static StubPublishMsgConsumerStats STUB_PUBLISH_MSG_CONSUMER_STATS = new StubPublishMsgConsumerStats();
-
-    private StubPublishMsgConsumerStats(){}
+    private StubApplicationProcessorStats(){}
 
     @Override
-    public String getConsumerId() {
-        return "STUB_CONSUMER_ID";
+    public String getClientId() {
+        return "STUB_CLIENT_ID";
     }
 
     @Override
-    public void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack) {
+    public void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack) {
     }
 
 
@@ -44,5 +43,6 @@ public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public void reset() {
+
     }
 }

@@ -29,6 +29,10 @@ public interface StatsManager {
 
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
 
+    ApplicationProcessorStats createApplicationProcessorStats(String clientId);
+
+    void clearApplicationProcessorStats(String clientId);
+
     AtomicInteger createSubscriptionSizeCounter();
 
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
