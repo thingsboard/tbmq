@@ -59,7 +59,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,7 +94,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @PostConstruct
     public void init() {
-        statsManager.registerActiveApplicationProcessorsCounter(processingFutures);
+        statsManager.registerActiveApplicationProcessorsStats(processingFutures);
     }
 
     @Override
@@ -165,6 +164,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
     }
 
+    // TODO: delete topic by TTL
     @Override
     public void clearPersistedMsgs(String clientId) {
         String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);

@@ -89,13 +89,10 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public AtomicInteger createLastWillCounter() {
+    public void registerLastWillStats(Map<?, ?> lastWillMsgsMap) {
         if (statsEnabled) {
-            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), sizeGauge::get));
-            return sizeGauge;
-        } else {
-            return new AtomicInteger(0);
+            statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap, Map::size);
+            gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap::size));
         }
     }
 
@@ -108,7 +105,7 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public void registerActiveApplicationProcessorsCounter(Map<?, ?> processingFuturesMap) {
+    public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
             gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));

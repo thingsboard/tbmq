@@ -31,11 +31,11 @@ public interface StatsManager {
 
     AtomicInteger createSubscriptionSizeCounter();
 
-    AtomicInteger createLastWillCounter();
+    void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 
     void registerSessionsStats(Map<?, ?> sessionsMap);
 
-    void registerActiveApplicationProcessorsCounter(Map<?, ?> processingFuturesMap);
+    void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
     AtomicLong createSubscriptionTrieNodesCounter();
 }

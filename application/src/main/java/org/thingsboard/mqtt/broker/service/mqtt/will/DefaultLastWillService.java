@@ -42,21 +42,17 @@ public class DefaultLastWillService implements LastWillService {
     @Autowired
     private StatsManager statsManager;
 
-    private AtomicInteger lastWillCounter;
-
     @PostConstruct
     public void init() {
-        this.lastWillCounter = statsManager.createLastWillCounter();
+        statsManager.registerLastWillStats(lastWillMessages);
     }
 
     @Override
     public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        log.trace("[{}][{}] Saving last will msg, topic - [{}]", sessionInfo.getSessionId(), sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName());
+        log.trace("[{}][{}] Saving last will msg, topic - [{}]", sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
-                log.error("[{}] Last will has been saved already!", sessionId);
-            } else {
-                lastWillCounter.incrementAndGet();
+                log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientInfo().getClientId(), sessionId);
             }
             return new MsgWithSessionInfo(publishMsg, sessionInfo);
         });
@@ -72,7 +68,6 @@ public class DefaultLastWillService implements LastWillService {
 
         log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
-        lastWillCounter.decrementAndGet();
         if (sendMsg) {
             msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
                     new TbQueueCallback() {
