@@ -27,7 +27,7 @@ public interface StatsManager {
 
     MessagesStats createMsgDispatcherPublishStats();
 
-    MessagesStats createPublishMsgConsumerStats();
+    PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
 
     AtomicInteger createSubscriptionSizeCounter();
 

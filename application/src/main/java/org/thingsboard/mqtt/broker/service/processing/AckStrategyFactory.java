@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,17 +47,16 @@ public class AckStrategyFactory {
         private final String consumerId;
 
         @Override
-        public ProcessingDecision analyze(PackProcessingContext processingContext) {
-            ConcurrentMap<UUID, PublishMsgWithId> pendingMap = new ConcurrentHashMap<>(processingContext.getPendingMap());
-            if (!pendingMap.isEmpty()) {
-                log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", consumerId, processingContext.getFailedMap().size(), pendingMap.size());
+        public ProcessingDecision analyze(PackProcessingResult result) {
+            if (!result.getPendingMap().isEmpty() || !result.getFailedMap().isEmpty()) {
+                log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", consumerId, result.getFailedMap().size(), result.getPendingMap().size());
             }
             if (log.isTraceEnabled()) {
-                processingContext.getFailedMap().forEach((packetId, msg) ->
+                result.getFailedMap().forEach((packetId, msg) ->
                         log.trace("[{}] Failed message: id - {}, topic - {}.",
                                 consumerId, msg.getId(), msg.getPublishMsgProto().getTopicName())
                 );
-                pendingMap.forEach((packetId, msg) ->
+                result.getPendingMap().forEach((packetId, msg) ->
                         log.trace("[{}] Timeout message: id - {}, topic - {}.",
                                 consumerId, msg.getId(), msg.getPublishMsgProto().getTopicName())
                 );
@@ -73,9 +73,9 @@ public class AckStrategyFactory {
         private int retryCount;
 
         @Override
-        public ProcessingDecision analyze(PackProcessingContext processingContext) {
-            ConcurrentMap<UUID, PublishMsgWithId> pendingMap = new ConcurrentHashMap<>(processingContext.getPendingMap());
-            ConcurrentMap<UUID, PublishMsgWithId> failedMap = processingContext.getFailedMap();
+        public ProcessingDecision analyze(PackProcessingResult result) {
+            Map<UUID, PublishMsgWithId> pendingMap = result.getPendingMap();
+            Map<UUID, PublishMsgWithId> failedMap = result.getFailedMap();
             if (pendingMap.isEmpty()) {
                 return new ProcessingDecision(true, Collections.emptyMap());
             }

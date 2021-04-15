@@ -35,12 +35,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultStatsManager implements StatsManager {
+public class StatsManagerImpl implements StatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
+    private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
     @Value("${stats.enabled}")
@@ -67,13 +69,13 @@ public class DefaultStatsManager implements StatsManager {
     }
 
     @Override
-    public MessagesStats createPublishMsgConsumerStats() {
+    public PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId) {
         if (statsEnabled) {
-            MessagesStats stats = statsFactory.createMessagesStats(StatsType.PUBLISH_MSG_CONSUMER.getPrintName() + "." + publishConsumerId.getAndIncrement());
-            managedStats.add(stats);
+            PublishMsgConsumerStats stats = new DefaultPublishMsgConsumerStats(consumerId, statsFactory);
+            managedPublishMsgConsumerStats.add(stats);
             return stats;
         } else {
-            return StubMessagesStats.STUB_MESSAGE_STATS;
+            return StubPublishMsgConsumerStats.STUB_PUBLISH_MSG_CONSUMER_STATS;
         }
     }
 
@@ -134,6 +136,14 @@ public class DefaultStatsManager implements StatsManager {
                     StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
                     StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
             log.info("[{}] Stats: {}", stats.getName(), statsStr);
+            stats.reset();
+        }
+
+        for (PublishMsgConsumerStats stats : managedPublishMsgConsumerStats) {
+            String statsStr = stats.getStatsCounters().stream()
+                    .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                    .collect(Collectors.joining(" "));
+            log.info("[{}] ConsumerId - {}, Stats: {}", StatsType.PUBLISH_MSG_CONSUMER, stats.getConsumerId(), statsStr);
             stats.reset();
         }
 

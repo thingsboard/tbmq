@@ -13,8 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.stats;
 
-public interface AckStrategy {
-    ProcessingDecision analyze(PackProcessingResult processingResult);
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
+
+import java.util.List;
+
+public interface PublishMsgConsumerStats {
+    String getConsumerId();
+
+    void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

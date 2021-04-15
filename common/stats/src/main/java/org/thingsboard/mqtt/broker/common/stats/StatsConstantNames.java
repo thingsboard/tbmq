@@ -19,6 +19,14 @@ public class StatsConstantNames {
     public static final String TOTAL_MSGS = "totalMsgs";
     public static final String SUCCESSFUL_MSGS = "successfulMsgs";
     public static final String FAILED_MSGS = "failedMsgs";
+    public static final String TIMEOUT_MSGS = "timeoutMsgs";
+
+    public static final String TMP_TIMEOUT = "tmpTimeout";
+    public static final String TMP_FAILED = "tmpFailed";
+
+    public static final String SUCCESSFUL_ITERATIONS = "successfulIterations";
+    public static final String FAILED_ITERATIONS = "failedIterations";
+
 
     public static final String STATS_NAME_TAG = "statsName";
 }

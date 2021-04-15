@@ -56,10 +56,14 @@ public class DefaultStatsFactory implements StatsFactory {
 
 
     @Override
-    public StatsCounter createStatsCounter(String key, String statsName) {
+    public StatsCounter createStatsCounter(String key, String statsName, String... tags) {
+        String[] updatedTags = new String[tags.length + 2];
+        System.arraycopy(tags, 0, updatedTags, 0, tags.length);
+        updatedTags[tags.length] = STATS_NAME_TAG;
+        updatedTags[tags.length + 1] = statsName;
         return new StatsCounter(
                 new AtomicInteger(0),
-                meterRegistry.counter(key, STATS_NAME_TAG, statsName),
+                meterRegistry.counter(key, updatedTags),
                 statsName
         );
     }

@@ -15,6 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-public interface AckStrategy {
-    ProcessingDecision analyze(PackProcessingResult processingResult);
+import lombok.Getter;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+public class PackProcessingResult {
+    @Getter
+    private final Map<UUID, PublishMsgWithId> pendingMap;
+    @Getter
+    private final Map<UUID, PublishMsgWithId> failedMap;
+
+    public PackProcessingResult(PackProcessingContext ctx) {
+        this.pendingMap = new HashMap<>(ctx.getPendingMap());
+        this.failedMap = new HashMap<>(ctx.getFailedMap());
+    }
 }

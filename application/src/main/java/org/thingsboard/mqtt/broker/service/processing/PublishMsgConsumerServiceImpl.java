@@ -24,6 +24,8 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -56,6 +58,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final PublishMsgQueueFactory publishMsgQueueFactory;
     private final AckStrategyFactory ackStrategyFactory;
     private final SubmitStrategyFactory submitStrategyFactory;
+    private final StatsManager statsManager;
 
 
     @PostConstruct
@@ -70,6 +73,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     }
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
+        PublishMsgConsumerStats stats = statsManager.createPublishMsgConsumerStats(consumerId);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
@@ -87,6 +91,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
                     while (!stopped) {
                         PackProcessingContext ctx = new PackProcessingContext(submitStrategy.getPendingMap());
+                        int totalMsgCount = ctx.getPendingMap().size();
                         submitStrategy.process(msg -> {
                             msgDispatcherService.processPublishMsg(msg.getPublishMsgProto(), new BasePublishMsgCallback(msg.getId(), ctx));
                         });
@@ -94,8 +99,11 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         if (!stopped) {
                             ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                         }
-                        ProcessingDecision decision = ackStrategy.analyze(ctx);
+                        PackProcessingResult result = new PackProcessingResult(ctx);
                         ctx.cleanup();
+                        ProcessingDecision decision = ackStrategy.analyze(result);
+
+                        stats.log(totalMsgCount, result, decision.isCommit());
 
                         if (decision.isCommit()) {
                             consumer.commit();

@@ -21,7 +21,7 @@ import java.util.function.ToDoubleFunction;
 
 // TODO move this to some separate library (or use ThingsBoard stats library)
 public interface StatsFactory {
-    StatsCounter createStatsCounter(String key, String statsName);
+    StatsCounter createStatsCounter(String key, String statsName, String... tags);
 
     DefaultCounter createDefaultCounter(String key, String... tags);
 
