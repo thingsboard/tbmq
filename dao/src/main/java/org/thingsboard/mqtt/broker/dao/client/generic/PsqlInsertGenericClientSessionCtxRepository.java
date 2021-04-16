@@ -21,6 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
+import org.thingsboard.mqtt.broker.dao.util.PsqlDao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -31,10 +32,11 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIEN
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY;
 
+@PsqlDao
 @Repository
 @Transactional
-public class InsertGenericClientSessionCtxRepositoryImpl implements InsertGenericClientSessionCtxRepository {
-    private static final String INSERT = "INSERT INTO " + GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
+public class PsqlInsertGenericClientSessionCtxRepository implements InsertGenericClientSessionCtxRepository {
+    private static final String INSERT_OR_UPDATE = "INSERT INTO " + GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +
             GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY + ", " +
             GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY + ") " +
@@ -49,7 +51,7 @@ public class InsertGenericClientSessionCtxRepositoryImpl implements InsertGeneri
 
     @Override
     public void saveOrUpdate(List<GenericClientSessionCtxEntity> entities) {
-        jdbcTemplate.batchUpdate(INSERT, new BatchPreparedStatementSetter() {
+        jdbcTemplate.batchUpdate(INSERT_OR_UPDATE, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 GenericClientSessionCtxEntity genericClientSessionCtxEntity = entities.get(i);

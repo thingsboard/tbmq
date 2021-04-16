@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.cleanup;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxDao;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgCleanUpDao;
 
 @Slf4j
 @Service
@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxDao;
 public class DeviceMsgCleanUpService {
 
     private final DeviceMsgCleanUpDao cleanUpDao;
-    private final DeviceSessionCtxDao sessionCtxDao;
 
     @Value("${mqtt.persistent-session.device.persisted-messages.ttl}")
     private long ttl;

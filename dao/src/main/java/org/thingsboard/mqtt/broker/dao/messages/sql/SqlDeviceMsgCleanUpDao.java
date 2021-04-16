@@ -35,7 +35,7 @@ public class SqlDeviceMsgCleanUpDao implements DeviceMsgCleanUpDao {
     private final DeviceMsgRepository deviceMsgRepository;
     private final DeviceSessionCtxRepository deviceSessionCtxRepository;
 
-    @Value("${mqtt.persistent-session.device.persisted-messages.sql.session-ctx-page-size}")
+    @Value("${mqtt.persistent-session.device.persisted-messages.sql.session-ctx-page-size:1000}")
     private int sessionCtxPageSize;
 
     @Override
