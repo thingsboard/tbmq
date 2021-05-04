@@ -9,6 +9,9 @@
 
     <logger name="org.thingsboard.mqtt.broker.service.integration.TopicsIntegrationTest" level="INFO" />
 
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl" level="TRACE" />
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.client.connect.ConnectServiceImpl" level="TRACE" />
+
     <root level="WARN">
         <appender-ref ref="console"/>
     </root>

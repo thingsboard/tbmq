@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -70,26 +71,62 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Test
     public void testPubSubBasicTopic() throws Throwable {
+        List<MqttClient> connectedClients = new CopyOnWriteArrayList<>();
         initPubSubTestService.initPubSubTest(
-                (waiter, subscriberId) -> initSubscriber(waiter, subscriberId, BASIC_TOPIC),
-                (waiter, publisherId) -> initPublisher(waiter, publisherId, () -> BASIC_TOPIC));
+                (waiter, subscriberId) -> {
+                    MqttClient client = initSubscriber(waiter, subscriberId, BASIC_TOPIC);
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                },
+                (waiter, publisherId) -> {
+                    MqttClient client = initPublisher(waiter, publisherId, () -> BASIC_TOPIC);
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                });
+        closeClients(connectedClients);
     }
 
     @Test
     public void testPubSubSingleLevelsTopic() throws Throwable {
+        List<MqttClient> connectedClients = new CopyOnWriteArrayList<>();
         initPubSubTestService.initPubSubTest(
-                (waiter, subscriberId) -> initSubscriber(waiter, subscriberId, SINGLE_LEVELS_TOPIC_FILTER),
-                (waiter, publisherId) -> initPublisher(waiter, publisherId, () -> SINGLE_LEVELS_TOPICS.get(publisherId % SINGLE_LEVELS_TOPICS.size())));
+                (waiter, subscriberId) -> {
+                    MqttClient client = initSubscriber(waiter, subscriberId, SINGLE_LEVELS_TOPIC_FILTER);
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                },
+                (waiter, publisherId) -> {
+                    MqttClient client = initPublisher(waiter, publisherId, () -> SINGLE_LEVELS_TOPICS.get(publisherId % SINGLE_LEVELS_TOPICS.size()));
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                });
+        closeClients(connectedClients);
     }
 
     @Test
     public void testPubSubMultipleLevelsTopic() throws Throwable {
+        List<MqttClient> connectedClients = new CopyOnWriteArrayList<>();
         initPubSubTestService.initPubSubTest(
-                (waiter, subscriberId) -> initSubscriber(waiter, subscriberId, MULTI_LEVEL_TOPIC_FILTER),
-                (waiter, publisherId) -> initPublisher(waiter, publisherId, () -> MULTI_LEVEL_TOPICS.get(publisherId % MULTI_LEVEL_TOPICS.size())));
+                (waiter, subscriberId) -> {
+                    MqttClient client = initSubscriber(waiter, subscriberId, MULTI_LEVEL_TOPIC_FILTER);
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                },
+                (waiter, publisherId) -> {
+                    MqttClient client = initPublisher(waiter, publisherId, () -> MULTI_LEVEL_TOPICS.get(publisherId % MULTI_LEVEL_TOPICS.size()));
+                    if (client != null) {
+                        connectedClients.add(client);
+                    }
+                });
+        closeClients(connectedClients);
     }
 
-    void initPublisher(Waiter waiter, int publisherId, Supplier<String> topicSupplier) {
+    MqttClient initPublisher(Waiter waiter, int publisherId, Supplier<String> topicSupplier) {
         try {
             MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "topic_pub_client_"
                     + publisherId + "_" + UUID.randomUUID().toString());
@@ -102,14 +139,16 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
                 pubClient.publish(topicSupplier.get(), msg);
             }
             log.info("[{}] Publisher stopped publishing", publisherId);
+            return pubClient;
         } catch (Exception e) {
             log.error("[{}] Failed to publish", publisherId, e);
             e.printStackTrace();
             waiter.assertNull(e);
+            return null;
         }
     }
 
-    void initSubscriber(Waiter waiter, int subscriberId, String topicFilter) {
+    MqttClient initSubscriber(Waiter waiter, int subscriberId, String topicFilter) {
         try {
             MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "topic_sub_client_"
                     + subscriberId + "_" + UUID.randomUUID().toString());
@@ -130,9 +169,24 @@ public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
                 }
                 previousMsgs.put(currentMsg.publisherId, currentMsg);
             });
+            return subClient;
         } catch (Exception e) {
             log.error("[{}] Failed to process published messages", subscriberId, e);
             waiter.assertNull(e);
+            return null;
+        }
+    }
+
+    private void closeClients(List<MqttClient> connectedClients) {
+        for (MqttClient client : connectedClients) {
+            if (client.isConnected()) {
+                try {
+                    client.disconnect();
+                    client.close();
+                } catch (Exception e) {
+                    log.debug("Failed to disconnect/close MQTT client.");
+                }
+            }
         }
     }
 }

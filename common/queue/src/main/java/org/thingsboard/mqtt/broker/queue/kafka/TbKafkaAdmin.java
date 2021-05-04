@@ -66,6 +66,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 log.warn("[{}] Failed to create topic", topic, ee);
                 throw new RuntimeException(ee);
             }
+        } catch (InterruptedException ie) {
+            log.warn("[{}] Creating of topic was interrupted.", topic);
         } catch (Exception e) {
             log.warn("[{}] Failed to create topic", topic, e);
             throw new RuntimeException(e);

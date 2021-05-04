@@ -88,14 +88,16 @@ public class DisconnectClientCommandProcessor {
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
         try {
             ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
-            if (sessionId.equals(clientSessionCtx.getSessionId())) {
+            if (clientSessionCtx == null) {
+                log.debug("[{}] Client is already disconnected.", clientId);
+            } else if (sessionId.equals(clientSessionCtx.getSessionId())) {
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_DISCONNECT_COMMAND);
             } else {
                 log.warn("[{}] Got disconnect command for different sessionId, actual sessionId - {}, received sessionId - {}.",
                         clientId, clientSessionCtx.getSessionId(), sessionId);
             }
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process disconnect command. Reason - {}.", clientId, sessionId, e.getMessage());
+            log.warn("[{}][{}] Failed to process disconnect command. Exception - {}, reason - {}.", clientId, sessionId, e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
         }
     }

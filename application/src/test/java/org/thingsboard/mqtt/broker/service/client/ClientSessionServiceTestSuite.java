@@ -58,6 +58,7 @@ public class ClientSessionServiceTestSuite {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, statsManagerMock);
+        ((DefaultClientSessionService) this.clientSessionService).init();
     }
 
     @Test

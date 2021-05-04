@@ -90,14 +90,14 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
         MqttMessageType msgType = msg.fixedHeader().messageType();
         if (wrongOrder(msgType)) {
-            log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
+            log.warn("[{}] Closing current session due to invalid msg order, current state - {}, msg - {}", sessionId, clientSessionCtx.getSessionState(), msg);
             disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
             return true;
         }
         clientSessionCtx.getConnectionLock().lock();
         try {
             if (wrongOrder(msgType)) {
-                log.warn("[{}] Closing current session due to invalid msg order: {}", sessionId, msg);
+                log.warn("[{}] Closing current session due to invalid msg order, current state - {}, msg - {}", sessionId, clientSessionCtx.getSessionState(), msg);
                 disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
                 return true;
             }

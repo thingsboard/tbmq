@@ -152,8 +152,8 @@ public class ConnectServiceImpl implements ConnectService {
 
             postConnectService.process(ctx);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to finish client connection. Reason - {}.",
-                    ctx.getClientId(), ctx.getSessionId(), e.getMessage());
+            log.warn("[{}][{}] Failed to finish client connection. Exception - {}, reason - {}.",
+                    ctx.getClientId(), ctx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
             disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
         }

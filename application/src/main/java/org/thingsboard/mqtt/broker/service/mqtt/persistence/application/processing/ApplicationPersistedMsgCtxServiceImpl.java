@@ -83,6 +83,10 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
     @Override
     public void clearContext(String clientId) {
         log.trace("[{}] Clearing application session context.", clientId);
-        sessionCtxService.deleteApplicationSessionCtx(clientId);
+        try {
+            sessionCtxService.deleteApplicationSessionCtx(clientId);
+        } catch (Exception e) {
+            log.info("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
+        }
     }
 }

@@ -40,10 +40,11 @@ public class MqttMessageHandler {
     public void process(ClientSessionCtx clientSessionCtx, MqttMessage msg) throws MqttException {
         clientSessionCtx.getProcessingLock().lock();
         try {
+            MqttMessageType msgType = msg.fixedHeader().messageType();
+            log.trace("[{}][{}] Processing {} msg.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), msgType);
             if (clientSessionCtx.getSessionState() == SessionState.DISCONNECTED) {
                 throw new MqttException("Session is already disconnected.");
             }
-            MqttMessageType msgType = msg.fixedHeader().messageType();
             keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
             switch (msgType) {
                 case SUBSCRIBE:

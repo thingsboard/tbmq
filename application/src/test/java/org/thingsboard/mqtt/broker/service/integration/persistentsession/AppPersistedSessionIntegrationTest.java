@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.thingsboard.mqtt.MqttClient;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -35,6 +37,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
@@ -76,26 +79,38 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Before
     public void init() throws Exception {
         applicationClient = mqttClientService.saveMqttClient(createApplicationClient());
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
     }
 
     @After
     public void clear() throws Exception {
-        clearPersistedClient(persistedClient, new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId()));
+        if (persistedClient.isConnected()) {
+            persistedClient.disconnect();
+        }
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(true);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
+        persistedClient.disconnect();
         mqttClientService.deleteMqttClient(applicationClient.getId());
     }
 
     @Test
     public void testSuccessPersistence_afterDisconnect() throws Exception {
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        persistedClient.connect(connectOptions);
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
+        int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
         persistedClient.disconnect();
         // need to wait till client is actually stopped
         Thread.sleep(200);
-        persistedClient.close();
 
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
         Assert.assertNull(clientSessionCtx);
@@ -111,17 +126,36 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
-    public void testSuccessPersistence_afterReconnect() throws Exception {
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        persistedClient.connect(connectOptions);
-
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+    public void testSuccessConnect() throws Exception {
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        Assert.assertNotNull(clientSessionCtx);
         persistedClient.disconnect();
-        persistedClient.close();
+        // need to wait till client is actually stopped
+        Thread.sleep(200);
+    }
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
-        persistedClient.connect(connectOptions);
+    @Test
+    public void testSuccessPersistence_afterReconnect() throws Exception {
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
+
+        String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
+        int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
+        persistedClient.disconnect();
+
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
         Assert.assertEquals(SessionState.CONNECTED, clientSessionCtx.getSessionState());
@@ -138,18 +172,28 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
     @Test
     public void testSuccessPersistence_afterReconnectAndChange() throws Exception {
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        persistedClient.connect(connectOptions);
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
+        int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
         persistedClient.disconnect();
-        persistedClient.close();
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
-        persistedClient.connect(connectOptions);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
+
         List<TopicSubscription> newTopicSubscriptions = Arrays.asList(new TopicSubscription("C/1", 1), new TopicSubscription("C/2", 0));
-        persistedClient.subscribe(getTopicNames(newTopicSubscriptions), getQoSLevels(newTopicSubscriptions));
+        String[] newTopicNames = getTopicNames(newTopicSubscriptions);
+        int[] newQoSLevels = getQoSLevels(newTopicSubscriptions);
+        for (int i = 0; i < newTopicNames.length; i++) {
+            persistedClient.on(newTopicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(newQoSLevels[i])).get();
+        }
 
         Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size() + newTopicSubscriptions.size()
@@ -158,17 +202,22 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
     @Test
     public void testSuccessPersistence_clearPersisted() throws Exception {
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        persistedClient.connect(connectOptions);
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
+        int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
         persistedClient.disconnect();
-        persistedClient.close();
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
-        connectOptions.setCleanSession(true);
-        persistedClient.connect(connectOptions);
+        config.setCleanSession(true);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
@@ -182,22 +231,28 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
     @Test
     public void testSuccessPersistence_clearPersistedAndDisconnect() throws Exception {
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        persistedClient.connect(connectOptions);
+        MqttClientConfig config = new MqttClientConfig();
+        config.setClientId(applicationClient.getClientId());
+        config.setCleanSession(false);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
 
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
+        int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
         persistedClient.disconnect();
-        persistedClient.close();
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
-        connectOptions.setCleanSession(true);
-        persistedClient.connect(connectOptions);
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        config.setCleanSession(true);
+        persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
+        persistedClient.connect("localhost", mqttPort).get();
+        for (int i = 0; i < topicNames.length; i++) {
+            persistedClient.on(topicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(qoSLevels[i])).get();
+        }
         persistedClient.disconnect();
         // need to wait till client is actually stopped
         Thread.sleep(200);
-        persistedClient.close();
 
         ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
         Assert.assertNull(persistedClientSession);
