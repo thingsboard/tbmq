@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,10 +36,9 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
-@RequiredArgsConstructor
 public class AdminController extends BaseController {
-    private final AdminService adminService;
-    private final UserService userService;
+    @Autowired
+    private AdminService adminService;
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -59,6 +58,7 @@ public class AdminController extends BaseController {
         checkParameter("userId", strUserId);
         try {
             UUID userId = toUUID(strUserId);
+            checkUserId(userId);
             userService.deleteUser(userId);
         } catch (Exception e) {
             throw handleException(e);

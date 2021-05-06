@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
@@ -31,10 +32,14 @@ public class AdminServiceImpl implements AdminService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public User createAdmin(AdminDto adminDto) {
         User user = toUser(adminDto);
         user = userService.saveUser(user);
         UserCredentials userCredentials = userService.findUserCredentialsByUserId(user.getId());
+        if (userCredentials == null) {
+            throw new IllegalArgumentException("User credentials were not created for user.");
+        }
         userCredentials.setPassword(passwordEncoder.encode(adminDto.getPassword()));
         userCredentials.setEnabled(true);
         userCredentials.setActivateToken(null);

@@ -23,21 +23,28 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
+
 @Slf4j
 public abstract class BaseController {
 
     @Autowired
     private ThingsboardErrorResponseHandler errorResponseHandler;
+
+    @Autowired
+    protected UserService userService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -83,6 +90,16 @@ public abstract class BaseController {
     void checkParameter(String name, String param) throws ThingsboardException {
         if (StringUtils.isEmpty(param)) {
             throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+    }
+
+    void checkUserId(UUID userId) throws ThingsboardException {
+        try {
+            validateId(userId, "Incorrect userId " + userId);
+            User user = userService.findUserById(userId);
+            checkNotNull(user);
+        } catch (Exception e) {
+            throw handleException(e, false);
         }
     }
 
