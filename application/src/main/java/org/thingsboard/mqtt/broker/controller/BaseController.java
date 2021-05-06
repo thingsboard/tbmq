@@ -31,7 +31,6 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -79,6 +78,12 @@ public abstract class BaseController {
             throw new ThingsboardException("Requested item wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         return reference;
+    }
+
+    void checkParameter(String name, String param) throws ThingsboardException {
+        if (StringUtils.isEmpty(param)) {
+            throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
     }
 
     protected SecurityUser getCurrentUser() throws ThingsboardException {

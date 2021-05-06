@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.keepalive;
+package org.thingsboard.mqtt.broker.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import lombok.extern.slf4j.Slf4j;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import java.util.UUID;
 
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-public class KeepAliveTestSuite {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdminDto {
+    private UUID id;
+    private String email;
+    private String password;
+    private String firstName;
+    private String lastName;
 }

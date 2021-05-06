@@ -21,10 +21,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.User;
-import org.thingsboard.mqtt.broker.common.data.security.Authority;
-import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
-import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 
 @Service
@@ -33,10 +31,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserService userService;
+    private AdminService adminService;
 
     @Bean
     protected BCryptPasswordEncoder passwordEncoder() {
@@ -45,21 +40,9 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createAdmin() {
-        createUser(Authority.ADMIN, "sysadmin@thingsboard.org", "sysadmin");
-    }
-
-    private User createUser(Authority authority,
-                            String email,
-                            String password) {
-        User user = new User();
-        user.setAuthority(authority);
-        user.setEmail(email);
-        user = userService.saveUser(user);
-        UserCredentials userCredentials = userService.findUserCredentialsByUserId(user.getId());
-        userCredentials.setPassword(passwordEncoder.encode(password));
-        userCredentials.setEnabled(true);
-        userCredentials.setActivateToken(null);
-        userService.saveUserCredentials(userCredentials);
-        return user;
+        adminService.createAdmin(AdminDto.builder()
+                .email("sysadmin@thingsboard.org")
+                .password("sysadmin")
+                .build());
     }
 }

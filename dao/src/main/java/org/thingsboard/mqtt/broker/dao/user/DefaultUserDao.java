@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.UserEntity;
@@ -44,5 +46,10 @@ public class DefaultUserDao extends AbstractDao<UserEntity, User> implements Use
     @Override
     public User findByEmail(String email) {
         return DaoUtil.getData(userRepository.findByEmail(email));
+    }
+
+    @Override
+    public PageData<User> findAll(PageLink pageLink) {
+        return DaoUtil.toPageData(userRepository.findAll(DaoUtil.toPageable(pageLink)));
     }
 }

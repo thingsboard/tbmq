@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 
 import java.util.UUID;
@@ -58,6 +59,22 @@ public class Validator {
     public static void validateId(UUID id, String errorMessage) {
         if (id == null) {
             throw new IncorrectParameterException(errorMessage);
+        }
+    }
+
+    /**
+     * This method validate <code>PageLink</code> page link. If pageLink is invalid than throw
+     * <code>IncorrectParameterException</code> exception
+     *
+     * @param pageLink     the page link
+     */
+    public static void validatePageLink(PageLink pageLink) {
+        if (pageLink == null) {
+            throw new IncorrectParameterException("Page link must be specified.");
+        } else if (pageLink.getPageSize() < 1) {
+            throw new IncorrectParameterException("Incorrect page link page size '"+pageLink.getPageSize()+"'. Page size must be greater than zero.");
+        } else if (pageLink.getPage() < 0) {
+            throw new IncorrectParameterException("Incorrect page link page '"+pageLink.getPage()+"'. Page must be positive integer.");
         }
     }
 }

@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.dao.user;
 
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 
 import java.util.UUID;
@@ -33,4 +35,6 @@ public interface UserService {
 	UserCredentials saveUserCredentials(UserCredentials userCredentials);
 
 	void deleteUser(UUID userId);
+
+	PageData<User> findUsers(PageLink pageLink);
 }

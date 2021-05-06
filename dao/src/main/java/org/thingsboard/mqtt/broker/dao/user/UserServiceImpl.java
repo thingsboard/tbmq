@@ -26,6 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
 
 @Service
@@ -119,6 +122,13 @@ public class UserServiceImpl implements UserService {
         UserCredentials userCredentials = userCredentialsDao.findByUserId(userId);
         userCredentialsDao.removeById(userCredentials.getId());
         userDao.removeById(userId);
+    }
+
+    @Override
+    public PageData<User> findUsers(PageLink pageLink) {
+        log.trace("Executing findUsers, pageLink [{}]", pageLink);
+        validatePageLink(pageLink);
+        return userDao.findAll(pageLink);
     }
 
     private UserCredentials saveUserCredentialsAndPasswordHistory(UserCredentials userCredentials) {

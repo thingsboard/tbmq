@@ -15,6 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
 import java.util.*;
@@ -52,4 +57,12 @@ public abstract class DaoUtil {
         return object;
     }
 
+    public static Pageable toPageable(PageLink pageLink) {
+        return PageRequest.of(pageLink.getPage(), pageLink.getPageSize());
+    }
+
+    public static <T> PageData<T> toPageData(Page<? extends ToData<T>> page) {
+        List<T> data = convertDataList(page.getContent());
+        return new PageData<>(data, page.getTotalPages(), page.getTotalElements(), page.hasNext());
+    }
 }

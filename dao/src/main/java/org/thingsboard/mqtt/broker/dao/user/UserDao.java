@@ -16,8 +16,14 @@
 package org.thingsboard.mqtt.broker.dao.user;
 
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.Dao;
+
+import java.util.UUID;
 
 public interface UserDao extends Dao<User> {
     User findByEmail(String email);
+
+    PageData<User> findAll(PageLink pageLink);
 }
