@@ -28,6 +28,7 @@ import java.util.Arrays;
 @SpringBootConfiguration
 @ComponentScan({"org.thingsboard.mqtt.broker.install",
         "org.thingsboard.mqtt.broker.service.install",
+        "org.thingsboard.mqtt.broker.service.user",
         "org.thingsboard.mqtt.broker.dao"})
 public class ThingsboardMqttBrokerInstallApplication {
 
