@@ -46,7 +46,7 @@ listener:
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
   ssl:
-    enabled: "${LISTENER_SSL_ENABLED:true}"
+    enabled: "${LISTENER_SSL_ENABLED:false}"
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
     config:
@@ -211,22 +211,6 @@ spring:
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "true"
 spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
 
-# spring CORS configuration
-spring.mvc.cors:
-  mappings:
-    # Intercept path
-    "[/api/**]":
-      #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
-      allowed-origins: "*"
-      #Comma-separated list of methods to allow. '*' allows all methods.
-      allowed-methods: "*"
-      #Comma-separated list of headers to allow in a request. '*' allows all headers.
-      allowed-headers: "*"
-      #How long, in seconds, the response from a pre-flight request can be cached by clients.
-      max-age: "1800"
-      #Set whether credentials are supported. When not set, credentials are not supported.
-      allow-credentials: "true"
-
 # Security parameters
 security:
   mqtt:
@@ -244,7 +228,6 @@ security:
     tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
-
 
 mqtt:
   keep-alive:
@@ -289,6 +272,22 @@ management:
       exposure:
         # Expose metrics endpoint (use value 'prometheus' to enable prometheus metrics).
         include: '${METRICS_ENDPOINTS_EXPOSE:info}'
+
+# spring CORS configuration
+spring.mvc.cors:
+  mappings:
+    # Intercept path
+    "[/api/**]":
+      #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
+      allowed-origins: "*"
+      #Comma-separated list of methods to allow. '*' allows all methods.
+      allowed-methods: "*"
+      #Comma-separated list of headers to allow in a request. '*' allows all headers.
+      allowed-headers: "*"
+      #How long, in seconds, the response from a pre-flight request can be cached by clients.
+      max-age: "1800"
+      #Set whether credentials are supported. When not set, credentials are not supported.
+      allow-credentials: "true"
 
 swagger:
   api_path_regex: "${SWAGGER_API_PATH_REGEX:/api.*}"
