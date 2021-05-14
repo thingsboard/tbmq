@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 @Builder(toBuilder = true)
 @Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class ClientSessionInfo {
     private final ClientSession clientSession;
     private final long lastUpdateTime;

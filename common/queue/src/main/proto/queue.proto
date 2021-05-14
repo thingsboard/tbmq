@@ -20,10 +20,11 @@ option java_package = "org.thingsboard.mqtt.broker.gen.queue";
 option java_outer_classname = "QueueProtos";
 
 message SessionInfoProto {
-  int64 sessionIdMSB = 1;
-  int64 sessionIdLSB = 2;
-  ClientInfoProto clientInfo = 3;
-  bool persistent = 4;
+  ServiceInfo serviceInfo = 1;
+  int64 sessionIdMSB = 2;
+  int64 sessionIdLSB = 3;
+  ClientInfoProto clientInfo = 4;
+  bool persistent = 5;
 }
 
 message PublishMsgProto {
@@ -53,10 +54,7 @@ message ClientSessionInfoProto {
 
 message ClientSessionEventProto {
   string eventType = 1;
-  int64 sessionIdMSB = 2;
-  int64 sessionIdLSB = 3;
-  ClientInfoProto clientInfo = 4;
-  bool persistent = 5;
+  SessionInfoProto sessionInfo = 2;
 }
 
 message ClientSessionEventResponseProto {

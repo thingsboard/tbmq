@@ -22,8 +22,8 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class ClientSessionEventResponseKafkaSettings {
-    @Value("${queue.kafka.client-session-event-response.topic}")
-    private String topic;
+    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
+    private String topicPrefix;
     @Value("${queue.kafka.client-session-event-response.topic-properties}")
     private String topicProperties;
     @Value("${queue.kafka.client-session-event-response.producer}")

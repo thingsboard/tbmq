@@ -69,6 +69,7 @@ public class ClientSessionEventProcessor {
     private final ClientSessionService clientSessionService;
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final SubscriptionManager subscriptionManager;
+    private final ClientSessionEventFactory eventFactory;
 
     @Value("${queue.client-session-event.consumers-count}")
     private int consumersCount;
@@ -128,27 +129,29 @@ public class ClientSessionEventProcessor {
     }
 
     private Future<Void> processMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
-        ClientSessionEvent clientSessionEvent = ProtoConverter.convertToClientSessionEvent(msg.getValue());
-        String clientId = clientSessionEvent.getClientInfo().getClientId();
+        ClientSessionEvent clientSessionEvent = eventFactory.convertToClientSessionEvent(msg.getValue());
+        String clientId = clientSessionEvent.getClientId();
         return getClientExecutor(clientId).submit(() -> {
-            switch (clientSessionEvent.getEventType()) {
+            switch (clientSessionEvent.getType()) {
                 case CONNECTION_REQUEST:
-                    processConnectionRequest(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo(), clientSessionEvent.isPersistent(), msg.getHeaders());
+                    processConnectionRequest((ConnectionRequestEvent)clientSessionEvent, msg.getHeaders());
                     return null;
                 case DISCONNECTED:
-                    processDisconnected(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo());
+                    processDisconnected((DisconnectedEvent)clientSessionEvent);
                     return null;
                 case TRY_CLEAR_SESSION_REQUEST:
-                    processTryClearSessionRequest(clientSessionEvent.getClientInfo());
+                    processTryClearSessionRequest((TryClearSessionRequestEvent)clientSessionEvent);
                     return null;
                 default:
-                    log.error("Type {} is not supported.", clientSessionEvent.getEventType());
-                    throw new RuntimeException("Type " + clientSessionEvent.getEventType() + " is not supported.");
+                    log.error("Type {} is not supported.", clientSessionEvent.getType());
+                    throw new RuntimeException("Type " + clientSessionEvent.getType() + " is not supported.");
             }
         });
     }
 
-    private void processDisconnected(UUID sessionId, ClientInfo clientInfo) {
+    private void processDisconnected(DisconnectedEvent event) {
+        ClientInfo clientInfo = event.getClientInfo();
+        UUID sessionId = event.getSessionId();
         String clientId = clientInfo.getClientId();
         disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
 
@@ -172,48 +175,51 @@ public class ClientSessionEventProcessor {
 
     }
 
-    private void processConnectionRequest(UUID sessionId, ClientInfo clientInfo, boolean isPersistent, TbQueueMsgHeaders requestHeaders) {
-        String clientId = clientInfo.getClientId();
+    private void processConnectionRequest(ConnectionRequestEvent event, TbQueueMsgHeaders requestHeaders) {
+        SessionInfo sessionInfo = event.getSessionInfo();
+        String clientId = sessionInfo.getClientInfo().getClientId();
+        UUID sessionId = sessionInfo.getSessionId();
         ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
-        if (currentlyConnectedSession != null && currentlyConnectedSession.isConnected()) {
-            UUID currentlyConnectedSessionId = currentlyConnectedSession.getSessionInfo().getSessionId();
-            if (sessionId.equals(currentlyConnectedSessionId)) {
-                log.warn("[{}][{}] Got CONNECT request from already connected session.", clientId, currentlyConnectedSessionId);
-                return;
-            }
-
-            SettableFuture<Void> future = disconnectClientCommandService.startWaitingForDisconnect(sessionId, currentlyConnectedSessionId, clientId);
-            DonAsynchron.withCallbackAndTimeout(future,
-                    unused -> saveClientSession(sessionId, clientInfo, isPersistent, requestHeaders),
-                    t -> {
-                        long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
-                        byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
-                        UUID requestId = bytesToUuid(requestIdHeader);
-                        log.debug("[{}][{}] Failed to process connection request. Reason - {}", clientId, requestId, t.getMessage());
-                        log.trace("Detailed error: ", t);
-                        if (t instanceof TimeoutException) {
-                            getClientExecutor(clientId).execute(() -> disconnectClientCommandService.clearWaitingFuture(sessionId, currentlyConnectedSessionId, clientId));
-                        }
-                        long currentTime = System.currentTimeMillis();
-                        if (requestTime + requestTimeout >= currentTime) {
-                            sendEventResponse(clientId, requestId, requestHeaders, false);
-                        } else {
-                            log.debug("[{}][{}] Connection request timed out.", clientId, requestId);
-                        }
-                    },
-                    requestTimeout, timeoutExecutor, getClientExecutor(clientId));
-
-            log.trace("[{}] Disconnecting currently connected client session, sessionId - {}.", clientId, currentlyConnectedSessionId);
-            // TODO (Cluster Mode): store node topic and send disconnect command there
-            disconnectClientCommandService.disconnectSession(clientId, currentlyConnectedSessionId);
-
-        } else {
-            saveClientSession(sessionId, clientInfo, isPersistent, requestHeaders);
+        if (currentlyConnectedSession == null || !currentlyConnectedSession.isConnected()) {
+            saveClientSession(sessionInfo, requestHeaders);
+            return;
         }
+
+        UUID currentlyConnectedSessionId = currentlyConnectedSession.getSessionInfo().getSessionId();
+        if (sessionId.equals(currentlyConnectedSessionId)) {
+            log.warn("[{}][{}] Got CONNECT request from already connected session.", clientId, currentlyConnectedSessionId);
+            return;
+        }
+
+        SettableFuture<Void> future = disconnectClientCommandService.startWaitingForDisconnect(sessionId, currentlyConnectedSessionId, clientId);
+        DonAsynchron.withCallbackAndTimeout(future,
+                unused -> saveClientSession(sessionInfo, requestHeaders),
+                t -> {
+                    long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
+                    byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
+                    UUID requestId = bytesToUuid(requestIdHeader);
+                    log.debug("[{}][{}] Failed to process connection request. Reason - {}", clientId, requestId, t.getMessage());
+                    log.trace("Detailed error: ", t);
+                    if (t instanceof TimeoutException) {
+                        getClientExecutor(clientId).execute(() -> disconnectClientCommandService.clearWaitingFuture(sessionId, currentlyConnectedSessionId, clientId));
+                    }
+                    long currentTime = System.currentTimeMillis();
+                    if (requestTime + requestTimeout >= currentTime) {
+                        sendEventResponse(clientId, requestId, requestHeaders, false);
+                    } else {
+                        log.debug("[{}][{}] Connection request timed out.", clientId, requestId);
+                    }
+                },
+                requestTimeout, timeoutExecutor, getClientExecutor(clientId));
+
+        log.trace("[{}] Disconnecting currently connected client session, sessionId - {}.", clientId, currentlyConnectedSessionId);
+        // TODO (Cluster Mode): store node topic and send disconnect command there
+        disconnectClientCommandService.disconnectSession(clientId, currentlyConnectedSessionId);
+
     }
 
-    private void processTryClearSessionRequest(ClientInfo clientInfo) {
-        String clientId = clientInfo.getClientId();
+    private void processTryClearSessionRequest(TryClearSessionRequestEvent event) {
+        String clientId = event.getClientId();
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         if (clientSession.isConnected()) {
             log.info("[{}} Is connected now, ignoring {}.", clientId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
@@ -224,7 +230,8 @@ public class ClientSessionEventProcessor {
         }
     }
 
-    private void saveClientSession(UUID sessionId, ClientInfo clientInfo, boolean isPersistent, TbQueueMsgHeaders requestHeaders) {
+    private void saveClientSession(SessionInfo sessionInfo, TbQueueMsgHeaders requestHeaders) {
+        ClientInfo clientInfo = sessionInfo.getClientInfo();
         long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
         byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
         UUID requestId = bytesToUuid(requestIdHeader);
@@ -232,11 +239,7 @@ public class ClientSessionEventProcessor {
         if (requestTime + requestTimeout >= currentTime) {
             ClientSession clientSession = ClientSession.builder()
                     .connected(true)
-                    .sessionInfo(SessionInfo.builder()
-                            .sessionId(sessionId)
-                            .persistent(isPersistent)
-                            .clientInfo(clientInfo)
-                            .build())
+                    .sessionInfo(sessionInfo)
                     .build();
             clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession);
 

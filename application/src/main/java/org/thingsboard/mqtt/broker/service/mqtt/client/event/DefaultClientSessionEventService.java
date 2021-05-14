@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.RESPONSE_TOPIC_HEADER;
 
 @Slf4j
 @Service
@@ -78,6 +79,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     private long maxRequestTimeout;
 
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientSessionEventFactory eventFactory;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventProducer;
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseConsumer;
@@ -85,7 +88,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     @PostConstruct
     public void init() {
         this.eventProducer = clientSessionEventQueueFactory.createEventProducer();
-        this.eventResponseConsumer = clientSessionEventQueueFactory.createEventResponseConsumer();
+        this.eventResponseConsumer = clientSessionEventQueueFactory.createEventResponseConsumer(serviceInfoProvider.getServiceId());
         startProcessingEventResponses();
         startStaleRequestsCleanup();
     }
@@ -93,25 +96,20 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     @Override
     public ListenableFuture<Boolean> connect(SessionInfo sessionInfo) {
         if (tickSize.get() > maxPendingRequests) {
-            return Futures.immediateFailedFuture(new RuntimeException("Pending request map is full!"));
+            return Futures.immediateFailedFuture(new RuntimeException("Cannot send CONNECTION_REQUEST. Pending request map is full!"));
         }
-        ClientSessionEvent connectionRequestEvent = ClientSessionEvent.builder().eventType(ClientSessionEventType.CONNECTION_REQUEST)
-                .sessionId(sessionInfo.getSessionId()).clientInfo(sessionInfo.getClientInfo()).persistent(sessionInfo.isPersistent()).build();
-        return sendEvent(sessionInfo.getClientInfo().getClientId(), ProtoConverter.convertToClientSessionEventProto(connectionRequestEvent), true);
+
+        return sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createConnectionRequestEventProto(sessionInfo), true);
     }
 
     @Override
     public void disconnect(ClientInfo clientInfo, UUID sessionId) {
-        ClientSessionEvent disconnectEvent = ClientSessionEvent.builder().eventType(ClientSessionEventType.DISCONNECTED)
-                .sessionId(sessionId).clientInfo(clientInfo).persistent(false).build();
-        sendEvent(clientInfo.getClientId(), ProtoConverter.convertToClientSessionEventProto(disconnectEvent), false);
+        sendEvent(clientInfo.getClientId(), eventFactory.createDisconnectedEventProto(clientInfo, sessionId), false);
     }
 
     @Override
     public void tryClear(SessionInfo sessionInfo) {
-        ClientSessionEvent clearRequestEvent = ClientSessionEvent.builder().eventType(ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST)
-                .sessionId(sessionInfo.getSessionId()).clientInfo(sessionInfo.getClientInfo()).persistent(false).build();
-        sendEvent(sessionInfo.getClientInfo().getClientId(), ProtoConverter.convertToClientSessionEventProto(clearRequestEvent), false);
+        sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
     }
 
     private ListenableFuture<Boolean> sendEvent(String clientId, QueueProtos.ClientSessionEventProto clientSessionEventProto, boolean isAwaitingResponse) {
@@ -119,6 +117,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         UUID requestId = UUID.randomUUID();
         eventRequest.getHeaders().put(REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
         eventRequest.getHeaders().put(REQUEST_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
+        eventRequest.getHeaders().put(RESPONSE_TOPIC_HEADER, BytesUtil.stringToBytes(eventResponseConsumer.getTopic()));
 
         SettableFuture<Boolean> future = SettableFuture.create();
         if (isAwaitingResponse) {

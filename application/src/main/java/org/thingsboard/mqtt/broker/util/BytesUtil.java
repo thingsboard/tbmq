@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.util;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public class BytesUtil {
@@ -41,5 +42,9 @@ public class BytesUtil {
 
     public static long bytesToLong(byte[] bytes) {
         return ByteBuffer.wrap(bytes).getLong();
+    }
+
+    public static byte[] stringToBytes(String string) {
+        return string.getBytes(StandardCharsets.UTF_8);
     }
 }

@@ -76,20 +76,21 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSessionEventResponseSettings.getProducerProperties()));
         producerBuilder.clientId("client-session-event-response-producer");
-        producerBuilder.topic(clientSessionEventResponseSettings.getTopic());
+        producerBuilder.topic(clientSessionEventResponseSettings.getTopicPrefix());
         producerBuilder.topicConfigs(getConfigs(clientSessionEventResponseSettings.getTopicProperties()));
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> createEventResponseConsumer() {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> createEventResponseConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(clientSessionEventResponseSettings.getConsumerProperties()));
-        consumerBuilder.topic(clientSessionEventResponseSettings.getTopic());
+        consumerBuilder.topic(clientSessionEventResponseSettings.getTopicPrefix());
+//        consumerBuilder.topic(clientSessionEventResponseSettings.getTopicPrefix() + "." + serviceId);
         consumerBuilder.topicConfigs(getConfigs(clientSessionEventResponseSettings.getTopicProperties()));
-        consumerBuilder.clientId("client-session-event-response-consumer");
-        consumerBuilder.groupId("client-session-event-response-consumer-group");
+        consumerBuilder.clientId("client-session-event-response-consumer-" + serviceId);
+        consumerBuilder.groupId("client-session-event-response-consumer-group-" + serviceId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionEventResponseProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

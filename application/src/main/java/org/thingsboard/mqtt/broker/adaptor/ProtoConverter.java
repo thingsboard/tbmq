@@ -80,6 +80,7 @@ public class ProtoConverter {
     public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
         return QueueProtos.SessionInfoProto.newBuilder()
+                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
                 .setPersistent(sessionInfo.isPersistent())
@@ -90,6 +91,7 @@ public class ProtoConverter {
     public static SessionInfo convertToSessionInfo(QueueProtos.SessionInfoProto sessionInfoProto) {
         QueueProtos.ClientInfoProto clientInfoProto = sessionInfoProto.getClientInfo();
         return SessionInfo.builder()
+                .serviceId(sessionInfoProto.getServiceInfo() != null ? sessionInfoProto.getServiceInfo().getServiceId() : null)
                 .sessionId(new UUID(sessionInfoProto.getSessionIdMSB(), sessionInfoProto.getSessionIdLSB()))
                 .persistent(sessionInfoProto.getPersistent())
                 .clientInfo(convertToClientInfo(clientInfoProto))
@@ -104,6 +106,9 @@ public class ProtoConverter {
     }
 
     public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
+        if (clientInfoProto == null) {
+            return null;
+        }
         return ClientInfo.builder()
                 .clientId(clientInfoProto.getClientId())
                 .type(ClientType.valueOf(clientInfoProto.getClientType()))
@@ -135,35 +140,6 @@ public class ProtoConverter {
 
     public static QueueProtos.LastPublishCtxProto createLastPublishCtxProto(int packetId) {
         return QueueProtos.LastPublishCtxProto.newBuilder().setPacketId(packetId).build();
-    }
-
-    public static QueueProtos.ClientSessionEventProto convertToClientSessionEventProto(ClientSessionEvent clientSessionEvent) {
-        ClientInfo clientInfo = clientSessionEvent.getClientInfo();
-        QueueProtos.ClientInfoProto clientInfoProto = clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
-                .setClientId(clientInfo.getClientId())
-                .setClientType(clientInfo.getType().toString())
-                .build() : null;
-        return QueueProtos.ClientSessionEventProto.newBuilder()
-                .setEventType(clientSessionEvent.getEventType().toString())
-                .setSessionIdMSB(clientSessionEvent.getSessionId().getMostSignificantBits())
-                .setSessionIdLSB(clientSessionEvent.getSessionId().getLeastSignificantBits())
-                .setClientInfo(clientInfoProto)
-                .setPersistent(clientSessionEvent.isPersistent())
-                .build();
-    }
-
-    public static ClientSessionEvent convertToClientSessionEvent(QueueProtos.ClientSessionEventProto clientSessionEventProto) {
-        QueueProtos.ClientInfoProto clientInfoProto = clientSessionEventProto.getClientInfo();
-        ClientInfo clientInfo = clientInfoProto != null ? ClientInfo.builder()
-                .clientId(clientInfoProto.getClientId())
-                .type(ClientType.valueOf(clientInfoProto.getClientType()))
-                .build() : null;
-        return ClientSessionEvent.builder()
-                .eventType(ClientSessionEventType.valueOf(clientSessionEventProto.getEventType()))
-                .sessionId(new UUID(clientSessionEventProto.getSessionIdMSB(), clientSessionEventProto.getSessionIdLSB()))
-                .clientInfo(clientInfo)
-                .persistent(clientSessionEventProto.getPersistent())
-                .build();
     }
 
     public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId) {

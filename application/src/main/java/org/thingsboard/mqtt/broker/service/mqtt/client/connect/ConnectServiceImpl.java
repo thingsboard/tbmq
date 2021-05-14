@@ -25,6 +25,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -77,6 +78,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final KeepAliveService keepAliveService;
     private final DisconnectService disconnectService;
     private final PostConnectService postConnectService;
+    private final ServiceInfoProvider serviceInfoProvider;
 
     @Override
     public void connect(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
@@ -184,7 +186,9 @@ public class ConnectServiceImpl implements ConnectService {
                 .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
                 .orElse(new ClientInfo(clientId, ClientType.DEVICE));
         boolean isPersistentSession = !msg.variableHeader().isCleanSession();
-        return SessionInfo.builder().sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
+        return SessionInfo.builder()
+                .serviceId(serviceInfoProvider.getServiceId())
+                .sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
     }
 
     private void validate(ClientSessionCtx ctx, MqttConnectMessage msg) {

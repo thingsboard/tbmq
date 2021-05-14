@@ -48,6 +48,8 @@ import java.util.stream.IntStream;
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class SubscriptionTriePerformanceTest {
+    private static final String SERVICE_ID = "serviceId";
+
     private static final int FIRST_LEVEL_SEGMENTS = 50;
     private static final int SECOND_LEVEL_SEGMENTS = 100;
     private static final int SINGLE_LEVEL_WILDCARDS_PERCENTAGE = 10;
@@ -151,7 +153,7 @@ public class SubscriptionTriePerformanceTest {
                             sessionInfo -> sessionInfoSubscriptions.sessionInfo.getSessionId().equals(sessionInfo.getSessionId()));
                 }
             } else {
-                SessionInfo sessionInfo = new SessionInfo(UUID.randomUUID(), r.nextBoolean(),
+                SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
                         new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE));
                 String randomTopicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
                 subscriptionTrie.put(randomTopicFilter, sessionInfo);
@@ -167,7 +169,7 @@ public class SubscriptionTriePerformanceTest {
     private void fillSubscriptionTrie(List<String> topicFilters) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         for (int i = 0; i < NUMBER_OF_SUBSCRIBERS; i++) {
-            SessionInfo sessionInfo = new SessionInfo(UUID.randomUUID(), r.nextBoolean(),
+            SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
                     new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE));
             int subscriptionsCount = r.nextInt(MAX_SUBSCRIPTIONS_PER_SESSION) + 1;
             SessionInfoSubscriptions sessionInfoSubscriptions = new SessionInfoSubscriptions(sessionInfo, new HashSet<>());
