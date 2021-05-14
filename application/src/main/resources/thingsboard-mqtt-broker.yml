@@ -140,7 +140,7 @@ queue:
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
-      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:2;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
     application-persisted-msg:
@@ -259,6 +259,21 @@ mqtt:
         clean-up-zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
         sql:
           session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_SESSION_CTX_PAGE_SIZE:1000}"
+
+# Zookeeper connection parameters. Used for service discovery.
+zk:
+  # Enable/disable zookeeper discovery service.
+  enabled: "${ZOOKEEPER_ENABLED:false}"
+  # Zookeeper connect string
+  url: "${ZOOKEEPER_URL:localhost:2181}"
+  # Zookeeper retry interval in milliseconds
+  retry_interval_ms: "${ZOOKEEPER_RETRY_INTERVAL_MS:3000}"
+  # Zookeeper connection timeout in milliseconds
+  connection_timeout_ms: "${ZOOKEEPER_CONNECTION_TIMEOUT_MS:3000}"
+  # Zookeeper session timeout in milliseconds
+  session_timeout_ms: "${ZOOKEEPER_SESSION_TIMEOUT_MS:3000}"
+  # Name of the directory in zookeeper 'filesystem'
+  zk_dir: "${ZOOKEEPER_NODES_DIR:/thingsboard-mqtt-broker}"
 
 stats:
   enabled: "${STATS_ENABLED:true}"
