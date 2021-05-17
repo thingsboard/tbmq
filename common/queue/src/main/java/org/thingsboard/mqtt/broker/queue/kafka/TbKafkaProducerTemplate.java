@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.Builder;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -29,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -38,38 +38,44 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
 
     private final KafkaProducer<String, byte[]> producer;
 
-    @Getter
-    private final String topic;
+    private final String defaultTopic;
 
     private final TbQueueAdmin admin;
     private final Map<String, String> topicConfigs;
 
     @Builder
-    private TbKafkaProducerTemplate(Properties properties, String topic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
+    private TbKafkaProducerTemplate(Properties properties, String defaultTopic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         if (!StringUtils.isEmpty(clientId)) {
             properties.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
         }
         this.producer = new KafkaProducer<>(properties);
-        this.topic = topic;
         this.admin = admin;
+        this.defaultTopic = defaultTopic;
         this.topicConfigs = topicConfigs;
     }
 
     @Override
-    public void init() {
+    public String getDefaultTopic() {
+        return defaultTopic;
     }
 
     @Override
     public void send(T msg, TbQueueCallback callback) {
-        admin.createTopicIfNotExists(topic, topicConfigs);
+        if (StringUtils.isEmpty(defaultTopic)) {
+            throw new RuntimeException("No default topic defined for producer.");
+        }
+        send(defaultTopic, msg, callback);
+    }
 
-        String key = msg.getKey();
-        byte[] data = msg.getData();
-        ProducerRecord<String, byte[]> record;
-        Iterable<Header> headers = msg.getHeaders().getData().entrySet().stream().map(e -> new RecordHeader(e.getKey(), e.getValue())).collect(Collectors.toList());
-        record = new ProducerRecord<>(topic, null, key, data, headers);
+    @Override
+    public void send(String topic, T msg, TbQueueCallback callback) {
+        if (admin != null && topicConfigs != null) {
+            admin.createTopicIfNotExists(topic, topicConfigs);
+        }
+
+        ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, null, msg.getKey(), msg.getData(), extractHeaders(msg));
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
                 if (callback != null) {
@@ -83,6 +89,12 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
                 }
             }
         });
+    }
+
+    private List<Header> extractHeaders(T msg) {
+        return msg.getHeaders().getData().entrySet().stream()
+                .map(e -> new RecordHeader(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
     }
 
     @Override
