@@ -57,7 +57,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(publishMsgSettings.getProducerProperties()));
         producerBuilder.clientId("publish-msg-producer");
-        producerBuilder.topic(publishMsgSettings.getTopic());
+        producerBuilder.defaultTopic(publishMsgSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();

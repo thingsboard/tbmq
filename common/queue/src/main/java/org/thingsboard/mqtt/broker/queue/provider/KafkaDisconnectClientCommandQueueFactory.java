@@ -59,7 +59,7 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(disconnectClientCommandSettings.getProducerProperties()));
         producerBuilder.clientId("disconnect-client-command-producer");
-        producerBuilder.topic(disconnectClientCommandSettings.getTopic());
+        producerBuilder.defaultTopic(disconnectClientCommandSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();

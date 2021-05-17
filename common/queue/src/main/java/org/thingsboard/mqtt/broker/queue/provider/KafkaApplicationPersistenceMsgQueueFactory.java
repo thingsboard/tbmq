@@ -66,7 +66,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("application-persisted-msg-producer-" + clientId);
-        producerBuilder.topic(TOPIC_PREFIX + clientId);
+        producerBuilder.defaultTopic(TOPIC_PREFIX + clientId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();

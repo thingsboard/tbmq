@@ -58,7 +58,7 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(devicePersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("device-persisted-msg-producer");
-        producerBuilder.topic(devicePersistenceMsgSettings.getTopic());
+        producerBuilder.defaultTopic(devicePersistenceMsgSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();

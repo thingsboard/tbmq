@@ -50,7 +50,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSessionEventSettings.getProducerProperties()));
         producerBuilder.clientId("client-session-event-producer");
-        producerBuilder.topic(clientSessionEventSettings.getTopic());
+        producerBuilder.defaultTopic(clientSessionEventSettings.getTopic());
         producerBuilder.topicConfigs(getConfigs(clientSessionEventSettings.getTopicProperties()));
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();

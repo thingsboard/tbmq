@@ -65,7 +65,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSubscriptionsSettings.getProducerProperties()));
         producerBuilder.clientId("client-subscriptions-producer");
-        producerBuilder.topic(clientSubscriptionsSettings.getTopic());
+        producerBuilder.defaultTopic(clientSubscriptionsSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
