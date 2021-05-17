@@ -174,7 +174,7 @@ queue:
       consumer: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_PRODUCER_CONFIG:}"
     disconnect-client-command:
-      topic: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC:disconnect_client_command}"
+      topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:disconnect_client_command}"
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"

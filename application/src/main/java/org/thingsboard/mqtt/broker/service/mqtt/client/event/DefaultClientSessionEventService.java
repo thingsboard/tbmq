@@ -87,7 +87,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
 
     @PostConstruct
     public void init() {
-        this.eventProducer = clientSessionEventQueueFactory.createEventProducer();
+        this.eventProducer = clientSessionEventQueueFactory.createEventProducer(serviceInfoProvider.getServiceId());
         this.eventResponseConsumer = clientSessionEventQueueFactory.createEventResponseConsumer(serviceInfoProvider.getServiceId());
         startProcessingEventResponses();
         startStaleRequestsCleanup();
@@ -112,29 +112,25 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
     }
 
-    private ListenableFuture<Boolean> sendEvent(String clientId, QueueProtos.ClientSessionEventProto clientSessionEventProto, boolean isAwaitingResponse) {
-        TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = new TbProtoQueueMsg<>(clientId, clientSessionEventProto);
+    private ListenableFuture<Boolean> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto, boolean isAwaitingResponse) {
         UUID requestId = UUID.randomUUID();
-        eventRequest.getHeaders().put(REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
-        eventRequest.getHeaders().put(REQUEST_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
-        eventRequest.getHeaders().put(RESPONSE_TOPIC_HEADER, BytesUtil.stringToBytes(eventResponseConsumer.getTopic()));
+        TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);
 
         SettableFuture<Boolean> future = SettableFuture.create();
         if (isAwaitingResponse) {
             EventFuture eventFuture = new EventFuture(tickTs.get() + maxRequestTimeout, future);
             pendingRequests.putIfAbsent(requestId, eventFuture);
         }
-        String eventType = clientSessionEventProto.getEventType();
-        log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventType, requestId);
+        log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventProto.getEventType(), requestId);
         eventProducer.send(eventRequest, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                log.trace("[{}][{}][{}] Request sent: {}", clientId, eventType, requestId, metadata);
+                log.trace("[{}][{}][{}] Request sent: {}", clientId, eventProto.getEventType(), requestId, metadata);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.debug("[{}][{}][{}] Failed to send request. Reason - {}.", clientId, eventType, requestId, t.getMessage());
+                log.debug("[{}][{}][{}] Failed to send request. Reason - {}.", clientId, eventProto.getEventType(), requestId, t.getMessage());
                 if (isAwaitingResponse) {
                     pendingRequests.remove(requestId);
                     future.setException(t);
@@ -142,6 +138,14 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             }
         });
         return future;
+    }
+
+    private TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> generateRequest(String clientId, QueueProtos.ClientSessionEventProto clientSessionEventProto, UUID requestId) {
+        TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = new TbProtoQueueMsg<>(clientId, clientSessionEventProto);
+        eventRequest.getHeaders().put(REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
+        eventRequest.getHeaders().put(REQUEST_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
+        eventRequest.getHeaders().put(RESPONSE_TOPIC_HEADER, BytesUtil.stringToBytes(eventResponseConsumer.getTopic()));
+        return eventRequest;
     }
 
 

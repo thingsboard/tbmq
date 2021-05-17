@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -40,12 +41,14 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class DisconnectClientCommandProcessor {
     private final ExecutorService disconnectExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-client-command-processor"));
-    private final ExecutorService consumerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
+    private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
     private volatile boolean stopped = false;
 
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
     private final ClientSessionCtxService clientSessionCtxService;
     private final DisconnectService disconnectService;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final DisconnectClientCommandHelper helper;
 
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
@@ -54,32 +57,33 @@ public class DisconnectClientCommandProcessor {
 
     @PostConstruct
     public void init() {
-        this.consumer = disconnectClientCommandQueueFactory.createConsumer();
-        this.consumer.subscribe();
-        consumerExecutor.execute(() -> {
-            while (!stopped) {
-                try {
-                    List<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> msgs = consumer.poll(pollDuration);
-                    if (msgs.isEmpty()) {
-                        continue;
-                    }
-                    for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
-                        disconnectExecutor.execute(() -> processClientDisconnect(msg));
-                    }
-                    consumer.commit();
-                } catch (Exception e) {
-                    if (!stopped) {
-                        log.error("Failed to process messages from queue.", e);
-                        try {
-                            Thread.sleep(pollDuration);
-                        } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
-                        }
+        initConsumer();
+        consumerExecutor.execute(this::processDisconnectCommands);
+    }
+
+    private void processDisconnectCommands() {
+        while (!stopped) {
+            try {
+                List<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> msgs = consumer.poll(pollDuration);
+                if (msgs.isEmpty()) {
+                    continue;
+                }
+                for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
+                    disconnectExecutor.execute(() -> processClientDisconnect(msg));
+                }
+                consumer.commit();
+            } catch (Exception e) {
+                if (!stopped) {
+                    log.error("Failed to process messages from queue.", e);
+                    try {
+                        Thread.sleep(pollDuration);
+                    } catch (InterruptedException e2) {
+                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
                     }
                 }
             }
-            log.info("Disconnect Client Command Consumer stopped.");
-        });
+        }
+        log.info("Disconnect Client Command Consumer stopped.");
     }
 
     private void processClientDisconnect(TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg) {
@@ -100,6 +104,13 @@ public class DisconnectClientCommandProcessor {
             log.warn("[{}][{}] Failed to process disconnect command. Exception - {}, reason - {}.", clientId, sessionId, e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
         }
+    }
+
+    private void initConsumer() {
+        String serviceId = serviceInfoProvider.getServiceId();
+        String topic = helper.getServiceTopic(serviceId);
+        this.consumer = disconnectClientCommandQueueFactory.createConsumer(topic, serviceId);
+        this.consumer.subscribe();
     }
 
     @PreDestroy

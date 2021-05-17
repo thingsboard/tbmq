@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -43,13 +44,16 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class DisconnectClientCommandServiceImpl implements DisconnectClientCommandService {
     private final ConcurrentMap<String, SessionDisconnectFuture> awaitingClientDisconnectMap = new ConcurrentHashMap<>();
+
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final DisconnectClientCommandHelper helper;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> clientDisconnectCommandProducer;
 
     @PostConstruct
     public void init() {
-        this.clientDisconnectCommandProducer = disconnectClientCommandQueueFactory.createProducer();
+        this.clientDisconnectCommandProducer = disconnectClientCommandQueueFactory.createProducer(serviceInfoProvider.getServiceId());
     }
 
     @Override
@@ -97,9 +101,10 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
     }
 
     @Override
-    public void disconnectSession(String clientId, UUID sessionId) {
+    public void disconnectSession(String serviceId, String clientId, UUID sessionId) {
         QueueProtos.DisconnectClientCommandProto disconnectCommand = ProtoConverter.createDisconnectClientCommandProto(sessionId);
-        clientDisconnectCommandProducer.send(new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
+        String topic = helper.getServiceTopic(serviceId);
+        clientDisconnectCommandProducer.send(topic, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}] Disconnect command for session {} sent successfully.", clientId, sessionId);

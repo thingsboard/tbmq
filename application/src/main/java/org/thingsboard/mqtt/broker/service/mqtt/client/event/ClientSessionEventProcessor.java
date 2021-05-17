@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
@@ -49,10 +49,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.RESPONSE_TOPIC_HEADER;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToLong;
+import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
 
 @Slf4j
@@ -60,9 +64,9 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
 @RequiredArgsConstructor
 public class ClientSessionEventProcessor {
 
+    private ExecutorService consumersExecutor;
+    private List<ExecutorService> clientExecutors;
     private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("client-session-event-consumer"));
-    private final List<ExecutorService> clientExecutors = new ArrayList<>();
     private volatile boolean stopped = false;
 
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
@@ -70,13 +74,14 @@ public class ClientSessionEventProcessor {
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final SubscriptionManager subscriptionManager;
     private final ClientSessionEventFactory eventFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
 
     @Value("${queue.client-session-event.consumers-count}")
     private int consumersCount;
     @Value("${queue.client-session-event.poll-interval}")
     private long pollDuration;
     @Value("${queue.client-session-event.client-threads-count}")
-    private long clientThreadsCount;
+    private int clientThreadsCount;
 
     @Value("${queue.client-session-event-response.max-request-timeout}")
     private long requestTimeout;
@@ -87,45 +92,53 @@ public class ClientSessionEventProcessor {
     @PostConstruct
     public void init() {
         this.clientThreadsCount = clientThreadsCount <= 0 ? Runtime.getRuntime().availableProcessors() : clientThreadsCount;
+        // TODO: maybe it's better to have an actor for each client and push every client-related action to that actor's queue?
+        // TODO: or publish all client-related events back to the Kafka queue
+        this.clientExecutors = IntStream.range(0, clientThreadsCount).boxed()
+                .map(i -> Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-event-executor-" + i)))
+                .collect(Collectors.toList());
         for (int i = 0; i < clientThreadsCount; i++) {
-            // TODO: maybe it's better to have an actor for each client and push every client-related action to that actor's queue?
             clientExecutors.add(Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-event-executor-" + i)));
         }
-        this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer();
+        this.consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
+        this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
         for (int i = 0; i < consumersCount; i++) {
-            eventConsumers.add(clientSessionEventQueueFactory.createEventConsumer(Integer.toString(i)));
-        }
-        for (TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventConsumer : eventConsumers) {
-            eventConsumer.subscribe();
-            launchConsumer(eventConsumer);
+            initConsumer(i);
         }
     }
 
-    private void launchConsumer(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer) {
-        consumersExecutor.submit(() -> {
-            while (!stopped) {
-                try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
-                    if (msgs.isEmpty()) {
-                        continue;
-                    }
-                    for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
-                        processMsg(msg).get();
-                        consumer.commit(msg.getPartition(), msg.getOffset() + 1);
-                    }
-                } catch (Exception e) {
-                    if (!stopped) {
-                        log.error("Failed to process messages from queue.", e);
-                        try {
-                            Thread.sleep(pollDuration);
-                        } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
-                        }
+    private void initConsumer(int consumerId) {
+        String consumerName = serviceInfoProvider.getServiceId() + "-" + consumerId;
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerName);
+        eventConsumers.add(eventConsumer);
+        eventConsumer.subscribe();
+        consumersExecutor.submit(() -> processClientSessionEvents(eventConsumer));
+    }
+
+    private void processClientSessionEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer) {
+        while (!stopped) {
+            try {
+                List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
+                if (msgs.isEmpty()) {
+                    continue;
+                }
+                // TODO: if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
+                for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
+                    processMsg(msg).get();
+                    consumer.commit(msg.getPartition(), msg.getOffset() + 1);
+                }
+            } catch (Exception e) {
+                if (!stopped) {
+                    log.error("Failed to process messages from queue.", e);
+                    try {
+                        Thread.sleep(pollDuration);
+                    } catch (InterruptedException e2) {
+                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
                     }
                 }
             }
-            log.info("Client Session Event Consumer stopped.");
-        });
+        }
+        log.info("Client Session Event Consumer stopped.");
     }
 
     private Future<Void> processMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
@@ -196,25 +209,22 @@ public class ClientSessionEventProcessor {
                 unused -> saveClientSession(sessionInfo, requestHeaders),
                 t -> {
                     long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
-                    byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
-                    UUID requestId = bytesToUuid(requestIdHeader);
-                    log.debug("[{}][{}] Failed to process connection request. Reason - {}", clientId, requestId, t.getMessage());
+                    UUID requestId = getRequestId(requestHeaders);
+                    log.debug("[{}][{}] Failed to process connection request. Exception - {}, reason - {}", clientId, requestId, t.getClass().getSimpleName(), t.getMessage());
                     log.trace("Detailed error: ", t);
                     if (t instanceof TimeoutException) {
                         getClientExecutor(clientId).execute(() -> disconnectClientCommandService.clearWaitingFuture(sessionId, currentlyConnectedSessionId, clientId));
                     }
-                    long currentTime = System.currentTimeMillis();
-                    if (requestTime + requestTimeout >= currentTime) {
-                        sendEventResponse(clientId, requestId, requestHeaders, false);
-                    } else {
+                    if (isRequestTimedOut(requestTime)) {
                         log.debug("[{}][{}] Connection request timed out.", clientId, requestId);
+                    } else {
+                        sendEventResponse(clientId, requestId, requestHeaders, false);
                     }
                 },
                 requestTimeout, timeoutExecutor, getClientExecutor(clientId));
 
         log.trace("[{}] Disconnecting currently connected client session, sessionId - {}.", clientId, currentlyConnectedSessionId);
-        // TODO (Cluster Mode): store node topic and send disconnect command there
-        disconnectClientCommandService.disconnectSession(clientId, currentlyConnectedSessionId);
+        disconnectClientCommandService.disconnectSession(sessionInfo.getServiceId(), clientId, currentlyConnectedSessionId);
 
     }
 
@@ -233,37 +243,46 @@ public class ClientSessionEventProcessor {
     private void saveClientSession(SessionInfo sessionInfo, TbQueueMsgHeaders requestHeaders) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
         long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
-        byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
-        UUID requestId = bytesToUuid(requestIdHeader);
-        long currentTime = System.currentTimeMillis();
-        if (requestTime + requestTimeout >= currentTime) {
-            ClientSession clientSession = ClientSession.builder()
-                    .connected(true)
-                    .sessionInfo(sessionInfo)
-                    .build();
-            clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession);
+        UUID requestId = getRequestId(requestHeaders);
 
-            sendEventResponse(clientInfo.getClientId(), requestId, requestHeaders, true);
-        } else {
+        if (isRequestTimedOut(requestTime)) {
             log.debug("[{}][{}] Connection request timed out.", clientInfo.getClientId(), requestId);
+            return;
         }
+
+        ClientSession clientSession = ClientSession.builder()
+                .connected(true)
+                .sessionInfo(sessionInfo)
+                .build();
+        clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession);
+
+        sendEventResponse(clientInfo.getClientId(), requestId, requestHeaders, true);
     }
 
     private void sendEventResponse(String clientId, UUID requestId, TbQueueMsgHeaders requestHeaders, boolean successfulConnect) {
         QueueProtos.ClientSessionEventResponseProto response = QueueProtos.ClientSessionEventResponseProto.newBuilder()
                 .setSuccess(successfulConnect).build();
-        eventResponseProducer.send(new TbProtoQueueMsg<>(clientId, response, requestHeaders), new TbQueueCallback() {
+        String responseTopic = bytesToString(requestHeaders.get(RESPONSE_TOPIC_HEADER));
+        eventResponseProducer.send(responseTopic, new TbProtoQueueMsg<>(clientId, response, requestHeaders), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}][{}] Successfully sent response.", clientId, requestId);
             }
-
             @Override
             public void onFailure(Throwable t) {
-                log.debug("[{}][{}] Failed to sent response. Reason - {}.", clientId, requestId, t.getMessage());
+                log.debug("[{}][{}] Failed to send response. Exception - {}, reason - {}.", clientId, requestId, t.getClass().getSimpleName(), t.getMessage());
                 log.trace("Detailed error: ", t);
             }
         });
+    }
+
+    private UUID getRequestId(TbQueueMsgHeaders requestHeaders) {
+        byte[] requestIdHeader = requestHeaders.get(REQUEST_ID_HEADER);
+        return bytesToUuid(requestIdHeader);
+    }
+
+    private boolean isRequestTimedOut(long requestTime) {
+        return requestTime + requestTimeout < System.currentTimeMillis();
     }
 
     private ExecutorService getClientExecutor(String clientId) {
@@ -276,12 +295,16 @@ public class ClientSessionEventProcessor {
     public void destroy() {
         stopped = true;
         eventConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
-        consumersExecutor.shutdownNow();
+        if (consumersExecutor != null) {
+            consumersExecutor.shutdownNow();
+        }
         if (eventResponseProducer != null) {
             eventResponseProducer.stop();
         }
-        for (ExecutorService clientExecutor : clientExecutors) {
-            clientExecutor.shutdownNow();
+        if (clientExecutors != null) {
+            for (ExecutorService clientExecutor : clientExecutors) {
+                clientExecutor.shutdownNow();
+            }
         }
         timeoutExecutor.shutdownNow();
     }

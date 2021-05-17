@@ -55,24 +55,23 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer() {
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(disconnectClientCommandSettings.getProducerProperties()));
-        producerBuilder.clientId("disconnect-client-command-producer");
-        producerBuilder.defaultTopic(disconnectClientCommandSettings.getTopic());
+        producerBuilder.clientId("disconnect-client-command-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer() {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer(String topic, String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(disconnectClientCommandSettings.getConsumerProperties()));
-        consumerBuilder.topic(disconnectClientCommandSettings.getTopic());
+        consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("disconnect-client-command-consumer");
-        consumerBuilder.groupId("disconnect-client-command-consumer-group");
+        consumerBuilder.clientId("disconnect-client-command-" + serviceId + "-consumer");
+        consumerBuilder.groupId("disconnect-client-command-" + serviceId + "-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

@@ -47,4 +47,8 @@ public class BytesUtil {
     public static byte[] stringToBytes(String string) {
         return string.getBytes(StandardCharsets.UTF_8);
     }
+
+    public static String bytesToString(byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
 }

@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface DisconnectClientCommandQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer(String serviceId);
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer();
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer(String topic, String serviceId);
 
 }

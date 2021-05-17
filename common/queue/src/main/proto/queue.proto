@@ -52,6 +52,7 @@ message ClientSessionInfoProto {
   int64 lastUpdatedTime = 3;
 }
 
+// TODO: think if we can use 'oneof'
 message ClientSessionEventProto {
   string eventType = 1;
   SessionInfoProto sessionInfo = 2;

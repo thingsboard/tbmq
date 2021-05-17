@@ -15,16 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
-import com.google.common.util.concurrent.SettableFuture;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
 
-import java.util.UUID;
+@Service
+@RequiredArgsConstructor
+public class DisconnectClientCommandHelperImpl implements DisconnectClientCommandHelper {
+    private final DisconnectClientCommandKafkaSettings disconnectClientCommandSettings;
 
-public interface DisconnectClientCommandService {
-    SettableFuture<Void> startWaitingForDisconnect(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
-
-    void clearWaitingFuture(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
-
-    void notifyWaitingSession(String clientId, UUID sessionId);
-
-    void disconnectSession(String serviceId, String clientId, UUID sessionId);
+    @Override
+    public String getServiceTopic(String serviceId) {
+        return disconnectClientCommandSettings.getTopicPrefix() + "." + serviceId;
+    }
 }
