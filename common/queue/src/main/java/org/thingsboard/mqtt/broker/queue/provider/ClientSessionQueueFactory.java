@@ -25,6 +25,6 @@ public interface ClientSessionQueueFactory {
 
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String id);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String serviceId);
 
 }

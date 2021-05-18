@@ -70,6 +70,8 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
     private String nodePath;
     private String zkNodesDir;
 
+    // TODO: need to make sure that each Node has a unique 'serviceId' at one point of a time
+
     @PostConstruct
     public void init() {
         log.info("Initializing...");

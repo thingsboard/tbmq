@@ -17,12 +17,14 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
 @AllArgsConstructor
 @Getter
 @Builder(toBuilder = true)
+@EqualsAndHashCode
 public class ClientSession {
     private final boolean connected;
     private final SessionInfo sessionInfo;

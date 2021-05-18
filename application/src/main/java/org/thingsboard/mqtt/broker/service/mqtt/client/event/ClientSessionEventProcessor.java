@@ -64,6 +64,8 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
 @RequiredArgsConstructor
 public class ClientSessionEventProcessor {
 
+    // TODO: add manual control over ClientSession for Admins
+
     private ExecutorService consumersExecutor;
     private List<ExecutorService> clientExecutors;
     private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -125,6 +127,7 @@ public class ClientSessionEventProcessor {
                 // TODO: if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
                     processMsg(msg).get();
+                    // TODO: test what happens if commit fails (probably need logic to retry commit before polling more messages)
                     consumer.commit(msg.getPartition(), msg.getOffset() + 1);
                 }
             } catch (Exception e) {

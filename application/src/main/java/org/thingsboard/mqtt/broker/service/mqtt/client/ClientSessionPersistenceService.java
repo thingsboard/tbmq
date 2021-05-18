@@ -20,7 +20,5 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import java.util.Map;
 
 public interface ClientSessionPersistenceService {
-    Map<String, ClientSessionInfo> loadAllClientSessionInfos();
-
-    void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
+    void persistClientSessionInfo(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
 }

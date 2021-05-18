@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
@@ -65,6 +64,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSessionSettings.getProducerProperties()));
+        // TODO (Cluster Mode): make clientId unique for Node
         producerBuilder.clientId("client-session-producer");
         producerBuilder.defaultTopic(clientSessionSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
@@ -73,13 +73,15 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String id) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(clientSessionSettings.getConsumerProperties()));
         consumerBuilder.topic(clientSessionSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("client-session-consumer-" + id);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionInfoProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.clientId("client-session-consumer-" + serviceId);
+        consumerBuilder.groupId("client-session-group-" + serviceId + "-" + System.currentTimeMillis());
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionInfoProto.parseFrom(msg.getData()), msg.getHeaders(),
+                msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();

@@ -165,7 +165,7 @@ queue:
       producer: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_PRODUCER_CONFIG:retries:3}"
     client-session-event:
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:client_session_event}"
-      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:50;replication.factor:1}"
       consumer: "${TB_KAFKA_CLIENT_SESSION_EVENT_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_CLIENT_SESSION_EVENT_PRODUCER_CONFIG:}"
     client-session-event-response:

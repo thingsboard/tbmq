@@ -15,83 +15,47 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
-public class DefaultClientSessionPersistenceService implements ClientSessionPersistenceService {
-    @Value("${queue.client-session.poll-interval}")
-    private long pollDuration;
+@RequiredArgsConstructor
+public class ClientSessionPersistenceServiceImpl implements ClientSessionPersistenceService {
     @Value("${queue.client-session.acknowledge-wait-timeout-ms}")
     private long ackTimeoutMs;
 
     private final ClientSessionQueueFactory clientSessionQueueFactory;
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
 
-    public DefaultClientSessionPersistenceService(ClientSessionQueueFactory clientSessionQueueFactory) {
-        this.clientSessionQueueFactory = clientSessionQueueFactory;
+    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
+
+    @PostConstruct
+    public void init() {
         this.clientSessionProducer = clientSessionQueueFactory.createProducer();
     }
 
     @Override
-    public Map<String, ClientSessionInfo> loadAllClientSessionInfos() {
-        log.info("Loading client sessions.");
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionConsumer = clientSessionQueueFactory.createConsumer(UUID.randomUUID().toString());
-        clientSessionConsumer.assignAllPartitions();
-        List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages;
-        Map<String, ClientSessionInfo> allClientSessions = new HashMap<>();
-        do {
-            try {
-                // TODO: think how to migrate data inside of the Kafka (in case of any changes to the protocol)
-                messages = clientSessionConsumer.poll(pollDuration);
-                for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
-                    String clientId = msg.getKey();
-                    if (isClientSessionInfoProtoEmpty(msg.getValue())) {
-                        // this means Kafka log compaction service haven't cleared empty message yet
-                        log.debug("[{}] Encountered empty ClientSessionInfo.", clientId);
-                        allClientSessions.remove(clientId);
-                    } else {
-                        ClientSessionInfo clientSession = ProtoConverter.convertToClientSessionInfo(msg.getValue());
-                        allClientSessions.put(clientId, clientSession);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Failed to load client sessions.", e);
-                throw e;
-            }
-        } while (!messages.isEmpty());
-
-        clientSessionConsumer.unsubscribeAndClose();
-
-        return allClientSessions;
-    }
-
-    @Override
-    public void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+    public void persistClientSessionInfo(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         // TODO: think if we need waiting for the result here
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSessionProducer.send(new TbProtoQueueMsg<>(clientId, clientSessionInfoProto),
+        clientSessionProducer.send(generateRequest(clientId, serviceId, clientSessionInfoProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -123,9 +87,10 @@ public class DefaultClientSessionPersistenceService implements ClientSessionPers
         }
     }
 
-    private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
-        return clientSessionInfoProto.getSessionInfo().getClientInfo().getClientId().isEmpty()
-                && clientSessionInfoProto.getSessionInfo().getClientInfo().getClientType().isEmpty();
+    private TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> generateRequest(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+        TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> request = new TbProtoQueueMsg<>(clientId, clientSessionInfoProto);
+        request.getHeaders().put(ClientSessionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceId));
+        return request;
     }
 
     @PreDestroy

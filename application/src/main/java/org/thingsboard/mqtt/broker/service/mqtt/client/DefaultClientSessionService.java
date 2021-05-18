@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -26,8 +27,9 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionConst.EMPTY_CLIENT_SESSION_INFO_PROTO;
 
 /*
     Not thread-safe for the same clientId
@@ -37,17 +39,36 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DefaultClientSessionService implements ClientSessionService {
     private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
-    private static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
 
     private Map<String, ClientSessionInfo> clientSessionMap;
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
+    private final ClientSessionListener clientSessionListener;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
 
     @PostConstruct
     public void init() {
-        this.clientSessionMap = loadPersistedClientSessions();
+        log.info("Load persisted client sessions.");
+        this.clientSessionMap = clientSessionListener.initLoad();
+        unmarkNodeSessions();
         statsManager.registerAllClientSessionsStats(clientSessionMap);
+        clientSessionListener.listen(this::processSessionUpdate);
+    }
+
+    private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
+        if (serviceInfoProvider.getServiceId().equals(serviceId)) {
+            log.trace("[{}] Msg was already processed.", clientId);
+            return;
+        }
+        // TODO: maybe it's better to update Map here even for Clients that are managed by current node?
+        if (clientSessionInfo == null) {
+            log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
+            clientSessionMap.remove(clientId);
+        } else {
+            log.trace("[{}][{}] Saving remote ClientSession.", serviceId, clientId);
+            clientSessionMap.put(clientId, clientSessionInfo);
+        }
     }
 
     @Override
@@ -74,37 +95,44 @@ public class DefaultClientSessionService implements ClientSessionService {
                     "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
             throw new MqttException("Key clientId should be equals to ClientSession's clientId");
         }
+        log.trace("[{}] Saving ClientSession.", clientId);
 
         ClientSessionInfo clientSessionInfo = new ClientSessionInfo(clientSession, System.currentTimeMillis());
         clientSessionMap.put(clientId, clientSessionInfo);
 
         QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, clientSessionInfoProto);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, serviceInfoProvider.getServiceId(), clientSessionInfoProto);
     }
+
+    // TODO: if client disconnects from Node A and connects to Node B it's possible that changes to ClientSession are not delivered on B yet
+    // TODO: possible solution is to ask other nodes before connecting client
+    // TODO: or force wait if client was previously connected to other node
 
     @Override
     public void clearClientSession(String clientId) {
+        log.trace("[{}] Clearing ClientSession.", clientId);
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, serviceInfoProvider.getServiceId(), EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
-    private Map<String, ClientSessionInfo> loadPersistedClientSessions() {
-        log.info("Load persisted client sessions.");
-        Map<String, ClientSessionInfo> allClientSessions = clientSessionPersistenceService.loadAllClientSessionInfos();
-        Map<String, ClientSessionInfo> persistedClientSessions = new ConcurrentHashMap<>();
-        allClientSessions.forEach((clientId, clientSessionInfo) -> {
-            if (clientSessionInfo.getClientSession().getSessionInfo().isPersistent()) {
+    private void unmarkNodeSessions() {
+        clientSessionMap.forEach((clientId, clientSessionInfo) -> {
+            String encounteredServiceId = clientSessionInfo.getClientSession().getSessionInfo().getServiceId();
+            if (sessionWasOnThisNode(encounteredServiceId)) {
+                // can safely mark session as 'not connected' because even if it's connected to another node, we will get that event later
                 clientSessionInfo = markDisconnected(clientSessionInfo);
-                persistedClientSessions.put(clientId, clientSessionInfo);
-            } else {
-                log.debug("[{}] Clearing not persistent client session.", clientId);
-                clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
+                clientSessionMap.put(clientId, clientSessionInfo);
             }
+            // TODO: cannot clear 'non-persistent' ClientSessions since they con be connected to other nodes by now
+            // TODO: send 'tryClearClientSession' event
         });
-        return persistedClientSessions;
+    }
+
+    private boolean sessionWasOnThisNode(String encounteredServiceId) {
+        return serviceInfoProvider.getServiceId().equals(encounteredServiceId);
     }
 
     private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {

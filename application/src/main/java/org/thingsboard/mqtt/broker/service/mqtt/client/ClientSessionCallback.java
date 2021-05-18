@@ -15,18 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import javax.annotation.Nullable;
 
-@Builder(toBuilder = true)
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class ClientSessionInfo {
-    private final ClientSession clientSession;
-    private final long lastUpdateTime;
+@FunctionalInterface
+public interface ClientSessionCallback {
+    void accept(String clientId, String serviceId, @Nullable ClientSessionInfo clientSessionInfo);
 }

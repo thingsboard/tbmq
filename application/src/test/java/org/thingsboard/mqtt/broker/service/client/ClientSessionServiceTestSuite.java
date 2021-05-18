@@ -22,16 +22,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionListener;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.DefaultClientSessionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,6 +42,7 @@ import java.util.UUID;
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class ClientSessionServiceTestSuite {
+    private static final String TEST_SERVICE_ID = "testServiceId";
     private static final String DEFAULT_CLIENT_ID = "test";
     private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;
     private static final ClientSession DEFAULT_CLIENT_SESSION = ClientSession.builder()
@@ -57,7 +61,11 @@ public class ClientSessionServiceTestSuite {
     public void init() {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, statsManagerMock);
+        ClientSessionListener listenerMock = Mockito.mock(ClientSessionListener.class);
+        Mockito.when(listenerMock.initLoad()).thenReturn(Collections.emptyMap());
+        ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
+        Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
+        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, listenerMock, serviceInfoProviderMock, statsManagerMock);
         ((DefaultClientSessionService) this.clientSessionService).init();
     }
 
