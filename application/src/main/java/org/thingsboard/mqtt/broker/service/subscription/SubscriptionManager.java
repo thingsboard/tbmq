@@ -15,9 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -29,8 +26,4 @@ public interface SubscriptionManager {
     void clearSubscriptions(String clientId);
 
     Set<TopicSubscription> getClientSubscriptions(String clientId);
-
-    Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
-
-    void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
 }

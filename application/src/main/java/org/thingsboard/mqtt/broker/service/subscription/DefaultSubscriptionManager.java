@@ -45,6 +45,11 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     private final SubscriptionService subscriptionService;
     private final StatsManager statsManager;
 
+    // TODO: sync subscriptions (and probably ClientSession)
+    //      - store events for each action in separate topic + sometimes make snapshots (apply events on 'value' sequentially)
+    //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
+
+
     @PostConstruct
     public void init() {
         this.clientSubscriptionsMap = loadPersistedClientSubscriptions();
@@ -59,10 +64,12 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void subscribe(String clientId, List<TopicSubscription> topicSubscriptions) {
+//  TODO      create list of executors
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.addAll(topicSubscriptions);
+        // TODO: add 'version' to at least detect issues
         subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }
 
@@ -77,6 +84,8 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void clearSubscriptions(String clientId) {
+        // TODO: create Client Subscription Actor to ensure all operations are not parallel for one client
+        //      now it's done using ClientSession locks for subscribing and disconnecting
         log.trace("[{}] Clearing all subscriptions.", clientId);
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
@@ -93,16 +102,6 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet());
-    }
-
-    @Override
-    public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
-        return subscriptionService.getSubscriptions(topic);
-    }
-
-    @Override
-    public void clearEmptyTopicNodes() throws SubscriptionTrieClearException {
-        subscriptionService.clearEmptyTopicNodes();
     }
 
     private ConcurrentMap<String, Set<TopicSubscription>> loadPersistedClientSubscriptions() {

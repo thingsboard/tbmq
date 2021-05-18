@@ -22,21 +22,21 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 
 @RestController
 @RequestMapping("/api/subscription")
 public class SubscriptionController extends BaseController {
 
     @Autowired
-    private SubscriptionManager subscriptionManager;
+    private SubscriptionMaintenanceService subscriptionMaintenanceService;
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)
     @ResponseBody
     public void clearEmptySubscriptionNodes() throws ThingsboardException {
         try {
-            subscriptionManager.clearEmptyTopicNodes();
+            subscriptionMaintenanceService.clearEmptyTopicNodes();
         } catch (Exception e) {
             throw handleException(e);
         }

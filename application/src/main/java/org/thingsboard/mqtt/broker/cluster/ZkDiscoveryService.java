@@ -72,6 +72,8 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
 
     // TODO: need to make sure that each Node has a unique 'serviceId' at one point of a time
 
+    // TODO: store ServiceInfos in memory (maybe along with related topics e.g. DisconnectCommand, Publish DownLink)
+
     @PostConstruct
     public void init() {
         log.info("Initializing...");

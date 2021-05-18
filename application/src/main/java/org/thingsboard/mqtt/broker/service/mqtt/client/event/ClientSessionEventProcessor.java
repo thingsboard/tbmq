@@ -195,6 +195,13 @@ public class ClientSessionEventProcessor {
         SessionInfo sessionInfo = event.getSessionInfo();
         String clientId = sessionInfo.getClientInfo().getClientId();
         UUID sessionId = sessionInfo.getSessionId();
+        // TODO: it's possible that we get not-relevant data since consumer didn't get message yet
+        //      this can happen if node just got control over this clientId
+        //      Solutions:
+        //          - can force wait till the end of the topic using dummy session
+        //          - gain more control over reassigning partitions + do some sync logic on reassign
+        //          - remake logic to ensure that the 'leader' for client has all information (look at Raft algorithm)
+        //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)
         ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
         if (currentlyConnectedSession == null || !currentlyConnectedSession.isConnected()) {
             saveClientSession(sessionInfo, requestHeaders);

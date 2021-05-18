@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.SessionState;
@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Autowired
-    private SubscriptionManager subscriptionManager;
+    private SubscriptionReader subscriptionReader;
     @Autowired
     private PublishMsgQueueFactory publishMsgQueueFactory;
     @Autowired
@@ -97,7 +97,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         // TODO: log time for getting subscriptions
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionManager.getSubscriptions(publishMsgProto.getTopicName());
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
         // TODO: log time for getting clients
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()

@@ -26,7 +26,7 @@ import java.util.Collection;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-class SubscriptionServiceImpl implements SubscriptionService {
+public class SubscriptionServiceImpl implements SubscriptionService, SubscriptionReader, SubscriptionMaintenanceService {
     private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
 
     @Override

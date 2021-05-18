@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.msg;
+package org.thingsboard.mqtt.broker.actors.subscription;
 
-public enum MsgType {
-    // Device Msg Types
-    DEVICE_CONNECTED_EVENT_MSG,
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 
-    DEVICE_DISCONNECTED_EVENT_MSG,
+@Slf4j
+// TODO: think if we need this
+public class ClientSubscriptionsActor extends ContextAwareActor {
 
-    PACKET_ACKNOWLEDGED_EVENT_MSG,
+    public ClientSubscriptionsActor(ActorSystemContext systemContext, String clientId) {
+        super(systemContext);
+    }
 
-    PACKET_RECEIVED_EVENT_MSG,
-
-    PACKET_COMPLETED_EVENT_MSG,
-
-    INCOMING_PUBLISH_MSG,
-
-    STOP_DEVICE_ACTOR_COMMAND_MSG;
+    @Override
+    protected boolean doProcess(TbActorMsg msg) {
+        return false;
+    }
 }
