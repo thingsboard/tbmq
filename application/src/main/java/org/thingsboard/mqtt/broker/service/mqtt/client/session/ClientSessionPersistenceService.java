@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-// TODO: separate READ and WRITE interfaces (only ClientEventProcessor can update ClientSession)
-public interface ClientSessionService {
-    Map<String, ClientSessionInfo> getPersistedClientSessionInfos();
-
-    ClientSession getClientSession(String clientId);
-
-    ClientSessionInfo getClientSessionInfo(String clientId);
-
-    void saveClientSession(String clientId, ClientSession clientSession);
-
-    void clearClientSession(String clientId);
+public interface ClientSessionPersistenceService {
+    void persistClientSessionInfo(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
 }

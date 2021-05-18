@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionConst.EMPTY_CLIENT_SESSION_INFO_PROTO;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConst.EMPTY_CLIENT_SESSION_INFO_PROTO;
 
 /*
     Not thread-safe for the same clientId

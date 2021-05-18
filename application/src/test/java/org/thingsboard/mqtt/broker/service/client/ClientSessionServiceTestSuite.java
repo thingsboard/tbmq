@@ -28,10 +28,10 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionListener;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionPersistenceService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.DefaultClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionListener;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.DefaultClientSessionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;

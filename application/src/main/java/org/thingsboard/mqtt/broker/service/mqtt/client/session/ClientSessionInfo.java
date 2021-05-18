@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
-public class ClientSessionConst {
-    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
-
-    public static final String SERVICE_ID_HEADER = "serviceId";
-
+@Builder(toBuilder = true)
+@Getter
+@AllArgsConstructor
+@EqualsAndHashCode
+public class ClientSessionInfo {
+    private final ClientSession clientSession;
+    private final long lastUpdateTime;
 }

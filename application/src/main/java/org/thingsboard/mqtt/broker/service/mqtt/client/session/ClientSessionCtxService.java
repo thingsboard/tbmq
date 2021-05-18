@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
-@Builder(toBuilder = true)
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class ClientSessionInfo {
-    private final ClientSession clientSession;
-    private final long lastUpdateTime;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Collection;
+
+public interface ClientSessionCtxService {
+    void registerSession(ClientSessionCtx clientSessionCtx);
+
+    void unregisterSession(String clientId);
+
+    ClientSessionCtx getClientSessionCtx(String clientId);
+
+    Collection<ClientSessionCtx> getAllClientSessionCtx();
 }
