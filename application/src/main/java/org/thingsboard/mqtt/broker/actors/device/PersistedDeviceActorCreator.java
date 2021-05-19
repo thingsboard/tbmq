@@ -19,8 +19,9 @@ package org.thingsboard.mqtt.broker.actors.device;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActor;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
-import org.thingsboard.mqtt.broker.actors.TbStringActorId;
+import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.service.ContextBasedCreator;
+import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 
 public class PersistedDeviceActorCreator extends ContextBasedCreator {
 
@@ -33,7 +34,7 @@ public class PersistedDeviceActorCreator extends ContextBasedCreator {
 
     @Override
     public TbActorId createActorId() {
-        return new TbStringActorId(clientId);
+        return new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId);
     }
 
     @Override

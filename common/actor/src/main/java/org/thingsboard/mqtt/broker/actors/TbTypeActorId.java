@@ -17,30 +17,33 @@ package org.thingsboard.mqtt.broker.actors;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 
 import java.util.Objects;
 
 @Getter
 @RequiredArgsConstructor
-public class TbStringActorId implements TbActorId {
+public class TbTypeActorId implements TbActorId {
 
+    private final ActorType type;
     private final String id;
 
     @Override
     public String toString() {
-        return id;
+        return type + "|" + id;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TbStringActorId that = (TbStringActorId) o;
-        return id.equals(that.id);
+        TbTypeActorId that = (TbTypeActorId) o;
+        return type == that.type &&
+                id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(type, id);
     }
 }

@@ -81,7 +81,7 @@ public class ConnectServiceImpl implements ConnectService {
     @Override
     public void connect(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
-        log.debug("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
+        log.trace("[{}] Processing connect msg for client: {}!", sessionId, msg.payload().clientIdentifier());
 
         validate(ctx, msg);
 
