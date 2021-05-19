@@ -59,7 +59,7 @@ public class MqttPublishHandler {
         try {
             authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(msg.variableHeader().topicName()));
         } catch (AuthorizationException e) {
-            log.debug("[{}][{}] Client doesn't have permission to publish to the topic {}, reason - {}",
+            log.info("[{}][{}] Client doesn't have permission to publish to the topic {}, reason - {}",
                     clientId, sessionId, e.getDeniedTopic(), e.getMessage());
             throw new MqttException(e);
         }
@@ -80,7 +80,7 @@ public class MqttPublishHandler {
 
             @Override
             public void onFailure(Throwable t) {
-                log.trace("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg, t);
+                log.info("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg, t);
                 disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
             }
         });

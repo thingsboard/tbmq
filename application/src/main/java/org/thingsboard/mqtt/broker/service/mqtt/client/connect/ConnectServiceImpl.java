@@ -170,12 +170,15 @@ public class ConnectServiceImpl implements ConnectService {
                 } else if (clientCredentials.getCredentialsType() == ClientCredentialsType.MQTT_BASIC) {
                     authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(clientCredentials.getCredentialsValue());
                 }
+                if (authorizationRule != null) {
+                    log.debug("[{}] Authorization rule for client - {}.", clientId, authorizationRule.getPattern().toString());
+                }
                 ctx.setAuthorizationRule(authorizationRule);
             }
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
-            throw new MqttException("Authentication failed for client [" + clientId + "].");
+            throw new MqttException("Authentication failed for client [" + clientId + "]");
         }
     }
 

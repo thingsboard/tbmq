@@ -22,9 +22,11 @@ import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @Qualifier("SslChannelInitializer")
 @RequiredArgsConstructor
@@ -46,6 +48,8 @@ public class MqttSslChannelInitializer extends ChannelInitializer<SocketChannel>
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
+
+        log.debug("[{}] Created SSL channel.", handler.getSessionId());
     }
 
 }

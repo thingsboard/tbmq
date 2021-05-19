@@ -64,8 +64,8 @@ public class DefaultAuthenticationService implements AuthenticationService {
                 return basicCredentials;
             }
         }
-        if (sslAuthEnabled) {
-            MqttClientCredentials sslCredentials = authWithSSLCredentials(sslHandler);
+        if (sslAuthEnabled && sslHandler != null) {
+            MqttClientCredentials sslCredentials = authWithSSLCredentials(clientId, sslHandler);
             if (sslCredentials != null) {
                 log.trace("[{}] Authenticated with ssl certificate", clientId);
                 return sslCredentials;
@@ -87,10 +87,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
     }
 
-    private MqttClientCredentials authWithSSLCredentials(SslHandler sslHandler) throws AuthenticationException {
-        if (sslHandler == null) {
-            throw new AuthenticationException("Couldn't get SslHandler for session.");
-        }
+    private MqttClientCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {
         X509Certificate[] certificates;
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
@@ -109,6 +106,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
             } catch (CertificateEncodingException e) {
                 throw new AuthenticationException("Couldn't get Common Name from certificate.", e);
             }
+            log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
             String sslCredentialsId = ProtocolUtil.sslCredentialsId(commonName);
             List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(Collections.singletonList(sslCredentialsId));
             if (!matchingCredentials.isEmpty()) {

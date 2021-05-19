@@ -53,7 +53,7 @@ public class MqttSubscribeHandler {
         try {
             validateSubscriptions(mqttTopicSubscriptions);
         } catch (DataValidationException e) {
-            log.debug("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
+            log.info("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
         }
         try {
@@ -62,8 +62,8 @@ public class MqttSubscribeHandler {
                     .collect(Collectors.toList())
             );
         } catch (AuthorizationException e) {
-            log.debug("[{}][{}] Client doesn't have permission to subscribe to the topic {}, reason - {}",
-                    clientId, sessionId, e.getDeniedTopic(), e.getMessage());
+            log.info("[{}][{}] Client doesn't have permission to subscribe to the topic {}",
+                    clientId, sessionId, e.getDeniedTopic());
             throw new MqttException(e);
         }
 

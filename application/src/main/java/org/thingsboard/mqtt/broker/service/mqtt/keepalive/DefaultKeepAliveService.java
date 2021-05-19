@@ -45,7 +45,7 @@ public class DefaultKeepAliveService implements KeepAliveService {
             if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
                     && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
                 it.remove();
-                log.debug("[{}] Closing session for inactivity", entry.getKey());
+                log.info("[{}] Closing session for inactivity", entry.getKey());
                 keepAliveInfo.getCloseSession().run();
             }
         }

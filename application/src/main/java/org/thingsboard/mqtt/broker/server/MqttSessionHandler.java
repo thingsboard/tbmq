@@ -25,6 +25,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.connect.ConnectService;
@@ -32,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectServ
 import org.thingsboard.mqtt.broker.service.mqtt.handlers.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.SessionContext;
 import org.thingsboard.mqtt.broker.session.SessionState;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -40,12 +42,13 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
-public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
+public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
 
     private final MqttMessageHandler messageHandler;
     private final ConnectService connectService;
     private final DisconnectService disconnectService;
 
+    @Getter
     private final UUID sessionId = UUID.randomUUID();
     private final ClientSessionCtx clientSessionCtx ;
 
