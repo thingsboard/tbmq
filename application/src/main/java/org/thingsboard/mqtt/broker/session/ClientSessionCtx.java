@@ -40,9 +40,6 @@ public class ClientSessionCtx implements SessionContext {
     private volatile AuthorizationRule authorizationRule;
 
     @Getter
-    private final UnprocessedMessagesQueue unprocessedMessagesQueue = new UnprocessedMessagesQueue();
-
-    @Getter
     private ChannelHandlerContext channel;
 
     @Getter

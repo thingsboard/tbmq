@@ -33,6 +33,8 @@ public class DefaultClientSessionActorState implements ClientSessionActorState {
     @Getter
     private DisconnectListener disconnectListener;
 
+    private final QueuedMqttMessages queuedMqttMessages = new QueuedMqttMessages();
+
     @Setter
     @Getter
     private UUID stopActorCommandId;
@@ -68,6 +70,11 @@ public class DefaultClientSessionActorState implements ClientSessionActorState {
     @Override
     public boolean isClientIdGenerated() {
         return isClientIdGenerated;
+    }
+
+    @Override
+    public QueuedMqttMessages getQueuedMessages() {
+        return queuedMqttMessages;
     }
 
     @Override

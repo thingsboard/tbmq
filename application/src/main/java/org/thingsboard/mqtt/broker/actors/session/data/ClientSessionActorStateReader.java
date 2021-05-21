@@ -34,4 +34,6 @@ public interface ClientSessionActorStateReader {
     UUID getStopActorCommandId();
 
     boolean isClientIdGenerated();
+
+    QueuedMqttMessages getQueuedMessages();
 }

@@ -53,7 +53,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         log.trace("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
         try {
-            clearClientSession(sessionCtx, reason.getType());
+            clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.info("Detailed error: ", e);
@@ -69,10 +69,11 @@ public class DisconnectServiceImpl implements DisconnectService {
         log.info("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
-    private void clearClientSession(ClientSessionCtx sessionCtx, DisconnectReasonType disconnectReasonType) {
+    private void clearClientSession(ClientSessionActorStateReader actorState, DisconnectReasonType disconnectReasonType) {
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         UUID sessionId = sessionCtx.getSessionId();
 
-        sessionCtx.getUnprocessedMessagesQueue().release();
+        actorState.getQueuedMessages().release();
 
         keepAliveService.unregisterSession(sessionId);
 

@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session.data;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.util.ReferenceCountUtil;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /*
     not thread safe
  */
 @Slf4j
-public class UnprocessedMessagesQueue {
-    @Getter
-    private final Queue<MqttMessage> unprocessedMessages = new LinkedList<>();
+public class QueuedMqttMessages {
+    private final Queue<MqttMessage> queuedMessages = new LinkedList<>();
 
     public void process(Consumer<MqttMessage> processor) {
-        while (!unprocessedMessages.isEmpty()) {
-            MqttMessage msg = unprocessedMessages.poll();
+        while (!queuedMessages.isEmpty()) {
+            MqttMessage msg = queuedMessages.poll();
             try {
                 processor.accept(msg);
             } finally {
@@ -45,14 +41,14 @@ public class UnprocessedMessagesQueue {
         }
     }
 
-    public void queueMessage(MqttMessage msg) {
-        unprocessedMessages.add(msg);
+    public void add(MqttMessage msg) {
+        queuedMessages.add(msg);
     }
 
     public void release() {
-        log.debug("Releasing {} queued messages.", unprocessedMessages.size());
-        while (!unprocessedMessages.isEmpty()) {
-            MqttMessage msg = unprocessedMessages.poll();
+        log.debug("Releasing {} queued messages.", queuedMessages.size());
+        while (!queuedMessages.isEmpty()) {
+            MqttMessage msg = queuedMessages.poll();
             ReferenceCountUtil.safeRelease(msg);
         }
     }

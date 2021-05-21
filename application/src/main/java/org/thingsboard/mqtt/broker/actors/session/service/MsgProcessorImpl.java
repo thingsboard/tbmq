@@ -106,7 +106,7 @@ public class MsgProcessorImpl implements MsgProcessor {
     @Override
     public void processConnectionFinished(ClientSessionActorStateReader actorState) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        sessionCtx.getUnprocessedMessagesQueue().process(msg -> messageHandler.process(sessionCtx, msg));
+        actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg));
     }
 
     private boolean handleMessage(ClientSessionActorStateSessionUpdater actorState, MqttMessage msg) {
@@ -126,7 +126,7 @@ public class MsgProcessorImpl implements MsgProcessor {
                 break;
             default:
                 if (actorState.getCurrentSessionState() == SessionState.CONNECTING) {
-                    sessionCtx.getUnprocessedMessagesQueue().queueMessage(msg);
+                    actorState.getQueuedMessages().add(msg);
                     messageNeedsToBeReleased = false;
                 } else {
                     messageHandler.process(sessionCtx, msg);
