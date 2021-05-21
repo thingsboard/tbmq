@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.session.data;
+package org.thingsboard.mqtt.broker.actors.session.state;
 
 import org.thingsboard.mqtt.broker.actors.session.service.DisconnectListener;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
-/*
-    not thread-safe
- */
-public interface ClientSessionActorState extends ClientSessionActorStateSessionUpdater {
-    void setStopActorCommandId(UUID commandId);
+public interface ClientSessionActorStateReader {
+    String getClientId();
 
-    void clearStopActorCommandId();
+    UUID getCurrentSessionId();
 
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+    SessionState getCurrentSessionState();
 
-    void setDisconnectListener(DisconnectListener disconnectListener);
+    ClientSessionCtx getCurrentSessionCtx();
+
+    DisconnectListener getDisconnectListener();
+
+    UUID getStopActorCommandId();
+
+    boolean isClientIdGenerated();
+
+    QueuedMqttMessages getQueuedMessages();
 }

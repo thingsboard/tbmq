@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.session.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.actors.session.messages.SessionDependentMsg;
 
 import java.util.UUID;

@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;

@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;

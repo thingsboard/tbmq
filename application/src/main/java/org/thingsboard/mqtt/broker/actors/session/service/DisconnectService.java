@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.session.service;
 
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 
 /*

@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.session.service;
 
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateSessionUpdater;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateSessionUpdater;
 import org.thingsboard.mqtt.broker.actors.session.messages.IncomingMqttMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 

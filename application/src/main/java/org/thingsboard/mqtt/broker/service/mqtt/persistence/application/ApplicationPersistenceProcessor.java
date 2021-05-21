@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ApplicationPersistenceProcessor {
