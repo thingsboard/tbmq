@@ -109,6 +109,8 @@ public class ClientSessionEventProcessor {
                         continue;
                     }
                     for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
+                        // TODO: retry failures (make sure method can be safely called multiple times)
+                        // TODO: send control message to ClientSession Actor
                         processMsg(msg).get();
                         consumer.commit(msg.getPartition(), msg.getOffset() + 1);
                     }
@@ -184,6 +186,7 @@ public class ClientSessionEventProcessor {
 
             SettableFuture<Void> future = disconnectClientCommandService.startWaitingForDisconnect(sessionId, currentlyConnectedSessionId, clientId);
             DonAsynchron.withCallbackAndTimeout(future,
+                    // TODO: should put message in Queue (not save by itself)
                     unused -> saveClientSession(sessionId, clientInfo, isPersistent, requestHeaders),
                     t -> {
                         long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
