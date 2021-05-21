@@ -13,12 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 
-public interface ConnectService {
-    void startConnection(String clientId, ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
+import java.util.UUID;
+
+@Slf4j
+@Getter
+public class DisconnectMsg extends SessionDependentMsg {
+    private final DisconnectReason reason;
+
+    public DisconnectMsg(UUID sessionId, DisconnectReason reason) {
+        super(sessionId);
+        this.reason = reason;
+    }
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.DISCONNECT_MSG;
+    }
 }

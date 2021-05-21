@@ -150,7 +150,6 @@ public class ClientSessionEventProcessor {
 
     private void processDisconnected(UUID sessionId, ClientInfo clientInfo) {
         String clientId = clientInfo.getClientId();
-        disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
 
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         if (clientSession == null) {
@@ -170,6 +169,7 @@ public class ClientSessionEventProcessor {
             subscriptionManager.clearSubscriptions(clientId);
         }
 
+        disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
     }
 
     private void processConnectionRequest(UUID sessionId, ClientInfo clientInfo, boolean isPersistent, TbQueueMsgHeaders requestHeaders) {

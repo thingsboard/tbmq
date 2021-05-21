@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.actors.session.service;
 
 import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateSessionUpdater;
+import org.thingsboard.mqtt.broker.actors.session.messages.IncomingMqttMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
-public interface ApplicationPersistenceProcessor {
-    void startProcessingPersistedMessages(ClientSessionActorStateReader clientSessionState);
+public interface MsgProcessor {
+    void process(ClientSessionActorStateSessionUpdater actorState, IncomingMqttMsg incomingMqttMsg);
 
-    void stopProcessingPersistedMessages(String clientId);
+    void processConnectionAccepted(ClientSessionActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
 
-    void clearPersistedMsgs(String clientId);
-
-    void processPubAck(String clientId, int packetId);
-
-    void processPubRec(ClientSessionCtx clientSessionCtx, int packetId);
-
-    void processPubComp(String clientId, int packetId);
+    void processConnectionFinished(ClientSessionActorStateReader actorState);
 }

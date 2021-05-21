@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.actors;
 
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.session.service.DisconnectService;
+import org.thingsboard.mqtt.broker.actors.session.service.MsgProcessor;
 
-public interface ConnectService {
-    void startConnection(String clientId, ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
+@Slf4j
+@Getter
+@Component
+@RequiredArgsConstructor
+public class ClientSessionActorContext {
+    private final MsgProcessor msgProcessor;
+    private final DisconnectService disconnectService;
 }

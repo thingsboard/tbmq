@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,8 +39,10 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionState;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -70,6 +71,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private ClientSessionCtxService clientSessionCtxService;
     @Autowired
     private PublishMsgDeliveryService publishMsgDeliveryService;
+    @Autowired
+    private ClientSessionActorManager clientSessionActorManager;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -148,14 +151,20 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private void trySendMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+        // TODO: think if it's better to send it to Actor
         ClientSessionCtx sessionCtx = subscription.getSessionCtx();
-        if (sessionCtx == null || sessionCtx.getSessionState() != SessionState.CONNECTED) {
+        if (sessionCtx == null) {
             return;
         }
         int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.getMsgIdSeq().nextMsgId();
         int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
         MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
-        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
-                mqttQoS, false, publishMsgProto.getPayload().toByteArray());
+
+        try {
+            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
+                    mqttQoS, false, publishMsgProto.getPayload().toByteArray());
+        } catch (Exception e) {
+            clientSessionActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
+        }
     }
 }

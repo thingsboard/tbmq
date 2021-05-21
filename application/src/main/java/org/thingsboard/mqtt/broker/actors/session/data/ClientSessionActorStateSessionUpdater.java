@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session.data;
 
-public enum SessionState {
-    CREATED,
-    CONNECTING,
-    CONNECTED,
-    DISCONNECTED
+public interface ClientSessionActorStateSessionUpdater extends ClientSessionActorStateReader {
+    void updateSessionState(SessionState newState);
 }

@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.session;
 
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-public interface ConnectService {
-    void startConnection(String clientId, ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
+public enum DisconnectReasonType {
+    ON_DISCONNECT_MSG,
+    ON_CONFLICTING_SESSIONS,
+    ON_ERROR,
+    ON_CHANNEL_CLOSED
 }

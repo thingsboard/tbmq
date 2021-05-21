@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device.messages;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,21 +21,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+
+import java.util.UUID;
 
 @Slf4j
 @Getter
-@RequiredArgsConstructor
-public class DeviceConnectedEventMsg implements TbActorMsg {
-    private final ClientSessionCtx sessionCtx;
+public class ConnectionAcceptedMsg extends SessionDependentMsg {
+    private final boolean isPrevSessionPersistent;
+    private final PublishMsg lastWillMsg;
 
-    @Override
-    public MsgType getMsgType() {
-        return MsgType.DEVICE_CONNECTED_EVENT_MSG;
+    public ConnectionAcceptedMsg(UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+        super(sessionId);
+        this.isPrevSessionPersistent = isPrevSessionPersistent;
+        this.lastWillMsg = lastWillMsg;
     }
 
     @Override
-    public void onTbActorStopped(TbActorId actorId) {
-        log.warn("[{}] Actor was stopped before processing {}, clientId - {}.", actorId, getMsgType(), sessionCtx.getClientId());
+    public MsgType getMsgType() {
+        return MsgType.CONNECTION_ACCEPTED_MSG;
     }
 }

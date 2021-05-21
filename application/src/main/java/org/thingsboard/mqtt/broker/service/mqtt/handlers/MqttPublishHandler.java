@@ -29,12 +29,12 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
+import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import java.util.Collections;
@@ -48,8 +48,7 @@ public class MqttPublishHandler {
     private final MsgDispatcherService msgDispatcherService;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
-    private final DisconnectService disconnectService;
-    private final MsgPersistenceManager msgPersistenceManager;
+    private final ClientSessionActorManager clientSessionActorManager;
 
     public void process(ClientSessionCtx ctx, MqttPublishMessage msg) throws MqttException {
         topicValidationService.validateTopic(msg.variableHeader().topicName());
@@ -81,7 +80,7 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 log.info("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg, t);
-                disconnectService.disconnect(ctx, DisconnectReason.ON_ERROR);
+                clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
             }
         });
     }

@@ -25,8 +25,9 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -39,13 +40,12 @@ import java.util.concurrent.Executors;
 @Component
 @RequiredArgsConstructor
 public class DisconnectClientCommandProcessor {
-    private final ExecutorService disconnectExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-client-command-processor"));
     private final ExecutorService consumerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
     private volatile boolean stopped = false;
 
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
     private final ClientSessionCtxService clientSessionCtxService;
-    private final DisconnectService disconnectService;
+    private final ClientSessionActorManager clientSessionActorManager;
 
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
@@ -64,7 +64,7 @@ public class DisconnectClientCommandProcessor {
                         continue;
                     }
                     for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
-                        disconnectExecutor.execute(() -> processClientDisconnect(msg));
+                        processClientDisconnect(msg);
                     }
                     consumer.commit();
                 } catch (Exception e) {
@@ -86,27 +86,13 @@ public class DisconnectClientCommandProcessor {
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
-        try {
-            ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
-            if (clientSessionCtx == null) {
-                log.debug("[{}] Client is already disconnected.", clientId);
-            } else if (sessionId.equals(clientSessionCtx.getSessionId())) {
-                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_DISCONNECT_COMMAND);
-            } else {
-                log.warn("[{}] Got disconnect command for different sessionId, actual sessionId - {}, received sessionId - {}.",
-                        clientId, clientSessionCtx.getSessionId(), sessionId);
-            }
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process disconnect command. Exception - {}, reason - {}.", clientId, sessionId, e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
-        }
+        clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
     }
 
     @PreDestroy
     public void destroy() {
         stopped = true;
         consumerExecutor.shutdownNow();
-        disconnectExecutor.shutdownNow();
         if (consumer != null) {
             consumer.unsubscribeAndClose();
         }

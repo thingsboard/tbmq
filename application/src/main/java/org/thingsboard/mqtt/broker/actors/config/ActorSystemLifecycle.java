@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorConfiguration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import javax.annotation.PostConstruct;
@@ -32,13 +33,16 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class ActorSystemLifecycle {
     public static final String PERSISTED_DEVICE_DISPATCHER_NAME = "persisted-device-dispatcher";
+    public static final String CLIENT_SESSION_DISPATCHER_NAME = "client-session-dispatcher";
 
     private final TbActorSystem actorSystem;
     private final DeviceActorConfiguration deviceActorConfiguration;
+    private final ClientSessionActorConfiguration clientSessionActorConfiguration;
 
     @PostConstruct
     public void init() {
         actorSystem.createDispatcher(PERSISTED_DEVICE_DISPATCHER_NAME, initDispatcherExecutor(PERSISTED_DEVICE_DISPATCHER_NAME, deviceActorConfiguration.getDispatcherSize()));
+        actorSystem.createDispatcher(CLIENT_SESSION_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_SESSION_DISPATCHER_NAME, clientSessionActorConfiguration.getDispatcherSize()));
     }
 
     @PreDestroy

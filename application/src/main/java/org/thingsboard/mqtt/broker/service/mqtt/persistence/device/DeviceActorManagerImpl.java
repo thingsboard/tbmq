@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -36,14 +37,15 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Slf4j
 @Service
 public class DeviceActorManagerImpl implements DeviceActorManager {
-    private final ActorSystemContext actorSystemContext;
+    private ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
-    public DeviceActorManagerImpl(ActorSystemContext actorSystemContext) {
+    public DeviceActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
         this.actorSystemContext = actorSystemContext;
-        this.actorSystem = actorSystemContext.getActorSystem();
+        this.actorSystem = actorSystem;
     }
 
+    // TODO: think how to group this with ClientSession Actor
     @Override
     public void notifyClientConnected(ClientSessionCtx clientSessionCtx) {
         String clientId = clientSessionCtx.getClientId();

@@ -20,16 +20,19 @@ import io.netty.util.ReferenceCountUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+/*
+    not thread safe
+ */
 @Slf4j
 public class UnprocessedMessagesQueue {
-
-    private final AtomicBoolean isProcessing = new AtomicBoolean(true);
     @Getter
-    private final ConcurrentLinkedQueue<MqttMessage> unprocessedMessages = new ConcurrentLinkedQueue<>();
+    private final Queue<MqttMessage> unprocessedMessages = new LinkedList<>();
 
     public void process(Consumer<MqttMessage> processor) {
         while (!unprocessedMessages.isEmpty()) {
@@ -42,26 +45,11 @@ public class UnprocessedMessagesQueue {
         }
     }
 
-    public boolean isProcessing() {
-        return isProcessing.get();
-    }
-
-    public void finishProcessing() {
-        isProcessing.getAndSet(false);
-    }
-
     public void queueMessage(MqttMessage msg) {
-        if (!isProcessing()) {
-            throw new RuntimeException("Queue is not processing messages anymore");
-        }
         unprocessedMessages.add(msg);
-        if (!isProcessing()) {
-            release();
-        }
     }
 
     public void release() {
-        finishProcessing();
         log.debug("Releasing {} queued messages.", unprocessedMessages.size());
         while (!unprocessedMessages.isEmpty()) {
             MqttMessage msg = unprocessedMessages.poll();

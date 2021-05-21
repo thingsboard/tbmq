@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device.messages;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,16 +26,16 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class DeviceConnectedEventMsg implements TbActorMsg {
-    private final ClientSessionCtx sessionCtx;
+public class SessionInitMsg implements TbActorMsg {
+    private final ClientSessionCtx clientSessionCtx;
 
     @Override
     public MsgType getMsgType() {
-        return MsgType.DEVICE_CONNECTED_EVENT_MSG;
+        return MsgType.SESSION_INIT_MSG;
     }
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        log.warn("[{}] Actor was stopped before processing {}, clientId - {}.", actorId, getMsgType(), sessionCtx.getClientId());
+        log.warn("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), clientSessionCtx.getSessionId());
     }
 }

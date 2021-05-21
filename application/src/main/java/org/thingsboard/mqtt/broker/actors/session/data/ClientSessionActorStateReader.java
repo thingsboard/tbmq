@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.actors.session.data;
 
-import org.thingsboard.mqtt.broker.actors.session.data.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.service.DisconnectListener;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface ApplicationPersistenceProcessor {
-    void startProcessingPersistedMessages(ClientSessionActorStateReader clientSessionState);
+import java.util.UUID;
 
-    void stopProcessingPersistedMessages(String clientId);
+public interface ClientSessionActorStateReader {
+    String getClientId();
 
-    void clearPersistedMsgs(String clientId);
+    UUID getCurrentSessionId();
 
-    void processPubAck(String clientId, int packetId);
+    SessionState getCurrentSessionState();
 
-    void processPubRec(ClientSessionCtx clientSessionCtx, int packetId);
+    ClientSessionCtx getCurrentSessionCtx();
 
-    void processPubComp(String clientId, int packetId);
+    DisconnectListener getDisconnectListener();
+
+    UUID getStopActorCommandId();
+
+    boolean isClientIdGenerated();
 }

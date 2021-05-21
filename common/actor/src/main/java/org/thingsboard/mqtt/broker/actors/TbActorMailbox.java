@@ -86,7 +86,7 @@ public final class TbActorMailbox implements TbActorCtx {
     private void enqueue(TbActorMsg msg, boolean highPriority) {
         if (destroyInProgress.get()) {
             // TODO: if CONNECT message - init actor
-            msg.onTbActorStopped();
+            msg.onTbActorStopped(selfId);
             return;
         }
         if (highPriority) {
@@ -190,8 +190,8 @@ public final class TbActorMailbox implements TbActorCtx {
             try {
                 ready.set(NOT_READY);
                 actor.destroy();
-                highPriorityMsgs.forEach(TbActorMsg::onTbActorStopped);
-                normalPriorityMsgs.forEach(TbActorMsg::onTbActorStopped);
+                highPriorityMsgs.forEach(msg -> msg.onTbActorStopped(selfId));
+                normalPriorityMsgs.forEach(msg -> msg.onTbActorStopped(selfId));
             } catch (Throwable t) {
                 log.warn("[{}] Failed to destroy actor: {}", selfId, t);
             }

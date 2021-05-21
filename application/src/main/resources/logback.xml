@@ -27,6 +27,7 @@
 
     <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.dao.messages.sql.SqlDeviceMsgCleanUpDao" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.session.service.MqttMsgProcessorImpl" level="DEBUG"/>
 
     <logger name="org.apache.kafka.clients.consumer.ConsumerConfig" level="WARN"/>
     <logger name="org.apache.kafka.clients.producer.ProducerConfig" level="WARN"/>

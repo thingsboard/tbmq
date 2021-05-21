@@ -13,31 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
 import lombok.Getter;
-import org.springframework.util.StringUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
+import java.util.UUID;
+
+@Slf4j
 @Getter
-public class DisconnectReason {
-    private final DisconnectReasonType type;
-    private String message;
+public class ConnectionFinishedMsg extends SessionDependentMsg {
 
-    public DisconnectReason(DisconnectReasonType type) {
-        this.type = type;
-    }
-
-    public DisconnectReason(DisconnectReasonType type, String message) {
-        this.type = type;
-        this.message = message;
+    public ConnectionFinishedMsg(UUID sessionId) {
+        super(sessionId);
     }
 
     @Override
-    public String toString() {
-        if (StringUtils.isEmpty(message)) {
-            return type.toString();
-        } else {
-            return type + "(" + message + ")";
-        }
+    public MsgType getMsgType() {
+        return MsgType.CONNECTION_FINISHED_MSG;
     }
 }

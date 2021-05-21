@@ -13,31 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session;
 
 import lombok.Getter;
-import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 @Getter
-public class DisconnectReason {
-    private final DisconnectReasonType type;
-    private String message;
-
-    public DisconnectReason(DisconnectReasonType type) {
-        this.type = type;
-    }
-
-    public DisconnectReason(DisconnectReasonType type, String message) {
-        this.type = type;
-        this.message = message;
-    }
-
-    @Override
-    public String toString() {
-        if (StringUtils.isEmpty(message)) {
-            return type.toString();
-        } else {
-            return type + "(" + message + ")";
-        }
-    }
+@Component
+@ConfigurationProperties(prefix = "actors.system.client-session")
+public class ClientSessionActorConfiguration {
+    @Value("${actors.system.client-session.dispatcher-pool-size:8}")
+    private int dispatcherSize;
+    @Value("${actors.system.client-session.wait-before-actor-stop-minutes:10}")
+    private int timeToWaitBeforeActorStopMinutes;
 }

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.msg;
 
 public enum MsgType {
+    // Device Msg Types
     DEVICE_CONNECTED_EVENT_MSG,
 
     DEVICE_DISCONNECTED_EVENT_MSG,
@@ -28,5 +29,24 @@ public enum MsgType {
 
     INCOMING_PUBLISH_MSG,
 
-    STOP_DEVICE_ACTOR_COMMAND_MSG;
+    STOP_DEVICE_ACTOR_COMMAND_MSG,
+
+    // ClientSession Msg Types
+    SESSION_INIT_MSG,
+    INCOMING_MQTT_MSG,
+    DISCONNECT_MSG,
+    CONNECTION_ACCEPTED_MSG,
+    CONNECTION_FINISHED_MSG,
+
+    STOP_ACTOR_COMMAND_MSG
+//    CONNECT_MSG,
+//    DISCONNECT_MSG,
+//    SUBSCRIBE_MSG,
+//    UNSUBSCRIBE_MSG,
+//    PING_MSG,
+//    PUBLISH_MSG,
+//    PUBACK_MSG,
+//    PUBREL_MSG,
+//    PUBCOMP_MSG,
+    ;
 }

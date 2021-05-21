@@ -13,31 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
-import lombok.Getter;
-import org.springframework.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-@Getter
-public class DisconnectReason {
-    private final DisconnectReasonType type;
-    private String message;
+import java.util.UUID;
 
-    public DisconnectReason(DisconnectReasonType type) {
-        this.type = type;
+@Slf4j
+public abstract class SessionDependentMsg implements TbActorMsg {
+    private final UUID sessionId;
+
+    public SessionDependentMsg(UUID sessionId) {
+        this.sessionId = sessionId;
     }
 
-    public DisconnectReason(DisconnectReasonType type, String message) {
-        this.type = type;
-        this.message = message;
+    public UUID getSessionId() {
+        return sessionId;
     }
 
     @Override
-    public String toString() {
-        if (StringUtils.isEmpty(message)) {
-            return type.toString();
-        } else {
-            return type + "(" + message + ")";
-        }
+    public void onTbActorStopped(TbActorId actorId) {
+        log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }
