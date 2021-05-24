@@ -153,7 +153,7 @@ public class ConnectServiceImpl implements ConnectService {
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
-            throw new MqttException("Authentication failed for client [" + clientId + "]");
+            throw new MqttException("Authentication failed . Reason - " + e.getMessage());
         }
     }
 
