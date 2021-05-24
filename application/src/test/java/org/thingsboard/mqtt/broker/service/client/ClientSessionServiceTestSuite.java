@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionListener;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
@@ -65,7 +66,8 @@ public class ClientSessionServiceTestSuite {
         Mockito.when(listenerMock.initLoad()).thenReturn(Collections.emptyMap());
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
         Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
-        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, listenerMock, serviceInfoProviderMock, statsManagerMock);
+        ClientSessionEventService clientSessionEventServiceMock = Mockito.mock(ClientSessionEventService.class);
+        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, clientSessionEventServiceMock, listenerMock, serviceInfoProviderMock, statsManagerMock);
         ((DefaultClientSessionService) this.clientSessionService).init();
     }
 

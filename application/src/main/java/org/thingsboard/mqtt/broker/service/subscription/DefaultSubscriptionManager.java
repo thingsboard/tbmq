@@ -64,7 +64,6 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void subscribe(String clientId, List<TopicSubscription> topicSubscriptions) {
-//  TODO      create list of executors
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
@@ -84,8 +83,6 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void clearSubscriptions(String clientId) {
-        // TODO: create Client Subscription Actor to ensure all operations are not parallel for one client
-        //      now it's done using ClientSession locks for subscribing and disconnecting
         log.trace("[{}] Clearing all subscriptions.", clientId);
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {

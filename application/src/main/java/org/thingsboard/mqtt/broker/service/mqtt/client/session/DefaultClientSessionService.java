@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PostConstruct;
@@ -43,6 +44,7 @@ public class DefaultClientSessionService implements ClientSessionService {
     private Map<String, ClientSessionInfo> clientSessionMap;
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
+    private final ClientSessionEventService clientSessionEventService;
     private final ClientSessionListener clientSessionListener;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
@@ -74,7 +76,7 @@ public class DefaultClientSessionService implements ClientSessionService {
     @Override
     public Map<String, ClientSessionInfo> getPersistedClientSessionInfos() {
         return clientSessionMap.entrySet().stream()
-                .filter(entry -> entry.getValue().getClientSession().getSessionInfo().isPersistent())
+                .filter(entry -> isPersistent(entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -125,10 +127,15 @@ public class DefaultClientSessionService implements ClientSessionService {
                 // can safely mark session as 'not connected' because even if it's connected to another node, we will get that event later
                 clientSessionInfo = markDisconnected(clientSessionInfo);
                 clientSessionMap.put(clientId, clientSessionInfo);
+                if (!isPersistent(clientSessionInfo)) {
+                    clientSessionEventService.tryClear(clientSessionInfo.getClientSession().getSessionInfo());
+                }
             }
-            // TODO: cannot clear 'non-persistent' ClientSessions since they con be connected to other nodes by now
-            // TODO: send 'tryClearClientSession' event
         });
+    }
+
+    private boolean isPersistent(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.getClientSession().getSessionInfo().isPersistent();
     }
 
     private boolean sessionWasOnThisNode(String encounteredServiceId) {

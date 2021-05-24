@@ -100,9 +100,6 @@ public class ClientSessionEventProcessor {
         this.clientExecutors = IntStream.range(0, clientThreadsCount).boxed()
                 .map(i -> Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-event-executor-" + i)))
                 .collect(Collectors.toList());
-        for (int i = 0; i < clientThreadsCount; i++) {
-            clientExecutors.add(Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-event-executor-" + i)));
-        }
         this.consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
         this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
         for (int i = 0; i < consumersCount; i++) {
