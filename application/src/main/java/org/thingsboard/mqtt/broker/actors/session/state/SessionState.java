@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.session.state;
 
 public enum SessionState {
-    CREATED,
+    INITIALIZED,
     CONNECTING,
     CONNECTED,
-    DISCONNECTED
+    DISCONNECTING,
+    DISCONNECTED,
 }

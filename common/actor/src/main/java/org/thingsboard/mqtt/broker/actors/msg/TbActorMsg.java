@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.msg;
 
+import org.thingsboard.mqtt.broker.actors.TbActorId;
+
 public interface TbActorMsg {
 
     MsgType getMsgType();
@@ -23,7 +25,8 @@ public interface TbActorMsg {
      * Executed when the target TbActor is stopped or destroyed.
      * Implementation should cleanup the resources.
      */
-    default void onTbActorStopped() {
+    // TODO: maybe add here ActorId (or some name) as an argument
+    default void onTbActorStopped(TbActorId actorId) {
     }
 
 }

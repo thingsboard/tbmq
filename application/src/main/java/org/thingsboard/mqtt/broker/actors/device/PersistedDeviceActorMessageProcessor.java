@@ -29,8 +29,10 @@ import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcesso
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionState;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +45,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     private final DeviceMsgService deviceMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final ClientSessionActorManager clientSessionActorManager;
     private final DeviceActorConfiguration deviceActorConfig;
 
     private final String clientId;
@@ -58,6 +61,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.clientId = clientId;
         this.deviceMsgService = systemContext.getDeviceMsgService();
         this.publishMsgDeliveryService = systemContext.getPublishMsgDeliveryService();
+        this.clientSessionActorManager = systemContext.getClientSessionActorManager();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
     }
 
@@ -65,12 +69,12 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
-        for (DevicePublishMsg persistedMessage : persistedMessages) {
-            if (sessionCtx.getSessionState() != SessionState.CONNECTED) {
-                log.debug("[{}] Client is already disconnected.", clientId);
-                break;
+        try {
+            for (DevicePublishMsg persistedMessage : persistedMessages) {
+                processPersistedMsg(persistedMessage);
             }
-            processPersistedMsg(persistedMessage);
+        } catch (Exception e) {
+            clientSessionActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process persisted messages"));
         }
     }
 
@@ -105,18 +109,18 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
-        if (sessionCtx == null || sessionCtx.getSessionState() != SessionState.CONNECTED) {
-            log.trace("[{}] Client is not connected, ignoring message {}.", clientId, publishMsg.getSerialNumber());
-            return;
-        }
         if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
             log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             return;
         }
         inFlightPacketIds.add(publishMsg.getPacketId());
-        publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
-                publishMsg.getTopic(), MqttQoS.valueOf(publishMsg.getQos()), false,
-                publishMsg.getPayload());
+        try {
+            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
+                    publishMsg.getTopic(), MqttQoS.valueOf(publishMsg.getQos()), false,
+                    publishMsg.getPayload());
+        } catch (Exception e) {
+            clientSessionActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
+        }
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {

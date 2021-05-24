@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -126,9 +127,17 @@ public class ClientSessionEventProcessor {
                 }
                 // TODO: if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
-                    processMsg(msg).get();
-                    // TODO: test what happens if commit fails (probably need logic to retry commit before polling more messages)
+                    // TODO: retry failures (make sure method can be safely called multiple times)
+                    // TODO: send control message to ClientSession Actor
                     consumer.commit(msg.getPartition(), msg.getOffset() + 1);
+                    ClientSessionEvent clientSessionEvent = eventFactory.convertToClientSessionEvent(msg.getValue());
+                    try {
+                        processMsg(clientSessionEvent, msg.getHeaders()).get();
+                    } catch (Exception e) {
+                        log.warn("[{}] Failed to process  {} message. Exception - {}, reason - {}.", msg.getKey(),
+                                clientSessionEvent.getEventType(), e.getClass().getSimpleName(), e.getMessage());
+                        log.trace("Detailed error: ", e);
+                    }
                 }
             } catch (Exception e) {
                 if (!stopped) {
@@ -144,13 +153,12 @@ public class ClientSessionEventProcessor {
         log.info("Client Session Event Consumer stopped.");
     }
 
-    private Future<Void> processMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
-        ClientSessionEvent clientSessionEvent = eventFactory.convertToClientSessionEvent(msg.getValue());
+    private Future<Void> processMsg(ClientSessionEvent clientSessionEvent, TbQueueMsgHeaders msgHeaders) {
         String clientId = clientSessionEvent.getClientId();
         return getClientExecutor(clientId).submit(() -> {
             switch (clientSessionEvent.getType()) {
                 case CONNECTION_REQUEST:
-                    processConnectionRequest((ConnectionRequestEvent)clientSessionEvent, msg.getHeaders());
+                    processConnectionRequest((ConnectionRequestEvent)clientSessionEvent, msgHeaders);
                     return null;
                 case DISCONNECTED:
                     processDisconnected((DisconnectedEvent)clientSessionEvent);
@@ -169,7 +177,6 @@ public class ClientSessionEventProcessor {
         ClientInfo clientInfo = event.getClientInfo();
         UUID sessionId = event.getSessionId();
         String clientId = clientInfo.getClientId();
-        disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
 
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         if (clientSession == null) {
@@ -189,6 +196,7 @@ public class ClientSessionEventProcessor {
             subscriptionManager.clearSubscriptions(clientId);
         }
 
+        disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
     }
 
     private void processConnectionRequest(ConnectionRequestEvent event, TbQueueMsgHeaders requestHeaders) {
@@ -216,6 +224,7 @@ public class ClientSessionEventProcessor {
 
         SettableFuture<Void> future = disconnectClientCommandService.startWaitingForDisconnect(sessionId, currentlyConnectedSessionId, clientId);
         DonAsynchron.withCallbackAndTimeout(future,
+                // TODO: should put message in Queue (not save by itself)
                 unused -> saveClientSession(sessionInfo, requestHeaders),
                 t -> {
                     long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));

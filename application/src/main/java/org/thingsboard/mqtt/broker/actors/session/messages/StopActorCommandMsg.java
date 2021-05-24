@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
-import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-public interface PostConnectService {
-    void process(ClientSessionCtx ctx) throws MqttException;
+import java.util.UUID;
+
+@Getter
+@RequiredArgsConstructor
+public class StopActorCommandMsg implements TbActorMsg {
+    private final UUID commandUUID;
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.STOP_ACTOR_COMMAND_MSG;
+    }
 }

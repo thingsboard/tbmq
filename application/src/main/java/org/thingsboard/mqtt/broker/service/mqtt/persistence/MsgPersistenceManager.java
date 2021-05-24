@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -34,7 +35,7 @@ public interface MsgPersistenceManager {
 
     void processPubRel(int packetId, ClientSessionCtx clientSessionCtx);
 
-    void processPersistedMessages(ClientSessionCtx clientSessionCtx);
+    void processPersistedMessages(ClientSessionActorStateReader actorState);
 
     void saveAwaitingQoS2Packets(ClientSessionCtx clientSessionCtx);
 

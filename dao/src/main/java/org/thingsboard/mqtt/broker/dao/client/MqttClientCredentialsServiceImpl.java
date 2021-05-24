@@ -43,6 +43,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     @Autowired
     private MqttClientCredentialsDao mqttClientCredentialsDao;
 
+    // TODO: move encoder out of DAO level
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 

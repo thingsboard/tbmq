@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.device.messages;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -34,7 +35,7 @@ public class DeviceConnectedEventMsg implements TbActorMsg {
     }
 
     @Override
-    public void onTbActorStopped() {
-        log.warn("[{}] Actor was stopped before it managed to process connect message.", sessionCtx.getClientId());
+    public void onTbActorStopped(TbActorId actorId) {
+        log.warn("[{}] Actor was stopped before processing {}, clientId - {}.", actorId, getMsgType(), sessionCtx.getClientId());
     }
 }

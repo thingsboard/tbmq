@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.SessionState;
 
 @Slf4j
 @Service
@@ -32,37 +31,27 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, MqttQoS qos, boolean isDup, byte[] payload) {
-        if (sessionCtx.getSessionState() == SessionState.DISCONNECTED) {
-            log.trace("[{}][{}] Session is already disconnected.",  sessionCtx.getClientId(), sessionCtx.getSessionId());
-            return;
-        }
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, topic, qos, isDup, payload);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         } catch (Exception e) {
-            if (sessionCtx.getSessionState() != SessionState.DISCONNECTED) {
-                log.debug("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
-                        sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-                log.trace("Detailed error:", e);
-            }
+            log.debug("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
+                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
+            log.trace("Detailed error:", e);
+            throw e;
         }
     }
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
-        if (sessionCtx.getSessionState() == SessionState.DISCONNECTED) {
-            log.trace("[{}][{}] Session is already disconnected.",  sessionCtx.getClientId(), sessionCtx.getSessionId());
-            return;
-        }
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubRelMsg);
         } catch (Exception e) {
-            if (sessionCtx.getSessionState() != SessionState.DISCONNECTED) {
-                log.debug("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
-                        sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-                log.trace("Detailed error:", e);
-            }
+            log.debug("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
+                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
+            log.trace("Detailed error:", e);
+            throw e;
         }
     }
 }

@@ -15,15 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.actors;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 import java.util.Objects;
 
+@Getter
+@RequiredArgsConstructor
 public class TbStringActorId implements TbActorId {
 
     private final String id;
-
-    public TbStringActorId(String id) {
-        this.id = id;
-    }
 
     @Override
     public String toString() {

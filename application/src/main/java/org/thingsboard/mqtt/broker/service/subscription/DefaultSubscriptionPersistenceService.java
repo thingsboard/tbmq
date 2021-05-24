@@ -82,6 +82,7 @@ public class DefaultSubscriptionPersistenceService implements SubscriptionPersis
 
     @Override
     public void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions) {
+        // TODO: make this async again
         QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -93,11 +94,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
+    public void processPersistedMessages(ClientSessionActorStateReader actorState) {
+        ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
-            applicationPersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
+            applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         }

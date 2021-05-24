@@ -15,9 +15,29 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-public enum DisconnectReason {
-    ON_DISCONNECT_MSG,
-    ON_DISCONNECT_COMMAND,
-    ON_ERROR,
-    ON_CHANNEL_CLOSED
+import lombok.Getter;
+import org.springframework.util.StringUtils;
+
+@Getter
+public class DisconnectReason {
+    private final DisconnectReasonType type;
+    private String message;
+
+    public DisconnectReason(DisconnectReasonType type) {
+        this.type = type;
+    }
+
+    public DisconnectReason(DisconnectReasonType type, String message) {
+        this.type = type;
+        this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        if (StringUtils.isEmpty(message)) {
+            return type.toString();
+        } else {
+            return type + "(" + message + ")";
+        }
+    }
 }

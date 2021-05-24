@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.client.device;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
@@ -47,7 +48,11 @@ public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
     @Override
     public void removeDeviceSessionContext(String clientId) {
         log.trace("Executing removeDeviceSessionContext [{}]", clientId);
-        deviceSessionCtxDao.removeById(clientId);
+        try {
+            deviceSessionCtxDao.removeById(clientId);
+        } catch (EmptyResultDataAccessException noDataException) {
+            log.debug("[{}] No DeviceSessionContext found for deletion.", clientId);
+        }
     }
 
     private void validate(DeviceSessionCtx deviceSessionCtx) {

@@ -56,7 +56,7 @@
         <hsqldb.version>2.5.0</hsqldb.version>
         <dbunit.version>2.5.3</dbunit.version>
         <spring-test-dbunit.version>1.2.1</spring-test-dbunit.version>
-        <postgresql.driver.version>9.4.1212</postgresql.driver.version>
+        <postgresql.driver.version>42.2.20</postgresql.driver.version>
         <kafka.version>2.3.0</kafka.version>
         <testcontainers.version>1.15.0</testcontainers.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>

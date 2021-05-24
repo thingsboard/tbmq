@@ -20,5 +20,5 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ConnectService {
-    void connect(ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
+    void startConnection(String clientId, ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
 }

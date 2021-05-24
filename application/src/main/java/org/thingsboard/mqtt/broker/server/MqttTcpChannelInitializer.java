@@ -21,9 +21,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @Qualifier("TcpChannelInitializer")
 @RequiredArgsConstructor
@@ -42,6 +44,8 @@ public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel>
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
+
+        log.debug("[{}] Created TCP channel.", handler.getSessionId());
     }
 
 }

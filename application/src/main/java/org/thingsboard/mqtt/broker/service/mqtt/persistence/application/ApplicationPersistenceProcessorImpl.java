@@ -21,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.session.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -30,7 +32,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingContext;
@@ -45,9 +46,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.SessionState;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -55,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -85,7 +88,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Autowired
     private ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
     @Autowired
-    private DisconnectService disconnectService;
+    private ClientSessionActorManager clientSessionActorManager;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
@@ -135,15 +138,16 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx) {
-        String clientId = clientSessionCtx.getClientId();
+    public void startProcessingPersistedMessages(ClientSessionActorStateReader clientSessionState) {
+        String clientId = clientSessionState.getClientId();
         log.trace("[{}] Starting persisted messages processing.", clientId);
+        ClientSessionCtx clientSessionCtx = clientSessionState.getCurrentSessionCtx();
         Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
             try {
-                processPersistedMessages(clientSessionCtx);
+                processPersistedMessages(clientSessionCtx, clientSessionState);
             } catch (Exception e) {
                 log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
-                disconnectService.disconnect(clientSessionCtx, DisconnectReason.ON_ERROR);
+                clientSessionActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to start processing persisted messages"));
             }
         });
         processingFutures.put(clientId, future);
@@ -177,8 +181,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         unacknowledgedPersistedMsgCtxService.clearContext(clientId);
     }
 
-    private void processPersistedMessages(ClientSessionCtx clientSessionCtx) {
+    private void processPersistedMessages(ClientSessionCtx clientSessionCtx, ClientSessionActorStateReader clientSessionState) {
         String clientId = clientSessionCtx.getClientId();
+        UUID sessionId = clientSessionCtx.getSessionId();
 
         ApplicationProcessorStats stats = statsManager.createApplicationProcessorStats(clientId);
 
@@ -194,7 +199,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
                 .collect(Collectors.toList());
 
-        while (isClientConnected(clientSessionCtx)) {
+        while (isClientConnected(sessionId, clientSessionState)) {
             try {
                 List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
                 if (publishProtoMessages.isEmpty() && persistedPubRelMessages.isEmpty()) {
@@ -231,7 +236,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
                 // TODO: refactor this
                 persistedPubRelMessages = Sets.newConcurrentHashSet();
-                while (isClientConnected(clientSessionCtx)) {
+                while (isClientConnected(sessionId, clientSessionState)) {
                     ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, persistedPubRelMessages);
                     int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
@@ -252,7 +257,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
                     });
 
-                    if (isClientConnected(clientSessionCtx)) {
+                    if (isClientConnected(sessionId, clientSessionState)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
@@ -269,12 +274,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     }
                 }
 
-                if (isClientConnected(clientSessionCtx)) {
+                if (isClientConnected(sessionId, clientSessionState)) {
                     log.trace("[{}] Committing all read messages.", clientId);
                     consumer.commit();
                 }
             } catch (Exception e) {
-                if (isClientConnected(clientSessionCtx)) {
+                // TODO: think if we need to drop session in this case
+                if (isClientConnected(sessionId, clientSessionState)) {
                     log.warn("[{}] Failed to process messages from queue.", clientId, e);
                     try {
                         Thread.sleep(pollDuration);
@@ -290,8 +296,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     }
 
-    private boolean isClientConnected(ClientSessionCtx clientSessionCtx) {
-        return clientSessionCtx.getSessionState() == SessionState.CONNECTED;
+    private boolean isClientConnected(UUID sessionId, ClientSessionActorStateReader clientSessionState) {
+        // TODO: think if it's not enough to check for Thread.interrupted()
+        return !Thread.interrupted()
+                && clientSessionState.getCurrentSessionId().equals(sessionId)
+                && clientSessionState.getCurrentSessionState() == SessionState.CONNECTED;
     }
 
     @PreDestroy
