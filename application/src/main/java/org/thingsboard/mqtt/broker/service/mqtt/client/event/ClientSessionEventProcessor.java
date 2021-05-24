@@ -135,7 +135,7 @@ public class ClientSessionEventProcessor {
                         processMsg(clientSessionEvent, msg.getHeaders()).get();
                     } catch (Exception e) {
                         log.warn("[{}] Failed to process  {} message. Exception - {}, reason - {}.", msg.getKey(),
-                                clientSessionEvent.getEventType(), e.getClass().getSimpleName(), e.getMessage());
+                                clientSessionEvent.getType(), e.getClass().getSimpleName(), e.getMessage());
                         log.trace("Detailed error: ", e);
                     }
                 }

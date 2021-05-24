@@ -38,14 +38,10 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectService;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
@@ -75,8 +71,6 @@ public class ConnectServiceImpl implements ConnectService {
     private final ClientSessionEventService clientSessionEventService;
     private final ClientSessionService clientSessionService;
     private final KeepAliveService keepAliveService;
-    private final DisconnectService disconnectService;
-    private final PostConnectService postConnectService;
     private final ServiceInfoProvider serviceInfoProvider;
 
     @Override

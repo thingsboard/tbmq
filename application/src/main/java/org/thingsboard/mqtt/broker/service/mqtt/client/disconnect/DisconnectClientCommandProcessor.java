@@ -25,9 +25,6 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.service.mqtt.client.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -70,7 +67,7 @@ public class DisconnectClientCommandProcessor {
                     continue;
                 }
                 for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
-                    disconnectExecutor.execute(() -> processClientDisconnect(msg));
+                    processClientDisconnect(msg);
                 }
                 consumer.commit();
             } catch (Exception e) {
