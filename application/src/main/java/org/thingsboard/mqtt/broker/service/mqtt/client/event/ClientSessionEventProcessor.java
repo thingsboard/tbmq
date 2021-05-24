@@ -100,6 +100,7 @@ public class ClientSessionEventProcessor {
         }
     }
 
+    // TODO: autocommit all msgs -> process all msgs or wait timeout -> poll again
     private void launchConsumer(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer) {
         consumersExecutor.submit(() -> {
             while (!stopped) {
@@ -111,8 +112,15 @@ public class ClientSessionEventProcessor {
                     for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
                         // TODO: retry failures (make sure method can be safely called multiple times)
                         // TODO: send control message to ClientSession Actor
-                        processMsg(msg).get();
                         consumer.commit(msg.getPartition(), msg.getOffset() + 1);
+                        ClientSessionEvent clientSessionEvent = ProtoConverter.convertToClientSessionEvent(msg.getValue());
+                        try {
+                            processMsg(clientSessionEvent, msg.getHeaders()).get();
+                        } catch (Exception e) {
+                            log.warn("[{}] Failed to process  {} message. Exception - {}, reason - {}.", msg.getKey(),
+                                    clientSessionEvent.getEventType(), e.getClass().getSimpleName(), e.getMessage());
+                            log.trace("Detailed error: ", e);
+                        }
                     }
                 } catch (Exception e) {
                     if (!stopped) {
@@ -129,13 +137,12 @@ public class ClientSessionEventProcessor {
         });
     }
 
-    private Future<Void> processMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
-        ClientSessionEvent clientSessionEvent = ProtoConverter.convertToClientSessionEvent(msg.getValue());
+    private Future<Void> processMsg(ClientSessionEvent clientSessionEvent, TbQueueMsgHeaders msgHeaders) {
         String clientId = clientSessionEvent.getClientInfo().getClientId();
         return getClientExecutor(clientId).submit(() -> {
             switch (clientSessionEvent.getEventType()) {
                 case CONNECTION_REQUEST:
-                    processConnectionRequest(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo(), clientSessionEvent.isPersistent(), msg.getHeaders());
+                    processConnectionRequest(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo(), clientSessionEvent.isPersistent(), msgHeaders);
                     return null;
                 case DISCONNECTED:
                     processDisconnected(clientSessionEvent.getSessionId(), clientSessionEvent.getClientInfo());

@@ -86,6 +86,7 @@ public class DisconnectClientCommandProcessor {
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
+        // TODO: if no session -> send CLIENT_DISCONNECTED
         clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
     }
 

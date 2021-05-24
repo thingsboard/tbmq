@@ -125,6 +125,7 @@ public class ClientSessionActor extends ContextAwareActor {
         }
 
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+            // TODO: duplicate DISCONNECTED event (if somehow prev session wasn't disconnected properly)
             log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
             return;
         }
