@@ -13,22 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
-import io.netty.handler.ssl.SslHandler;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.actors.session.messages.CallbackMsg;
 
-@Service
-@AllArgsConstructor
-public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
-
-    private final ClientSessionActorManager actorManager;
-
-    @Override
-    public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(actorManager, sslHandler);
-    }
+public interface ClientSessionEventActorManager {
+    void sendCallbackMsg(String clientId, CallbackMsg callbackMsg);
 }

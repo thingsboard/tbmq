@@ -113,7 +113,7 @@ public class ClientSessionListenerImpl implements ClientSessionListener {
     }
 
     @Override
-    public void listen(ClientSessionCallback callback) {
+    public void listen(ClientSessionChangesCallback callback) {
         if (initializing) {
             throw new RuntimeException("Cannot start listening before initialization is finished.");
         }

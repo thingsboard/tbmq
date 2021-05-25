@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
-@AllArgsConstructor
 @Getter
-@Builder
-public class TryClearSessionRequestEvent implements ClientSessionEvent {
-    private final ClientInfo clientInfo;
-
-    @Override
-    public ClientSessionEventType getType() {
-        return ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST;
-    }
-
-    @Override
-    public String getClientId() {
-        return clientInfo.getClientId();
-    }
+@RequiredArgsConstructor
+public class ConnectionRequestInfo {
+    private final UUID requestId;
+    private final long requestTime;
+    private final String responseTopic;
 }

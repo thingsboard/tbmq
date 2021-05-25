@@ -21,5 +21,5 @@ import java.util.Map;
 public interface ClientSessionListener {
     Map<String, ClientSessionInfo> initLoad();
 
-    void listen(ClientSessionCallback callback);
+    void listen(ClientSessionChangesCallback callback);
 }

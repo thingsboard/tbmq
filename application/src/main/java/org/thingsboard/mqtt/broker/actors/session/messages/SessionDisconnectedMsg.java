@@ -13,30 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 import java.util.UUID;
 
-@AllArgsConstructor
+@Slf4j
 @Getter
-@Builder
-public class DisconnectedEvent implements ClientSessionEvent {
+public class SessionDisconnectedMsg extends CallbackMsg {
     private final UUID sessionId;
-    private final ClientInfo clientInfo;
 
-    @Override
-    public ClientSessionEventType getType() {
-        return ClientSessionEventType.DISCONNECTED;
+    public SessionDisconnectedMsg(ClientSessionCallback callback, UUID sessionId) {
+        super(callback);
+        this.sessionId = sessionId;
     }
 
     @Override
-    public String getClientId() {
-        return clientInfo.getClientId();
+    public MsgType getMsgType() {
+        return MsgType.SESSION_DISCONNECTED_MSG;
+    }
+
+    @Override
+    public void onTbActorStopped(TbActorId actorId) {
+        super.onTbActorStopped(actorId);
+        log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }

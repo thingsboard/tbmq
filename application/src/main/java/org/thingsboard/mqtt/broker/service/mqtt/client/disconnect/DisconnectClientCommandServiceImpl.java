@@ -60,7 +60,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
     public SettableFuture<Void> startWaitingForDisconnect(UUID disconnectRequesterSessionId, UUID sessionId, String clientId) {
         SessionDisconnectFuture currentlyAwaitingSession = awaitingClientDisconnectMap.get(clientId);
         if (currentlyAwaitingSession != null) {
-            currentlyAwaitingSession.getFuture().setException(new MqttException("Another session is trying to connect with this clientId."));
+            currentlyAwaitingSession.getFuture().setException(new MqttException("Another session is trying to connect with this clientId"));
         }
 
         SettableFuture<Void> awaitClientDisconnectFuture = SettableFuture.create();

@@ -157,6 +157,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
                     List<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseList = eventResponseConsumer.poll(pollDuration);
                     if (eventResponseList.size() > 0) {
                         log.trace("Read {} event responses.", eventResponseList.size());
+                    } else {
+                        continue;
                     }
                     for (TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> eventResponseMsg : eventResponseList) {
                         processEventResponse(eventResponseMsg);

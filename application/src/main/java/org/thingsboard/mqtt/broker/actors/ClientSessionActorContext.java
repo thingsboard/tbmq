@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.session.service.ClientSessionManager;
 import org.thingsboard.mqtt.broker.actors.session.service.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.session.service.MsgProcessor;
 
@@ -28,5 +29,6 @@ import org.thingsboard.mqtt.broker.actors.session.service.MsgProcessor;
 @RequiredArgsConstructor
 public class ClientSessionActorContext {
     private final MsgProcessor msgProcessor;
+    private final ClientSessionManager clientSessionManager;
     private final DisconnectService disconnectService;
 }

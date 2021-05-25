@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.subscription;
+package org.thingsboard.mqtt.broker.actors.session.messages;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
+import org.thingsboard.mqtt.broker.exception.ActorStoppedException;
+
 
 @Slf4j
-// TODO: think if we need this
-public class ClientSubscriptionsActor extends ContextAwareActor {
+public abstract class CallbackMsg implements TbActorMsg {
+    private final ClientSessionCallback callback;
 
-    public ClientSubscriptionsActor(ActorSystemContext systemContext, String clientId) {
-        super(systemContext);
+    public CallbackMsg(ClientSessionCallback callback) {
+        this.callback = callback;
+    }
+
+    public ClientSessionCallback getCallback() {
+        return callback;
     }
 
     @Override
-    protected boolean doProcess(TbActorMsg msg) {
-        return false;
+    public void onTbActorStopped(TbActorId actorId) {
+        callback.onFailure(new ActorStoppedException("ClientSession actor was stopped before it can process message"));
     }
 }

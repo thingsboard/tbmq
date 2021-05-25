@@ -53,19 +53,4 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
                 .setEventType(ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST.toString())
                 .build();
     }
-
-    @Override
-    public ClientSessionEvent convertToClientSessionEvent(QueueProtos.ClientSessionEventProto clientSessionEventProto) {
-        SessionInfo sessionInfo = ProtoConverter.convertToSessionInfo(clientSessionEventProto.getSessionInfo());
-        switch (ClientSessionEventType.valueOf(clientSessionEventProto.getEventType())) {
-            case CONNECTION_REQUEST:
-                return new ConnectionRequestEvent(sessionInfo);
-            case DISCONNECTED:
-                return new DisconnectedEvent(sessionInfo.getSessionId(), sessionInfo.getClientInfo());
-            case TRY_CLEAR_SESSION_REQUEST:
-                return new TryClearSessionRequestEvent(sessionInfo.getClientInfo());
-            default:
-                throw new RuntimeException("Unexpected ClientSessionEvent type.");
-        }
-    }
 }

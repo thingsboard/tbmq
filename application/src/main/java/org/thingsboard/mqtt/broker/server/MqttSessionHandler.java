@@ -43,7 +43,6 @@ import java.util.UUID;
 @Slf4j
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
 
-    private final ActorSystemContext actorSystemContext;
     private final ClientSessionActorManager clientSessionActorManager;
 
     @Getter
@@ -51,8 +50,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private String clientId;
     private final ClientSessionCtx clientSessionCtx ;
 
-    public MqttSessionHandler(ActorSystemContext actorSystemContext, ClientSessionActorManager clientSessionActorManager, SslHandler sslHandler) {
-        this.actorSystemContext = actorSystemContext;
+    public MqttSessionHandler(ClientSessionActorManager clientSessionActorManager, SslHandler sslHandler) {
         this.clientSessionActorManager = clientSessionActorManager;
         this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler);
     }
@@ -93,7 +91,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             clientId = ((MqttConnectMessage) msg).payload().clientIdentifier();
             boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
             clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-            clientSessionActorManager.initSession(actorSystemContext, clientId, isClientIdGenerated, clientSessionCtx);
+            clientSessionActorManager.initSession(clientId, isClientIdGenerated, clientSessionCtx);
         }
 
         clientSessionActorManager.processMqttMsg(clientId, sessionId, msg);

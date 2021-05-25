@@ -13,26 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import javax.annotation.Nullable;
 
-@AllArgsConstructor
-@Getter
-@Builder
-public class ConnectionRequestEvent implements ClientSessionEvent {
-    private final SessionInfo sessionInfo;
-
-    @Override
-    public ClientSessionEventType getType() {
-        return ClientSessionEventType.CONNECTION_REQUEST;
-    }
-
-    @Override
-    public String getClientId() {
-        return sessionInfo.getClientInfo().getClientId();
-    }
+@FunctionalInterface
+public interface ClientSessionChangesCallback {
+    void accept(String clientId, String serviceId, @Nullable ClientSessionInfo clientSessionInfo);
 }

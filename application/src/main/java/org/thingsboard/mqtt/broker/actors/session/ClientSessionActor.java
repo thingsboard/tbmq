@@ -21,6 +21,13 @@ import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
+import org.thingsboard.mqtt.broker.actors.session.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.session.messages.ClearSessionMsg;
+import org.thingsboard.mqtt.broker.actors.session.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.session.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.session.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.actors.session.service.ClientSessionManager;
 import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorState;
 import org.thingsboard.mqtt.broker.actors.session.state.DefaultClientSessionActorState;
 import org.thingsboard.mqtt.broker.actors.session.state.SessionState;
@@ -44,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientSessionActor extends ContextAwareActor {
 
     private final MsgProcessor msgProcessor;
+    private final ClientSessionManager clientSessionManager;
     private final DisconnectService disconnectService;
     private final ClientSessionActorConfiguration clientSessionActorConfiguration;
 
@@ -54,6 +62,7 @@ public class ClientSessionActor extends ContextAwareActor {
     public ClientSessionActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
         super(systemContext);
         this.msgProcessor = systemContext.getClientSessionActorContext().getMsgProcessor();
+        this.clientSessionManager = systemContext.getClientSessionActorContext().getClientSessionManager();
         this.disconnectService = systemContext.getClientSessionActorContext().getDisconnectService();
         this.clientSessionActorConfiguration = systemContext.getClientSessionActorConfiguration();
         this.state = new DefaultClientSessionActorState(clientId, isClientIdGenerated);
@@ -68,6 +77,9 @@ public class ClientSessionActor extends ContextAwareActor {
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
+        if (msg instanceof CallbackMsg) {
+            return processCallbackMsg(msg);
+        }
         switch (msg.getMsgType()) {
             case SESSION_INIT_MSG:
                 initClientSession(((SessionInitMsg) msg).getClientSessionCtx());
@@ -87,10 +99,40 @@ public class ClientSessionActor extends ContextAwareActor {
             case CONNECTION_FINISHED_MSG:
                 processConnectionFinishedMsg((ConnectionFinishedMsg) msg);
                 break;
+
+            case TRY_CONNECT_MSG:
+                clientSessionManager.tryConnectSession((TryConnectMsg) msg);
+                break;
             default:
                 return false;
         }
         return true;
+    }
+
+    private boolean processCallbackMsg(TbActorMsg msg) {
+        ClientSessionCallback callback = ((CallbackMsg) msg).getCallback();
+        try {
+            switch (msg.getMsgType()) {
+                case CONNECTION_REQUEST_MSG:
+                    clientSessionManager.processConnectionRequest((ConnectionRequestMsg) msg,
+                            tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
+                    break;
+                case SESSION_DISCONNECTED_MSG:
+                    clientSessionManager.processSessionDisconnected(state.getClientId(), (SessionDisconnectedMsg) msg);
+                    break;
+                case CLEAR_SESSION_MSG:
+                    clientSessionManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
+                    break;
+                default:
+                    callback.onFailure(new RuntimeException("Unknown msg type"));
+                    return false;
+            }
+            callback.onSuccess();
+            return true;
+        } catch (Exception e) {
+            callback.onFailure(e);
+            return true;
+        }
     }
 
     private void initClientSession(ClientSessionCtx clientSessionCtx) {

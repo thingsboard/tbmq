@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -25,10 +25,10 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorCreator;
+import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionFinishedMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -37,15 +37,20 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ClientSessionActorManagerImpl implements ClientSessionActorManager {
+    private ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
+    public ClientSessionActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
+        this.actorSystemContext = actorSystemContext;
+        this.actorSystem = actorSystem;
+    }
+
     @Override
-    public void initSession(ActorSystemContext actorSystemContext, String clientId, boolean isClientIdGenerated, ClientSessionCtx clientSessionCtx) {
+    public void initSession(String clientId, boolean isClientIdGenerated, ClientSessionCtx clientSessionCtx) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
         if (clientActorRef == null) {
-            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.PERSISTED_DEVICE_DISPATCHER_NAME,
+            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_SESSION_DISPATCHER_NAME,
                     new ClientSessionActorCreator(actorSystemContext, clientId, isClientIdGenerated));
         }
         clientActorRef.tellWithHighPriority(new SessionInitMsg(clientSessionCtx));
