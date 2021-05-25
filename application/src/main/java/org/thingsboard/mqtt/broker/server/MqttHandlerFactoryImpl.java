@@ -18,14 +18,13 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 @Service
 @AllArgsConstructor
 public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
-    private final ClientSessionActorManager actorManager;
+    private final ClientMqttActorManager actorManager;
 
     @Override
     public MqttSessionHandler create(SslHandler sslHandler) {

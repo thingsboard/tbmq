@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.PersistenceSessionClearer;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -54,7 +54,7 @@ public class MsgProcessorImpl implements MsgProcessor {
     private final PersistenceSessionClearer persistenceSessionClearer;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgPersistenceManager msgPersistenceManager;
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     @Override
     public void process(ClientSessionActorStateSessionUpdater actorState, IncomingMqttMsg incomingMqttMsg) {
@@ -100,7 +100,7 @@ public class MsgProcessorImpl implements MsgProcessor {
         if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPersistedMessages(actorState);
         }
-        clientSessionActorManager.processConnectionFinished(sessionCtx.getClientId(), sessionCtx.getSessionId());
+        clientMqttActorManager.processConnectionFinished(sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
     @Override

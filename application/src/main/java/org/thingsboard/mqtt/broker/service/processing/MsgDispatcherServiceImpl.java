@@ -39,7 +39,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -72,7 +72,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private PublishMsgDeliveryService publishMsgDeliveryService;
     @Autowired
-    private ClientSessionActorManager clientSessionActorManager;
+    private ClientMqttActorManager clientMqttActorManager;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -164,7 +164,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
                     mqttQoS, false, publishMsgProto.getPayload().toByteArray());
         } catch (Exception e) {
-            clientSessionActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
+            clientMqttActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
         }
     }
 }

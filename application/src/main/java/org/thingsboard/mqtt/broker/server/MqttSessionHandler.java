@@ -28,9 +28,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -43,15 +42,15 @@ import java.util.UUID;
 @Slf4j
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
 
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     @Getter
     private final UUID sessionId = UUID.randomUUID();
     private String clientId;
     private final ClientSessionCtx clientSessionCtx ;
 
-    public MqttSessionHandler(ClientSessionActorManager clientSessionActorManager, SslHandler sslHandler) {
-        this.clientSessionActorManager = clientSessionActorManager;
+    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, SslHandler sslHandler) {
+        this.clientMqttActorManager = clientMqttActorManager;
         this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler);
     }
 
@@ -91,10 +90,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             clientId = ((MqttConnectMessage) msg).payload().clientIdentifier();
             boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
             clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-            clientSessionActorManager.initSession(clientId, isClientIdGenerated, clientSessionCtx);
+            clientMqttActorManager.initSession(clientId, isClientIdGenerated, clientSessionCtx);
         }
 
-        clientSessionActorManager.processMqttMsg(clientId, sessionId, msg);
+        clientMqttActorManager.processMqttMsg(clientId, sessionId, msg);
     }
 
     @Override
@@ -128,7 +127,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void operationComplete(Future<? super Void> future) {
         if (clientId != null) {
-            clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED));
+            clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED));
         }
     }
 
@@ -141,7 +140,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 log.debug("[{}] Failed to close channel. Reason - {}.", sessionId, e.getMessage());
             }
         } else {
-            clientSessionActorManager.disconnect(clientId, sessionId, reason);
+            clientMqttActorManager.disconnect(clientId, sessionId, reason);
         }
     }
 }

@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -44,7 +44,7 @@ public class DisconnectClientCommandProcessor {
     private volatile boolean stopped = false;
 
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DisconnectClientCommandHelper helper;
 
@@ -89,7 +89,7 @@ public class DisconnectClientCommandProcessor {
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
         // TODO: if no session -> send CLIENT_DISCONNECTED
-        clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
+        clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
     }
 
     private void initConsumer() {

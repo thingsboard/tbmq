@@ -31,7 +31,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -48,7 +48,7 @@ public class MqttPublishHandler {
     private final MsgDispatcherService msgDispatcherService;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     public void process(ClientSessionCtx ctx, MqttPublishMessage msg) throws MqttException {
         topicValidationService.validateTopic(msg.variableHeader().topicName());
@@ -80,7 +80,7 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 log.info("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg, t);
-                clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
+                clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
             }
         });
     }

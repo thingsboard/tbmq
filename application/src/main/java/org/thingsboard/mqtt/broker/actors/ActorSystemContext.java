@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorConfiguration;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +36,7 @@ public class ActorSystemContext {
     private final TbActorSystem actorSystem;
     private final DeviceMsgService deviceMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     private final ClientSessionActorContext clientSessionActorContext;
 

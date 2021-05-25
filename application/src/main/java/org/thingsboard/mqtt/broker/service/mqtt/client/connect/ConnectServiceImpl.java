@@ -44,7 +44,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -63,7 +63,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 public class ConnectServiceImpl implements ConnectService {
     private final ExecutorService connectHandlerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("connect-handler-executor"));
 
-    private final ClientSessionActorManager clientSessionActorManager;
+    private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final AuthenticationService authenticationService;
     private final AuthorizationRuleService authorizationRuleService;
@@ -86,7 +86,7 @@ public class ConnectServiceImpl implements ConnectService {
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
 
         keepAliveService.registerSession(sessionId, msg.variableHeader().keepAliveTimeSeconds(),
-                () -> clientSessionActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
+                () -> clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
 
         ClientSession prevSession = clientSessionService.getClientSession(clientId);
         boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
@@ -112,7 +112,7 @@ public class ConnectServiceImpl implements ConnectService {
         try {
             sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
         } finally {
-            clientSessionActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(),
+            clientMqttActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(),
                     new DisconnectReason(DisconnectReasonType.ON_ERROR, "Connection failed. Message - " + t.getMessage()));
         }
     }
@@ -122,7 +122,7 @@ public class ConnectServiceImpl implements ConnectService {
         String clientId = ctx.getClientId();
 
         if (wasConnectionSuccessful) {
-            clientSessionActorManager.processConnectionAccepted(clientId, sessionId, isPrevSessionPersistent, lastWillMsg);
+            clientMqttActorManager.processConnectionAccepted(clientId, sessionId, isPrevSessionPersistent, lastWillMsg);
         } else {
             log.debug("[{}][{}] Client wasn't connected.", clientId, sessionId);
             try {
@@ -130,7 +130,7 @@ public class ConnectServiceImpl implements ConnectService {
             } catch (Exception e) {
                 log.trace("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
             } finally {
-                clientSessionActorManager.disconnect(clientId, sessionId,
+                clientMqttActorManager.disconnect(clientId, sessionId,
                         new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client wasn't allowed to connect"));
             }
         }

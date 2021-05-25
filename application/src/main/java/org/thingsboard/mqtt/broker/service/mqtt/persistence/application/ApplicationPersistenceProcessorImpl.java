@@ -46,7 +46,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.session.ClientSessionActorManager;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -88,7 +88,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Autowired
     private ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
     @Autowired
-    private ClientSessionActorManager clientSessionActorManager;
+    private ClientMqttActorManager clientMqttActorManager;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
@@ -147,7 +147,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 processPersistedMessages(clientSessionCtx, clientSessionState);
             } catch (Exception e) {
                 log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
-                clientSessionActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to start processing persisted messages"));
+                clientMqttActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to start processing persisted messages"));
             }
         });
         processingFutures.put(clientId, future);

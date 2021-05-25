@@ -37,11 +37,11 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class ClientSessionActorManagerImpl implements ClientSessionActorManager {
+public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     private ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
-    public ClientSessionActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
+    public ClientMqttActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
         this.actorSystemContext = actorSystemContext;
         this.actorSystem = actorSystem;
     }
