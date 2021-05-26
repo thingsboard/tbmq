@@ -66,6 +66,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
+        // TODO: fix order of persisted messages
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
