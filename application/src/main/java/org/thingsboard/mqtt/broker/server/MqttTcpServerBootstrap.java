@@ -25,9 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Service
@@ -53,8 +54,8 @@ public class MqttTcpServerBootstrap {
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
-    @PostConstruct
-    public void init() throws Exception {
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) throws Exception {
         log.info("[TCP Server] Setting resource leak detector level to {}", leakDetectorLevel);
         ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.valueOf(leakDetectorLevel.toUpperCase()));
 
@@ -75,10 +76,16 @@ public class MqttTcpServerBootstrap {
     public void shutdown() throws InterruptedException {
         log.info("[TCP Server] Stopping MQTT server!");
         try {
-            serverChannel.close().sync();
+            if (serverChannel != null) {
+                serverChannel.close().sync();
+            }
         } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
+            if (workerGroup != null) {
+                workerGroup.shutdownGracefully();
+            }
+            if (bossGroup != null) {
+                bossGroup.shutdownGracefully();
+            }
         }
         log.info("[TCP Server] MQTT server stopped!");
     }
