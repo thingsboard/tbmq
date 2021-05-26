@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.actors.session.service.subscription;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
-import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,12 +37,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 // not thread-safe for operations with the same 'clientId'
-public class DefaultSubscriptionManager implements SubscriptionManager {
+public class SubscriptionManagerImpl implements SubscriptionManager {
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
-    private final ClientSessionService clientSessionService;
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
 
     // TODO: sync subscriptions (and probably ClientSession)
@@ -50,9 +50,9 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
 
 
-    @PostConstruct
-    public void init() {
-        this.clientSubscriptionsMap = loadPersistedClientSubscriptions();
+    @Override
+    public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
+        this.clientSubscriptionsMap = new ConcurrentHashMap<>(clientTopicSubscriptions);
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
@@ -63,22 +63,36 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
     }
 
     @Override
-    public void subscribe(String clientId, List<TopicSubscription> topicSubscriptions) {
+    public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        subscribeInternally(clientId, topicSubscriptions);
+
+        // TODO: add 'version' to at least detect issues
+        Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), clientSubscriptions);
+    }
+
+    @Override
+    public void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.addAll(topicSubscriptions);
-        // TODO: add 'version' to at least detect issues
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }
 
     @Override
-    public void unsubscribe(String clientId, List<String> topicFilters) {
+    public void unsubscribe(String clientId, Collection<String> topicFilters) {
+        unsubscribeInternally(clientId, topicFilters);
+
+        Set<TopicSubscription> updatedClientSubscriptions = clientSubscriptionsMap.get(clientId);
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), updatedClientSubscriptions);
+    }
+
+    @Override
+    public void unsubscribeInternally(String clientId, Collection<String> topicFilters) {
         subscriptionService.unsubscribe(clientId, topicFilters);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscription -> topicFilters.contains(topicSubscription.getTopic()));
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }
 
     @Override
@@ -93,27 +107,13 @@ public class DefaultSubscriptionManager implements SubscriptionManager {
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), Collections.emptySet());
     }
 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
-        return clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet());
+        return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
 
-    private ConcurrentMap<String, Set<TopicSubscription>> loadPersistedClientSubscriptions() {
-        log.info("Load persisted client subscriptions.");
-        Map<String, Set<TopicSubscription>> allClientSubscriptions = subscriptionPersistenceService.loadAllClientSubscriptions();
-        Set<String> persistedClientIds = clientSessionService.getPersistedClientSessionInfos().keySet();
-        ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptions = new ConcurrentHashMap<>();
-        allClientSubscriptions.forEach((clientId, topicSubscriptions) -> {
-            if (persistedClientIds.contains(clientId)) {
-                clientSubscriptions.put(clientId, new HashSet<>(topicSubscriptions));
-            } else {
-                log.debug("[{}] Clearing not persistent client subscriptions.", clientId);
-                subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
-            }
-        });
-        return clientSubscriptions;
-    }
+
 }

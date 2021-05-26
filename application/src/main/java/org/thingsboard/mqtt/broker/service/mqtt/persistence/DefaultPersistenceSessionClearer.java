@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.session.service.subscription.SubscriptionManager;
 
 @Slf4j
 @Service

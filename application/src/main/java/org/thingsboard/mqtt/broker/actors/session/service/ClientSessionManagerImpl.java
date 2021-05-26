@@ -42,7 +42,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.session.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PostConstruct;

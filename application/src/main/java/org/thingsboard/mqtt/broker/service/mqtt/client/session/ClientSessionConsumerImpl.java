@@ -46,7 +46,7 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ClientSessionListenerImpl implements ClientSessionListener {
+public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
 

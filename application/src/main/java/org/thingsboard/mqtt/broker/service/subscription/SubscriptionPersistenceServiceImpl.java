@@ -22,71 +22,37 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PreDestroy;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
-public class DefaultSubscriptionPersistenceService implements SubscriptionPersistenceService {
-    @Value("${queue.client-subscriptions.poll-interval}")
-    private long pollDuration;
+public class SubscriptionPersistenceServiceImpl implements SubscriptionPersistenceService {
     @Value("${queue.client-subscriptions.acknowledge-wait-timeout-ms}")
     private long ackTimeoutMs;
 
-    private final ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory;
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsProducer;
 
-    public DefaultSubscriptionPersistenceService(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory) {
-        this.clientSubscriptionsQueueFactory = clientSubscriptionsQueueFactory;
+    public SubscriptionPersistenceServiceImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory) {
         this.clientSubscriptionsProducer = clientSubscriptionsQueueFactory.createProducer();
     }
 
     @Override
-    public Map<String, Set<TopicSubscription>> loadAllClientSubscriptions() {
-        log.info("Loading client subscriptions.");
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(UUID.randomUUID().toString());
-        clientSubscriptionsConsumer.assignAllPartitions();
-        List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages;
-        Map<String, Set<TopicSubscription>> allClientsSubscriptions = new HashMap<>();
-        do {
-            try {
-                messages = clientSubscriptionsConsumer.poll(pollDuration);
-                for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
-                    String clientId = msg.getKey();
-                    Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
-                    allClientsSubscriptions.put(clientId, clientSubscriptions);
-                }
-            } catch (Exception e) {
-                log.error("Failed to load client subscriptions.", e);
-                throw e;
-            }
-        } while (!messages.isEmpty());
-
-        clientSubscriptionsConsumer.unsubscribeAndClose();
-
-        return allClientsSubscriptions;
-    }
-
-    @Override
-    public void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions) {
+    public void persistClientSubscriptions(String clientId, String serviceId, Set<TopicSubscription> clientSubscriptions) {
         // TODO: make this async again
         QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSubscriptionsProducer.send(new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto),
+        clientSubscriptionsProducer.send(generateRequest(clientId, serviceId, clientSubscriptionsProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -118,6 +84,11 @@ public class DefaultSubscriptionPersistenceService implements SubscriptionPersis
         }
     }
 
+    private TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> generateRequest(String clientId, String serviceId, QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
+        TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> request = new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto);
+        request.getHeaders().put(SubscriptionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceId));
+        return request;
+    }
 
     @PreDestroy
     public void destroy() {

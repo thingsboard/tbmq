@@ -26,8 +26,10 @@ import org.thingsboard.mqtt.broker.actors.session.messages.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.ClientSessionCallback;
 import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.session.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.session.messages.TryConnectMsg;
 import org.thingsboard.mqtt.broker.actors.session.service.ClientSessionManager;
+import org.thingsboard.mqtt.broker.actors.session.service.subscription.SubscriptionChangesManager;
 import org.thingsboard.mqtt.broker.actors.session.state.ClientSessionActorState;
 import org.thingsboard.mqtt.broker.actors.session.state.DefaultClientSessionActorState;
 import org.thingsboard.mqtt.broker.actors.session.state.SessionState;
@@ -52,6 +54,7 @@ public class ClientSessionActor extends ContextAwareActor {
 
     private final MsgProcessor msgProcessor;
     private final ClientSessionManager clientSessionManager;
+    private final SubscriptionChangesManager subscriptionChangesManager;
     private final DisconnectService disconnectService;
     private final ClientSessionActorConfiguration clientSessionActorConfiguration;
 
@@ -63,6 +66,7 @@ public class ClientSessionActor extends ContextAwareActor {
         super(systemContext);
         this.msgProcessor = systemContext.getClientSessionActorContext().getMsgProcessor();
         this.clientSessionManager = systemContext.getClientSessionActorContext().getClientSessionManager();
+        this.subscriptionChangesManager = systemContext.getClientSessionActorContext().getSubscriptionChangesManager();
         this.disconnectService = systemContext.getClientSessionActorContext().getDisconnectService();
         this.clientSessionActorConfiguration = systemContext.getClientSessionActorConfiguration();
         this.state = new DefaultClientSessionActorState(clientId, isClientIdGenerated);
@@ -102,6 +106,10 @@ public class ClientSessionActor extends ContextAwareActor {
 
             case TRY_CONNECT_MSG:
                 clientSessionManager.tryConnectSession((TryConnectMsg) msg);
+                break;
+
+            case SUBSCRIPTION_CHANGED_EVENT_MSG:
+                subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
                 break;
             default:
                 return false;

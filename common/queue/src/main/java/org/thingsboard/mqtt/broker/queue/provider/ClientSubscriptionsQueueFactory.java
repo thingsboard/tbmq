@@ -25,6 +25,6 @@ public interface ClientSubscriptionsQueueFactory {
 
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String id);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String serviceId);
 
 }

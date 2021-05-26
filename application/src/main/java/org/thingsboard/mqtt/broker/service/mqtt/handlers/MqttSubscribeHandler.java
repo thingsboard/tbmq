@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.session.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 

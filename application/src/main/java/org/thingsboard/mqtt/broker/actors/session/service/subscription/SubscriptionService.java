@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.actors.session.service.subscription;
 
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
-import java.util.Map;
+import java.util.Collection;
+/*
+    not thread-safe for operations with the same 'clientId'
+ */
+interface SubscriptionService {
+    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
-public interface ClientSessionListener {
-    Map<String, ClientSessionInfo> initLoad();
-
-    void listen(ClientSessionChangesCallback callback);
+    void unsubscribe(String clientId, Collection<String> topicFilters);
 }

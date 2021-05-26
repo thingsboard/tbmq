@@ -45,7 +45,7 @@ public class ClientSessionEventActorManagerImpl implements ClientSessionEventAct
         if (clientActorRef == null) {
             clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_SESSION_DISPATCHER_NAME,
                     // TODO: pass correct 'isClientIdGenerated' here
-                    new ClientSessionActorCreator(actorSystemContext, clientId, false));
+                    new ClientSessionActorCreator(actorSystemContext, clientId, true));
         }
         clientActorRef.tellWithHighPriority(callbackMsg);
     }

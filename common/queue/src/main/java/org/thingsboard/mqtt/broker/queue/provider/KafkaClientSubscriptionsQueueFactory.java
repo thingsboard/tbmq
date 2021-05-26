@@ -72,13 +72,15 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String id) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(clientSubscriptionsSettings.getConsumerProperties()));
         consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("client-subscriptions-consumer-" + id);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSubscriptionsProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.clientId("client-subscriptions-consumer-" + serviceId);
+        consumerBuilder.groupId("client-subscriptions-group-" + serviceId + "-" + System.currentTimeMillis());
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSubscriptionsProto.parseFrom(msg.getData()), msg.getHeaders(),
+                msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();

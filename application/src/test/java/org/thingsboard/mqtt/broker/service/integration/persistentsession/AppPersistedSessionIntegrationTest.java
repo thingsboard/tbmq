@@ -36,10 +36,10 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Arrays;
@@ -67,7 +67,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Autowired
     private ClientSessionCtxService clientSessionCtxService;
     @Autowired
-    private SubscriptionManager subscriptionManager;
+    private ClientSubscriptionService clientSubscriptionService;
 
     private org.thingsboard.mqtt.broker.common.data.MqttClient applicationClient;
     private MqttClient persistedClient;
@@ -116,7 +116,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertFalse(persistedClientSession.isConnected());
         Assert.assertTrue(sessionInfo.isPersistent());
         Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -161,7 +161,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertTrue(persistedClientSession.isConnected());
         Assert.assertTrue(sessionInfo.isPersistent());
         Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -191,7 +191,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             persistedClient.on(newTopicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(newQoSLevels[i])).get();
         }
 
-        Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size() + newTopicSubscriptions.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS) && persistedTopicSubscriptions.containsAll(newTopicSubscriptions));
     }
@@ -220,7 +220,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertNotNull(clientSessionCtx);
         Assert.assertTrue(persistedClientSession.isConnected());
         Assert.assertFalse(persistedClientSession.getSessionInfo().isPersistent());
-        Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }
 
@@ -254,7 +254,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertNull(persistedClientSession);
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
         Assert.assertNull(clientSessionCtx);
-        Set<TopicSubscription> persistedTopicSubscriptions = subscriptionManager.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }
 }

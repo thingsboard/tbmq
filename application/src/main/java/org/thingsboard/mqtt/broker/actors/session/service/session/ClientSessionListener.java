@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.actors.session.service.session;
 
-import java.util.Set;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 
-public interface SubscriptionPersistenceService {
-    void persistClientSubscriptions(String clientId, String serviceId, Set<TopicSubscription> clientSubscriptions);
+import java.util.Map;
+
+public interface ClientSessionListener {
+    void init(Map<String, ClientSessionInfo> clientSessionInfos);
+
+    void startListening(ClientSessionConsumer clientSessionConsumer);
 }

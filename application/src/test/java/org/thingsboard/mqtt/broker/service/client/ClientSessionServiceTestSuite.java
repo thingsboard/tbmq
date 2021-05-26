@@ -29,10 +29,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionListener;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.DefaultClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;
@@ -62,13 +61,11 @@ public class ClientSessionServiceTestSuite {
     public void init() {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
-        ClientSessionListener listenerMock = Mockito.mock(ClientSessionListener.class);
-        Mockito.when(listenerMock.initLoad()).thenReturn(Collections.emptyMap());
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
         Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
         ClientSessionEventService clientSessionEventServiceMock = Mockito.mock(ClientSessionEventService.class);
-        this.clientSessionService = new DefaultClientSessionService(clientSessionPersistenceServiceMock, clientSessionEventServiceMock, listenerMock, serviceInfoProviderMock, statsManagerMock);
-        ((DefaultClientSessionService) this.clientSessionService).init();
+        this.clientSessionService = new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock);
+        ((ClientSessionServiceImpl) this.clientSessionService).init(Collections.emptyMap());
     }
 
     @Test

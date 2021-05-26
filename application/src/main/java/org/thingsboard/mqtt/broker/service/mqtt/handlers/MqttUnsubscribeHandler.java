@@ -20,7 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.session.service.subscription.SubscriptionManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;

@@ -15,15 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import java.util.List;
-import java.util.Set;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-public interface SubscriptionManager {
-    void subscribe(String clientId, List<TopicSubscription> topicSubscriptions);
+public class SubscriptionConst {
+    public static final String SERVICE_ID_HEADER = "serviceId";
 
-    void unsubscribe(String clientId, List<String> topicFilters);
-
-    void clearSubscriptions(String clientId);
-
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
 }

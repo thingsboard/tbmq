@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.actors.session.service.subscription;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
 
