@@ -208,6 +208,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> {
                     log.trace("[{}] Committing offset {}.", clientId, offset);
+                    // TODO: use commit only once
                     consumer.commit(0, offset + 1);
                 });
 

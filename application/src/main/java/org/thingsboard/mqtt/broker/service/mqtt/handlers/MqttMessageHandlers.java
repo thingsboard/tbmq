@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Getter
 public class MqttMessageHandlers {
+    // TODO: move handlers to actor packet (it can only be executed in one thread for one client)
     private final MqttSubscribeHandler subscribeHandler;
     private final MqttUnsubscribeHandler unsubscribeHandler;
     private final MqttPublishHandler publishHandler;
