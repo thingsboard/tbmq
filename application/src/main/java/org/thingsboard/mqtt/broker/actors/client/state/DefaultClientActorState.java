@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
-public class DefaultClientSessionActorState implements ClientSessionActorState {
+public class DefaultClientActorState implements ClientActorState {
     // TODO: move subscription here
     //    private final Set<TopicSubscription> subscriptions = new HashSet<>();
 
@@ -42,7 +42,7 @@ public class DefaultClientSessionActorState implements ClientSessionActorState {
     private ClientSessionCtx clientSessionCtx;
     private SessionState currentSessionState = SessionState.DISCONNECTED;
 
-    public DefaultClientSessionActorState(String clientId, boolean isClientIdGenerated) {
+    public DefaultClientActorState(String clientId, boolean isClientIdGenerated) {
         this.clientId = clientId;
         this.isClientIdGenerated = isClientIdGenerated;
     }

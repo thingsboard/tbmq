@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
-import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import javax.annotation.PostConstruct;
@@ -33,16 +33,16 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class ActorSystemLifecycle {
     public static final String PERSISTED_DEVICE_DISPATCHER_NAME = "persisted-device-dispatcher";
-    public static final String CLIENT_SESSION_DISPATCHER_NAME = "client-session-dispatcher";
+    public static final String CLIENT_DISPATCHER_NAME = "client-dispatcher";
 
     private final TbActorSystem actorSystem;
     private final DeviceActorConfiguration deviceActorConfiguration;
-    private final ClientSessionActorConfiguration clientSessionActorConfiguration;
+    private final ClientActorConfiguration clientActorConfiguration;
 
     @PostConstruct
     public void init() {
         actorSystem.createDispatcher(PERSISTED_DEVICE_DISPATCHER_NAME, initDispatcherExecutor(PERSISTED_DEVICE_DISPATCHER_NAME, deviceActorConfiguration.getDispatcherSize()));
-        actorSystem.createDispatcher(CLIENT_SESSION_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_SESSION_DISPATCHER_NAME, clientSessionActorConfiguration.getDispatcherSize()));
+        actorSystem.createDispatcher(CLIENT_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_DISPATCHER_NAME, clientActorConfiguration.getDispatcherSize()));
     }
 
     @PreDestroy

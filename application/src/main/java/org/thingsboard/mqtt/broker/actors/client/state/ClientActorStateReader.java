@@ -20,15 +20,20 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
-/*
-    not thread-safe
- */
-public interface ClientSessionActorState extends ClientSessionActorStateSessionUpdater {
-    void setStopActorCommandId(UUID commandId);
+public interface ClientActorStateReader {
+    String getClientId();
 
-    void clearStopActorCommandId();
+    UUID getCurrentSessionId();
 
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+    SessionState getCurrentSessionState();
 
-    void setDisconnectListener(DisconnectListener disconnectListener);
+    ClientSessionCtx getCurrentSessionCtx();
+
+    DisconnectListener getDisconnectListener();
+
+    UUID getStopActorCommandId();
+
+    boolean isClientIdGenerated();
+
+    QueuedMqttMessages getQueuedMessages();
 }

@@ -16,14 +16,14 @@
 package org.thingsboard.mqtt.broker.actors.client.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 
 import java.util.UUID;
 
 @Slf4j
 public class ClientActorUtil {
-    public static boolean validateAndLogSession(ClientSessionActorStateReader state, SessionDependentMsg msg) {
+    public static boolean validateAndLogSession(ClientActorStateReader state, SessionDependentMsg msg) {
         UUID receivedSessionId = msg.getSessionId();
         if (!state.getCurrentSessionId().equals(receivedSessionId)) {
             log.debug("[{}][{}] Received {} for another sessionId - {}.",

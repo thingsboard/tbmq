@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
-import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorCreator;
+import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionListener;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionManager;
@@ -108,11 +108,11 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
                 return;
             }
 
-            TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+            TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
             if (clientActorRef == null) {
                 // TODO: get ClientInfo and check if clientId is generated
-                clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_SESSION_DISPATCHER_NAME,
-                        new ClientSessionActorCreator(actorSystemContext, clientId, true));
+                clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                        new ClientActorCreator(actorSystemContext, clientId, true));
             }
 
             clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));

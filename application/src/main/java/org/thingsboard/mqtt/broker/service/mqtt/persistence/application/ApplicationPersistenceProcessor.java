@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ApplicationPersistenceProcessor {
-    void startProcessingPersistedMessages(ClientSessionActorStateReader clientSessionState);
+    void startProcessingPersistedMessages(ClientActorStateReader clientState);
 
     void stopProcessingPersistedMessages(String clientId);
 

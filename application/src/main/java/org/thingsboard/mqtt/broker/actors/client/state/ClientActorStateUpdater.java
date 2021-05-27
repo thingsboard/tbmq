@@ -15,25 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.client.service.DisconnectListener;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-
-import java.util.UUID;
-
-public interface ClientSessionActorStateReader {
-    String getClientId();
-
-    UUID getCurrentSessionId();
-
-    SessionState getCurrentSessionState();
-
-    ClientSessionCtx getCurrentSessionCtx();
-
-    DisconnectListener getDisconnectListener();
-
-    UUID getStopActorCommandId();
-
-    boolean isClientIdGenerated();
-
-    QueuedMqttMessages getQueuedMessages();
+public interface ClientActorStateUpdater extends ClientActorStateReader {
+    void updateSessionState(SessionState newState);
 }

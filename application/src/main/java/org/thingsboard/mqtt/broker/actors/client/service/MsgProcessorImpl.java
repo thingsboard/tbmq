@@ -22,8 +22,8 @@ import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateReader;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateSessionUpdater;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateUpdater;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.util.ClientActorUtil;
@@ -57,7 +57,7 @@ public class MsgProcessorImpl implements MsgProcessor {
     private final ClientMqttActorManager clientMqttActorManager;
 
     @Override
-    public void process(ClientSessionActorStateSessionUpdater actorState, IncomingMqttMsg incomingMqttMsg) {
+    public void process(ClientActorStateUpdater actorState, IncomingMqttMsg incomingMqttMsg) {
         boolean messageNeedsToBeReleased = true;
         try {
             MqttMessageType msgType = incomingMqttMsg.getMsg().fixedHeader().messageType();
@@ -79,7 +79,7 @@ public class MsgProcessorImpl implements MsgProcessor {
     }
 
     @Override
-    public void processConnectionAccepted(ClientSessionActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+    public void processConnectionAccepted(ClientActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 
@@ -104,12 +104,12 @@ public class MsgProcessorImpl implements MsgProcessor {
     }
 
     @Override
-    public void processConnectionFinished(ClientSessionActorStateReader actorState) {
+    public void processConnectionFinished(ClientActorStateReader actorState) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg));
     }
 
-    private boolean handleMessage(ClientSessionActorStateSessionUpdater actorState, MqttMessage msg) {
+    private boolean handleMessage(ClientActorStateUpdater actorState, MqttMessage msg) {
         MqttMessageType msgType = msg.fixedHeader().messageType();
 
         validateState(msgType, actorState.getCurrentSessionState());

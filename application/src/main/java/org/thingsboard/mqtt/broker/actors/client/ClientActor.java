@@ -30,8 +30,8 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEve
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorState;
-import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientSessionActorState;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
@@ -50,27 +50,27 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ClientSessionActor extends ContextAwareActor {
+public class ClientActor extends ContextAwareActor {
     // TODO: rename packet and maybe classes
 
     private final MsgProcessor msgProcessor;
     private final ClientSessionManager clientSessionManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
     private final DisconnectService disconnectService;
-    private final ClientSessionActorConfiguration clientSessionActorConfiguration;
+    private final ClientActorConfiguration clientActorConfiguration;
 
-    private final ClientSessionActorState state;
+    private final ClientActorState state;
 
     // TODO: create actor for persistent clients with Subscriptions in SessionState
 
-    public ClientSessionActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
+    public ClientActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
         super(systemContext);
-        this.msgProcessor = systemContext.getClientSessionActorContext().getMsgProcessor();
-        this.clientSessionManager = systemContext.getClientSessionActorContext().getClientSessionManager();
-        this.subscriptionChangesManager = systemContext.getClientSessionActorContext().getSubscriptionChangesManager();
-        this.disconnectService = systemContext.getClientSessionActorContext().getDisconnectService();
-        this.clientSessionActorConfiguration = systemContext.getClientSessionActorConfiguration();
-        this.state = new DefaultClientSessionActorState(clientId, isClientIdGenerated);
+        this.msgProcessor = systemContext.getClientActorContext().getMsgProcessor();
+        this.clientSessionManager = systemContext.getClientActorContext().getClientSessionManager();
+        this.subscriptionChangesManager = systemContext.getClientActorContext().getSubscriptionChangesManager();
+        this.disconnectService = systemContext.getClientActorContext().getDisconnectService();
+        this.clientActorConfiguration = systemContext.getClientActorConfiguration();
+        this.state = new DefaultClientActorState(clientId, isClientIdGenerated);
     }
 
     @Override
@@ -194,7 +194,7 @@ public class ClientSessionActor extends ContextAwareActor {
         if (state.isClientIdGenerated()) {
             ctx.tell(stopActorCommandMsg);
         } else {
-            systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, TimeUnit.MINUTES.toMillis(clientSessionActorConfiguration.getTimeToWaitBeforeActorStopMinutes()));
+            systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, TimeUnit.MINUTES.toMillis(clientActorConfiguration.getTimeToWaitBeforeActorStopMinutes()));
         }
     }
 

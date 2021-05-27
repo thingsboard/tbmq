@@ -17,5 +17,5 @@ package org.thingsboard.mqtt.broker.common.data.id;
 
 public enum ActorType {
     PERSISTED_DEVICE,
-    CLIENT_SESSION,
+    CLIENT,
 }

@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
-import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorCreator;
+import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
@@ -48,17 +48,17 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
 
     @Override
     public void initSession(String clientId, boolean isClientIdGenerated, ClientSessionCtx clientSessionCtx) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
-            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_SESSION_DISPATCHER_NAME,
-                    new ClientSessionActorCreator(actorSystemContext, clientId, isClientIdGenerated));
+            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                    new ClientActorCreator(actorSystemContext, clientId, isClientIdGenerated));
         }
         clientActorRef.tellWithHighPriority(new SessionInitMsg(clientSessionCtx));
     }
 
     @Override
     public void disconnect(String clientId, UUID sessionId, DisconnectReason reason) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, sessionId);
         } else {
@@ -68,7 +68,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
 
     @Override
     public void processMqttMsg(String clientId, UUID sessionId, MqttMessage msg) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process MQTT message.", clientId);
         } else {
@@ -78,7 +78,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
 
     @Override
     public void processConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process connection accepted.", clientId);
         } else {
@@ -89,7 +89,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     // TODO: group in one method
     @Override
     public void processConnectionFinished(String clientId, UUID sessionId) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT_SESSION, clientId));
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process connection finished.", clientId);
         } else {

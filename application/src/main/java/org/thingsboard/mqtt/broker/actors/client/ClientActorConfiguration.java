@@ -22,10 +22,10 @@ import org.springframework.stereotype.Component;
 
 @Getter
 @Component
-@ConfigurationProperties(prefix = "actors.system.client-session")
-public class ClientSessionActorConfiguration {
-    @Value("${actors.system.client-session.dispatcher-pool-size:8}")
+@ConfigurationProperties(prefix = "actors.system.client")
+public class ClientActorConfiguration {
+    @Value("${actors.system.client.dispatcher-pool-size:8}")
     private int dispatcherSize;
-    @Value("${actors.system.client-session.wait-before-actor-stop-minutes:10}")
+    @Value("${actors.system.client.wait-before-actor-stop-minutes:10}")
     private int timeToWaitBeforeActorStopMinutes;
 }

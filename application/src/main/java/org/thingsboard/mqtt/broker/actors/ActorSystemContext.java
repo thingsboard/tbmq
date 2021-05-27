@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -38,10 +38,10 @@ public class ActorSystemContext {
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
 
-    private final ClientSessionActorContext clientSessionActorContext;
+    private final ClientActorContext clientActorContext;
 
     private final DeviceActorConfiguration deviceActorConfiguration;
-    private final ClientSessionActorConfiguration clientSessionActorConfiguration;
+    private final ClientActorConfiguration clientActorConfiguration;
 
     public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
         log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);

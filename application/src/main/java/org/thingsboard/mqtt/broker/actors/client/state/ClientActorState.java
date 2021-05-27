@@ -15,6 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-public interface ClientSessionActorStateSessionUpdater extends ClientSessionActorStateReader {
-    void updateSessionState(SessionState newState);
+import org.thingsboard.mqtt.broker.actors.client.service.DisconnectListener;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.UUID;
+
+/*
+    not thread-safe
+ */
+public interface ClientActorState extends ClientActorStateUpdater {
+    void setStopActorCommandId(UUID commandId);
+
+    void clearStopActorCommandId();
+
+    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+
+    void setDisconnectListener(DisconnectListener disconnectListener);
 }

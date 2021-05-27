@@ -23,12 +23,12 @@ import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.service.ContextBasedCreator;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 
-public class ClientSessionActorCreator extends ContextBasedCreator {
+public class ClientActorCreator extends ContextBasedCreator {
 
     private final String clientId;
     private final boolean isClientIdGenerated;
 
-    public ClientSessionActorCreator(ActorSystemContext context, String clientId, boolean isClientIdGenerated) {
+    public ClientActorCreator(ActorSystemContext context, String clientId, boolean isClientIdGenerated) {
         super(context);
         this.clientId = clientId;
         this.isClientIdGenerated = isClientIdGenerated;
@@ -36,12 +36,12 @@ public class ClientSessionActorCreator extends ContextBasedCreator {
 
     @Override
     public TbActorId createActorId() {
-        return new TbTypeActorId(ActorType.CLIENT_SESSION, clientId);
+        return new TbTypeActorId(ActorType.CLIENT, clientId);
     }
 
     @Override
     public TbActor createActor() {
-        return new ClientSessionActor(context, clientId, isClientIdGenerated);
+        return new ClientActor(context, clientId, isClientIdGenerated);
     }
 
 }

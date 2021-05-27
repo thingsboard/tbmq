@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateReader;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateSessionUpdater;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateUpdater;
 import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface MsgProcessor {
-    void process(ClientSessionActorStateSessionUpdater actorState, IncomingMqttMsg incomingMqttMsg);
+    void process(ClientActorStateUpdater actorState, IncomingMqttMsg incomingMqttMsg);
 
-    void processConnectionAccepted(ClientSessionActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
+    void processConnectionAccepted(ClientActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
 
-    void processConnectionFinished(ClientSessionActorStateReader actorState);
+    void processConnectionFinished(ClientActorStateReader actorState);
 }

@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 @Getter
 @Component
 @RequiredArgsConstructor
-public class ClientSessionActorContext {
+public class ClientActorContext {
     private final MsgProcessor msgProcessor;
     private final ClientSessionManager clientSessionManager;
     private final SubscriptionChangesManager subscriptionChangesManager;

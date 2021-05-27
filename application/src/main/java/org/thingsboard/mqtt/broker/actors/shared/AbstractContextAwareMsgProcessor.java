@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.shared;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 
@@ -23,7 +22,6 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 public abstract class AbstractContextAwareMsgProcessor {
 
     protected final ActorSystemContext systemContext;
-    protected final ObjectMapper mapper = new ObjectMapper();
 
     protected AbstractContextAwareMsgProcessor(ActorSystemContext systemContext) {
         super();
