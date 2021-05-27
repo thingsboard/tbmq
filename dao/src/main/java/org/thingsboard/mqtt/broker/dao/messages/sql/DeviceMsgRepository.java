@@ -35,8 +35,8 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
             "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " DESC " +
             "LIMIT :limit",
             nativeQuery = true)
-    List<DevicePublishMsgEntity> findByClientId(@Param("clientId") String clientId,
-                                                @Param("limit") int limit);
+    List<DevicePublishMsgEntity> findByClientIdReversed(@Param("clientId") String clientId,
+                                                        @Param("limit") int limit);
 
     @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
             "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +

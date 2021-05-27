@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgDao;
 import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,10 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     @Override
     public List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit) {
         log.trace("Finding device publish messages, clientId - {}, limit - {}", clientId, messageLimit);
-        return DaoUtil.convertDataList(deviceMsgRepository.findByClientId(clientId, messageLimit));
+        List<DevicePublishMsgEntity> devicePublishMsgs = deviceMsgRepository.findByClientIdReversed(clientId, messageLimit).stream()
+                .sorted(Comparator.comparingLong(DevicePublishMsgEntity::getSerialNumber))
+                .collect(Collectors.toList());
+        return DaoUtil.convertDataList(devicePublishMsgs);
     }
 
     @Override
