@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-
-public interface ClientSessionCallbackMsgFactory {
-    CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback);
+public interface ClientSessionActorStateSessionUpdater extends ClientSessionActorStateReader {
+    void updateSessionState(SessionState newState);
 }

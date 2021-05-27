@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.client.service;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientSessionActorStateReader;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 
-public interface ClientSessionCallbackMsgFactory {
-    CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback);
+/*
+    should only be called from ClientSessionActor
+ */
+public interface DisconnectService {
+    void disconnect(ClientSessionActorStateReader actorState, DisconnectReason reason);
 }

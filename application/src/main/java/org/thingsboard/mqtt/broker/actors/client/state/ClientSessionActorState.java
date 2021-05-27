@@ -13,13 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.DisconnectListener;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface ClientSessionCallbackMsgFactory {
-    CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback);
+import java.util.UUID;
+
+/*
+    not thread-safe
+ */
+public interface ClientSessionActorState extends ClientSessionActorStateSessionUpdater {
+    void setStopActorCommandId(UUID commandId);
+
+    void clearStopActorCommandId();
+
+    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+
+    void setDisconnectListener(DisconnectListener disconnectListener);
 }

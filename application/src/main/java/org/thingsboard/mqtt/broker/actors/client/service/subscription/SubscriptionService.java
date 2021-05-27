@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
-public interface ClientSessionCallbackMsgFactory {
-    CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback);
+import java.util.Collection;
+/*
+    not thread-safe for operations with the same 'clientId'
+ */
+interface SubscriptionService {
+    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
+
+    void unsubscribe(String clientId, Collection<String> topicFilters);
 }

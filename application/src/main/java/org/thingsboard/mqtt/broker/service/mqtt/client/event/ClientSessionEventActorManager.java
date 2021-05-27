@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
-import org.thingsboard.mqtt.broker.actors.session.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 
 public interface ClientSessionEventActorManager {
     void sendCallbackMsg(String clientId, CallbackMsg callbackMsg);

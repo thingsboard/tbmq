@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors;
+package org.thingsboard.mqtt.broker.actors.client.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
-import org.thingsboard.mqtt.broker.actors.client.service.DisconnectService;
-import org.thingsboard.mqtt.broker.actors.client.service.MsgProcessor;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Slf4j
 @Getter
-@Component
 @RequiredArgsConstructor
-public class ClientSessionActorContext {
-    private final MsgProcessor msgProcessor;
-    private final ClientSessionManager clientSessionManager;
-    private final SubscriptionChangesManager subscriptionChangesManager;
-    private final DisconnectService disconnectService;
+public class SessionInitMsg implements TbActorMsg {
+    private final ClientSessionCtx clientSessionCtx;
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.SESSION_INIT_MSG;
+    }
+
+    @Override
+    public void onTbActorStopped(TbActorId actorId) {
+        log.warn("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), clientSessionCtx.getSessionId());
+    }
 }

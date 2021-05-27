@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.session.service.session.ClientSessionListener;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionListener;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;

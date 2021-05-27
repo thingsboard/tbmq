@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
-import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorConfiguration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import javax.annotation.PostConstruct;

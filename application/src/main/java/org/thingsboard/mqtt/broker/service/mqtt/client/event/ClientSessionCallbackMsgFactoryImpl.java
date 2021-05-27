@@ -16,12 +16,12 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.session.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.ClearSessionMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.ClientSessionCallback;
-import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionRequestInfo;
-import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClearSessionMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;

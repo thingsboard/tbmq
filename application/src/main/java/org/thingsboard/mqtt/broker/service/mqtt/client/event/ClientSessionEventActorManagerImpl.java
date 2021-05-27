@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
-import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorCreator;
-import org.thingsboard.mqtt.broker.actors.session.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorCreator;
+import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 
 @Slf4j

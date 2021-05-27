@@ -24,12 +24,12 @@ import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
-import org.thingsboard.mqtt.broker.actors.session.ClientSessionActorCreator;
-import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.ConnectionFinishedMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.DisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.actors.session.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.ClientSessionActorCreator;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
