@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingContext;
@@ -57,7 +59,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("device-persisted-msg-consumer"));
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
 
     private volatile boolean stopped = false;
 
@@ -72,25 +74,27 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DevicePacketIdAndSerialNumberService serialNumberService;
     private final DeviceActorManager deviceActorManager;
     private final StatsManager statsManager;
+    private final ServiceInfoProvider serviceInfoProvider;
 
 
     @PostConstruct
     public void init() {
         for (int i = 0; i < consumersCount; i++) {
-            String consumerId = Integer.toString(i);
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = devicePersistenceMsgQueueFactory.createConsumer(consumerId);
+            String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = devicePersistenceMsgQueueFactory.createConsumer(consumerId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
         }
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer) {
         DeviceProcessorStats stats = statsManager.createDeviceProcessorStats(consumerId);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    // TODO: multiple nodes can consume same messages and therefore persist same msg multiple times
+                    List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
@@ -155,12 +159,11 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         private final int packetId;
         private final long serialNumber;
     }
-    private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs,
+    private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs,
                                                        Function<String, PacketIdAndSerialNumberDto> getPacketIdAndSerialNumberFunc
                                                        ) {
         return msgs.stream()
-                .map(TbProtoQueueMsg::getValue)
-                .map(ProtoConverter::toDevicePublishMsg)
+                .map(protoMsg -> ProtoConverter.toDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue()))
                 .map(devicePublishMsg -> {
                     PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getPacketIdAndSerialNumberFunc.apply(devicePublishMsg.getClientId());
                     return devicePublishMsg.toBuilder()

@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
-public interface DeviceMsgQueueConsumer {
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+
+public interface DeviceMsgQueueService {
+    void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callbackWrapper);
 }

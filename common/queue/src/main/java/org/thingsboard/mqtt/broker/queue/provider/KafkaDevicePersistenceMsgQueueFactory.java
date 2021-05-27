@@ -54,8 +54,8 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createProducer() {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(devicePersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("device-persisted-msg-producer");
         producerBuilder.defaultTopic(devicePersistenceMsgSettings.getTopic());
@@ -65,14 +65,14 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createConsumer(String id) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(devicePersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(devicePersistenceMsgSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("device-persisted-msg-consumer-" + id);
         consumerBuilder.groupId("device-persisted-msg-consumer-group");
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);

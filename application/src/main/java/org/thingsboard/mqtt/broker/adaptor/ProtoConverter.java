@@ -147,12 +147,12 @@ public class ProtoConverter {
                .build();
     }
 
-    public static DevicePublishMsg toDevicePublishMsg(QueueProtos.DevicePublishMsgProto devicePublishMsgProto) {
+    public static DevicePublishMsg toDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto devicePublishMsgProto) {
         return DevicePublishMsg.builder()
-                .clientId(devicePublishMsgProto.getClientId())
-                .topic(devicePublishMsgProto.getMsg().getTopicName())
-                .qos(devicePublishMsgProto.getMsg().getQos())
-                .payload(devicePublishMsgProto.getMsg().getPayload().toByteArray())
+                .clientId(clientId)
+                .topic(devicePublishMsgProto.getTopicName())
+                .qos(devicePublishMsgProto.getQos())
+                .payload(devicePublishMsgProto.getPayload().toByteArray())
                 .build();
     }
 }

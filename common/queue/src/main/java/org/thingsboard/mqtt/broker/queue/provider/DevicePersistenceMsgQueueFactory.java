@@ -21,8 +21,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface DevicePersistenceMsgQueueFactory {
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createConsumer(String id);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id);
 
 }

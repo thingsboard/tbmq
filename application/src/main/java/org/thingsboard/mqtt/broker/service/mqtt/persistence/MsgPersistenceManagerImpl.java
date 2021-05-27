@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceMsgQueueService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;

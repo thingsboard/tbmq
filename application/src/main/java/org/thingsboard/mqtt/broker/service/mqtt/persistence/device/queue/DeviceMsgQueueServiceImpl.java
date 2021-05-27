@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ import javax.annotation.PreDestroy;
 @Slf4j
 @Service
 public class DeviceMsgQueueServiceImpl implements DeviceMsgQueueService {
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> producer;
+    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producer;
 
     public DeviceMsgQueueServiceImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory) {
         this.producer = devicePersistenceMsgQueueFactory.createProducer();
@@ -38,11 +38,7 @@ public class DeviceMsgQueueServiceImpl implements DeviceMsgQueueService {
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        QueueProtos.DevicePublishMsgProto deviceMsg = QueueProtos.DevicePublishMsgProto.newBuilder()
-                .setClientId(clientId)
-                .setMsg(msgProto)
-                .build();
-        producer.send(new TbProtoQueueMsg<>(clientId, deviceMsg),
+        producer.send(new TbProtoQueueMsg<>(clientId, msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

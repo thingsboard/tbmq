@@ -79,11 +79,6 @@ message TimeProto {
   int64 timestamp = 1;
 }
 
-message DevicePublishMsgProto {
-  string clientId = 1;
-  PublishMsgProto msg = 2;
-}
-
 /**
  * Service Discovery Data Structures;
  */
