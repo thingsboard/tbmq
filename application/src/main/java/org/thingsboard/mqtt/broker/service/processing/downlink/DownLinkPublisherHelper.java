@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.processing.downlink;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+public interface DownLinkPublisherHelper {
+    String getBasicDownLinkServiceTopic(String serviceId);
 
-@Getter
-@AllArgsConstructor
-public class Subscription {
-    private final String topicFilter;
-    private final int mqttQoSValue;
-    private final SessionInfo sessionInfo;
+    String getPersistentDownLinkServiceTopic(String serviceId);
 }

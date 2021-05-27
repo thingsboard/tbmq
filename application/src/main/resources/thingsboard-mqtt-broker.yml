@@ -116,6 +116,12 @@ queue:
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
+  persistent-downlink-publish-msg:
+    consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
+  basic-downlink-publish-msg:
+    consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -178,6 +184,16 @@ queue:
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"
+    basic-downlink-publish-msg:
+      topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:basic_downlink_publish_msg}"
+      topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      consumer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:}"
+      producer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
+    persistent-downlink-publish-msg:
+      topic-prefix: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:persistent_downlink_publish_msg}"
+      topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      consumer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:}"
+      producer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
 
 # Actor system parameters
 actors:

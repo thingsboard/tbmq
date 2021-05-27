@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
-@Getter
-@AllArgsConstructor
-public class Subscription {
-    private final String topicFilter;
-    private final int mqttQoSValue;
-    private final SessionInfo sessionInfo;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+
+public interface DownLinkPublishMsgQueueFactory {
+
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String id);
+
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String id);
+
 }

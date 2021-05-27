@@ -20,10 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.LastPublishCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -132,14 +132,6 @@ public class ProtoConverter {
                 .collect(Collectors.toSet());
     }
 
-    public static LastPublishCtx convertToLastPublishCtx(QueueProtos.LastPublishCtxProto publishCtxProto) {
-        return new LastPublishCtx(publishCtxProto.getPacketId());
-    }
-
-    public static QueueProtos.LastPublishCtxProto createLastPublishCtxProto(int packetId) {
-        return QueueProtos.LastPublishCtxProto.newBuilder().setPacketId(packetId).build();
-    }
-
     public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId) {
        return QueueProtos.DisconnectClientCommandProto.newBuilder()
                .setSessionIdMSB(sessionId.getMostSignificantBits())
@@ -153,6 +145,32 @@ public class ProtoConverter {
                 .topic(devicePublishMsgProto.getTopicName())
                 .qos(devicePublishMsgProto.getQos())
                 .payload(devicePublishMsgProto.getPayload().toByteArray())
+                .build();
+    }
+
+    public static QueueProtos.PersistedDevicePublishMsgProto toPersistedDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
+        return QueueProtos.PersistedDevicePublishMsgProto.newBuilder()
+                .setSerialNumber(devicePublishMsg.getSerialNumber())
+                .setTime(devicePublishMsg.getTime())
+                .setPacketId(devicePublishMsg.getPacketId())
+                .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
+                .setQos(devicePublishMsg.getQos())
+                .setTopicName(devicePublishMsg.getTopic())
+                .setClientId(devicePublishMsg.getClientId())
+                .setPacketType(devicePublishMsg.getPacketType().toString())
+                .build();
+    }
+
+    public static DevicePublishMsg toDevicePublishMsg(QueueProtos.PersistedDevicePublishMsgProto persistedDevicePublishMsgProto) {
+        return DevicePublishMsg.builder()
+                .serialNumber(persistedDevicePublishMsgProto.getSerialNumber())
+                .time(persistedDevicePublishMsgProto.getTime())
+                .packetId(persistedDevicePublishMsgProto.getPacketId())
+                .payload(persistedDevicePublishMsgProto.getPayload().toByteArray())
+                .qos(persistedDevicePublishMsgProto.getQos())
+                .topic(persistedDevicePublishMsgProto.getTopicName())
+                .clientId(persistedDevicePublishMsgProto.getClientId())
+                .packetType(PersistedPacketType.valueOf(persistedDevicePublishMsgProto.getPacketType()))
                 .build();
     }
 }

@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Getter
-@AllArgsConstructor
-public class Subscription {
-    private final String topicFilter;
-    private final int mqttQoSValue;
-    private final SessionInfo sessionInfo;
+@Component
+public class BasicDownLinkPublishMsgKafkaSettings {
+    @Value("${queue.kafka.basic-downlink-publish-msg.topic-prefix}")
+    private String topicPrefix;
+    @Value("${queue.kafka.basic-downlink-publish-msg.topic-properties}")
+    private String topicProperties;
+    @Value("${queue.kafka.basic-downlink-publish-msg.producer}")
+    private String producerProperties;
+    @Value("${queue.kafka.basic-downlink-publish-msg.consumer}")
+    private String consumerProperties;
 }

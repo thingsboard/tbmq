@@ -67,8 +67,6 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     @Override
     public Map<String, Set<TopicSubscription>> initLoad() {
-        log.info("Loading client subscriptions.");
-
         String dummyClientId = persistDummyClientSubscriptions();
 
         clientSubscriptionsConsumer.subscribe();

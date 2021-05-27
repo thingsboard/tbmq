@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -63,7 +64,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
     public void onApplicationEvent(ApplicationReadyEvent event) {
         Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
 
-        initClientSubscriptions();
+        initClientSubscriptions(allClientSessions);
 
 
         Map<String, ClientSessionInfo> currentNodeSessions = allClientSessions.values().stream()
@@ -77,9 +78,16 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
         startSubscriptionListening();
     }
 
-    private void initClientSubscriptions() {
+    private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) {
         Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} persisted client subscriptions.", allClientSubscriptions.size());
+        Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
+        for (String clientId : loadedClientIds) {
+            if (!allClientSessions.containsKey(clientId)) {
+                allClientSubscriptions.remove(clientId);
+            }
+        }
+        log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
         subscriptionManager.init(allClientSubscriptions);
     }
 

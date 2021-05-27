@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 public class PersistedDeviceActor extends ContextAwareActor {
     private final PersistedDeviceActorMessageProcessor processor;
 
+    // TODO: merge it with Client Actor
     PersistedDeviceActor(ActorSystemContext systemContext, String clientId) {
         super(systemContext);
         this.processor = new PersistedDeviceActorMessageProcessor(systemContext, clientId);

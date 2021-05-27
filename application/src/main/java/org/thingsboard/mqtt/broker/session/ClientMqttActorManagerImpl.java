@@ -60,7 +60,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void disconnect(String clientId, UUID sessionId, DisconnectReason reason) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
-            log.warn("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, sessionId);
+            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, sessionId);
         } else {
             clientActorRef.tellWithHighPriority(new DisconnectMsg(sessionId, reason));
         }

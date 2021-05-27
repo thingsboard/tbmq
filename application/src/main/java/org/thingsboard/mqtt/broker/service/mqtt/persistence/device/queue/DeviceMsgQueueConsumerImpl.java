@@ -31,13 +31,15 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingContext;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.PacketIdAndSerialNumber;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher;
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -72,9 +74,10 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
     private final DeviceMsgService deviceMsgService;
     private final DevicePacketIdAndSerialNumberService serialNumberService;
-    private final DeviceActorManager deviceActorManager;
+    private final DownLinkPublisher downLinkPublisher;
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientSessionService clientSessionService;
 
 
     @PostConstruct
@@ -127,7 +130,13 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     }
 
                     for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
-                        deviceActorManager.sendMsgToActor(devicePublishMsg);
+                        ClientSession clientSession = clientSessionService.getClientSession(devicePublishMsg.getClientId());
+                        if (clientSession == null) {
+                            log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                        } else {
+                            String targetServiceId = clientSession.getSessionInfo().getServiceId();
+                            downLinkPublisher.publishPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toPersistedDevicePublishMsgProto(devicePublishMsg));
+                        }
                     }
                 } catch (Exception e) {
                     if (!stopped) {

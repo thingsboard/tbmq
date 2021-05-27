@@ -79,6 +79,17 @@ message TimeProto {
   int64 timestamp = 1;
 }
 
+message PersistedDevicePublishMsgProto {
+  int64 serialNumber = 1;
+  int64 time = 2;
+  int32 packetId = 3;
+  bytes payload = 4;
+  int32 qos = 5;
+  string topicName = 6;
+  string clientId = 7;
+  string packetType = 8;
+}
+
 /**
  * Service Discovery Data Structures;
  */

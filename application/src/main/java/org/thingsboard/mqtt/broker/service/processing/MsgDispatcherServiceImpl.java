@@ -30,19 +30,14 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -68,11 +63,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private ClientSessionService clientSessionService;
     @Autowired
-    private ClientSessionCtxService clientSessionCtxService;
-    @Autowired
-    private PublishMsgDeliveryService publishMsgDeliveryService;
-    @Autowired
-    private ClientMqttActorManager clientMqttActorManager;
+    private DownLinkPublisher downLinkPublisher;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -112,9 +103,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                         log.info("[{}] Client session not found for existent client subscription.", clientId);
                         return null;
                     }
-                    ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
                     return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                            clientSession.getSessionInfo(), clientSessionCtx);
+                            clientSession.getSessionInfo());
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -124,7 +114,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             if (needToBePersisted(publishMsgProto, msgSubscription)) {
                 persistentSubscriptions.add(msgSubscription);
             } else {
-                trySendMsg(publishMsgProto, msgSubscription);
+                sendToNode(publishMsgProto, msgSubscription);
             }
         }
         if (!persistentSubscriptions.isEmpty()) {
@@ -150,21 +140,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
-    private void trySendMsg(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
-        // TODO: think if it's better to send it to Actor
-        ClientSessionCtx sessionCtx = subscription.getSessionCtx();
-        if (sessionCtx == null) {
-            return;
-        }
-        int packetId = subscription.getMqttQoSValue() == MqttQoS.AT_MOST_ONCE.value() ? -1 : sessionCtx.getMsgIdSeq().nextMsgId();
-        int minQoSValue = Math.min(subscription.getMqttQoSValue(), publishMsgProto.getQos());
-        MqttQoS mqttQoS = MqttQoS.valueOf(minQoSValue);
-
-        try {
-            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, packetId, publishMsgProto.getTopicName(),
-                    mqttQoS, false, publishMsgProto.getPayload().toByteArray());
-        } catch (Exception e) {
-            clientMqttActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
-        }
+    private void sendToNode(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+        String targetServiceId = subscription.getSessionInfo().getServiceId();
+        String clientId = subscription.getSessionInfo().getClientInfo().getClientId();
+        downLinkPublisher.publishBasicMsg(targetServiceId, clientId, publishMsgProto);
     }
 }
