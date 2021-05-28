@@ -27,6 +27,7 @@ public enum StatsType {
     ACTIVE_APP_PROCESSORS("activeAppProcessors"),
     APP_PROCESSOR("appProcessor"),
     DEVICE_PROCESSOR("deviceProcessor"),
+    RUNNING_ACTORS("runningActors"),
     ;
 
     private final String printName;

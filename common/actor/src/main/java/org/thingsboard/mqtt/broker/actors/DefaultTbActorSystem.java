@@ -47,9 +47,10 @@ public class DefaultTbActorSystem implements TbActorSystem {
     @Getter
     private final ScheduledExecutorService scheduler;
 
-    public DefaultTbActorSystem(TbActorSystemSettings settings) {
+    public DefaultTbActorSystem(TbActorSystemSettings settings, ActorStatsManager statsManager) {
         this.settings = settings;
         this.scheduler = Executors.newScheduledThreadPool(settings.getSchedulerPoolSize(), ThingsBoardThreadFactory.forName("actor-system-scheduler"));
+        statsManager.registerActorsStats(actors);
     }
 
     @Override

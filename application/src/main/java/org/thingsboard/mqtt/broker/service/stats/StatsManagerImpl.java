@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StatsManagerImpl implements StatsManager {
+public class StatsManagerImpl implements StatsManager, ActorStatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
@@ -169,6 +170,15 @@ public class StatsManagerImpl implements StatsManager {
         if (statsEnabled) {
             statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
             gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
+        }
+    }
+
+    @Override
+    public void registerActorsStats(Map<?, ?> actorsMap) {
+        log.trace("Registering ActorsStats.");
+        if (statsEnabled) {
+            statsFactory.createGauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap, Map::size);
+            gauges.add(new Gauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap::size));
         }
     }
 

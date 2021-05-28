@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.actors.DefaultTbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbActorSystemSettings;
@@ -37,7 +38,7 @@ public class ActorsConfiguration {
     }
 
     @Bean
-    public TbActorSystem actorSystem(TbActorSystemSettings actorSystemSettings) {
-        return new DefaultTbActorSystem(actorSystemSettings);
+    public TbActorSystem actorSystem(TbActorSystemSettings actorSystemSettings, ActorStatsManager actorStatsManager) {
+        return new DefaultTbActorSystem(actorSystemSettings, actorStatsManager);
     }
 }
