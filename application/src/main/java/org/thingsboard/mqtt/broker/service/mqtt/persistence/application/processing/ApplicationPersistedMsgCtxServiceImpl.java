@@ -54,9 +54,7 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
             log.debug("[{}] No pack processing context found.", clientId);
             return;
         }
-        long lastCommittedOffset = processingContext.getLastCommittedOffset();
         Collection<ApplicationMsgInfo> publishMsgInfos = processingContext.getPublishPendingMsgMap().values().stream()
-                .filter(publishMsg -> publishMsg.getPacketOffset() > lastCommittedOffset)
                 .map(publishMsg -> ApplicationMsgInfo.builder()
                         .packetId(publishMsg.getPacketId())
                         .offset(publishMsg.getPacketOffset())

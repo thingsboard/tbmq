@@ -31,15 +31,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
     private final String clientId;
-    private final Consumer<Long> successfulOffsetConsumer;
 
     private List<PersistedMsg> orderedMessages;
-    private AtomicLong lastCommittedOffset;
 
     @Override
-    public void init(long lastCommittedOffset, List<PersistedMsg> orderedMessages) {
+    public void init(List<PersistedMsg> orderedMessages) {
         this.orderedMessages = new ArrayList<>(orderedMessages);
-        this.lastCommittedOffset = new AtomicLong(lastCommittedOffset);
     }
 
     @Override
@@ -64,19 +61,5 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
             }
         }
         orderedMessages = newOrderedMessages;
-    }
-
-    @Override
-    public void onSuccess(Long offset) {
-        long prevOffset = lastCommittedOffset.get();
-        if (offset > prevOffset) {
-            lastCommittedOffset.getAndSet(offset);
-            successfulOffsetConsumer.accept(offset);
-        }
-    }
-
-    @Override
-    public Long getLastCommittedOffset() {
-        return lastCommittedOffset.get();
     }
 }

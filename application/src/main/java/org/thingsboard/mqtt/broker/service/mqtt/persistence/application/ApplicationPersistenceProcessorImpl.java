@@ -206,11 +206,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     continue;
                 }
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
-                ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId, offset -> {
-                    log.trace("[{}] Committing offset {}.", clientId, offset);
-                    // TODO: use commit only once
-                    consumer.commit(0, offset + 1);
-                });
+                ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
 
                 List<PersistedPublishMsg> persistedPublishMessages = publishProtoMessages.stream()
                         .map(msg -> {
@@ -231,9 +227,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 persistedMessages.addAll(persistedPubRelMessages.stream()
                         .sorted(Comparator.comparingLong(PersistedMsg::getPacketOffset))
                         .collect(Collectors.toList()));
-                long lastCommittedOffset = !persistedPublishMessages.isEmpty() ?
-                        persistedPublishMessages.get(0).getPacketOffset() - 1 : -1;
-                submitStrategy.init(lastCommittedOffset, persistedMessages);
+                submitStrategy.init(persistedMessages);
 
                 // TODO: refactor this
                 persistedPubRelMessages = Sets.newConcurrentHashSet();

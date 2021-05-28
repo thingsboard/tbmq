@@ -35,14 +35,12 @@ public class ApplicationPackProcessingContext {
     private final ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>();
 
     private final CountDownLatch processingTimeoutLatch;
-    private final ApplicationSubmitStrategy submitStrategy;
     // TODO: wrap in separate class
     @Getter
     private final Collection<PersistedPubRelMsg> newPubRelPackets;
 
     public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets) {
         this.newPubRelPackets = newPubRelPackets;
-        this.submitStrategy = submitStrategy;
         for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
@@ -79,7 +77,6 @@ public class ApplicationPackProcessingContext {
     private Long onPublishMsgSuccess(Integer packetId) {
         PersistedPublishMsg msg = publishPendingMsgMap.remove(packetId);
         if (msg != null) {
-            submitStrategy.onSuccess(msg.getPacketOffset());
             processingTimeoutLatch.countDown();
             return msg.getPacketOffset();
         } else {
@@ -95,10 +92,6 @@ public class ApplicationPackProcessingContext {
         } else {
             log.info("Couldn't find packet {} to complete delivery.", packetId);
         }
-    }
-
-    public long getLastCommittedOffset() {
-        return submitStrategy.getLastCommittedOffset();
     }
 
     public void clear() {

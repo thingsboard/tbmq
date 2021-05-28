@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 @Component
 @Slf4j
 public class ApplicationSubmitStrategyFactory {
-    public ApplicationSubmitStrategy newInstance(String clientId, Consumer<Long> successfulOffsetConsumer) {
-        return new BurstSubmitStrategy(clientId, successfulOffsetConsumer);
+    public ApplicationSubmitStrategy newInstance(String clientId) {
+        return new BurstSubmitStrategy(clientId);
     }
 }
