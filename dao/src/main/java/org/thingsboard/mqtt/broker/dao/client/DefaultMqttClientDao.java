@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientEntity;
@@ -43,5 +45,10 @@ public class DefaultMqttClientDao extends AbstractDao<MqttClientEntity, MqttClie
     @Override
     public MqttClient findByClientId(String clientId) {
         return DaoUtil.getData(mqttClientRepository.findByClientId(clientId));
+    }
+
+    @Override
+    public PageData<MqttClient> findAll(PageLink pageLink) {
+        return DaoUtil.toPageData(mqttClientRepository.findAll(DaoUtil.toPageable(pageLink)));
     }
 }

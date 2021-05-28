@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface MqttClientCredentialsRepository extends CrudRepository<MqttClientCredentialsEntity, UUID> {
+public interface MqttClientCredentialsRepository extends PagingAndSortingRepository<MqttClientCredentialsEntity, UUID> {
     MqttClientCredentialsEntity findByCredentialsId(String credentialsId);
 
     List<MqttClientCredentialsEntity> findByCredentialsIdIn(List<String> credentialsIds);

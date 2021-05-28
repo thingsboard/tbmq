@@ -16,8 +16,12 @@
 package org.thingsboard.mqtt.broker.dao.client;
 
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
 public interface MqttClientDao extends Dao<MqttClient> {
     MqttClient findByClientId(String clientId);
+
+    PageData<MqttClient> findAll(PageLink pageLink);
 }

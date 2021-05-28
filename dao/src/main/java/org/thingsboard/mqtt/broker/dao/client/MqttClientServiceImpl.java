@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
@@ -28,6 +30,8 @@ import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
 @Service
 @Slf4j
@@ -66,9 +70,10 @@ public class MqttClientServiceImpl implements MqttClientService {
     }
 
     @Override
-    public List<MqttClient> getAllClients() {
-        log.trace("Executing getAllClients");
-        return mqttClientDao.find();
+    public PageData<MqttClient> getClients(PageLink pageLink) {
+        log.trace("Executing getClients, pageLink [{}]", pageLink);
+        validatePageLink(pageLink);
+        return mqttClientDao.findAll(pageLink);
     }
 
     private final DataValidator<MqttClient> mqttClientValidator =

@@ -24,26 +24,28 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.MqttClient;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 
 @RestController
-@RequestMapping("/api/mqtt/client")
-public class MqttClientController extends BaseController {
-    @Autowired
-    private MqttClientService mqttClientService;
+@RequestMapping("/api/mqtt/client/credentials")
+public class MqttClientCredentialsController extends BaseController {
 
+    @Autowired
+    private MqttClientCredentialsService mqttClientCredentialsService;
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
-    public MqttClient saveMqttClient(@RequestBody MqttClient mqttClient) throws ThingsboardException {
-        checkNotNull(mqttClient);
+    public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
+        checkNotNull(mqttClientCredentials);
         try {
-            return checkNotNull(mqttClientService.saveMqttClient(mqttClient));
+            return checkNotNull(
+                mqttClientCredentialsService.saveCredentials(mqttClientCredentials)
+            );
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -52,23 +54,22 @@ public class MqttClientController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<MqttClient> getMqttClients(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<MqttClientCredentials> getMqttClientCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
-            return checkNotNull(mqttClientService.getClients(pageLink));
+            return checkNotNull(mqttClientCredentialsService.getCredentials(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
-    public void deleteClient(@PathVariable("clientId") String strClientId) throws ThingsboardException {
+    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.DELETE)
+    public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
-            mqttClientService.deleteMqttClient(toUUID(strClientId));
+            mqttClientCredentialsService.deleteCredentials(toUUID(strCredentialsId));
         } catch (Exception e) {
             throw handleException(e);
         }
     }
-
 }

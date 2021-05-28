@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.dao.client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
@@ -53,5 +55,10 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
         return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
                 .map(DaoUtil::getData)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageData<MqttClientCredentials> findAll(PageLink pageLink) {
+        return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(DaoUtil.toPageable(pageLink)));
     }
 }

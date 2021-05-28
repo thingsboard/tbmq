@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 import java.util.List;
@@ -27,5 +29,5 @@ public interface MqttClientCredentialsService {
 
     List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds);
 
-    List<MqttClientCredentials> getAllCredentials();
+    PageData<MqttClientCredentials> getCredentials(PageLink pageLink);
 }

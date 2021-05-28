@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -34,6 +36,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
 @Service
 @Slf4j
@@ -90,9 +94,10 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
-    public List<MqttClientCredentials> getAllCredentials() {
-        log.trace("Executing getAllCredentials");
-        return mqttClientCredentialsDao.find();
+    public PageData<MqttClientCredentials> getCredentials(PageLink pageLink) {
+        log.trace("Executing getCredentials, pageLink [{}]", pageLink);
+        validatePageLink(pageLink);
+        return mqttClientCredentialsDao.findAll(pageLink);
     }
 
     private void processBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
