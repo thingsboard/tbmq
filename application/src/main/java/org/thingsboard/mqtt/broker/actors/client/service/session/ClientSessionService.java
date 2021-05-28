@@ -15,13 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 import java.util.Map;
 
-public interface ClientSessionListener {
+public interface ClientSessionService extends ClientSessionReader {
     void init(Map<String, ClientSessionInfo> clientSessionInfos);
 
     void startListening(ClientSessionConsumer clientSessionConsumer);
+
+    void saveClientSession(String clientId, ClientSession clientSession);
+
+    void clearClientSession(String clientId);
 }

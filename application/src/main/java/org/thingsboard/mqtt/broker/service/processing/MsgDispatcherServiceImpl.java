@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -61,7 +61,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private MsgPersistenceManager msgPersistenceManager;
     @Autowired
-    private ClientSessionService clientSessionService;
+    private ClientSessionReader clientSessionReader;
     @Autowired
     private DownLinkPublisher downLinkPublisher;
 
@@ -98,7 +98,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
                     String clientId = clientSubscription.getValue().getClientId();
-                    ClientSession clientSession = clientSessionService.getClientSession(clientId);
+                    ClientSession clientSession = clientSessionReader.getClientSession(clientId);
                     if (clientSession == null) {
                         log.info("[{}] Client session not found for existent client subscription.", clientId);
                         return null;

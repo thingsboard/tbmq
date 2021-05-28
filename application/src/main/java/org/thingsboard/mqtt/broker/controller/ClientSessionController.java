@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 @RestController
 @RequestMapping("/api/client-session")
@@ -33,7 +33,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionClea
 public class ClientSessionController extends BaseController {
 
     private final ClientSessionCleanUpService clientSessionCleanUpService;
-    private final ClientSessionService clientSessionService;
+    private final ClientSessionReader clientSessionReader;
+
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "/{clientId}/clear", method = RequestMethod.DELETE)
@@ -51,7 +52,7 @@ public class ClientSessionController extends BaseController {
     @ResponseBody
     public ClientSessionInfo getClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            return clientSessionService.getClientSessionInfo(clientId);
+            return clientSessionReader.getClientSessionInfo(clientId);
         } catch (Exception e) {
             throw handleException(e);
         }

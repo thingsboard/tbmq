@@ -22,9 +22,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpService {
-    private final ClientSessionService clientSessionService;
+    private final ClientSessionReader clientSessionReader;
     private final ClientSessionEventService clientSessionEventService;
 
     @Value("${mqtt.client-session-cleanup.inactive-session-ttl}")
@@ -43,7 +43,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Override
     public void removeClientSession(String clientId) {
-        ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
+        ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
             throw new RuntimeException("Client Session doesn't exist for provided clientId.");
         }
@@ -59,7 +59,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         log.info("Starting cleaning up stale ClientSessions.");
 
         long oldestAllowedTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
-        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionService.getPersistedClientSessionInfos();
+        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionReader.getPersistedClientSessionInfos();
 
 
         List<SessionInfo> clientSessionToRemove = persistedClientSessionInfos.values().stream()

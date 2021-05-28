@@ -41,7 +41,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -69,7 +69,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientService mqttClientService;
     private final ClientSessionEventService clientSessionEventService;
-    private final ClientSessionService clientSessionService;
+    private final ClientSessionReader clientSessionReader;
     private final KeepAliveService keepAliveService;
     private final ServiceInfoProvider serviceInfoProvider;
 
@@ -88,7 +88,7 @@ public class ConnectServiceImpl implements ConnectService {
         keepAliveService.registerSession(sessionId, msg.variableHeader().keepAliveTimeSeconds(),
                 () -> clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
 
-        ClientSession prevSession = clientSessionService.getClientSession(clientId);
+        ClientSession prevSession = clientSessionReader.getClientSession(clientId);
         boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
 
         ListenableFuture<Boolean> connectFuture = clientSessionEventService.connect(sessionCtx.getSessionInfo());

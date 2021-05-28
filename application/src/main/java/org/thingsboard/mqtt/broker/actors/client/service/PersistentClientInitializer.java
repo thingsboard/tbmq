@@ -24,11 +24,11 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
-import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionListener;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -52,7 +52,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
     private final ClientSessionConsumer clientSessionConsumer;
 
     private final SubscriptionManager subscriptionManager;
-    private final ClientSessionListener clientSessionListener;
+    private final ClientSessionService clientSessionService;
 
     private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
@@ -73,7 +73,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
                         Function.identity()));
         clearNonPersistentClients(currentNodeSessions);
 
-        clientSessionListener.startListening(clientSessionConsumer);
+        clientSessionService.startListening(clientSessionConsumer);
 
         startSubscriptionListening();
     }
@@ -104,7 +104,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
 
         allClientSessions.putAll(currentNodeSessions);
 
-        clientSessionListener.init(allClientSessions);
+        clientSessionService.init(allClientSessions);
 
         return allClientSessions;
     }

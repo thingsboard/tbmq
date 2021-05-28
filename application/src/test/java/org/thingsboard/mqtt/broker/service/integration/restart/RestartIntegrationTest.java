@@ -37,9 +37,9 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
 
@@ -69,7 +69,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
     @Autowired
     private MqttClientService mqttClientService;
     @Autowired
-    private ClientSessionService clientSessionService;
+    private ClientSessionReader clientSessionReader;
     @Autowired
     private ClientSubscriptionService clientSubscriptionService;
 
@@ -110,7 +110,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
         SpringRestarter.getInstance().restart();
 
-        ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
@@ -131,7 +131,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
         SpringRestarter.getInstance().restart();
 
-        ClientSession persistedClientSession = clientSessionService.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();

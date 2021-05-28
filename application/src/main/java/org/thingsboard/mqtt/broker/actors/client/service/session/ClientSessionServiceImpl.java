@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionListener;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Map;
@@ -39,7 +41,7 @@ import static org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSess
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClientSessionServiceImpl implements ClientSessionService, ClientSessionListener {
+public class ClientSessionServiceImpl implements ClientSessionService {
     private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
 
     private ConcurrentMap<String, ClientSessionInfo> clientSessionMap;

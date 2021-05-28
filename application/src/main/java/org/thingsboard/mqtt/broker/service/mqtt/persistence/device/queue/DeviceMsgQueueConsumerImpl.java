@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingContext;
@@ -77,7 +77,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DownLinkPublisher downLinkPublisher;
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final ClientSessionService clientSessionService;
+    private final ClientSessionReader clientSessionReader;
 
 
     @PostConstruct
@@ -130,7 +130,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     }
 
                     for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
-                        ClientSession clientSession = clientSessionService.getClientSession(devicePublishMsg.getClientId());
+                        ClientSession clientSession = clientSessionReader.getClientSession(devicePublishMsg.getClientId());
                         if (clientSession == null) {
                             log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
                         } else {
