@@ -41,7 +41,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PostConstruct;
@@ -64,7 +64,7 @@ public class ClientSessionManagerImpl implements ClientSessionManager {
     private long requestTimeout;
 
     private final ClientSessionService clientSessionService;
-    private final SubscriptionManager subscriptionManager;
+    private final ClientSubscriptionService clientSubscriptionService;
     // TODO: move this to Actor state (on DISCONNECTED check pending connection requests + schedule RETRY_DISCONNECT_COMMAND message for an actor)
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
@@ -163,7 +163,7 @@ public class ClientSessionManagerImpl implements ClientSessionManager {
             clientSessionService.saveClientSession(clientId, disconnectedClientSession);
         } else {
             clientSessionService.clearClientSession(clientId);
-            subscriptionManager.clearSubscriptions(clientId);
+            clientSubscriptionService.clearSubscriptions(clientId);
         }
 
         disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
@@ -181,7 +181,7 @@ public class ClientSessionManagerImpl implements ClientSessionManager {
         } else {
             log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
             clientSessionService.clearClientSession(clientId);
-            subscriptionManager.clearSubscriptions(clientId);
+            clientSubscriptionService.clearSubscriptions(clientId);
         }
     }
 

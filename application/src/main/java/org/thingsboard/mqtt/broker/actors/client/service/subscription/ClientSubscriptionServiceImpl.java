@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 // not thread-safe for operations with the same 'clientId'
-public class SubscriptionManagerImpl implements SubscriptionManager {
+public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     private final SubscriptionPersistenceService subscriptionPersistenceService;

@@ -38,7 +38,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
@@ -71,7 +71,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
     @Autowired
     private ClientSessionReader clientSessionReader;
     @Autowired
-    private ClientSubscriptionService clientSubscriptionService;
+    private ClientSubscriptionReader clientSubscriptionReader;
 
     private org.thingsboard.mqtt.broker.common.data.MqttClient applicationClient;
     private MqttClient persistedClient;
@@ -116,7 +116,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(sessionInfo.isPersistent());
         Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -137,7 +137,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(sessionInfo.isPersistent());
         Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }

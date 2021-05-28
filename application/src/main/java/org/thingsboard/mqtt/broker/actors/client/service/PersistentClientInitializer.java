@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionManager;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
@@ -51,7 +51,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
     private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final ClientSessionConsumer clientSessionConsumer;
 
-    private final SubscriptionManager subscriptionManager;
+    private final ClientSubscriptionService clientSubscriptionService;
     private final ClientSessionService clientSessionService;
 
     private final ActorSystemContext actorSystemContext;
@@ -88,7 +88,7 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
             }
         }
         log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
-        subscriptionManager.init(allClientSubscriptions);
+        clientSubscriptionService.init(allClientSubscriptions);
     }
 
     private Map<String, ClientSessionInfo> initClientSessions() {

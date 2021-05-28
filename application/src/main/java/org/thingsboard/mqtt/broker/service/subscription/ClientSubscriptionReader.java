@@ -17,6 +17,6 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import java.util.Set;
 
-public interface ClientSubscriptionService {
+public interface ClientSubscriptionReader {
     Set<TopicSubscription> getClientSubscriptions(String clientId);
 }

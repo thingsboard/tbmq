@@ -15,14 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-public interface SubscriptionManager extends ClientSubscriptionService {
+public interface ClientSubscriptionService extends ClientSubscriptionReader {
     void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
 
     void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);

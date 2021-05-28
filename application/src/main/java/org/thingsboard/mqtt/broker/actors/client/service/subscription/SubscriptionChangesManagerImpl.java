@@ -29,15 +29,15 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SubscriptionChangesManagerImpl implements SubscriptionChangesManager {
-    private final SubscriptionManager subscriptionManager;
+    private final ClientSubscriptionService clientSubscriptionService;
 
     @Override
     public void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg) {
-        Set<TopicSubscription> currentTopicSubscriptions = subscriptionManager.getClientSubscriptions(clientId);
+        Set<TopicSubscription> currentTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
         Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
 
         if (newTopicSubscriptions.isEmpty()) {
-            subscriptionManager.clearSubscriptionsInternally(clientId);
+            clientSubscriptionService.clearSubscriptionsInternally(clientId);
             return;
         }
 
@@ -45,8 +45,8 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
         Set<TopicSubscription> unsubscribeTopics = getUnsubscribeTopics(newTopicSubscriptions, currentTopicSubscriptions);
 
 
-        subscriptionManager.unsubscribeInternally(clientId, unsubscribeTopics.stream().map(TopicSubscription::getTopic).collect(Collectors.toList()));
-        subscriptionManager.subscribeInternally(clientId, subscribeTopics);
+        clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics.stream().map(TopicSubscription::getTopic).collect(Collectors.toList()));
+        clientSubscriptionService.subscribeInternally(clientId, subscribeTopics);
     }
 
     private Set<TopicSubscription> getSubscribeTopics(Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
