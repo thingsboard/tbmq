@@ -97,6 +97,12 @@ public class SubscriptionManagerImpl implements SubscriptionManager {
 
     @Override
     public void clearSubscriptions(String clientId) {
+        clearSubscriptionsInternally(clientId);
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), Collections.emptySet());
+    }
+
+    @Override
+    public void clearSubscriptionsInternally(String clientId) {
         log.trace("[{}] Clearing all subscriptions.", clientId);
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
@@ -107,7 +113,6 @@ public class SubscriptionManagerImpl implements SubscriptionManager {
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), Collections.emptySet());
     }
 
     @Override

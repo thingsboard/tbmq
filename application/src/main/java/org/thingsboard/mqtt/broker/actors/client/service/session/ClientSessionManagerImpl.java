@@ -109,8 +109,9 @@ public class ClientSessionManagerImpl implements ClientSessionManager {
                 t -> onDisconnectRejected(clientId, sessionId, requestInfo, currentlyConnectedSessionId, t),
                 requestTimeout, timeoutExecutor, MoreExecutors.directExecutor());
 
-        log.trace("[{}] Disconnecting currently connected client session, sessionId - {}.", clientId, currentlyConnectedSessionId);
-        disconnectClientCommandService.disconnectSession(sessionInfo.getServiceId(), clientId, currentlyConnectedSessionId);
+        String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
+        log.trace("[{}] Disconnecting currently connected client session, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
+        disconnectClientCommandService.disconnectSession(currentSessionServiceId, clientId, currentlyConnectedSessionId);
     }
 
     @Override

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -58,13 +59,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final PublishMsgQueueFactory publishMsgQueueFactory;
     private final AckStrategyFactory ackStrategyFactory;
     private final SubmitStrategyFactory submitStrategyFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
 
 
     @PostConstruct
     public void init() {
         for (int i = 0; i < consumersCount; i++) {
-            String consumerId = Integer.toString(i);
+            String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = publishMsgQueueFactory.createConsumer(consumerId);
             publishMsgConsumers.add(consumer);
             consumer.subscribe();

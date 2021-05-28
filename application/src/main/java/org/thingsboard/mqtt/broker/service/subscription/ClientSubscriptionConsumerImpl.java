@@ -110,7 +110,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         if (initializing) {
             throw new RuntimeException("Cannot start listening before initialization is finished.");
         }
-        // TODO: add concurrent consumers for multiple partitions (need to store offsets)
+        // TODO: add concurrent consumers for multiple partitions (in the same consumer-group as InitLoader)
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {

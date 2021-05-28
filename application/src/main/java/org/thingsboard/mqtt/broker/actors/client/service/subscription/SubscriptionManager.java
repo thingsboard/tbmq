@@ -34,4 +34,6 @@ public interface SubscriptionManager extends ClientSubscriptionService {
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
 
     void clearSubscriptions(String clientId);
+
+    void clearSubscriptionsInternally(String clientId);
 }

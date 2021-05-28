@@ -36,9 +36,14 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
         Set<TopicSubscription> currentTopicSubscriptions = subscriptionManager.getClientSubscriptions(clientId);
         Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
 
+        if (newTopicSubscriptions.isEmpty()) {
+            subscriptionManager.clearSubscriptionsInternally(clientId);
+            return;
+        }
 
         Set<TopicSubscription> subscribeTopics = getSubscribeTopics(newTopicSubscriptions, currentTopicSubscriptions);
         Set<TopicSubscription> unsubscribeTopics = getUnsubscribeTopics(newTopicSubscriptions, currentTopicSubscriptions);
+
 
         subscriptionManager.unsubscribeInternally(clientId, unsubscribeTopics.stream().map(TopicSubscription::getTopic).collect(Collectors.toList()));
         subscriptionManager.subscribeInternally(clientId, subscribeTopics);

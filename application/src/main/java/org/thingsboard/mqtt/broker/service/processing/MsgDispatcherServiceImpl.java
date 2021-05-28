@@ -114,7 +114,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             if (needToBePersisted(publishMsgProto, msgSubscription)) {
                 persistentSubscriptions.add(msgSubscription);
             } else {
-                sendToNode(publishMsgProto, msgSubscription);
+                sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
             }
         }
         if (!persistentSubscriptions.isEmpty()) {
@@ -144,5 +144,12 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         String targetServiceId = subscription.getSessionInfo().getServiceId();
         String clientId = subscription.getSessionInfo().getClientInfo().getClientId();
         downLinkPublisher.publishBasicMsg(targetServiceId, clientId, publishMsgProto);
+    }
+
+    private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {
+        int minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        return publishMsgProto.toBuilder()
+                .setQos(minQoSValue)
+                .build();
     }
 }

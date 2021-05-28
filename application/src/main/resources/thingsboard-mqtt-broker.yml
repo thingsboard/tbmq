@@ -146,7 +146,7 @@ queue:
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
-      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:2;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:12;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
     application-persisted-msg:
@@ -156,7 +156,7 @@ queue:
       producer: "${TB_KAFKA_APP_PERSISTED_MSG_PRODUCER_CONFIG:}"
     device-persisted-msg:
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
-      topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:2;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       consumer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_PRODUCER_CONFIG:}"
     client-session:
@@ -171,7 +171,7 @@ queue:
       producer: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_PRODUCER_CONFIG:retries:3}"
     client-session-event:
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:client_session_event}"
-      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:50;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
       consumer: "${TB_KAFKA_CLIENT_SESSION_EVENT_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_CLIENT_SESSION_EVENT_PRODUCER_CONFIG:}"
     client-session-event-response:
@@ -194,6 +194,9 @@ queue:
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       consumer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
+
+service:
+  id: "${TB_SERVICE_ID:}"
 
 # Actor system parameters
 actors:

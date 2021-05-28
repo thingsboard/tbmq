@@ -119,7 +119,6 @@ public class BasicDownLinkConsumerService {
     }
 
     private void deliverMsgToClient(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto publishMsgProto) {
-        // TODO: not correct since doesn't take into account QoS of Subscription, need to pass it inside of PublishMsgProto or get from Client Actor (if Subscriptions are stored there)
         publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, clientSessionCtx.getMsgIdSeq().nextMsgId(),
                 publishMsgProto.getTopicName(), MqttQoS.valueOf(publishMsgProto.getQos()),
                 false, publishMsgProto.getPayload().toByteArray());
