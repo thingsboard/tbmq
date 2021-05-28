@@ -55,6 +55,7 @@ import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.
 @ConditionalOnProperty(prefix = "zk", value = "enabled", havingValue = "true", matchIfMissing = false)
 @Slf4j
 public class ZkDiscoveryService implements PathChildrenCacheListener {
+    // TODO: implement service discovery (?)
     private volatile boolean stopped = true;
 
     @Autowired

@@ -81,6 +81,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         validate(sessionCtx, msg);
 
+        // TODO: move auth to INIT phase (reject client before it disconnects existing session)
         authenticateClient(sessionCtx, msg, clientId);
 
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
@@ -138,6 +139,7 @@ public class ConnectServiceImpl implements ConnectService {
 
     private void authenticateClient(ClientSessionCtx ctx, MqttConnectMessage msg, String clientId) {
         try {
+            // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
             MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), ctx.getSslHandler());
             if (clientCredentials != null) {
                 AuthorizationRule authorizationRule = null;
