@@ -15,16 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import java.util.Map;
 
-public interface ClientSessionReader {
-    Map<String, ClientSessionInfo> getPersistedClientSessionInfos();
-
-    ClientSession getClientSession(String clientId);
-
-    ClientSessionInfo getClientSessionInfo(String clientId);
-
-    Map<String, ClientSessionInfo> getAllClientSessions();
+public interface ClientSessionPageReader {
+    PageData<ClientSessionInfo> getClientSessionInfos(PageLink pageLink);
 }

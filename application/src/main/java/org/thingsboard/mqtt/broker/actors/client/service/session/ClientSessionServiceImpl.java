@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -106,6 +107,11 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     @Override
     public ClientSessionInfo getClientSessionInfo(String clientId) {
         return clientSessionMap.get(clientId);
+    }
+
+    @Override
+    public Map<String, ClientSessionInfo> getAllClientSessions() {
+        return new HashMap<>(clientSessionMap);
     }
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
