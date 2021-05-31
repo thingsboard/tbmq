@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
-public interface ClientSessionCallback {
+public interface ClientCallback {
     void onSuccess();
 
     void onFailure(Throwable e);

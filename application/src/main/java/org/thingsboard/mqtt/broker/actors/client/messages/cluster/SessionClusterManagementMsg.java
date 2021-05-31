@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
-import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-
-@Slf4j
-public abstract class CallbackMsg {
-    private final ClientCallback callback;
-
-    public CallbackMsg(ClientCallback callback) {
-        this.callback = callback;
-    }
-
-    public ClientCallback getCallback() {
-        return callback;
-    }
+public interface SessionClusterManagementMsg extends TbActorMsg {
 }

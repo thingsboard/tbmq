@@ -22,9 +22,9 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
-import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
+import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 
 @Slf4j
@@ -40,13 +40,13 @@ public class ClientSessionEventActorManagerImpl implements ClientSessionEventAct
 
 
     @Override
-    public void sendCallbackMsg(String clientId, CallbackMsg callbackMsg) {
+    public void sendCallbackMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
                     // TODO: pass correct 'isClientIdGenerated' here
                     new ClientActorCreator(actorSystemContext, clientId, true));
         }
-        clientActorRef.tellWithHighPriority(callbackMsg);
+        clientActorRef.tellWithHighPriority(sessionClusterManagementMsg);
     }
 }

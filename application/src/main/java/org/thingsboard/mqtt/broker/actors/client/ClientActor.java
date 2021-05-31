@@ -19,19 +19,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClearSessionMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
 import org.thingsboard.mqtt.broker.actors.client.service.session.MsgProcessor;
@@ -80,8 +79,8 @@ public class ClientActor extends ContextAwareActor {
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
-        if (msg instanceof CallbackMsg) {
-            return processCallbackMsg(msg);
+        if (msg instanceof SessionClusterManagementMsg) {
+            return processSessionClusterManagementMsg(msg);
         }
         switch (msg.getMsgType()) {
             case SESSION_INIT_MSG:
@@ -117,29 +116,38 @@ public class ClientActor extends ContextAwareActor {
         return true;
     }
 
-    private boolean processCallbackMsg(TbActorMsg msg) {
-        ClientSessionCallback callback = ((CallbackMsg) msg).getCallback();
+    private boolean processSessionClusterManagementMsg(TbActorMsg msg) {
+        switch (msg.getMsgType()) {
+            case CONNECTION_REQUEST_MSG:
+                processConnectionRequestMsg((ConnectionRequestMsg) msg);
+                break;
+            case SESSION_DISCONNECTED_MSG:
+                processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
+                break;
+            case CLEAR_SESSION_MSG:
+                clientSessionManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
+                break;
+            default:
+                return false;
+        }
+        return true;
+    }
+
+    private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
-            switch (msg.getMsgType()) {
-                case CONNECTION_REQUEST_MSG:
-                    clientSessionManager.processConnectionRequest((ConnectionRequestMsg) msg,
-                            tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
-                    break;
-                case SESSION_DISCONNECTED_MSG:
-                    clientSessionManager.processSessionDisconnected(state.getClientId(), (SessionDisconnectedMsg) msg);
-                    break;
-                case CLEAR_SESSION_MSG:
-                    clientSessionManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
-                    break;
-                default:
-                    callback.onFailure(new RuntimeException("Unknown msg type"));
-                    return false;
-            }
-            callback.onSuccess();
-            return true;
+            clientSessionManager.processSessionDisconnected(state.getClientId(), msg);
+            msg.getCallback().onSuccess();
         } catch (Exception e) {
-            callback.onFailure(e);
-            return true;
+            msg.getCallback().onFailure(e);
+        }
+    }
+
+    private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
+        try {
+            clientSessionManager.processConnectionRequest(msg, tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
+            msg.getCallback().onSuccess();
+        } catch (Exception e) {
+            msg.getCallback().onFailure(e);
         }
     }
 

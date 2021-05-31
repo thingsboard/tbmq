@@ -16,10 +16,11 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ClientSessionCallbackMsgFactory {
-    CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback);
+    SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback);
 }

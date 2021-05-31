@@ -20,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -117,7 +118,7 @@ public class ClientSessionEventProcessor {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
 
-        ClientSessionCallback callback = new ClientSessionCallback() {
+        ClientCallback callback = new ClientCallback() {
             @Override
             public void onSuccess() {
                 updateWaiter.countDown();
@@ -130,8 +131,8 @@ public class ClientSessionEventProcessor {
             }
         };
 
-        CallbackMsg callbackMsg = callbackMsgFactory.createCallbackMsg(msg, callback);
-        clientSessionEventActorManager.sendCallbackMsg(clientId, callbackMsg);
+        SessionClusterManagementMsg sessionClusterManagementMsg = callbackMsgFactory.createSessionClusterManagementMsg(msg, callback);
+        clientSessionEventActorManager.sendCallbackMsg(clientId, sessionClusterManagementMsg);
 
         boolean waitSuccessful = false;
         try {
@@ -143,7 +144,7 @@ public class ClientSessionEventProcessor {
         Throwable error = errorRef.get();
         if (!waitSuccessful || error != null) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
-                    clientId, callbackMsg.getMsgType(), error != null ? error.getMessage() : "timeout waiting");
+                    clientId, sessionClusterManagementMsg.getMsgType(), error != null ? error.getMessage() : "timeout waiting");
             if (error != null) {
                 log.trace("Detailed error:", error);
             }

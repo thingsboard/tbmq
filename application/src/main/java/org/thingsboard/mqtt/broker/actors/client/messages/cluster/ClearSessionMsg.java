@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +24,10 @@ import java.util.UUID;
 
 @Slf4j
 @Getter
-public class ClearSessionMsg extends CallbackMsg {
+public class ClearSessionMsg implements SessionClusterManagementMsg {
     private final UUID sessionId;
 
-    public ClearSessionMsg(ClientSessionCallback callback, UUID sessionId) {
-        super(callback);
+    public ClearSessionMsg(UUID sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -39,7 +38,6 @@ public class ClearSessionMsg extends CallbackMsg {
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        super.onTbActorStopped(actorId);
         log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
     }
 }

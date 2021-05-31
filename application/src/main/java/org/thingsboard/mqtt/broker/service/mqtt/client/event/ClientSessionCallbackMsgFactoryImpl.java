@@ -17,11 +17,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClearSessionMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -40,7 +41,7 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
 @Service
 public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbackMsgFactory {
     @Override
-    public CallbackMsg createCallbackMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientSessionCallback callback) {
+    public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback) {
         QueueProtos.ClientSessionEventProto eventProto = msg.getValue();
         SessionInfo sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
@@ -54,7 +55,9 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
             case DISCONNECTED:
                 return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId());
             case TRY_CLEAR_SESSION_REQUEST:
-                return new ClearSessionMsg(callback, sessionInfo.getSessionId());
+                // TODO: think if there's a better solution
+                callback.onSuccess();
+                return new ClearSessionMsg(sessionInfo.getSessionId());
             default:
                 throw new RuntimeException("Unexpected ClientSessionEvent type.");
         }

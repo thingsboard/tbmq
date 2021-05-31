@@ -13,35 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.exception.ActorStoppedException;
+
+import java.util.UUID;
 
 @Slf4j
 @Getter
-public class ConnectionRequestMsg extends CallbackMsg {
-    private final SessionInfo sessionInfo;
-    private final ConnectionRequestInfo requestInfo;
+public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
+    private final UUID sessionId;
 
-    public ConnectionRequestMsg(ClientSessionCallback callback, SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId) {
         super(callback);
-        this.sessionInfo = sessionInfo;
-        this.requestInfo = requestInfo;
+        this.sessionId = sessionId;
     }
 
     @Override
     public MsgType getMsgType() {
-        return MsgType.CONNECTION_REQUEST_MSG;
+        return MsgType.SESSION_DISCONNECTED_MSG;
     }
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        super.onTbActorStopped(actorId);
-        log.warn("[{}] Actor was stopped before processing {}, serviceId - {}, sessionId - {}.", actorId, getMsgType(),
-                sessionInfo.getServiceId(), sessionInfo.getSessionId());
+        log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
+
+        getCallback().onFailure(new ActorStoppedException("Actor was stopped before it can process message"));
     }
 }

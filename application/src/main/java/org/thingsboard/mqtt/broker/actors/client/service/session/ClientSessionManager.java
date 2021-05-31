@@ -16,9 +16,9 @@
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 
-import org.thingsboard.mqtt.broker.actors.client.messages.ClearSessionMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
 
 import java.util.function.Consumer;
