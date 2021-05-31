@@ -75,7 +75,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         clientSessionMap.put(clientId, clientSessionInfo);
 
         QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, serviceInfoProvider.getServiceId(), clientSessionInfoProto);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, clientSessionInfoProto);
     }
 
     // TODO: if client disconnects from Node A and connects to Node B it's possible that changes to ClientSession are not delivered on B yet
@@ -89,7 +89,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, serviceInfoProvider.getServiceId(), EMPTY_CLIENT_SESSION_INFO_PROTO);
+        clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
     @Override

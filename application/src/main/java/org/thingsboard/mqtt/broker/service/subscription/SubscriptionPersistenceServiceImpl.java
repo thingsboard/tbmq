@@ -95,8 +95,6 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
 
     @PreDestroy
     public void destroy() {
-        if (clientSubscriptionsProducer != null) {
-            clientSubscriptionsProducer.stop();
-        }
+        clientSubscriptionsProducer.stop();
     }
 }

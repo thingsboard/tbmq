@@ -20,5 +20,5 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import java.util.Map;
 
 public interface ClientSessionPersistenceService {
-    void persistClientSessionInfo(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
+    void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
 }

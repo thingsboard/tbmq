@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
+import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PostConstruct;
@@ -36,26 +38,24 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ClientSessionPersistenceServiceImpl implements ClientSessionPersistenceService {
     @Value("${queue.client-session.acknowledge-wait-timeout-ms}")
     private long ackTimeoutMs;
 
-    private final ClientSessionQueueFactory clientSessionQueueFactory;
+    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
+    private final ServiceInfoProvider serviceInfoProvider;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
-
-    @PostConstruct
-    public void init() {
+    public ClientSessionPersistenceServiceImpl(ClientSessionQueueFactory clientSessionQueueFactory, ServiceInfoProvider serviceInfoProvider) {
         this.clientSessionProducer = clientSessionQueueFactory.createProducer();
+        this.serviceInfoProvider = serviceInfoProvider;
     }
 
     @Override
-    public void persistClientSessionInfo(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+    public void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         // TODO: think if we need waiting for the result here
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSessionProducer.send(generateRequest(clientId, serviceId, clientSessionInfoProto),
+        clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -87,16 +87,14 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
         }
     }
 
-    private TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> generateRequest(String clientId, String serviceId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+    private TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> generateRequest(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> request = new TbProtoQueueMsg<>(clientId, clientSessionInfoProto);
-        request.getHeaders().put(ClientSessionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceId));
+        request.getHeaders().put(ClientSessionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }
 
     @PreDestroy
     public void destroy() {
-        if (clientSessionProducer != null) {
-            clientSessionProducer.stop();
-        }
+        clientSessionProducer.stop();
     }
 }

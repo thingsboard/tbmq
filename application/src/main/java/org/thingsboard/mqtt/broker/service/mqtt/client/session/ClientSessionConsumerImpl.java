@@ -166,13 +166,13 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                         .build())
                 .lastUpdateTime(System.currentTimeMillis())
                 .build();
-        persistenceService.persistClientSessionInfo(dummyClientId, serviceInfoProvider.getServiceId(), ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
+        persistenceService.persistClientSessionInfo(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
         return dummyClientSessionInfo;
     }
 
     private void clearDummySession(ClientSessionInfo dummySession) {
         String clientId = dummySession.getClientSession().getSessionInfo().getClientInfo().getClientId();
-        persistenceService.persistClientSessionInfo(clientId, serviceInfoProvider.getServiceId(), EMPTY_CLIENT_SESSION_INFO_PROTO);
+        persistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
     private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
