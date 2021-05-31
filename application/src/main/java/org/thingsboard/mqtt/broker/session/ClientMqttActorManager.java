@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import java.util.UUID;
 
 public interface ClientMqttActorManager {
-    void initSession(String clientId, boolean isClientIdGenerated, ClientSessionCtx clientSessionCtx);
+    void initSession(String clientId, String username, byte[] passwordBytes, ClientSessionCtx clientSessionCtx, boolean isClientIdGenerated);
 
     void disconnect(String clientId, UUID sessionId, DisconnectReason reason);
 

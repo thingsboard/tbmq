@@ -50,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ClientActor extends ContextAwareActor {
-    // TODO: rename packet and maybe classes
 
     private final MsgProcessor msgProcessor;
     private final ClientSessionManager clientSessionManager;

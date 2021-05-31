@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @RequiredArgsConstructor
 public class SessionInitMsg implements TbActorMsg {
     private final ClientSessionCtx clientSessionCtx;
+    private final String username;
+    private final byte[] passwordBytes;
 
     @Override
     public MsgType getMsgType() {

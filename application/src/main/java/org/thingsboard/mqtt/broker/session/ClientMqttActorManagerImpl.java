@@ -47,13 +47,13 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void initSession(String clientId, boolean isClientIdGenerated, ClientSessionCtx clientSessionCtx) {
+    public void initSession(String clientId, String username, byte[] passwordBytes, ClientSessionCtx clientSessionCtx, boolean isClientIdGenerated) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
                     new ClientActorCreator(actorSystemContext, clientId, isClientIdGenerated));
         }
-        clientActorRef.tellWithHighPriority(new SessionInitMsg(clientSessionCtx));
+        clientActorRef.tellWithHighPriority(new SessionInitMsg(clientSessionCtx, username, passwordBytes));
     }
 
     @Override

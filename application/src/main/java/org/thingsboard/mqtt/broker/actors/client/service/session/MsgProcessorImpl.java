@@ -61,13 +61,13 @@ public class MsgProcessorImpl implements MsgProcessor {
         boolean messageNeedsToBeReleased = true;
         try {
             MqttMessageType msgType = incomingMqttMsg.getMsg().fixedHeader().messageType();
-            boolean isSessionValid = ClientActorUtil.validateAndLogSession(actorState, incomingMqttMsg);
-            if (!isSessionValid) {
-                return;
-            }
             if (actorState.getCurrentSessionState() == SessionState.DISCONNECTED) {
                 log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
                         actorState.getClientId(), actorState.getCurrentSessionId(), SessionState.DISCONNECTED, msgType);
+                return;
+            }
+            boolean isSessionValid = ClientActorUtil.validateAndLogSession(actorState, incomingMqttMsg);
+            if (!isSessionValid) {
                 return;
             }
             messageNeedsToBeReleased = handleMessage(actorState, incomingMqttMsg.getMsg());
@@ -118,10 +118,12 @@ public class MsgProcessorImpl implements MsgProcessor {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         switch (msgType) {
             case CONNECT:
+                // TODO: maybe better to send separate msg to actor
                 actorState.updateSessionState(SessionState.CONNECTING);
                 connectService.startConnection(actorState.getClientId(), sessionCtx, (MqttConnectMessage) msg);
                 break;
             case DISCONNECT:
+                // TODO: maybe pass DisconnectListener as argument
                 actorState.getDisconnectListener().disconnect(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
                 break;
             default:

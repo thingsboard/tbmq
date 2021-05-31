@@ -87,10 +87,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             if (msgType != MqttMessageType.CONNECT) {
                 throw new ProtocolViolationException("First received message was not CONNECT");
             }
-            clientId = ((MqttConnectMessage) msg).payload().clientIdentifier();
+            MqttConnectMessage connectMessage = (MqttConnectMessage) msg;
+            clientId = connectMessage.payload().clientIdentifier();
             boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
             clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-            clientMqttActorManager.initSession(clientId, isClientIdGenerated, clientSessionCtx);
+            clientMqttActorManager.initSession(clientId, connectMessage.payload().userName(), connectMessage.payload().passwordInBytes(), clientSessionCtx, isClientIdGenerated);
         }
 
         clientMqttActorManager.processMqttMsg(clientId, sessionId, msg);

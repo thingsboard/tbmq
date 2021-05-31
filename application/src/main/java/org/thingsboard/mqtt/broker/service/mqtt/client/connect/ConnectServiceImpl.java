@@ -29,21 +29,15 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -55,7 +49,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
@@ -65,8 +58,6 @@ public class ConnectServiceImpl implements ConnectService {
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final AuthenticationService authenticationService;
-    private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientService mqttClientService;
     private final ClientSessionEventService clientSessionEventService;
     private final ClientSessionReader clientSessionReader;
@@ -80,9 +71,6 @@ public class ConnectServiceImpl implements ConnectService {
         log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
 
         validate(sessionCtx, msg);
-
-        // TODO: move auth to INIT phase (reject client before it disconnects existing session)
-        authenticateClient(sessionCtx, msg, clientId);
 
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
 
@@ -137,29 +125,6 @@ public class ConnectServiceImpl implements ConnectService {
         }
     }
 
-    private void authenticateClient(ClientSessionCtx ctx, MqttConnectMessage msg, String clientId) {
-        try {
-            // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
-            MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, msg.payload().userName(), msg.payload().passwordInBytes(), ctx.getSslHandler());
-            if (clientCredentials != null) {
-                AuthorizationRule authorizationRule = null;
-                if (clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
-                    String clientCommonName = authenticationService.getClientCertificateCommonName(ctx.getSslHandler());
-                    authorizationRule = authorizationRuleService.parseSslAuthorizationRule(clientCredentials.getCredentialsValue(), clientCommonName);
-                } else if (clientCredentials.getCredentialsType() == ClientCredentialsType.MQTT_BASIC) {
-                    authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(clientCredentials.getCredentialsValue());
-                }
-                if (authorizationRule != null) {
-                    log.debug("[{}] Authorization rule for client - {}.", clientId, authorizationRule.getPattern().toString());
-                }
-                ctx.setAuthorizationRule(authorizationRule);
-            }
-        } catch (AuthenticationException e) {
-            log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
-            throw new MqttException("Authentication failed . Reason - " + e.getMessage());
-        }
-    }
 
     private SessionInfo getSessionInfo(MqttConnectMessage msg, UUID sessionId, String clientId) {
         ClientInfo clientInfo = mqttClientService.getMqttClient(clientId)

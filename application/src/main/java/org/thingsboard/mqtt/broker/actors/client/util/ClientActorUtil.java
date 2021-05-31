@@ -25,7 +25,7 @@ import java.util.UUID;
 public class ClientActorUtil {
     public static boolean validateAndLogSession(ClientActorStateReader state, SessionDependentMsg msg) {
         UUID receivedSessionId = msg.getSessionId();
-        if (!state.getCurrentSessionId().equals(receivedSessionId)) {
+        if (!receivedSessionId.equals(state.getCurrentSessionId())) {
             log.debug("[{}][{}] Received {} for another sessionId - {}.",
                     state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), receivedSessionId);
             return false;
