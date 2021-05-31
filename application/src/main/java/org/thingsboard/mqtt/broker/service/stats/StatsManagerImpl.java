@@ -20,13 +20,14 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
-import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
@@ -41,7 +42,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Primary
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
 public class StatsManagerImpl implements StatsManager, ActorStatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
@@ -50,8 +53,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager {
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
 
-    @Value("${stats.enabled}")
-    private Boolean statsEnabled;
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
 
@@ -59,55 +60,39 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager {
 
     @Override
     public TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats) {
-        return statsEnabled ? new StatsQueueCallback(queueCallback, stats) : queueCallback;
+        return new StatsQueueCallback(queueCallback, stats);
     }
 
     @Override
     public MessagesStats createMsgDispatcherPublishStats() {
         log.trace("Creating MsgDispatcherPublishStats.");
-        if (statsEnabled) {
-            MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
-            managedStats.add(stats);
-            return stats;
-        } else {
-            return StubMessagesStats.STUB_MESSAGE_STATS;
-        }
+        MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
+        managedStats.add(stats);
+        return stats;
     }
 
     @Override
     public PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId) {
         log.trace("Creating PublishMsgConsumerStats, consumerId - {}.", consumerId);
-        if (statsEnabled) {
-            PublishMsgConsumerStats stats = new DefaultPublishMsgConsumerStats(consumerId, statsFactory);
-            managedPublishMsgConsumerStats.add(stats);
-            return stats;
-        } else {
-            return StubPublishMsgConsumerStats.STUB_PUBLISH_MSG_CONSUMER_STATS;
-        }
+        PublishMsgConsumerStats stats = new DefaultPublishMsgConsumerStats(consumerId, statsFactory);
+        managedPublishMsgConsumerStats.add(stats);
+        return stats;
     }
 
     @Override
     public DeviceProcessorStats createDeviceProcessorStats(String consumerId) {
         log.trace("Creating DeviceProcessorStats, consumerId - {}.", consumerId);
-        if (statsEnabled) {
-            DeviceProcessorStats stats = new DefaultDeviceProcessorStats(consumerId, statsFactory);
-            managedDeviceProcessorStats.add(stats);
-            return stats;
-        } else {
-            return StubDeviceProcessorStats.STUB_DEVICE_PROCESSOR_STATS;
-        }
+        DeviceProcessorStats stats = new DefaultDeviceProcessorStats(consumerId, statsFactory);
+        managedDeviceProcessorStats.add(stats);
+        return stats;
     }
 
     @Override
     public ApplicationProcessorStats createApplicationProcessorStats(String clientId) {
         log.trace("Creating ApplicationProcessorStats, clientId - {}.", clientId);
-        if (statsEnabled && applicationProcessorStatsEnabled) {
-            ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
-            managedApplicationProcessorStats.put(clientId, stats);
-            return stats;
-        } else {
-            return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
-        }
+        ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
+        managedApplicationProcessorStats.put(clientId, stats);
+        return stats;
     }
 
     @Override
@@ -119,87 +104,63 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager {
     @Override
     public AtomicInteger createSubscriptionSizeCounter() {
         log.trace("Creating SubscriptionSizeCounter.");
-        if (statsEnabled) {
-            AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
-            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
-            return sizeGauge;
-        } else {
-            return new AtomicInteger(0);
-        }
+        AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
+        gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
+        return sizeGauge;
     }
 
     @Override
     public void registerLastWillStats(Map<?, ?> lastWillMsgsMap) {
         log.trace("Registering LastWillStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap, Map::size);
-            gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap::size));
-        }
+        statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap, Map::size);
+        gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap::size));
     }
 
     @Override
     public void registerActiveSessionsStats(Map<?, ?> sessionsMap) {
         log.trace("Registering SessionsStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
-            gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
-        }
+        statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
+        gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
     }
 
     @Override
     public void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap) {
         log.trace("Registering AllClientSessionsStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap, Map::size);
-            gauges.add(new Gauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap::size));
-        }
+        statsFactory.createGauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap, Map::size);
+        gauges.add(new Gauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap::size));
     }
 
     @Override
     public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
         log.trace("Registering ClientSubscriptionsStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
-            gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
-        }
+        statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
+        gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
     }
 
     @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
         log.trace("Registering ActiveApplicationProcessorsStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
-            gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
-        }
+        statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
+        gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
     }
 
     @Override
     public void registerActorsStats(Map<?, ?> actorsMap) {
         log.trace("Registering ActorsStats.");
-        if (statsEnabled) {
-            statsFactory.createGauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap, Map::size);
-            gauges.add(new Gauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap::size));
-        }
+        statsFactory.createGauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap, Map::size);
+        gauges.add(new Gauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap::size));
     }
 
     @Override
     public AtomicLong createSubscriptionTrieNodesCounter() {
         log.trace("Creating SubscriptionTrieNodesCounter.");
-        if (statsEnabled) {
-            AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
-            gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
-            return sizeGauge;
-        } else {
-            return new AtomicLong(0);
-        }
+        AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
+        gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
+        return sizeGauge;
     }
 
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
     public void printStats() {
-        if (!statsEnabled) {
-            return;
-        }
-
         for (MessagesStats stats : managedStats) {
             String statsStr = StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
                     StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
