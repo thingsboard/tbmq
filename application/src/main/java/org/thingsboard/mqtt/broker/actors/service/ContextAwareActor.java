@@ -16,28 +16,42 @@
 package org.thingsboard.mqtt.broker.actors.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.thingsboard.mqtt.broker.actors.AbstractTbActor;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.ProcessFailureStrategy;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
 @Slf4j
 public abstract class ContextAwareActor extends AbstractTbActor {
 
     protected final ActorSystemContext systemContext;
+    private final StopWatch stopWatch;
 
     public ContextAwareActor(ActorSystemContext systemContext) {
         super();
         this.systemContext = systemContext;
+        this.stopWatch = new StopWatch();
     }
 
     @Override
     public boolean process(TbActorMsg msg) {
-        if (log.isDebugEnabled()) {
-            log.debug("Processing msg: {}", msg);
+        if (log.isTraceEnabled()) {
+            log.debug("[{}] Processing msg: {}", getActorId(), msg.getMsgType());
+        } else if (log.isDebugEnabled()) {
+            log.debug("[{}] Processing msg: {}", getActorId(), msg);
         }
-        if (!doProcess(msg)) {
-            log.warn("Unprocessed message: {}!", msg);
+
+        stopWatch.start();
+        try {
+            if (!doProcess(msg)) {
+                log.warn("[{}] Unprocessed message: {}!", getActorId(), msg);
+            }
+        } finally {
+            stopWatch.stop();
+            systemContext.getActorProcessingMetricService().logMsgProcessingTime(getActorId(), msg.getMsgType(), stopWatch.getTime());
+            stopWatch.reset();
         }
         return false;
     }
@@ -46,8 +60,12 @@ public abstract class ContextAwareActor extends AbstractTbActor {
 
     @Override
     public ProcessFailureStrategy onProcessFailure(Throwable t) {
-        log.debug("[{}] Processing failure: ", getActorRef().getActorId(), t);
+        log.debug("[{}] Processing failure: ", getActorId(), t);
         return doProcessFailure(t);
+    }
+
+    private TbActorId getActorId() {
+        return getActorRef() != null ? getActorRef().getActorId() : null;
     }
 
     private ProcessFailureStrategy doProcessFailure(Throwable t) {

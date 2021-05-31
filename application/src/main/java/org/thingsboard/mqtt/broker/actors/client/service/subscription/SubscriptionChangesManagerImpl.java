@@ -35,6 +35,8 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
     public void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg) {
         Set<TopicSubscription> currentTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
         Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
+        log.debug("[{}] Updating Client's subscriptions, new subscriptions size - {}, current subscriptions size - {}.",
+                clientId, newTopicSubscriptions.size(), currentTopicSubscriptions.size());
 
         if (newTopicSubscriptions.isEmpty()) {
             clientSubscriptionService.clearSubscriptionsInternally(clientId);

@@ -204,6 +204,9 @@ actors:
     throughput: "${ACTORS_SYSTEM_THROUGHPUT:5}"
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
+    processing-metrics:
+      # TODO: disable by default for production
+      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:true}"
   persisted-device:
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:10}"
@@ -307,8 +310,8 @@ management:
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'prometheus' to enable prometheus metrics).
-        include: '${METRICS_ENDPOINTS_EXPOSE:info}'
+        # Expose metrics endpoint (use value 'info' to disable prometheus metrics).
+        include: '${METRICS_ENDPOINTS_EXPOSE:prometheus}'
 
 # spring CORS configuration
 spring.mvc.cors:
