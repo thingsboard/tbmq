@@ -19,30 +19,29 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
-import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientSessionCallback;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
+import org.thingsboard.mqtt.broker.actors.client.service.session.MsgProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
-import org.thingsboard.mqtt.broker.actors.client.service.DisconnectService;
-import org.thingsboard.mqtt.broker.actors.client.service.MsgProcessor;
 import org.thingsboard.mqtt.broker.actors.client.util.ClientActorUtil;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -56,8 +55,8 @@ public class ClientActor extends ContextAwareActor {
     private final MsgProcessor msgProcessor;
     private final ClientSessionManager clientSessionManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
-    private final DisconnectService disconnectService;
-    private final ClientActorConfiguration clientActorConfiguration;
+    private final ActorProcessor actorProcessor;
+    private final ClientActorConfiguration actorConfiguration;
 
     private final ClientActorState state;
 
@@ -68,8 +67,8 @@ public class ClientActor extends ContextAwareActor {
         this.msgProcessor = systemContext.getClientActorContext().getMsgProcessor();
         this.clientSessionManager = systemContext.getClientActorContext().getClientSessionManager();
         this.subscriptionChangesManager = systemContext.getClientActorContext().getSubscriptionChangesManager();
-        this.disconnectService = systemContext.getClientActorContext().getDisconnectService();
-        this.clientActorConfiguration = systemContext.getClientActorConfiguration();
+        this.actorProcessor = systemContext.getClientActorContext().getActorProcessor();
+        this.actorConfiguration = systemContext.getClientActorConfiguration();
         this.state = new DefaultClientActorState(clientId, isClientIdGenerated);
     }
 
@@ -87,13 +86,14 @@ public class ClientActor extends ContextAwareActor {
         }
         switch (msg.getMsgType()) {
             case SESSION_INIT_MSG:
-                initClientSession(((SessionInitMsg) msg).getClientSessionCtx());
+                actorProcessor.onInit(state, (SessionInitMsg) msg);
                 break;
             case STOP_ACTOR_COMMAND_MSG:
                 processActorStop((StopActorCommandMsg) msg);
                 break;
             case DISCONNECT_MSG:
-                disconnectClient((DisconnectMsg) msg);
+                processDisconnectMsg((DisconnectMsg) msg);
+                actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
                 break;
             case INCOMING_MQTT_MSG:
                 processMqttMessage((IncomingMqttMsg) msg);
@@ -144,58 +144,9 @@ public class ClientActor extends ContextAwareActor {
         }
     }
 
-    private void initClientSession(ClientSessionCtx clientSessionCtx) {
-        // TODO: pass more info on INIT to be able to auth client and check if we should connect it
-        if (clientSessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
-            log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), clientSessionCtx.getSessionId());
-            if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
-                ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
-                        "Trying to init the same session")));
-            }
-            return;
-        }
-
-        SessionState sessionState = state.getCurrentSessionState();
-        if (sessionState != SessionState.DISCONNECTED) {
-            // TODO: think if it's better to send DISCONNECT + INIT commands to actor instead (but need some limit logic to not got stuck in the loop)
-            log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
-                    state.getClientId(), sessionState, state.getCurrentSessionId(), clientSessionCtx.getSessionId());
-            state.updateSessionState(SessionState.DISCONNECTING);
-            disconnectService.disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
-        }
-
-        state.updateSessionState(SessionState.INITIALIZED);
-        state.setClientSessionCtx(clientSessionCtx);
-        state.clearStopActorCommandId();
-    }
-
-    private void disconnectClient(DisconnectMsg disconnectMsg) {
-        boolean isSessionValid = ClientActorUtil.validateAndLogSession(state, disconnectMsg);
-        if (!isSessionValid) {
-            return;
-        }
-
-        if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            // TODO: duplicate DISCONNECTED event (if somehow prev session wasn't disconnected properly)
-            log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
-            return;
-        }
-
-        if (state.getCurrentSessionState() == SessionState.DISCONNECTING) {
-            log.warn("[{}][{}] Session is in {} state. Will try to disconnect again.", state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTING);
-        }
-
-        state.updateSessionState(SessionState.DISCONNECTING);
-        disconnectService.disconnect(state, disconnectMsg.getReason());
-        state.updateSessionState(SessionState.DISCONNECTED);
-
-        state.setStopActorCommandId(UUID.randomUUID());
-        StopActorCommandMsg stopActorCommandMsg = new StopActorCommandMsg(state.getStopActorCommandId());
-        if (state.isClientIdGenerated()) {
-            ctx.tell(stopActorCommandMsg);
-        } else {
-            systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, TimeUnit.MINUTES.toMillis(clientActorConfiguration.getTimeToWaitBeforeActorStopMinutes()));
-        }
+    private void processDisconnectMsg(DisconnectMsg disconnectMsg) {
+        actorProcessor.onDisconnect(state, disconnectMsg);
+        requestActorStop();
     }
 
     private void processMqttMessage(IncomingMqttMsg msg) {
@@ -249,6 +200,16 @@ public class ClientActor extends ContextAwareActor {
             ctx.stop(ctx.getSelf());
         } else {
             log.debug("[{}] Client was reconnected, ignoring {}.", state.getClientId(), msg.getMsgType());
+        }
+    }
+
+    private void requestActorStop() {
+        state.setStopActorCommandId(UUID.randomUUID());
+        StopActorCommandMsg stopActorCommandMsg = new StopActorCommandMsg(state.getStopActorCommandId());
+        if (state.isClientIdGenerated()) {
+            ctx.tell(stopActorCommandMsg);
+        } else {
+            systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, TimeUnit.MINUTES.toMillis(actorConfiguration.getTimeToWaitBeforeActorStopMinutes()));
         }
     }
 }

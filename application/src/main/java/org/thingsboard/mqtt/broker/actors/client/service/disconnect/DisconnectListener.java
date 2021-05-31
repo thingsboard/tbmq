@@ -13,27 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
-import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectListener;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
 
-import java.util.UUID;
-
-public interface ClientActorStateReader {
-    String getClientId();
-
-    UUID getCurrentSessionId();
-
-    SessionState getCurrentSessionState();
-
-    ClientSessionCtx getCurrentSessionCtx();
-
-    DisconnectListener getDisconnectListener();
-
-    UUID getStopActorCommandId();
-
-    boolean isClientIdGenerated();
-
-    QueuedMqttMessages getQueuedMessages();
+@FunctionalInterface
+public interface DisconnectListener {
+    void disconnect(DisconnectReason reason);
 }

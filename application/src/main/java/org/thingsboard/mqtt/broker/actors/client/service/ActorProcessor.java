@@ -15,9 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 
-@FunctionalInterface
-public interface DisconnectListener {
-    void disconnect(DisconnectReason reason);
+public interface ActorProcessor {
+    void onInit(ClientActorState state, SessionInitMsg sessionInitMsg);
+
+    void onDisconnect(ClientActorState state, DisconnectMsg disconnectMsg);
 }

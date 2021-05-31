@@ -27,7 +27,7 @@
 
     <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.dao.messages.sql.SqlDeviceMsgCleanUpDao" level="TRACE"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.MsgProcessorImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.session.MsgProcessorImpl" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.ClientActor" level="TRACE"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.util.ClientActorUtil" level="DEBUG"/>
 

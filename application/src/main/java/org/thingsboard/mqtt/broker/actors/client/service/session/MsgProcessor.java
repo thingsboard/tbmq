@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service;
+package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateUpdater;
+import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
-/*
-    should only be called from ClientSessionActor
- */
-public interface DisconnectService {
-    void disconnect(ClientActorStateReader actorState, DisconnectReason reason);
+public interface MsgProcessor {
+    void process(ClientActorStateUpdater actorState, IncomingMqttMsg incomingMqttMsg);
+
+    void processConnectionAccepted(ClientActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
+
+    void processConnectionFinished(ClientActorStateReader actorState);
 }

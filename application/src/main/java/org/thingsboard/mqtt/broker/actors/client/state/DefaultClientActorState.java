@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.thingsboard.mqtt.broker.actors.client.service.DisconnectListener;
+import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectListener;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
