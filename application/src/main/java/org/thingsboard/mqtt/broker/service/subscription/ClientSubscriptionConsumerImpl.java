@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -42,7 +41,6 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsumer {
     private static final String DUMMY_TOPIC = "dummy_topic";
 
@@ -54,15 +52,12 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     @Value("${queue.client-subscriptions.poll-interval}")
     private long pollDuration;
 
-    private final ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory;
-    private final ServiceInfoProvider serviceInfoProvider;
     private final SubscriptionPersistenceService persistenceService;
+    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
-
-    @PostConstruct
-    public void init() {
+    public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider, SubscriptionPersistenceService persistenceService) {
         this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId());
+        this.persistenceService = persistenceService;
     }
 
     @Override
@@ -142,12 +137,12 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private String persistDummyClientSubscriptions() {
         String dummyClientId = UUID.randomUUID().toString();
-        persistenceService.persistClientSubscriptions(dummyClientId, serviceInfoProvider.getServiceId(), Collections.singleton(new TopicSubscription(DUMMY_TOPIC, 0)));
+        persistenceService.persistClientSubscriptions(dummyClientId, Collections.singleton(new TopicSubscription(DUMMY_TOPIC, 0)));
         return dummyClientId;
     }
 
     private void clearDummyClientSubscriptions(String clientId) {
-        persistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), Collections.emptySet());
+        persistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
     }
 
     @PreDestroy

@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -42,7 +41,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
-    private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
 
     // TODO: sync subscriptions (and probably ClientSession)
@@ -68,7 +66,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         // TODO: add 'version' to at least detect issues
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), clientSubscriptions);
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }
 
     @Override
@@ -84,7 +82,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         unsubscribeInternally(clientId, topicFilters);
 
         Set<TopicSubscription> updatedClientSubscriptions = clientSubscriptionsMap.get(clientId);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), updatedClientSubscriptions);
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, updatedClientSubscriptions);
     }
 
     @Override
@@ -98,7 +96,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void clearSubscriptions(String clientId) {
         clearSubscriptionsInternally(clientId);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, serviceInfoProvider.getServiceId(), Collections.emptySet());
+        subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
     }
 
     @Override

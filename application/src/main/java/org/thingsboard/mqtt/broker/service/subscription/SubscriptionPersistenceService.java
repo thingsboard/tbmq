@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import java.util.Set;
 
 public interface SubscriptionPersistenceService {
-    void persistClientSubscriptions(String clientId, String serviceId, Set<TopicSubscription> clientSubscriptions);
+    void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions);
 }

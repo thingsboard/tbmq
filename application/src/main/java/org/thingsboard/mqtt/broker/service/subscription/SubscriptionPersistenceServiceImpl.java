@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -41,18 +42,20 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
     private long ackTimeoutMs;
 
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsProducer;
+    private final ServiceInfoProvider serviceInfoProvider;
 
-    public SubscriptionPersistenceServiceImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory) {
+    public SubscriptionPersistenceServiceImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider) {
         this.clientSubscriptionsProducer = clientSubscriptionsQueueFactory.createProducer();
+        this.serviceInfoProvider = serviceInfoProvider;
     }
 
     @Override
-    public void persistClientSubscriptions(String clientId, String serviceId, Set<TopicSubscription> clientSubscriptions) {
+    public void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions) {
         // TODO: make this async again
         QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSubscriptionsProducer.send(generateRequest(clientId, serviceId, clientSubscriptionsProto),
+        clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -84,9 +87,9 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
         }
     }
 
-    private TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> generateRequest(String clientId, String serviceId, QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
+    private TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> generateRequest(String clientId, QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
         TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> request = new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto);
-        request.getHeaders().put(SubscriptionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceId));
+        request.getHeaders().put(SubscriptionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }
 
