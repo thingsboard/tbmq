@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -23,13 +22,13 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
-import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
+import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
@@ -67,33 +66,32 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void processMqttMsg(String clientId, UUID sessionId, MqttMessage msg) {
+    public void connect(String clientId, MqttConnectMsg connectMsg) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
-            log.warn("[{}] Cannot find client actor to process MQTT message.", clientId);
+            log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
         } else {
-            clientActorRef.tell(new IncomingMqttMsg(sessionId, msg));
+            clientActorRef.tell(connectMsg);
         }
     }
 
     @Override
-    public void processConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+    public void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
-            log.warn("[{}] Cannot find client actor to process connection accepted.", clientId);
+            log.warn("[{}] Cannot find client actor to process MQTT message, sessionId - {}, msgType - {}.", clientId, mqttMsg.getSessionId(), mqttMsg.getMsgType());
+        } else {
+            clientActorRef.tell(mqttMsg);
+        }
+    }
+
+    @Override
+    public void notifyConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+        if (clientActorRef == null) {
+            log.warn("[{}] Cannot find client actor to process connection accepted, sessionId - {}.", clientId, sessionId);
         } else {
             clientActorRef.tell(new ConnectionAcceptedMsg(sessionId, isPrevSessionPersistent, lastWillMsg));
-        }
-    }
-
-    // TODO: group in one method
-    @Override
-    public void processConnectionFinished(String clientId, UUID sessionId) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
-        if (clientActorRef == null) {
-            log.warn("[{}] Cannot find client actor to process connection finished.", clientId);
-        } else {
-            clientActorRef.tell(new ConnectionFinishedMsg(sessionId));
         }
     }
 }

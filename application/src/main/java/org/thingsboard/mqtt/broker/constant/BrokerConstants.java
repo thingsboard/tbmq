@@ -15,13 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.constant;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
-
-import static io.netty.handler.codec.mqtt.MqttQoS.EXACTLY_ONCE;
-
 public class BrokerConstants {
-    public static final MqttQoS MAX_SUPPORTED_QOS_LVL = EXACTLY_ONCE;
-
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";

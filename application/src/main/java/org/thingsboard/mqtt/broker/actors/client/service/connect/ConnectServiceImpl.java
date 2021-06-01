@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
+import org.thingsboard.mqtt.broker.actors.client.service.session.PersistenceSessionClearer;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -34,10 +36,12 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -48,6 +52,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 
 @Service
@@ -63,10 +68,17 @@ public class ConnectServiceImpl implements ConnectService {
     private final ClientSessionReader clientSessionReader;
     private final KeepAliveService keepAliveService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final LastWillService lastWillService;
+    private final PersistenceSessionClearer persistenceSessionClearer;
+    private final ClientSessionCtxService clientSessionCtxService;
+    private final MsgPersistenceManager msgPersistenceManager;
+    private final MqttMessageHandlerImpl messageHandler;
 
     @Override
-    public void startConnection(String clientId, ClientSessionCtx sessionCtx, MqttConnectMessage msg) throws MqttException {
-        UUID sessionId = sessionCtx.getSessionId();
+    public void startConnection(ClientActorStateReader actorState, MqttConnectMsg msg) throws MqttException {
+        UUID sessionId = actorState.getCurrentSessionId();
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        String clientId = actorState.getClientId();
 
         log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
 
@@ -74,7 +86,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
 
-        keepAliveService.registerSession(sessionId, msg.variableHeader().keepAliveTimeSeconds(),
+        keepAliveService.registerSession(sessionId, msg.getKeepAliveTimeSeconds(),
                 () -> clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
 
         ClientSession prevSession = clientSessionReader.getClientSession(clientId);
@@ -83,61 +95,79 @@ public class ConnectServiceImpl implements ConnectService {
         ListenableFuture<Boolean> connectFuture = clientSessionEventService.connect(sessionCtx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(@Nullable Boolean successfulConnection) {
-                onConnectFinish(msg.variableHeader().isWillFlag() ? MqttConverter.convertLastWillToPublishMsg(msg) : null,
-                        sessionCtx, successfulConnection, isPrevSessionPersistent);
+            public void onSuccess(Boolean successfulConnection) {
+                if (successfulConnection) {
+                    clientMqttActorManager.notifyConnectionAccepted(clientId, sessionId, isPrevSessionPersistent, msg.getLastWillMsg());
+                } else {
+                    refuseConnection(sessionCtx, null);
+                }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                onConnectFailure(sessionCtx, t);
+                refuseConnection(sessionCtx, t);
             }
         }, connectHandlerExecutor);
     }
 
-    private void onConnectFailure(ClientSessionCtx sessionCtx, Throwable t) {
-        log.debug("[{}][{}] Couldn't connect the client. Exception - {}, reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), t.getClass().getSimpleName(), t.getMessage());
-        log.trace("Detailed error: ", t);
-        try {
-            sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
-        } finally {
-            clientMqttActorManager.disconnect(sessionCtx.getClientId(), sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Connection failed. Message - " + t.getMessage()));
+    @Override
+    public void acceptConnection(ClientActorStateReader actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        SessionInfo sessionInfo = sessionCtx.getSessionInfo();
+
+        if (connectionAcceptedMsg.getLastWillMsg() != null) {
+            lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg());
         }
+
+        boolean isCurrentSessionPersistent = sessionInfo.isPersistent();
+        if (connectionAcceptedMsg.isPrevSessionPersistent() && !isCurrentSessionPersistent) {
+            persistenceSessionClearer.clearPersistedSession(sessionInfo.getClientInfo());
+        }
+
+        sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED,
+                connectionAcceptedMsg.isPrevSessionPersistent() && isCurrentSessionPersistent));
+        log.info("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
+
+        clientSessionCtxService.registerSession(sessionCtx);
+
+        if (sessionCtx.getSessionInfo().isPersistent()) {
+            msgPersistenceManager.processPersistedMessages(actorState);
+        }
+
+        actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg));
     }
 
-    private void onConnectFinish(PublishMsg lastWillMsg, ClientSessionCtx ctx, Boolean wasConnectionSuccessful, boolean isPrevSessionPersistent) {
-        UUID sessionId = ctx.getSessionId();
-        String clientId = ctx.getClientId();
-
-        if (wasConnectionSuccessful) {
-            clientMqttActorManager.processConnectionAccepted(clientId, sessionId, isPrevSessionPersistent, lastWillMsg);
-        } else {
+    private void refuseConnection(ClientSessionCtx clientSessionCtx, Throwable t) {
+        String clientId = clientSessionCtx.getClientId();
+        UUID sessionId = clientSessionCtx.getSessionId();
+        if (t == null) {
             log.debug("[{}][{}] Client wasn't connected.", clientId, sessionId);
-            try {
-                ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
-            } catch (Exception e) {
-                log.trace("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
-            } finally {
-                clientMqttActorManager.disconnect(clientId, sessionId,
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client wasn't allowed to connect"));
-            }
+        } else {
+            log.debug("[{}][{}] Client wasn't connected. Exception - {}, reason - {}.", clientId, sessionId, t.getClass().getSimpleName(), t.getMessage());
+            log.trace("Detailed error: ", t);
+        }
+        try {
+            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
+        } catch (Exception e) {
+            log.trace("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
+        } finally {
+            clientMqttActorManager.disconnect(clientId, sessionId,
+                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client"));
         }
     }
 
-
-    private SessionInfo getSessionInfo(MqttConnectMessage msg, UUID sessionId, String clientId) {
+    private SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId) {
         ClientInfo clientInfo = mqttClientService.getMqttClient(clientId)
                 .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
                 .orElse(new ClientInfo(clientId, ClientType.DEVICE));
-        boolean isPersistentSession = !msg.variableHeader().isCleanSession();
+        boolean isPersistentSession = !msg.isCleanSession();
         return SessionInfo.builder()
                 .serviceId(serviceInfoProvider.getServiceId())
                 .sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
     }
 
-    private void validate(ClientSessionCtx ctx, MqttConnectMessage msg) {
-        if (!msg.variableHeader().isCleanSession() && StringUtils.isEmpty(msg.payload().clientIdentifier())) {
+    private void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {
+        if (!msg.isCleanSession() && StringUtils.isEmpty(msg.getClientIdentifier())) {
             ctx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
             throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
         }

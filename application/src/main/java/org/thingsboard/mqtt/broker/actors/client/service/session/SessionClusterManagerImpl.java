@@ -57,7 +57,7 @@ import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessio
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClientSessionManagerImpl implements ClientSessionManager {
+public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Value("${queue.client-session-event-response.max-request-timeout}")

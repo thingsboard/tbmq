@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 import java.util.UUID;
 
-/*
-    not thread-safe
- */
-public interface ClientActorState extends ClientActorStateUpdater {
-    void setStopActorCommandId(UUID commandId);
+@Slf4j
+@Getter
+public class MqttPubCompMsg extends QueueableMqttMsg {
+    private final int messageId;
 
-    void clearStopActorCommandId();
+    public MqttPubCompMsg(UUID sessionId, int messageId) {
+        super(sessionId);
+        this.messageId = messageId;
+    }
 
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.MQTT_PUBCOMP_MSG;
+    }
 }

@@ -15,9 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -28,28 +27,20 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class QueuedMqttMessages {
-    private final Queue<MqttMessage> queuedMessages = new LinkedList<>();
+    private final Queue<QueueableMqttMsg> queuedMessages = new LinkedList<>();
 
-    public void process(Consumer<MqttMessage> processor) {
+    public void process(Consumer<QueueableMqttMsg> processor) {
         while (!queuedMessages.isEmpty()) {
-            MqttMessage msg = queuedMessages.poll();
-            try {
-                processor.accept(msg);
-            } finally {
-                ReferenceCountUtil.safeRelease(msg);
-            }
+            QueueableMqttMsg msg = queuedMessages.poll();
+            processor.accept(msg);
         }
     }
 
-    public void add(MqttMessage msg) {
+    public void add(QueueableMqttMsg msg) {
         queuedMessages.add(msg);
     }
 
-    public void release() {
-        log.debug("Releasing {} queued messages.", queuedMessages.size());
-        while (!queuedMessages.isEmpty()) {
-            MqttMessage msg = queuedMessages.poll();
-            ReferenceCountUtil.safeRelease(msg);
-        }
+    public void clear() {
+        queuedMessages.clear();
     }
 }

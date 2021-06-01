@@ -19,7 +19,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -28,6 +33,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -56,24 +62,25 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        log.trace("[{}] Processing msg: {}", sessionId, msg);
+        log.trace("[{}][{}] Processing msg: {}", clientId, sessionId, msg);
         clientSessionCtx.setChannel(ctx);
         try {
-            if (msg instanceof MqttMessage) {
-                MqttMessage message = (MqttMessage) msg;
-                if (message.decoderResult().isSuccess()) {
-                    processMqttMsg(message);
-                } else {
-                    log.warn("[{}] Message decoding failed: {}", sessionId, message.decoderResult().cause().getMessage());
-                    disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, "Message decoding failed"));
-                }
-            } else {
-                log.warn("[{}] Received unknown message", sessionId);
+            if (!(msg instanceof MqttMessage)) {
+                log.warn("[{}][{}] Received unknown message", clientId, sessionId);
                 disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, "Received unknown message"));
+                return;
             }
-        } catch (Exception e) {
+
+            MqttMessage message = (MqttMessage) msg;
+            if (!message.decoderResult().isSuccess()) {
+                log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
+                disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, "Message decoding failed"));
+                return;
+            }
+
+            processMqttMsg(message);
+        } finally {
             ReferenceCountUtil.safeRelease(msg);
-            throw e;
         }
     }
 
@@ -83,18 +90,53 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
 
         MqttMessageType msgType = msg.fixedHeader().messageType();
-        if (StringUtils.isEmpty(clientId)) {
-            if (msgType != MqttMessageType.CONNECT) {
-                throw new ProtocolViolationException("First received message was not CONNECT");
-            }
-            MqttConnectMessage connectMessage = (MqttConnectMessage) msg;
-            clientId = connectMessage.payload().clientIdentifier();
-            boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
-            clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-            clientMqttActorManager.initSession(clientId, connectMessage.payload().userName(), connectMessage.payload().passwordInBytes(), clientSessionCtx, isClientIdGenerated);
+        if (StringUtils.isEmpty(clientId) && msgType == MqttMessageType.CONNECT) {
+            initSession((MqttConnectMessage) msg);
         }
 
-        clientMqttActorManager.processMqttMsg(clientId, sessionId, msg);
+        if (StringUtils.isEmpty(clientId)) {
+            throw new ProtocolViolationException("Session wasn't initialized");
+        }
+
+        switch (msgType) {
+            case DISCONNECT:
+                clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+                break;
+            case CONNECT:
+                clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
+                break;
+            case SUBSCRIBE:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttSubscribeMsg(sessionId, (MqttSubscribeMessage) msg));
+                break;
+            case UNSUBSCRIBE:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttUnsubscribeMsg(sessionId, (MqttUnsubscribeMessage) msg));
+                break;
+            case PUBLISH:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
+                break;
+            case PUBACK:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPubAckMsg(sessionId, (MqttPubAckMessage) msg));
+                break;
+            case PUBREC:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPubRecMsg(sessionId, (MqttMessageIdVariableHeader) msg.variableHeader()));
+                break;
+            case PUBREL:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPubRelMsg(sessionId, (MqttMessageIdVariableHeader) msg.variableHeader()));
+                break;
+            case PUBCOMP:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPubCompMsg(sessionId, (MqttMessageIdVariableHeader) msg.variableHeader()));
+                break;
+            case PINGREQ:
+                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPingMsg(sessionId));
+                break;
+        }
+    }
+
+    private void initSession(MqttConnectMessage connectMessage) {
+        clientId = connectMessage.payload().clientIdentifier();
+        boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
+        clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
+        clientMqttActorManager.initSession(clientId, connectMessage.payload().userName(), connectMessage.payload().passwordInBytes(), clientSessionCtx, isClientIdGenerated);
     }
 
     @Override

@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 import java.util.UUID;
@@ -26,9 +26,9 @@ public interface ClientMqttActorManager {
 
     void disconnect(String clientId, UUID sessionId, DisconnectReason reason);
 
-    void processMqttMsg(String clientId, UUID sessionId, MqttMessage msg);
+    void connect(String clientId, MqttConnectMsg connectMsg);
 
-    void processConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
+    void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);
 
-    void processConnectionFinished(String clientId, UUID sessionId);
+    void notifyConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
 }

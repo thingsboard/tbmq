@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.connect;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 
-public interface ConnectService {
-    void startConnection(String clientId, ClientSessionCtx ctx, MqttConnectMessage msg) throws MqttException;
+import java.util.UUID;
+
+public abstract class QueueableMqttMsg extends SessionDependentMsg {
+    public QueueableMqttMsg(UUID sessionId) {
+        super(sessionId);
+    }
 }

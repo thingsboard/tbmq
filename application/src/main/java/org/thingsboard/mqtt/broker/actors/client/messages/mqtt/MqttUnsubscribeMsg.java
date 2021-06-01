@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
+import java.util.Collection;
 import java.util.UUID;
 
 @Slf4j
 @Getter
-public class ConnectionFinishedMsg extends SessionDependentMsg {
+public class MqttUnsubscribeMsg extends QueueableMqttMsg {
 
-    public ConnectionFinishedMsg(UUID sessionId) {
+    private final int messageId;
+    private final Collection<String> topics;
+
+    public MqttUnsubscribeMsg(UUID sessionId, int messageId, Collection<String> topics) {
         super(sessionId);
+        this.messageId = messageId;
+        this.topics = topics;
     }
 
     @Override
     public MsgType getMsgType() {
-        return MsgType.CONNECTION_FINISHED_MSG;
+        return MsgType.MQTT_UNSUBSCRIBE_MSG;
     }
 }

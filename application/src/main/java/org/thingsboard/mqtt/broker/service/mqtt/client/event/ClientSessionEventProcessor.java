@@ -96,6 +96,7 @@ public class ClientSessionEventProcessor {
                     // TODO: think about failures (make sure method can be safely called multiple times)
                     // TODO: process messages in batch and wait for all to finish
                     consumer.commit(msg.getPartition(), msg.getOffset() + 1);
+                    // TODO (priority 1): will block till timeout if message is lost in Actor System
                     processMsg(msg);
                 }
             } catch (Exception e) {

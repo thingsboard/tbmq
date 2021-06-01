@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
-public class IncomingMqttMsg extends SessionDependentMsg {
-    // TODO: think if it's really worth it or we can create a DTO for transfering and release messages in SessionHandler
-    // message needs to be released at some point of a time
-    private final MqttMessage msg;
+public class MqttPublishMsg extends QueueableMqttMsg {
 
-    public IncomingMqttMsg(UUID sessionId, MqttMessage msg) {
+    private final PublishMsg publishMsg;
+
+    public MqttPublishMsg(UUID sessionId, PublishMsg publishMsg) {
         super(sessionId);
-        this.msg = msg;
+        this.publishMsg = publishMsg;
     }
 
     @Override
     public MsgType getMsgType() {
-        return MsgType.INCOMING_MQTT_MSG;
+        return MsgType.MQTT_PUBLISH_MSG;
     }
 }

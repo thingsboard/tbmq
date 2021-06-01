@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectListener;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
@@ -28,10 +27,6 @@ public class DefaultClientActorState implements ClientActorState {
 
     private final String clientId;
     private final boolean isClientIdGenerated;
-
-    @Setter
-    @Getter
-    private DisconnectListener disconnectListener;
 
     private final QueuedMqttMessages queuedMqttMessages = new QueuedMqttMessages();
 

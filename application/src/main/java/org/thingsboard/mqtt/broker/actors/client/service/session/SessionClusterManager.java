@@ -23,7 +23,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
 
 import java.util.function.Consumer;
 
-public interface ClientSessionManager {
+public interface SessionClusterManager {
     void processConnectionRequest(ConnectionRequestMsg connectionRequestMsg, Consumer<TryConnectMsg> tryConnectMsgPublisher);
 
     void tryConnectSession(TryConnectMsg tryConnectMsg);

@@ -16,20 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
-
-import java.util.UUID;
 
 @Slf4j
 public class ClientActorUtil {
-    public static boolean validateAndLogSession(ClientActorStateReader state, SessionDependentMsg msg) {
-        UUID receivedSessionId = msg.getSessionId();
-        if (!receivedSessionId.equals(state.getCurrentSessionId())) {
-            log.debug("[{}][{}] Received {} for another sessionId - {}.",
-                    state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), receivedSessionId);
-            return false;
-        }
-        return true;
-    }
 }

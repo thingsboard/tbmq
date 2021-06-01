@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.device;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
@@ -88,7 +87,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 }
                 lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
                 publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, persistedMessage.getPacketId(),
-                        persistedMessage.getTopic(), MqttQoS.valueOf(persistedMessage.getQos()), isDup,
+                        persistedMessage.getTopic(), persistedMessage.getQos(), isDup,
                         persistedMessage.getPayload());
                 break;
             case PUBREL:
@@ -116,7 +115,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
-                    publishMsg.getTopic(), MqttQoS.valueOf(publishMsg.getQos()), false,
+                    publishMsg.getTopic(), publishMsg.getQos(), false,
                     publishMsg.getPayload());
         } catch (Exception e) {
             clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));

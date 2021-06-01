@@ -93,9 +93,9 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
-    public MqttPublishMessage createPubMsg(int packetId, String topic, MqttQoS mqttQoS, boolean isDup, byte[] payloadBytes) {
+    public MqttPublishMessage createPubMsg(int packetId, String topic, int mqttQoS, boolean isDup, byte[] payloadBytes) {
         MqttFixedHeader mqttFixedHeader =
-                new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, mqttQoS, false, 0);
+                new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, MqttQoS.valueOf(mqttQoS), false, 0);
         MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, packetId);
         ByteBuf payload = ALLOCATOR.buffer();
         payload.writeBytes(payloadBytes);

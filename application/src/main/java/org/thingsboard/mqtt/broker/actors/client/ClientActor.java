@@ -19,26 +19,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionFinishedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
-import org.thingsboard.mqtt.broker.actors.client.service.session.MsgProcessor;
+import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectService;
+import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
-import org.thingsboard.mqtt.broker.actors.client.util.ClientActorUtil;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -50,10 +51,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ClientActor extends ContextAwareActor {
 
-    private final MsgProcessor msgProcessor;
-    private final ClientSessionManager clientSessionManager;
+    private final SessionClusterManager sessionClusterManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
     private final ActorProcessor actorProcessor;
+    private final ConnectService connectService;
+    private final MqttMessageHandler mqttMessageHandler;
     private final ClientActorConfiguration actorConfiguration;
 
     private final ClientActorState state;
@@ -62,10 +64,11 @@ public class ClientActor extends ContextAwareActor {
 
     public ClientActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
         super(systemContext);
-        this.msgProcessor = systemContext.getClientActorContext().getMsgProcessor();
-        this.clientSessionManager = systemContext.getClientActorContext().getClientSessionManager();
+        this.sessionClusterManager = systemContext.getClientActorContext().getSessionClusterManager();
         this.subscriptionChangesManager = systemContext.getClientActorContext().getSubscriptionChangesManager();
         this.actorProcessor = systemContext.getClientActorContext().getActorProcessor();
+        this.connectService = systemContext.getClientActorContext().getConnectService();
+        this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
         this.actorConfiguration = systemContext.getClientActorConfiguration();
         this.state = new DefaultClientActorState(clientId, isClientIdGenerated);
     }
@@ -73,14 +76,28 @@ public class ClientActor extends ContextAwareActor {
     @Override
     public void init(TbActorCtx ctx) throws TbActorException {
         super.init(ctx);
-        this.state.setDisconnectListener(reason -> ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), reason)));
     }
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
+
+        if (sessionNotMatch(msg)) {
+            log.debug("[{}][{}] Received {} for another sessionId - {}.",
+                    state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
+            return true;
+        }
+
+        boolean success = true;
         if (msg instanceof SessionClusterManagementMsg) {
-            return processSessionClusterManagementMsg(msg);
+            success = processSessionClusterManagementMsg((SessionClusterManagementMsg) msg);
+            if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+                requestActorStop();
+            }
+            return success;
+        }
+        if (msg instanceof QueueableMqttMsg) {
+            return processQueueableMqttMsg((QueueableMqttMsg) msg);
         }
         switch (msg.getMsgType()) {
             case SESSION_INIT_MSG:
@@ -90,33 +107,36 @@ public class ClientActor extends ContextAwareActor {
                 processActorStop((StopActorCommandMsg) msg);
                 break;
             case DISCONNECT_MSG:
-                processDisconnectMsg((DisconnectMsg) msg);
                 actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
+                requestActorStop();
                 break;
-            case INCOMING_MQTT_MSG:
-                processMqttMessage((IncomingMqttMsg) msg);
+
+            case MQTT_CONNECT_MSG:
+                processConnectMsg((MqttConnectMsg) msg);
                 break;
             case CONNECTION_ACCEPTED_MSG:
                 processConnectionAcceptedMsg((ConnectionAcceptedMsg) msg);
                 break;
-            case CONNECTION_FINISHED_MSG:
-                processConnectionFinishedMsg((ConnectionFinishedMsg) msg);
-                break;
 
             case TRY_CONNECT_MSG:
-                clientSessionManager.tryConnectSession((TryConnectMsg) msg);
+                sessionClusterManager.tryConnectSession((TryConnectMsg) msg);
+                // TODO: move to one place
+                if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+                    requestActorStop();
+                }
                 break;
 
             case SUBSCRIPTION_CHANGED_EVENT_MSG:
                 subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
                 break;
             default:
-                return false;
+                success = false;
         }
-        return true;
+        return success;
     }
 
-    private boolean processSessionClusterManagementMsg(TbActorMsg msg) {
+    private boolean processSessionClusterManagementMsg(SessionClusterManagementMsg msg) {
+        state.clearStopActorCommandId();
         switch (msg.getMsgType()) {
             case CONNECTION_REQUEST_MSG:
                 processConnectionRequestMsg((ConnectionRequestMsg) msg);
@@ -125,7 +145,7 @@ public class ClientActor extends ContextAwareActor {
                 processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
                 break;
             case CLEAR_SESSION_MSG:
-                clientSessionManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
+                sessionClusterManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
                 break;
             default:
                 return false;
@@ -135,7 +155,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
-            clientSessionManager.processSessionDisconnected(state.getClientId(), msg);
+            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
@@ -144,79 +164,126 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
-            clientSessionManager.processConnectionRequest(msg, tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
+            sessionClusterManager.processConnectionRequest(msg, tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
         }
     }
 
-    private void processDisconnectMsg(DisconnectMsg disconnectMsg) {
-        actorProcessor.onDisconnect(state, disconnectMsg);
-        requestActorStop();
-    }
+    private boolean processQueueableMqttMsg(QueueableMqttMsg msg) {
+        if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+            log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
+                    state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
+            return true;
+        }
+        if (state.getCurrentSessionState() != SessionState.CONNECTING
+                && state.getCurrentSessionState() != SessionState.CONNECTED) {
+            log.warn("[{}][{}] Msg {} cannot be processed in state - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), state.getCurrentSessionState());
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to process message")));
+            return true;
+        }
 
-    private void processMqttMessage(IncomingMqttMsg msg) {
+        if (state.getCurrentSessionState() == SessionState.CONNECTING) {
+            state.getQueuedMessages().add(msg);
+            return true;
+        }
+
         try {
-            msgProcessor.process(state, msg);
+            return mqttMessageHandler.process(state.getCurrentSessionCtx(), msg);
         } catch (Exception e) {
             log.info("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
             ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process MQTT message. Exception message - " + e.getMessage())));
+            return true;
+        }
+    }
+
+    private void processConnectMsg(MqttConnectMsg msg) {
+        if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+            log.debug("[{}][{}] Session is in state {}, ignoring {}",  state.getClientId(), state.getCurrentSessionId(),
+                    SessionState.DISCONNECTED, msg.getMsgType());
+            return;
+        }
+
+        if (state.getCurrentSessionState() != SessionState.INITIALIZED) {
+            log.warn("[{}][{}] Msg {} can only be processed in {} state, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), SessionState.INITIALIZED, state.getCurrentSessionState());
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to process message")));
+            return;
+        }
+
+        try {
+            state.updateSessionState(SessionState.CONNECTING);
+            connectService.startConnection(state, msg);
+        } catch (Exception e) {
+            log.info("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error:", e);
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to process message")));
         }
     }
 
     private void processConnectionAcceptedMsg(ConnectionAcceptedMsg msg) {
-        boolean isSessionValid = ClientActorUtil.validateAndLogSession(state, msg);
-        if (!isSessionValid) {
+        if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+            log.debug("[{}][{}] Session is in state {}, ignoring {}",  state.getClientId(), state.getCurrentSessionId(),
+                    SessionState.DISCONNECTED, msg.getMsgType());
             return;
         }
-        try {
-            msgProcessor.processConnectionAccepted(state, msg.isPrevSessionPersistent(), msg.getLastWillMsg());
-        } catch (Exception e) {
-            log.info("[{}][{}] Failed to process connection accepted. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
-                    "Failed to process connection accepted. Exception message - " + e.getMessage())));
-        }
-    }
 
-    private void processConnectionFinishedMsg(ConnectionFinishedMsg msg) {
-        boolean isSessionValid = ClientActorUtil.validateAndLogSession(state, msg);
-        if (!isSessionValid) {
+        if (state.getCurrentSessionState() != SessionState.CONNECTING) {
+            log.warn("[{}][{}] Msg {} can only be processed in {} state, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), SessionState.CONNECTING, state.getCurrentSessionState());
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to process message")));
             return;
         }
+
         try {
-            msgProcessor.processConnectionFinished(state);
+            connectService.acceptConnection(state, msg);
             state.updateSessionState(SessionState.CONNECTED);
         } catch (Exception e) {
-            log.info("[{}][{}] Failed to process connection finished. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    e.getClass().getSimpleName(), e.getMessage());
+            log.info("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
+                    msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
             ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
-                    "Failed to process connection finished. Exception message - " + e.getMessage())));
+                    "Failed to process message")));
         }
     }
 
-
     private void processActorStop(StopActorCommandMsg msg) {
-        if (msg.getCommandUUID().equals(state.getStopActorCommandId())) {
-            ctx.stop(ctx.getSelf());
-        } else {
-            log.debug("[{}] Client was reconnected, ignoring {}.", state.getClientId(), msg.getMsgType());
+        if (!msg.getCommandUUID().equals(state.getStopActorCommandId())) {
+            log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
+            return;
         }
+
+        // TODO: what if we loose some messages while actor is stopped
+        log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
+                state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
+        ctx.stop(ctx.getSelf());
     }
 
     private void requestActorStop() {
+        if (state.getStopActorCommandId() != null) {
+            log.debug("[{}] Currently waiting for {} stop command.", state.getClientId(), state.getStopActorCommandId());
+            return;
+        }
+
         state.setStopActorCommandId(UUID.randomUUID());
         StopActorCommandMsg stopActorCommandMsg = new StopActorCommandMsg(state.getStopActorCommandId());
-        if (state.isClientIdGenerated()) {
-            ctx.tell(stopActorCommandMsg);
-        } else {
-            systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, TimeUnit.MINUTES.toMillis(actorConfiguration.getTimeToWaitBeforeActorStopMinutes()));
-        }
+
+        long delay = state.isClientIdGenerated() ? TimeUnit.SECONDS.toMillis(actorConfiguration.getTimeToWaitBeforeGeneratedActorStopSeconds())
+                : TimeUnit.SECONDS.toMillis(actorConfiguration.getTimeToWaitBeforeNamedActorStopSeconds());
+        systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, delay);
+    }
+
+    private boolean sessionNotMatch(TbActorMsg msg) {
+        return msg instanceof SessionDependentMsg && !((SessionDependentMsg) msg).getSessionId().equals(state.getCurrentSessionId());
     }
 }

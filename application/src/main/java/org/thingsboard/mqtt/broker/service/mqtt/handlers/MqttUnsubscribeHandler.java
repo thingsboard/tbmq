@@ -15,15 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,15 +33,14 @@ public class MqttUnsubscribeHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientSubscriptionService clientSubscriptionService;
 
-    public void process(ClientSessionCtx ctx, MqttUnsubscribeMessage msg) {
+    public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         UUID sessionId = ctx.getSessionId();
         String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
-        List<String> topicFilters = msg.payload().topics();
-        log.trace("[{}][{}] Processing unsubscribe [{}], topic filters - {}", clientId, sessionId, msg.variableHeader().messageId(), topicFilters);
+        log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
 
-        clientSubscriptionService.unsubscribe(clientId, topicFilters);
+        clientSubscriptionService.unsubscribe(clientId, msg.getTopics());
 
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.variableHeader().messageId()));
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId()));
     }
 
 }

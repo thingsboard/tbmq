@@ -103,6 +103,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
+    // TODO: use ClientId instead of ClientInfo (and change protocol to not use SessionInfo - use anyof keyword)
     public void disconnect(ClientInfo clientInfo, UUID sessionId) {
         sendEvent(clientInfo.getClientId(), eventFactory.createDisconnectedEventProto(clientInfo, sessionId), false);
     }

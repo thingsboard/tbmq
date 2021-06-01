@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,11 +29,10 @@ public class MqttPubAckHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
 
-    public void process(ClientSessionCtx ctx, MqttPubAckMessage msg) throws MqttException {
-        int packetId = msg.variableHeader().messageId();
-        log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), packetId);
+    public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
+        log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubAck(packetId, ctx);
+            msgPersistenceManager.processPubAck(messageId, ctx);
         }
     }
 }

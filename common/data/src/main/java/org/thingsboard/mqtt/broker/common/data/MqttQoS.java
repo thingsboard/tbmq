@@ -13,19 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.common.data;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+public enum MqttQoS {
+    AT_MOST_ONCE(0),
+    AT_LEAST_ONCE(1),
+    EXACTLY_ONCE(2),
+    ;
 
-import java.util.UUID;
+    private final int value;
 
-/*
-    not thread-safe
- */
-public interface ClientActorState extends ClientActorStateUpdater {
-    void setStopActorCommandId(UUID commandId);
+    MqttQoS(int value) {
+        this.value = value;
+    }
 
-    void clearStopActorCommandId();
+    public int value() {
+        return value;
+    }
 
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+    public static MqttQoS valueOf(int value) {
+        for (MqttQoS q: values()) {
+            if (q.value == value) {
+                return q;
+            }
+        }
+        throw new IllegalArgumentException("invalid QoS: " + value);
+    }
 }

@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -120,7 +119,7 @@ public class BasicDownLinkConsumerService {
 
     private void deliverMsgToClient(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto publishMsgProto) {
         publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, clientSessionCtx.getMsgIdSeq().nextMsgId(),
-                publishMsgProto.getTopicName(), MqttQoS.valueOf(publishMsgProto.getQos()),
+                publishMsgProto.getTopicName(), publishMsgProto.getQos(),
                 false, publishMsgProto.getPayload().toByteArray());
     }
 

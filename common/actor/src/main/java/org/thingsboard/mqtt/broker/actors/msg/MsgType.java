@@ -31,17 +31,26 @@ public enum MsgType {
 
     STOP_DEVICE_ACTOR_COMMAND_MSG,
 
-    // ClientSession MQTT Msg Types
+    // Client Session MQTT Msg Types
+    MQTT_CONNECT_MSG,
+    MQTT_SUBSCRIBE_MSG,
+    MQTT_UNSUBSCRIBE_MSG,
+    MQTT_PING_MSG,
+    MQTT_PUBLISH_MSG,
+    MQTT_PUBACK_MSG,
+    MQTT_PUBREC_MSG,
+    MQTT_PUBREL_MSG,
+    MQTT_PUBCOMP_MSG,
+
+    // Client Session Inter-Node Management Msg Types
     SESSION_INIT_MSG,
-    INCOMING_MQTT_MSG,
     DISCONNECT_MSG,
     CONNECTION_ACCEPTED_MSG,
-    CONNECTION_FINISHED_MSG,
 
-    // ClientSession Actor Management Msg Types
+    // Client Actor Management Msg Types
     STOP_ACTOR_COMMAND_MSG,
 
-    // ClientSession Session Management Msg Types
+    // Client Session Inter-Cluster Management Msg Types
     CLEAR_SESSION_MSG,
     SESSION_DISCONNECTED_MSG,
     CONNECTION_REQUEST_MSG,

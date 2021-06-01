@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectListener;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
@@ -28,8 +27,6 @@ public interface ClientActorStateReader {
     SessionState getCurrentSessionState();
 
     ClientSessionCtx getCurrentSessionCtx();
-
-    DisconnectListener getDisconnectListener();
 
     UUID getStopActorCommandId();
 

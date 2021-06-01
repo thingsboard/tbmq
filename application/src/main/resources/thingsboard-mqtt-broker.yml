@@ -212,7 +212,8 @@ actors:
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:10}"
   client:
     dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
-    wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_ACTOR_STOP_MINUTES:10}"
+    wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
+    wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
 
 # SQL DAO Configuration
 spring:

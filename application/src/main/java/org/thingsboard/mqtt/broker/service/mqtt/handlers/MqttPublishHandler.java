@@ -15,12 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.MqttConverter;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
@@ -50,31 +49,28 @@ public class MqttPublishHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final ClientMqttActorManager clientMqttActorManager;
 
-    public void process(ClientSessionCtx ctx, MqttPublishMessage msg) throws MqttException {
-        topicValidationService.validateTopic(msg.variableHeader().topicName());
-
+    public void process(ClientSessionCtx ctx, MqttPublishMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         String clientId = ctx.getClientId();
-        try {
-            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(msg.variableHeader().topicName()));
-        } catch (AuthorizationException e) {
-            log.info("[{}][{}] Client doesn't have permission to publish to the topic {}, reason - {}",
-                    clientId, sessionId, e.getDeniedTopic(), e.getMessage());
-            throw new MqttException(e);
-        }
-        int msgId = msg.variableHeader().packetId();
-        MqttQoS msgQoS = msg.fixedHeader().qosLevel();
+        PublishMsg publishMsg = msg.getPublishMsg();
+        int msgId = publishMsg.getPacketId();
 
-        if (msgQoS == MqttQoS.EXACTLY_ONCE) {
-            if (preprocessQoS2Msg(msgId, ctx)) return;
-        }
         log.trace("[{}][{}] Processing publish msg: {}", clientId, sessionId, msgId);
-        PublishMsg publishMsg = MqttConverter.convertToPublishMsg(msg);
+        topicValidationService.validateTopic(publishMsg.getTopicName());
+        validateClientAccess(ctx, publishMsg.getTopicName());
+
+        if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
+            boolean isPacketStillBeingProcessed = preprocessQoS2Msg(msgId, ctx);
+            if (isPacketStillBeingProcessed) {
+                return;
+            }
+        }
+
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);
-                acknowledgePacket(ctx, msgId, msgQoS);
+                acknowledgePacket(ctx, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
             }
 
             @Override
@@ -106,8 +102,8 @@ public class MqttPublishHandler {
             return true;
         } else {
             ctx.getIncomingMessagesCtx().await(msgId);
+            return false;
         }
-        return false;
     }
 
     private void acknowledgePacket(ClientSessionCtx ctx, int packetId, MqttQoS mqttQoS) {
@@ -134,6 +130,16 @@ public class MqttPublishHandler {
                 break;
             default:
                 throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
+        }
+    }
+
+    private void validateClientAccess(ClientSessionCtx ctx, String topic) {
+        try {
+            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(topic));
+        } catch (AuthorizationException e) {
+            log.info("[{}][{}] Client doesn't have permission to publish to the topic {}, reason - {}",
+                    ctx.getClientId(), ctx.getSessionId(), e.getDeniedTopic(), e.getMessage());
+            throw new MqttException(e);
         }
     }
 

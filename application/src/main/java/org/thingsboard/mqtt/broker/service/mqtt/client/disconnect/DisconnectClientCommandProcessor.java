@@ -20,11 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -47,6 +51,8 @@ public class DisconnectClientCommandProcessor {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DisconnectClientCommandHelper helper;
+    private final ClientSessionCtxService clientSessionCtxService;
+    private final ClientSessionEventService clientSessionEventService;
 
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
@@ -84,12 +90,17 @@ public class DisconnectClientCommandProcessor {
         log.info("Disconnect Client Command Consumer stopped.");
     }
 
+    // TODO: add force-disconnect logic
+
     private void processClientDisconnect(TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg) {
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
-        // TODO: if no session -> send CLIENT_DISCONNECTED
-        clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
+        if (clientSessionCtxService.getClientSessionCtx(clientId) == null) {
+            clientSessionEventService.disconnect(new ClientInfo(clientId, ClientType.IGNORED), sessionId);
+        } else {
+            clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
+        }
     }
 
     private void initConsumer() {

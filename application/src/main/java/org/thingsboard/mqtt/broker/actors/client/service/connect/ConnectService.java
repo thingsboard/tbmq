@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.session;
+package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateUpdater;
-import org.thingsboard.mqtt.broker.actors.client.messages.IncomingMqttMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.exception.MqttException;
 
-public interface MsgProcessor {
-    void process(ClientActorStateUpdater actorState, IncomingMqttMsg incomingMqttMsg);
+public interface ConnectService {
+    void startConnection(ClientActorStateReader actorState, MqttConnectMsg connectMsg) throws MqttException;
 
-    void processConnectionAccepted(ClientActorStateReader actorState, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
-
-    void processConnectionFinished(ClientActorStateReader actorState);
+    void acceptConnection(ClientActorStateReader actorState, ConnectionAcceptedMsg connectionAcceptedMsg);
 }

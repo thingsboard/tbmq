@@ -84,12 +84,7 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onDisconnect(ClientActorState state, DisconnectMsg disconnectMsg) {
-        boolean isSessionValid = ClientActorUtil.validateAndLogSession(state, disconnectMsg);
-        if (!isSessionValid) {
-            return;
-        }
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            // TODO: duplicate DISCONNECTED event (if somehow prev session wasn't disconnected properly)
             log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
             return;
         }

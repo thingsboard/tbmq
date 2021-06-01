@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import com.google.common.collect.Sets;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -242,7 +241,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                             case PUBLISH:
                                 PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
                                 publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.getPacketId(),
-                                        publishMsg.getTopicName(), MqttQoS.valueOf(publishMsg.getQosLevel()),
+                                        publishMsg.getTopicName(), publishMsg.getQosLevel(),
                                         publishMsg.isDup(), publishMsg.getPayload());
                                 break;
                             case PUBREL:

@@ -73,7 +73,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         UUID sessionId = sessionCtx.getSessionId();
 
-        actorState.getQueuedMessages().release();
+        actorState.getQueuedMessages().clear();
 
         keepAliveService.unregisterSession(sessionId);
 

@@ -13,11 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
-public interface SessionListener {
-    void onPublishMsg(MqttQoS mqttQoS, QueueProtos.PublishMsgProto publishMsgProto);
+import java.util.UUID;
+
+@Slf4j
+@Getter
+public class MqttPubRelMsg extends QueueableMqttMsg {
+    private final int messageId;
+
+    public MqttPubRelMsg(UUID sessionId, int messageId) {
+        super(sessionId);
+        this.messageId = messageId;
+    }
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.MQTT_PUBREL_MSG;
+    }
 }

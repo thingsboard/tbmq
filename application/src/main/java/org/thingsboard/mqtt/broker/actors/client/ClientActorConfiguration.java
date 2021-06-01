@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 public class ClientActorConfiguration {
     @Value("${actors.system.client.dispatcher-pool-size:8}")
     private int dispatcherSize;
-    @Value("${actors.system.client.wait-before-actor-stop-minutes:10}")
-    private int timeToWaitBeforeActorStopMinutes;
+    @Value("${actors.system.client.wait-before-generated-actor-stop-seconds:10}")
+    private int timeToWaitBeforeGeneratedActorStopSeconds;
+    @Value("${actors.system.client.wait-before-named-actor-stop-seconds:60}")
+    private int timeToWaitBeforeNamedActorStopSeconds;
 }

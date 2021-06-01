@@ -20,7 +20,6 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public interface MqttMessageGenerator {
 
     MqttMessage createPubRecMsg(int requestId);
 
-    MqttPublishMessage createPubMsg(int packetId, String topic, MqttQoS mqttQoS, boolean isDup, byte[] payloadBytes);
+    MqttPublishMessage createPubMsg(int packetId, String topic, int mqttQoS, boolean isDup, byte[] payloadBytes);
 
     MqttMessage createPingRespMsg();
 

@@ -20,8 +20,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionManager;
-import org.thingsboard.mqtt.broker.actors.client.service.session.MsgProcessor;
+import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
+import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectService;
+import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
 
 @Slf4j
@@ -29,8 +30,9 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 @Component
 @RequiredArgsConstructor
 public class ClientActorContext {
-    private final MsgProcessor msgProcessor;
-    private final ClientSessionManager clientSessionManager;
+    private final SessionClusterManager sessionClusterManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
     private final ActorProcessor actorProcessor;
+    private final ConnectService connectService;
+    private final MqttMessageHandler mqttMessageHandler;
 }
