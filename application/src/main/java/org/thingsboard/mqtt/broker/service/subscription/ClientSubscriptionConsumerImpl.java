@@ -56,7 +56,8 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
 
     public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider, SubscriptionPersistenceService persistenceService) {
-        this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId());
+        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
+        this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
         this.persistenceService = persistenceService;
     }
 

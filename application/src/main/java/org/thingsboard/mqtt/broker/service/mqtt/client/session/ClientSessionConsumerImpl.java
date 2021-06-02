@@ -63,7 +63,8 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     @PostConstruct
     public void init() {
-        this.clientSessionConsumer = clientSessionQueueFactory.createConsumer(serviceInfoProvider.getServiceId());
+        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
+        this.clientSessionConsumer = clientSessionQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
     }
 
     @Override
