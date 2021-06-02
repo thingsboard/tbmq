@@ -64,13 +64,13 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createConsumer(String topic, String id) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("persistent-downlink-publish-" + id + "-consumer");
-        consumerBuilder.groupId("persistent-downlink-publish-" + id + "-consumer-group");
+        consumerBuilder.clientId("persistent-downlink-publish-consumer-" + consumerId);
+        consumerBuilder.groupId("persistent-downlink-publish-group" + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PersistedDevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

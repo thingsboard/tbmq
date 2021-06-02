@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.DownLinkPublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -49,7 +49,7 @@ public class BasicDownLinkConsumerService {
 
     private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
 
-    private final DownLinkPublishMsgQueueFactory downLinkPublishMsgQueueFactory;
+    private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final ClientSessionCtxService clientSessionCtxService;
@@ -65,9 +65,10 @@ public class BasicDownLinkConsumerService {
     @PostConstruct
     public void init() {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(serviceInfoProvider.getServiceId());
+        String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = downLinkPublishMsgQueueFactory.createConsumer(topic, consumerId);
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);

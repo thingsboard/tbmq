@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.queue.provider.DownLinkPublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
 
 import javax.annotation.PostConstruct;
 
@@ -34,7 +34,7 @@ import javax.annotation.PostConstruct;
 @RequiredArgsConstructor
 public class DownLinkPublisherImpl implements DownLinkPublisher {
     private final ServiceInfoProvider serviceInfoProvider;
-    private final DownLinkPublishMsgQueueFactory downLinkPublishMsgQueueFactory;
+    private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
 
@@ -43,7 +43,7 @@ public class DownLinkPublisherImpl implements DownLinkPublisher {
 
     @PostConstruct
     public void init() {
-        this.basicProducer = downLinkPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+        this.basicProducer = downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
         this.persistedDeviceProducer = downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
     }
 

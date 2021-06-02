@@ -25,6 +25,6 @@ public interface DownLinkPersistentPublishMsgQueueFactory {
 
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createProducer(String id);
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createConsumer(String topic, String id);
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId);
 
 }

@@ -38,7 +38,7 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaDownLinkPublishMsgQueueFactory implements DownLinkPublishMsgQueueFactory {
+public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPublishMsgQueueFactory {
 
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
@@ -64,13 +64,13 @@ public class KafkaDownLinkPublishMsgQueueFactory implements DownLinkPublishMsgQu
     }
 
     @Override
-    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String id) {
+    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("basic-downlink-publish-" + id + "-consumer");
-        consumerBuilder.groupId("basic-downlink-publish-" + id + "-consumer-group");
+        consumerBuilder.clientId("basic-downlink-publish-consumer-" + consumerId);
+        consumerBuilder.groupId("basic-downlink-publish-group-" + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

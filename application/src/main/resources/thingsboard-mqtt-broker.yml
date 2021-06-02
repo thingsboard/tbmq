@@ -157,7 +157,7 @@ queue:
     device-persisted-msg:
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      consumer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_CONSUMER_CONFIG:}"
+      consumer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_CONSUMER_CONFIG:auto.offset.reset:earliest}"
       producer: "${TB_KAFKA_DEVICE_PERSISTED_MSG_PRODUCER_CONFIG:}"
     client-session:
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
@@ -182,17 +182,17 @@ queue:
     disconnect-client-command:
       topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:disconnect_client_command}"
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:}"
+      consumer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_CONSUMER_CONFIG:auto.offset.reset:earliest}"
       producer: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_PRODUCER_CONFIG:}"
     basic-downlink-publish-msg:
       topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:basic_downlink_publish_msg}"
       topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      consumer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:}"
+      consumer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:auto.offset.reset:latest}"
       producer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
     persistent-downlink-publish-msg:
       topic-prefix: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:persistent_downlink_publish_msg}"
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      consumer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:}"
+      consumer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:auto.offset.reset:latest}"
       producer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
 
 service:

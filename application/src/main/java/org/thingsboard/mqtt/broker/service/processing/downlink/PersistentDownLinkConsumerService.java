@@ -59,9 +59,11 @@ public class PersistentDownLinkConsumerService {
     @PostConstruct
     public void init() {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(serviceInfoProvider.getServiceId());
+        String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory.createConsumer(topic, consumerId);
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
+                    .createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
@@ -80,7 +82,6 @@ public class PersistentDownLinkConsumerService {
                     // TODO: do we still need to check if client is subscribed for topic
                     // TODO: maybe send msg to Client Actor (to be sure that we don't send msg after client unsubscribes)
                     for (TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto> msg : msgs) {
-                        String clientId = msg.getKey();
                         QueueProtos.PersistedDevicePublishMsgProto persistedDevicePublishMsgProto = msg.getValue();
                         deviceActorManager.sendMsgToActor(ProtoConverter.toDevicePublishMsg(persistedDevicePublishMsgProto));
                     }
