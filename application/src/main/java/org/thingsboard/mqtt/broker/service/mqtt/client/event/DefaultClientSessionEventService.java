@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -237,7 +238,13 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         }
         
         if (eventProducer != null) {
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+
             eventProducer.stop();
+
+            stopWatch.stop();
+            log.info("Client Session Event producer stopped for {} ms.", stopWatch.getTime());
         }
         if (eventResponseConsumer != null) {
             eventResponseConsumer.unsubscribeAndClose();

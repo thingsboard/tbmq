@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
@@ -73,6 +74,8 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
 
     @PreDestroy
     public void destroy() {
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         List<GenericClientSessionCtx> genericCtxList = clientSessionCtxService.getAllClientSessionCtx().stream()
                 .filter(clientSessionCtx -> clientSessionCtx.getSessionInfo().isPersistent())
                 .map(this::toGenericClientSessionCtx)
@@ -85,6 +88,8 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
             log.warn("Failed to save client contexts. Reason: {}.", e.getMessage());
             log.trace("Detailed error: ", e);
         }
+        stopWatch.stop();
+        log.info("Persisting client contexts took {} ms.", stopWatch.getTime());
     }
 
     private GenericClientSessionCtx toGenericClientSessionCtx(ClientSessionCtx ctx) {

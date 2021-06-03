@@ -19,12 +19,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
-import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,8 +40,10 @@ public class ActorSystemLifecycle {
     public static final String CLIENT_DISPATCHER_NAME = "client-dispatcher";
 
     private final TbActorSystem actorSystem;
+    private final ClientSessionCtxService clientSessionCtxService;
     private final DeviceActorConfiguration deviceActorConfiguration;
     private final ClientActorConfiguration clientActorConfiguration;
+    private final ClientSessionEventService clientSessionEventService;
 
     @PostConstruct
     public void init() {
@@ -50,6 +56,19 @@ public class ActorSystemLifecycle {
         log.info("Stopping actor system.");
         actorSystem.stop();
         log.info("Actor system stopped.");
+        notifyAboutDisconnectedClients();
+    }
+
+    private void notifyAboutDisconnectedClients() {
+        Collection<ClientSessionCtx> clientSessionContexts = clientSessionCtxService.getAllClientSessionCtx();
+        if (clientSessionContexts.isEmpty()) {
+            return;
+        }
+
+        log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
+        for (ClientSessionCtx sessionCtx : clientSessionContexts) {
+            clientSessionEventService.disconnect(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId());
+        }
     }
 
     private ExecutorService initDispatcherExecutor(String dispatcherName, int poolSize) {

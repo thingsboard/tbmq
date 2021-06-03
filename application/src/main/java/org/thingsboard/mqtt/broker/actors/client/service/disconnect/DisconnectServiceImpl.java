@@ -50,14 +50,26 @@ public class DisconnectServiceImpl implements DisconnectService {
     public void disconnect(ClientActorStateReader actorState, DisconnectReason reason) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
+        if (sessionCtx.getSessionInfo() == null) {
+            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            return;
+        }
+
         log.trace("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
+        // TODO: divide to 'local' and 'global' clearing ('global' should be done even if node is shutting down)
         try {
             clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.info("Detailed error: ", e);
             // TODO: think if we need to just leave it like this or throw exception
+        }
+
+        try {
+            clientSessionEventService.disconnect(actorState.getCurrentSessionCtx().getSessionInfo().getClientInfo(), actorState.getCurrentSessionId());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to notify client disconnected. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
         }
 
         try {
@@ -71,16 +83,12 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     private void clearClientSession(ClientActorStateReader actorState, DisconnectReasonType disconnectReasonType) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        UUID sessionId = sessionCtx.getSessionId();
+        ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
 
         actorState.getQueuedMessages().clear();
 
+        UUID sessionId = sessionCtx.getSessionId();
         keepAliveService.unregisterSession(sessionId);
-
-        ClientInfo clientInfo = sessionCtx.getSessionInfo() != null ? sessionCtx.getSessionInfo().getClientInfo() : null;
-        if (clientInfo == null) {
-            return;
-        }
 
         boolean sendLastWill = !DisconnectReasonType.ON_DISCONNECT_MSG.equals(disconnectReasonType);
         lastWillService.removeLastWill(sessionId, sendLastWill);
@@ -91,6 +99,5 @@ public class DisconnectServiceImpl implements DisconnectService {
             msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
         }
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());
-        clientSessionEventService.disconnect(clientInfo, sessionId);
     }
 }
