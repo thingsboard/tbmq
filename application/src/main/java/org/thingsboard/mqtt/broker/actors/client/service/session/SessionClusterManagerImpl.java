@@ -15,20 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
-import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.cluster.NodeStateService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
@@ -47,8 +42,6 @@ import javax.annotation.PreDestroy;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
 
@@ -67,7 +60,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final NodeStateService nodeStateService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
 
@@ -76,103 +68,59 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
     }
 
+    // TODO: it's possible that we get not-relevant data since consumer didn't get message yet
+    //      this can happen if node just got control over this clientId
+    //      Solutions:
+    //          - can force wait till the end of the topic using dummy session
+    //          - gain more control over reassigning partitions + do some sync logic on reassign
+    //          - remake logic to ensure that the 'leader' for client has all information (look at Raft algorithm)
+    //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)
+
     @Override
-    public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo, Consumer<TryConnectMsg> tryConnectMsgPublisher) {
+    public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
+        // It is possible that for some time sessions can be connected with the same clientId to different Nodes
         String clientId = sessionInfo.getClientInfo().getClientId();
         UUID sessionId = sessionInfo.getSessionId();
-        // TODO: it's possible that we get not-relevant data since consumer didn't get message yet
-        //      this can happen if node just got control over this clientId
-        //      Solutions:
-        //          - can force wait till the end of the topic using dummy session
-        //          - gain more control over reassigning partitions + do some sync logic on reassign
-        //          - remake logic to ensure that the 'leader' for client has all information (look at Raft algorithm)
-        //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)
-        ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
-        if (currentlyConnectedSession == null || !currentlyConnectedSession.isConnected()) {
-            saveClientSession(sessionInfo, requestInfo);
-            return;
-        }
 
-        UUID currentlyConnectedSessionId = currentlyConnectedSession.getSessionInfo().getSessionId();
+        log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionId);
+
+        ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
+        UUID currentlyConnectedSessionId = currentlyConnectedSession != null ?
+                currentlyConnectedSession.getSessionInfo().getSessionId() : null;
+
         if (sessionId.equals(currentlyConnectedSessionId)) {
             log.warn("[{}][{}] Got CONNECT request from already connected session.", clientId, currentlyConnectedSessionId);
+            sendEventResponse(clientId, requestInfo, false);
             return;
         }
 
-        SettableFuture<Void> future = disconnectClientCommandService.startWaitingForDisconnect(sessionId, currentlyConnectedSessionId, clientId);
-        DonAsynchron.withCallbackAndTimeout(future,
-                unused -> tryConnectMsgPublisher.accept(new TryConnectMsg(sessionInfo, requestInfo)),
-                t -> onDisconnectRejected(clientId, sessionId, requestInfo, currentlyConnectedSessionId, t),
-                requestTimeout, timeoutExecutor, MoreExecutors.directExecutor());
-
-        String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
-        log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
-        // TODO: maybe if serviceId == serviceInfoProvider.getServiceId() -> push immediately to actor?
-        disconnectClientCommandService.disconnectSession(currentSessionServiceId, clientId, currentlyConnectedSessionId);
-        if (!nodeStateService.isConnected(currentSessionServiceId)) {
-            // TODO: think if it's a good idea to directly call this method from here
-            log.debug("[{}] Disconnecting client session from the 'failed' node, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
-            processSessionDisconnected(clientId, currentlyConnectedSessionId);
-        }
-
-    }
-
-    @Override
-    public void tryConnectSession(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
-        String clientId = sessionInfo.getClientInfo().getClientId();
-
-        ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
         if (currentlyConnectedSession != null && currentlyConnectedSession.isConnected()) {
-            log.debug("[{}] Client session is already connected.", clientId);
-        } else {
-            saveClientSession(sessionInfo, requestInfo);
+            String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
+            log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
+            disconnectClientCommandService.disconnectSession(currentSessionServiceId, clientId, currentlyConnectedSessionId);
+            finishDisconnect(currentlyConnectedSession);
         }
-    }
 
-    private void onDisconnectRejected(String clientId, UUID sessionId, ConnectionRequestInfo requestInfo, UUID currentlyConnectedSessionId, Throwable t) {
-        log.debug("[{}][{}] Failed to process connection request. Exception - {}, reason - {}", clientId, requestInfo.getRequestId(), t.getClass().getSimpleName(), t.getMessage());
-        log.trace("Detailed error: ", t);
-        if (t instanceof TimeoutException) {
-            disconnectClientCommandService.clearWaitingFuture(sessionId, currentlyConnectedSessionId, clientId);
-        }
-        if (isRequestTimedOut(requestInfo.getRequestTime())) {
-            log.debug("[{}][{}] Connection request timed out.", clientId, requestInfo.getRequestId());
-        } else {
-            sendEventResponse(clientId, requestInfo, false);
-        }
+        updateClientSession(sessionInfo, requestInfo);
     }
 
     @Override
     public void processSessionDisconnected(String clientId, UUID sessionId) {
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         if (clientSession == null) {
-            log.warn("[{}][{}] Cannot find client session.", clientId, sessionId);
-            return;
-        }
-        if (!sessionId.equals(clientSession.getSessionInfo().getSessionId())) {
-            log.warn("[{}] Got disconnected event from the session with different sessionId. Currently connected sessionId - {}, " +
+            log.debug("[{}][{}] Cannot find client session.", clientId, sessionId);
+        } else if (!sessionId.equals(clientSession.getSessionInfo().getSessionId())) {
+            log.debug("[{}] Got disconnected event from the session with different sessionId. Currently connected sessionId - {}, " +
                     "received sessionId - {}.", clientId, clientSession.getSessionInfo().getSessionId(), sessionId);
-            return;
-        }
-        if (!clientSession.isConnected()) {
+        } else if (!clientSession.isConnected()) {
             log.debug("[{}] Client session is already disconnected.", clientId);
-            return;
-        }
-
-        if (clientSession.getSessionInfo().isPersistent()) {
-            ClientSession disconnectedClientSession = clientSession.toBuilder().connected(false).build();
-            clientSessionService.saveClientSession(clientId, disconnectedClientSession);
         } else {
-            clientSessionService.clearClientSession(clientId);
-            clientSubscriptionService.clearSubscriptions(clientId);
+            finishDisconnect(clientSession);
         }
-
-        disconnectClientCommandService.notifyWaitingSession(clientId, sessionId);
     }
 
     @Override
     public void processClearSession(String clientId, UUID sessionId) {
-        // TODO: get session from the state
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         UUID currentSessionId = clientSession.getSessionInfo().getSessionId();
         if (!currentSessionId.equals(sessionId)) {
@@ -188,8 +136,21 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
-    private void saveClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo) {
+    private void finishDisconnect(ClientSession clientSession) {
+        String clientId = clientSession.getSessionInfo().getClientInfo().getClientId();
+        log.trace("[{}] Finishing client session disconnection.", clientId);
+        if (clientSession.getSessionInfo().isPersistent()) {
+            ClientSession disconnectedClientSession = clientSession.toBuilder().connected(false).build();
+            clientSessionService.saveClientSession(clientId, disconnectedClientSession);
+        } else {
+            clientSessionService.clearClientSession(clientId);
+            clientSubscriptionService.clearSubscriptions(clientId);
+        }
+    }
+
+    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
+        log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
         if (isRequestTimedOut(connectionRequestInfo.getRequestTime())) {
             log.debug("[{}][{}] Connection request timed out.", clientInfo.getClientId(), connectionRequestInfo.getRequestId());

@@ -15,16 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
-import com.google.common.util.concurrent.SettableFuture;
-
 import java.util.UUID;
 
 public interface DisconnectClientCommandService {
-    SettableFuture<Void> startWaitingForDisconnect(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
-
-    void clearWaitingFuture(UUID disconnectRequesterSessionId, UUID sessionId, String clientId);
-
-    void notifyWaitingSession(String clientId, UUID sessionId);
-
     void disconnectSession(String serviceId, String clientId, UUID sessionId);
 }

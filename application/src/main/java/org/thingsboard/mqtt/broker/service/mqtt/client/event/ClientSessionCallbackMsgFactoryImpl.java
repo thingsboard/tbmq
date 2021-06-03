@@ -46,20 +46,25 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
         SessionInfo sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
             case CONNECTION_REQUEST:
-                TbQueueMsgHeaders requestHeaders = msg.getHeaders();
-                long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
-                UUID requestId = bytesToUuid(requestHeaders.get(REQUEST_ID_HEADER));
-                String responseTopic = bytesToString(requestHeaders.get(RESPONSE_TOPIC_HEADER));
-                ConnectionRequestInfo connectionRequestInfo = new ConnectionRequestInfo(requestId, requestTime, responseTopic);
+                ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
             case DISCONNECTED:
-                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId());
+                callback.onSuccess();
+                return new SessionDisconnectedMsg(sessionInfo.getSessionId());
             case TRY_CLEAR_SESSION_REQUEST:
                 // TODO: think if there's a better solution
                 callback.onSuccess();
                 return new ClearSessionMsg(sessionInfo.getSessionId());
             default:
-                throw new RuntimeException("Unexpected ClientSessionEvent type.");
+                throw new RuntimeException("Unexpected " + ClientSessionEventType.class.getSimpleName());
         }
+    }
+
+    private ConnectionRequestInfo getConnectionRequestInfo(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
+        TbQueueMsgHeaders requestHeaders = msg.getHeaders();
+        long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
+        UUID requestId = bytesToUuid(requestHeaders.get(REQUEST_ID_HEADER));
+        String responseTopic = bytesToString(requestHeaders.get(RESPONSE_TOPIC_HEADER));
+        return new ConnectionRequestInfo(requestId, requestTime, responseTopic);
     }
 }

@@ -18,20 +18,16 @@ package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
-import org.thingsboard.mqtt.broker.exception.ActorStoppedException;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
-public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
+public class SessionDisconnectedMsg implements SessionClusterManagementMsg {
     private final UUID sessionId;
 
-    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId) {
-        super(callback);
+    public SessionDisconnectedMsg(UUID sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -43,7 +39,5 @@ public class SessionDisconnectedMsg extends CallbackMsg implements SessionCluste
     @Override
     public void onTbActorStopped(TbActorId actorId) {
         log.debug("[{}] Actor was stopped before processing {}, sessionId - {}.", actorId, getMsgType(), sessionId);
-
-        getCallback().onFailure(new ActorStoppedException("Actor was stopped before it can process message"));
     }
 }

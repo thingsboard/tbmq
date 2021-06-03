@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
@@ -118,14 +117,6 @@ public class ClientActor extends ContextAwareActor {
                 processConnectionAcceptedMsg((ConnectionAcceptedMsg) msg);
                 break;
 
-            case TRY_CONNECT_MSG:
-                sessionClusterManager.tryConnectSession(((TryConnectMsg) msg).getSessionInfo(), ((TryConnectMsg) msg).getRequestInfo());
-                // TODO: move to one place
-                if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-                    requestActorStop();
-                }
-                break;
-
             case SUBSCRIPTION_CHANGED_EVENT_MSG:
                 subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
                 break;
@@ -142,7 +133,7 @@ public class ClientActor extends ContextAwareActor {
                 processConnectionRequestMsg((ConnectionRequestMsg) msg);
                 break;
             case SESSION_DISCONNECTED_MSG:
-                processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
+                sessionClusterManager.processSessionDisconnected(state.getClientId(), ((SessionDisconnectedMsg) msg).getSessionId());
                 break;
             case CLEAR_SESSION_MSG:
                 sessionClusterManager.processClearSession(state.getClientId(), ((ClearSessionMsg) msg).getSessionId());
@@ -153,18 +144,9 @@ public class ClientActor extends ContextAwareActor {
         return true;
     }
 
-    private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
-        try {
-            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg.getSessionId());
-            msg.getCallback().onSuccess();
-        } catch (Exception e) {
-            msg.getCallback().onFailure(e);
-        }
-    }
-
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
-            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo(), tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
+            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
