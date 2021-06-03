@@ -15,6 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-public interface ClientActorStateUpdater extends ClientActorStateReader {
+public interface ClientActorStateUpdater extends ClientActorStateInfo {
     void updateSessionState(SessionState newState);
 }

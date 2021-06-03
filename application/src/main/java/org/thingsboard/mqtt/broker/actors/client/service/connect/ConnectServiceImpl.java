@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.service.session.PersistenceSessionClearer;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -75,7 +75,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final MqttMessageHandlerImpl messageHandler;
 
     @Override
-    public void startConnection(ClientActorStateReader actorState, MqttConnectMsg msg) throws MqttException {
+    public void startConnection(ClientActorStateInfo actorState, MqttConnectMsg msg) throws MqttException {
         UUID sessionId = actorState.getCurrentSessionId();
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         String clientId = actorState.getClientId();
@@ -111,7 +111,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     @Override
-    public void acceptConnection(ClientActorStateReader actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
+    public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 

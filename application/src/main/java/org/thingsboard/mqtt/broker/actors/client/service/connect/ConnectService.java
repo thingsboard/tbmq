@@ -17,11 +17,11 @@ package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 
 public interface ConnectService {
-    void startConnection(ClientActorStateReader actorState, MqttConnectMsg connectMsg) throws MqttException;
+    void startConnection(ClientActorStateInfo actorState, MqttConnectMsg connectMsg) throws MqttException;
 
-    void acceptConnection(ClientActorStateReader actorState, ConnectionAcceptedMsg connectionAcceptedMsg);
+    void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg);
 }

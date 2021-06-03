@@ -19,7 +19,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
-public interface ClientActorStateReader {
+public interface ClientActorStateInfo {
     String getClientId();
 
     UUID getCurrentSessionId();

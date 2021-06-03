@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
@@ -47,7 +47,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private ClientSessionEventService clientSessionEventService;
 
     @Override
-    public void disconnect(ClientActorStateReader actorState, DisconnectReason reason) {
+    public void disconnect(ClientActorStateInfo actorState, DisconnectReason reason) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
         if (sessionCtx.getSessionInfo() == null) {
@@ -81,7 +81,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         log.info("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
-    private void clearClientSession(ClientActorStateReader actorState, DisconnectReasonType disconnectReasonType) {
+    private void clearClientSession(ClientActorStateInfo actorState, DisconnectReasonType disconnectReasonType) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
 

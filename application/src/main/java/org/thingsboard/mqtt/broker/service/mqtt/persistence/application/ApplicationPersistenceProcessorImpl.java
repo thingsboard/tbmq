@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateReader;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -137,7 +137,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientActorStateReader clientState) {
+    public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
         log.trace("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
@@ -180,7 +180,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         unacknowledgedPersistedMsgCtxService.clearContext(clientId);
     }
 
-    private void processPersistedMessages(ClientSessionCtx clientSessionCtx, ClientActorStateReader clientState) {
+    private void processPersistedMessages(ClientSessionCtx clientSessionCtx, ClientActorStateInfo clientState) {
         String clientId = clientSessionCtx.getClientId();
         UUID sessionId = clientSessionCtx.getSessionId();
 
@@ -290,7 +290,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     }
 
-    private boolean isClientConnected(UUID sessionId, ClientActorStateReader clientState) {
+    private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
         // TODO: think if it's not enough to check for Thread.interrupted()
         return !Thread.interrupted()
                 && clientState.getCurrentSessionId().equals(sessionId)
