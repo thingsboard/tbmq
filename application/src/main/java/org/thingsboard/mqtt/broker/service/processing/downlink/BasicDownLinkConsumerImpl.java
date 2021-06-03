@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BasicDownLinkConsumerService {
+public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("basic-downlink-publish-msg-consumer"));
 
     private volatile boolean stopped = false;
@@ -62,8 +61,8 @@ public class BasicDownLinkConsumerService {
     private long pollDuration;
 
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void startConsuming() {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(serviceInfoProvider.getServiceId());
         String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {

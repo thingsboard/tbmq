@@ -16,4 +16,5 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 public interface PublishMsgConsumerService {
+    void startConsuming();
 }

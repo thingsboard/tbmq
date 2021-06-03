@@ -18,7 +18,8 @@ package org.thingsboard.mqtt.broker.actors.client.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -31,9 +32,14 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
+import org.thingsboard.mqtt.broker.service.processing.downlink.BasicDownLinkConsumer;
+import org.thingsboard.mqtt.broker.service.processing.downlink.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -46,7 +52,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PersistentClientInitializer implements ApplicationListener<ApplicationReadyEvent> {
+public class BrokerInitializer {
 
     private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final ClientSessionConsumer clientSessionConsumer;
@@ -60,8 +66,16 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
 
-    @Override
+    private final ClientSessionEventProcessor clientSessionEventProcessor;
+    private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
+    private final PublishMsgConsumerService publishMsgConsumerService;
+    private final BasicDownLinkConsumer basicDownLinkConsumer;
+    private final PersistentDownLinkConsumer persistentDownLinkConsumer;
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(value = 1)
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        log.info("Initializing Client Sessions and Subscriptions.");
         Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
 
         initClientSubscriptions(allClientSessions);
@@ -76,6 +90,13 @@ public class PersistentClientInitializer implements ApplicationListener<Applicat
         clientSessionService.startListening(clientSessionConsumer);
 
         startSubscriptionListening();
+
+        log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
+        clientSessionEventProcessor.startProcessing();
+        deviceMsgQueueConsumer.startConsuming();
+        publishMsgConsumerService.startConsuming();
+        basicDownLinkConsumer.startConsuming();
+        persistentDownLinkConsumer.startConsuming();
     }
 
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) {

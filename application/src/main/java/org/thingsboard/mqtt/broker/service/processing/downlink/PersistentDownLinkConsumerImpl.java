@@ -38,7 +38,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PersistentDownLinkConsumerService {
+public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsumer {
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("persistent-downlink-publish-msg-consumer"));
 
     private volatile boolean stopped = false;
@@ -56,8 +56,8 @@ public class PersistentDownLinkConsumerService {
     private long pollDuration;
 
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void startConsuming() {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(serviceInfoProvider.getServiceId());
         String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {

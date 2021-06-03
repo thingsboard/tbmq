@@ -80,8 +80,8 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final ClientSessionReader clientSessionReader;
 
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void startConsuming() {
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = devicePersistenceMsgQueueFactory.createConsumer(consumerId);

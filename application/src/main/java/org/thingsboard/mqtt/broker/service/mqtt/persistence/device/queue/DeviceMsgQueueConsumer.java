@@ -16,4 +16,5 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
 public interface DeviceMsgQueueConsumer {
+    void startConsuming();
 }

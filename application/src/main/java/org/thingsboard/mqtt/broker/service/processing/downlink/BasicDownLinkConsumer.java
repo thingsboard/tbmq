@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.service.processing.downlink;
 
-public interface ClientSessionEventProcessor {
-    void startProcessing();
+public interface BasicDownLinkConsumer {
+    void startConsuming();
 }

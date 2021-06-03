@@ -63,8 +63,8 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final StatsManager statsManager;
 
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void startConsuming() {
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = publishMsgQueueFactory.createConsumer(consumerId);

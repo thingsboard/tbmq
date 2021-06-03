@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -55,6 +56,7 @@ public class MqttTcpServerBootstrap {
     private EventLoopGroup workerGroup;
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(value = 100)
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) throws Exception {
         log.info("[TCP Server] Setting resource leak detector level to {}", leakDetectorLevel);
         ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.valueOf(leakDetectorLevel.toUpperCase()));
