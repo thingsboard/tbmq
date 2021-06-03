@@ -286,23 +286,6 @@ mqtt:
         sql:
           session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_SESSION_CTX_PAGE_SIZE:1000}"
 
-# Zookeeper connection parameters. Used for service discovery.
-zk:
-  # Enable/disable zookeeper discovery service.
-  enabled: "${ZOOKEEPER_ENABLED:false}"
-  # Zookeeper connect string
-  url: "${ZOOKEEPER_URL:localhost:2181}"
-  # Zookeeper retry interval in milliseconds
-  retry_interval_ms: "${ZOOKEEPER_RETRY_INTERVAL_MS:3000}"
-  # Zookeeper connection timeout in milliseconds
-  connection_timeout_ms: "${ZOOKEEPER_CONNECTION_TIMEOUT_MS:3000}"
-  # Zookeeper session timeout in milliseconds
-  session_timeout_ms: "${ZOOKEEPER_SESSION_TIMEOUT_MS:3000}"
-  # Time to wait between reconnect requests
-  reconnect_scheduled_delay_ms: "${ZOOKEEPER_RECONNECT_SCHEDULED_DELAY_MS:10000}"
-  # Name of the directory in zookeeper 'filesystem'
-  zk_dir: "${ZOOKEEPER_NODES_DIR:/thingsboard-mqtt-broker}"
-
 stats:
   enabled: "${STATS_ENABLED:true}"
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
