@@ -298,6 +298,8 @@ zk:
   connection_timeout_ms: "${ZOOKEEPER_CONNECTION_TIMEOUT_MS:3000}"
   # Zookeeper session timeout in milliseconds
   session_timeout_ms: "${ZOOKEEPER_SESSION_TIMEOUT_MS:3000}"
+  # Time to wait between reconnect requests
+  reconnect_scheduled_delay_ms: "${ZOOKEEPER_RECONNECT_SCHEDULED_DELAY_MS:10000}"
   # Name of the directory in zookeeper 'filesystem'
   zk_dir: "${ZOOKEEPER_NODES_DIR:/thingsboard-mqtt-broker}"
 

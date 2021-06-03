@@ -119,7 +119,7 @@ public class ClientActor extends ContextAwareActor {
                 break;
 
             case TRY_CONNECT_MSG:
-                sessionClusterManager.tryConnectSession((TryConnectMsg) msg);
+                sessionClusterManager.tryConnectSession(((TryConnectMsg) msg).getSessionInfo(), ((TryConnectMsg) msg).getRequestInfo());
                 // TODO: move to one place
                 if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
                     requestActorStop();
@@ -145,7 +145,7 @@ public class ClientActor extends ContextAwareActor {
                 processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
                 break;
             case CLEAR_SESSION_MSG:
-                sessionClusterManager.processClearSession(state.getClientId(), (ClearSessionMsg) msg);
+                sessionClusterManager.processClearSession(state.getClientId(), ((ClearSessionMsg) msg).getSessionId());
                 break;
             default:
                 return false;
@@ -155,7 +155,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
-            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg);
+            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg.getSessionId());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
@@ -164,7 +164,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
-            sessionClusterManager.processConnectionRequest(msg, tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
+            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo(), tryConnectMsg -> ctx.tellWithHighPriority(tryConnectMsg));
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);

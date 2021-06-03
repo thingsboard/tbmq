@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.cluster;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -30,14 +31,11 @@ import org.apache.curator.retry.RetryForever;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
@@ -47,6 +45,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type.CHILD_REMOVED;
@@ -54,16 +53,15 @@ import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.
 @Service
 @ConditionalOnProperty(prefix = "zk", value = "enabled", havingValue = "true", matchIfMissing = false)
 @Slf4j
+@RequiredArgsConstructor
 public class ZkDiscoveryService implements PathChildrenCacheListener {
-    // TODO: implement service discovery (?)
     private volatile boolean stopped = true;
 
-    @Autowired
-    private ZkConfiguration zkConfiguration;
-    @Autowired
-    private ServiceInfoProvider serviceInfoProvider;
+    private final ZkConfiguration zkConfiguration;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final NodeStateUpdateService nodeStateUpdateService;
 
-    private ExecutorService reconnectExecutorService;
+    private final ExecutorService reconnectExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("zk-discovery"));
 
 
     private CuratorFramework client;
@@ -78,8 +76,6 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
     @PostConstruct
     public void init() {
         log.info("Initializing...");
-
-        reconnectExecutorService = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("zk-discovery"));
 
         log.info("Initializing discovery service using ZK connect string: {}", zkConfiguration.getUrl());
 
@@ -107,35 +103,17 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
         if (stopped) {
             log.debug("Ignoring application ready event. Service is stopped.");
             return;
-        } else {
-            log.info("Received application ready event. Starting current ZK node.");
         }
+
         if (client.getState() != CuratorFrameworkState.STARTED) {
             log.debug("Ignoring application ready event, ZK client is not started, ZK client state [{}]", client.getState());
             return;
         }
+
+        log.info("Received application ready event. Starting current ZK node.");
         publishCurrentServer();
-        // do logic
-    }
 
-    public synchronized void publishCurrentServer() {
-        QueueProtos.ServiceInfo self = serviceInfoProvider.getServiceInfo();
-        if (currentServerExists()) {
-            log.info("[{}] ZK node for current instance already exists, NOT creating new one: {}", self.getServiceId(), nodePath);
-            return;
-        }
-
-        try {
-            log.info("[{}] Creating ZK node for current instance", self.getServiceId());
-            nodePath = client.create()
-                    .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(zkNodesDir + "/", self.toByteArray());
-            log.info("[{}] Created ZK node for current instance: {}", self.getServiceId(), nodePath);
-            client.getConnectionStateListenable().addListener(checkReconnect(self));
-        } catch (Exception e) {
-            log.error("Failed to create ZK node", e);
-            throw new RuntimeException(e);
-        }
+        loadNodes();
     }
 
     private boolean currentServerExists() {
@@ -158,30 +136,42 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
         return null;
     }
 
-    private ConnectionStateListener checkReconnect(QueueProtos.ServiceInfo self) {
+    private ConnectionStateListener checkReconnect() {
         return (client, newState) -> {
-            log.info("[{}] ZK state changed: {}", self.getServiceId(), newState);
+            log.info("ZK state changed: {}", newState);
+            // TODO: if LOST or SUSPENDED should disconnect all Kafka consumers
             if (newState == ConnectionState.LOST) {
-                reconnectExecutorService.submit(this::reconnect);
+                scheduleReconnect();
             }
         };
     }
 
-    private volatile boolean reconnectInProgress = false;
-
-    private synchronized void reconnect() {
-        if (!reconnectInProgress) {
-            reconnectInProgress = true;
-            try {
-                destroyZkClient();
-                initZkClient();
-                publishCurrentServer();
-            } catch (Exception e) {
-                log.error("Failed to reconnect to ZK: {}", e.getMessage(), e);
-            } finally {
-                reconnectInProgress = false;
-            }
+    private final AtomicBoolean isReconnecting = new AtomicBoolean(false);
+    private void scheduleReconnect() {
+        boolean inProcess = isReconnecting.compareAndExchange(false, true);
+        if (inProcess) {
+            log.debug("Reconnect scheduler is currently running.");
+            return;
         }
+
+        reconnectExecutor.execute(() -> {
+            while (isReconnecting.get()) {
+                log.info("Trying to reconnect");
+                try {
+                    destroyZkClient();
+                    initZkClient();
+                    publishCurrentServer();
+                    isReconnecting.getAndSet(false);
+                } catch (Exception e) {
+                    log.error("Failed to reconnect to ZK: {}", e.getMessage(), e);
+                    try {
+                        Thread.sleep(zkConfiguration.getReconnectScheduledDelayMs());
+                    } catch (InterruptedException interruptedException) {
+                        log.trace("Failed to wait for ");
+                    }
+                }
+            }
+        });
     }
 
     private void initZkClient() {
@@ -203,17 +193,6 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
         }
     }
 
-    private void unpublishCurrentServer() {
-        try {
-            if (nodePath != null) {
-                client.delete().forPath(nodePath);
-            }
-        } catch (Exception e) {
-            log.error("Failed to delete ZK node {}", nodePath, e);
-            throw new RuntimeException(e);
-        }
-    }
-
     private void destroyZkClient() {
         stopped = true;
         try {
@@ -225,13 +204,45 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
         log.info("ZK client disconnected");
     }
 
+    public synchronized void publishCurrentServer() {
+        QueueProtos.ServiceInfo self = serviceInfoProvider.getServiceInfo();
+        if (currentServerExists()) {
+            log.info("[{}] ZK node for current instance already exists, NOT creating new one: {}", self.getServiceId(), nodePath);
+            return;
+        }
+
+        try {
+            log.info("[{}] Creating ZK node for current instance", self.getServiceId());
+            nodePath = client.create()
+                    .creatingParentsIfNeeded()
+                    .withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(zkNodesDir + "/", self.toByteArray());
+            log.info("[{}] Created ZK node for current instance: {}", self.getServiceId(), nodePath);
+            client.getConnectionStateListenable().addListener(checkReconnect());
+        } catch (Exception e) {
+            log.error("Failed to create ZK node", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void unpublishCurrentServer() {
+        try {
+            if (nodePath != null) {
+                client.delete().forPath(nodePath);
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete ZK node {}", nodePath, e);
+            throw new RuntimeException(e);
+        }
+    }
+
     @PreDestroy
     public void destroy() {
         destroyZkClient();
-        reconnectExecutorService.shutdownNow();
+        reconnectExecutor.shutdownNow();
         log.info("Stopped discovery service");
     }
 
+    // TODO: need to wait till clients gets disconnected on the node that is shutting down normally
     @Override
     public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent pathChildrenCacheEvent) throws Exception {
         if (stopped) {
@@ -246,10 +257,14 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
         if (data == null) {
             log.debug("Ignoring {} due to empty child data", pathChildrenCacheEvent);
             return;
-        } else if (data.getData() == null) {
+        }
+
+        if (data.getData() == null) {
             log.debug("Ignoring {} due to empty child's data", pathChildrenCacheEvent);
             return;
-        } else if (nodePath != null && nodePath.equals(data.getPath())) {
+        }
+
+        if (nodePath != null && nodePath.equals(data.getPath())) {
             if (pathChildrenCacheEvent.getType() == CHILD_REMOVED) {
                 log.info("ZK node for current instance is somehow deleted.");
                 publishCurrentServer();
@@ -257,6 +272,7 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
             log.debug("Ignoring event about current server {}", pathChildrenCacheEvent);
             return;
         }
+
         QueueProtos.ServiceInfo instance;
         try {
             instance = QueueProtos.ServiceInfo.parseFrom(data.getData());
@@ -269,11 +285,18 @@ public class ZkDiscoveryService implements PathChildrenCacheListener {
             case CHILD_ADDED:
             case CHILD_UPDATED:
             case CHILD_REMOVED:
-                // do logic
+                loadNodes();
                 break;
             default:
                 break;
         }
     }
 
+    /**
+     * A single entry point to recalculate partitions
+     * Synchronized to ensure that other servers info is up to date
+     * */
+    private synchronized void loadNodes() {
+        nodeStateUpdateService.loadNodes(getOtherServers().stream().map(QueueProtos.ServiceInfo::getServiceId).collect(Collectors.toList()));
+    }
 }

@@ -21,11 +21,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.cluster.NodeStateService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -41,7 +40,6 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PostConstruct;
@@ -69,6 +67,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final NodeStateService nodeStateService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
 
@@ -78,11 +77,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processConnectionRequest(ConnectionRequestMsg connectionRequestMsg, Consumer<TryConnectMsg> tryConnectMsgPublisher) {
-        SessionInfo sessionInfo = connectionRequestMsg.getSessionInfo();
+    public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo, Consumer<TryConnectMsg> tryConnectMsgPublisher) {
         String clientId = sessionInfo.getClientInfo().getClientId();
         UUID sessionId = sessionInfo.getSessionId();
-        ConnectionRequestInfo requestInfo = connectionRequestMsg.getRequestInfo();
         // TODO: it's possible that we get not-relevant data since consumer didn't get message yet
         //      this can happen if node just got control over this clientId
         //      Solutions:
@@ -109,20 +106,26 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 requestTimeout, timeoutExecutor, MoreExecutors.directExecutor());
 
         String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
-        log.trace("[{}] Disconnecting currently connected client session, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
+        log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
+        // TODO: maybe if serviceId == serviceInfoProvider.getServiceId() -> push immediately to actor?
         disconnectClientCommandService.disconnectSession(currentSessionServiceId, clientId, currentlyConnectedSessionId);
+        if (!nodeStateService.isConnected(currentSessionServiceId)) {
+            // TODO: think if it's a good idea to directly call this method from here
+            log.debug("[{}] Disconnecting client session from the 'failed' node, serviceId - {}, sessionId - {}.", clientId, currentSessionServiceId, currentlyConnectedSessionId);
+            processSessionDisconnected(clientId, currentlyConnectedSessionId);
+        }
+
     }
 
     @Override
-    public void tryConnectSession(TryConnectMsg tryConnectMsg) {
-        SessionInfo sessionInfo = tryConnectMsg.getSessionInfo();
+    public void tryConnectSession(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
         String clientId = sessionInfo.getClientInfo().getClientId();
 
         ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
         if (currentlyConnectedSession != null && currentlyConnectedSession.isConnected()) {
             log.debug("[{}] Client session is already connected.", clientId);
         } else {
-            saveClientSession(sessionInfo, tryConnectMsg.getRequestInfo());
+            saveClientSession(sessionInfo, requestInfo);
         }
     }
 
@@ -140,9 +143,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processSessionDisconnected(String clientId, SessionDisconnectedMsg sessionDisconnectedMsg) {
-        UUID sessionId = sessionDisconnectedMsg.getSessionId();
-
+    public void processSessionDisconnected(String clientId, UUID sessionId) {
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         if (clientSession == null) {
             log.warn("[{}][{}] Cannot find client session.", clientId, sessionId);
@@ -170,12 +171,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processClearSession(String clientId, ClearSessionMsg clearSessionMsg) {
+    public void processClearSession(String clientId, UUID sessionId) {
         // TODO: get session from the state
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         UUID currentSessionId = clientSession.getSessionInfo().getSessionId();
-        if (!currentSessionId.equals(clearSessionMsg.getSessionId())) {
-            log.info("[{}][{}] Ignoring {} for session - {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, clearSessionMsg.getSessionId());
+        if (!currentSessionId.equals(sessionId)) {
+            log.info("[{}][{}] Ignoring {} for session - {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
         } else if (clientSession.isConnected()) {
             log.info("[{}][{}] Is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
         } else {

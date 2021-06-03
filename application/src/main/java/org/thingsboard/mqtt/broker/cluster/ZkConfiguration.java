@@ -32,6 +32,7 @@ public class ZkConfiguration {
     private Integer retryIntervalMs;
     private Integer connectionTimeoutMs;
     private Integer sessionTimeoutMs;
+    private Integer reconnectScheduledDelayMs;
     private String zkDir;
 
     @PostConstruct

@@ -16,19 +16,19 @@
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.TryConnectMsg;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public interface SessionClusterManager {
-    void processConnectionRequest(ConnectionRequestMsg connectionRequestMsg, Consumer<TryConnectMsg> tryConnectMsgPublisher);
+    void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo, Consumer<TryConnectMsg> tryConnectMsgPublisher);
 
-    void tryConnectSession(TryConnectMsg tryConnectMsg);
+    void tryConnectSession(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo);
 
-    void processSessionDisconnected(String clientId, SessionDisconnectedMsg sessionDisconnectedMsg);
+    void processSessionDisconnected(String clientId, UUID sessionId);
 
-    void processClearSession(String clientId, ClearSessionMsg clearSessionMsg);
+    void processClearSession(String clientId, UUID sessionId);
 }
