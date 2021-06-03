@@ -181,8 +181,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             log.info("[{}][{}] Is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
         } else {
             log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
+            // TODO: clear all persisted info
             clientSessionService.clearClientSession(clientId);
             clientSubscriptionService.clearSubscriptions(clientId);
+            // TODO: think in general about what data can get stuck in the DB forever
         }
     }
 

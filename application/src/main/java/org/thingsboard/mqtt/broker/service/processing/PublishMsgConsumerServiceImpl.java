@@ -67,6 +67,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     public void startConsuming() {
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
+            // TODO: think about the fact that all consumed messages can be processed multiple time (if kafka is disconnected while msgs are processing)
             TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = publishMsgQueueFactory.createConsumer(consumerId);
             publishMsgConsumers.add(consumer);
             consumer.subscribe();

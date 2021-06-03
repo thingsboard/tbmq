@@ -50,6 +50,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final DeviceActorManager deviceActorManager;
 
+    // TODO: don't push msg to kafka if it's the same serviceId
     @Value("${queue.persistent-downlink-publish-msg.consumers-count}")
     private int consumersCount;
     @Value("${queue.persistent-downlink-publish-msg.poll-interval}")

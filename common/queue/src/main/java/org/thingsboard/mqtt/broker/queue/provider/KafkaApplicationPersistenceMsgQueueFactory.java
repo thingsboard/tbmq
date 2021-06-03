@@ -74,6 +74,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
 
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String clientId) {
+        // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(TOPIC_PREFIX + clientId);
