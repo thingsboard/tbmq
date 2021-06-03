@@ -152,7 +152,7 @@ public class BrokerInitializer {
         thisNodeClientSessions.values().stream()
                 .filter(clientSessionInfo -> !isPersistent(clientSessionInfo))
                 .map(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo())
-                .forEach(clientSessionEventService::tryClear);
+                .forEach(clientSessionEventService::requestSessionCleanup);
     }
 
     private boolean isPersistent(ClientSessionInfo clientSessionInfo) {

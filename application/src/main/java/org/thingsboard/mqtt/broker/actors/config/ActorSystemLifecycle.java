@@ -67,7 +67,7 @@ public class ActorSystemLifecycle {
 
         log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
         for (ClientSessionCtx sessionCtx : clientSessionContexts) {
-            clientSessionEventService.disconnect(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId());
+            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId());
         }
     }
 

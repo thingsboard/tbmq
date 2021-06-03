@@ -51,7 +51,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             throw new RuntimeException("Client is currently connected!");
         }
         log.debug("[{}] Cleaning up client session.", clientId);
-        clientSessionEventService.tryClear(clientSessionInfo.getClientSession().getSessionInfo());
+        clientSessionEventService.requestSessionCleanup(clientSessionInfo.getClientSession().getSessionInfo());
     }
 
     @Scheduled(cron = "${mqtt.client-session-cleanup.cron}", zone = "${mqtt.client-session-cleanup.zone}")
@@ -70,7 +70,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
         log.info("Cleaning up stale {} client sessions.", clientSessionToRemove.size());
         for (SessionInfo sessionInfo : clientSessionToRemove) {
-            clientSessionEventService.tryClear(sessionInfo);
+            clientSessionEventService.requestSessionCleanup(sessionInfo);
         }
     }
 

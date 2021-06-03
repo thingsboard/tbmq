@@ -91,7 +91,7 @@ public class ConnectServiceImpl implements ConnectService {
         ClientSession prevSession = clientSessionReader.getClientSession(clientId);
         boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
 
-        ListenableFuture<Boolean> connectFuture = clientSessionEventService.connect(sessionCtx.getSessionInfo());
+        ListenableFuture<Boolean> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
             public void onSuccess(Boolean successfulConnection) {

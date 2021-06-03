@@ -22,9 +22,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import java.util.UUID;
 
 public interface ClientSessionEventService {
-    ListenableFuture<Boolean> connect(SessionInfo sessionInfo);
+    ListenableFuture<Boolean> requestConnection(SessionInfo sessionInfo);
 
-    void disconnect(ClientInfo clientInfo, UUID sessionId);
+    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId);
 
-    void tryClear(SessionInfo sessionInfo);
+    void requestSessionCleanup(SessionInfo sessionInfo);
 }

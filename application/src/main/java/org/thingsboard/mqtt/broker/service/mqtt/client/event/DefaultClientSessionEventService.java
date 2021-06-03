@@ -95,7 +95,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public ListenableFuture<Boolean> connect(SessionInfo sessionInfo) {
+    public ListenableFuture<Boolean> requestConnection(SessionInfo sessionInfo) {
         if (tickSize.get() > maxPendingRequests) {
             return Futures.immediateFailedFuture(new RuntimeException("Cannot send CONNECTION_REQUEST. Pending request map is full!"));
         }
@@ -105,12 +105,12 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
 
     @Override
     // TODO: use ClientId instead of ClientInfo (and change protocol to not use SessionInfo - use anyof keyword)
-    public void disconnect(ClientInfo clientInfo, UUID sessionId) {
+    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId) {
         sendEvent(clientInfo.getClientId(), eventFactory.createDisconnectedEventProto(clientInfo, sessionId), false);
     }
 
     @Override
-    public void tryClear(SessionInfo sessionInfo) {
+    public void requestSessionCleanup(SessionInfo sessionInfo) {
         sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
     }
 

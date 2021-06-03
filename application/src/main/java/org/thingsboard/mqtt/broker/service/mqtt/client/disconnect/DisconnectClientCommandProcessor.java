@@ -97,7 +97,7 @@ public class DisconnectClientCommandProcessor {
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
         if (clientSessionCtxService.getClientSessionCtx(clientId) == null) {
-            clientSessionEventService.disconnect(new ClientInfo(clientId, ClientType.IGNORED), sessionId);
+            clientSessionEventService.notifyClientDisconnected(new ClientInfo(clientId, ClientType.IGNORED), sessionId);
         } else {
             clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
         }
