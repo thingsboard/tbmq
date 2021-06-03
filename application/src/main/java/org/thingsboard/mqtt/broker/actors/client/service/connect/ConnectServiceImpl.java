@@ -86,8 +86,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
 
-        keepAliveService.registerSession(sessionId, msg.getKeepAliveTimeSeconds(),
-                () -> clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
+        keepAliveService.registerSession(clientId, sessionId, msg.getKeepAliveTimeSeconds());
 
         ClientSession prevSession = clientSessionReader.getClientSession(clientId);
         boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
