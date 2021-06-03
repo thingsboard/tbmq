@@ -53,7 +53,6 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
     @Override
     public void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
-        // TODO: think if we need waiting for the result here
         CountDownLatch updateWaiter = new CountDownLatch(1);
         clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto),
                 new TbQueueCallback() {
@@ -71,7 +70,6 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
 
         boolean waitSuccessful = false;
         try {
-            // TODO is this OK that the thread is blocked?
             waitSuccessful = updateWaiter.await(ackTimeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             errorRef.getAndSet(e);

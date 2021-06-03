@@ -83,8 +83,6 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
                         continue;
                     }
 
-                    // TODO: do we still need to check if client is subscribed for topic
-                    // TODO: maybe send msg to Client Actor (to be sure that we don't send msg after client unsubscribes)
                     for (TbProtoQueueMsg<QueueProtos.PublishMsgProto> msg : msgs) {
                         String clientId = msg.getKey();
                         QueueProtos.PublishMsgProto publishMsgProto = msg.getValue();

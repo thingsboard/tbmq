@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-// TODO: group this interface with ApplicationPersistenceProcessor
 public interface DevicePersistenceProcessor {
     void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
 

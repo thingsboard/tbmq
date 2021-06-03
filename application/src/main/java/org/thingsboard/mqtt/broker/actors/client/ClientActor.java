@@ -59,8 +59,6 @@ public class ClientActor extends ContextAwareActor {
 
     private final ClientActorState state;
 
-    // TODO: create actor for persistent clients with Subscriptions in SessionState
-
     public ClientActor(ActorSystemContext systemContext, String clientId, boolean isClientIdGenerated) {
         super(systemContext);
         this.sessionClusterManager = systemContext.getClientActorContext().getSessionClusterManager();
@@ -245,7 +243,6 @@ public class ClientActor extends ContextAwareActor {
             return;
         }
 
-        // TODO: what if we loose some messages while actor is stopped
         log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
                 state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
         ctx.stop(ctx.getSelf());

@@ -71,7 +71,6 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
 
         boolean waitSuccessful = false;
         try {
-            // TODO is this OK that the thread is blocked?
             waitSuccessful = updateWaiter.await(ackTimeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             errorRef.getAndSet(e);

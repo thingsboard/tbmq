@@ -64,7 +64,6 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSessionSettings.getProducerProperties()));
-        // TODO (Cluster Mode): make clientId unique for Node
         producerBuilder.clientId("client-session-producer");
         producerBuilder.defaultTopic(clientSessionSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);

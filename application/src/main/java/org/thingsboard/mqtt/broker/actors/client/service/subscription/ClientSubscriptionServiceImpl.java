@@ -64,7 +64,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscribeInternally(clientId, topicSubscriptions);
 
-        // TODO: add 'version' to at least detect issues
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
     }

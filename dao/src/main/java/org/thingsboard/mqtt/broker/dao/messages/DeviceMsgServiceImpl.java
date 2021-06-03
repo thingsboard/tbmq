@@ -33,8 +33,6 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     private final DeviceMsgDao deviceMsgDao;
 
-    // TODO: schedule clear old messages from DB
-
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages) {
         log.trace("Saving device publish messages - {}.", devicePublishMessages);

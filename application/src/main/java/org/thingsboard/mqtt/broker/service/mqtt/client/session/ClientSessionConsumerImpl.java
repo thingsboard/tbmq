@@ -69,8 +69,6 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     @Override
     public Map<String, ClientSessionInfo> initLoad() {
-        // TODO: if 'serviceId' of session == 'currentServiceId' -> it's OK, else we need to ensure that all events from other services are consumed (we can publish blank msg for that client)
-        //          need to have 'versionId' to check if ClientSession is updated based on the correct value
         log.info("Loading client sessions.");
 
         ClientSessionInfo dummySession = persistDummySession();
@@ -115,10 +113,12 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     @Override
     public void listen(ClientSessionChangesCallback callback) {
+        // TODO: if 'serviceId' of session == 'currentServiceId' -> it's OK, else we need to ensure that all events from other services are consumed (we can publish blank msg for that client)
+        //          need to have 'versionId' to check if ClientSession is updated based on the correct value
         if (initializing) {
             throw new RuntimeException("Cannot start listening before initialization is finished.");
         }
-        // TODO: add concurrent consumers for multiple partitions (need to store offsets)
+        // TODO: add concurrent consumers for multiple partitions
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {

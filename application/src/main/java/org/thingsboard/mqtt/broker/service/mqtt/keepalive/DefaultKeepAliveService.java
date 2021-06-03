@@ -61,8 +61,7 @@ public class DefaultKeepAliveService implements KeepAliveService {
     }
 
     private boolean isInactive(int keepAliveSeconds, long lastPacketTime) {
-        // TODO: rebuilt to nanos
-        // TODO: add Ticker and write unit test
+        // TODO: rebuild to nanos
         long now = System.currentTimeMillis();
         long actualKeepAliveMs = (long) (TimeUnit.SECONDS.toMillis(keepAliveSeconds) * 1.5);
         return lastPacketTime + actualKeepAliveMs < now;

@@ -44,8 +44,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class ClientSessionEventProcessorImpl implements ClientSessionEventProcessor {
 
-    // TODO: add manual control over ClientSession for Admins
-
     private ExecutorService consumersExecutor;
     private volatile boolean stopped = false;
 
@@ -90,12 +88,13 @@ public class ClientSessionEventProcessorImpl implements ClientSessionEventProces
                 if (msgs.isEmpty()) {
                     continue;
                 }
-                // TODO: if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
+                // TODO: Possible issues:
+                //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
+                //          - failures (make sure method can be safely called multiple times)
+                //          - will block till timeout if message is lost in Actor System
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
-                    // TODO: think about failures (make sure method can be safely called multiple times)
                     // TODO: process messages in batch and wait for all to finish
                     consumer.commit(msg.getPartition(), msg.getOffset() + 1);
-                    // TODO (priority 1): will block till timeout if message is lost in Actor System
                     processMsg(msg);
                 }
             } catch (Exception e) {
@@ -136,7 +135,6 @@ public class ClientSessionEventProcessorImpl implements ClientSessionEventProces
 
         boolean waitSuccessful = false;
         try {
-            // TODO is this OK that the thread is blocked?
             waitSuccessful = updateWaiter.await(ackTimeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             errorRef.getAndSet(e);

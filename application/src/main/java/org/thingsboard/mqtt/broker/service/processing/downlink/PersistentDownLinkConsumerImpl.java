@@ -80,8 +80,6 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
                         continue;
                     }
 
-                    // TODO: do we still need to check if client is subscribed for topic
-                    // TODO: maybe send msg to Client Actor (to be sure that we don't send msg after client unsubscribes)
                     for (TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto> msg : msgs) {
                         QueueProtos.PersistedDevicePublishMsgProto persistedDevicePublishMsgProto = msg.getValue();
                         deviceActorManager.sendMsgToActor(ProtoConverter.toDevicePublishMsg(persistedDevicePublishMsgProto));

@@ -76,6 +76,8 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                 messages = clientSubscriptionsConsumer.poll(pollDuration);
                 for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                     String clientId = msg.getKey();
+                    // TODO: replace with events (instead of storing the whole state) - but need to think about the logic when and how to make snapshots (so that we don't need to store all event log)
+                    //          also think about order of messages (sub A -> unsub A is different than unsub A -> sub A)
                     Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
                         encounteredDummyClient = true;

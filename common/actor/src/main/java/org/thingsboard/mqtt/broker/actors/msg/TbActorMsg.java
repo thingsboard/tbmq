@@ -25,7 +25,6 @@ public interface TbActorMsg {
      * Executed when the target TbActor is stopped or destroyed.
      * Implementation should cleanup the resources.
      */
-    // TODO: maybe add here ActorId (or some name) as an argument
     default void onTbActorStopped(TbActorId actorId) {
     }
 

@@ -45,7 +45,6 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         this.actorSystem = actorSystem;
     }
 
-    // TODO: think how to group this with ClientSession Actor
     @Override
     public void notifyClientConnected(ClientSessionCtx clientSessionCtx) {
         String clientId = clientSessionCtx.getClientId();

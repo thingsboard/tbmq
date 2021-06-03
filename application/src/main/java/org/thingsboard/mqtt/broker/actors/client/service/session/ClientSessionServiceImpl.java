@@ -78,9 +78,9 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         clientSessionPersistenceService.persistClientSessionInfo(clientId, clientSessionInfoProto);
     }
 
-    // TODO: if client disconnects from Node A and connects to Node B it's possible that changes to ClientSession are not delivered on B yet
-    // TODO: possible solution is to ask other nodes before connecting client
-    // TODO: or force wait if client was previously connected to other node
+    // TODO: if client disconnects from Node A and connects to Node B it's possible that changes to ClientSession are not delivered on B yet. Solutions:
+    //          - ask other nodes before connecting client
+    //          - force wait if client was previously connected to other node
 
     @Override
     public void clearClientSession(String clientId) {
@@ -119,7 +119,6 @@ public class ClientSessionServiceImpl implements ClientSessionService {
             log.trace("[{}] Msg was already processed.", clientId);
             return;
         }
-        // TODO: maybe it's better to update Map here even for Clients that are managed by current node?
         if (clientSessionInfo == null) {
             log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
             clientSessionMap.remove(clientId);

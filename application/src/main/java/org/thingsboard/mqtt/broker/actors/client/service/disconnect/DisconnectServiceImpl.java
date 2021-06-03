@@ -57,13 +57,11 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         log.trace("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
-        // TODO: divide to 'local' and 'global' clearing ('global' should be done even if node is shutting down)
         try {
             clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.info("Detailed error: ", e);
-            // TODO: think if we need to just leave it like this or throw exception
         }
 
         try {
@@ -94,7 +92,6 @@ public class DisconnectServiceImpl implements DisconnectService {
         lastWillService.removeLastWill(sessionId, sendLastWill);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            // TODO: group these methods (they should be only called together)
             msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
             msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
         }

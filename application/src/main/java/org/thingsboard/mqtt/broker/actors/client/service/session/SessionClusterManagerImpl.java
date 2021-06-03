@@ -56,7 +56,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
-    // TODO: move this to Actor state (on DISCONNECTED check pending connection requests + schedule RETRY_DISCONNECT_COMMAND message for an actor)
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -68,10 +67,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
     }
 
-    // TODO: it's possible that we get not-relevant data since consumer didn't get message yet
-    //      this can happen if node just got control over this clientId
-    //      Solutions:
-    //          - can force wait till the end of the topic using dummy session
+    // TODO: it's possible that we get not-relevant data since consumer didn't get message yet, this can happen if node just got control over this clientId. Solutions:
+    //          - force wait till the end of the topic using dummy session
     //          - gain more control over reassigning partitions + do some sync logic on reassign
     //          - remake logic to ensure that the 'leader' for client has all information (look at Raft algorithm)
     //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)

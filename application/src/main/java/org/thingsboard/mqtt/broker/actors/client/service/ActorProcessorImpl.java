@@ -51,7 +51,6 @@ public class ActorProcessorImpl implements ActorProcessor {
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
         ClientSessionCtx clientSessionCtx = sessionInitMsg.getClientSessionCtx();
 
-        // TODO: pass more info on INIT to be able to auth client and check if we should connect it
         if (clientSessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
             log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), clientSessionCtx.getSessionId());
             if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
@@ -70,7 +69,6 @@ public class ActorProcessorImpl implements ActorProcessor {
 
         SessionState sessionState = state.getCurrentSessionState();
         if (sessionState != SessionState.DISCONNECTED) {
-            // TODO: think if it's better to send DISCONNECT + INIT commands to actor instead (but need some limit logic to not got stuck in the loop)
             log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
                     state.getClientId(), sessionState, state.getCurrentSessionId(), clientSessionCtx.getSessionId());
             state.updateSessionState(SessionState.DISCONNECTING);

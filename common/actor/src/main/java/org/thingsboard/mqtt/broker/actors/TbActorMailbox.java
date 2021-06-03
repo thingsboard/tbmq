@@ -85,7 +85,6 @@ public final class TbActorMailbox implements TbActorCtx {
 
     private void enqueue(TbActorMsg msg, boolean highPriority) {
         if (destroyInProgress.get()) {
-            // TODO: if CONNECT message - init actor
             msg.onTbActorStopped(selfId);
             return;
         }
