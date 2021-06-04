@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import java.util.Map;
 
+// TODO: rename (and all 'Reader' classes)
 public interface ClientSessionReader {
     Map<String, ClientSessionInfo> getPersistedClientSessionInfos();
 

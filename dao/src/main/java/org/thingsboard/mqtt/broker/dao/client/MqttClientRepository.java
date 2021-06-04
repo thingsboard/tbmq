@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.client;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientEntity;
 
 import java.util.UUID;
@@ -23,5 +24,6 @@ import java.util.UUID;
 public interface MqttClientRepository extends PagingAndSortingRepository<MqttClientEntity, UUID> {
     MqttClientEntity findByClientId(String clientId);
 
+    @Transactional
     void deleteByClientId(String clientId);
 }
