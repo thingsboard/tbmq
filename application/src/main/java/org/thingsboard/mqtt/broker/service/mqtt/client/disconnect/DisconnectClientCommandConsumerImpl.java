@@ -43,7 +43,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DisconnectClientCommandProcessor {
+public class DisconnectClientCommandConsumerImpl implements DisconnectClientCommandConsumer {
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
     private volatile boolean stopped = false;
 
@@ -51,16 +51,14 @@ public class DisconnectClientCommandProcessor {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DisconnectClientCommandHelper helper;
-    private final ClientSessionCtxService clientSessionCtxService;
-    private final ClientSessionEventService clientSessionEventService;
 
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
 
     private TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumer;
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void startConsuming() {
         initConsumer();
         consumerExecutor.execute(this::processDisconnectCommands);
     }
@@ -96,11 +94,7 @@ public class DisconnectClientCommandProcessor {
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
-        if (clientSessionCtxService.getClientSessionCtx(clientId) == null) {
-            clientSessionEventService.notifyClientDisconnected(new ClientInfo(clientId, ClientType.IGNORED), sessionId);
-        } else {
-            clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
-        }
+        clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
     }
 
     private void initConsumer() {

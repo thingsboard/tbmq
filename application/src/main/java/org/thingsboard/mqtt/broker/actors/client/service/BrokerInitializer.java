@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
@@ -66,6 +67,7 @@ public class BrokerInitializer {
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
 
+    private final DisconnectClientCommandConsumer disconnectClientCommandConsumer;
     private final ClientSessionEventProcessor clientSessionEventProcessor;
     private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
@@ -92,6 +94,7 @@ public class BrokerInitializer {
         startSubscriptionListening();
 
         log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
+        disconnectClientCommandConsumer.startConsuming();
         clientSessionEventProcessor.startProcessing();
         deviceMsgQueueConsumer.startConsuming();
         publishMsgConsumerService.startConsuming();
