@@ -58,9 +58,9 @@ public class MqttClientServiceImpl implements MqttClientService {
     }
 
     @Override
-    public void deleteMqttClient(UUID id) {
-        log.trace("Executing deleteMqttClient [{}]", id);
-        mqttClientDao.removeById(id);
+    public void deleteMqttClient(String clientId) {
+        log.trace("Executing deleteMqttClient [{}]", clientId);
+        mqttClientDao.removeByClientId(clientId);
     }
 
     @Override

@@ -22,4 +22,6 @@ import java.util.UUID;
 
 public interface MqttClientRepository extends PagingAndSortingRepository<MqttClientEntity, UUID> {
     MqttClientEntity findByClientId(String clientId);
+
+    void deleteByClientId(String clientId);
 }

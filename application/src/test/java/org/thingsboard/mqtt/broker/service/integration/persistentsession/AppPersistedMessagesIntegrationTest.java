@@ -64,7 +64,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         persistedClient.connect(connectOptions);
         persistedClient.disconnect();
         persistedClient.close();
-        mqttClientService.deleteMqttClient(applicationClient.getId());
+        mqttClientService.deleteMqttClient(applicationClient.getClientId());
     }
 
     @Test

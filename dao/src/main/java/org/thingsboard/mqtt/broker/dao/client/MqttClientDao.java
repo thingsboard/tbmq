@@ -24,4 +24,6 @@ public interface MqttClientDao extends Dao<MqttClient> {
     MqttClient findByClientId(String clientId);
 
     PageData<MqttClient> findAll(PageLink pageLink);
+
+    void removeByClientId(String clientId);
 }

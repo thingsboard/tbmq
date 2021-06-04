@@ -51,4 +51,9 @@ public class DefaultMqttClientDao extends AbstractDao<MqttClientEntity, MqttClie
     public PageData<MqttClient> findAll(PageLink pageLink) {
         return DaoUtil.toPageData(mqttClientRepository.findAll(DaoUtil.toPageable(pageLink)));
     }
+
+    @Override
+    public void removeByClientId(String clientId) {
+        mqttClientRepository.deleteByClientId(clientId);
+    }
 }

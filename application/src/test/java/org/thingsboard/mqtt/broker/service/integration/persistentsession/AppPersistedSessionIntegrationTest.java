@@ -88,7 +88,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
         persistedClient.disconnect();
-        mqttClientService.deleteMqttClient(applicationClient.getId());
+        mqttClientService.deleteMqttClient(applicationClient.getClientId());
     }
 
     @Test

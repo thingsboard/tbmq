@@ -49,6 +49,18 @@ public class MqttClientController extends BaseController {
         }
     }
 
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
+    @ResponseBody
+    public MqttClient getMqttClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
+        try {
+            return mqttClientService.getMqttClient(clientId).orElse(null);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
@@ -63,9 +75,9 @@ public class MqttClientController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
-    public void deleteClient(@PathVariable("clientId") String strClientId) throws ThingsboardException {
+    public void deleteClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            mqttClientService.deleteMqttClient(toUUID(strClientId));
+            mqttClientService.deleteMqttClient(clientId);
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -19,14 +19,12 @@ import org.thingsboard.mqtt.broker.common.data.MqttClient;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface MqttClientService {
     MqttClient saveMqttClient(MqttClient mqttClient);
 
-    void deleteMqttClient(UUID id);
+    void deleteMqttClient(String clientId);
 
     Optional<MqttClient> getMqttClient(String clientId);
 
