@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import com.google.common.collect.Streams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
@@ -83,6 +84,8 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
         log.trace("[{}] Clearing application session context.", clientId);
         try {
             sessionCtxService.deleteApplicationSessionCtx(clientId);
+        } catch (EmptyResultDataAccessException noDataException) {
+            log.debug("[{}] No session for clientId.", clientId);
         } catch (Exception e) {
             log.warn("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
         }

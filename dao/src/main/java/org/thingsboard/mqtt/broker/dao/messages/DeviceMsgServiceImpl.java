@@ -48,7 +48,11 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     @Override
     public void removePersistedMessages(String clientId) {
         log.trace("[{}] Removing persisted messages.", clientId);
-        deviceMsgDao.removePersistedMessages(clientId);
+        try {
+            deviceMsgDao.removePersistedMessages(clientId);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to remove persisted messages. Reason - {}.", clientId, e.getMessage());
+        }
     }
 
     @Override

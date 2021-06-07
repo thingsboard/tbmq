@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.client.generic;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
@@ -50,7 +51,13 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
     @Override
     public void deleteGenericClientSessionCtx(String clientId) {
         log.trace("Executing deleteGenericClientSessionCtx [{}]", clientId);
-        genericClientSessionCtxDao.remove(clientId);
+        try {
+            genericClientSessionCtxDao.remove(clientId);
+        } catch (EmptyResultDataAccessException noDataException) {
+            log.debug("[{}] No session for clientId.", clientId);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to delete generic client session context. Reason - {}.", clientId, e.getMessage());
+        }
     }
 
     @Override

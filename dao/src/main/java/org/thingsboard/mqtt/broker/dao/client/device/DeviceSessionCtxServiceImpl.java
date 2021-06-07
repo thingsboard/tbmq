@@ -51,7 +51,9 @@ public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
         try {
             deviceSessionCtxDao.removeById(clientId);
         } catch (EmptyResultDataAccessException noDataException) {
-            log.debug("[{}] No DeviceSessionContext found for deletion.", clientId);
+            log.debug("[{}] No session for clientId.", clientId);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to remove device session context. Reason - {}.", clientId, e.getMessage());
         }
     }
 
