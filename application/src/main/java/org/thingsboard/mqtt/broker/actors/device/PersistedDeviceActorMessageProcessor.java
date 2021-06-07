@@ -139,6 +139,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {
         if (msg.getCommandUUID().equals(stopActorCommandUUID)) {
+            log.debug("[{}] Stopping DEVICE actor.", clientId);
             ctx.stop(ctx.getSelf());
         } else {
             log.debug("[{}] Device was reconnected, ignoring actor stop command.", clientId);
