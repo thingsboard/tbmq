@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PostConstruct;
@@ -59,6 +60,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final DisconnectClientCommandService disconnectClientCommandService;
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final MsgPersistenceManager msgPersistenceManager;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
 
@@ -116,21 +118,23 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
+    // TODO: think in general about what data can get stuck in the DB forever
     @Override
     public void processClearSession(String clientId, UUID sessionId) {
         ClientSession clientSession = clientSessionService.getClientSession(clientId);
         UUID currentSessionId = clientSession.getSessionInfo().getSessionId();
         if (!currentSessionId.equals(sessionId)) {
             log.info("[{}][{}] Ignoring {} for session - {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
-        } else if (clientSession.isConnected()) {
-            log.info("[{}][{}] Is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
-        } else {
-            log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
-            // TODO: clear all persisted info
-            clientSessionService.clearClientSession(clientId);
-            clientSubscriptionService.clearSubscriptions(clientId);
-            // TODO: think in general about what data can get stuck in the DB forever
+            return;
         }
+        if (clientSession.isConnected()) {
+            log.info("[{}][{}] Session is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
+            return;
+        }
+        log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
+        clientSessionService.clearClientSession(clientId);
+        clientSubscriptionService.clearSubscriptions(clientId);
+        msgPersistenceManager.clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
     }
 
     private void finishDisconnect(ClientSession clientSession) {
