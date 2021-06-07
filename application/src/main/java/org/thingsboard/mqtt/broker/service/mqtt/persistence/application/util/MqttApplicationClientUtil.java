@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+public class MqttApplicationClientUtil {
+    private static final String TOPIC_PREFIX = "application_";
 
-public interface ApplicationMsgQueueService {
-    void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback);
+    public static String createTopic(String clientId) {
+        return TOPIC_PREFIX + clientId;
+    }
 }

@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -173,7 +174,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     // TODO: delete topic by TTL
     @Override
     public void clearPersistedMsgs(String clientId) {
-        String clientTopic = applicationPersistenceMsgQueueFactory.getTopic(clientId);
+        String clientTopic = MqttApplicationClientUtil.createTopic(clientId);
         log.debug("[{}] Clearing persisted topic {} for application.", clientId, clientTopic);
         queueAdmin.deleteTopic(clientTopic);
         log.debug("[{}] Clearing application session context.", clientId);
@@ -191,7 +192,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // TODO: make consistent with logic for DEVICES
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory.createConsumer(clientId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
+                .createConsumer(MqttApplicationClientUtil.createTopic(clientId), clientId);
         consumer.assignPartition(0);
 
         Collection<PersistedPubRelMsg> persistedPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()

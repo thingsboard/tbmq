@@ -84,7 +84,7 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
         try {
             sessionCtxService.deleteApplicationSessionCtx(clientId);
         } catch (Exception e) {
-            log.info("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
+            log.warn("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
         }
     }
 }

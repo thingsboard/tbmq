@@ -127,7 +127,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientInfo.getClientId());
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
-            applicationMsgQueueService.clearQueueContext(clientInfo.getClientId());
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());
         }

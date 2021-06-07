@@ -41,8 +41,6 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Component
 @RequiredArgsConstructor
 public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
-    public static final String TOPIC_PREFIX = "application_";
-
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
@@ -62,35 +60,29 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String clientId) {
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
-        producerBuilder.clientId("application-persisted-msg-producer-" + clientId);
-        producerBuilder.defaultTopic(TOPIC_PREFIX + clientId);
+        producerBuilder.clientId("application-persisted-msg-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String clientId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String clientId) {
         // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
-        consumerBuilder.topic(TOPIC_PREFIX + clientId);
+        consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("application-persisted-msg-consumer-" + clientId);
-        consumerBuilder.groupId("application-persisted-msg-consumer-group-" + clientId);
+        consumerBuilder.groupId("application-persisted-msg-group-" + clientId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
-    }
-
-    @Override
-    public String getTopic(String clientId) {
-        return TOPIC_PREFIX + clientId;
     }
 }
