@@ -94,7 +94,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPersistedMessages(ClientActorStateInfo actorState) {
+    public void startProcessingPersistedMessages(ClientActorStateInfo actorState) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();

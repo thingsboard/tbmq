@@ -99,7 +99,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                     String clientId = clientSubscription.getValue().getClientId();
                     ClientSession clientSession = clientSessionReader.getClientSession(clientId);
                     if (clientSession == null) {
-                        log.info("[{}] Client session not found for existent client subscription.", clientId);
+                        log.debug("[{}] Client session not found for existent client subscription.", clientId);
                         return null;
                     }
                     return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),

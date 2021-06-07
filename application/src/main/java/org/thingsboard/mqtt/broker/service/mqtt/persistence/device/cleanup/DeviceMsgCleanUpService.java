@@ -40,6 +40,7 @@ public class DeviceMsgCleanUpService {
     public void cleanUp() {
         log.info("Starting cleaning up DEVICE publish messages.");
 
+        // TODO: sync with other nodes
         cleanUpDao.cleanUpByTime(ttl);
 
         cleanUpDao.cleanUpBySize(messagesLimit);

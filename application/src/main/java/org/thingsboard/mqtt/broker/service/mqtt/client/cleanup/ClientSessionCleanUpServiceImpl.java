@@ -56,6 +56,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Scheduled(cron = "${mqtt.client-session-cleanup.cron}", zone = "${mqtt.client-session-cleanup.zone}")
     public void cleanUp() {
+        // TODO: sync with other nodes
         log.info("Starting cleaning up stale ClientSessions.");
 
         long oldestAllowedTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
