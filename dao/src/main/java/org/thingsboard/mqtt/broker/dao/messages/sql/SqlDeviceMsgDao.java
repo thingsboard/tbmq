@@ -55,7 +55,7 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     @Override
     public void removePersistedMessages(String clientId) {
-        log.trace("Removing device publish messages, clientId - {}", clientId);
+        log.debug("Removing device publish messages, clientId - {}", clientId);
         deviceMsgRepository.removeAllByClientId(clientId);
     }
 
@@ -70,7 +70,7 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
         log.trace("Updating packet type for device publish message, clientId - {}, packetId - {}, packetType - {}.", clientId, packetId, packetType);
         int rowsUpdated = insertDeviceMsgRepository.updatePacketType(clientId, packetId, packetType);
         if (rowsUpdated != 1) {
-            log.info("While trying to update packet type {} rows were affected instead of 1 row. ClientId - {}, packetId - {}, packetType - {}.",
+            log.warn("While trying to update packet type {} rows were affected instead of 1 row. ClientId - {}, packetId - {}, packetType - {}.",
                     rowsUpdated, clientId, packetId, packetType);
         }
     }

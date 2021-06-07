@@ -35,7 +35,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages) {
-        log.trace("Saving device publish messages - {}.", devicePublishMessages);
+        log.debug("Saving {} device publish messages.", devicePublishMessages.size());
         deviceMsgDao.save(devicePublishMessages);
     }
 
@@ -47,7 +47,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     @Override
     public void removePersistedMessages(String clientId) {
-        log.trace("[{}] Removing persisted messages.", clientId);
+        log.debug("[{}] Removing persisted messages.", clientId);
         try {
             deviceMsgDao.removePersistedMessages(clientId);
         } catch (Exception e) {
