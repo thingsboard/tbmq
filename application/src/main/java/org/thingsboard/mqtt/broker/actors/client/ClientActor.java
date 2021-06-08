@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -86,60 +87,56 @@ public class ClientActor extends ContextAwareActor {
         }
 
         boolean success = true;
-        if (msg instanceof SessionClusterManagementMsg) {
-            success = processSessionClusterManagementMsg((SessionClusterManagementMsg) msg);
-            if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-                requestActorStop();
-            }
-            return success;
-        }
         if (msg instanceof QueueableMqttMsg) {
-            return processQueueableMqttMsg((QueueableMqttMsg) msg);
+            success = processQueueableMqttMsg((QueueableMqttMsg) msg);
+        } else if (msg instanceof SessionClusterManagementMsg) {
+            switch (msg.getMsgType()) {
+                case CONNECTION_REQUEST_MSG:
+                    processConnectionRequestMsg((ConnectionRequestMsg) msg);
+                    break;
+                case SESSION_DISCONNECTED_MSG:
+                    sessionClusterManager.processSessionDisconnected(state.getClientId(), ((SessionDisconnectedMsg) msg).getSessionId());
+                    break;
+                case CLEAR_SESSION_MSG:
+                    sessionClusterManager.processClearSession(state.getClientId(), ((ClearSessionMsg) msg).getSessionId());
+                    break;
+                default:
+                    success = false;
+            }
+        } else {
+            switch (msg.getMsgType()) {
+                case SESSION_INIT_MSG:
+                    actorProcessor.onInit(state, (SessionInitMsg) msg);
+                    break;
+                case STOP_ACTOR_COMMAND_MSG:
+                    processActorStop((StopActorCommandMsg) msg);
+                    break;
+                case DISCONNECT_MSG:
+                    actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
+                    break;
+
+                case MQTT_CONNECT_MSG:
+                    processConnectMsg((MqttConnectMsg) msg);
+                    break;
+                case CONNECTION_ACCEPTED_MSG:
+                    processConnectionAcceptedMsg((ConnectionAcceptedMsg) msg);
+                    break;
+
+                case SUBSCRIPTION_CHANGED_EVENT_MSG:
+                    subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
+                    break;
+                default:
+                    success = false;
+            }
         }
-        switch (msg.getMsgType()) {
-            case SESSION_INIT_MSG:
-                actorProcessor.onInit(state, (SessionInitMsg) msg);
-                break;
-            case STOP_ACTOR_COMMAND_MSG:
-                processActorStop((StopActorCommandMsg) msg);
-                break;
-            case DISCONNECT_MSG:
-                actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
+        if (msg.getMsgType() != MsgType.STOP_ACTOR_COMMAND_MSG) {
+            if (actorNeedsToBeStopped(success)) {
                 requestActorStop();
-                break;
-
-            case MQTT_CONNECT_MSG:
-                processConnectMsg((MqttConnectMsg) msg);
-                break;
-            case CONNECTION_ACCEPTED_MSG:
-                processConnectionAcceptedMsg((ConnectionAcceptedMsg) msg);
-                break;
-
-            case SUBSCRIPTION_CHANGED_EVENT_MSG:
-                subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
-                break;
-            default:
-                success = false;
+            } else {
+                state.clearStopActorCommandId();
+            }
         }
         return success;
-    }
-
-    private boolean processSessionClusterManagementMsg(SessionClusterManagementMsg msg) {
-        state.clearStopActorCommandId();
-        switch (msg.getMsgType()) {
-            case CONNECTION_REQUEST_MSG:
-                processConnectionRequestMsg((ConnectionRequestMsg) msg);
-                break;
-            case SESSION_DISCONNECTED_MSG:
-                sessionClusterManager.processSessionDisconnected(state.getClientId(), ((SessionDisconnectedMsg) msg).getSessionId());
-                break;
-            case CLEAR_SESSION_MSG:
-                sessionClusterManager.processClearSession(state.getClientId(), ((ClearSessionMsg) msg).getSessionId());
-                break;
-            default:
-                return false;
-        }
-        return true;
     }
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
@@ -237,6 +234,10 @@ public class ClientActor extends ContextAwareActor {
         }
     }
 
+    private boolean actorNeedsToBeStopped(boolean successfulProcessing) {
+        return !successfulProcessing || state.getCurrentSessionState() == SessionState.DISCONNECTED;
+    }
+
     private void processActorStop(StopActorCommandMsg msg) {
         if (!msg.getCommandUUID().equals(state.getStopActorCommandId())) {
             log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
@@ -249,11 +250,6 @@ public class ClientActor extends ContextAwareActor {
     }
 
     private void requestActorStop() {
-        if (state.getStopActorCommandId() != null) {
-            log.debug("[{}] Currently waiting for {} stop command.", state.getClientId(), state.getStopActorCommandId());
-            return;
-        }
-
         state.setStopActorCommandId(UUID.randomUUID());
         StopActorCommandMsg stopActorCommandMsg = new StopActorCommandMsg(state.getStopActorCommandId());
 
