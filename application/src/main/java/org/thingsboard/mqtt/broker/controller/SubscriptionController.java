@@ -52,7 +52,7 @@ public class SubscriptionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
     @ResponseBody
-    public Set<TopicSubscription> getClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public Set<TopicSubscription> getClientSubscriptions(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
             return clientSubscriptionReader.getClientSubscriptions(clientId);
         } catch (Exception e) {
