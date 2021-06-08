@@ -32,10 +32,10 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.MqttClientWrapperService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
@@ -63,7 +63,7 @@ public class ConnectServiceImpl implements ConnectService {
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final MqttClientService mqttClientService;
+    private final MqttClientWrapperService mqttClientService;
     private final ClientSessionEventService clientSessionEventService;
     private final ClientSessionReader clientSessionReader;
     private final KeepAliveService keepAliveService;

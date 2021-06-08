@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import java.util.Collection;
 import java.util.Map;
 
 public interface TbQueueAdmin {
@@ -22,6 +23,8 @@ public interface TbQueueAdmin {
     void createTopicIfNotExists(String topic, Map<String, String> topicConfigs);
 
     void deleteTopic(String topic);
+
+    void deleteConsumerGroups(Collection<String> consumerGroups);
 
     int getNumberOfPartitions(String topic);
 }

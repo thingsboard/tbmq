@@ -77,12 +77,17 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("application-persisted-msg-consumer-" + clientId);
-        consumerBuilder.groupId("application-persisted-msg-group-" + clientId);
+        consumerBuilder.groupId(getConsumerGroup(clientId));
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
+    }
+
+    @Override
+    public String getConsumerGroup(String clientId) {
+        return "application-persisted-msg-group-" + clientId;
     }
 }

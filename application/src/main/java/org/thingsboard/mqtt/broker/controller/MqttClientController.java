@@ -28,13 +28,13 @@ import org.thingsboard.mqtt.broker.common.data.MqttClient;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.MqttClientWrapperService;
 
 @RestController
 @RequestMapping("/api/mqtt/client")
 public class MqttClientController extends BaseController {
     @Autowired
-    private MqttClientService mqttClientService;
+    private MqttClientWrapperService mqttClientWrapperService;
 
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
@@ -43,7 +43,7 @@ public class MqttClientController extends BaseController {
     public MqttClient saveMqttClient(@RequestBody MqttClient mqttClient) throws ThingsboardException {
         checkNotNull(mqttClient);
         try {
-            return checkNotNull(mqttClientService.saveMqttClient(mqttClient));
+            return checkNotNull(mqttClientWrapperService.saveMqttClient(mqttClient));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -55,7 +55,7 @@ public class MqttClientController extends BaseController {
     @ResponseBody
     public MqttClient getMqttClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            return mqttClientService.getMqttClient(clientId).orElse(null);
+            return mqttClientWrapperService.getMqttClient(clientId).orElse(null);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -67,7 +67,7 @@ public class MqttClientController extends BaseController {
     public PageData<MqttClient> getMqttClients(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
-            return checkNotNull(mqttClientService.getClients(pageLink));
+            return checkNotNull(mqttClientWrapperService.getClients(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -77,7 +77,7 @@ public class MqttClientController extends BaseController {
     @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
     public void deleteClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            mqttClientService.deleteMqttClient(clientId);
+            mqttClientWrapperService.deleteMqttClient(clientId);
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 
 import javax.annotation.PreDestroy;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +82,17 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         if (result.values().containsKey(topic)) {
             topics.remove(topic);
+        }
+    }
+
+    @Override
+    public void deleteConsumerGroups(Collection<String> consumerGroups) {
+        log.debug("Deleting Consumer Groups - {}", consumerGroups);
+        try {
+            DeleteConsumerGroupsResult result = client.deleteConsumerGroups(consumerGroups);
+            result.all().get();
+        } catch (Exception e) {
+            log.warn("Failed to delete consumer groups {}. Exception - {}, reason - {}.", consumerGroups, e.getClass().getSimpleName(), e.getMessage());
         }
     }
 

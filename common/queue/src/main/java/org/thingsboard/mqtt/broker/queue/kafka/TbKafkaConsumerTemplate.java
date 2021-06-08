@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 @Slf4j
@@ -158,8 +159,15 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
-    public long doGetOffset(String topic, int partition) {
-        return consumer.position(new TopicPartition(topic, partition));
+    public long doGetEndOffset(String topic, int partition) {
+        TopicPartition topicPartition = new TopicPartition(topic, partition);
+        return consumer.endOffsets(Collections.singletonList(topicPartition)).getOrDefault(topicPartition, 0L);
+    }
+
+    @Override
+    public Optional<Long> doGetCommittedOffset(String topic, int partition) {
+        return Optional.ofNullable(consumer.committed(new TopicPartition(topic, partition)))
+                .map(OffsetAndMetadata::offset);
     }
 
 

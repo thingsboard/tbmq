@@ -55,8 +55,10 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -171,12 +173,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
     }
 
-    // TODO: delete topic by TTL
     @Override
     public void clearPersistedMsgs(String clientId) {
-        String clientTopic = MqttApplicationClientUtil.createTopic(clientId);
-        log.debug("[{}] Clearing persisted topic {} for application.", clientId, clientTopic);
-        queueAdmin.deleteTopic(clientTopic);
+        String applicationConsumerGroup = applicationPersistenceMsgQueueFactory.getConsumerGroup(clientId);
+        log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
+        queueAdmin.deleteConsumerGroups(Collections.singleton(applicationConsumerGroup));
         log.debug("[{}] Clearing application session context.", clientId);
         unacknowledgedPersistedMsgCtxService.clearContext(clientId);
     }
@@ -196,15 +197,29 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 .createConsumer(MqttApplicationClientUtil.createTopic(clientId), clientId);
         consumer.assignPartition(0);
 
+        Optional<Long> committedOffset = consumer.getCommittedOffset(consumer.getTopic(), 0);
+        if (committedOffset.isEmpty()) {
+            long endOffset = consumer.getEndOffset(consumer.getTopic(), 0);
+            consumer.commit(0, endOffset);
+        }
+
         Collection<PersistedPubRelMsg> persistedPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
                 .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
                 .collect(Collectors.toList());
 
+        boolean isFirstMsgCommitted = false;
         while (isClientConnected(sessionId, clientState)) {
             try {
+                // TODO: remove auto-creation of topics (create topic when creating MQTT Client)
                 List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
                 if (publishProtoMessages.isEmpty() && persistedPubRelMessages.isEmpty()) {
                     continue;
+                }
+                if (!isFirstMsgCommitted) {
+                    // need to commit first message in case of first batch processing fails so that we don't miss those messages
+                    TbProtoQueueMsg<QueueProtos.PublishMsgProto> firstReceivedMsg = publishProtoMessages.get(0);
+                    consumer.commit(0, firstReceivedMsg.getOffset());
+                    isFirstMsgCommitted = true;
                 }
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);

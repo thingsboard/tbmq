@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue;
+package org.thingsboard.mqtt.broker.service.mqtt.client;
+
+import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 
 import java.util.Optional;
 
-public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends TbQueueConsumer<T> {
-    void commit(int partition, long offset);
+public interface MqttClientWrapperService {
+    MqttClient saveMqttClient(MqttClient mqttClient);
 
-    void assignPartition(int partition);
+    void deleteMqttClient(String clientId);
 
-    void assignAllPartitions();
+    Optional<MqttClient> getMqttClient(String clientId);
 
-    void seekToTheBeginning();
-
-    long getEndOffset(String topic, int partition);
-
-    Optional<Long> getCommittedOffset(String topic, int partition);
+    PageData<MqttClient> getClients(PageLink pageLink);
 }

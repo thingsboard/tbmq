@@ -24,4 +24,6 @@ public interface ApplicationPersistenceMsgQueueFactory {
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId);
 
     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String clientId);
+
+    String getConsumerGroup(String clientId);
 }

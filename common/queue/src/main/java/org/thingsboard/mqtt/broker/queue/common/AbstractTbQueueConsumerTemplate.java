@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -165,20 +166,30 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public long getOffset(String topic, int partition) {
+    public void seekToTheBeginning() {
         consumerLock.lock();
         try {
-            return doGetOffset(topic, partition);
+            doSeekToTheBeginning();
         } finally {
             consumerLock.unlock();
         }
     }
 
     @Override
-    public void seekToTheBeginning() {
+    public long getEndOffset(String topic, int partition) {
         consumerLock.lock();
         try {
-            doSeekToTheBeginning();
+            return doGetEndOffset(topic, partition);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public Optional<Long> getCommittedOffset(String topic, int partition) {
+        consumerLock.lock();
+        try {
+            return doGetCommittedOffset(topic, partition);
         } finally {
             consumerLock.unlock();
         }
@@ -200,7 +211,10 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doUnsubscribeAndClose();
 
-    abstract protected long doGetOffset(String topic, int partition);
-
     abstract protected void doSeekToTheBeginning();
+
+    abstract protected long doGetEndOffset(String topic, int partition);
+
+    abstract protected Optional<Long> doGetCommittedOffset(String topic, int partition);
+
 }
