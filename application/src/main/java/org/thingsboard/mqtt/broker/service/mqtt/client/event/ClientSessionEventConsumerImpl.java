@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -42,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ClientSessionEventProcessorImpl implements ClientSessionEventProcessor {
+public class ClientSessionEventConsumerImpl implements ClientSessionEventConsumer {
 
     private ExecutorService consumersExecutor;
     private volatile boolean stopped = false;
@@ -65,7 +64,7 @@ public class ClientSessionEventProcessorImpl implements ClientSessionEventProces
     private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     @Override
-    public void startProcessing() {
+    public void startConsuming() {
         this.clientThreadsCount = clientThreadsCount <= 0 ? Runtime.getRuntime().availableProcessors() : clientThreadsCount;
         this.consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
         for (int i = 0; i < consumersCount; i++) {

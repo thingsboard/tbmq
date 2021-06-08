@@ -15,6 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
-public interface ClientSessionEventProcessor {
-    void startProcessing();
+public interface ClientSessionEventConsumer {
+    void startConsuming();
 }
