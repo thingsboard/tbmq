@@ -68,7 +68,6 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
             log.warn("Client session clean-up policy should be " + COMPACT_POLICY + ".");
         }
         topicConfigs.put(CLEANUP_POLICY_PROPERTY, COMPACT_POLICY);
-
     }
 
     @Override
@@ -89,7 +88,8 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
 
         Properties props = consumerSettings.toProps(clientSessionSettings.getAdditionalConsumerConfig());
         PropertiesUtil.overrideProperties("ClientSessionQueue-" + consumerId, props, requiredConsumerProperties);
-        consumerBuilder.properties(props);consumerBuilder.topic(clientSessionSettings.getTopic());
+        consumerBuilder.properties(props);
+        consumerBuilder.topic(clientSessionSettings.getTopic());
 
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-session-consumer-" + consumerId);

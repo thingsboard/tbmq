@@ -23,6 +23,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
@@ -86,13 +87,20 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void deleteTopic(String topic) {
+    public void deleteTopic(String topic, BasicCallback callback) {
         if (!enableTopicDeletion) {
             log.debug("Ignoring deletion of topic {}", topic);
             return;
         }
         log.debug("[{}] Deleting topic", topic);
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
+        result.all().whenComplete((unused, throwable) -> {
+            if (throwable == null) {
+                callback.onSuccess();
+            } else {
+                callback.onFailure(throwable);
+            }
+        });
         if (result.values().containsKey(topic)) {
             topics.remove(topic);
         }

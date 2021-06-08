@@ -89,7 +89,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private void finishSessionAuth(ClientSessionCtx sessionCtx, AuthResponse authResponse) {
         String clientId = sessionCtx.getClientId();
         List<AuthorizationRule> authorizationRules = authResponse.getAuthorizationRules();
-        if (authorizationRules != null) {
+        if (authorizationRules != null && !authorizationRules.isEmpty()) {
             List<String> authPatterns = authorizationRules.stream().map(AuthorizationRule::getPattern).map(Pattern::toString).collect(Collectors.toList());
             log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
             sessionCtx.setAuthorizationRules(authorizationRules);

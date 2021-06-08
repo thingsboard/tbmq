@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -28,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
@@ -40,7 +42,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationTopicManager;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
@@ -75,7 +78,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final MsgPersistenceManager msgPersistenceManager;
-    private final ApplicationTopicManager applicationTopicManager;
+    private final ApplicationRemovedEventService applicationRemovedEventService;
+    private final ApplicationTopicService applicationTopicService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
 
@@ -176,6 +180,23 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
+    @Override
+    public void processRemoveApplicationTopicRequest(String clientId, ClientCallback callback) {
+        if (StringUtils.isEmpty(clientId)) {
+            callback.onFailure(new RuntimeException("Trying to remove APPLICATION topic for empty clientId"));
+            return;
+        }
+        ClientSession clientSession = clientSessionService.getClientSession(clientId);
+        ClientType currentType = clientSession.getSessionInfo().getClientInfo().getType();
+        if (currentType == ClientType.APPLICATION) {
+            log.debug("[{}] Current type of the client is APPLICATION", clientId);
+            callback.onSuccess();
+            return;
+        }
+
+        applicationTopicService.deleteTopic(clientId, CallbackUtil.createCallback(callback::onSuccess, callback::onFailure));
+    }
+
     private void finishDisconnect(ClientSession clientSession) {
         SessionInfo sessionInfo = clientSession.getSessionInfo();
         String clientId = sessionInfo.getClientInfo().getClientId();
@@ -231,7 +252,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 && clientInfo.getType() == ClientType.DEVICE;
         if (applicationRemoved) {
             msgPersistenceManager.clearPersistedMessages(clientInfo);
-            applicationTopicManager.applicationRemovedEvent(clientInfo.getClientId());
+            applicationRemovedEventService.sendApplicationRemovedEvent(clientInfo.getClientId());
         }
 
         ClientSession clientSession = ClientSession.builder()

@@ -27,4 +27,6 @@ public interface ClientSessionEventService {
     void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId);
 
     void requestSessionCleanup(SessionInfo sessionInfo);
+
+    void requestApplicationTopicRemoved(String clientId);
 }

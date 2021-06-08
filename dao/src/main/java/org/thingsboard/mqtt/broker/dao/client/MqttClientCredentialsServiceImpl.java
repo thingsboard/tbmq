@@ -108,6 +108,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 .map(mqttClientCredentials -> ShortMqttClientCredentials.builder()
                         .id(mqttClientCredentials.getId())
                         .name(mqttClientCredentials.getName())
+                        .clientType(mqttClientCredentials.getClientType())
                         .credentialsType(mqttClientCredentials.getCredentialsType())
                         .createdTime(mqttClientCredentials.getCreatedTime())
                         .build())

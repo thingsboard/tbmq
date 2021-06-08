@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class ApplicationTopicManagerImpl implements ApplicationTopicManager {
-    @Override
-    public void applicationRemovedEvent(String clientId) {
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-    }
+public interface ApplicationRemovedEventQueueFactory {
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventProducer(String serviceId);
+
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId);
 }

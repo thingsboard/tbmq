@@ -53,4 +53,11 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
                 .setEventType(ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST.toString())
                 .build();
     }
+
+    @Override
+    public QueueProtos.ClientSessionEventProto createApplicationTopicRemoveRequestProto(String clientId) {
+        return QueueProtos.ClientSessionEventProto.newBuilder()
+                .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.toString())
+                .build();
+    }
 }

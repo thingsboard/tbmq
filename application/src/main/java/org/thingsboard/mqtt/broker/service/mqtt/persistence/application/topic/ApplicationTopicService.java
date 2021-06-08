@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
-public enum ClientSessionEventType {
-    CONNECTION_REQUEST,
-    DISCONNECTED,
-    TRY_CLEAR_SESSION_REQUEST,
-    REMOVE_APPLICATION_TOPIC_REQUEST
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+
+public interface ApplicationTopicService {
+    void createTopic(String clientId);
+
+    void deleteTopic(String clientId, BasicCallback callback);
 }

@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     id uuid NOT NULL CONSTRAINT mqtt_client_credentials_pkey PRIMARY KEY,
     created_time bigint NOT NULL,
     name varchar(255),
+    client_type varchar(255),
     credentials_id varchar,
     credentials_type varchar(255),
     credentials_value varchar,

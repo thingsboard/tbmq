@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -43,15 +44,20 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
     @Override
     public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback) {
         QueueProtos.ClientSessionEventProto eventProto = msg.getValue();
-        SessionInfo sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
+        SessionInfo sessionInfo;
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
             case CONNECTION_REQUEST:
+                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
             case DISCONNECTED:
+                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
                 return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId());
             case TRY_CLEAR_SESSION_REQUEST:
+                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
                 return new ClearSessionMsg(callback, sessionInfo.getSessionId());
+            case REMOVE_APPLICATION_TOPIC_REQUEST:
+                return new RemoveApplicationTopicRequestMsg(callback);
             default:
                 throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
         }

@@ -115,6 +115,11 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
     }
 
+    @Override
+    public void requestApplicationTopicRemoved(String clientId) {
+        sendEvent(clientId, eventFactory.createApplicationTopicRemoveRequestProto(clientId), false);
+    }
+
     private ListenableFuture<ConnectionResponse> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto, boolean isAwaitingResponse) {
         UUID requestId = UUID.randomUUID();
         TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);

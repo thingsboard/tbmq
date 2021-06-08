@@ -76,6 +76,8 @@
         <springfox-swagger.version>2.6.1</springfox-swagger.version>
         <springfox-swagger-ui-rfc6570.version>1.0.0</springfox-swagger-ui-rfc6570.version>
         <micrometer.version>1.5.2</micrometer.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
     <modules>

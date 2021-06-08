@@ -127,6 +127,11 @@ queue:
     publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
+  application-removed-event:
+    poll-interval: "${TB_APPLICATION_REMOVED_EVENT_POLL_INTERVAL:100}"
+    processing:
+      cron: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_CRON:0 0 3 * * *}"
+      zone: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_ZONE:UTC}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -202,6 +207,11 @@ queue:
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    application-removed-event:
+      topic: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC:application_removed_event}"
+      topic-properties: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      additional-consumer: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
+      additional-producer: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
 
 service:
   id: "${TB_SERVICE_ID:}"

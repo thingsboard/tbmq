@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.event;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
-public enum ClientSessionEventType {
-    CONNECTION_REQUEST,
-    DISCONNECTED,
-    TRY_CLEAR_SESSION_REQUEST,
-    REMOVE_APPLICATION_TOPIC_REQUEST
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+@AllArgsConstructor
+public class ApplicationRemovedEvent {
+    private final String clientId;
+    private final Long time;
 }

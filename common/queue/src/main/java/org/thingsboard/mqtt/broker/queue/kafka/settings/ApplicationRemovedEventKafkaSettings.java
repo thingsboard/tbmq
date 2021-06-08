@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-public interface ApplicationTopicService {
-    void createTopic(String clientId);
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-    void deleteTopic(String clientId);
+@Data
+@Component
+@ConfigurationProperties(prefix = "queue.kafka.application-removed-event")
+public class ApplicationRemovedEventKafkaSettings {
+    private String topic;
+    private String topicProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

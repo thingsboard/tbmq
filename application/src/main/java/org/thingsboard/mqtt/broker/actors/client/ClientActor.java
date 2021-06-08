@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEve
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
@@ -130,6 +131,9 @@ public class ClientActor extends ContextAwareActor {
                         break;
                     case CLEAR_SESSION_MSG:
                         processClearSessionMsg((ClearSessionMsg) msg);
+                        break;
+                    case REMOVE_APPLICATION_TOPIC_REQUEST_MSG:
+                        sessionClusterManager.processRemoveApplicationTopicRequest(state.getClientId(), ((RemoveApplicationTopicRequestMsg)msg).getCallback());
                         break;
 
                     case SUBSCRIBE_COMMAND_MSG:

@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 
 import java.util.UUID;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class ShortMqttClientCredentials {
     private UUID id;
     private String name;
+    private ClientType clientType;
     private ClientCredentialsType credentialsType;
     private long createdTime;
 }

@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -24,7 +26,7 @@ public interface TbQueueAdmin {
 
     void createTopic(String topic, Map<String, String> topicConfigs);
 
-    void deleteTopic(String topic);
+    void deleteTopic(String topic, BasicCallback callback);
 
     void deleteConsumerGroups(Collection<String> consumerGroups);
 

@@ -25,14 +25,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
 import java.util.Collection;
 
 @RestController
-@RequestMapping("/api/app/info")
-public class AppInfoController extends BaseController {
+@RequestMapping("/api/app")
+public class AppController extends BaseController {
     @Autowired
     private TbActorSystem tbActorSystem;
+    @Autowired
+    private ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
@@ -40,6 +43,17 @@ public class AppInfoController extends BaseController {
     public Collection<TbActorId> getAllActorIds() throws ThingsboardException {
         try {
            return tbActorSystem.getAllActorIds();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/remove-topics", method = RequestMethod.DELETE)
+    @ResponseBody
+    public void removeApplicationTopics() throws ThingsboardException {
+        try {
+            applicationRemovedEventProcessor.processEvents();
         } catch (Exception e) {
             throw handleException(e);
         }

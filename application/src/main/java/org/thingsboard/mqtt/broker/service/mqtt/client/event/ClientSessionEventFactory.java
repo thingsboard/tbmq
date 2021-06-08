@@ -27,4 +27,6 @@ public interface ClientSessionEventFactory {
     QueueProtos.ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId);
 
     QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo);
+
+    QueueProtos.ClientSessionEventProto createApplicationTopicRemoveRequestProto(String clientId);
 }

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
@@ -37,11 +38,10 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
     }
 
     @Override
-    public void deleteTopic(String clientId) {
+    public void deleteTopic(String clientId, BasicCallback callback) {
         log.debug("[{}] Deleting APPLICATION topic", clientId);
         // TODO: delete consumer group as well
         String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
-        // TODO: add callback
-        queueAdmin.deleteTopic(clientTopic);
+        queueAdmin.deleteTopic(clientTopic, callback);
     }
 }

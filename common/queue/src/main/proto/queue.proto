@@ -110,6 +110,6 @@ message ServiceInfo {
   string serviceId = 1;
 }
 
-message ApplicationQueueRemovedEventProto {
+message ApplicationRemovedEventProto {
   string clientId = 1;
 }
