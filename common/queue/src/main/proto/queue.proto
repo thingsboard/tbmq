@@ -96,3 +96,13 @@ message PersistedDevicePublishMsgProto {
 message ServiceInfo {
   string serviceId = 1;
 }
+
+message ApplicationQueueRemovedEventProto {
+  string clientId = 1;
+}
+
+message ClusterEventProto {
+  string eventType = 1;
+  ServiceInfo serviceInfo = 2;
+  ApplicationQueueRemovedEventProto applicationQueueRemovedEventProto = 3;
+}

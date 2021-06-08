@@ -122,6 +122,8 @@ queue:
   basic-downlink-publish-msg:
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
+  cluster-event:
+    poll-interval: "${TB_CLUSTER_EVENT_POLL_INTERVAL:100}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -194,6 +196,11 @@ queue:
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       consumer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:auto.offset.reset:latest}"
       producer: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
+    cluster-event:
+      topic: "${TB_KAFKA_CLUSTER_EVENT_TOPIC:cluster_event}"
+      topic-properties: "${TB_KAFKA_CLUSTER_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
+      consumer: "${TB_KAFKA_CLUSTER_EVENT_CONSUMER_CONFIG:}"
+      producer: "${TB_KAFKA_CLUSTER_EVENT_PRODUCER_CONFIG:}"
 
 service:
   id: "${TB_SERVICE_ID:}"
