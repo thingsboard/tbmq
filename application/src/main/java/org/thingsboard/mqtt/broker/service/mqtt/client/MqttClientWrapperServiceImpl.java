@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.cluster.ClusterEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 
 import java.util.Optional;
@@ -33,6 +34,7 @@ import java.util.Optional;
 public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     private final MqttClientService mqttClientService;
     private final TbQueueAdmin queueAdmin;
+    private final ClusterEventService clusterEventService;
 
     @Override
     public MqttClient saveMqttClient(MqttClient mqttClient) {
@@ -44,6 +46,7 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
         String clientTopic = MqttApplicationClientUtil.createTopic(clientId);
         queueAdmin.deleteTopic(clientTopic);
         mqttClientService.deleteMqttClient(clientId);
+        clusterEventService.sendApplicationQueueDeletedEvent(clientId);
     }
 
     @Override
