@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
@@ -51,4 +52,6 @@ public interface TbActorSystem {
     void broadcastToChildren(TbActorId parent, Predicate<TbActorId> childFilter, TbActorMsg msg);
 
     List<TbActorId> filterChildren(TbActorId parent, Predicate<TbActorId> childFilter);
+
+    Set<TbActorId> getAllActorIds();
 }

@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -211,4 +212,8 @@ public class DefaultTbActorSystem implements TbActorSystem {
         actors.clear();
     }
 
+    @Override
+    public Set<TbActorId> getAllActorIds() {
+        return new HashSet<>(actors.keySet());
+    }
 }
