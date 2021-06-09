@@ -53,6 +53,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final Set<Integer> inFlightPacketIds = new HashSet<>();
     private volatile ClientSessionCtx sessionCtx;
     private volatile Long lastPersistedMsgSentSerialNumber = 0L;
+    private volatile boolean processedAnyMsg = false;
     private volatile UUID stopActorCommandUUID;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
@@ -112,6 +113,21 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             return;
         }
+        if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
+            // TODO: think if it's OK
+            long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
+            log.info("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
+                    clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+            List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+            try {
+                for (DevicePublishMsg persistedMessage : persistedMessages) {
+                    processPersistedMsg(persistedMessage);
+                }
+            } catch (Exception e) {
+                clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process missed persisted messages"));
+            }
+        }
+        processedAnyMsg = true;
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),

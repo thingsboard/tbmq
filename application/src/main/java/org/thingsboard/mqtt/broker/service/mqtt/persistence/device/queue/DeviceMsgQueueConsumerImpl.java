@@ -132,6 +132,9 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         ClientSession clientSession = clientSessionReader.getClientSession(devicePublishMsg.getClientId());
                         if (clientSession == null) {
                             log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                        } else if (!clientSession.isConnected()) {
+                            // TODO: think if it's OK to ignore msg if session is 'disconnected'
+                            log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
                         } else {
                             String targetServiceId = clientSession.getSessionInfo().getServiceId();
                             downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toPersistedDevicePublishMsgProto(devicePublishMsg));
