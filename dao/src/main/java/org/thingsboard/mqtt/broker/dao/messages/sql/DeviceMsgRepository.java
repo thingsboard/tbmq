@@ -27,20 +27,33 @@ import java.util.List;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;
-import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY;
 
 public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
-    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
-            "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
-            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " DESC " +
+    String DEVICE_PUBLISH_MSG = DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
+    String CLIENT_ID = DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY;
+    String SERIAL_NUMBER = DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;
+
+    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG + " pubMsg " +
+            "WHERE pubMsg." + CLIENT_ID + " = :clientId " +
+            "ORDER BY pubMsg." + SERIAL_NUMBER + " DESC " +
             "LIMIT :limit",
             nativeQuery = true)
     List<DevicePublishMsgEntity> findByClientIdReversed(@Param("clientId") String clientId,
                                                         @Param("limit") int limit);
 
-    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME + " pubMsg " +
-            "WHERE pubMsg." + DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY + " = :clientId " +
-            "ORDER BY pubMsg." + DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY + " DESC " +
+    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG + " pubMsg " +
+            "WHERE pubMsg." + CLIENT_ID + " = :clientId " +
+            "AND pubMsg." + SERIAL_NUMBER + " >= :fromSerialNumber " +
+            "AND pubMsg." + SERIAL_NUMBER + " < :toSerialNumber " +
+            "ORDER BY pubMsg." + SERIAL_NUMBER + " ASC",
+            nativeQuery = true)
+    List<DevicePublishMsgEntity> findByClientIdAndSerialNumberInRange(@Param("clientId") String clientId,
+                                                                      @Param("fromSerialNumber") long fromSerialNumber,
+                                                                      @Param("toSerialNumber") long toSerialNumber);
+
+    @Query(value = "SELECT * FROM " + DEVICE_PUBLISH_MSG + " pubMsg " +
+            "WHERE pubMsg." + CLIENT_ID + " = :clientId " +
+            "ORDER BY pubMsg." + SERIAL_NUMBER + " DESC " +
             "OFFSET :offset " +
             "LIMIT 1",
             nativeQuery = true)

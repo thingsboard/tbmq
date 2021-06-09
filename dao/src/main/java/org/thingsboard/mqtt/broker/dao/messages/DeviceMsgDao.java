@@ -25,6 +25,8 @@ public interface DeviceMsgDao {
 
     List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
 
+    List<DevicePublishMsg> findPersistedMessagesBySerialNumber(String clientId, long fromSerialNumber, long toSerialNumber);
+
     void removePersistedMessages(String clientId);
 
     void removePersistedMessage(String clientId, int packetId);

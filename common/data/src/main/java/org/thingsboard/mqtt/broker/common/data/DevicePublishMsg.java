@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +23,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @Builder(toBuilder = true)
 @EqualsAndHashCode
+@AllArgsConstructor
 public class DevicePublishMsg {
     private String clientId;
     private String topic;

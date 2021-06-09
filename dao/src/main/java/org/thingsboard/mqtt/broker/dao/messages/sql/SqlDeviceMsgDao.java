@@ -54,6 +54,13 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     }
 
     @Override
+    public List<DevicePublishMsg> findPersistedMessagesBySerialNumber(String clientId, long fromSerialNumber, long toSerialNumber) {
+        log.trace("Finding device publish messages, clientId - {}, fromSerialNumber - {}, toSerialNumber - {}", clientId, fromSerialNumber, toSerialNumber);
+        List<DevicePublishMsgEntity> devicePublishMsgs = deviceMsgRepository.findByClientIdAndSerialNumberInRange(clientId, fromSerialNumber, toSerialNumber);
+        return DaoUtil.convertDataList(devicePublishMsgs);
+    }
+
+    @Override
     public void removePersistedMessages(String clientId) {
         log.debug("Removing device publish messages, clientId - {}", clientId);
         deviceMsgRepository.removeAllByClientId(clientId);

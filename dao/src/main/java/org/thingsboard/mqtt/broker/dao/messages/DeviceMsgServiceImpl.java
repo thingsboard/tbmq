@@ -46,6 +46,15 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     @Override
+    public List<DevicePublishMsg> findPersistedMessages(String clientId, long fromSerialNumber, long toSerialNumber) {
+        log.trace("[{}] Loading persisted messages, fromSerialNumber - {}, toSerialNumber - {}.", clientId, fromSerialNumber, toSerialNumber);
+        if (fromSerialNumber < 0 || toSerialNumber < 0 || fromSerialNumber > toSerialNumber) {
+            throw new RuntimeException("Not valid 'from' and 'to' serial number values");
+        }
+        return deviceMsgDao.findPersistedMessagesBySerialNumber(clientId, fromSerialNumber, toSerialNumber);
+    }
+
+    @Override
     public void removePersistedMessages(String clientId) {
         log.debug("[{}] Removing persisted messages.", clientId);
         try {

@@ -24,6 +24,8 @@ public interface DeviceMsgService {
 
     List<DevicePublishMsg> findPersistedMessages(String clientId);
 
+    List<DevicePublishMsg> findPersistedMessages(String clientId, long fromSerialNumber, long toSerialNumber);
+
     void removePersistedMessages(String clientId);
 
     void removePersistedMessage(String clientId, int packetId);
