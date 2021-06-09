@@ -51,9 +51,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     // works only if Actor wasn't deleted
     private final Set<Integer> inFlightPacketIds = new HashSet<>();
-    private ClientSessionCtx sessionCtx;
-    private Long lastPersistedMsgSentSerialNumber = 0L;
-    private UUID stopActorCommandUUID;
+    private volatile ClientSessionCtx sessionCtx;
+    private volatile Long lastPersistedMsgSentSerialNumber = 0L;
+    private volatile UUID stopActorCommandUUID;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
         super(systemContext);
