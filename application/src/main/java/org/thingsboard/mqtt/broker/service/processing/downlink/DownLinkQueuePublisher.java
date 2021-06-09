@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
-public interface BasicDownLinkConsumer {
-    void startConsuming();
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+
+interface DownLinkQueuePublisher {
+    void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg);
+
+    void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg);
 }

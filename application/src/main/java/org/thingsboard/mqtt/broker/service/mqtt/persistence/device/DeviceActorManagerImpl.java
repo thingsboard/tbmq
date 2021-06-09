@@ -68,8 +68,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     }
 
     @Override
-    public void sendMsgToActor(DevicePublishMsg devicePublishMsg) {
-        String clientId = devicePublishMsg.getClientId();
+    public void sendMsgToActor(String clientId, DevicePublishMsg devicePublishMsg) {
         TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
         if (deviceActorRef == null) {
             log.trace("[{}] No active actor for device.", clientId);

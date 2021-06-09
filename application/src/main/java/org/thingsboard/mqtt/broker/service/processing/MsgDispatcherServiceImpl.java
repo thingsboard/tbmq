@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
-import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -63,7 +63,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private ClientSessionReader clientSessionReader;
     @Autowired
-    private DownLinkPublisher downLinkPublisher;
+    private DownLinkProxy downLinkProxy;
 
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
@@ -142,7 +142,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private void sendToNode(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
         String targetServiceId = subscription.getSessionInfo().getServiceId();
         String clientId = subscription.getSessionInfo().getClientInfo().getClientId();
-        downLinkPublisher.publishBasicMsg(targetServiceId, clientId, publishMsgProto);
+        downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
     }
 
     private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {

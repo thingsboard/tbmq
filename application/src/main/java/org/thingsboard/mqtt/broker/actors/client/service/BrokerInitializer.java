@@ -40,8 +40,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCons
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
-import org.thingsboard.mqtt.broker.service.processing.downlink.BasicDownLinkConsumer;
-import org.thingsboard.mqtt.broker.service.processing.downlink.PersistentDownLinkConsumer;
+import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
+import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 

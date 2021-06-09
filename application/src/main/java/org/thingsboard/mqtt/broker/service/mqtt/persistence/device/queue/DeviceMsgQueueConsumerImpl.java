@@ -39,11 +39,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.De
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceProcessingDecision;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.PacketIdAndSerialNumber;
-import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +73,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
     private final DeviceMsgService deviceMsgService;
     private final DevicePacketIdAndSerialNumberService serialNumberService;
-    private final DownLinkPublisher downLinkPublisher;
+    private final DownLinkProxy downLinkProxy;
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionReader clientSessionReader;
@@ -135,7 +134,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
                         } else {
                             String targetServiceId = clientSession.getSessionInfo().getServiceId();
-                            downLinkPublisher.publishPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toPersistedDevicePublishMsgProto(devicePublishMsg));
+                            downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toPersistedDevicePublishMsgProto(devicePublishMsg));
                         }
                     }
                 } catch (Exception e) {

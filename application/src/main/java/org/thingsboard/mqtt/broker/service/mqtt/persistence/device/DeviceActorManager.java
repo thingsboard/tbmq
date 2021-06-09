@@ -23,7 +23,7 @@ public interface DeviceActorManager {
 
     void notifyClientDisconnected(String clientId);
 
-    void sendMsgToActor(DevicePublishMsg devicePublishMsg);
+    void sendMsgToActor(String clientId, DevicePublishMsg devicePublishMsg);
 
     void notifyPacketAcknowledged(String clientId, int packetId);
 

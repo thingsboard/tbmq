@@ -32,7 +32,7 @@ import javax.annotation.PostConstruct;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DownLinkPublisherImpl implements DownLinkPublisher {
+class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;

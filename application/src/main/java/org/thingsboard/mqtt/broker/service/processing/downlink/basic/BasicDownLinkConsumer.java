@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing.downlink;
+package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 
-public interface PersistentDownLinkConsumer {
+public interface BasicDownLinkConsumer {
     void startConsuming();
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing.downlink;
+package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +25,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
-import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelper;
 
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
@@ -51,9 +46,8 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
     private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
-    private final ClientSessionCtxService clientSessionCtxService;
-    private final ClientMqttActorManager clientMqttActorManager;
-    private final PublishMsgDeliveryService publishMsgDeliveryService;
+
+    private final BasicDownLinkProcessor processor;
 
     @Value("${queue.basic-downlink-publish-msg.consumers-count}")
     private int consumersCount;
@@ -84,21 +78,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
                     }
 
                     for (TbProtoQueueMsg<QueueProtos.PublishMsgProto> msg : msgs) {
-                        String clientId = msg.getKey();
-                        QueueProtos.PublishMsgProto publishMsgProto = msg.getValue();
-                        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
-                        if (clientSessionCtx == null) {
-                            log.trace("[{}] No client session on the node.", clientId);
-                            continue;
-                        }
-                        try {
-                            deliverMsgToClient(clientSessionCtx, publishMsgProto);
-                        } catch (Exception e) {
-                            log.debug("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
-                            log.trace("Detailed error: ", e);
-                            clientMqttActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
-                                    "Failed to deliver PUBLISH msg"));
-                        }
+                        processor.process(msg.getKey(), msg.getValue());
                     }
                 } catch (Exception e) {
                     if (!stopped) {
@@ -113,12 +93,6 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
             }
             log.info("[{}] Publish Msg Consumer stopped.", consumerId);
         });
-    }
-
-    private void deliverMsgToClient(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto publishMsgProto) {
-        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, clientSessionCtx.getMsgIdSeq().nextMsgId(),
-                publishMsgProto.getTopicName(), publishMsgProto.getQos(),
-                false, publishMsgProto.getPayload().toByteArray());
     }
 
 

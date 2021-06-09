@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing.downlink;
+package org.thingsboard.mqtt.broker.service.processing.downlink.persistent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
+import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelper;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +46,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
-    private final DeviceActorManager deviceActorManager;
+    private final PersistentDownLinkProcessor processor;
 
     // TODO: don't push msg to kafka if it's the same serviceId
     @Value("${queue.persistent-downlink-publish-msg.consumers-count}")
@@ -81,8 +79,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
                     }
 
                     for (TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto> msg : msgs) {
-                        QueueProtos.PersistedDevicePublishMsgProto persistedDevicePublishMsgProto = msg.getValue();
-                        deviceActorManager.sendMsgToActor(ProtoConverter.toDevicePublishMsg(persistedDevicePublishMsgProto));
+                        processor.process(msg.getKey(), msg.getValue());
                     }
                 } catch (Exception e) {
                     if (!stopped) {
