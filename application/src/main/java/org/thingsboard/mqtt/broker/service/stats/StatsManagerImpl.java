@@ -170,10 +170,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager {
         }
 
         for (PublishMsgConsumerStats stats : managedPublishMsgConsumerStats) {
-            String statsStr = stats.getStatsCounters().stream()
+            String countersStats = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(), statsStr);
+            log.info("[{}][{}] Mean processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
+                    stats.getMeanProcessingTime(), countersStats);
             stats.reset();
         }
 

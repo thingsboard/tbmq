@@ -93,6 +93,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                     submitStrategy.init(messagesWithId);
 
                     while (!stopped) {
+                        long packProcessingStart = System.currentTimeMillis();
                         PackProcessingContext ctx = new PackProcessingContext(submitStrategy.getPendingMap());
                         int totalMsgCount = ctx.getPendingMap().size();
                         submitStrategy.process(msg -> {
@@ -106,7 +107,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         ctx.cleanup();
                         ProcessingDecision decision = ackStrategy.analyze(result);
 
-                        stats.log(totalMsgCount, result, decision.isCommit());
+                        stats.log(totalMsgCount, result, decision.isCommit(), System.currentTimeMillis() - packProcessingStart);
 
                         if (decision.isCommit()) {
                             consumer.commit();

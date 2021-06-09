@@ -33,13 +33,18 @@ public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack) {
+    public void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack, long processingTimeMs) {
     }
 
 
     @Override
     public List<StatsCounter> getStatsCounters() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public double getMeanProcessingTime() {
+        return 0;
     }
 
     @Override

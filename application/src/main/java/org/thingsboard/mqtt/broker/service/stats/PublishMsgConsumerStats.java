@@ -23,9 +23,11 @@ import java.util.List;
 public interface PublishMsgConsumerStats {
     String getConsumerId();
 
-    void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack);
+    void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack, long processingTimeMs);
 
     List<StatsCounter> getStatsCounters();
+
+    double getMeanProcessingTime();
 
     void reset();
 }

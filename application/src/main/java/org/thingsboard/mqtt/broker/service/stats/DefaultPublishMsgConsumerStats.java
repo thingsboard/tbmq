@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
@@ -22,6 +23,7 @@ import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_ITERATIONS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
@@ -51,6 +53,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     private final StatsCounter successIterationsCounter;
     private final StatsCounter failedIterationsCounter;
 
+    private final Timer processingTimer;
+
     public DefaultPublishMsgConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
         String statsKey = StatsType.PUBLISH_MSG_CONSUMER.getPrintName();
@@ -71,6 +75,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
         counters.add(tmpFailedMsgCounter);
         counters.add(successIterationsCounter);
         counters.add(failedIterationsCounter);
+
+        this.processingTimer = statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId);
     }
 
     @Override
@@ -79,7 +85,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public void log(int totalMessagesCount, PackProcessingResult result, boolean finalIterationForPack) {
+    public void log(int totalMessagesCount, PackProcessingResult result, boolean finalIterationForPack, long processingTimeMs) {
+        processingTimer.record(processingTimeMs, TimeUnit.MILLISECONDS);
         int pending = result.getPendingMap().size();
         int failed = result.getFailedMap().size();
         int success = totalMessagesCount - (pending + failed);
@@ -103,6 +110,11 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     @Override
     public List<StatsCounter> getStatsCounters() {
         return counters;
+    }
+
+    @Override
+    public double getMeanProcessingTime() {
+        return processingTimer.mean(TimeUnit.MILLISECONDS);
     }
 
     @Override
