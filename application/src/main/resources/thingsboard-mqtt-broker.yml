@@ -148,7 +148,7 @@ queue:
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
-      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:12;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
       producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
     application-persisted-msg:
