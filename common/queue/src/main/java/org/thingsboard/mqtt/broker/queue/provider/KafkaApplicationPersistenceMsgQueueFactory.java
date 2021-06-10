@@ -60,12 +60,11 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String topic, String producerId) {
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
-        producerBuilder.clientId("application-persisted-msg-producer-" + producerId);
+        producerBuilder.clientId("application-persisted-msg-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
-        producerBuilder.defaultTopic(topic);
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }

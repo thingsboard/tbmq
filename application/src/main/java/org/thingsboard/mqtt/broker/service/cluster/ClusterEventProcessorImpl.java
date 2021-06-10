@@ -20,14 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.cluster.model.ApplicationQueueDeletedEvent;
 import org.thingsboard.mqtt.broker.service.cluster.model.ClusterEvent;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClusterEventProcessorImpl implements ClusterEventProcessor {
-
-    private final ApplicationMsgQueueService applicationMsgQueueService;
 
     @Override
     public void processClusterEvent(ClusterEvent event) {
@@ -41,8 +38,5 @@ public class ClusterEventProcessorImpl implements ClusterEventProcessor {
     }
 
     private void processApplicationQueueDeleted(ApplicationQueueDeletedEvent event) {
-        String clientId = event.getClientId();
-        log.debug("[{}] Clearing APPLICATION queue producer.", clientId);
-        applicationMsgQueueService.clearQueueProducer(clientId);
     }
 }

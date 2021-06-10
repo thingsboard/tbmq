@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -29,24 +28,20 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.Mqt
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PreDestroy;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueService {
-    private final Map<String, TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> applicationProducers = new ConcurrentHashMap<>();
+    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer;
 
-    private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    private final ServiceInfoProvider serviceInfoProvider;
+    public ApplicationMsgQueueServiceImpl(ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory, ServiceInfoProvider serviceInfoProvider) {
+        this.applicationProducer = applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+    }
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
-        TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer = applicationProducers.computeIfAbsent(clientId,
-                id -> applicationPersistenceMsgQueueFactory.createProducer(clientQueueTopic, createProducerId(clientId)));
-        applicationProducer.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
+        applicationProducer.send(clientQueueTopic, new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -63,24 +58,8 @@ public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueServic
                 });
     }
 
-    private String createProducerId(String clientId) {
-        return serviceInfoProvider.getServiceId() + "-" + clientId;
-    }
-
-    @Override
-    public void clearQueueProducer(String clientId) {
-        TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> removedProducer = applicationProducers.remove(clientId);
-        if (removedProducer != null) {
-            removedProducer.stop();
-        } else {
-            log.trace("[{}] No producer found.", clientId);
-        }
-    }
-
     @PreDestroy
     public void destroy() {
-        for (TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producer : applicationProducers.values()) {
-            producer.stop();
-        }
+        applicationProducer.stop();
     }
 }
