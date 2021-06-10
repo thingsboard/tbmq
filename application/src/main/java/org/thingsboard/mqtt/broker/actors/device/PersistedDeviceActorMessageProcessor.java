@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.device;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +53,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final String clientId;
 
     // works only if Actor wasn't deleted
-    private final Set<Integer> inFlightPacketIds = new HashSet<>();
+    private final Set<Integer> inFlightPacketIds = Sets.newConcurrentHashSet();
     private volatile ClientSessionCtx sessionCtx;
     private volatile long lastPersistedMsgSentSerialNumber = -1L;
     private volatile boolean processedAnyMsg = false;
@@ -142,7 +143,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         ListenableFuture<Void> future = deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
-        future.addListener(() -> inFlightPacketIds.remove(msg.getPacketId()), MoreExecutors.directExecutor());
+        future.addListener(() -> {
+            inFlightPacketIds.remove(msg.getPacketId());
+        }, MoreExecutors.directExecutor());
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
