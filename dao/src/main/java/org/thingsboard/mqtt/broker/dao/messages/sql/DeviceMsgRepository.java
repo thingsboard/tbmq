@@ -64,9 +64,6 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
     void removeAllByClientId(String clientId);
 
     @Transactional
-    void removeAllByClientIdAndPacketId(String clientId, int packetId);
-
-    @Transactional
     int removeAllByTimeLessThan(long earliestAcceptableTime);
 
     @Transactional

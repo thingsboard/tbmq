@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +52,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         if (fromSerialNumber < 0 || toSerialNumber < 0 || fromSerialNumber > toSerialNumber) {
             throw new RuntimeException("Not valid 'from' and 'to' serial number values");
         }
+        if (toSerialNumber - fromSerialNumber > messagesLimit) {
+            fromSerialNumber = toSerialNumber - messagesLimit;
+        }
         return deviceMsgDao.findPersistedMessagesBySerialNumber(clientId, fromSerialNumber, toSerialNumber);
     }
 
@@ -65,14 +69,14 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     @Override
-    public void removePersistedMessage(String clientId, int packetId) {
+    public ListenableFuture<Void> removePersistedMessage(String clientId, int packetId) {
         log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
-        deviceMsgDao.removePersistedMessage(clientId, packetId);
+        return deviceMsgDao.removePersistedMessage(clientId, packetId);
     }
 
     @Override
-    public void updatePacketReceived(String clientId, int packetId) {
+    public ListenableFuture<Void> updatePacketReceived(String clientId, int packetId) {
         log.trace("[{}] Updating packet type to PUBREL for packetId {}.", clientId, packetId);
-        deviceMsgDao.updatePacketType(clientId, packetId, PersistedPacketType.PUBREL);
+        return deviceMsgDao.updatePacketType(clientId, packetId, PersistedPacketType.PUBREL);
     }
 }

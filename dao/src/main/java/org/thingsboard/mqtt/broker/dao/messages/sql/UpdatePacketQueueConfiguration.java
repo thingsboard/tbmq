@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.dao.messages.sql;
 
-import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
-import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-import java.util.List;
+@Component
+@ConfigurationProperties(prefix = "mqtt.persistent-session.device.persisted-messages.sql.update-packet-queue")
+@Getter
+public class UpdatePacketQueueConfiguration {
+    private int batchThreads = 1;
+    private int batchSize = 100;
+    private int maxDelay = 50;
 
-public interface InsertDeviceMsgRepository {
-    void insert(List<DevicePublishMsgEntity> entities);
-
-    int updatePacketType(String clientId, int packetId, PersistedPacketType packetType);
 }

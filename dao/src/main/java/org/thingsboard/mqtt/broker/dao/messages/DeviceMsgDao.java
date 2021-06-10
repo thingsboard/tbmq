@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
@@ -29,7 +30,7 @@ public interface DeviceMsgDao {
 
     void removePersistedMessages(String clientId);
 
-    void removePersistedMessage(String clientId, int packetId);
+    ListenableFuture<Void> removePersistedMessage(String clientId, int packetId);
 
-    void updatePacketType(String clientId, int packetId, PersistedPacketType packetType);
+    ListenableFuture<Void> updatePacketType(String clientId, int packetId, PersistedPacketType packetType);
 }

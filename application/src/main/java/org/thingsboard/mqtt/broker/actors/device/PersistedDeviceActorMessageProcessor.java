@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.device;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
@@ -52,7 +54,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     // works only if Actor wasn't deleted
     private final Set<Integer> inFlightPacketIds = new HashSet<>();
     private volatile ClientSessionCtx sessionCtx;
-    private volatile Long lastPersistedMsgSentSerialNumber = 0L;
+    private volatile long lastPersistedMsgSentSerialNumber = -1L;
     private volatile boolean processedAnyMsg = false;
     private volatile UUID stopActorCommandUUID;
 
@@ -116,7 +118,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
             // TODO: think if it's OK
             long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
-            log.info("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
+            log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
                     clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
             List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
             try {
@@ -139,14 +141,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
-        deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
-        inFlightPacketIds.remove(msg.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
+        future.addListener(() -> inFlightPacketIds.remove(msg.getPacketId()), MoreExecutors.directExecutor());
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
-        deviceMsgService.updatePacketReceived(clientId, msg.getPacketId());
-        inFlightPacketIds.remove(msg.getPacketId());
-        publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.updatePacketReceived(clientId, msg.getPacketId());
+        future.addListener(() -> {
+            inFlightPacketIds.remove(msg.getPacketId());
+            publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
+        }, MoreExecutors.directExecutor());
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {

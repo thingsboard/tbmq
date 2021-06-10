@@ -15,21 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-import java.util.List;
-
-public interface DeviceMsgService {
-    void save(List<DevicePublishMsg> devicePublishMessages);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId);
-
-    List<DevicePublishMsg> findPersistedMessages(String clientId, long fromSerialNumber, long toSerialNumber);
-
-    void removePersistedMessages(String clientId);
-
-    ListenableFuture<Void> removePersistedMessage(String clientId, int packetId);
-
-    ListenableFuture<Void> updatePacketReceived(String clientId, int packetId);
+@Getter
+@Builder
+@AllArgsConstructor
+public class DeletePacketInfo {
+    private final String clientId;
+    private final int packetId;
 }

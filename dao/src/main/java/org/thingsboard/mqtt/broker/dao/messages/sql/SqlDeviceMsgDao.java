@@ -15,18 +15,28 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages.sql;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
+import org.thingsboard.mqtt.broker.dao.messages.DeletePacketInfo;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgDao;
-import org.thingsboard.mqtt.broker.dao.messages.InsertDeviceMsgRepository;
+import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
+import org.thingsboard.mqtt.broker.dao.messages.LowLevelDeviceMsgRepository;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
+import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
+import org.thingsboard.mqtt.broker.dao.sql.TbSqlBlockingQueuePool;
+import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueue;
+import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueueParams;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,14 +44,26 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SqlDeviceMsgDao implements DeviceMsgDao {
 
-    private final InsertDeviceMsgRepository insertDeviceMsgRepository;
+    private final LowLevelDeviceMsgRepository lowLevelDeviceMsgRepository;
     private final DeviceMsgRepository deviceMsgRepository;
+    private final DeletePacketQueueConfiguration deletePacketQueueConfiguration;
+    private final UpdatePacketQueueConfiguration updatePacketQueueConfiguration;
+    private final SqlQueueStatsManager sqlQueueStatsManager;
+
+    private TbSqlQueue<UpdatePacketTypeInfo> updatePacketTypeQueue;
+    private TbSqlQueue<DeletePacketInfo> deletePacketQueue;
+
+    @PostConstruct
+    public void init() {
+        initUpdatePacketTypeQueue();
+        initDeletePacketQueue();
+    }
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages) {
         log.trace("Saving device publish messages: {}", devicePublishMessages);
         List<DevicePublishMsgEntity> entities = devicePublishMessages.stream().map(DevicePublishMsgEntity::new).collect(Collectors.toList());
-        insertDeviceMsgRepository.insert(entities);
+        lowLevelDeviceMsgRepository.insert(entities);
     }
 
     @Override
@@ -67,18 +89,58 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     }
 
     @Override
-    public void removePersistedMessage(String clientId, int packetId) {
+    public ListenableFuture<Void> removePersistedMessage(String clientId, int packetId) {
         log.trace("Removing device publish message, clientId - {}, packetId - {}", clientId, packetId);
-        deviceMsgRepository.removeAllByClientIdAndPacketId(clientId, packetId);
+        return deletePacketQueue.add(new DeletePacketInfo(clientId, packetId));
     }
 
     @Override
-    public void updatePacketType(String clientId, int packetId, PersistedPacketType packetType) {
+    public ListenableFuture<Void> updatePacketType(String clientId, int packetId, PersistedPacketType packetType) {
         log.trace("Updating packet type for device publish message, clientId - {}, packetId - {}, packetType - {}.", clientId, packetId, packetType);
-        int rowsUpdated = insertDeviceMsgRepository.updatePacketType(clientId, packetId, packetType);
-        if (rowsUpdated != 1) {
-            log.warn("While trying to update packet type {} rows were affected instead of 1 row. ClientId - {}, packetId - {}, packetType - {}.",
-                    rowsUpdated, clientId, packetId, packetType);
+        return updatePacketTypeQueue.add(new UpdatePacketTypeInfo(clientId, packetType, packetId));
+    }
+
+    private void initDeletePacketQueue() {
+        Function<DeletePacketInfo, Integer> deleteQueueIndexHashFunction = deletePacketInfo -> deletePacketInfo.getClientId().hashCode();
+        TbSqlQueueParams deletePacketQueueParams = TbSqlQueueParams.builder()
+                .queueName("DeletePacketQueue")
+                .batchSize(deletePacketQueueConfiguration.getBatchSize())
+                .maxDelay(deletePacketQueueConfiguration.getMaxDelay())
+                .build();
+        this.deletePacketQueue = TbSqlBlockingQueuePool.<DeletePacketInfo>builder()
+                .queueIndexHashFunction(deleteQueueIndexHashFunction)
+                .maxThreads(deletePacketQueueConfiguration.getBatchThreads())
+                .params(deletePacketQueueParams)
+                .statsManager(sqlQueueStatsManager)
+                .processingFunction(lowLevelDeviceMsgRepository::removePackets)
+                .build();
+        deletePacketQueue.init();
+    }
+
+    private void initUpdatePacketTypeQueue() {
+        Function<UpdatePacketTypeInfo, Integer> updateQueueIndexHashFunction = updatePacketTypeInfo -> updatePacketTypeInfo.getClientId().hashCode();
+        TbSqlQueueParams updatePacketTypeQueueParams = TbSqlQueueParams.builder()
+                .queueName("UpdatePacketTypeQueue")
+                .batchSize(updatePacketQueueConfiguration.getBatchSize())
+                .maxDelay(updatePacketQueueConfiguration.getMaxDelay())
+                .build();
+        this.updatePacketTypeQueue = TbSqlBlockingQueuePool.<UpdatePacketTypeInfo>builder()
+                .queueIndexHashFunction(updateQueueIndexHashFunction)
+                .maxThreads(updatePacketQueueConfiguration.getBatchThreads())
+                .params(updatePacketTypeQueueParams)
+                .statsManager(sqlQueueStatsManager)
+                .processingFunction(lowLevelDeviceMsgRepository::updatePacketTypes)
+                .build();
+        updatePacketTypeQueue.init();
+    }
+
+    @PreDestroy
+    private void destroy() {
+        if (updatePacketTypeQueue != null) {
+            updatePacketTypeQueue.destroy();
+        }
+        if (deletePacketQueue != null) {
+            deletePacketQueue.destroy();
         }
     }
 }
