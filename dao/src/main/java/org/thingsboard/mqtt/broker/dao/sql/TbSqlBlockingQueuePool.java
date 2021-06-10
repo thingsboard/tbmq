@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,12 +35,13 @@ public class TbSqlBlockingQueuePool<E> implements TbSqlQueue<E> {
     private final TbSqlQueueParams params;
     private final int maxThreads;
     private final Function<E, Integer> queueIndexHashFunction;
-    private final Consumer<List<E>> insertFunction;
-    // TODO: add StatsManager
+    private final Consumer<List<E>> processingFunction;
+    private final SqlQueueStatsManager statsManager;
 
     public void init() {
         for (int i = 0; i < maxThreads; i++) {
-            TbSqlBlockingQueue<E> queue = new TbSqlBlockingQueue<>(i, params, insertFunction);
+            MessagesStats queueStats = statsManager.createSqlQueueStats(params.getQueueName(), i);
+            TbSqlBlockingQueue<E> queue = new TbSqlBlockingQueue<>(i, params, processingFunction, queueStats);
             queues.add(queue);
             queue.init();
         }

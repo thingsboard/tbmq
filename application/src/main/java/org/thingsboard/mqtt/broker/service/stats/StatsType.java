@@ -28,6 +28,7 @@ public enum StatsType {
     APP_PROCESSOR("appProcessor"),
     DEVICE_PROCESSOR("deviceProcessor"),
     RUNNING_ACTORS("runningActors"),
+    SQL_QUEUE("sqlQueue"),
     ;
 
     private final String printName;

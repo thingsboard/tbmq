@@ -42,9 +42,8 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
 
     private final int id;
     private final TbSqlQueueParams params;
-    private final Consumer<List<E>> insertFunction;
-    // TODO: add stats
-//    private final MessagesStats stats;
+    private final Consumer<List<E>> processingFunction;
+    private final MessagesStats stats;
 
     @Override
     public void init() {
@@ -68,11 +67,11 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
                 }
                 queue.drainTo(elements, batchSize - 1);
                 boolean fullPack = elements.size() == batchSize;
-                log.debug("[{}] Going to save {} elements.", queueName, elements.size());
+                log.debug("[{}] Going to process {} elements.", queueName, elements.size());
                 List<E> elementsList = elements.stream().map(TbSqlQueueElement::getElement).collect(Collectors.toList());
-                insertFunction.accept(elementsList);
+                processingFunction.accept(elementsList);
                 elements.forEach(element -> element.getFuture().set(null));
-//                    stats.incrementSuccessful(elements.size());
+                stats.incrementSuccessful(elements.size());
                 if (!fullPack) {
                     long remainingDelay = maxDelay - (System.currentTimeMillis() - currentTs);
                     if (remainingDelay > 0) {
@@ -80,7 +79,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
                     }
                 }
             } catch (Exception e) {
-//                    stats.incrementFailed(elements.size());
+                stats.incrementFailed(elements.size());
                 elements.forEach(element -> element.getFuture().setException(e));
                 if (e instanceof InterruptedException) {
                     log.info("[{}] Queue polling was interrupted.", queueName);
@@ -104,7 +103,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
     public ListenableFuture<Void> add(E element) {
         SettableFuture<Void> future = SettableFuture.create();
         queue.add(new TbSqlQueueElement<>(future, element));
-//        stats.incrementTotal();
+        stats.incrementTotal();
         return future;
     }
 }

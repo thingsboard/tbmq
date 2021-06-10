@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
 @Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
-public class StatsManagerImpl implements StatsManager, ActorStatsManager {
+public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
@@ -157,6 +158,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager {
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
+    }
+
+
+    @Override
+    public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
+        log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}.", queueName, queueIndex);
+        MessagesStats stats = statsFactory.createMessagesStats(StatsType.SQL_QUEUE.getPrintName() + "." + queueName,
+                "queueIndex", String.valueOf(queueIndex));
+        managedStats.add(stats);
+        return stats;
     }
 
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")

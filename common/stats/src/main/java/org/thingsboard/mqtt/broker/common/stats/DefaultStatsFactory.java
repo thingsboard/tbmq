@@ -87,11 +87,13 @@ public class DefaultStatsFactory implements StatsFactory {
     }
 
     @Override
-    public MessagesStats createMessagesStats(String key) {
-        StatsCounter totalCounter = createStatsCounter(key, TOTAL_MSGS);
-        StatsCounter successfulCounter = createStatsCounter(key, SUCCESSFUL_MSGS);
-        StatsCounter failedCounter = createStatsCounter(key, FAILED_MSGS);
-        return new DefaultMessagesStats(key, totalCounter, successfulCounter, failedCounter);
+    public MessagesStats createMessagesStats(String key, String... tags) {
+        StatsCounter totalCounter = createStatsCounter(key, TOTAL_MSGS, tags);
+        StatsCounter successfulCounter = createStatsCounter(key, SUCCESSFUL_MSGS, tags);
+        StatsCounter failedCounter = createStatsCounter(key, FAILED_MSGS, tags);
+        String statsName = tags.length > 0 ?
+                key + "_" + String.join("_", tags) : key;
+        return new DefaultMessagesStats(statsName, totalCounter, successfulCounter, failedCounter);
     }
 
     @Override

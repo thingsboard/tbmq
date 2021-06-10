@@ -29,7 +29,7 @@ public interface StatsFactory {
 
     <T> T createGauge(String key, T stateObject, ToDoubleFunction<T> valueFunction, String... tags);
 
-    MessagesStats createMessagesStats(String key);
+    MessagesStats createMessagesStats(String key, String... tags);
 
     Timer createTimer(String key, String... tags);
 }
