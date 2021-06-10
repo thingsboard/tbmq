@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
-import org.thingsboard.mqtt.broker.service.cluster.ClusterEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -74,7 +73,6 @@ public class BrokerInitializer {
     private final PublishMsgConsumerService publishMsgConsumerService;
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
-    private final ClusterEventConsumer clusterEventConsumer;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(value = 1)
@@ -102,7 +100,6 @@ public class BrokerInitializer {
         publishMsgConsumerService.startConsuming();
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
-        clusterEventConsumer.startConsuming();
     }
 
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) {
