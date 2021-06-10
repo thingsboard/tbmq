@@ -85,8 +85,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public void log(int totalMessagesCount, PackProcessingResult result, boolean finalIterationForPack, long processingTimeMs) {
-        processingTimer.record(processingTimeMs, TimeUnit.MILLISECONDS);
+    public void log(int totalMessagesCount, PackProcessingResult result, boolean finalIterationForPack) {
         int pending = result.getPendingMap().size();
         int failed = result.getFailedMap().size();
         int success = totalMessagesCount - (pending + failed);
@@ -105,6 +104,11 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
             tmpTimeoutMsgCounter.add(pending);
             tmpFailedMsgCounter.add(failed);
         }
+    }
+
+    @Override
+    public void logMsgProcessingTime(long time) {
+        processingTimer.record(time, TimeUnit.MILLISECONDS);
     }
 
     @Override
