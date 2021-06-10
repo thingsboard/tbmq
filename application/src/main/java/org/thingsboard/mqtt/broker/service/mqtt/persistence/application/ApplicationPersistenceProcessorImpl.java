@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -68,6 +69,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil.getConsumerGroup;
+import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil.getTopic;
+
 @Service
 @Slf4j
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
@@ -91,6 +95,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
     @Autowired
     private ClientMqttActorManager clientMqttActorManager;
+    @Autowired
+    private ServiceInfoProvider serviceInfoProvider;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
@@ -175,7 +181,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void clearPersistedMsgs(String clientId) {
-        String applicationConsumerGroup = applicationPersistenceMsgQueueFactory.getConsumerGroup(clientId);
+        String applicationConsumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
         log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
         queueAdmin.deleteConsumerGroups(Collections.singleton(applicationConsumerGroup));
         log.debug("[{}] Clearing application session context.", clientId);
@@ -194,7 +200,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
-                .createConsumer(MqttApplicationClientUtil.createTopic(clientId), clientId);
+                .createConsumer(getTopic(clientId), getConsumerGroup(clientId), serviceInfoProvider.getServiceId() + "-" + clientId);
         consumer.assignPartition(0);
 
         Optional<Long> committedOffset = consumer.getCommittedOffset(consumer.getTopic(), 0);

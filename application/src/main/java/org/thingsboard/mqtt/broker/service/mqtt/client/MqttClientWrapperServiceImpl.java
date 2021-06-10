@@ -43,7 +43,7 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
 
     @Override
     public void deleteMqttClient(String clientId) {
-        String clientTopic = MqttApplicationClientUtil.createTopic(clientId);
+        String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
         queueAdmin.deleteTopic(clientTopic);
         mqttClientService.deleteMqttClient(clientId);
         clusterEventService.sendApplicationQueueDeletedEvent(clientId);

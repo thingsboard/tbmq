@@ -71,24 +71,19 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String clientId) {
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId) {
         // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("application-persisted-msg-consumer-" + clientId);
-        consumerBuilder.groupId(getConsumerGroup(clientId));
+        consumerBuilder.clientId("application-persisted-msg-consumer-" + consumerId);
+        consumerBuilder.groupId(consumerGroup);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();
-    }
-
-    @Override
-    public String getConsumerGroup(String clientId) {
-        return "application-persisted-msg-group-" + clientId;
     }
 }

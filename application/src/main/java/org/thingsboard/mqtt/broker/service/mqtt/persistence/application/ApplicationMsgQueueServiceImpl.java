@@ -43,7 +43,7 @@ public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueServic
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        String clientQueueTopic = MqttApplicationClientUtil.createTopic(clientId);
+        String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
         TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer = applicationProducers.computeIfAbsent(clientId,
                 id -> applicationPersistenceMsgQueueFactory.createProducer(clientQueueTopic, createProducerId(clientId)));
         applicationProducer.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
