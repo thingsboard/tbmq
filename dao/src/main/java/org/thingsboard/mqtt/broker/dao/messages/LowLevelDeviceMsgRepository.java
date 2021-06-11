@@ -25,4 +25,6 @@ public interface LowLevelDeviceMsgRepository {
     void updatePacketTypes(List<UpdatePacketTypeInfo> updatedPackets);
 
     void removePackets(List<DeletePacketInfo> packets);
+
+    void removePacketsByClientId(String clientId);
 }

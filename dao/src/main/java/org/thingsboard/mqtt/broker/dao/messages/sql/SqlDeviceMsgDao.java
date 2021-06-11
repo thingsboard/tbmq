@@ -85,7 +85,7 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     @Override
     public void removePersistedMessages(String clientId) {
         log.debug("Removing device publish messages, clientId - {}", clientId);
-        deviceMsgRepository.removeAllByClientId(clientId);
+        lowLevelDeviceMsgRepository.removePacketsByClientId(clientId);
     }
 
     @Override

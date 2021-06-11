@@ -57,6 +57,9 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
     private static final String DELETE_PACKET = "DELETE FROM " + DEVICE_PUBLISH_MSG + " WHERE " +
             CLIENT_ID + "=? AND " + PACKET_ID + "=?;";
 
+    private static final String DELETE_PACKETS_BY_CLIENT_ID = "DELETE FROM " + DEVICE_PUBLISH_MSG + " WHERE " +
+            CLIENT_ID + "=?;";
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -126,5 +129,14 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
         if (deletedPackets != packets.size()) {
             log.debug("Expected to delete {} packet, actually deleted {} packets", packets.size(), deletedPackets);
         }
+    }
+
+    @Override
+    public void removePacketsByClientId(String clientId) {
+        int removedPackets = jdbcTemplate.update(DELETE_PACKETS_BY_CLIENT_ID, ps -> {
+            ps.setString(1, clientId);
+        });
+
+        log.trace("Removed {} packets for client {}", removedPackets, clientId);
     }
 }

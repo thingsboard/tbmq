@@ -61,9 +61,6 @@ public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEnti
                                                            @Param("offset") int offset);
 
     @Transactional
-    void removeAllByClientId(String clientId);
-
-    @Transactional
     int removeAllByTimeLessThan(long earliestAcceptableTime);
 
     @Transactional
