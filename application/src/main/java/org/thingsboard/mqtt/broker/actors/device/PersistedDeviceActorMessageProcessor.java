@@ -77,6 +77,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 processPersistedMsg(persistedMessage);
             }
         } catch (Exception e) {
+            log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId, sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error: ", e);
             clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process persisted messages"));
         }
     }

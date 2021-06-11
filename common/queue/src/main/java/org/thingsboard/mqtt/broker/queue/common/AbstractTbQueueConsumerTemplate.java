@@ -139,7 +139,7 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
                 Thread.sleep(Math.max(TimeUnit.NANOSECONDS.toMillis(durationNanos - spentNanos), 1));
             } catch (InterruptedException e) {
                 if (!stopped) {
-                    log.error("Failed to wait", e);
+                    log.error("Failed to wait");
                 }
             }
         }

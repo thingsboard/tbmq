@@ -28,6 +28,7 @@ public class DevicePublishMsg {
     private String clientId;
     private String topic;
     private Long serialNumber;
+    // TODO: use time to check if DEVICE queue is not overloaded (check latency)
     private Long time;
     private Integer qos;
     private Integer packetId;

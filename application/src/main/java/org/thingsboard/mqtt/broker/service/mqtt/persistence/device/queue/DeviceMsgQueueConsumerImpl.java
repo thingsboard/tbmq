@@ -114,6 +114,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     while (!stopped) {
                         try {
                             // TODO: think if we need transaction here
+                            // TODO: think about case when client is 'clearing session' at this moment
                             serialNumberService.saveLastSerialNumbers(lastPacketIdAndSerialNumbers);
                             deviceMsgService.save(devicePublishMessages, ctx.detectMsgDuplication());
                             ctx.onSuccess();
