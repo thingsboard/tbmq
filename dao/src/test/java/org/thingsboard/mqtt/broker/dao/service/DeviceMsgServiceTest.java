@@ -52,31 +52,31 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     @Test
     public void testFindAllInRange() {
         Assert.assertTrue(deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 0, 5).isEmpty());
-        deviceMsgService.save(TEST_MESSAGES);
+        deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(TEST_MESSAGES, deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 0, 5));
     }
 
     @Test
     public void testFindSomeInRange_1() {
-        deviceMsgService.save(TEST_MESSAGES);
+        deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(TEST_MESSAGES.subList(0, 3), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 0, 3));
     }
 
     @Test
     public void testFindSomeInRange_2() {
-        deviceMsgService.save(TEST_MESSAGES);
+        deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(TEST_MESSAGES.subList(1, 3), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 1, 3));
     }
 
     @Test
     public void testFindSomeInRange_3() {
-        deviceMsgService.save(TEST_MESSAGES);
+        deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(TEST_MESSAGES.subList(3, 5), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 3, 5));
     }
 
     @Test
     public void testFindNoneInRange() {
-        deviceMsgService.save(TEST_MESSAGES);
+        deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(Collections.emptyList(), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 5, 10));
     }
 }

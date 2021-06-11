@@ -82,6 +82,35 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
     }
 
     @Override
+    public void insertOrUpdate(List<DevicePublishMsgEntity> entities) {
+        jdbcTemplate.batchUpdate(INSERT_OR_UPDATE, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                DevicePublishMsgEntity devicePublishMsgEntity = entities.get(i);
+                ps.setString(1, devicePublishMsgEntity.getClientId());
+                ps.setString(2, devicePublishMsgEntity.getTopic());
+                ps.setLong(3, devicePublishMsgEntity.getSerialNumber());
+                ps.setInt(4, devicePublishMsgEntity.getPacketId());
+                ps.setString(5, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(6, devicePublishMsgEntity.getTime());
+                ps.setInt(7, devicePublishMsgEntity.getQos());
+                ps.setBytes(8, devicePublishMsgEntity.getPayload());
+                ps.setString(9, devicePublishMsgEntity.getTopic());
+                ps.setInt(10, devicePublishMsgEntity.getPacketId());
+                ps.setString(11, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(12, devicePublishMsgEntity.getTime());
+                ps.setInt(13, devicePublishMsgEntity.getQos());
+                ps.setBytes(14, devicePublishMsgEntity.getPayload());
+            }
+
+            @Override
+            public int getBatchSize() {
+                return entities.size();
+            }
+        });
+    }
+
+    @Override
     @Transactional
     public void updatePacketTypes(List<UpdatePacketTypeInfo> packets) {
         int[] result = jdbcTemplate.batchUpdate(UPDATE_PACKET_TYPE, new BatchPreparedStatementSetter() {

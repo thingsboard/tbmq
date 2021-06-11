@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import java.util.List;
 
 public interface DeviceMsgDao {
-    void save(List<DevicePublishMsg> devicePublishMessages);
+    void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
 
     List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit);
 

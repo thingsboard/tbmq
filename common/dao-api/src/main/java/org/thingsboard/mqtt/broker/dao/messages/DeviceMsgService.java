@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import java.util.List;
 
 public interface DeviceMsgService {
-    void save(List<DevicePublishMsg> devicePublishMessages);
+    void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
 
     List<DevicePublishMsg> findPersistedMessages(String clientId);
 

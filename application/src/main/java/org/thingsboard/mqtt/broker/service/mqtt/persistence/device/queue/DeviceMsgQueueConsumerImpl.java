@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -68,6 +69,8 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private int consumersCount;
     @Value("${queue.device-persisted-msg.poll-interval}")
     private long pollDuration;
+    @Value("${queue.device-persisted-msg.detect-msg-duplication:false}")
+    private boolean detectMsgDuplication;
 
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
     private final DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
@@ -107,13 +110,16 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             clientId -> getPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, clientId));
 
                     DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
-                    DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages);
+                    DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages, detectMsgDuplication);
                     while (!stopped) {
                         try {
                             // TODO: think if we need transaction here
                             serialNumberService.saveLastSerialNumbers(lastPacketIdAndSerialNumbers);
-                            deviceMsgService.save(devicePublishMessages);
+                            deviceMsgService.save(devicePublishMessages, ctx.detectMsgDuplication());
                             ctx.onSuccess();
+                        } catch (DuplicateKeyException e) {
+                            log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());
+                            ctx.disableMsgDuplicationDetection();
                         } catch (Exception e) {
                             log.warn("[{}] Failed to save device messages. Exception - {}, reason - {}.", consumerId, e.getClass().getSimpleName(), e.getMessage());
                         }

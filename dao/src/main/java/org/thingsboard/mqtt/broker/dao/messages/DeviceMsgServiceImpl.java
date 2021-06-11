@@ -35,9 +35,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private final DeviceMsgDao deviceMsgDao;
 
     @Override
-    public void save(List<DevicePublishMsg> devicePublishMessages) {
-        log.debug("Saving {} device publish messages.", devicePublishMessages.size());
-        deviceMsgDao.save(devicePublishMessages);
+    public void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
+        log.debug("Saving {} device publish messages, failOnConflict - {}.", devicePublishMessages.size(), failOnConflict);
+        deviceMsgDao.save(devicePublishMessages, failOnConflict);
     }
 
     @Override

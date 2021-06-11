@@ -94,6 +94,8 @@ queue:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
+    # TODO: change to 'false' by default (or remove entirely)
+    detect-msg-duplication: "${TB_DEVICE_PERSISTED_MSG_DETECT_MSG_DUPLICATION:true}"
     ack-strategy:
       type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only

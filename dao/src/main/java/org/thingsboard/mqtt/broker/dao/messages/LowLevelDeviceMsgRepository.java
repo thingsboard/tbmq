@@ -22,6 +22,8 @@ import java.util.List;
 public interface LowLevelDeviceMsgRepository {
     void insert(List<DevicePublishMsgEntity> entities);
 
+    void insertOrUpdate(List<DevicePublishMsgEntity> entities);
+
     void updatePacketTypes(List<UpdatePacketTypeInfo> updatedPackets);
 
     void removePackets(List<DeletePacketInfo> packets);

@@ -60,10 +60,14 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     }
 
     @Override
-    public void save(List<DevicePublishMsg> devicePublishMessages) {
-        log.trace("Saving device publish messages: {}", devicePublishMessages);
+    public void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
+        log.trace("Saving device publish messages: failOnConflict - {}, msgs - {}", failOnConflict, devicePublishMessages);
         List<DevicePublishMsgEntity> entities = devicePublishMessages.stream().map(DevicePublishMsgEntity::new).collect(Collectors.toList());
-        lowLevelDeviceMsgRepository.insert(entities);
+        if (failOnConflict) {
+            lowLevelDeviceMsgRepository.insert(entities);
+        } else {
+            lowLevelDeviceMsgRepository.insertOrUpdate(entities);
+        }
     }
 
     @Override
