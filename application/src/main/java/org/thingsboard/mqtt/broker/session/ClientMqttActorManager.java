@@ -30,5 +30,5 @@ public interface ClientMqttActorManager {
 
     void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);
 
-    void notifyConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg);
+    void notifyConnectionAccepted(String clientId, UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg);
 }

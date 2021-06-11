@@ -33,12 +33,11 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.MqttClientWrapperService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
@@ -65,7 +64,6 @@ public class ConnectServiceImpl implements ConnectService {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MqttClientWrapperService mqttClientService;
     private final ClientSessionEventService clientSessionEventService;
-    private final ClientSessionReader clientSessionReader;
     private final KeepAliveService keepAliveService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final LastWillService lastWillService;
@@ -88,15 +86,12 @@ public class ConnectServiceImpl implements ConnectService {
 
         keepAliveService.registerSession(clientId, sessionId, msg.getKeepAliveTimeSeconds());
 
-        ClientSession prevSession = clientSessionReader.getClientSession(clientId);
-        boolean isPrevSessionPersistent = prevSession != null && prevSession.getSessionInfo().isPersistent();
-
-        ListenableFuture<Boolean> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
+        ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
             @Override
-            public void onSuccess(Boolean successfulConnection) {
-                if (successfulConnection) {
-                    clientMqttActorManager.notifyConnectionAccepted(clientId, sessionId, isPrevSessionPersistent, msg.getLastWillMsg());
+            public void onSuccess(ConnectionResponse connectionResponse) {
+                if (connectionResponse.isSuccess()) {
+                    clientMqttActorManager.notifyConnectionAccepted(clientId, sessionId, connectionResponse.isWasPrevSessionPersistent(), msg.getLastWillMsg());
                 } else {
                     refuseConnection(sessionCtx, null);
                 }
@@ -120,14 +115,14 @@ public class ConnectServiceImpl implements ConnectService {
         }
 
         boolean isCurrentSessionPersistent = sessionInfo.isPersistent();
-        if (connectionAcceptedMsg.isPrevSessionPersistent() && !isCurrentSessionPersistent) {
+        if (connectionAcceptedMsg.wasPrevSessionPersistent() && !isCurrentSessionPersistent) {
             log.debug("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
             clientSubscriptionService.clearSubscriptions(clientInfo.getClientId());
             msgPersistenceManager.clearPersistedMessages(clientInfo);
         }
 
         sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED,
-                connectionAcceptedMsg.isPrevSessionPersistent() && isCurrentSessionPersistent));
+                connectionAcceptedMsg.wasPrevSessionPersistent() && isCurrentSessionPersistent));
         log.info("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);

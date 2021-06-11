@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -95,7 +96,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public ListenableFuture<Boolean> requestConnection(SessionInfo sessionInfo) {
+    public ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo) {
         if (tickSize.get() > maxPendingRequests) {
             return Futures.immediateFailedFuture(new RuntimeException("Cannot send CONNECTION_REQUEST. Pending request map is full!"));
         }
@@ -114,11 +115,11 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
     }
 
-    private ListenableFuture<Boolean> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto, boolean isAwaitingResponse) {
+    private ListenableFuture<ConnectionResponse> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto, boolean isAwaitingResponse) {
         UUID requestId = UUID.randomUUID();
         TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);
 
-        SettableFuture<Boolean> future = SettableFuture.create();
+        SettableFuture<ConnectionResponse> future = SettableFuture.create();
         if (isAwaitingResponse) {
             EventFuture eventFuture = new EventFuture(tickTs.get() + maxRequestTimeout, future);
             pendingRequests.putIfAbsent(requestId, eventFuture);
@@ -185,8 +186,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         if (eventFuture == null) {
             log.debug("[{}] Invalid or stale request.", requestId);
         } else {
-            boolean success = eventResponseMsg.getValue().getSuccess();
-            eventFuture.future.set(success);
+            ConnectionResponse connectionResponse = ProtoConverter.toConnectionResponse(eventResponseMsg.getValue());
+            eventFuture.future.set(connectionResponse);
         }
     }
 
@@ -254,6 +255,6 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     @AllArgsConstructor
     private static class EventFuture {
         private final long expTime;
-        private final SettableFuture<Boolean> future;
+        private final SettableFuture<ConnectionResponse> future;
     }
 }

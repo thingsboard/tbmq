@@ -15,16 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-import java.util.UUID;
-
-public interface ClientSessionEventService {
-    ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo);
-
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId);
-
-    void requestSessionCleanup(SessionInfo sessionInfo);
+@Getter
+@Builder
+@AllArgsConstructor
+public class ConnectionResponse {
+    private final boolean success;
+    private final boolean wasPrevSessionPersistent;
 }

@@ -86,12 +86,12 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void notifyConnectionAccepted(String clientId, UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+    public void notifyConnectionAccepted(String clientId, UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process connection accepted, sessionId - {}.", clientId, sessionId);
         } else {
-            clientActorRef.tell(new ConnectionAcceptedMsg(sessionId, isPrevSessionPersistent, lastWillMsg));
+            clientActorRef.tell(new ConnectionAcceptedMsg(sessionId, wasPrevSessionPersistent, lastWillMsg));
         }
     }
 }

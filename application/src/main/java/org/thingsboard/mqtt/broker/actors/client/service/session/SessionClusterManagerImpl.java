@@ -89,7 +89,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         if (sessionId.equals(currentlyConnectedSessionId)) {
             log.warn("[{}][{}] Got CONNECT request from already connected session.", clientId, currentlyConnectedSessionId);
-            sendEventResponse(clientId, requestInfo, false);
+            sendEventResponse(clientId, requestInfo, false, false);
             return;
         }
 
@@ -100,7 +100,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             finishDisconnect(currentlyConnectedSession);
         }
 
-        updateClientSession(sessionInfo, requestInfo);
+        boolean wasPrevSessionPersistent = currentlyConnectedSession != null && currentlyConnectedSession.getSessionInfo().isPersistent();
+        updateClientSession(sessionInfo, requestInfo, wasPrevSessionPersistent);
     }
 
     @Override
@@ -149,7 +150,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
-    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo) {
+    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, boolean wasPrevSessionPersistent) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
         log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
@@ -164,12 +165,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 .build();
         clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession);
 
-        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true);
+        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, wasPrevSessionPersistent);
     }
 
-    private void sendEventResponse(String clientId, ConnectionRequestInfo connectionRequestInfo, boolean successfulConnect) {
+    private void sendEventResponse(String clientId, ConnectionRequestInfo connectionRequestInfo, boolean successfulConnect, boolean wasPrevSessionPersistent) {
         QueueProtos.ClientSessionEventResponseProto response = QueueProtos.ClientSessionEventResponseProto.newBuilder()
-                .setSuccess(successfulConnect).build();
+                .setSuccess(successfulConnect)
+                .setWasPrevSessionPersistent(wasPrevSessionPersistent)
+                .build();
         TbQueueMsgHeaders headers = createResponseHeaders(connectionRequestInfo.getRequestId());
         eventResponseProducer.send(connectionRequestInfo.getResponseTopic(), new TbProtoQueueMsg<>(clientId, response, headers), new TbQueueCallback() {
             @Override

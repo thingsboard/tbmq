@@ -60,6 +60,7 @@ message ClientSessionEventProto {
 
 message ClientSessionEventResponseProto {
   bool success = 1;
+  bool wasPrevSessionPersistent = 2;
 }
 
 message ClientSubscriptionsProto {

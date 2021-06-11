@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -171,6 +172,13 @@ public class ProtoConverter {
                 .topic(persistedDevicePublishMsgProto.getTopicName())
                 .clientId(persistedDevicePublishMsgProto.getClientId())
                 .packetType(PersistedPacketType.valueOf(persistedDevicePublishMsgProto.getPacketType()))
+                .build();
+    }
+
+    public static ConnectionResponse toConnectionResponse(QueueProtos.ClientSessionEventResponseProto clientSessionEventResponseProto) {
+        return ConnectionResponse.builder()
+                .success(clientSessionEventResponseProto.getSuccess())
+                .wasPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
                 .build();
     }
 }
