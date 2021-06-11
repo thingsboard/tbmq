@@ -42,9 +42,11 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
 
     private final TbQueueAdmin admin;
     private final Map<String, String> topicConfigs;
+    private final boolean createTopicIfNotExists;
 
     @Builder
-    private TbKafkaProducerTemplate(Properties properties, String defaultTopic, String clientId, TbQueueAdmin admin, Map<String, String> topicConfigs) {
+    private TbKafkaProducerTemplate(Properties properties, String defaultTopic, String clientId, TbQueueAdmin admin,
+                                    Boolean createTopicIfNotExists, Map<String, String> topicConfigs) {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         if (!StringUtils.isEmpty(clientId)) {
@@ -54,6 +56,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
         this.admin = admin;
         this.defaultTopic = defaultTopic;
         this.topicConfigs = topicConfigs;
+        this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
     }
 
     @Override
@@ -71,7 +74,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
 
     @Override
     public void send(String topic, T msg, TbQueueCallback callback) {
-        if (admin != null && topicConfigs != null) {
+        if (admin != null && topicConfigs != null && createTopicIfNotExists) {
             admin.createTopicIfNotExists(topic, topicConfigs);
         }
 

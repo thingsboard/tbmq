@@ -52,6 +52,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final String groupId;
 
     private final long closeTimeoutMs;
+    private final boolean createTopicIfNotExists;
 
 
     /*
@@ -64,6 +65,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
                                     boolean autoCommit, int autoCommitIntervalMs,
                                     long closeTimeoutMs,
                                     TbQueueAdmin admin, TbKafkaConsumerStatsService statsService,
+                                    Boolean createTopicIfNotExists,
                                     Map<String, String> topicConfigs) {
         super(topic);
         properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
@@ -87,23 +89,30 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.consumer = new KafkaConsumer<>(properties);
         this.decoder = decoder;
         this.topicConfigs = topicConfigs;
+        this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
     }
 
     @Override
     protected void doSubscribe(String topic) {
-        admin.createTopicIfNotExists(topic, topicConfigs);
+        if (createTopicIfNotExists) {
+            admin.createTopicIfNotExists(topic, topicConfigs);
+        }
         consumer.subscribe(Collections.singletonList(topic));
     }
 
     @Override
     protected void doAssignPartition(String topic, int partition) {
-        admin.createTopicIfNotExists(topic, topicConfigs);
+        if (createTopicIfNotExists) {
+            admin.createTopicIfNotExists(topic, topicConfigs);
+        }
         consumer.assign(Collections.singletonList(new TopicPartition(topic, partition)));
     }
 
     @Override
     protected void doAssignAllPartitions(String topic) {
-        admin.createTopicIfNotExists(topic, topicConfigs);
+        if (createTopicIfNotExists) {
+            admin.createTopicIfNotExists(topic, topicConfigs);
+        }
         int numberOfPartitions = admin.getNumberOfPartitions(topic);
         List<TopicPartition> allTopicPartitions = new ArrayList<>();
         for (int i = 0; i < numberOfPartitions; i++) {
