@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client;
 
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 
@@ -24,7 +25,7 @@ import java.util.Optional;
 public interface MqttClientWrapperService {
     MqttClient saveMqttClient(MqttClient mqttClient);
 
-    void deleteMqttClient(String clientId);
+    void deleteMqttClient(String clientId) throws ThingsboardException;
 
     Optional<MqttClient> getMqttClient(String clientId);
 

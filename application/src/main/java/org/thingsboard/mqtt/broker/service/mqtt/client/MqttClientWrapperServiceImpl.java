@@ -18,11 +18,16 @@ package org.thingsboard.mqtt.broker.service.mqtt.client;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttClient;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 
 import java.util.Optional;
@@ -32,6 +37,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     private final MqttClientService mqttClientService;
+    private final ClientSessionReader clientSessionReader;
     private final TbQueueAdmin queueAdmin;
 
     @Override
@@ -40,9 +46,21 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     }
 
     @Override
-    public void deleteMqttClient(String clientId) {
-        String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
-        queueAdmin.deleteTopic(clientTopic);
+    public void deleteMqttClient(String clientId) throws ThingsboardException {
+        MqttClient mqttClient = mqttClientService.getMqttClient(clientId).orElse(null);
+        if (mqttClient == null) {
+            log.debug("[{}] No client found for deletion.", clientId);
+            return;
+        }
+        if (mqttClient.getType() == ClientType.APPLICATION) {
+            ClientSession clientSession = clientSessionReader.getClientSession(clientId);
+            if (clientSession != null && clientSession.isConnected()) {
+                throw new ThingsboardException("Cannot delete APPLICATION client for active session", ThingsboardErrorCode.PERMISSION_DENIED);
+            }
+            String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
+            queueAdmin.deleteTopic(clientTopic);
+        }
+
         mqttClientService.deleteMqttClient(clientId);
     }
 
