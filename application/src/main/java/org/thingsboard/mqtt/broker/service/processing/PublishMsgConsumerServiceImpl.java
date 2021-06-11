@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService {
 
+    // TODO: remove all cachedThreadPool
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
     private volatile boolean stopped = false;
 
