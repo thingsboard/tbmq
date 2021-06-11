@@ -277,15 +277,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
                     if (decision.isCommit()) {
                         ctx.clear();
+                        log.trace("[{}] Committing all read messages.", clientId);
+                        consumer.commit();
                         break;
                     } else {
                         submitStrategy.update(decision.getReprocessMap());
                     }
-                }
-
-                if (isClientConnected(sessionId, clientState)) {
-                    log.trace("[{}] Committing all read messages.", clientId);
-                    consumer.commit();
                 }
             } catch (Exception e) {
                 // TODO: think if we need to drop session in this case
