@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.messages.DeletePacketInfo;
 import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
 import org.thingsboard.mqtt.broker.dao.messages.LowLevelDeviceMsgRepository;
-import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
 import java.sql.PreparedStatement;
@@ -36,29 +35,25 @@ import java.util.stream.IntStream;
 @Repository
 @Transactional
 public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgRepository {
-    private static final String DEVICE_PUBLISH_MSG = ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
-    private static final String CLIENT_ID = ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY;
-    private static final String TOPIC = ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY;
-    private static final String SERIAL_NUMBER = ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;
-    private static final String PACKET_ID = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY;
-    private static final String PACKET_TYPE = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY;
-    private static final String TIME = ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY;
-    private static final String QOS = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY;
-    private static final String PAYLOAD = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY;
 
-    private static final String INSERT = "INSERT INTO " + DEVICE_PUBLISH_MSG + " (" +
-            CLIENT_ID + ", " + TOPIC + ", " + SERIAL_NUMBER + ", " + PACKET_ID + ", " +
-            PACKET_TYPE + ", " + TIME + ", " + QOS + ", " + PAYLOAD + ") " +
+    private static final String INSERT_OR_UPDATE = "INSERT INTO device_publish_msg " +
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload)" +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+            "ON CONFLICT (client_id, serial_number) DO UPDATE SET " +
+            "topic=?, packet_id=?, packet_type=?, time=?, qos=?, payload=?;";
+
+    private static final String INSERT = "INSERT INTO device_publish_msg " +
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload) "+
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 
-    private static final String UPDATE_PACKET_TYPE = "UPDATE " + DEVICE_PUBLISH_MSG + " SET " +
-            PACKET_TYPE + "=?  WHERE " + CLIENT_ID + "=? AND " + PACKET_ID + "=?;";
+    private static final String UPDATE_PACKET_TYPE = "UPDATE device_publish_msg SET packet_type=? " +
+            "WHERE client_id=? AND packet_id=?;";
 
-    private static final String DELETE_PACKET = "DELETE FROM " + DEVICE_PUBLISH_MSG + " WHERE " +
-            CLIENT_ID + "=? AND " + PACKET_ID + "=?;";
+    private static final String DELETE_PACKET = "DELETE FROM device_publish_msg " +
+            "WHERE client_id=? AND packet_id=?;";
 
-    private static final String DELETE_PACKETS_BY_CLIENT_ID = "DELETE FROM " + DEVICE_PUBLISH_MSG + " WHERE " +
-            CLIENT_ID + "=?;";
+    private static final String DELETE_PACKETS_BY_CLIENT_ID = "DELETE FROM device_publish_msg " +
+            "WHERE client_id=?;";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
