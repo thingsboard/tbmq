@@ -52,12 +52,17 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopicIfNotExists(String topic, Map<String, String> topicConfigs) {
-        if (topics.contains(topic)) {
-            return;
+        // TODO: rethink this logic to work when multiple nodes have access to same topics
+        if (!topics.contains(topic)) {
+            createTopic(topic, topicConfigs);
         }
+    }
+
+    @Override
+    public void createTopic(String topic, Map<String, String> topicConfigs) {
+        log.debug("[{}] Creating topic", topic);
+        log.trace("Topic configs - {}.", topicConfigs);
         try {
-            log.debug("[{}] Creating topic", topic);
-            log.trace("Topic configs - {}.", topicConfigs);
             NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(topicConfigs), extractReplicationFactor(topicConfigs)).configs(topicConfigs);
             client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
             topics.add(topic);

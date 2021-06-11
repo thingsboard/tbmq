@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
@@ -39,18 +40,25 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     private final MqttClientService mqttClientService;
     private final ClientSessionReader clientSessionReader;
     private final TbQueueAdmin queueAdmin;
+    private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
 
     @Override
     public MqttClient saveMqttClient(MqttClient mqttClient) {
-        return mqttClientService.saveMqttClient(mqttClient);
+        MqttClient savedClient = mqttClientService.saveMqttClient(mqttClient);
+
+        if (mqttClient.getType() == ClientType.APPLICATION) {
+            String clientTopic = MqttApplicationClientUtil.getTopic(mqttClient.getClientId());
+            queueAdmin.createTopic(clientTopic, applicationPersistenceMsgQueueFactory.getTopicConfigs());
+        }
+
+        return savedClient;
     }
 
     @Override
     public void deleteMqttClient(String clientId) throws ThingsboardException {
         MqttClient mqttClient = mqttClientService.getMqttClient(clientId).orElse(null);
         if (mqttClient == null) {
-            log.debug("[{}] No client found for deletion.", clientId);
-            return;
+            throw new ThingsboardException("Cannot find MQTT client", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         if (mqttClient.getType() == ClientType.APPLICATION) {
             ClientSession clientSession = clientSessionReader.getClientSession(clientId);

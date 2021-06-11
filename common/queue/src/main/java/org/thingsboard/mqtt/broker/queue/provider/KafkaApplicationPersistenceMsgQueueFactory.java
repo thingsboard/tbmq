@@ -44,7 +44,6 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
-    private final TbQueueAdmin queueAdmin;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
     private Map<String, String> topicConfigs;
@@ -64,8 +63,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("application-persisted-msg-producer-" + serviceId);
-        producerBuilder.topicConfigs(topicConfigs);
-        producerBuilder.admin(queueAdmin);
+        producerBuilder.createTopicIfNotExists(false);
         return producerBuilder.build();
     }
 
@@ -75,14 +73,18 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
-        consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("application-persisted-msg-consumer-" + consumerId);
         consumerBuilder.groupId(consumerGroup);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
-        consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.createTopicIfNotExists(false);
         return consumerBuilder.build();
+    }
+
+    @Override
+    public Map<String, String> getTopicConfigs() {
+        return topicConfigs;
     }
 }

@@ -22,6 +22,8 @@ public interface TbQueueAdmin {
 
     void createTopicIfNotExists(String topic, Map<String, String> topicConfigs);
 
+    void createTopic(String topic, Map<String, String> topicConfigs);
+
     void deleteTopic(String topic);
 
     void deleteConsumerGroups(Collection<String> consumerGroups);

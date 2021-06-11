@@ -20,8 +20,12 @@ import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
+import java.util.Map;
+
 public interface ApplicationPersistenceMsgQueueFactory {
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId);
 
     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId);
+
+    Map<String, String> getTopicConfigs();
 }
