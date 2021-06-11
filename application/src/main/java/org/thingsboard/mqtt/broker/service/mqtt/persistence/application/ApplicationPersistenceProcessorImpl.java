@@ -213,19 +213,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
                 .collect(Collectors.toList());
 
-        boolean isFirstMsgCommitted = false;
         while (isClientConnected(sessionId, clientState)) {
             try {
-                // TODO: remove auto-creation of topics (create topic when creating MQTT Client)
                 List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
                 if (publishProtoMessages.isEmpty() && persistedPubRelMessages.isEmpty()) {
                     continue;
-                }
-                if (!isFirstMsgCommitted) {
-                    // need to commit first message in case of first batch processing fails so that we don't miss those messages
-                    TbProtoQueueMsg<QueueProtos.PublishMsgProto> firstReceivedMsg = publishProtoMessages.get(0);
-                    consumer.commit(0, firstReceivedMsg.getOffset());
-                    isFirstMsgCommitted = true;
                 }
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
