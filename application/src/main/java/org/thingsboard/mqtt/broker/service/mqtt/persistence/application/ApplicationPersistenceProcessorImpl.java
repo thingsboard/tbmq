@@ -150,12 +150,16 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         String clientId = clientState.getClientId();
         log.trace("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer;
+        consumer = initConsumer(clientId);
         Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
             try {
-                processPersistedMessages(clientSessionCtx, clientState);
+                processPersistedMessages(consumer, clientSessionCtx, clientState);
             } catch (Exception e) {
                 log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
                 clientMqttActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to start processing persisted messages"));
+            } finally {
+                consumer.unsubscribeAndClose();
             }
         });
         processingFutures.put(clientId, future);
@@ -188,7 +192,26 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         unacknowledgedPersistedMsgCtxService.clearContext(clientId);
     }
 
-    private void processPersistedMessages(ClientSessionCtx clientSessionCtx, ClientActorStateInfo clientState) {
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> initConsumer(String clientId) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
+                .createConsumer(getTopic(clientId), getConsumerGroup(clientId), serviceInfoProvider.getServiceId() + "-" + clientId);
+        try {
+            consumer.assignPartition(0);
+
+            Optional<Long> committedOffset = consumer.getCommittedOffset(consumer.getTopic(), 0);
+            if (committedOffset.isEmpty()) {
+                long endOffset = consumer.getEndOffset(consumer.getTopic(), 0);
+                consumer.commit(0, endOffset);
+            }
+            return consumer;
+        } catch (Exception e) {
+            consumer.unsubscribeAndClose();
+            throw e;
+        }
+    }
+
+    private void processPersistedMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer,
+                                          ClientSessionCtx clientSessionCtx, ClientActorStateInfo clientState) {
         String clientId = clientSessionCtx.getClientId();
         UUID sessionId = clientSessionCtx.getSessionId();
 
@@ -199,15 +222,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // TODO: make consistent with logic for DEVICES
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
-                .createConsumer(getTopic(clientId), getConsumerGroup(clientId), serviceInfoProvider.getServiceId() + "-" + clientId);
-        consumer.assignPartition(0);
-
-        Optional<Long> committedOffset = consumer.getCommittedOffset(consumer.getTopic(), 0);
-        if (committedOffset.isEmpty()) {
-            long endOffset = consumer.getEndOffset(consumer.getTopic(), 0);
-            consumer.commit(0, endOffset);
-        }
 
         Collection<PersistedPubRelMsg> persistedPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
                 .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
@@ -296,8 +310,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 }
             }
         }
-
-        consumer.unsubscribeAndClose();
         log.info("[{}] Application persisted messages consumer stopped.", clientId);
 
     }
