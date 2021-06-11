@@ -94,13 +94,18 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientActorStateInfo actorState) {
+    public void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
+            if (!wasPrevSessionPersistent) {
+                // TODO: it's still possible to get old msgs if DEVICE queue is overloaded
+                // in case some messages got persisted after session clear
+                devicePersistenceProcessor.clearPersistedMsgs(clientSessionCtx.getClientId());
+            }
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
         }
     }

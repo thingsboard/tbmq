@@ -128,7 +128,7 @@ public class ConnectServiceImpl implements ConnectService {
         clientSessionCtxService.registerSession(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.startProcessingPersistedMessages(actorState);
+            msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.wasPrevSessionPersistent());
         }
 
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg));
