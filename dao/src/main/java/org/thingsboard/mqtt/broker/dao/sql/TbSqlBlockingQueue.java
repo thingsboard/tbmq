@@ -83,6 +83,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
                 elements.forEach(element -> element.getFuture().setException(e));
                 if (e instanceof InterruptedException) {
                     log.info("[{}] Queue polling was interrupted.", queueName);
+                    break;
                 } else {
                     log.error("[{}] Failed to save {} elements.", queueName, elements, e);
                 }
