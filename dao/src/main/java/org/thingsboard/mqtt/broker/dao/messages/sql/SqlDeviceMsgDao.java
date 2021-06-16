@@ -106,6 +106,7 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     private void initDeletePacketQueue() {
         Function<DeletePacketInfo, Integer> deleteQueueIndexHashFunction = deletePacketInfo -> deletePacketInfo.getClientId().hashCode();
+        // TODO: made this params dynamic (increase batch size for higher load)
         TbSqlQueueParams deletePacketQueueParams = TbSqlQueueParams.builder()
                 .queueName("DeletePacketQueue")
                 .batchSize(deletePacketQueueConfiguration.getBatchSize())

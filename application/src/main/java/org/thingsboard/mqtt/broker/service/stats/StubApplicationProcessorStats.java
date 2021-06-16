@@ -45,4 +45,14 @@ public class StubApplicationProcessorStats implements ApplicationProcessorStats 
     public void reset() {
 
     }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public void disable() {
+
+    }
 }

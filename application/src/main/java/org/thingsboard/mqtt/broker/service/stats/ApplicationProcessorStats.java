@@ -23,9 +23,14 @@ import java.util.List;
 public interface ApplicationProcessorStats {
     String getClientId();
 
+    // TODO: separate log from all 'admin' operations
     void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
 
     List<StatsCounter> getStatsCounters();
 
     void reset();
+
+    boolean isActive();
+
+    void disable();
 }

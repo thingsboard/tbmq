@@ -148,7 +148,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        log.trace("[{}] Starting persisted messages processing.", clientId);
+        log.debug("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer;
         consumer = initConsumer(clientId);
@@ -167,7 +167,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
-        log.trace("[{}] Stopping persisted messages processing.", clientId);
+        log.debug("[{}] Stopping persisted messages processing.", clientId);
         Future<?> processingFuture = processingFutures.remove(clientId);
         if (processingFuture == null) {
             log.warn("[{}] Cannot find processing future for client.", clientId);
@@ -310,7 +310,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 }
             }
         }
-        log.info("[{}] Application persisted messages consumer stopped.", clientId);
+        log.debug("[{}] Application persisted messages consumer stopped.", clientId);
 
     }
 
@@ -325,7 +325,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     public void destroy() {
         processingFutures.forEach((clientId, future) -> {
             future.cancel(true);
-            log.debug("[{}] Saving processing context before shutting down.", clientId);
+            log.info("[{}] Saving processing context before shutting down.", clientId);
             ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
             unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
         });

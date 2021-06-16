@@ -35,6 +35,8 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_TI
 
 @Slf4j
 public class DefaultApplicationProcessorStats implements ApplicationProcessorStats {
+    private volatile boolean active = true;
+
     private final String clientId;
 
     private final List<StatsCounter> counters = new ArrayList<>();
@@ -107,5 +109,15 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
     @Override
     public void reset() {
         counters.forEach(StatsCounter::clear);
+    }
+
+    @Override
+    public boolean isActive() {
+        return active;
+    }
+
+    @Override
+    public void disable() {
+        this.active = false;
     }
 }

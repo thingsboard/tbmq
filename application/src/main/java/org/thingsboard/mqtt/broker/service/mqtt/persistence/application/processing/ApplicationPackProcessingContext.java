@@ -80,7 +80,7 @@ public class ApplicationPackProcessingContext {
             processingTimeoutLatch.countDown();
             return msg.getPacketOffset();
         } else {
-            log.info("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
+            log.warn("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
             return null;
         }
     }
@@ -90,7 +90,7 @@ public class ApplicationPackProcessingContext {
         if (msg != null) {
             processingTimeoutLatch.countDown();
         } else {
-            log.info("Couldn't find packet {} to complete delivery.", packetId);
+            log.warn("Couldn't find packet {} to complete delivery.", packetId);
         }
     }
 

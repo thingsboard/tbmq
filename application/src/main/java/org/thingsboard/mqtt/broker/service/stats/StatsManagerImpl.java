@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,15 +92,21 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public ApplicationProcessorStats createApplicationProcessorStats(String clientId) {
         log.trace("Creating ApplicationProcessorStats, clientId - {}.", clientId);
-        ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
-        managedApplicationProcessorStats.put(clientId, stats);
-        return stats;
+        if (applicationProcessorStatsEnabled) {
+            ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
+            managedApplicationProcessorStats.put(clientId, stats);
+            return stats;
+        } else {
+            return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
+        }
     }
 
     @Override
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
-        managedApplicationProcessorStats.remove(clientId);
+        ApplicationProcessorStats stats = managedApplicationProcessorStats.get(clientId);
+        assert stats != null && stats.isActive();
+        stats.disable();
     }
 
     @Override
@@ -172,6 +179,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
     public void printStats() {
+        log.info("----------------------------------------------------------------");
         for (MessagesStats stats : managedStats) {
             String statsStr = StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
                     StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
@@ -198,12 +206,17 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
 
         if (applicationProcessorStatsEnabled) {
-            for (ApplicationProcessorStats stats : managedApplicationProcessorStats.values()) {
+            for (ApplicationProcessorStats stats : new ArrayList<>(managedApplicationProcessorStats.values())) {
                 String statsStr = stats.getStatsCounters().stream()
                         .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                         .collect(Collectors.joining(" "));
                 log.info("[{}][{}] Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), statsStr);
-                stats.reset();
+                if (!stats.isActive()) {
+                    log.trace("[{}] Clearing inactive APPLICATION stats", stats.getClientId());
+                    managedApplicationProcessorStats.computeIfPresent(stats.getClientId(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
+                } else {
+                    stats.reset();
+                }
             }
         }
 
