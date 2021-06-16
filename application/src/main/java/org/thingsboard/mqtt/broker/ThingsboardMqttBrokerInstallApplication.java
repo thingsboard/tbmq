@@ -23,6 +23,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.thingsboard.mqtt.broker.install.ThingsboardMqttBrokerInstallService;
 
 import java.util.Arrays;
+import java.util.Properties;
 
 @Slf4j
 @SpringBootConfiguration
@@ -39,6 +40,9 @@ public class ThingsboardMqttBrokerInstallApplication {
         try {
             SpringApplication application = new SpringApplication(ThingsboardMqttBrokerInstallApplication.class);
             application.setAdditionalProfiles("install");
+            Properties properties = new Properties();
+            properties.put("spring.main.web-application-type", "none");
+            application.setDefaultProperties(properties);
             ConfigurableApplicationContext context = application.run(updateArguments(args));
             context.getBean(ThingsboardMqttBrokerInstallService.class).performInstall();
         } catch (Exception e) {
