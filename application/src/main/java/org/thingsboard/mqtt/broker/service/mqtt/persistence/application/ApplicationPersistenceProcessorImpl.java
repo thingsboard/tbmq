@@ -223,44 +223,32 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
 
-        Collection<PersistedPubRelMsg> persistedPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
+        Collection<PersistedPubRelMsg> pendingPubRelMessages = persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
                 .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
                 .collect(Collectors.toList());
 
         while (isClientConnected(sessionId, clientState)) {
             try {
                 List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
-                if (publishProtoMessages.isEmpty() && persistedPubRelMessages.isEmpty()) {
+                if (publishProtoMessages.isEmpty() && pendingPubRelMessages.isEmpty()) {
                     continue;
                 }
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
 
-                List<PersistedPublishMsg> persistedPublishMessages = publishProtoMessages.stream()
-                        .map(msg -> {
-                            Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
-                            int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
-                            boolean isDup = msgPacketId != null;
-                            QueueProtos.PublishMsgProto persistedMsgProto = msg.getValue();
-                            PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
-                                    .packetId(packetId)
-                                    .isDup(isDup)
-                                    .build();
-                            return new PersistedPublishMsg(publishMsg, msg.getOffset());
-                        })
-                        .sorted(Comparator.comparingLong(PersistedPublishMsg::getPacketOffset))
-                        .collect(Collectors.toList());
-                List<PersistedMsg> persistedMessages = new ArrayList<>();
-                persistedMessages.addAll(persistedPublishMessages);
-                persistedMessages.addAll(persistedPubRelMessages.stream()
+                List<PersistedPubRelMsg> pubRelMessagesToDeliver = pendingPubRelMessages.stream()
                         .sorted(Comparator.comparingLong(PersistedMsg::getPacketOffset))
-                        .collect(Collectors.toList()));
-                submitStrategy.init(persistedMessages);
+                        .collect(Collectors.toList());
+                List<PersistedPublishMsg> publishMessagesToDeliver = extractPublishMessagesToDeliver(clientSessionCtx, persistedMsgCtx, publishProtoMessages);
+                List<PersistedMsg> messagesToDeliver = new ArrayList<>();
+                messagesToDeliver.addAll(pubRelMessagesToDeliver);
+                messagesToDeliver.addAll(publishMessagesToDeliver);
+                submitStrategy.init(messagesToDeliver);
 
                 // TODO: refactor this
-                persistedPubRelMessages = Sets.newConcurrentHashSet();
+                pendingPubRelMessages = Sets.newConcurrentHashSet();
                 while (isClientConnected(sessionId, clientState)) {
-                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, persistedPubRelMessages);
+                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, pendingPubRelMessages);
                     int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);
@@ -312,6 +300,23 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
         log.debug("[{}] Application persisted messages consumer stopped.", clientId);
 
+    }
+
+    private List<PersistedPublishMsg> extractPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx, ApplicationPersistedMsgCtx persistedMsgCtx, List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages) {
+        return publishProtoMessages.stream()
+                .map(msg -> {
+                    Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
+                    int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
+                    boolean isDup = msgPacketId != null;
+                    QueueProtos.PublishMsgProto persistedMsgProto = msg.getValue();
+                    PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
+                            .packetId(packetId)
+                            .isDup(isDup)
+                            .build();
+                    return new PersistedPublishMsg(publishMsg, msg.getOffset());
+                })
+                .sorted(Comparator.comparingLong(PersistedPublishMsg::getPacketOffset))
+                .collect(Collectors.toList());
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
