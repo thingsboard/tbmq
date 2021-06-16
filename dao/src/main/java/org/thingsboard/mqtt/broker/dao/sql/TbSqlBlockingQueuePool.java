@@ -26,6 +26,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.thingsboard.mqtt.broker.common.stats.StubMessagesStats.STUB_MESSAGE_STATS;
+
 @Slf4j
 @RequiredArgsConstructor
 @Builder
@@ -40,7 +42,7 @@ public class TbSqlBlockingQueuePool<E> implements TbSqlQueue<E> {
 
     public void init() {
         for (int i = 0; i < maxThreads; i++) {
-            MessagesStats queueStats = statsManager.createSqlQueueStats(params.getQueueName(), i);
+            MessagesStats queueStats = statsManager != null ? statsManager.createSqlQueueStats(params.getQueueName(), i) : STUB_MESSAGE_STATS;
             TbSqlBlockingQueue<E> queue = new TbSqlBlockingQueue<>(i, params, processingFunction, queueStats);
             queues.add(queue);
             queue.init();

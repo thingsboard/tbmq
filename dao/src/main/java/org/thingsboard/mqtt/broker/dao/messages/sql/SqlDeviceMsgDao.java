@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.messages.sql;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
@@ -48,7 +49,9 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
     private final DeviceMsgRepository deviceMsgRepository;
     private final DeletePacketQueueConfiguration deletePacketQueueConfiguration;
     private final UpdatePacketQueueConfiguration updatePacketQueueConfiguration;
-    private final SqlQueueStatsManager sqlQueueStatsManager;
+
+    @Autowired(required = false)
+    private SqlQueueStatsManager sqlQueueStatsManager;
 
     private TbSqlQueue<UpdatePacketTypeInfo> updatePacketTypeQueue;
     private TbSqlQueue<DeletePacketInfo> deletePacketQueue;
