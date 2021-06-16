@@ -68,20 +68,21 @@ public class ApplicationPackProcessingContext {
 
     public void onPubRec(Integer packetId) {
         // TODO: think what to do if PUBREC came after PackContext timeout
-        Long packetOffset = onPublishMsgSuccess(packetId);
-        if (packetOffset != null) {
-            newPubRelPackets.add(new PersistedPubRelMsg(packetId, packetOffset));
+        PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
+        if (msg != null) {
+            newPubRelPackets.add(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
+            onPublishMsgSuccess(packetId);
+        } else {
+            log.debug("Couldn't find PUBLISH packet {} to process PUBREC msg.", packetId);
         }
     }
 
-    private Long onPublishMsgSuccess(Integer packetId) {
+    private void onPublishMsgSuccess(Integer packetId) {
         PersistedPublishMsg msg = publishPendingMsgMap.remove(packetId);
         if (msg != null) {
             processingTimeoutLatch.countDown();
-            return msg.getPacketOffset();
         } else {
-            log.warn("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
-            return null;
+            log.debug("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
         }
     }
 
