@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 
 public class MqttApplicationClientUtil {
-    private static final String TOPIC_PREFIX = "application_";
+    private static final String TOPIC_PREFIX = "mqtt_broker_application_client_";
     private static final String CONSUMER_GROUP_PREFIX = "application-persisted-msg-group-";
 
     public static String getTopic(String clientId) {
