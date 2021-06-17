@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorManager;
 
 @Slf4j
@@ -27,8 +28,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DeviceActorMa
 @RequiredArgsConstructor
 public class PersistentDownLinkProcessorImpl implements PersistentDownLinkProcessor {
     private final DeviceActorManager deviceActorManager;
+    private final ClientLogger clientLogger;
     @Override
     public void process(String clientId, QueueProtos.PersistedDevicePublishMsgProto msg) {
         deviceActorManager.sendMsgToActor(clientId, ProtoConverter.toDevicePublishMsg(msg));
+        clientLogger.logEvent(clientId, "Sent msg to device client actor");
     }
 }

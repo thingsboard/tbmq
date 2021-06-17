@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
@@ -64,7 +65,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private ClientSessionReader clientSessionReader;
     @Autowired
     private DownLinkProxy downLinkProxy;
-
+    @Autowired
+    private ClientLogger clientLogger;
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
     private MessagesStats producerStats;
@@ -92,6 +94,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         // TODO: log time
+        String senderClientId = ProtoConverter.getClientId(publishMsgProto);
+        clientLogger.logEvent(senderClientId, "Start msg processing");
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
@@ -108,6 +112,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
+        clientLogger.logEvent(senderClientId, "Found msg subscribers");
         List<Subscription> persistentSubscriptions = new ArrayList<>();
         for (Subscription msgSubscription : msgSubscriptions) {
             if (needToBePersisted(publishMsgProto, msgSubscription)) {
@@ -123,6 +128,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         } else {
             callback.onSuccess();
         }
+        clientLogger.logEvent(senderClientId, "Finished msg processing");
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {

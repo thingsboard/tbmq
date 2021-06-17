@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.service.analysis;
 
-import io.netty.handler.ssl.SslHandler;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
+import java.util.Set;
+
+@Slf4j
 @Service
-@AllArgsConstructor
-public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
+@RequiredArgsConstructor
+public class ClientLoggerImpl implements ClientLogger {
+    @Value("${analysis.log.analyzed-client-ids:}")
+    private Set<String> analyzedClientIds;
 
-    private final ClientMqttActorManager actorManager;
-    private final ClientLogger clientLogger;
 
     @Override
-    public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(actorManager, clientLogger, sslHandler);
+    public void logEvent(String clientId, String eventDescription) {
+        if (analyzedClientIds == null || analyzedClientIds.isEmpty() || !analyzedClientIds.contains(clientId)) {
+            return;
+        }
+
+        log.info("[{}] {}", clientId, eventDescription);
     }
 }

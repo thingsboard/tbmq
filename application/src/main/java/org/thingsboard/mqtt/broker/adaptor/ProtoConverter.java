@@ -48,6 +48,10 @@ public class ProtoConverter {
                 .setSessionInfo(sessionInfoProto)
                 .build();
     }
+    public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
+        return publishMsgProto != null && publishMsgProto.getSessionInfo() != null && publishMsgProto.getSessionInfo().getClientInfo() != null ?
+                publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;
+    }
 
     public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
         return PublishMsg.builder()

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 
 import javax.annotation.PostConstruct;
 
@@ -37,6 +38,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
+    private final ClientLogger clientLogger;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> basicProducer;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> persistedDeviceProducer;
@@ -51,11 +53,13 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @Override
     public void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(targetServiceId);
+        clientLogger.logEvent(clientId, "Sending msg to basic down-link queue");
         basicProducer.send(topic,
                 new TbProtoQueueMsg<>(clientId, msg),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
+                        clientLogger.logEvent(clientId, "Sent msg to basic down-link queue");
                         log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
                     }
 
@@ -71,11 +75,13 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @Override
     public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
+        clientLogger.logEvent(clientId, "Sending msg to persistent down-link queue");
         persistedDeviceProducer.send(topic,
                 new TbProtoQueueMsg<>(clientId, msg),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
+                        clientLogger.logEvent(clientId, "Sent msg to persistent down-link queue");
                         log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
                     }
 

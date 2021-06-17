@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
@@ -80,6 +81,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionReader clientSessionReader;
+    private final ClientLogger clientLogger;
 
 
     @Override
@@ -105,6 +107,9 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     }
 
                     Set<String> clientIds = msgs.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
+                    for (String clientId : clientIds) {
+                        clientLogger.logEvent(clientId, "Start persisting DEVICE msg");
+                    }
                     Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers = serialNumberService.getLastPacketIdAndSerialNumber(clientIds);
                     List<DevicePublishMsg> devicePublishMessages = toDevicePublishMsgs(msgs,
                             clientId -> getPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, clientId));
@@ -117,6 +122,9 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             // TODO: think about case when client is 'clearing session' at this moment
                             serialNumberService.saveLastSerialNumbers(lastPacketIdAndSerialNumbers);
                             deviceMsgService.save(devicePublishMessages, ctx.detectMsgDuplication());
+                            for (String clientId : clientIds) {
+                                clientLogger.logEvent(clientId, "Finished persisting DEVICE msg");
+                            }
                             ctx.onSuccess();
                         } catch (DuplicateKeyException e) {
                             log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -48,6 +49,7 @@ public class MqttPublishHandler {
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final ClientMqttActorManager clientMqttActorManager;
+    private final ClientLogger clientLogger;
 
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -66,9 +68,11 @@ public class MqttPublishHandler {
             }
         }
 
+        clientLogger.logEvent(clientId, "Sending PUBLISH");
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
+                clientLogger.logEvent(clientId, "PUBLISH acknowledged");
                 log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);
                 acknowledgePacket(ctx, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
             }
