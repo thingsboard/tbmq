@@ -84,8 +84,7 @@ public class MqttSslHandlerProvider {
     }
 
     private KeyManagerFactory initKeyStore() throws Exception {
-        URL ksUrl = Resources.getResource(keyStoreFile);
-        File ksFile = new File(ksUrl.toURI());
+        File ksFile = getFile(keyStoreFile);
         KeyStore ks = KeyStore.getInstance(keyStoreType);
         try (InputStream ksFileInputStream = new FileInputStream(ksFile)) {
             ks.load(ksFileInputStream, keyStorePassword.toCharArray());
@@ -99,9 +98,7 @@ public class MqttSslHandlerProvider {
         if (StringUtils.isEmpty(trustStoreFile)){
             return null;
         }
-        URL tsUrl = Resources.getResource(trustStoreFile);
-        File tsFile = new File(tsUrl.toURI());
-
+        File tsFile = getFile(trustStoreFile);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         KeyStore trustStore = KeyStore.getInstance(trustStoreType);
         try (InputStream tsFileInputStream = new FileInputStream(tsFile)) {
@@ -109,5 +106,14 @@ public class MqttSslHandlerProvider {
         }
         tmf.init(trustStore);
         return tmf;
+    }
+
+    private static File getFile(String filePath) {
+        try {
+            URL url = Resources.getResource(filePath);
+            return new File(url.toURI());
+        } catch (Exception e) {
+            return new File(filePath);
+        }
     }
 }
