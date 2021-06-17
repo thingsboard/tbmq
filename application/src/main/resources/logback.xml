@@ -25,13 +25,14 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="DEBUG"/>
-    <logger name="org.thingsboard.mqtt.broker.dao.messages.sql.SqlDeviceMsgCleanUpDao" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="INFO"/>
+    <logger name="org.thingsboard.mqtt.broker.dao.messages.sql.SqlDeviceMsgCleanUpDao" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.ClientActor" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManagerImpl" level="INFO"/>
 
-    <logger name="org.apache.kafka.clients.consumer.ConsumerConfig" level="WARN"/>
-    <logger name="org.apache.kafka.clients.producer.ProducerConfig" level="WARN"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="WARN"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="WARN"/>
+
     <logger name="org.apache.kafka" level="WARN"/>
 
     <root level="INFO">
