@@ -49,7 +49,7 @@ public class SubscriptionServiceImpl implements SubscriptionService, Subscriptio
         for (String topicFilter : topicFilters) {
             boolean successfullyDeleted = subscriptionTrie.delete(topicFilter, val -> clientId.equals(val.getClientId()));
             if (!successfullyDeleted) {
-                log.error("[{}] Couldn't delete subscription for topic {}", clientId, topicFilter);
+                log.debug("[{}] Client wasn't subscribed to the topic filter {}", clientId, topicFilter);
             }
         }
     }
