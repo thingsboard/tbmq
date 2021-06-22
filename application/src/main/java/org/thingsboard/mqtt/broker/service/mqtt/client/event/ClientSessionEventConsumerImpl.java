@@ -130,7 +130,14 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         };
 
         SessionClusterManagementMsg sessionClusterManagementMsg = callbackMsgFactory.createSessionClusterManagementMsg(msg, callback);
-        clientSessionEventActorManager.sendCallbackMsg(clientId, sessionClusterManagementMsg);
+        try {
+            clientSessionEventActorManager.sendCallbackMsg(clientId, sessionClusterManagementMsg);
+        } catch (Exception e) {
+            log.warn("[{}] Failed to send {} msg to actor. Exception - {}, reason - {}.", clientId, sessionClusterManagementMsg.getMsgType(),
+                    e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error: ", e);
+            return;
+        }
 
         boolean waitSuccessful = false;
         try {
@@ -141,7 +148,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         Throwable error = errorRef.get();
         if (!waitSuccessful || error != null) {
             log.warn("[{}] Failed to process {} msg. Reason - {}.",
-                    clientId, sessionClusterManagementMsg.getMsgType(), error != null ? error.getMessage() : "timeout waiting");
+                    clientId, sessionClusterManagementMsg.getMsgType(), error != null
+                            ? error.getClass().getSimpleName() + " - " + error.getMessage()
+                            : "timeout waiting");
             if (error != null) {
                 log.trace("Detailed error:", error);
             }
