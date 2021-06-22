@@ -51,7 +51,7 @@
         <curator.version>4.2.0</curator.version>
         <protobuf.version>3.11.4</protobuf.version>
         <lombok.version>1.18.16</lombok.version>
-        <netty.version>4.1.49.Final</netty.version>
+        <netty.version>4.1.65.Final</netty.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
         <hsqldb.version>2.5.0</hsqldb.version>
         <dbunit.version>2.5.3</dbunit.version>

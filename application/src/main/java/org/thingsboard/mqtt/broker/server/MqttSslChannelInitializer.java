@@ -24,6 +24,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -31,6 +32,9 @@ import org.springframework.stereotype.Component;
 @Qualifier("SslChannelInitializer")
 @RequiredArgsConstructor
 public class MqttSslChannelInitializer extends ChannelInitializer<SocketChannel> {
+    @Value("${mqtt.version-3-1.max-client-id-length}")
+    private int maxClientIdLength;
+
     private final MqttSslServerContext context;
     private final MqttHandlerFactory handlerFactory;
 
@@ -41,7 +45,7 @@ public class MqttSslChannelInitializer extends ChannelInitializer<SocketChannel>
         SslHandler sslHandler = context.getSslHandlerProvider().getSslHandler();
         pipeline.addLast(sslHandler);
 
-        pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
+        pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize(), maxClientIdLength));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
         MqttSessionHandler handler = handlerFactory.create(sslHandler);

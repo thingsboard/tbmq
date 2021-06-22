@@ -23,6 +23,7 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -30,6 +31,8 @@ import org.springframework.stereotype.Component;
 @Qualifier("TcpChannelInitializer")
 @RequiredArgsConstructor
 public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel> {
+    @Value("${mqtt.version-3-1.max-client-id-length}")
+    private int maxClientIdLength;
 
     private final MqttTcpServerContext context;
     private final MqttHandlerFactory handlerFactory;
@@ -37,7 +40,7 @@ public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel>
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize()));
+        pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize(), maxClientIdLength));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
         MqttSessionHandler handler = handlerFactory.create(null);
