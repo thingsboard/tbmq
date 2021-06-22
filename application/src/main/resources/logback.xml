@@ -30,6 +30,7 @@
     <logger name="org.thingsboard.mqtt.broker.actors.client.ClientActor" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManagerImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionServiceImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveServiceImpl" level="DEBUG"/>
 
     <logger name="org.apache.kafka" level="WARN"/>
 

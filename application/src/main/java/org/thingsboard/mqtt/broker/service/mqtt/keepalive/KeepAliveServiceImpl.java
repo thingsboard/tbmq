@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultKeepAliveService implements KeepAliveService {
+public class KeepAliveServiceImpl implements KeepAliveService {
     private static final int CLEARED_KEEP_ALIVE_VALUE = -1;
 
     private final Map<UUID, KeepAliveInfo> keepAliveInfoMap = new ConcurrentHashMap<>();
@@ -53,7 +53,7 @@ public class DefaultKeepAliveService implements KeepAliveService {
             if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
                     && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
                 it.remove();
-                log.info("[{}] Closing session for inactivity", sessionId);
+                log.debug("[{}][{}] Closing session for inactivity", keepAliveInfo.getClientId(), sessionId);
                 clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), sessionId,
                         new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long"));
             }
