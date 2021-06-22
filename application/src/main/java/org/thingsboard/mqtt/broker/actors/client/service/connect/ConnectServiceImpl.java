@@ -116,14 +116,14 @@ public class ConnectServiceImpl implements ConnectService {
 
         boolean isCurrentSessionPersistent = sessionInfo.isPersistent();
         if (connectionAcceptedMsg.wasPrevSessionPersistent() && !isCurrentSessionPersistent) {
-            log.debug("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
-            clientSubscriptionService.clearSubscriptions(clientInfo.getClientId());
+            log.trace("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
+            clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId());
             msgPersistenceManager.clearPersistedMessages(clientInfo);
         }
 
         sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED,
                 connectionAcceptedMsg.wasPrevSessionPersistent() && isCurrentSessionPersistent));
-        log.info("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
+        log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);
 
@@ -146,7 +146,7 @@ public class ConnectServiceImpl implements ConnectService {
         try {
             clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false));
         } catch (Exception e) {
-            log.trace("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
+            log.debug("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
         } finally {
             clientMqttActorManager.disconnect(clientId, sessionId,
                     new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client"));

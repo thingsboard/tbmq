@@ -52,6 +52,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
     @Override
     public void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions) {
         // TODO: make this async again
+        log.trace("[{}] Persisting client subscriptions - {}", clientId, clientSubscriptions);
         QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);

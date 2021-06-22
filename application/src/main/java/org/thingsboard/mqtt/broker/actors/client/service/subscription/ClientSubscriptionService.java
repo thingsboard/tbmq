@@ -25,15 +25,15 @@ import java.util.Set;
 public interface ClientSubscriptionService extends ClientSubscriptionReader {
     void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
 
-    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
+    void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
     void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
-    void unsubscribe(String clientId, Collection<String> topicFilters);
+    void unsubscribeAndPersist(String clientId, Collection<String> topicFilters);
 
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
 
-    void clearSubscriptions(String clientId);
+    void clearSubscriptionsAndPersist(String clientId);
 
     void clearSubscriptionsInternally(String clientId);
 }

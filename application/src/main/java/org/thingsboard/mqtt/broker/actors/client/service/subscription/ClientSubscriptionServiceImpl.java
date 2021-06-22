@@ -61,8 +61,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        subscribeInternally(clientId, topicSubscriptions);
+    public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
@@ -70,6 +71,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
+        subscribe(clientId, topicSubscriptions);
+    }
+
+    private void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
@@ -77,8 +83,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void unsubscribe(String clientId, Collection<String> topicFilters) {
-        unsubscribeInternally(clientId, topicFilters);
+    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
+        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        unsubscribe(clientId, topicFilters);
 
         Set<TopicSubscription> updatedClientSubscriptions = clientSubscriptionsMap.get(clientId);
         subscriptionPersistenceService.persistClientSubscriptions(clientId, updatedClientSubscriptions);
@@ -86,6 +93,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeInternally(String clientId, Collection<String> topicFilters) {
+        log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
+        unsubscribe(clientId, topicFilters);
+    }
+
+    private void unsubscribe(String clientId, Collection<String> topicFilters) {
         subscriptionService.unsubscribe(clientId, topicFilters);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
@@ -93,14 +105,19 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void clearSubscriptions(String clientId) {
-        clearSubscriptionsInternally(clientId);
+    public void clearSubscriptionsAndPersist(String clientId) {
+        log.trace("[{}] Clearing all subscriptions.", clientId);
+        clearSubscriptions(clientId);
         subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
     }
 
     @Override
     public void clearSubscriptionsInternally(String clientId) {
-        log.trace("[{}] Clearing all subscriptions.", clientId);
+        log.trace("[{}] Clearing all subscriptions internally.", clientId);
+        clearSubscriptions(clientId);
+    }
+
+    private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
             log.debug("[{}] There were no active subscriptions for client.", clientId);

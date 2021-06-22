@@ -55,7 +55,7 @@ public class MqttSubscribeHandler {
 
         validateClientAccess(ctx, topicSubscriptions);
 
-        clientSubscriptionService.subscribe(clientId, topicSubscriptions);
+        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions);
 
         List<Integer> grantedQoSList = topicSubscriptions.stream().map(TopicSubscription::getQos).collect(Collectors.toList());
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList));

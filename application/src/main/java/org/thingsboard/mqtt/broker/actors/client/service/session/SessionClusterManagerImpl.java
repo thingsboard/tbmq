@@ -134,7 +134,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
         clientSessionService.clearClientSession(clientId);
-        clientSubscriptionService.clearSubscriptions(clientId);
+        clientSubscriptionService.clearSubscriptionsAndPersist(clientId);
         msgPersistenceManager.clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
     }
 
@@ -146,7 +146,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             clientSessionService.saveClientSession(clientId, disconnectedClientSession);
         } else {
             clientSessionService.clearClientSession(clientId);
-            clientSubscriptionService.clearSubscriptions(clientId);
+            clientSubscriptionService.clearSubscriptionsAndPersist(clientId);
         }
     }
 

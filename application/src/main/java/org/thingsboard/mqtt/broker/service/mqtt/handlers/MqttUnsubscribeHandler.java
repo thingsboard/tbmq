@@ -38,7 +38,7 @@ public class MqttUnsubscribeHandler {
         String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
 
-        clientSubscriptionService.unsubscribe(clientId, msg.getTopics());
+        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics());
 
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId()));
     }

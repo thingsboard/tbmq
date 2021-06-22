@@ -18,12 +18,14 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.Objects;
 
 @AllArgsConstructor
 @Getter
 @Builder(toBuilder = true)
+@ToString
 public class TopicSubscription {
     private final String topic;
     private final int qos;

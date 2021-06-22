@@ -61,7 +61,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-            log.info("Detailed error: ", e);
+            log.warn("Detailed error: ", e);
         }
 
         try {
@@ -76,7 +76,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             log.debug("[{}][{}] Failed to close channel. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
         }
 
-        log.info("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
+        log.debug("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
     private void clearClientSession(ClientActorStateInfo actorState, DisconnectReasonType disconnectReasonType) {
