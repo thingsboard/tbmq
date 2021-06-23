@@ -146,6 +146,11 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
+    protected void doCommitSync() {
+        consumer.commitSync();
+    }
+
+    @Override
     protected void doCommit(String topic, int partition, long offset) {
         Map<TopicPartition, OffsetAndMetadata> offsetMap = Map.of(new TopicPartition(topic, partition), new OffsetAndMetadata(offset));
         consumer.commitAsync(offsetMap, (offsets, exception) -> {

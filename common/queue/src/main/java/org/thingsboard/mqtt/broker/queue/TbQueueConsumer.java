@@ -29,4 +29,5 @@ public interface TbQueueConsumer<T extends TbQueueMsg> {
 
     void commit();
 
+    void commitSync();
 }

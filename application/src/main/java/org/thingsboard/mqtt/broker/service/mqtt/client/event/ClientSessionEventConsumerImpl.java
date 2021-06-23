@@ -91,9 +91,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
                 //          - failures (make sure method can be safely called multiple times)
                 //          - will block till timeout if message is lost in Actor System
+                consumer.commitSync();
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
                     // TODO: process messages in batch and wait for all to finish
-                    consumer.commit(msg.getPartition(), msg.getOffset() + 1);
                     processMsg(msg);
                 }
             } catch (Exception e) {
