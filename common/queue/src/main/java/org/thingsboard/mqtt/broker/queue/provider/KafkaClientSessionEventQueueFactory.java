@@ -70,6 +70,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.autoCommit(true);
         return consumerBuilder.build();
     }
 

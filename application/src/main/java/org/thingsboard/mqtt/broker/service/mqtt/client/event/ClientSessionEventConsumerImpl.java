@@ -93,7 +93,6 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 //          - will block till timeout if message is lost in Actor System
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
                     // TODO: process messages in batch and wait for all to finish
-                    consumer.commit(msg.getPartition(), msg.getOffset() + 1);
                     processMsg(msg);
                 }
             } catch (Exception e) {
