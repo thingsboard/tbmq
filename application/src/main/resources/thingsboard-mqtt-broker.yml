@@ -129,6 +129,7 @@ queue:
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
+    enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
       consumer:
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"

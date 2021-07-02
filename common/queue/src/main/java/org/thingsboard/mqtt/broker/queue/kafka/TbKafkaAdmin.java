@@ -21,6 +21,7 @@ import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -37,6 +38,9 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 @Component
 public class TbKafkaAdmin implements TbQueueAdmin {
+    @Value("${queue.kafka.enable-topic-deletion:true}")
+    private boolean enableTopicDeletion;
+
     private final AdminClient client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
 
@@ -83,6 +87,10 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void deleteTopic(String topic) {
+        if (!enableTopicDeletion) {
+            log.debug("Ignoring deletion of topic {}", topic);
+            return;
+        }
         log.debug("[{}] Deleting topic", topic);
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         if (result.values().containsKey(topic)) {
