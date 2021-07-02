@@ -79,7 +79,7 @@ public class MqttPublishHandler {
 
             @Override
             public void onFailure(Throwable t) {
-                log.info("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg, t);
+                log.warn("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg.getPacketId(), t);
                 clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
             }
         });

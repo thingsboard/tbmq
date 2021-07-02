@@ -32,10 +32,10 @@ public class ClientLoggerImpl implements ClientLogger {
 
     @Override
     public void logEvent(String clientId, String eventDescription) {
-        if (analyzedClientIds == null || analyzedClientIds.isEmpty() || !analyzedClientIds.contains(clientId)) {
+        if (!log.isDebugEnabled() || analyzedClientIds == null || analyzedClientIds.isEmpty() || !analyzedClientIds.contains(clientId)) {
             return;
         }
 
-        log.info("[{}] {}", clientId, eventDescription);
+        log.debug("[{}] {}", clientId, eventDescription);
     }
 }

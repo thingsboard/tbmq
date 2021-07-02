@@ -46,6 +46,7 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     public MqttClient saveMqttClient(MqttClient mqttClient) {
         MqttClient savedClient = mqttClientService.saveMqttClient(mqttClient);
 
+        // TODO: check if was APPLICATION and now device
         if (mqttClient.getType() == ClientType.APPLICATION) {
             String clientTopic = MqttApplicationClientUtil.getTopic(mqttClient.getClientId());
             queueAdmin.createTopic(clientTopic, applicationPersistenceMsgQueueFactory.getTopicConfigs());
