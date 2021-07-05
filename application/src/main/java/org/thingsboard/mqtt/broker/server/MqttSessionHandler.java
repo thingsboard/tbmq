@@ -98,7 +98,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
 
         if (StringUtils.isEmpty(clientId)) {
-            throw new ProtocolViolationException("Session wasn't initialized");
+            throw new ProtocolViolationException("Received " + msgType +" while session wasn't initialized");
         }
 
         clientLogger.logEvent(clientId, "Incoming MQTT - " + msgType);

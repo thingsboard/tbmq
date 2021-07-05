@@ -86,6 +86,8 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
                 if (msgs.isEmpty()) {
                     continue;
+                } else {
+                    log.debug("Going to process {} client session events", msgs.size());
                 }
                 // TODO: Possible issues:
                 //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed

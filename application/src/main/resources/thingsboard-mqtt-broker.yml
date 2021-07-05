@@ -177,7 +177,7 @@ queue:
     client-session-event:
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:client_session_event}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
-      consumer: "${TB_KAFKA_CLIENT_SESSION_EVENT_CONSUMER_CONFIG:}"
+      consumer: "${TB_KAFKA_CLIENT_SESSION_EVENT_CONSUMER_CONFIG:max.poll.records:500}"
       producer: "${TB_KAFKA_CLIENT_SESSION_EVENT_PRODUCER_CONFIG:}"
     client-session-event-response:
       topic-prefix: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PREFIX:client_session_event_response}"
