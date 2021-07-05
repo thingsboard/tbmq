@@ -97,7 +97,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                         }
                     }
                 }
-                clientSessionConsumer.commit();
+                clientSessionConsumer.commitSync();
             } catch (Exception e) {
                 log.error("Failed to load client sessions.", e);
                 throw e;
@@ -137,7 +137,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                             callback.accept(clientId, serviceId, clientSession);
                         }
                     }
-                    clientSessionConsumer.commit();
+                    clientSessionConsumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("Failed to process messages from queue.", e);

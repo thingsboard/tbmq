@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,7 +88,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                         allSubscriptions.put(clientId, clientSubscriptions);
                     }
                 }
-                clientSubscriptionsConsumer.commit();
+                clientSubscriptionsConsumer.commitSync();
             } catch (Exception e) {
                 log.error("Failed to load client sessions.", e);
                 throw e;
@@ -122,7 +121,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                         Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
                         callback.accept(clientId, serviceId, clientSubscriptions);
                     }
-                    clientSubscriptionsConsumer.commit();
+                    clientSubscriptionsConsumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("Failed to process messages from queue.", e);

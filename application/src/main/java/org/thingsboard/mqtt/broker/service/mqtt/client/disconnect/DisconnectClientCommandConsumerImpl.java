@@ -73,7 +73,7 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
                 for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
                     processClientDisconnect(msg);
                 }
-                consumer.commit();
+                consumer.commitSync();
             } catch (Exception e) {
                 if (!stopped) {
                     log.error("Failed to process messages from queue.", e);

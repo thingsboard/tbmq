@@ -138,7 +138,11 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         stats.log(devicePublishMessages.size(), ctx.isSuccessful(), decision.isCommit());
 
                         if (decision.isCommit()) {
-                            consumer.commit();
+                            try {
+                                consumer.commitSync();
+                            } catch (Exception e) {
+                                log.warn("[{}] Failed to commit polled messages.", consumerId, e);
+                            }
                             break;
                         }
                     }

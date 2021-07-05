@@ -112,7 +112,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         stats.log(totalMsgCount, result, decision.isCommit());
 
                         if (decision.isCommit()) {
-                            consumer.commit();
+                            consumer.commitSync();
                             break;
                         } else {
                             submitStrategy.update(decision.getReprocessMap());

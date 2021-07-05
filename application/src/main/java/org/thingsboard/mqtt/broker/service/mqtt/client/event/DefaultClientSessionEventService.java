@@ -166,7 +166,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
                     for (TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> eventResponseMsg : eventResponseList) {
                         processEventResponse(eventResponseMsg);
                     }
-                    eventResponseConsumer.commit();
+                    eventResponseConsumer.commitSync();
                 } catch (Throwable e) {
                     processingEventResponseError(e);
                 }

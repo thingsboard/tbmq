@@ -146,17 +146,6 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
-    public void commit() {
-        consumerLock.lock();
-        try {
-            doCommit();
-        } finally {
-            consumerLock.unlock();
-        }
-    }
-
-
-    @Override
     public void commitSync() {
         consumerLock.lock();
         try {
@@ -215,8 +204,6 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     abstract protected void doAssignPartition(String topic, int partition);
 
     abstract protected void doAssignAllPartitions(String topic);
-
-    abstract protected void doCommit();
 
     abstract protected void doCommitSync();
 
