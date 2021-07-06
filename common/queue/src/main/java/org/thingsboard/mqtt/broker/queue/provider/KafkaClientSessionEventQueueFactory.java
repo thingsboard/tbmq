@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.queue.provider;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -29,9 +30,8 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventKafkaS
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventResponseKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-
-import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
@@ -47,6 +47,9 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
     private final TbQueueAdmin queueAdmin;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
+    @Autowired(required = false)
+    private ProducerStatsManager producerStatsManager;
+
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> createEventProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> producerBuilder = TbKafkaProducerTemplate.builder();
@@ -55,6 +58,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         producerBuilder.defaultTopic(clientSessionEventSettings.getTopic());
         producerBuilder.topicConfigs(getConfigs(clientSessionEventSettings.getTopicProperties()));
         producerBuilder.admin(queueAdmin);
+        producerBuilder.statsManager(producerStatsManager);
         return producerBuilder.build();
     }
 

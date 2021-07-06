@@ -27,10 +27,13 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.Timer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,10 +46,11 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
     private final TbQueueAdmin admin;
     private final Map<String, String> topicConfigs;
     private final boolean createTopicIfNotExists;
+    private final Timer sendTimer;
 
     @Builder
     private TbKafkaProducerTemplate(Properties properties, String defaultTopic, String clientId, TbQueueAdmin admin,
-                                    Boolean createTopicIfNotExists, Map<String, String> topicConfigs) {
+                                    Boolean createTopicIfNotExists, Map<String, String> topicConfigs, ProducerStatsManager statsManager) {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
         if (!StringUtils.isEmpty(clientId)) {
@@ -57,6 +61,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
         this.defaultTopic = defaultTopic;
         this.topicConfigs = topicConfigs;
         this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
+        this.sendTimer = statsManager != null ? statsManager.createTimer(clientId) : (amount, unit) -> {};
     }
 
     @Override
@@ -78,6 +83,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
             admin.createTopicIfNotExists(topic, topicConfigs);
         }
 
+        long startTime = System.nanoTime();
         ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, null, msg.getKey(), msg.getData(), extractHeaders(msg));
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
@@ -92,6 +98,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
                 }
             }
         });
+        sendTimer.logTime(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
     }
 
     private List<Header> extractHeaders(T msg) {

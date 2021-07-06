@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.queue.provider;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -28,11 +29,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSubscriptionsKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
@@ -47,6 +48,9 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     private final ClientSubscriptionsKafkaSettings clientSubscriptionsSettings;
     private final TbQueueAdmin queueAdmin;
     private final TbKafkaConsumerStatsService consumerStatsService;
+
+    @Autowired(required = false)
+    private ProducerStatsManager producerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -68,6 +72,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
         producerBuilder.defaultTopic(clientSubscriptionsSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
+        producerBuilder.statsManager(producerStatsManager);
         return producerBuilder.build();
     }
 

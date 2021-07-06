@@ -22,6 +22,8 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.Timer;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
@@ -34,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "false", matchIfMissing = true)
-public class StatsManagerStub implements StatsManager, ActorStatsManager {
+public class StatsManagerStub implements StatsManager, ActorStatsManager, ProducerStatsManager {
     private static final StubTimerStats timerStats = new StubTimerStats();
 
     @Override
@@ -113,5 +115,10 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager {
     @Override
     public AtomicLong createSubscriptionTrieNodesCounter() {
         return new AtomicLong(0);
+    }
+
+    @Override
+    public Timer createTimer(String clientId) {
+        return (amount, unit) -> {};
     }
 }

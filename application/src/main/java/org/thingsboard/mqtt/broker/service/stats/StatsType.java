@@ -35,6 +35,8 @@ public enum StatsType {
     NOT_PERSISTENT_MESSAGES_PROCESSING("notPersistentMessagesProcessing"),
     PERSISTENT_MESSAGES_PROCESSING("persistentMessagesProcessing"),
     DELIVERY("delivery"),
+
+    QUEUE_PRODUCER("producer"),
     ;
 
     private final String printName;

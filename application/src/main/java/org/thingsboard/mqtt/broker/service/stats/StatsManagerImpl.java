@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
@@ -54,13 +55,14 @@ import java.util.stream.Collectors;
 @Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
-public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager {
+public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
     private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
+    private final Map<String, Timer> managedQueueProducers = new ConcurrentHashMap<>();
 
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
@@ -190,6 +192,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public org.thingsboard.mqtt.broker.queue.kafka.stats.Timer createTimer(String clientId) {
+        Timer timer = statsFactory.createTimer(StatsType.QUEUE_PRODUCER.getPrintName(), "producerId", clientId);
+        managedQueueProducers.put(clientId, timer);
+        return timer::record;
+    }
+
+    @Override
     public SubscriptionTimerStats getSubscriptionTimerStats() {
         return timerStats;
     }
@@ -258,6 +267,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             timerLogBuilder.append(timer.getId().getName()).append(" = [").append(timer.mean(TimeUnit.MILLISECONDS)).append("] ");
         }
         log.info("Timer Median Stats: {}", timerLogBuilder.toString());
+
+        StringBuilder queueProducerLogBuilder = new StringBuilder();
+        managedQueueProducers.forEach((producerId, timer) -> {
+            queueProducerLogBuilder.append(producerId).append(" = [").append(timer.mean(TimeUnit.MILLISECONDS)).append("] ");
+        });
+        log.info("Queue Producer Send Time Median Stats: {}", queueProducerLogBuilder.toString());
     }
 
     @AllArgsConstructor

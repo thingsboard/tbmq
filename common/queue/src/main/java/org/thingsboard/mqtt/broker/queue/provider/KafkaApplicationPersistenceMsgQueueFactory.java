@@ -17,9 +17,9 @@ package org.thingsboard.mqtt.broker.queue.provider;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -29,11 +29,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationPersistenceMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
@@ -45,6 +45,9 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
     private final TbKafkaConsumerStatsService consumerStatsService;
+
+    @Autowired(required = false)
+    private ProducerStatsManager producerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -64,6 +67,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
         producerBuilder.clientId("application-persisted-msg-producer-" + serviceId);
         producerBuilder.createTopicIfNotExists(false);
+        producerBuilder.statsManager(producerStatsManager);
         return producerBuilder.build();
     }
 
