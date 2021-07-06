@@ -34,6 +34,7 @@ public enum StatsType {
     CLIENT_SESSIONS_LOOKUP("clientSessionsLookup"),
     NOT_PERSISTENT_MESSAGES_PROCESSING("notPersistentMessagesProcessing"),
     PERSISTENT_MESSAGES_PROCESSING("persistentMessagesProcessing"),
+    DELIVERY("delivery"),
     ;
 
     private final String printName;

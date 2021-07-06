@@ -17,26 +17,6 @@ package org.thingsboard.mqtt.broker.service.stats.timer;
 
 import java.util.concurrent.TimeUnit;
 
-public class StubTimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats {
-
-    @Override
-    public void logSubscriptionsLookup(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logClientSessionsLookup(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logNotPersistentMessagesProcessing(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logDelivery(long amount, TimeUnit unit) {
-
-    }
+public interface DeliveryTimerStats {
+    void logDelivery(long amount, TimeUnit unit);
 }

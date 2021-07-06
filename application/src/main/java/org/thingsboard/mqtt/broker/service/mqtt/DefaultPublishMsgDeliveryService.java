@@ -17,19 +17,28 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryService {
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final DeliveryTimerStats deliveryTimerStats;
+
+    public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator, StatsManager statsManager) {
+        this.mqttMessageGenerator = mqttMessageGenerator;
+        this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
+    }
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, int qos, boolean isDup, byte[] payload) {
+        long startTime = System.nanoTime();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(packetId, topic, qos, isDup, payload);
         try {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
@@ -39,6 +48,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             log.trace("Detailed error:", e);
             throw e;
         }
+        deliveryTimerStats.logDelivery(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
     }
 
     @Override

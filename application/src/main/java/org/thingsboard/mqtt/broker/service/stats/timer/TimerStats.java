@@ -24,22 +24,25 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats {
+public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats {
     private final List<Timer> timers;
 
     private final Timer subscriptionLookupTimer;
     private final Timer clientSessionsLookupTimer;
     private final Timer notPersistentMessagesProcessingTimer;
     private final Timer persistentMessagesProcessingTimer;
+    private final Timer deliveryTimer;
 
     public TimerStats(StatsFactory statsFactory) {
         this.subscriptionLookupTimer = statsFactory.createTimer(StatsType.SUBSCRIPTION_LOOKUP.getPrintName());
         this.clientSessionsLookupTimer = statsFactory.createTimer(StatsType.CLIENT_SESSIONS_LOOKUP.getPrintName());
         this.notPersistentMessagesProcessingTimer = statsFactory.createTimer(StatsType.NOT_PERSISTENT_MESSAGES_PROCESSING.getPrintName());
         this.persistentMessagesProcessingTimer = statsFactory.createTimer(StatsType.PERSISTENT_MESSAGES_PROCESSING.getPrintName());
+        this.deliveryTimer = statsFactory.createTimer(StatsType.DELIVERY.getPrintName());
 
         this.timers = Arrays.asList(
-                subscriptionLookupTimer, clientSessionsLookupTimer, notPersistentMessagesProcessingTimer, persistentMessagesProcessingTimer
+                subscriptionLookupTimer, clientSessionsLookupTimer, notPersistentMessagesProcessingTimer, persistentMessagesProcessingTimer,
+                deliveryTimer
         );
     }
 
@@ -65,5 +68,10 @@ public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingT
     @Override
     public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
         persistentMessagesProcessingTimer.record(amount, unit);
+    }
+
+    @Override
+    public void logDelivery(long amount, TimeUnit unit) {
+        deliveryTimer.record(amount, unit);
     }
 }

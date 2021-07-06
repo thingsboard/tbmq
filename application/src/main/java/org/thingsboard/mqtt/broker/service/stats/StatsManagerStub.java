@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
@@ -97,6 +98,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager {
 
     @Override
     public PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats() {
+        return timerStats;
+    }
+
+    @Override
+    public DeliveryTimerStats getDeliveryTimerStats() {
         return timerStats;
     }
 

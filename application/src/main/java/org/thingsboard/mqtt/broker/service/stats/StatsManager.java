@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
@@ -54,4 +55,6 @@ public interface StatsManager {
     SubscriptionTimerStats getSubscriptionTimerStats();
 
     PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();
+
+    DeliveryTimerStats getDeliveryTimerStats();
 }

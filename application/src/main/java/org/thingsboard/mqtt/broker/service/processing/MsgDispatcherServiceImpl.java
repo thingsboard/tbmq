@@ -127,12 +127,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         clientLogger.logEvent(senderClientId, "Finished msg processing");
     }
 
-    private void deliverNotPersistentMessages(PublishMsgProto publishMsgProto, List<Subscription> msgSubscriptions) {
-        msgSubscriptions.stream()
-                .filter(subscription -> !needToBePersisted(publishMsgProto, subscription))
-                .forEach(subscription -> sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription));
-    }
-
     private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
         long startTime = System.nanoTime();
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);

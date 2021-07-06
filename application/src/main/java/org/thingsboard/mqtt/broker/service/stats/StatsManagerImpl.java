@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
@@ -195,6 +196,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats() {
+        return timerStats;
+    }
+
+    @Override
+    public DeliveryTimerStats getDeliveryTimerStats() {
         return timerStats;
     }
 
