@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,17 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -59,6 +65,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private Boolean applicationProcessorStatsEnabled;
 
     private final StatsFactory statsFactory;
+    private TimerStats timerStats;
+
+    @PostConstruct
+    public void init() {
+        this.timerStats = new TimerStats(statsFactory);
+    }
 
     @Override
     public TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats) {
@@ -167,7 +179,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         return sizeGauge;
     }
 
-
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}.", queueName, queueIndex);
@@ -175,6 +186,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                 "queueIndex", String.valueOf(queueIndex));
         managedStats.add(stats);
         return stats;
+    }
+
+    @Override
+    public SubscriptionTimerStats getSubscriptionTimerStats() {
+        return timerStats;
+    }
+
+    @Override
+    public PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats() {
+        return timerStats;
     }
 
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
@@ -225,6 +246,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
+
+        StringBuilder timerLogBuilder = new StringBuilder();
+        for (Timer timer : timerStats.getTimers()) {
+            timerLogBuilder.append(timer.getId().getName()).append(" = [").append(timer.mean(TimeUnit.MILLISECONDS)).append("] ");
+        }
+        log.info("Timer Median Stats: {}", timerLogBuilder.toString());
     }
 
     @AllArgsConstructor

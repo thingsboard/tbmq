@@ -107,8 +107,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public void logMsgProcessingTime(long time) {
-        processingTimer.record(time, TimeUnit.MILLISECONDS);
+    public void logMsgProcessingTime(long amount, TimeUnit unit) {
+        processingTimer.record(amount, unit);
     }
 
     @Override

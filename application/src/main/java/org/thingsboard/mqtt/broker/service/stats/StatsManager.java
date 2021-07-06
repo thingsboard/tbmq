@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +39,8 @@ public interface StatsManager {
 
     AtomicInteger createSubscriptionSizeCounter();
 
+    AtomicLong createSubscriptionTrieNodesCounter();
+
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 
     void registerActiveSessionsStats(Map<?, ?> sessionsMap);
@@ -47,5 +51,7 @@ public interface StatsManager {
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
-    AtomicLong createSubscriptionTrieNodesCounter();
+    SubscriptionTimerStats getSubscriptionTimerStats();
+
+    PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();
 }

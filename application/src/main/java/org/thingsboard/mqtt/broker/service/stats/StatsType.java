@@ -29,6 +29,11 @@ public enum StatsType {
     DEVICE_PROCESSOR("deviceProcessor"),
     RUNNING_ACTORS("runningActors"),
     SQL_QUEUE("sqlQueue"),
+
+    SUBSCRIPTION_LOOKUP("subscriptionLookup"),
+    CLIENT_SESSIONS_LOOKUP("clientSessionsLookup"),
+    NOT_PERSISTENT_MESSAGES_PROCESSING("notPersistentMessagesProcessing"),
+    PERSISTENT_MESSAGES_PROCESSING("persistentMessagesProcessing"),
     ;
 
     private final String printName;

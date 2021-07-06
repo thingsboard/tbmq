@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionRead
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -70,11 +72,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
     private MessagesStats producerStats;
+    private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
 
     @PostConstruct
     public void init() {
         this.publishMsgProducer = publishMsgQueueFactory.createProducer();
         this.producerStats = statsManager.createMsgDispatcherPublishStats();
+        this.publishMsgProcessingTimerStats = statsManager.getPublishMsgProcessingTimerStats();
     }
 
     @PreDestroy
@@ -93,10 +97,44 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
-        // TODO: log time
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
         clientLogger.logEvent(senderClientId, "Start msg processing");
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
+        List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
+
+        clientLogger.logEvent(senderClientId, "Found msg subscribers");
+
+        List<Subscription> persistentSubscriptions = new ArrayList<>();
+        long notPersistentMessagesProcessingStartTime = System.nanoTime();
+        for (Subscription msgSubscription : msgSubscriptions) {
+            if (needToBePersisted(publishMsgProto, msgSubscription)) {
+                persistentSubscriptions.add(msgSubscription);
+            } else {
+                sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
+            }
+        }
+        publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+
+        if (!persistentSubscriptions.isEmpty()) {
+            // TODO: convert Proto msg to PublishMsg
+            // TODO: process messages one by one (retrying to save message could lead to wrong order)
+            long persistentMessagesProcessingStartTime = System.nanoTime();
+            msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
+            publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+        } else {
+            callback.onSuccess();
+        }
+        clientLogger.logEvent(senderClientId, "Finished msg processing");
+    }
+
+    private void deliverNotPersistentMessages(PublishMsgProto publishMsgProto, List<Subscription> msgSubscriptions) {
+        msgSubscriptions.stream()
+                .filter(subscription -> !needToBePersisted(publishMsgProto, subscription))
+                .forEach(subscription -> sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription));
+    }
+
+    private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+        long startTime = System.nanoTime();
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
@@ -111,24 +149,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-        clientLogger.logEvent(senderClientId, "Found msg subscribers");
-        List<Subscription> persistentSubscriptions = new ArrayList<>();
-        for (Subscription msgSubscription : msgSubscriptions) {
-            if (needToBePersisted(publishMsgProto, msgSubscription)) {
-                persistentSubscriptions.add(msgSubscription);
-            } else {
-                sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
-            }
-        }
-        if (!persistentSubscriptions.isEmpty()) {
-            // TODO: convert Proto msg to PublishMsg
-            // TODO: process messages one by one (retrying to save message could lead to wrong order)
-            msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
-        } else {
-            callback.onSuccess();
-        }
-        clientLogger.logEvent(senderClientId, "Finished msg processing");
+        publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        return msgSubscriptions;
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {

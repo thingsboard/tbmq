@@ -15,11 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
@@ -28,12 +29,19 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService, SubscriptionReader, SubscriptionMaintenanceService {
     private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
+    private final SubscriptionTimerStats subscriptionTimerStats;
+
+    public SubscriptionServiceImpl(SubscriptionTrie<ClientSubscription> subscriptionTrie, StatsManager statsManager) {
+        this.subscriptionTrie = subscriptionTrie;
+        this.subscriptionTimerStats = statsManager.getSubscriptionTimerStats();
+    }
 
     @Override
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
@@ -56,7 +64,10 @@ public class SubscriptionServiceImpl implements SubscriptionService, Subscriptio
 
     @Override
     public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
-        return subscriptionTrie.get(topic);
+        long startTime = System.nanoTime();
+        List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
+        subscriptionTimerStats.logSubscriptionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        return subscriptions;
     }
 
     @Override

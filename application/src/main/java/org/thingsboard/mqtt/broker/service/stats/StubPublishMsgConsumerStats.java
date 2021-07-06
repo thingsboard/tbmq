@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
@@ -38,7 +39,7 @@ public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public void logMsgProcessingTime(long time) {
+    public void logMsgProcessingTime(long amount, TimeUnit unit) {
 
     }
 

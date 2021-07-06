@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.stats;
+package org.thingsboard.mqtt.broker.service.stats.timer;
 
-import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
-import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
-
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public interface PublishMsgConsumerStats {
-    String getConsumerId();
+public class StubTimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats {
 
-    void log(int totalMessagesCount, PackProcessingResult packProcessingResult, boolean finalIterationForPack);
+    @Override
+    public void logSubscriptionsLookup(long amount, TimeUnit unit) {
+    }
 
-    void logMsgProcessingTime(long amount, TimeUnit unit);
+    @Override
+    public void logClientSessionsLookup(long amount, TimeUnit unit) {
+    }
 
-    List<StatsCounter> getStatsCounters();
+    @Override
+    public void logNotPersistentMessagesProcessing(long amount, TimeUnit unit) {
+    }
 
-    double getMeanProcessingTime();
-
-    void reset();
+    @Override
+    public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
+    }
 }

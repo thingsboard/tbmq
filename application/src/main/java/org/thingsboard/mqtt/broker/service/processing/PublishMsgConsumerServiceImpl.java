@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,9 +96,9 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         PackProcessingContext ctx = new PackProcessingContext(submitStrategy.getPendingMap());
                         int totalMsgCount = ctx.getPendingMap().size();
                         submitStrategy.process(msg -> {
-                            long msgProcessingStart = System.currentTimeMillis();
+                            long msgProcessingStart = System.nanoTime();
                             msgDispatcherService.processPublishMsg(msg.getPublishMsgProto(), new BasePublishMsgCallback(msg.getId(), ctx));
-                            stats.logMsgProcessingTime(System.currentTimeMillis() - msgProcessingStart);
+                            stats.logMsgProcessingTime(System.nanoTime() - msgProcessingStart, TimeUnit.NANOSECONDS);
                         });
 
                         if (!stopped) {

@@ -22,6 +22,9 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "false", matchIfMissing = true)
 public class StatsManagerStub implements StatsManager, ActorStatsManager {
+    private static final StubTimerStats timerStats = new StubTimerStats();
+
     @Override
     public TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats) {
         return queueCallback;
@@ -83,6 +88,16 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager {
 
     @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+    }
+
+    @Override
+    public SubscriptionTimerStats getSubscriptionTimerStats() {
+        return timerStats;
+    }
+
+    @Override
+    public PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats() {
+        return timerStats;
     }
 
     @Override
