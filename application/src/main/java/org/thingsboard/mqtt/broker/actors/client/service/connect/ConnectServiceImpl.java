@@ -58,7 +58,8 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 @RequiredArgsConstructor
 @Slf4j
 public class ConnectServiceImpl implements ConnectService {
-    private final ExecutorService connectHandlerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("connect-handler-executor"));
+    private final ExecutorService connectHandlerExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
+            ThingsBoardThreadFactory.forName("connect-handler-executor"));
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
