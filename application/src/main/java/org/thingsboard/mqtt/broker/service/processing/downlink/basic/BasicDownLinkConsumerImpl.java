@@ -41,7 +41,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
 
     private volatile boolean stopped = false;
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -61,24 +61,25 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
         String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
         }
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
 
-                    for (TbProtoQueueMsg<QueueProtos.PublishMsgProto> msg : msgs) {
-                        processor.process(msg.getKey(), msg.getValue());
+                    for (TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto> msg : msgs) {
+                        QueueProtos.ClientPublishMsgProto clientPublishMsgProto = msg.getValue();
+                        processor.process(clientPublishMsgProto.getClientId(), clientPublishMsgProto.getPublishMsg());
                     }
                 } catch (Exception e) {
                     if (!stopped) {

@@ -38,7 +38,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> basicProducer;
+    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> basicProducer;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> persistedDeviceProducer;
 
     @PostConstruct
@@ -51,8 +51,12 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @Override
     public void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(targetServiceId);
+        QueueProtos.ClientPublishMsgProto clientPublishMsgProto = QueueProtos.ClientPublishMsgProto.newBuilder()
+                .setClientId(clientId)
+                .setPublishMsg(msg)
+                .build();
         basicProducer.send(topic,
-                new TbProtoQueueMsg<>(clientId, msg),
+                new TbProtoQueueMsg<>(msg.getTopicName(), clientPublishMsgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

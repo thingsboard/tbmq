@@ -59,8 +59,8 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String id) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createProducer(String id) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getProducerProperties()));
         producerBuilder.clientId("basic-downlink-publish-producer-" + id);
         producerBuilder.topicConfigs(topicConfigs);
@@ -70,14 +70,14 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     }
 
     @Override
-    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("basic-downlink-publish-consumer-" + consumerId);
         consumerBuilder.groupId("basic-downlink-publish-group-" + groupId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientPublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();

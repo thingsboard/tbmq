@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface DownLinkBasicPublishMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String id);
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createProducer(String id);
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerId, String groupId);
+    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId);
 
 }
