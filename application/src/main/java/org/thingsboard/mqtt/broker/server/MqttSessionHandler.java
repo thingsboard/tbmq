@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -55,11 +54,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final UUID sessionId = UUID.randomUUID();
     private String clientId;
     private final ClientSessionCtx clientSessionCtx ;
-    private final ClientLogger clientLogger ;
 
-    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger, SslHandler sslHandler) {
+    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, SslHandler sslHandler) {
         this.clientMqttActorManager = clientMqttActorManager;
-        this.clientLogger = clientLogger;
         this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler);
     }
 
@@ -101,7 +98,6 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             throw new ProtocolViolationException("Received " + msgType +" while session wasn't initialized");
         }
 
-        clientLogger.logEvent(clientId, "Incoming MQTT - " + msgType);
         switch (msgType) {
             case DISCONNECT:
                 clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));

@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PreDestroy;
@@ -32,21 +31,17 @@ import javax.annotation.PreDestroy;
 @Service
 public class DeviceMsgQueueServiceImpl implements DeviceMsgQueueService {
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producer;
-    private final ClientLogger clientLogger;
 
-    public DeviceMsgQueueServiceImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory, ClientLogger clientLogger) {
+    public DeviceMsgQueueServiceImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory) {
         this.producer = devicePersistenceMsgQueueFactory.createProducer();
-        this.clientLogger = clientLogger;
     }
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, "Sending msg in DEVICE Queue");
         producer.send(new TbProtoQueueMsg<>(clientId, msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Sent msg in DEVICE Queue");
                         log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                         callback.onSuccess();
                     }

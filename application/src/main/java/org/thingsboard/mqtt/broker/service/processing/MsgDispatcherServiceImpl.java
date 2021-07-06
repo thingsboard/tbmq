@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
@@ -67,8 +66,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private ClientSessionReader clientSessionReader;
     @Autowired
     private DownLinkProxy downLinkProxy;
-    @Autowired
-    private ClientLogger clientLogger;
 
     private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
     private MessagesStats producerStats;
@@ -98,11 +95,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
-        clientLogger.logEvent(senderClientId, "Start msg processing");
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
         List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
-
-        clientLogger.logEvent(senderClientId, "Found msg subscribers");
 
         List<Subscription> persistentSubscriptions = new ArrayList<>();
         long notPersistentMessagesProcessingStartTime = System.nanoTime();
@@ -124,7 +118,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         } else {
             callback.onSuccess();
         }
-        clientLogger.logEvent(senderClientId, "Finished msg processing");
     }
 
     private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {

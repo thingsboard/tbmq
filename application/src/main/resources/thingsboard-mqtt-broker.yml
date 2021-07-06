@@ -349,8 +349,3 @@ swagger:
     title: "${SWAGGER_LICENSE_TITLE:}"
     url: "${SWAGGER_LICENSE_URL:}"
   version: "${SWAGGER_VERSION:2.0}"
-
-
-analysis:
-  log:
-    analyzed-client-ids: "${ANALYSIS_LOG_CLIENT_IDS:}"

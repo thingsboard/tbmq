@@ -25,12 +25,10 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 
 @Slf4j
 public class PersistedDeviceActor extends ContextAwareActor {
     private final PersistedDeviceActorMessageProcessor processor;
-    private final ClientLogger clientLogger;
     private final String clientId;
 
     // TODO: merge it with Client Actor
@@ -38,13 +36,11 @@ public class PersistedDeviceActor extends ContextAwareActor {
         super(systemContext);
         this.clientId = clientId;
         this.processor = new PersistedDeviceActorMessageProcessor(systemContext, clientId);
-        this.clientLogger = systemContext.getClientLogger();
     }
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         log.trace("[{}] Received {} msg.", clientId, msg.getMsgType());
-        clientLogger.logEvent(clientId, "Received DEVICE actor msg - " + msg.getMsgType());
         switch (msg.getMsgType()) {
             case DEVICE_CONNECTED_EVENT_MSG:
                 processor.processDeviceConnect((DeviceConnectedEventMsg) msg);

@@ -24,7 +24,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
@@ -34,22 +33,18 @@ import javax.annotation.PreDestroy;
 @Service
 public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueService {
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> applicationProducer;
-    private final ClientLogger clientLogger;
 
-    public ApplicationMsgQueueServiceImpl(ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory, ServiceInfoProvider serviceInfoProvider, ClientLogger clientLogger) {
+    public ApplicationMsgQueueServiceImpl(ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory, ServiceInfoProvider serviceInfoProvider) {
         this.applicationProducer = applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
-        this.clientLogger = clientLogger;
     }
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
-        clientLogger.logEvent(clientId, "Persisting msg in APPLICATION Queue");
         applicationProducer.send(clientQueueTopic, new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Persisted msg in APPLICATION Queue");
                         log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                         callback.onSuccess();
                     }

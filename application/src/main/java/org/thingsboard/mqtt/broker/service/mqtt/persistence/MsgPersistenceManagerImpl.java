@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueService;
@@ -56,8 +55,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private DeviceMsgQueueService deviceMsgQueueService;
     @Autowired
     private DevicePersistenceProcessor devicePersistenceProcessor;
-    @Autowired
-    private ClientLogger clientLogger;
 
     // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
 
@@ -80,7 +77,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         int callbackCount = applicationSubscriptions.size() + deviceSubscriptions.size();
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
-        clientLogger.logEvent(senderClientId, "Before msg persistence");
         for (Subscription deviceSubscription : deviceSubscriptions) {
             String deviceClientId = deviceSubscription.getSessionInfo().getClientInfo().getClientId();
             deviceMsgQueueService.sendMsg(deviceClientId, createReceiverPublishMsg(deviceSubscription, publishMsgProto), callbackWrapper);
@@ -89,7 +85,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             String applicationClientId = applicationSubscription.getSessionInfo().getClientInfo().getClientId();
             applicationMsgQueueService.sendMsg(applicationClientId, createReceiverPublishMsg(applicationSubscription, publishMsgProto),callbackWrapper);
         }
-        clientLogger.logEvent(senderClientId, "After msg persistence");
     }
 
     private QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {

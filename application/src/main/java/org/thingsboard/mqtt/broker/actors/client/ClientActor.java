@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
@@ -57,7 +56,6 @@ public class ClientActor extends ContextAwareActor {
     private final ActorProcessor actorProcessor;
     private final ConnectService connectService;
     private final MqttMessageHandler mqttMessageHandler;
-    private final ClientLogger clientLogger;
     private final ClientActorConfiguration actorConfiguration;
 
     private final ClientActorState state;
@@ -69,7 +67,6 @@ public class ClientActor extends ContextAwareActor {
         this.actorProcessor = systemContext.getClientActorContext().getActorProcessor();
         this.connectService = systemContext.getClientActorContext().getConnectService();
         this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
-        this.clientLogger = systemContext.getClientActorContext().getClientLogger();
         this.actorConfiguration = systemContext.getClientActorConfiguration();
         this.state = new DefaultClientActorState(clientId, isClientIdGenerated);
     }
@@ -82,7 +79,6 @@ public class ClientActor extends ContextAwareActor {
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
-        clientLogger.logEvent(state.getClientId(), "Received CLIENT actor msg - " + msg.getMsgType());
 
         if (sessionNotMatch(msg)) {
             log.debug("[{}][{}] Received {} for another sessionId - {}.",
