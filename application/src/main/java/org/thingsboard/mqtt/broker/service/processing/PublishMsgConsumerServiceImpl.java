@@ -118,7 +118,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                             submitStrategy.update(decision.getReprocessMap());
                         }
                     }
-                    log.trace("[{}] Pack processing took {} ms, pack size - {}", consumerId, System.nanoTime() - packProcessingStart, msgs.size());
+                    log.trace("[{}] Pack processing took {} ms, pack size - {}", consumerId, (double)(System.nanoTime() - packProcessingStart) / 1_000_000, msgs.size());
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
