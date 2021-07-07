@@ -92,6 +92,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                             .collect(Collectors.toList());
                     submitStrategy.init(messagesWithId);
 
+                    long packProcessingStart = System.nanoTime();
                     while (!stopped) {
                         PackProcessingContext ctx = new PackProcessingContext(submitStrategy.getPendingMap());
                         int totalMsgCount = ctx.getPendingMap().size();
@@ -117,13 +118,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                             submitStrategy.update(decision.getReprocessMap());
                         }
                     }
+                    log.trace("[{}] Pack processing took {} ms, pack size - {}", consumerId, System.nanoTime() - packProcessingStart, msgs.size());
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.trace("[{}] Failed to wait until the server has capacity to handle new requests", consumerId, e2);
+                            log.debug("[{}] Failed to wait until the server has capacity to handle new requests", consumerId, e2);
                         }
                     }
                 }
