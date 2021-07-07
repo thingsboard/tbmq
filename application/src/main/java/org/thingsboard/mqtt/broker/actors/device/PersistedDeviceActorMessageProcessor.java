@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommand
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -48,6 +49,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final DeviceMsgService deviceMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
+    private final ClientLogger clientLogger;
     private final DeviceActorConfiguration deviceActorConfig;
 
     private final String clientId;
@@ -63,6 +65,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         super(systemContext);
         this.clientId = clientId;
         this.deviceMsgService = systemContext.getDeviceMsgService();
+        this.clientLogger = systemContext.getClientLogger();
         this.publishMsgDeliveryService = systemContext.getPublishMsgDeliveryService();
         this.clientMqttActorManager = systemContext.getClientMqttActorManager();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
@@ -138,6 +141,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
                     publishMsg.getTopic(), publishMsg.getQos(), false,
                     publishMsg.getPayload());
+            clientLogger.logEvent(clientId, "Delivered msg to device client");
         } catch (Exception e) {
             clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
         }

@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.service.ActorProcessingMetricService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
@@ -39,6 +40,7 @@ public class ActorSystemContext {
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ActorProcessingMetricService actorProcessingMetricService;
+    private final ClientLogger clientLogger;
 
     private final ClientActorContext clientActorContext;
 
