@@ -153,7 +153,7 @@ queue:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
-      producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
+      producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:compression.type:gzip}"
     application-persisted-msg:
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
@@ -193,7 +193,7 @@ queue:
       topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:basic_downlink_publish_msg}"
       topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       consumer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMER_CONFIG:auto.offset.reset:latest}"
-      producer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:}"
+      producer: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG:batch.size:32768;linger.ms:5;buffer.memory:67108864;compression.type:gzip}"
     persistent-downlink-publish-msg:
       topic-prefix: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:persistent_downlink_publish_msg}"
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
