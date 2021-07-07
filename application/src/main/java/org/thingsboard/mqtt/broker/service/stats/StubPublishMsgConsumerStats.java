@@ -49,7 +49,7 @@ public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public double getMeanProcessingTime() {
+    public double getAvgProcessingTime() {
         return 0;
     }
 

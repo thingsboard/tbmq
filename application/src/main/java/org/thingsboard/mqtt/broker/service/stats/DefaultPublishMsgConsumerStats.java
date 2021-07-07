@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
@@ -53,7 +53,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     private final StatsCounter successIterationsCounter;
     private final StatsCounter failedIterationsCounter;
 
-    private final Timer processingTimer;
+    private final ResettableTimer processingTimer;
 
     public DefaultPublishMsgConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -76,7 +76,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
         counters.add(successIterationsCounter);
         counters.add(failedIterationsCounter);
 
-        this.processingTimer = statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId);
+        this.processingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId));
     }
 
     @Override
@@ -108,7 +108,8 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public void logMsgProcessingTime(long amount, TimeUnit unit) {
-        processingTimer.record(amount, unit);
+        processingTimer.logTime(amount, unit);
+
     }
 
     @Override
@@ -117,12 +118,13 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public double getMeanProcessingTime() {
-        return processingTimer.mean(TimeUnit.MILLISECONDS);
+    public double getAvgProcessingTime() {
+        return processingTimer.getAvg();
     }
 
     @Override
     public void reset() {
         counters.forEach(StatsCounter::clear);
+        processingTimer.reset();
     }
 }

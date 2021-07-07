@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats.timer;
 
-import io.micrometer.core.instrument.Timer;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.stats.StatsType;
 
@@ -25,20 +25,20 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats {
-    private final List<Timer> timers;
+    private final List<ResettableTimer> timers;
 
-    private final Timer subscriptionLookupTimer;
-    private final Timer clientSessionsLookupTimer;
-    private final Timer notPersistentMessagesProcessingTimer;
-    private final Timer persistentMessagesProcessingTimer;
-    private final Timer deliveryTimer;
+    private final ResettableTimer subscriptionLookupTimer;
+    private final ResettableTimer clientSessionsLookupTimer;
+    private final ResettableTimer notPersistentMessagesProcessingTimer;
+    private final ResettableTimer persistentMessagesProcessingTimer;
+    private final ResettableTimer deliveryTimer;
 
     public TimerStats(StatsFactory statsFactory) {
-        this.subscriptionLookupTimer = statsFactory.createTimer(StatsType.SUBSCRIPTION_LOOKUP.getPrintName());
-        this.clientSessionsLookupTimer = statsFactory.createTimer(StatsType.CLIENT_SESSIONS_LOOKUP.getPrintName());
-        this.notPersistentMessagesProcessingTimer = statsFactory.createTimer(StatsType.NOT_PERSISTENT_MESSAGES_PROCESSING.getPrintName());
-        this.persistentMessagesProcessingTimer = statsFactory.createTimer(StatsType.PERSISTENT_MESSAGES_PROCESSING.getPrintName());
-        this.deliveryTimer = statsFactory.createTimer(StatsType.DELIVERY.getPrintName());
+        this.subscriptionLookupTimer = new ResettableTimer(statsFactory.createTimer(StatsType.SUBSCRIPTION_LOOKUP.getPrintName()));
+        this.clientSessionsLookupTimer = new ResettableTimer(statsFactory.createTimer(StatsType.CLIENT_SESSIONS_LOOKUP.getPrintName()));
+        this.notPersistentMessagesProcessingTimer = new ResettableTimer(statsFactory.createTimer(StatsType.NOT_PERSISTENT_MESSAGES_PROCESSING.getPrintName()));
+        this.persistentMessagesProcessingTimer = new ResettableTimer(statsFactory.createTimer(StatsType.PERSISTENT_MESSAGES_PROCESSING.getPrintName()));
+        this.deliveryTimer = new ResettableTimer(statsFactory.createTimer(StatsType.DELIVERY.getPrintName()));
 
         this.timers = Arrays.asList(
                 subscriptionLookupTimer, clientSessionsLookupTimer, notPersistentMessagesProcessingTimer, persistentMessagesProcessingTimer,
@@ -46,32 +46,32 @@ public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingT
         );
     }
 
-    public Collection<Timer> getTimers() {
+    public Collection<ResettableTimer> getTimers() {
         return timers;
     }
 
     @Override
     public void logSubscriptionsLookup(long amount, TimeUnit unit) {
-        subscriptionLookupTimer.record(amount, unit);
+        subscriptionLookupTimer.logTime(amount, unit);
     }
 
     @Override
     public void logClientSessionsLookup(long amount, TimeUnit unit) {
-        clientSessionsLookupTimer.record(amount, unit);
+        clientSessionsLookupTimer.logTime(amount, unit);
     }
 
     @Override
     public void logNotPersistentMessagesProcessing(long amount, TimeUnit unit) {
-        notPersistentMessagesProcessingTimer.record(amount, unit);
+        notPersistentMessagesProcessingTimer.logTime(amount, unit);
     }
 
     @Override
     public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
-        persistentMessagesProcessingTimer.record(amount, unit);
+        persistentMessagesProcessingTimer.logTime(amount, unit);
     }
 
     @Override
     public void logDelivery(long amount, TimeUnit unit) {
-        deliveryTimer.record(amount, unit);
+        deliveryTimer.logTime(amount, unit);
     }
 }

@@ -30,7 +30,7 @@ public interface PublishMsgConsumerStats {
 
     List<StatsCounter> getStatsCounters();
 
-    double getMeanProcessingTime();
+    double getAvgProcessingTime();
 
     void reset();
 }

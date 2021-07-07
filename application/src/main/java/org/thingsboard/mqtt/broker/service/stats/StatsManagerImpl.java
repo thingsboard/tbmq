@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
-import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +26,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsConstantNames;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -62,7 +61,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
-    private final Map<String, Timer> managedQueueProducers = new ConcurrentHashMap<>();
+    private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
 
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
@@ -193,9 +192,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public org.thingsboard.mqtt.broker.queue.kafka.stats.Timer createTimer(String clientId) {
-        Timer timer = statsFactory.createTimer(StatsType.QUEUE_PRODUCER.getPrintName(), "producerId", clientId);
+        ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_PRODUCER.getPrintName(), "producerId", clientId));
         managedQueueProducers.put(clientId, timer);
-        return timer::record;
+        return timer::logTime;
     }
 
     @Override
@@ -228,8 +227,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             String countersStats = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Mean processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
-                    stats.getMeanProcessingTime(), countersStats);
+            log.info("[{}][{}] Average processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
+                    stats.getAvgProcessingTime(), countersStats);
             stats.reset();
         }
 
@@ -263,16 +262,20 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
 
         StringBuilder timerLogBuilder = new StringBuilder();
-        for (Timer timer : timerStats.getTimers()) {
-            timerLogBuilder.append(timer.getId().getName()).append(" = [").append(timer.mean(TimeUnit.MILLISECONDS)).append("] ");
+        for (ResettableTimer resettableTimer : timerStats.getTimers()) {
+            timerLogBuilder.append(resettableTimer.getTimer().getId().getName()).append(" = [").append(resettableTimer.getCount()).append(" | ")
+                    .append(resettableTimer.getAvg()).append("] ");
+            resettableTimer.reset();
         }
-        log.info("Timer Median Stats: {}", timerLogBuilder.toString());
+        log.info("Timer Average Stats: {}", timerLogBuilder.toString());
 
         StringBuilder queueProducerLogBuilder = new StringBuilder();
         managedQueueProducers.forEach((producerId, timer) -> {
-            queueProducerLogBuilder.append(producerId).append(" = [").append(timer.mean(TimeUnit.MILLISECONDS)).append("] ");
+            queueProducerLogBuilder.append(producerId).append(" = [").append(timer.getCount()).append(" | ")
+                    .append(timer.getAvg()).append("] ");
+            timer.reset();
         });
-        log.info("Queue Producer Send Time Median Stats: {}", queueProducerLogBuilder.toString());
+        log.info("Queue Producer Send Time Average Stats: {}", queueProducerLogBuilder.toString());
     }
 
     @AllArgsConstructor
