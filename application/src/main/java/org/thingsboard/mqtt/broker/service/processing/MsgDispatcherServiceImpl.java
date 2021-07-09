@@ -113,7 +113,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
             }
         }
-        publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+        if (msgSubscriptions.size() != persistentSubscriptions.size()) {
+            publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+        }
 
         if (!persistentSubscriptions.isEmpty()) {
             // TODO: convert Proto msg to PublishMsg

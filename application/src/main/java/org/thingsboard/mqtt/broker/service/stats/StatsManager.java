@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,6 +52,8 @@ public interface StatsManager {
     void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
+
+    void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue);
 
     SubscriptionTimerStats getSubscriptionTimerStats();
 

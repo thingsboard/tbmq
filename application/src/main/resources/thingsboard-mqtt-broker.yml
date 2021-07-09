@@ -84,6 +84,7 @@ queue:
       # For RETRY_ALL only
       retries: "${TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   application-persisted-msg:
+    publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
     ack-strategy:

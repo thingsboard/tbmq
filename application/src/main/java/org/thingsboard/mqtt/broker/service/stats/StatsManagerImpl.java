@@ -42,6 +42,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -164,6 +165,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.trace("Registering ActiveApplicationProcessorsStats.");
         statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
         gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
+    }
+
+    @Override
+    public void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue) {
+        log.trace("Registering PendingApplicationPersistentMessages.");
+        statsFactory.createGauge(StatsType.PENDING_APP_PERSISTENT_MESSAGES.getPrintName(), pendingMessagesQueue, Queue::size);
+        gauges.add(new Gauge(StatsType.PENDING_APP_PERSISTENT_MESSAGES.getPrintName(), pendingMessagesQueue::size));
     }
 
     @Override
