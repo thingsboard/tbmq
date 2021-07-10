@@ -88,7 +88,7 @@ public class ApplicationMsgQueueServiceImpl implements ApplicationMsgQueueServic
             try {
                 sendMsgToApplicationQueue(clientId, callback, msgProto);
             } catch (Exception e) {
-                log.error("[{}] Failed to send APPLICATION msg to the queue", clientId, e);
+                log.error("[{}] Failed to send msg to the APPLICATION queue", clientId, e);
                 callback.onFailure(e);
             }
         }

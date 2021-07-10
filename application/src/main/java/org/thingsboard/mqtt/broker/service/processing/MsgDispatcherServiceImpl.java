@@ -58,8 +58,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private SubscriptionReader subscriptionReader;
     @Autowired
-    private PublishMsgQueueFactory publishMsgQueueFactory;
-    @Autowired
     private StatsManager statsManager;
     @Autowired
     private MsgPersistenceManager msgPersistenceManager;
@@ -69,21 +67,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private DownLinkProxy downLinkProxy;
     @Autowired
     private ClientLogger clientLogger;
+    @Autowired
+    private PublishMsgQueueService publishMsgQueueService;
 
-    private TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> publishMsgProducer;
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
 
     @PostConstruct
     public void init() {
-        this.publishMsgProducer = publishMsgQueueFactory.createProducer();
         this.producerStats = statsManager.createMsgDispatcherPublishStats();
         this.publishMsgProcessingTimerStats = statsManager.getPublishMsgProcessingTimerStats();
-    }
-
-    @PreDestroy
-    public void destroy() {
-        publishMsgProducer.stop();
     }
 
     @Override
@@ -92,7 +85,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
-        publishMsgProducer.send(new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsgProto), callback);
+        publishMsgQueueService.sendMsg(publishMsgProto, callback);
     }
 
     @Override

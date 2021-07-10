@@ -55,6 +55,8 @@ public interface StatsManager {
 
     void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue);
 
+    void registerPendingPublishMessages(Queue<?> pendingMessagesQueue);
+
     SubscriptionTimerStats getSubscriptionTimerStats();
 
     PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();
