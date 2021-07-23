@@ -100,10 +100,6 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue) {
-    }
-
-    @Override
     public SubscriptionTimerStats getSubscriptionTimerStats() {
         return timerStats;
     }

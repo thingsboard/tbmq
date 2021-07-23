@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueueService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -48,7 +48,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private GenericClientSessionCtxManager genericClientSessionCtxManager;
 
     @Autowired
-    private ApplicationMsgQueueService applicationMsgQueueService;
+    private ApplicationMsgQueuePublisher applicationMsgQueuePublisher;
     @Autowired
     private ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
@@ -87,7 +87,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         }
         for (Subscription applicationSubscription : applicationSubscriptions) {
             String applicationClientId = applicationSubscription.getSessionInfo().getClientInfo().getClientId();
-            applicationMsgQueueService.sendMsg(applicationClientId, createReceiverPublishMsg(applicationSubscription, publishMsgProto),callbackWrapper);
+            applicationMsgQueuePublisher.sendMsg(applicationClientId, createReceiverPublishMsg(applicationSubscription, publishMsgProto),callbackWrapper);
         }
         clientLogger.logEvent(senderClientId, "After msg persistence");
     }

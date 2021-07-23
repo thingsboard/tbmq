@@ -55,8 +55,6 @@ public interface StatsManager {
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
-    void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue);
-
     SubscriptionTimerStats getSubscriptionTimerStats();
 
     PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();

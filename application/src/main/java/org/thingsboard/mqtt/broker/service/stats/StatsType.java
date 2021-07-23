@@ -25,7 +25,6 @@ public enum StatsType {
     CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     ACTIVE_APP_PROCESSORS("activeAppProcessors"),
-    PENDING_APP_PERSISTENT_MESSAGES("pendingApplicationPersistentMessages"),
     PENDING_PRODUCER_MESSAGES("pendingProducerMessages"),
     APP_PROCESSOR("appProcessor"),
     DEVICE_PROCESSOR("deviceProcessor"),

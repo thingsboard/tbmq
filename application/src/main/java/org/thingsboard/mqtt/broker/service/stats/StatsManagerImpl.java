@@ -181,13 +181,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue) {
-        log.trace("Registering PendingApplicationPersistentMessages.");
-        statsFactory.createGauge(StatsType.PENDING_APP_PERSISTENT_MESSAGES.getPrintName(), pendingMessagesQueue, Queue::size);
-        gauges.add(new Gauge(StatsType.PENDING_APP_PERSISTENT_MESSAGES.getPrintName(), pendingMessagesQueue::size));
-    }
-
-    @Override
     public void registerActorsStats(Map<?, ?> actorsMap) {
         log.trace("Registering ActorsStats.");
         statsFactory.createGauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap, Map::size);

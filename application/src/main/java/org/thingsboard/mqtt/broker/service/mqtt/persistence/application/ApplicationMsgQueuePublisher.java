@@ -18,6 +18,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
-public interface ApplicationMsgQueueService {
+public interface ApplicationMsgQueuePublisher {
     void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback);
 }
