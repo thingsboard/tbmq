@@ -17,15 +17,17 @@ package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 
 import javax.annotation.PostConstruct;
@@ -39,14 +41,33 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final ClientLogger clientLogger;
+    private final ProducerStatsManager statsManager;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> basicProducer;
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> persistedDeviceProducer;
+    private TbPublishBlockingQueue<QueueProtos.ClientPublishMsgProto> basicPublisherQueue;
+    private TbPublishBlockingQueue<QueueProtos.PersistedDevicePublishMsgProto> persistentPublisherQueue;
+
+
+    @Value("${queue.basic-downlink-publish-msg.publisher-thread-max-delay}")
+    private long basicMaxDelay;
+    @Value("${queue.persistent-downlink-publish-msg.publisher-thread-max-delay}")
+    private long persistentMaxDelay;
 
     @PostConstruct
     public void init() {
-        this.basicProducer = downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
-        this.persistedDeviceProducer = downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+        this.basicPublisherQueue = TbPublishBlockingQueue.<QueueProtos.ClientPublishMsgProto>builder()
+                .queueName("basicDownlinkQueue")
+                .producer(downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
+                .maxDelay(basicMaxDelay)
+                .statsManager(statsManager)
+                .build();
+        this.basicPublisherQueue.init();
+        this.persistentPublisherQueue = TbPublishBlockingQueue.<QueueProtos.PersistedDevicePublishMsgProto>builder()
+                .queueName("persistentDownlinkQueue")
+                .producer(downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
+                .maxDelay(persistentMaxDelay)
+                .statsManager(statsManager)
+                .build();
+        this.persistentPublisherQueue.init();
     }
 
     // TODO: what to do if sending msg to Kafka fails?
@@ -57,9 +78,8 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 .setClientId(clientId)
                 .setPublishMsg(msg)
                 .build();
-        clientLogger.logEvent(clientId, "Sending msg to basic down-link queue");
-        basicProducer.send(topic,
-                new TbProtoQueueMsg<>(msg.getTopicName(), clientPublishMsgProto),
+        clientLogger.logEvent(clientId, "Putting msg to basic down-link memory queue");
+        basicPublisherQueue.add(new TbProtoQueueMsg<>(msg.getTopicName(), clientPublishMsgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -72,16 +92,16 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                         log.info("[{}] Failed to publish BASIC msg to {} service. Exception - {}, reason - {}.",
                                 clientId, targetServiceId, t.getClass().getSimpleName(), t.getMessage());
                     }
-                }
+                },
+                topic
         );
     }
 
     @Override
     public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
-        clientLogger.logEvent(clientId, "Sending msg to persistent down-link queue");
-        persistedDeviceProducer.send(topic,
-                new TbProtoQueueMsg<>(clientId, msg),
+        clientLogger.logEvent(clientId, "Putting msg to persistent down-link memory queue");
+        persistentPublisherQueue.add(new TbProtoQueueMsg<>(clientId, msg),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -94,7 +114,8 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                         log.info("[{}] Failed to publish PERSISTENT msg to {} service. Exception - {}, reason - {}.",
                                 clientId, targetServiceId, t.getClass().getSimpleName(), t.getMessage());
                     }
-                }
+                },
+                topic
         );
     }
 }

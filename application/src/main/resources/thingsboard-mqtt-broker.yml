@@ -121,9 +121,11 @@ queue:
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persistent-downlink-publish-msg:
+    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   basic-downlink-publish-msg:
+    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   cluster-event:
