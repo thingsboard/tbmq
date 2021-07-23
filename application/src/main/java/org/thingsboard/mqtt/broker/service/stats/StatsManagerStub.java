@@ -22,8 +22,8 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.Timer;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.Timer;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
@@ -134,5 +134,10 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     @Override
     public Timer createTimer(String clientId) {
         return (amount, unit) -> {};
+    }
+
+    @Override
+    public void registerProducerQueue(String queueName, Queue<?> queue) {
+
     }
 }

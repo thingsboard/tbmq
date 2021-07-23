@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventKafkaS
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventResponseKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
 import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;

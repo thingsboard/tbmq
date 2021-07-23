@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.kafka.stats;
+package org.thingsboard.mqtt.broker.queue.stats;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Queue;
 
-@FunctionalInterface
-public interface Timer {
-    void logTime(long amount, TimeUnit unit);
+public interface ProducerStatsManager {
+    Timer createTimer(String clientId);
+
+    void registerProducerQueue(String queueName, Queue<?> queue);
 }

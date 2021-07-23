@@ -13,8 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.kafka.stats;
+package org.thingsboard.mqtt.broker.queue.publish;
 
-public interface ProducerStatsManager {
-    Timer createTimer(String clientId);
+import com.google.protobuf.GeneratedMessageV3;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+
+public interface TbPublishQueue<PROTO extends GeneratedMessageV3> {
+    void init();
+
+    void destroy();
+
+    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback);
+
+    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback, String topic);
 }

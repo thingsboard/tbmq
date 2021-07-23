@@ -32,7 +32,8 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.Timer;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
@@ -63,6 +64,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
+    private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
 
     @Value("${stats.application-processor.enabled}")
@@ -217,10 +219,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public org.thingsboard.mqtt.broker.queue.kafka.stats.Timer createTimer(String clientId) {
+    public Timer createTimer(String clientId) {
         ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_PRODUCER.getPrintName(), "producerId", clientId));
         managedQueueProducers.put(clientId, timer);
         return timer::logTime;
+    }
+
+    @Override
+    public void registerProducerQueue(String queueName, Queue<?> queue) {
+        statsFactory.createGauge(StatsType.PENDING_PRODUCER_MESSAGES.getPrintName(), queue, Queue::size, "queueName", queueName);
+        managedProducerQueues.add(new Gauge(queueName, queue::size));
     }
 
     @Override
@@ -292,6 +300,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
+
+        StringBuilder producerGaugeLogBuilder = new StringBuilder();
+        for (Gauge gauge : managedProducerQueues) {
+            producerGaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
+        }
+        log.info("Producer Gauges Stats: {}", producerGaugeLogBuilder.toString());
 
         StringBuilder timerLogBuilder = new StringBuilder();
         for (ResettableTimer resettableTimer : timerStats.getTimers()) {

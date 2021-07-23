@@ -27,8 +27,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.Timer;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.Timer;
 
 import java.util.List;
 import java.util.Map;
