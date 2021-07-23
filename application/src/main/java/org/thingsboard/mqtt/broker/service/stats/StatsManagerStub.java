@@ -66,6 +66,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats() {
+        return StubClientSubscriptionConsumerStats.STUB_CLIENT_SUBSCRIPTION_CONSUMER_STATS;
+    }
+
+    @Override
     public void clearApplicationProcessorStats(String clientId) {
     }
 

@@ -137,7 +137,7 @@ public class BrokerInitializer {
         clientSubscriptionConsumer.listen((clientId, serviceId, topicSubscriptions) -> {
             if (serviceInfoProvider.getServiceId().equals(serviceId)) {
                 log.trace("[{}] Msg was already processed.", clientId);
-                return;
+                return false;
             }
 
             TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
@@ -148,6 +148,7 @@ public class BrokerInitializer {
             }
 
             clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
+            return true;
         });
     }
 

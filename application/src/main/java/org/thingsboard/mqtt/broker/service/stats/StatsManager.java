@@ -37,6 +37,8 @@ public interface StatsManager {
 
     ApplicationProcessorStats createApplicationProcessorStats(String clientId);
 
+    ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats();
+
     void clearApplicationProcessorStats(String clientId);
 
     AtomicInteger createSubscriptionSizeCounter();

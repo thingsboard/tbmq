@@ -39,6 +39,10 @@ public class StatsConstantNames {
     public static final String CLIENT_ID_TAG = "clientId";
     public static final String CONSUMER_ID_TAG = "consumerId";
 
+    public static final String TOTAL_SUBSCRIPTIONS = "totalSubscriptions";
+    public static final String ACCEPTED_SUBSCRIPTIONS = "acceptedSubscriptions";
+    public static final String IGNORED_SUBSCRIPTIONS = "ignoredSubscriptions";
+
 
     public static final String STATS_NAME_TAG = "statsName";
 }

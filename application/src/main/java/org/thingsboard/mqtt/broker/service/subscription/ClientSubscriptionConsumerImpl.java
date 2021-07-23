@@ -25,6 +25,8 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.ClientSubscriptionConsumerStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PreDestroy;
 import java.util.Collections;
@@ -53,11 +55,13 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private final SubscriptionPersistenceService persistenceService;
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private final ClientSubscriptionConsumerStats stats;
 
-    public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider, SubscriptionPersistenceService persistenceService) {
+    public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider, SubscriptionPersistenceService persistenceService, StatsManager statsManager) {
         String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
         this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
         this.persistenceService = persistenceService;
+        this.stats = statsManager.createClientSubscriptionConsumerStats();
     }
 
     @Override
@@ -115,12 +119,21 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     if (messages.isEmpty()) {
                         continue;
                     }
+                    stats.logTotal(messages.size());
+                    int acceptedSubscriptions = 0;
+                    int ignoredSubscriptions = 0;
                     for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
                         String serviceId = bytesToString(msg.getHeaders().get(SubscriptionConst.SERVICE_ID_HEADER));
                         Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
-                        callback.accept(clientId, serviceId, clientSubscriptions);
+                        boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
+                        if (accepted) {
+                            acceptedSubscriptions++;
+                        } else {
+                            ignoredSubscriptions++;
+                        }
                     }
+                    stats.log(acceptedSubscriptions, ignoredSubscriptions);
                     clientSubscriptionsConsumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {

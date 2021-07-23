@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.stats;
 
-import java.util.Set;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 
-@FunctionalInterface
-public interface ClientSubscriptionChangesCallback {
-    boolean accept(String clientId, String serviceId, Set<TopicSubscription>topicSubscriptions);
+import java.util.List;
+
+public interface ClientSubscriptionConsumerStats {
+    void logTotal(int totalSubscriptions);
+
+    void log(int acceptedSubscriptions, int ignoredSubscriptions);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

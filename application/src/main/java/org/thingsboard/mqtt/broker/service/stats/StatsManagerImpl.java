@@ -63,6 +63,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
+    private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
 
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
@@ -114,6 +115,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         } else {
             return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
         }
+    }
+
+    @Override
+    public ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats() {
+        log.trace("Creating ClientSubscriptionConsumerStats.");
+        if (managedClientSubscriptionConsumerStats != null) {
+            throw new RuntimeException("ClientSubscriptionConsumerStats is already defined");
+        }
+        this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
+        return managedClientSubscriptionConsumerStats;
     }
 
     @Override
@@ -269,6 +280,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                 }
             }
         }
+
+        String statsStr = managedClientSubscriptionConsumerStats.getStatsCounters().stream()
+                .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                .collect(Collectors.joining(" "));
+        log.info("[{}] Stats: {}", StatsType.CLIENT_SUBSCRIPTIONS_CONSUMER.getPrintName(), statsStr);
+        managedClientSubscriptionConsumerStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

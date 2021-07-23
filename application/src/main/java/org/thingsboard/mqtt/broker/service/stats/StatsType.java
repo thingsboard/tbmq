@@ -31,6 +31,7 @@ public enum StatsType {
     DEVICE_PROCESSOR("deviceProcessor"),
     RUNNING_ACTORS("runningActors"),
     SQL_QUEUE("sqlQueue"),
+    CLIENT_SUBSCRIPTIONS_CONSUMER("clientSubscriptionsConsumer"),
 
     SUBSCRIPTION_LOOKUP("subscriptionLookup"),
     CLIENT_SESSIONS_LOOKUP("clientSessionsLookup"),
