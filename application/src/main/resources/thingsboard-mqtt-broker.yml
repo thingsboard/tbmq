@@ -93,6 +93,7 @@ queue:
       # For RETRY_ALL only
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   device-persisted-msg:
+    publisher-thread-max-delay: "${TB_DEVICE_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"

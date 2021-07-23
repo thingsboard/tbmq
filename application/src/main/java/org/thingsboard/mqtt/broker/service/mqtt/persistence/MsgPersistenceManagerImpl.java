@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -53,7 +53,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     @Autowired
-    private DeviceMsgQueueService deviceMsgQueueService;
+    private DeviceMsgQueuePublisher deviceMsgQueuePublisher;
     @Autowired
     private DevicePersistenceProcessor devicePersistenceProcessor;
     @Autowired
@@ -83,7 +83,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, "Before msg persistence");
         for (Subscription deviceSubscription : deviceSubscriptions) {
             String deviceClientId = deviceSubscription.getSessionInfo().getClientInfo().getClientId();
-            deviceMsgQueueService.sendMsg(deviceClientId, createReceiverPublishMsg(deviceSubscription, publishMsgProto), callbackWrapper);
+            deviceMsgQueuePublisher.sendMsg(deviceClientId, createReceiverPublishMsg(deviceSubscription, publishMsgProto), callbackWrapper);
         }
         for (Subscription applicationSubscription : applicationSubscriptions) {
             String applicationClientId = applicationSubscription.getSessionInfo().getClientInfo().getClientId();

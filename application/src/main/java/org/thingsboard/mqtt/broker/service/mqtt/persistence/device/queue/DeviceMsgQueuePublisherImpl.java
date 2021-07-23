@@ -16,13 +16,15 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
+import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
@@ -30,19 +32,28 @@ import javax.annotation.PreDestroy;
 
 @Slf4j
 @Service
-public class DeviceMsgQueueServiceImpl implements DeviceMsgQueueService {
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producer;
+public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
+    private final TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
     private final ClientLogger clientLogger;
 
-    public DeviceMsgQueueServiceImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory, ClientLogger clientLogger) {
-        this.producer = devicePersistenceMsgQueueFactory.createProducer();
+    @Value("${queue.device-persisted-msg.publisher-thread-max-delay}")
+    private long maxDelay;
+
+    public DeviceMsgQueuePublisherImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory, ClientLogger clientLogger, ProducerStatsManager statsManager) {
         this.clientLogger = clientLogger;
+        this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
+                .queueName("deviceMsgQueue")
+                .producer(devicePersistenceMsgQueueFactory.createProducer())
+                .maxDelay(maxDelay)
+                .statsManager(statsManager)
+                .build();
+        this.publisherQueue.init();
     }
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, "Sending msg in DEVICE Queue");
-        producer.send(new TbProtoQueueMsg<>(clientId, msgProto),
+        publisherQueue.add(new TbProtoQueueMsg<>(clientId, msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -62,6 +73,6 @@ public class DeviceMsgQueueServiceImpl implements DeviceMsgQueueService {
 
     @PreDestroy
     public void destroy() {
-        producer.stop();
+        publisherQueue.destroy();
     }
 }
