@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CONSUMER_ID_TAG;
@@ -33,7 +32,7 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_FA
 public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
     private final String consumerId;
 
-    private final List<StatsCounter> counters = new ArrayList<>();
+    private final List<StatsCounter> counters;
 
     private final StatsCounter successMsgCounter;
     private final StatsCounter tmpFailedMsgCounter;
@@ -51,11 +50,7 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
         this.successIterationsCounter = statsFactory.createStatsCounter(statsKey, SUCCESSFUL_ITERATIONS, CONSUMER_ID_TAG, consumerId);
         this.failedIterationsCounter = statsFactory.createStatsCounter(statsKey, FAILED_ITERATIONS, CONSUMER_ID_TAG, consumerId);
 
-        counters.add(successMsgCounter);
-        counters.add(failedMsgCounter);
-        counters.add(tmpFailedMsgCounter);
-        counters.add(successIterationsCounter);
-        counters.add(failedIterationsCounter);
+        counters = List.of(successMsgCounter, failedMsgCounter, tmpFailedMsgCounter, successIterationsCounter, failedIterationsCounter);
     }
 
     @Override

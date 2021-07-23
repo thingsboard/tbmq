@@ -44,12 +44,26 @@ public class StubPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
+    public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
+    }
+
+    @Override
     public List<StatsCounter> getStatsCounters() {
         return Collections.emptyList();
     }
 
     @Override
-    public double getAvgProcessingTime() {
+    public double getAvgMsgProcessingTime() {
+        return 0;
+    }
+
+    @Override
+    public double getAvgPackProcessingTime() {
+        return 0;
+    }
+
+    @Override
+    public double getAvgPackSize() {
         return 0;
     }
 

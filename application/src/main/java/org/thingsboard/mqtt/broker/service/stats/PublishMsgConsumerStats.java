@@ -28,9 +28,15 @@ public interface PublishMsgConsumerStats {
 
     void logMsgProcessingTime(long amount, TimeUnit unit);
 
+    void logPackProcessingTime(int packSize, long amount, TimeUnit unit);
+
     List<StatsCounter> getStatsCounters();
 
-    double getAvgProcessingTime();
+    double getAvgMsgProcessingTime();
+
+    double getAvgPackProcessingTime();
+
+    double getAvgPackSize();
 
     void reset();
 }

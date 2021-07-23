@@ -20,7 +20,6 @@ import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
@@ -39,7 +38,7 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
 
     private final String clientId;
 
-    private final List<StatsCounter> counters = new ArrayList<>();
+    private final List<StatsCounter> counters;
 
     private final StatsCounter successPublishMsgCounter;
     private final StatsCounter successPubRelMsgCounter;
@@ -65,14 +64,8 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
         this.successIterationsCounter = statsFactory.createStatsCounter(statsKey, SUCCESSFUL_ITERATIONS, CLIENT_ID_TAG, clientId);
         this.failedIterationsCounter = statsFactory.createStatsCounter(statsKey, FAILED_ITERATIONS, CLIENT_ID_TAG, clientId);
 
-        counters.add(successPublishMsgCounter);
-        counters.add(successPubRelMsgCounter);
-        counters.add(tmpTimeoutPublishMsgCounter);
-        counters.add(tmpTimeoutPubRelMsgCounter);
-        counters.add(timeoutPublishMsgCounter);
-        counters.add(timeoutPubRelMsgCounter);
-        counters.add(successIterationsCounter);
-        counters.add(failedIterationsCounter);
+        counters = List.of(successPublishMsgCounter, successPubRelMsgCounter, tmpTimeoutPublishMsgCounter, tmpTimeoutPubRelMsgCounter,
+                timeoutPublishMsgCounter, timeoutPubRelMsgCounter, successIterationsCounter, failedIterationsCounter);
     }
 
     @Override

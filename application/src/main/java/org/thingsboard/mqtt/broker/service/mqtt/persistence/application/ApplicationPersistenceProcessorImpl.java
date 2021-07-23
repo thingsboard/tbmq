@@ -239,6 +239,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 if (publishProtoMessages.isEmpty() && pendingPubRelMessages.isEmpty()) {
                     continue;
                 }
+                long packProcessingStart = System.nanoTime();
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
 
@@ -259,7 +260,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);
                     submitStrategy.process(msg -> {
-                        log.trace("[{}] processing packet: {}", clientId, msg.getPacketId());
                         switch (msg.getPacketType()) {
                             case PUBLISH:
                                 PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
@@ -285,13 +285,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
                     if (decision.isCommit()) {
                         ctx.clear();
-                        log.trace("[{}] Committing all read messages.", clientId);
                         consumer.commitSync();
                         break;
                     } else {
                         submitStrategy.update(decision.getReprocessMap());
                     }
                 }
+                log.trace("[{}] Pack processing took {} ms, pack size - {}", clientId, (double)(System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
+
             } catch (Exception e) {
                 // TODO: think if we need to drop session in this case
                 if (isClientConnected(sessionId, clientState)) {

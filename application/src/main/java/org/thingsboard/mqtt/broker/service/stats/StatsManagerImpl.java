@@ -242,8 +242,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             String countersStats = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Average processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
-                    stats.getAvgProcessingTime(), countersStats);
+            log.info("[{}][{}] Average pack size - {}, pack processing time - {}, msg processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
+                    stats.getAvgPackSize(), stats.getAvgPackProcessingTime(), stats.getAvgMsgProcessingTime(), countersStats);
             stats.reset();
         }
 

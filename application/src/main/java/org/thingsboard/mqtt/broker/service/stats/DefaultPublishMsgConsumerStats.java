@@ -21,9 +21,9 @@ import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.processing.PackProcessingResult;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_ITERATIONS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
@@ -40,7 +40,7 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     private final String consumerId;
 
-    private final List<StatsCounter> counters = new ArrayList<>();
+    private final List<StatsCounter> counters;
 
     private final StatsCounter totalMsgCounter;
     private final StatsCounter successMsgCounter;
@@ -53,7 +53,10 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     private final StatsCounter successIterationsCounter;
     private final StatsCounter failedIterationsCounter;
 
-    private final ResettableTimer processingTimer;
+    private final ResettableTimer msgProcessingTimer;
+    private final ResettableTimer packProcessingTimer;
+
+    private final AtomicLong totalPackSize = new AtomicLong();
 
     public DefaultPublishMsgConsumerStats(String consumerId, StatsFactory statsFactory) {
         this.consumerId = consumerId;
@@ -67,16 +70,11 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
         this.successIterationsCounter = statsFactory.createStatsCounter(statsKey, SUCCESSFUL_ITERATIONS, CONSUMER_ID_TAG, consumerId);
         this.failedIterationsCounter = statsFactory.createStatsCounter(statsKey, FAILED_ITERATIONS, CONSUMER_ID_TAG, consumerId);
 
-        counters.add(totalMsgCounter);
-        counters.add(successMsgCounter);
-        counters.add(timeoutMsgCounter);
-        counters.add(failedMsgCounter);
-        counters.add(tmpTimeoutMsgCounter);
-        counters.add(tmpFailedMsgCounter);
-        counters.add(successIterationsCounter);
-        counters.add(failedIterationsCounter);
+        counters = List.of(totalMsgCounter, successMsgCounter, timeoutMsgCounter, failedMsgCounter, tmpTimeoutMsgCounter, tmpFailedMsgCounter,
+                successIterationsCounter, failedIterationsCounter);
 
-        this.processingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId));
+        this.msgProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", CONSUMER_ID_TAG, consumerId));
+        this.packProcessingTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".pack.processing.time", CONSUMER_ID_TAG, consumerId));
     }
 
     @Override
@@ -108,8 +106,23 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
 
     @Override
     public void logMsgProcessingTime(long amount, TimeUnit unit) {
-        processingTimer.logTime(amount, unit);
+        msgProcessingTimer.logTime(amount, unit);
+    }
 
+    @Override
+    public void logPackProcessingTime(int packSize, long amount, TimeUnit unit) {
+        packProcessingTimer.logTime(amount, unit);
+        totalPackSize.addAndGet(packSize);
+    }
+
+    @Override
+    public double getAvgPackProcessingTime() {
+        return packProcessingTimer.getAvg();
+    }
+
+    @Override
+    public double getAvgPackSize() {
+        return Math.ceil((double) totalPackSize.get() / packProcessingTimer.getCount());
     }
 
     @Override
@@ -118,13 +131,15 @@ public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
     }
 
     @Override
-    public double getAvgProcessingTime() {
-        return processingTimer.getAvg();
+    public double getAvgMsgProcessingTime() {
+        return msgProcessingTimer.getAvg();
     }
 
     @Override
     public void reset() {
         counters.forEach(StatsCounter::clear);
-        processingTimer.reset();
+        msgProcessingTimer.reset();
+        packProcessingTimer.reset();
+        totalPackSize.getAndSet(0);
     }
 }
