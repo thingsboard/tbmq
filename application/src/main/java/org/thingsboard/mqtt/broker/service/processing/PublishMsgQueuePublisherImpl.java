@@ -25,6 +25,8 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 
+import javax.annotation.PreDestroy;
+
 @Slf4j
 @Service
 public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
@@ -46,5 +48,10 @@ public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
     @Override
     public void sendMsg(QueueProtos.PublishMsgProto msgProto, TbQueueCallback callback) {
         publisherQueue.add(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto), callback);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        publisherQueue.destroy();
     }
 }

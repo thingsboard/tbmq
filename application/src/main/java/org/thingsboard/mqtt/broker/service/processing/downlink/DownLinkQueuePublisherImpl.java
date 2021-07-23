@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Slf4j
 @Service
@@ -117,5 +118,15 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 },
                 topic
         );
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (basicPublisherQueue != null) {
+            basicPublisherQueue.destroy();
+        }
+        if (persistentPublisherQueue != null) {
+            persistentPublisherQueue.destroy();
+        }
     }
 }

@@ -30,6 +30,8 @@ import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
+import javax.annotation.PreDestroy;
+
 @Slf4j
 @Service
 public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePublisher {
@@ -72,5 +74,10 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                     }
                 },
                 clientQueueTopic);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        publisherQueue.destroy();
     }
 }
