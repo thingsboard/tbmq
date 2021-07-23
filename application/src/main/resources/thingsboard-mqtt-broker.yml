@@ -158,12 +158,12 @@ queue:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
       consumer: "${TB_KAFKA_PUBLISH_MSG_CONSUMER_CONFIG:}"
-      producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:compression.type:gzip}"
+      producer: "${TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG:}"
     application-persisted-msg:
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       consumer: "${TB_KAFKA_APP_PERSISTED_MSG_CONSUMER_CONFIG:auto.offset.reset:latest}"
-      producer: "${TB_KAFKA_APP_PERSISTED_MSG_PRODUCER_CONFIG:}"
+      producer: "${TB_KAFKA_APP_PERSISTED_MSG_PRODUCER_CONFIG:linger.ms:5}"
     device-persisted-msg:
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
