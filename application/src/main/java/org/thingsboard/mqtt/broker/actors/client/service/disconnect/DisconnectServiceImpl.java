@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionException;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -92,8 +93,16 @@ public class DisconnectServiceImpl implements DisconnectService {
         lastWillService.removeLastWill(sessionId, sendLastWill);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
-            msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
+            try {
+                msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
+                msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
+            } catch (Exception e) {
+                if (e instanceof TransactionException) {
+                    log.warn("[{}][{}] Couldn't properly stop processing persisted messages and saving QoS 2 packets.", clientInfo.getClientId(), sessionId);
+                } else {
+                    throw e;
+                }
+            }
         }
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());
     }

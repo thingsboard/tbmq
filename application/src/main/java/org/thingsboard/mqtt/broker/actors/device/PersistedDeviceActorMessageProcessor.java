@@ -150,15 +150,25 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         ListenableFuture<Void> future = deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
         future.addListener(() -> {
-            inFlightPacketIds.remove(msg.getPacketId());
+            try {
+                inFlightPacketIds.remove(msg.getPacketId());
+            } catch (Exception e) {
+                log.warn("[{}] Failed to process packet acknowledge, packetId - {}, exception - {}, reason - {}", clientId, msg.getPacketId(), e.getClass().getSimpleName(), e.getMessage());
+            }
         }, MoreExecutors.directExecutor());
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
         ListenableFuture<Void> future = deviceMsgService.updatePacketReceived(clientId, msg.getPacketId());
         future.addListener(() -> {
-            inFlightPacketIds.remove(msg.getPacketId());
-            publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
+            try {
+                inFlightPacketIds.remove(msg.getPacketId());
+                if (sessionCtx != null) {
+                    publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
+                }
+            } catch (Exception e) {
+                log.warn("[{}] Failed to process packet received, packetId - {}", clientId, msg.getPacketId());
+            }
         }, MoreExecutors.directExecutor());
     }
 

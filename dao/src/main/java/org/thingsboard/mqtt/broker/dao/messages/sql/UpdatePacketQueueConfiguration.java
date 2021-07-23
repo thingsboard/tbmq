@@ -15,14 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages.sql;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "mqtt.persistent-session.device.persisted-messages.sql.update-packet-queue")
-@Getter
+@Data
 public class UpdatePacketQueueConfiguration {
     private int batchThreads = 1;
     private int batchSize = 100;
