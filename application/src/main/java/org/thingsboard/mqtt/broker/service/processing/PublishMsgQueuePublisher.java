@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 
-public interface PublishMsgQueueService {
+public interface PublishMsgQueuePublisher {
     void sendMsg(QueueProtos.PublishMsgProto msgProto, TbQueueCallback callback);
 
 }

@@ -25,9 +25,6 @@ import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -42,7 +39,6 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -68,7 +64,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Autowired
     private ClientLogger clientLogger;
     @Autowired
-    private PublishMsgQueueService publishMsgQueueService;
+    private PublishMsgQueuePublisher publishMsgQueuePublisher;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -85,7 +81,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
-        publishMsgQueueService.sendMsg(publishMsgProto, callback);
+        publishMsgQueuePublisher.sendMsg(publishMsgProto, callback);
     }
 
     @Override

@@ -100,10 +100,6 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void registerPendingPublishMessages(Queue<?> pendingMessagesQueue) {
-    }
-
-    @Override
     public void registerPendingApplicationPersistentMessages(Queue<?> pendingMessagesQueue) {
     }
 
