@@ -125,8 +125,6 @@ public class TbKafkaConsumerStatsService {
                 GroupTopicStats groupTopicStats = GroupTopicStats.builder()
                         .topic(topicPartition.topic())
                         .partition(topicPartition.partition())
-                        .committedOffset(committedOffset)
-                        .endOffset(endOffset)
                         .lag(lag)
                         .build();
                 consumerGroupStats.add(groupTopicStats);
@@ -166,8 +164,6 @@ public class TbKafkaConsumerStatsService {
     private static class GroupTopicStats {
         private String topic;
         private int partition;
-        private long committedOffset;
-        private long endOffset;
         private long lag;
 
         @Override
@@ -175,8 +171,6 @@ public class TbKafkaConsumerStatsService {
             return "[" +
                     "topic=[" + topic + ']' +
                     ", partition=[" + partition + "]" +
-                    ", committedOffset=[" + committedOffset + "]" +
-                    ", endOffset=[" + endOffset + "]" +
                     ", lag=[" + lag + "]" +
                     "]";
         }
