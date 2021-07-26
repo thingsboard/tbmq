@@ -80,12 +80,16 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
                 .filter(clientSessionCtx -> clientSessionCtx.getSessionInfo().isPersistent())
                 .map(this::toGenericClientSessionCtx)
                 .collect(Collectors.toList());
+        if (genericCtxList.isEmpty()) {
+            log.info("No client contexts to save.");
+            return;
+        }
         log.info("Trying to save {} client contexts.", genericCtxList.size());
         try {
             genericClientSessionCtxService.saveAllGenericClientSessionCtx(genericCtxList);
             log.info("Successfully saved client contexts.");
         } catch (Exception e) {
-            log.warn("Failed to save client contexts. Reason: {}.", e.getMessage());
+            log.warn("Failed to save client contexts. Exception - {}, reason: {}.", e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
         }
         stopWatch.stop();

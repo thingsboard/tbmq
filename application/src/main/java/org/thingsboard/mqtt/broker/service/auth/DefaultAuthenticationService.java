@@ -56,20 +56,25 @@ public class DefaultAuthenticationService implements AuthenticationService {
         if (!basicAuthEnabled && !sslAuthEnabled) {
             return null;
         }
-        log.trace("[{}] Authorizing client", clientId);
-        if (basicAuthEnabled) {
-            MqttClientCredentials basicCredentials = authWithBasicCredentials(clientId, username, passwordBytes);
-            if (basicCredentials != null) {
-                log.trace("[{}] Authenticated with username {}", clientId, username);
-                return basicCredentials;
+        log.trace("[{}] Authenticating client", clientId);
+        try {
+            if (basicAuthEnabled) {
+                MqttClientCredentials basicCredentials = authWithBasicCredentials(clientId, username, passwordBytes);
+                if (basicCredentials != null) {
+                    log.trace("[{}] Authenticated with username {}", clientId, username);
+                    return basicCredentials;
+                }
             }
-        }
-        if (sslAuthEnabled && sslHandler != null) {
-            MqttClientCredentials sslCredentials = authWithSSLCredentials(clientId, sslHandler);
-            if (sslCredentials != null) {
-                log.trace("[{}] Authenticated with ssl certificate", clientId);
-                return sslCredentials;
+            if (sslAuthEnabled && sslHandler != null) {
+                MqttClientCredentials sslCredentials = authWithSSLCredentials(clientId, sslHandler);
+                if (sslCredentials != null) {
+                    log.trace("[{}] Authenticated with ssl certificate", clientId);
+                    return sslCredentials;
+                }
             }
+        } catch (Exception e) {
+            log.warn("[{}] Failed to authenticate client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+            throw new AuthenticationException("Failed to authenticate client");
         }
         throw new AuthenticationException("Could not find basic or ssl credentials!");
     }

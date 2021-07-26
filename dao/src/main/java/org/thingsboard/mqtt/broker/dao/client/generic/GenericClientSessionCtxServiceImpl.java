@@ -56,7 +56,7 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
         } catch (EmptyResultDataAccessException noDataException) {
             log.debug("[{}] No session for clientId.", clientId);
         } catch (Exception e) {
-            log.warn("[{}] Failed to delete generic client session context. Reason - {}.", clientId, e.getMessage());
+            log.warn("[{}] Failed to delete generic client session context. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
         }
     }
 

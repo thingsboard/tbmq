@@ -122,20 +122,24 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     // TODO: think in general about what data can get stuck in the DB forever
     @Override
     public void processClearSession(String clientId, UUID sessionId) {
-        ClientSession clientSession = clientSessionService.getClientSession(clientId);
-        UUID currentSessionId = clientSession.getSessionInfo().getSessionId();
-        if (!currentSessionId.equals(sessionId)) {
-            log.info("[{}][{}] Ignoring {} for session - {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
-            return;
+        try {
+            ClientSession clientSession = clientSessionService.getClientSession(clientId);
+            UUID currentSessionId = clientSession.getSessionInfo().getSessionId();
+            if (!currentSessionId.equals(sessionId)) {
+                log.info("[{}][{}] Ignoring {} for session - {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
+                return;
+            }
+            if (clientSession.isConnected()) {
+                log.info("[{}][{}] Session is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
+                return;
+            }
+            log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
+            clientSessionService.clearClientSession(clientId);
+            clientSubscriptionService.clearSubscriptionsAndPersist(clientId);
+            msgPersistenceManager.clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to clear session. Exception - {}, reason - {}.", clientId, sessionId, e.getClass().getSimpleName(), e.getMessage());
         }
-        if (clientSession.isConnected()) {
-            log.info("[{}][{}] Session is connected now, ignoring {}.", clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
-            return;
-        }
-        log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
-        clientSessionService.clearClientSession(clientId);
-        clientSubscriptionService.clearSubscriptionsAndPersist(clientId);
-        msgPersistenceManager.clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
     }
 
     private void finishDisconnect(ClientSession clientSession) {

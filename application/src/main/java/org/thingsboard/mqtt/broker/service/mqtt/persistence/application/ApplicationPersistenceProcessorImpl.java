@@ -339,7 +339,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             future.cancel(true);
             log.info("[{}] Saving processing context before shutting down.", clientId);
             ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
-            unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
+            try {
+                unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
+            } catch (Exception e) {
+                log.warn("[{}] Failed to save APPLICATION context.", clientId);
+            }
         });
         persistedMsgsConsumeExecutor.shutdownNow();
     }

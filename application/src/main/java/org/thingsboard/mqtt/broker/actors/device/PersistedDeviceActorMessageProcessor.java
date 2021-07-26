@@ -153,7 +153,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             try {
                 inFlightPacketIds.remove(msg.getPacketId());
             } catch (Exception e) {
-                log.warn("[{}] Failed to process packet acknowledge, packetId - {}, exception - {}, reason - {}", clientId, msg.getPacketId(), e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Failed to process packet acknowledge, packetId - {}, exception - {}, reason - {}",
+                        clientId, msg.getPacketId(), e.getClass().getSimpleName(), e.getMessage());
             }
         }, MoreExecutors.directExecutor());
     }
@@ -167,7 +168,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
                 }
             } catch (Exception e) {
-                log.warn("[{}] Failed to process packet received, packetId - {}", clientId, msg.getPacketId());
+                log.warn("[{}] Failed to process packet received, packetId - {}, exception - {}, reason - {}",
+                        clientId, msg.getPacketId(), e.getClass().getSimpleName(), e.getMessage());
             }
         }, MoreExecutors.directExecutor());
     }

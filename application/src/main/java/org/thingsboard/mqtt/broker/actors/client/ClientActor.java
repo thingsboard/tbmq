@@ -230,7 +230,7 @@ public class ClientActor extends ContextAwareActor {
             connectService.acceptConnection(state, msg);
             state.updateSessionState(SessionState.CONNECTED);
         } catch (Exception e) {
-            log.info("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
+            log.warn("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
             ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
