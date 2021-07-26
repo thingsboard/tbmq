@@ -56,14 +56,14 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @PostConstruct
     public void init() {
         this.basicPublisherQueue = TbPublishBlockingQueue.<QueueProtos.ClientPublishMsgProto>builder()
-                .queueName("basicDownlinkQueue")
+                .queueName("basicDownlink")
                 .producer(downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .maxDelay(basicMaxDelay)
                 .statsManager(statsManager)
                 .build();
         this.basicPublisherQueue.init();
         this.persistentPublisherQueue = TbPublishBlockingQueue.<QueueProtos.DevicePublishMsgProto>builder()
-                .queueName("persistentDownlinkQueue")
+                .queueName("persistentDownlink")
                 .producer(downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .maxDelay(persistentMaxDelay)
                 .statsManager(statsManager)

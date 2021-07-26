@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,21 +29,26 @@ import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
-    private final TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+
     private final ClientLogger clientLogger;
+    private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
+    private final ProducerStatsManager statsManager;
 
     @Value("${queue.device-persisted-msg.publisher-thread-max-delay}")
     private long maxDelay;
 
-    public DeviceMsgQueuePublisherImpl(DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory, ClientLogger clientLogger, ProducerStatsManager statsManager) {
-        this.clientLogger = clientLogger;
+    @PostConstruct
+    public void init() {
         this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
-                .queueName("deviceMsgQueue")
+                .queueName("deviceMsg")
                 .producer(devicePersistenceMsgQueueFactory.createProducer())
                 .maxDelay(maxDelay)
                 .statsManager(statsManager)

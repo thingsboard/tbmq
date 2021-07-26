@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,19 +26,25 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
     @Value("${queue.publish-msg.publisher-thread-max-delay}")
     private long maxDelay;
 
-    private final TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
-    public PublishMsgQueuePublisherImpl(PublishMsgQueueFactory publishMsgQueueFactory, ProducerStatsManager statsManager) {
+    private final PublishMsgQueueFactory publishMsgQueueFactory;
+    private final ProducerStatsManager statsManager;
+
+    @PostConstruct
+    public void init() {
         this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
-                .queueName("publishMsgQueue")
+                .queueName("publishMsg")
                 .producer(publishMsgQueueFactory.createProducer())
                 .maxDelay(maxDelay)
                 .statsManager(statsManager)

@@ -112,7 +112,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                     }
                     Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers = serialNumberService.getLastPacketIdAndSerialNumber(clientIds);
                     List<DevicePublishMsg> devicePublishMessages = toDevicePublishMsgs(msgs,
-                            clientId -> getPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, clientId));
+                            clientId -> getAndIncrementPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, clientId));
 
                     DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages, detectMsgDuplication);
@@ -174,7 +174,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         });
     }
 
-    private PacketIdAndSerialNumberDto getPacketIdAndSerialNumberDto(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String clientId) {
+    private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumberDto(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String clientId) {
         PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
                 new PacketIdAndSerialNumber(new AtomicInteger(1), new AtomicLong(0)));
         AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
