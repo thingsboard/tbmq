@@ -59,8 +59,8 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createProducer(String id) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createProducer(String id) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getProducerProperties()));
         producerBuilder.clientId("persistent-downlink-publish-producer-" + id);
         producerBuilder.topicConfigs(topicConfigs);
@@ -70,14 +70,14 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getConsumerProperties()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("persistent-downlink-publish-consumer-" + consumerId);
         consumerBuilder.groupId("persistent-downlink-publish-group" + groupId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PersistedDevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         return consumerBuilder.build();

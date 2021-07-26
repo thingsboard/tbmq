@@ -156,7 +156,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
                         } else {
                             String targetServiceId = clientSession.getSessionInfo().getServiceId();
-                            downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toPersistedDevicePublishMsgProto(devicePublishMsg));
+                            downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toDevicePublishMsgProto(devicePublishMsg));
                         }
                     }
                 } catch (Exception e) {

@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.persistent;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 public interface PersistentDownLinkProcessor {
-    void process(String clientId, QueueProtos.PersistedDevicePublishMsgProto msg);
+    void process(String clientId, QueueProtos.DevicePublishMsgProto msg);
 }

@@ -42,7 +42,7 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     @Override
-    public void sendPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg) {
+    public void sendPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg) {
         if (belongsToThisNode(targetServiceId)) {
             persistentDownLinkProcessor.process(clientId, msg);
         } else {

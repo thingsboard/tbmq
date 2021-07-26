@@ -41,7 +41,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
 
     private volatile boolean stopped = false;
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -61,7 +61,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
                     .createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
@@ -69,16 +69,16 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         }
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
 
-                    for (TbProtoQueueMsg<QueueProtos.PersistedDevicePublishMsgProto> msg : msgs) {
+                    for (TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto> msg : msgs) {
                         processor.process(msg.getKey(), msg.getValue());
                     }
                 } catch (Exception e) {

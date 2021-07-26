@@ -20,5 +20,5 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 public interface DownLinkProxy {
     void sendBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg);
 
-    void sendPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg);
+    void sendPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg);
 }

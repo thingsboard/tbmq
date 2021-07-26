@@ -153,8 +153,8 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static QueueProtos.PersistedDevicePublishMsgProto toPersistedDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
-        return QueueProtos.PersistedDevicePublishMsgProto.newBuilder()
+    public static QueueProtos.DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
+        return QueueProtos.DevicePublishMsgProto.newBuilder()
                 .setSerialNumber(devicePublishMsg.getSerialNumber())
                 .setTime(devicePublishMsg.getTime())
                 .setPacketId(devicePublishMsg.getPacketId())
@@ -166,16 +166,16 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static DevicePublishMsg toDevicePublishMsg(QueueProtos.PersistedDevicePublishMsgProto persistedDevicePublishMsgProto) {
+    public static DevicePublishMsg toDevicePublishMsg(QueueProtos.DevicePublishMsgProto devicePublishMsgProto) {
         return DevicePublishMsg.builder()
-                .serialNumber(persistedDevicePublishMsgProto.getSerialNumber())
-                .time(persistedDevicePublishMsgProto.getTime())
-                .packetId(persistedDevicePublishMsgProto.getPacketId())
-                .payload(persistedDevicePublishMsgProto.getPayload().toByteArray())
-                .qos(persistedDevicePublishMsgProto.getQos())
-                .topic(persistedDevicePublishMsgProto.getTopicName())
-                .clientId(persistedDevicePublishMsgProto.getClientId())
-                .packetType(PersistedPacketType.valueOf(persistedDevicePublishMsgProto.getPacketType()))
+                .serialNumber(devicePublishMsgProto.getSerialNumber())
+                .time(devicePublishMsgProto.getTime())
+                .packetId(devicePublishMsgProto.getPacketId())
+                .payload(devicePublishMsgProto.getPayload().toByteArray())
+                .qos(devicePublishMsgProto.getQos())
+                .topic(devicePublishMsgProto.getTopicName())
+                .clientId(devicePublishMsgProto.getClientId())
+                .packetType(PersistedPacketType.valueOf(devicePublishMsgProto.getPacketType()))
                 .build();
     }
 

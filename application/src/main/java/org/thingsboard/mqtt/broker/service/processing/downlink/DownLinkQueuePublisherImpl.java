@@ -45,7 +45,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final ProducerStatsManager statsManager;
 
     private TbPublishBlockingQueue<QueueProtos.ClientPublishMsgProto> basicPublisherQueue;
-    private TbPublishBlockingQueue<QueueProtos.PersistedDevicePublishMsgProto> persistentPublisherQueue;
+    private TbPublishBlockingQueue<QueueProtos.DevicePublishMsgProto> persistentPublisherQueue;
 
 
     @Value("${queue.basic-downlink-publish-msg.publisher-thread-max-delay}")
@@ -62,7 +62,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 .statsManager(statsManager)
                 .build();
         this.basicPublisherQueue.init();
-        this.persistentPublisherQueue = TbPublishBlockingQueue.<QueueProtos.PersistedDevicePublishMsgProto>builder()
+        this.persistentPublisherQueue = TbPublishBlockingQueue.<QueueProtos.DevicePublishMsgProto>builder()
                 .queueName("persistentDownlinkQueue")
                 .producer(downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .maxDelay(persistentMaxDelay)
@@ -99,7 +99,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     }
 
     @Override
-    public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.PersistedDevicePublishMsgProto msg) {
+    public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
         clientLogger.logEvent(clientId, "Putting msg to persistent down-link memory queue");
         persistentPublisherQueue.add(new TbProtoQueueMsg<>(clientId, msg),
