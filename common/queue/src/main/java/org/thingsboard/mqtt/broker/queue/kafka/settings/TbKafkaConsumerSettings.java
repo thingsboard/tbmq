@@ -33,6 +33,12 @@ public class TbKafkaConsumerSettings {
     @Value("${queue.kafka.default.consumer.max-poll-records}")
     private int maxPollRecords;
 
+    @Value("${queue.kafka.default.consumer.partition-assignment-strategy}")
+    private String partitionAssignmentStrategy;
+
+    @Value("${queue.kafka.default.consumer.session-timeout-ms}")
+    private int sessionTimeoutMs;
+
     @Value("${queue.kafka.default.consumer.max-poll-interval-ms}")
     private int maxPollIntervalMs;
 
@@ -46,6 +52,8 @@ public class TbKafkaConsumerSettings {
     public Properties toProps(String customProperties) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, partitionAssignmentStrategy);
+        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeoutMs);
         props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, maxPollIntervalMs);
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);

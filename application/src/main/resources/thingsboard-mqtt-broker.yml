@@ -137,6 +137,8 @@ queue:
     enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
       consumer:
+        partition-assignment-strategy: "${TB_KAFKA_DEFAULT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:org.apache.kafka.clients.consumer.StickyAssignor}"
+        session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:300000}"
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
         max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:8192}"
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
