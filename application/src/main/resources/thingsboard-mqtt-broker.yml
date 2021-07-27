@@ -311,6 +311,9 @@ mqtt:
   version-3-1:
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
 
+db:
+  connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
+
 stats:
   enabled: "${STATS_ENABLED:true}"
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
