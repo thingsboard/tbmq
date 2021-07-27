@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 
 import java.util.List;
 
@@ -33,6 +35,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private int messagesLimit;
 
     private final DeviceMsgDao deviceMsgDao;
+    private final DbConnectionChecker dbConnectionChecker;
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
@@ -69,13 +72,21 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     @Override
-    public ListenableFuture<Void> removePersistedMessage(String clientId, int packetId) {
+    public ListenableFuture<Void> tryRemovePersistedMessage(String clientId, int packetId) {
+        if (!dbConnectionChecker.isDbConnected()) {
+            log.trace("[{}] Ignoring remove persisted message request, no DB connection, packetId - {}", clientId, packetId);
+            return Futures.immediateFuture(null);
+        }
         log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
         return deviceMsgDao.removePersistedMessage(clientId, packetId);
     }
 
     @Override
-    public ListenableFuture<Void> updatePacketReceived(String clientId, int packetId) {
+    public ListenableFuture<Void> tryUpdatePacketReceived(String clientId, int packetId) {
+        if (!dbConnectionChecker.isDbConnected()) {
+            log.trace("[{}] Ignoring update packet request, no DB connection, packetId - {}", clientId, packetId);
+            return Futures.immediateFuture(null);
+        }
         log.trace("[{}] Updating packet type to PUBREL for packetId {}.", clientId, packetId);
         return deviceMsgDao.updatePacketType(clientId, packetId, PersistedPacketType.PUBREL);
     }

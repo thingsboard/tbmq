@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -77,7 +76,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
         try {
             for (DevicePublishMsg persistedMessage : persistedMessages) {
-                processPersistedMsg(persistedMessage);
+                deliverPersistedMsg(persistedMessage);
             }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId, sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
@@ -86,7 +85,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
     }
 
-    private void processPersistedMsg(DevicePublishMsg persistedMessage) {
+    private void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
         switch (persistedMessage.getPacketType()) {
             case PUBLISH:
                 // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
@@ -129,7 +128,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
             try {
                 for (DevicePublishMsg persistedMessage : persistedMessages) {
-                    processPersistedMsg(persistedMessage);
+                    deliverPersistedMsg(persistedMessage);
                 }
             } catch (Exception e) {
                 clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process missed persisted messages"));
@@ -148,7 +147,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
-        ListenableFuture<Void> future = deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(clientId, msg.getPacketId());
         future.addListener(() -> {
             try {
                 inFlightPacketIds.remove(msg.getPacketId());
@@ -160,7 +159,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
-        ListenableFuture<Void> future = deviceMsgService.updatePacketReceived(clientId, msg.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.tryUpdatePacketReceived(clientId, msg.getPacketId());
         future.addListener(() -> {
             try {
                 inFlightPacketIds.remove(msg.getPacketId());
@@ -175,7 +174,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {
-        deviceMsgService.removePersistedMessage(clientId, msg.getPacketId());
+        deviceMsgService.tryRemovePersistedMessage(clientId, msg.getPacketId());
     }
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {

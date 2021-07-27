@@ -48,6 +48,14 @@ public class ProtoConverter {
                 .setSessionInfo(sessionInfoProto)
                 .build();
     }
+    public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(DevicePublishMsg devicePublishMsg) {
+        return QueueProtos.PublishMsgProto.newBuilder()
+                .setPacketId(devicePublishMsg.getPacketId())
+                .setTopicName(devicePublishMsg.getTopic())
+                .setQos(devicePublishMsg.getQos())
+                .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
+                .build();
+    }
     public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
         return publishMsgProto != null && publishMsgProto.getSessionInfo() != null && publishMsgProto.getSessionInfo().getClientInfo() != null ?
                 publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;

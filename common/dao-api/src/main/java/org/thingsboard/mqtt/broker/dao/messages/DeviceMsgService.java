@@ -29,7 +29,7 @@ public interface DeviceMsgService {
 
     void removePersistedMessages(String clientId);
 
-    ListenableFuture<Void> removePersistedMessage(String clientId, int packetId);
+    ListenableFuture<Void> tryRemovePersistedMessage(String clientId, int packetId);
 
-    ListenableFuture<Void> updatePacketReceived(String clientId, int packetId);
+    ListenableFuture<Void> tryUpdatePacketReceived(String clientId, int packetId);
 }
