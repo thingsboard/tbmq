@@ -66,7 +66,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats() {
+    public ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats() {
         return StubClientSubscriptionConsumerStats.STUB_CLIENT_SUBSCRIPTION_CONSUMER_STATS;
     }
 

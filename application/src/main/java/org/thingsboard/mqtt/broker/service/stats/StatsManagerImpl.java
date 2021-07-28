@@ -76,6 +76,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @PostConstruct
     public void init() {
         this.timerStats = new TimerStats(statsFactory);
+        this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
+        this.clientActorStats = new DefaultClientActorStats(statsFactory);
     }
 
     @Override
@@ -120,12 +122,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats() {
-        log.trace("Creating ClientSubscriptionConsumerStats.");
-        if (managedClientSubscriptionConsumerStats != null) {
-            throw new RuntimeException("ClientSubscriptionConsumerStats is already defined");
-        }
-        this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
+    public ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats() {
         return managedClientSubscriptionConsumerStats;
     }
 

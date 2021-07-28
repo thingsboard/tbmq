@@ -37,7 +37,7 @@ public interface StatsManager {
 
     ApplicationProcessorStats createApplicationProcessorStats(String clientId);
 
-    ClientSubscriptionConsumerStats createClientSubscriptionConsumerStats();
+    ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats();
 
     void clearApplicationProcessorStats(String clientId);
 

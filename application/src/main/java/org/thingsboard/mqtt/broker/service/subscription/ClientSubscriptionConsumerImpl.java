@@ -61,7 +61,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
         this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
         this.persistenceService = persistenceService;
-        this.stats = statsManager.createClientSubscriptionConsumerStats();
+        this.stats = statsManager.getClientSubscriptionConsumerStats();
     }
 
     @Override
