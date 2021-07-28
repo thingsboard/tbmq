@@ -140,6 +140,7 @@ public class ClientActor extends ContextAwareActor {
                 state.clearStopActorCommandId();
             }
         }
+        clientLogger.logEvent(state.getClientId(), "Finished CLIENT actor msg processing - " + msg.getMsgType());
         return success;
     }
 
