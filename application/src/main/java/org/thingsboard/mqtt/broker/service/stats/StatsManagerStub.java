@@ -115,6 +115,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ClientActorStats getClientActorStats() {
+        return StubClientActorStats.STUB_CLIENT_ACTOR_STATS;
+    }
+
+    @Override
     public void registerActorsStats(Map<?, ?> actorsMap) {
     }
 

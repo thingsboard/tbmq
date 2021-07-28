@@ -66,6 +66,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
     private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
+    private ClientActorStats clientActorStats;
 
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
@@ -229,6 +230,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         return timerStats;
     }
 
+    @Override
+    public ClientActorStats getClientActorStats() {
+        return clientActorStats;
+    }
+
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
     public void printStats() {
         log.info("----------------------------------------------------------------");
@@ -289,6 +295,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             producerGaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Producer Gauges Stats: {}", producerGaugeLogBuilder.toString());
+
+        StringBuilder clientActorLogBuilder = new StringBuilder();
+        clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")
+                .append(clientActorStats.getQueueTimeAvg()).append("] ");
+        clientActorStats.getTimers().forEach((msgType, timer) -> {
+            clientActorLogBuilder.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
+                    .append(timer.getAvg()).append("] ");
+        });
+        clientActorStats.reset();
+        log.info("Client Actor Average Stats: {}", clientActorLogBuilder.toString());
 
         StringBuilder timerLogBuilder = new StringBuilder();
         for (ResettableTimer resettableTimer : timerStats.getTimers()) {

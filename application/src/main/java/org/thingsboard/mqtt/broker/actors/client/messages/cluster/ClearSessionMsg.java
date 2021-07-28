@@ -18,13 +18,14 @@ package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
+import org.thingsboard.mqtt.broker.actors.client.messages.AbstractTimedMsg;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
-public class ClearSessionMsg implements SessionClusterManagementMsg {
+public class ClearSessionMsg extends AbstractTimedMsg implements SessionClusterManagementMsg {
     private final UUID sessionId;
 
     public ClearSessionMsg(UUID sessionId) {

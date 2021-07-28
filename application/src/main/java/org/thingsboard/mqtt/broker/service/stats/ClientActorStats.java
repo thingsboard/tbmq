@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.service.stats;
 
-import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-@Slf4j
-public abstract class CallbackMsg extends AbstractTimedMsg {
-    private final ClientCallback callback;
+public interface ClientActorStats {
+    void logMsgProcessingTime(String msgType, long amount, TimeUnit unit);
 
-    public CallbackMsg(ClientCallback callback) {
-        this.callback = callback;
-    }
+    void logMsgQueueTime(long amount, TimeUnit unit);
 
-    public ClientCallback getCallback() {
-        return callback;
-    }
+    Map<String, ResettableTimer> getTimers();
+
+    int getMsgCount();
+
+    double getQueueTimeAvg();
+
+    void reset();
+
 }

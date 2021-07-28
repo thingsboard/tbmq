@@ -60,4 +60,6 @@ public interface StatsManager {
     PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();
 
     DeliveryTimerStats getDeliveryTimerStats();
+
+    ClientActorStats getClientActorStats();
 }

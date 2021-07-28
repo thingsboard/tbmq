@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectService;
 import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 @Slf4j
 @Getter
@@ -37,4 +38,5 @@ public class ClientActorContext {
     private final ConnectService connectService;
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
+    private final StatsManager statsManager;
 }

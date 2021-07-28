@@ -15,18 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
-import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 
+public abstract class AbstractTimedMsg implements TimedMsg {
+    private final long createdTimeNanos = System.nanoTime();
 
-@Slf4j
-public abstract class CallbackMsg extends AbstractTimedMsg {
-    private final ClientCallback callback;
-
-    public CallbackMsg(ClientCallback callback) {
-        this.callback = callback;
-    }
-
-    public ClientCallback getCallback() {
-        return callback;
+    @Override
+    public long getMsgCreatedTimeNanos() {
+        return createdTimeNanos;
     }
 }

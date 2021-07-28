@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class SessionInitMsg implements TbActorMsg {
+public class SessionInitMsg extends AbstractTimedMsg implements TbActorMsg {
     private final ClientSessionCtx clientSessionCtx;
     private final String username;
     private final byte[] passwordBytes;

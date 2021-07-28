@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import java.util.UUID;
 
 @Slf4j
-public abstract class SessionDependentMsg implements TbActorMsg {
+public abstract class SessionDependentMsg extends AbstractTimedMsg implements TbActorMsg {
     private final UUID sessionId;
 
     public SessionDependentMsg(UUID sessionId) {

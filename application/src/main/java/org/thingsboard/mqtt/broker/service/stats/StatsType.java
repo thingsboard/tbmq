@@ -31,6 +31,7 @@ public enum StatsType {
     RUNNING_ACTORS("runningActors"),
     SQL_QUEUE("sqlQueue"),
     CLIENT_SUBSCRIPTIONS_CONSUMER("clientSubscriptionsConsumer"),
+    CLIENT_ACTOR("clientActor"),
 
     SUBSCRIPTION_LOOKUP("subscriptionLookup"),
     CLIENT_SESSIONS_LOOKUP("clientSessionsLookup"),

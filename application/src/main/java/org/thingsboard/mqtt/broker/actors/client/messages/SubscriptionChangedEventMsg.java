@@ -28,7 +28,7 @@ import java.util.Set;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class SubscriptionChangedEventMsg implements TbActorMsg {
+public class SubscriptionChangedEventMsg extends AbstractTimedMsg implements TbActorMsg {
     private final Set<TopicSubscription> topicSubscriptions;
 
     @Override

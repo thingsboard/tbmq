@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.shared;
 
-import lombok.extern.slf4j.Slf4j;
-
-
-@Slf4j
-public abstract class CallbackMsg extends AbstractTimedMsg {
-    private final ClientCallback callback;
-
-    public CallbackMsg(ClientCallback callback) {
-        this.callback = callback;
-    }
-
-    public ClientCallback getCallback() {
-        return callback;
-    }
+public interface TimedMsg {
+    long getMsgCreatedTimeNanos();
 }
