@@ -66,6 +66,7 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
             if (clientSession != null && clientSession.isConnected()) {
                 throw new ThingsboardException("Cannot delete APPLICATION client for active session", ThingsboardErrorCode.PERMISSION_DENIED);
             }
+            // TODO: delete consumer group as well
             String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
             queueAdmin.deleteTopic(clientTopic);
         }

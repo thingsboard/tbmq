@@ -27,6 +27,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+// TODO: make some methods async to properly work
 public class DefaultApplicationSessionCtxDao implements ApplicationSessionCtxDao {
     @Autowired
     private ApplicationSessionCtxRepository applicationSessionCtxRepository;

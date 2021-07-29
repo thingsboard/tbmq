@@ -193,6 +193,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientLogger.logEvent(clientId, "Clearing persisted messages");
         String applicationConsumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
         log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
+        // TODO: make async
         queueAdmin.deleteConsumerGroups(Collections.singleton(applicationConsumerGroup));
         log.debug("[{}] Clearing application session context.", clientId);
         unacknowledgedPersistedMsgCtxService.clearContext(clientId);
