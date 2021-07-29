@@ -15,12 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -34,12 +33,16 @@ public class ApplicationPackProcessingContext {
     @Getter
     private final ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>();
 
+    private final ApplicationProcessorStats stats;
+    private final long processingStartTimeNanos;
     private final CountDownLatch processingTimeoutLatch;
     // TODO: wrap in separate class
     @Getter
     private final Collection<PersistedPubRelMsg> newPubRelPackets;
 
-    public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets) {
+    public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
+        this.processingStartTimeNanos = System.nanoTime();
+        this.stats = stats;
         this.newPubRelPackets = newPubRelPackets;
         for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
             switch (persistedMsg.getPacketType()) {
@@ -63,11 +66,13 @@ public class ApplicationPackProcessingContext {
     // TODO: save only messages with higher offset (InFlightMessagesCtx)
 
     public void onPubAck(Integer packetId) {
+        stats.logPubAckLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
         onPublishMsgSuccess(packetId);
     }
 
     public void onPubRec(Integer packetId) {
         // TODO: think what to do if PUBREC came after PackContext timeout
+        stats.logPubRecLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
         PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
         if (msg != null) {
             newPubRelPackets.add(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
@@ -87,6 +92,7 @@ public class ApplicationPackProcessingContext {
     }
 
     public void onPubComp(Integer packetId) {
+        stats.logPubCompLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
         PersistedPubRelMsg msg = pubRelPendingMsgMap.remove(packetId);
         if (msg != null) {
             processingTimeoutLatch.countDown();

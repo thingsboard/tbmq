@@ -16,11 +16,14 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.CLIENT_ID_TAG;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_ITERATIONS;
@@ -34,10 +37,12 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_TI
 
 @Slf4j
 public class DefaultApplicationProcessorStats implements ApplicationProcessorStats {
+    private static final String PACKET_TYPE_TAG = "packetType";
     private volatile boolean active = true;
 
     private final String clientId;
 
+    private final Map<String, ResettableTimer> latencyTimers;
     private final List<StatsCounter> counters;
 
     private final StatsCounter successPublishMsgCounter;
@@ -51,6 +56,10 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
 
     private final StatsCounter successIterationsCounter;
     private final StatsCounter failedIterationsCounter;
+
+    private final ResettableTimer pubAckLatencyTimer;
+    private final ResettableTimer pubRecLatencyTimer;
+    private final ResettableTimer pubCompLatencyTimer;
 
     public DefaultApplicationProcessorStats(String clientId, StatsFactory statsFactory) {
         this.clientId = clientId;
@@ -66,6 +75,15 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
 
         counters = List.of(successPublishMsgCounter, successPubRelMsgCounter, tmpTimeoutPublishMsgCounter, tmpTimeoutPubRelMsgCounter,
                 timeoutPublishMsgCounter, timeoutPubRelMsgCounter, successIterationsCounter, failedIterationsCounter);
+
+        this.pubAckLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "puback"));
+        this.pubRecLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubrec"));
+        this.pubCompLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubcomp"));
+        latencyTimers = Map.of(
+                "PUBACK", pubAckLatencyTimer,
+                "PUBREC", pubRecLatencyTimer,
+                "PUBCOMP", pubCompLatencyTimer
+        );
     }
 
     @Override
@@ -95,13 +113,34 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
     }
 
     @Override
+    public void logPubAckLatency(long amount, TimeUnit unit) {
+        pubAckLatencyTimer.logTime(amount, unit);
+    }
+
+    @Override
+    public void logPubRecLatency(long amount, TimeUnit unit) {
+        pubRecLatencyTimer.logTime(amount, unit);
+    }
+
+    @Override
+    public void logPubCompLatency(long amount, TimeUnit unit) {
+        pubCompLatencyTimer.logTime(amount, unit);
+    }
+
+    @Override
     public List<StatsCounter> getStatsCounters() {
         return counters;
     }
 
     @Override
+    public Map<String, ResettableTimer> getLatencyTimers() {
+        return latencyTimers;
+    }
+
+    @Override
     public void reset() {
         counters.forEach(StatsCounter::clear);
+        latencyTimers.forEach((s, timer) -> timer.reset());
     }
 
     @Override

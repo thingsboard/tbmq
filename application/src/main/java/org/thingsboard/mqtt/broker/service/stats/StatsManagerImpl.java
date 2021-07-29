@@ -265,10 +265,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         if (applicationProcessorStatsEnabled) {
             for (ApplicationProcessorStats stats : new ArrayList<>(managedApplicationProcessorStats.values())) {
-                String statsStr = stats.getStatsCounters().stream()
+                String msgStatsStr = stats.getStatsCounters().stream()
                         .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                         .collect(Collectors.joining(" "));
-                log.info("[{}][{}] Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), statsStr);
+                String latencyStatsStr = stats.getLatencyTimers().entrySet().stream()
+                        .map(entry -> entry.getKey() + " = [" + entry.getValue().getCount() + "|" + entry.getValue().getAvg() + "]")
+                        .collect(Collectors.joining(" "));
+                log.info("[{}][{}] Latency Stats: {}, Processing Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), latencyStatsStr, msgStatsStr);
                 if (!stats.isActive()) {
                     log.trace("[{}] Clearing inactive APPLICATION stats", stats.getClientId());
                     managedApplicationProcessorStats.computeIfPresent(stats.getClientId(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);

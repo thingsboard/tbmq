@@ -15,11 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class StubApplicationProcessorStats implements ApplicationProcessorStats {
     public static StubApplicationProcessorStats STUB_APPLICATION_PROCESSOR_STATS = new StubApplicationProcessorStats();
@@ -35,10 +38,30 @@ public class StubApplicationProcessorStats implements ApplicationProcessorStats 
     public void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack) {
     }
 
+    @Override
+    public void logPubAckLatency(long amount, TimeUnit unit) {
+
+    }
+
+    @Override
+    public void logPubRecLatency(long amount, TimeUnit unit) {
+
+    }
+
+    @Override
+    public void logPubCompLatency(long amount, TimeUnit unit) {
+
+    }
+
 
     @Override
     public List<StatsCounter> getStatsCounters() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, ResettableTimer> getLatencyTimers() {
+        return Collections.emptyMap();
     }
 
     @Override

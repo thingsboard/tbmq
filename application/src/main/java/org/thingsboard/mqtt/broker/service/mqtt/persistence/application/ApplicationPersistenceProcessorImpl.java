@@ -255,7 +255,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 // TODO: refactor this
                 pendingPubRelMessages = Sets.newConcurrentHashSet();
                 while (isClientConnected(sessionId, clientState)) {
-                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, pendingPubRelMessages);
+                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, pendingPubRelMessages, stats);
                     int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);

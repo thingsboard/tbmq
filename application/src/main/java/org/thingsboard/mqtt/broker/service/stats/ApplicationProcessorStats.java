@@ -15,10 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public interface ApplicationProcessorStats {
     String getClientId();
@@ -26,7 +29,15 @@ public interface ApplicationProcessorStats {
     // TODO: separate log from all 'admin' operations
     void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
 
+    void logPubAckLatency(long amount, TimeUnit unit);
+
+    void logPubRecLatency(long amount, TimeUnit unit);
+
+    void logPubCompLatency(long amount, TimeUnit unit);
+
     List<StatsCounter> getStatsCounters();
+
+    Map<String, ResettableTimer> getLatencyTimers();
 
     void reset();
 
