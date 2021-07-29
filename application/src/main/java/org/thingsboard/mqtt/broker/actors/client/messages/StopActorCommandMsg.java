@@ -19,16 +19,22 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 
 import java.util.UUID;
 
 @Getter
 @RequiredArgsConstructor
-public class StopActorCommandMsg extends AbstractTimedMsg implements TbActorMsg {
+public class StopActorCommandMsg implements TbActorMsg, TimedMsg {
     private final UUID commandUUID;
 
     @Override
     public MsgType getMsgType() {
         return MsgType.STOP_ACTOR_COMMAND_MSG;
+    }
+
+    @Override
+    public long getMsgCreatedTimeNanos() {
+        return System.nanoTime();
     }
 }

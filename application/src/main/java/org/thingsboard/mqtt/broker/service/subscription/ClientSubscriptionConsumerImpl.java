@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -65,7 +66,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     }
 
     @Override
-    public Map<String, Set<TopicSubscription>> initLoad() {
+    public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
         String dummyClientId = persistDummyClientSubscriptions();
 
         clientSubscriptionsConsumer.subscribe();
@@ -150,14 +151,14 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     }
 
-    private String persistDummyClientSubscriptions() {
+    private String persistDummyClientSubscriptions() throws QueuePersistenceException {
         String dummyClientId = UUID.randomUUID().toString();
-        persistenceService.persistClientSubscriptions(dummyClientId, Collections.singleton(new TopicSubscription(DUMMY_TOPIC, 0)));
+        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new TopicSubscription(DUMMY_TOPIC, 0)));
         return dummyClientId;
     }
 
-    private void clearDummyClientSubscriptions(String clientId) {
-        persistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
+    private void clearDummyClientSubscriptions(String clientId) throws QueuePersistenceException {
+        persistenceService.persistClientSubscriptionsSync(clientId, Collections.emptySet());
     }
 
     @PreDestroy

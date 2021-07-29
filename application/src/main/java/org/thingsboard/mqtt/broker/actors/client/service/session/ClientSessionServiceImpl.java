@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -63,7 +64,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
-    public void saveClientSession(String clientId, ClientSession clientSession) {
+    public void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback) {
         if (!clientId.equals(clientSession.getSessionInfo().getClientInfo().getClientId())) {
             log.error("Error saving client session. " +
                     "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
@@ -75,7 +76,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         clientSessionMap.put(clientId, clientSessionInfo);
 
         QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, clientSessionInfoProto);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, clientSessionInfoProto, callback);
     }
 
     // TODO: if client disconnects from Node A and connects to Node B it's possible that changes to ClientSession are not delivered on B yet. Solutions:
@@ -83,17 +84,17 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     //          - force wait if client was previously connected to other node
 
     @Override
-    public void clearClientSession(String clientId) {
+    public void clearClientSession(String clientId, BasicCallback callback) {
         log.trace("[{}] Clearing ClientSession.", clientId);
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }
 
     @Override
-    public Map<String, ClientSessionInfo> getPersistedClientSessionInfos() {
+    public Map<String, ClientSessionInfo> getPersistentClientSessionInfos() {
         return clientSessionMap.entrySet().stream()
                 .filter(entry -> isPersistent(entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

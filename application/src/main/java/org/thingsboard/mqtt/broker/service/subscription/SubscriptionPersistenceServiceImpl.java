@@ -20,7 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -50,25 +51,44 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
     }
 
     @Override
-    public void persistClientSubscriptions(String clientId, Set<TopicSubscription> clientSubscriptions) {
-        // TODO: make this async again
-        log.trace("[{}] Persisting client subscriptions - {}", clientId, clientSubscriptions);
+    public void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, BasicCallback callback) {
+        log.trace("[{}] Persisting client subscriptions asynchronously - {}", clientId, clientSubscriptions);
+        QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
+        clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto), new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                if (callback != null) {
+                    callback.onSuccess();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void persistClientSubscriptionsSync(String clientId, Set<TopicSubscription> clientSubscriptions) throws QueuePersistenceException {
+        log.trace("[{}] Persisting client subscriptions synchronously - {}", clientId, clientSubscriptions);
         QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto),
-                new TbQueueCallback() {
-                    @Override
-                    public void onSuccess(TbQueueMsgMetadata metadata) {
-                        updateWaiter.countDown();
-                    }
+        clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto), new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                updateWaiter.countDown();
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        errorRef.getAndSet(t);
-                        updateWaiter.countDown();
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                errorRef.getAndSet(t);
+                updateWaiter.countDown();
+            }
+        });
 
         boolean waitSuccessful = false;
         try {
@@ -83,7 +103,11 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
             if (error != null) {
                 log.trace("Detailed error:", error);
             }
-            throw new MqttException("Failed to update client subscriptions.");
+            if (!waitSuccessful) {
+                throw new QueuePersistenceException("Timed out to update client subscriptions");
+            } else {
+                throw new QueuePersistenceException("Failed to update client subscriptions");
+            }
         }
     }
 

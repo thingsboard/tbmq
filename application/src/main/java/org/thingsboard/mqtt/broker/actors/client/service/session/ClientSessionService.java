@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
@@ -27,7 +28,7 @@ public interface ClientSessionService extends ClientSessionReader {
 
     void startListening(ClientSessionConsumer clientSessionConsumer);
 
-    void saveClientSession(String clientId, ClientSession clientSession);
+    void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback);
 
-    void clearClientSession(String clientId);
+    void clearClientSession(String clientId, BasicCallback callback);
 }

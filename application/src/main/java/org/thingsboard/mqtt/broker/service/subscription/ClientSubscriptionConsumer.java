@@ -16,11 +16,13 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+
 import java.util.Map;
 import java.util.Set;
 
 public interface ClientSubscriptionConsumer {
-    Map<String, Set<TopicSubscription>> initLoad();
+    Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException;
 
     void listen(ClientSubscriptionChangesCallback callback);
 }

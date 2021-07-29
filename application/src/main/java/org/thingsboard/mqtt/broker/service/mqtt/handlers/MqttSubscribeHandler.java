@@ -15,11 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
+import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -55,10 +57,12 @@ public class MqttSubscribeHandler {
 
         validateClientAccess(ctx, topicSubscriptions);
 
-        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions);
-
+        // TODO: it's possible that client will get messages for topic before SUB_ACK
         List<Integer> grantedQoSList = topicSubscriptions.stream().map(TopicSubscription::getQos).collect(Collectors.toList());
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList));
+        MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
+        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions, CallbackUtil.createCallback(() -> ctx.getChannel().writeAndFlush(subAckMessage),
+                t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}", clientId, sessionId, t.getClass().getSimpleName(), t.getMessage()))
+        );
     }
 
     private void validateSubscriptions(String clientId, UUID sessionId, Collection<TopicSubscription> subscriptions) {

@@ -60,7 +60,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         log.info("Starting cleaning up stale ClientSessions.");
 
         long oldestAllowedTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
-        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionReader.getPersistedClientSessionInfos();
+        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionReader.getPersistentClientSessionInfos();
 
 
         List<SessionInfo> clientSessionToRemove = persistedClientSessionInfos.values().stream()

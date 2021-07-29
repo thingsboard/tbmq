@@ -15,22 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
-import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,22 +49,42 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
     }
 
     @Override
-    public void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+    public void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback) {
+        log.trace("[{}] Persisting client session asynchronously - {}", clientId, clientSessionInfoProto);
+        clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto), new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                if (callback != null) {
+                    callback.onSuccess();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void persistClientSessionInfoSync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException {
+        log.trace("[{}] Persisting client session synchronously - {}", clientId, clientSessionInfoProto);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
-        clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto),
-                new TbQueueCallback() {
-                    @Override
-                    public void onSuccess(TbQueueMsgMetadata metadata) {
-                        updateWaiter.countDown();
-                    }
+        clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto), new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                updateWaiter.countDown();
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        errorRef.getAndSet(t);
-                        updateWaiter.countDown();
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                errorRef.getAndSet(t);
+                updateWaiter.countDown();
+            }
+        });
 
         boolean waitSuccessful = false;
         try {
@@ -81,7 +99,11 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
             if (error != null) {
                 log.trace("Detailed error:", error);
             }
-            throw new MqttException("Failed to update client session.");
+            if (!waitSuccessful) {
+                throw new QueuePersistenceException("Timed out to update client session");
+            } else {
+                throw new QueuePersistenceException("Failed to update client session");
+            }
         }
     }
 

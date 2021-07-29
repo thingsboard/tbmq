@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -25,15 +26,15 @@ import java.util.Set;
 public interface ClientSubscriptionService extends ClientSubscriptionReader {
     void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
 
-    void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);
+    void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback);
 
     void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
-    void unsubscribeAndPersist(String clientId, Collection<String> topicFilters);
+    void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback);
 
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
 
-    void clearSubscriptionsAndPersist(String clientId);
+    void clearSubscriptionsAndPersist(String clientId, BasicCallback callback);
 
     void clearSubscriptionsInternally(String clientId);
 }

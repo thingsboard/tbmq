@@ -26,9 +26,9 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
@@ -87,11 +87,11 @@ public class ClientSessionServiceTestSuite {
                         .persistent(false)
                         .build())
                 .build();
-        clientSessionService.saveClientSession("persistent_1", persistentSession1);
-        clientSessionService.saveClientSession("persistent_2", persistentSession2);
-        clientSessionService.saveClientSession("not_persistent", notPersistentSession);
+        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {}, t -> {}));
 
-        Set<String> persistedClients = clientSessionService.getPersistedClientSessionInfos().keySet();
+        Set<String> persistedClients = clientSessionService.getPersistentClientSessionInfos().keySet();
         Assert.assertEquals(2, persistedClients.size());
         Assert.assertTrue(persistedClients.contains("persistent_1") && persistedClients.contains("persistent_2"));
     }
@@ -103,6 +103,6 @@ public class ClientSessionServiceTestSuite {
                         .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID + "_not_valid", ClientType.DEVICE))
                         .build())
                 .build();
-        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession);
+        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {}, t -> {}));
     }
 }

@@ -116,6 +116,7 @@ queue:
     max-pending-requests: "${TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS:10000}"
     poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
   client-session-event-response:
+    response-sender-threads: "${TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS:8}"
     poll-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_POLL_INTERVAL:100}"
     max-request-timeout: "${TB_CLIENT_SESSION_EVENT_RESPONSE_MAX_REQUEST_TIMEOUT:100000}"
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"

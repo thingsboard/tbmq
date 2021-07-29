@@ -21,7 +21,7 @@ import java.util.Map;
 
 // TODO: rename (and all 'Reader' classes)
 public interface ClientSessionReader {
-    Map<String, ClientSessionInfo> getPersistedClientSessionInfos();
+    Map<String, ClientSessionInfo> getPersistentClientSessionInfos();
 
     ClientSession getClientSession(String clientId);
 

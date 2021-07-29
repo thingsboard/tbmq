@@ -15,10 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-import java.util.Map;
-
 public interface ClientSessionPersistenceService {
-    void persistClientSessionInfo(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto);
+    void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback);
+
+    void persistClientSessionInfoSync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException;
 }

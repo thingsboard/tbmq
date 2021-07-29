@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -78,31 +79,36 @@ public class BrokerInitializer {
     @Order(value = 1)
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.info("Initializing Client Sessions and Subscriptions.");
-        Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
+        try {
+            Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
 
-        initClientSubscriptions(allClientSessions);
+            initClientSubscriptions(allClientSessions);
 
 
-        Map<String, ClientSessionInfo> currentNodeSessions = allClientSessions.values().stream()
-                .filter(this::sessionWasOnThisNode)
-                .collect(Collectors.toMap(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId(),
-                        Function.identity()));
-        clearNonPersistentClients(currentNodeSessions);
+            Map<String, ClientSessionInfo> currentNodeSessions = allClientSessions.values().stream()
+                    .filter(this::sessionWasOnThisNode)
+                    .collect(Collectors.toMap(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId(),
+                            Function.identity()));
+            clearNonPersistentClients(currentNodeSessions);
 
-        clientSessionService.startListening(clientSessionConsumer);
+            clientSessionService.startListening(clientSessionConsumer);
 
-        startSubscriptionListening();
+            startSubscriptionListening();
 
-        log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
-        disconnectClientCommandConsumer.startConsuming();
-        clientSessionEventConsumer.startConsuming();
-        deviceMsgQueueConsumer.startConsuming();
-        publishMsgConsumerService.startConsuming();
-        basicDownLinkConsumer.startConsuming();
-        persistentDownLinkConsumer.startConsuming();
+            log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
+            disconnectClientCommandConsumer.startConsuming();
+            clientSessionEventConsumer.startConsuming();
+            deviceMsgQueueConsumer.startConsuming();
+            publishMsgConsumerService.startConsuming();
+            basicDownLinkConsumer.startConsuming();
+            persistentDownLinkConsumer.startConsuming();
+        } catch (Exception e) {
+            log.error("Failed to initialize broker. Exception - {}, reason - {}", e.getClass().getSimpleName(), e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
-    private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) {
+    private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
         Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} persisted client subscriptions.", allClientSubscriptions.size());
         Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
@@ -115,7 +121,7 @@ public class BrokerInitializer {
         clientSubscriptionService.init(allClientSubscriptions);
     }
 
-    private Map<String, ClientSessionInfo> initClientSessions() {
+    private Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
         log.info("Loaded {} persisted client sessions.", allClientSessions.size());
 

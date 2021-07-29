@@ -16,10 +16,12 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+
 import java.util.Map;
 
 public interface ClientSessionConsumer {
-    Map<String, ClientSessionInfo> initLoad();
+    Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException;
 
     void listen(ClientSessionChangesCallback callback);
 }

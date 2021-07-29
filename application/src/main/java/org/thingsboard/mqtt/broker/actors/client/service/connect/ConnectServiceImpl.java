@@ -25,7 +25,6 @@ import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
-import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -69,7 +68,6 @@ public class ConnectServiceImpl implements ConnectService {
     private final ServiceInfoProvider serviceInfoProvider;
     private final LastWillService lastWillService;
     private final ClientSessionCtxService clientSessionCtxService;
-    private final ClientSubscriptionService clientSubscriptionService;
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandlerImpl messageHandler;
 
@@ -109,21 +107,13 @@ public class ConnectServiceImpl implements ConnectService {
     public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
-        ClientInfo clientInfo = sessionInfo.getClientInfo();
 
         if (connectionAcceptedMsg.getLastWillMsg() != null) {
             lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg());
         }
 
-        boolean isCurrentSessionPersistent = sessionInfo.isPersistent();
-        if (connectionAcceptedMsg.wasPrevSessionPersistent() && !isCurrentSessionPersistent) {
-            log.trace("[{}][{}] Clearing persisted session.", clientInfo.getType(), clientInfo.getClientId());
-            clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId());
-            msgPersistenceManager.clearPersistedMessages(clientInfo);
-        }
-
         sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED,
-                connectionAcceptedMsg.wasPrevSessionPersistent() && isCurrentSessionPersistent));
+                connectionAcceptedMsg.wasPrevSessionPersistent() && sessionInfo.isPersistent()));
         log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
         clientSessionCtxService.registerSession(sessionCtx);

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -68,7 +69,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     }
 
     @Override
-    public Map<String, ClientSessionInfo> initLoad() {
+    public Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException {
         log.info("Loading client sessions.");
 
         ClientSessionInfo dummySession = persistDummySession();
@@ -153,7 +154,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     }
 
-    private ClientSessionInfo persistDummySession() {
+    private ClientSessionInfo persistDummySession() throws QueuePersistenceException {
         String dummyClientId = UUID.randomUUID().toString();
         ClientSessionInfo dummyClientSessionInfo = ClientSessionInfo.builder()
                 .clientSession(ClientSession.builder()
@@ -167,13 +168,13 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                         .build())
                 .lastUpdateTime(System.currentTimeMillis())
                 .build();
-        persistenceService.persistClientSessionInfo(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
+        persistenceService.persistClientSessionInfoSync(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
         return dummyClientSessionInfo;
     }
 
-    private void clearDummySession(ClientSessionInfo dummySession) {
+    private void clearDummySession(ClientSessionInfo dummySession) throws QueuePersistenceException {
         String clientId = dummySession.getClientSession().getSessionInfo().getClientInfo().getClientId();
-        persistenceService.persistClientSessionInfo(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
+        persistenceService.persistClientSessionInfoSync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
     private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {

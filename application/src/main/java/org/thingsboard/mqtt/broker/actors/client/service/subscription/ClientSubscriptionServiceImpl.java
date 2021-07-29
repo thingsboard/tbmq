@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -61,12 +62,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+    public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
         log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
         subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, clientSubscriptions);
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, clientSubscriptions, callback);
     }
 
     @Override
@@ -83,12 +84,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
+    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
         log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
         unsubscribe(clientId, topicFilters);
 
         Set<TopicSubscription> updatedClientSubscriptions = clientSubscriptionsMap.get(clientId);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, updatedClientSubscriptions);
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
     }
 
     @Override
@@ -105,10 +106,10 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
-    public void clearSubscriptionsAndPersist(String clientId) {
+    public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
         log.trace("[{}] Clearing all subscriptions.", clientId);
         clearSubscriptions(clientId);
-        subscriptionPersistenceService.persistClientSubscriptions(clientId, Collections.emptySet());
+        subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, Collections.emptySet(), callback);
     }
 
     @Override

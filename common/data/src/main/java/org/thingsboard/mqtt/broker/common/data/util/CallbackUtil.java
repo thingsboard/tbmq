@@ -13,15 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.common.data.util;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 
-import java.util.Set;
+import java.util.function.Consumer;
 
-public interface SubscriptionPersistenceService {
-    void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, BasicCallback callback);
+public class CallbackUtil {
+    public static BasicCallback createCallback(Runnable onSuccess, Consumer<Throwable> onFailure) {
+        return new BasicCallback() {
+            @Override
+            public void onSuccess() {
+                if (onSuccess != null) {
+                    onSuccess.run();
+                }
+            }
 
-    void persistClientSubscriptionsSync(String clientId, Set<TopicSubscription> clientSubscriptions) throws QueuePersistenceException;
+            @Override
+            public void onFailure(Throwable t) {
+                if (onFailure != null) {
+                    onFailure.accept(t);
+                }
+            }
+        };
+    }
 }

@@ -15,11 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 
+import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -38,9 +40,9 @@ public class MqttUnsubscribeHandler {
         String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
 
-        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics());
-
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId()));
+        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId());
+        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(), CallbackUtil.createCallback(() -> ctx.getChannel().writeAndFlush(unSubAckMessage),
+                t -> log.warn("[{}][{}] Fail to process client unsubscription. Exception - {}, reason - {}", clientId, sessionId, t.getClass().getSimpleName(), t.getMessage())));
     }
 
 }

@@ -13,19 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.session;
+package org.thingsboard.mqtt.broker.common.data;
 
+public interface BasicCallback {
+    void onSuccess();
 
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
-import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-
-import java.util.UUID;
-
-public interface SessionClusterManager {
-    void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo, ClientCallback callback);
-
-    void processSessionDisconnected(String clientId, UUID sessionId);
-
-    void processClearSession(String clientId, UUID sessionId);
+    void onFailure(Throwable t);
 }
