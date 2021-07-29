@@ -28,7 +28,7 @@ public class DefaultClientActorState implements ClientActorState {
     private final String clientId;
     private final boolean isClientIdGenerated;
 
-    private final QueuedMqttMessages queuedMqttMessages = new QueuedMqttMessages();
+    private final QueuedMqttMessages queuedMqttMessages;
 
     @Setter
     @Getter
@@ -37,9 +37,10 @@ public class DefaultClientActorState implements ClientActorState {
     private ClientSessionCtx clientSessionCtx;
     private SessionState currentSessionState = SessionState.DISCONNECTED;
 
-    public DefaultClientActorState(String clientId, boolean isClientIdGenerated) {
+    public DefaultClientActorState(String clientId, boolean isClientIdGenerated, int maxPreConnectQueueSize) {
         this.clientId = clientId;
         this.isClientIdGenerated = isClientIdGenerated;
+        this.queuedMqttMessages = new QueuedMqttMessages(maxPreConnectQueueSize);
     }
 
     @Override

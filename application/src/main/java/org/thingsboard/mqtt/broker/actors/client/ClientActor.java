@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ContextAwareActor;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.stats.ClientActorStats;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -74,7 +75,7 @@ public class ClientActor extends ContextAwareActor {
         this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
         this.actorConfiguration = systemContext.getClientActorConfiguration();
-        this.state = new DefaultClientActorState(clientId, isClientIdGenerated);
+        this.state = new DefaultClientActorState(clientId, isClientIdGenerated, systemContext.getClientActorContext().getMaxPreConnectQueueSize());
         this.clientActorStats = systemContext.getClientActorContext().getStatsManager().getClientActorStats();
     }
 
@@ -181,14 +182,20 @@ public class ClientActor extends ContextAwareActor {
         }
 
         if (state.getCurrentSessionState() == SessionState.CONNECTING) {
-            state.getQueuedMessages().add(msg);
+            try {
+                state.getQueuedMessages().add(msg);
+            } catch (FullMsgQueueException e) {
+                log.warn("[{}][{}] Too much messages in the preconnect-queue.", state.getClientId(), state.getCurrentSessionId());
+                ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                        "Too much messages in the preconnect-queue")));
+            }
             return true;
         }
 
         try {
             return mqttMessageHandler.process(state.getCurrentSessionCtx(), msg);
         } catch (Exception e) {
-            log.info("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
+            log.warn("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
             ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,

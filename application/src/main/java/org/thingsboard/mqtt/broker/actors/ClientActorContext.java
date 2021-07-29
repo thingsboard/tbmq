@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
@@ -39,4 +40,7 @@ public class ClientActorContext {
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
     private final StatsManager statsManager;
+
+    @Value("${mqtt.pre-connect-queue.max-size:10000}")
+    private int maxPreConnectQueueSize;
 }

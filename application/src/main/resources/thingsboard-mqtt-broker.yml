@@ -274,6 +274,8 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 mqtt:
+  pre-connect-queue:
+    max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
   keep-alive:
     # Schedule monitoring for inactive MQTT clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"

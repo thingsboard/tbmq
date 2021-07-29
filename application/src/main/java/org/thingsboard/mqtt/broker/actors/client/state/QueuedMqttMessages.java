@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
+import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -26,8 +28,11 @@ import java.util.function.Consumer;
     not thread safe
  */
 @Slf4j
+@RequiredArgsConstructor
 public class QueuedMqttMessages {
     private final Queue<QueueableMqttMsg> queuedMessages = new LinkedList<>();
+
+    private final int maxQueueSize;
 
     public void process(Consumer<QueueableMqttMsg> processor) {
         while (!queuedMessages.isEmpty()) {
@@ -36,8 +41,12 @@ public class QueuedMqttMessages {
         }
     }
 
-    public void add(QueueableMqttMsg msg) {
-        queuedMessages.add(msg);
+    public void add(QueueableMqttMsg msg) throws FullMsgQueueException {
+        if (queuedMessages.size() >= maxQueueSize) {
+            throw new FullMsgQueueException("Current queue size is " + queuedMessages.size());
+        } else {
+            queuedMessages.add(msg);
+        }
     }
 
     public void clear() {
