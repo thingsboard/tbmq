@@ -56,6 +56,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
         if (!StringUtils.isEmpty(clientId)) {
             properties.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
         }
+        Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
         this.producer = new KafkaProducer<>(properties);
         this.admin = admin;
         this.defaultTopic = defaultTopic;

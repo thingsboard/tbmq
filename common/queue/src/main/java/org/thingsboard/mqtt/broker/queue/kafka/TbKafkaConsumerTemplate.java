@@ -86,6 +86,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.closeTimeoutMs = closeTimeoutMs > 0 ? closeTimeoutMs : DEFAULT_CLOSE_TIMEOUT;
 
         this.admin = admin;
+        Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
         this.consumer = new KafkaConsumer<>(properties);
         this.decoder = decoder;
         this.topicConfigs = topicConfigs;
