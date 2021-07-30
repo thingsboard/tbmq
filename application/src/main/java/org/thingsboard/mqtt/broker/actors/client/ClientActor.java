@@ -90,7 +90,7 @@ public class ClientActor extends ContextAwareActor {
         if (msg instanceof TimedMsg) {
             clientActorStats.logMsgQueueTime(System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
         }
-        clientLogger.logEvent(state.getClientId(), "Received CLIENT actor msg - " + msg.getMsgType());
+        clientLogger.logEvent(state.getClientId(), this.getClass(), "Received msg - " + msg.getMsgType());
 
         long startTime = System.nanoTime();
 
@@ -154,7 +154,7 @@ public class ClientActor extends ContextAwareActor {
             return success;
         } finally {
             clientActorStats.logMsgProcessingTime(msg.getMsgType().toString(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-            clientLogger.logEvent(state.getClientId(), "Finished CLIENT actor msg processing - " + msg.getMsgType());
+            clientLogger.logEvent(state.getClientId(), this.getClass(), "Finished msg processing - " + msg.getMsgType());
         }
     }
 

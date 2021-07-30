@@ -68,11 +68,11 @@ public class MqttPublishHandler {
             }
         }
 
-        clientLogger.logEvent(clientId, "Sending PUBLISH");
+        clientLogger.logEvent(clientId, this.getClass(), "Sending PUBLISH");
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                clientLogger.logEvent(clientId, "PUBLISH acknowledged");
+                clientLogger.logEvent(clientId, this.getClass(), "PUBLISH acknowledged");
                 log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);
                 acknowledgePacket(ctx, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
             }

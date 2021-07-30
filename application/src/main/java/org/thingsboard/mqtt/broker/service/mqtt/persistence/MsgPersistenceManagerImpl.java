@@ -80,7 +80,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         int callbackCount = applicationSubscriptions.size() + deviceSubscriptions.size();
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
-        clientLogger.logEvent(senderClientId, "Before msg persistence");
+        clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
         for (Subscription deviceSubscription : deviceSubscriptions) {
             String deviceClientId = deviceSubscription.getSessionInfo().getClientInfo().getClientId();
             deviceMsgQueuePublisher.sendMsg(deviceClientId, createReceiverPublishMsg(deviceSubscription, publishMsgProto), callbackWrapper);
@@ -89,7 +89,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             String applicationClientId = applicationSubscription.getSessionInfo().getClientInfo().getClientId();
             applicationMsgQueuePublisher.sendMsg(applicationClientId, createReceiverPublishMsg(applicationSubscription, publishMsgProto),callbackWrapper);
         }
-        clientLogger.logEvent(senderClientId, "After msg persistence");
+        clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
     private QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {

@@ -101,7 +101,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             throw new ProtocolViolationException("Received " + msgType +" while session wasn't initialized");
         }
 
-        clientLogger.logEvent(clientId, "Incoming MQTT - " + msgType);
+        clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
         switch (msgType) {
             case DISCONNECT:
                 clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));

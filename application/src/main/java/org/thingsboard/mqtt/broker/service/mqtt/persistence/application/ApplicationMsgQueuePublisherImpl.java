@@ -61,13 +61,13 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, "Start waiting for APPLICATION msg to be persisted");
+        clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
         String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
         publisherQueue.add(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Persisted msg in APPLICATION Queue");
+                        clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
                         log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                         callback.onSuccess();
                     }

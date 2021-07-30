@@ -58,12 +58,12 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, "Sending msg in DEVICE Queue");
+        clientLogger.logEvent(clientId, this.getClass(), "Sending msg in DEVICE Queue");
         publisherQueue.add(new TbProtoQueueMsg<>(clientId, msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Sent msg in DEVICE Queue");
+                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
                         log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                         callback.onSuccess();
                     }

@@ -79,12 +79,12 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 .setClientId(clientId)
                 .setPublishMsg(msg)
                 .build();
-        clientLogger.logEvent(clientId, "Putting msg to basic down-link memory queue");
+        clientLogger.logEvent(clientId, this.getClass(), "Putting msg to basic down-link memory queue");
         basicPublisherQueue.add(new TbProtoQueueMsg<>(msg.getTopicName(), clientPublishMsgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Sent msg to basic down-link queue");
+                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg to basic down-link queue");
                         log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
                     }
 
@@ -101,12 +101,12 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @Override
     public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
-        clientLogger.logEvent(clientId, "Putting msg to persistent down-link memory queue");
+        clientLogger.logEvent(clientId, this.getClass(), "Putting msg to persistent down-link memory queue");
         persistentPublisherQueue.add(new TbProtoQueueMsg<>(clientId, msg),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, "Sent msg to persistent down-link queue");
+                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg to persistent down-link queue");
                         log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
                     }
 

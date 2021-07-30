@@ -65,7 +65,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     public List<DevicePublishMsg> persistMessages(List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> messages, DeviceProcessorStats stats, String consumerId) {
         Set<String> clientIds = messages.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
         for (String clientId : clientIds) {
-            clientLogger.logEvent(clientId, "Start persisting DEVICE msg");
+            clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msg");
         }
 
         List<DevicePublishMsg> devicePublishMessages = toDevicePublishMsgs(messages);
@@ -77,7 +77,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         }
 
         for (String clientId : clientIds) {
-            clientLogger.logEvent(clientId, "Finished persisting DEVICE msg");
+            clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE msg");
         }
         return devicePublishMessages;
     }

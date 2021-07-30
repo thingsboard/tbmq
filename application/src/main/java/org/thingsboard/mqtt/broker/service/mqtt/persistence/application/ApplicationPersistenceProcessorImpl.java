@@ -151,7 +151,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        clientLogger.logEvent(clientId, "Starting processing persisted messages");
+        clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer;
@@ -172,7 +172,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
         log.debug("[{}] Stopping persisted messages processing.", clientId);
-        clientLogger.logEvent(clientId, "Stopping processing persisted messages");
+        clientLogger.logEvent(clientId, this.getClass(), "Stopping processing persisted messages");
         Future<?> processingFuture = processingFutures.remove(clientId);
         if (processingFuture == null) {
             log.warn("[{}] Cannot find processing future for client.", clientId);
@@ -190,7 +190,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void clearPersistedMsgs(String clientId) {
-        clientLogger.logEvent(clientId, "Clearing persisted messages");
+        clientLogger.logEvent(clientId, this.getClass(), "Clearing persisted messages");
         String applicationConsumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
         log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
         // TODO: make async
@@ -272,7 +272,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                 publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, msg.getPacketId());
                                 break;
                         }
-                        clientLogger.logEvent(clientId, "Delivered msg to application client");
+                        clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to application client");
                     });
 
                     if (isClientConnected(sessionId, clientState)) {

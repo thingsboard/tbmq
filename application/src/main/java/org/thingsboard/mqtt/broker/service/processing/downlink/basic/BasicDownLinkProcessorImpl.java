@@ -47,7 +47,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         try {
             publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, clientSessionCtx.getMsgIdSeq().nextMsgId(),
                     msg.getTopicName(), msg.getQos(), false, msg.getPayload().toByteArray());
-            clientLogger.logEvent(clientId, "Delivered msg to basic client");
+            clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
         } catch (Exception e) {
             log.debug("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);

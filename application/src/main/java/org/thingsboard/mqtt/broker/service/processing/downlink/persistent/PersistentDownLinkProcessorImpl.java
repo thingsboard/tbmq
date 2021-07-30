@@ -32,6 +32,6 @@ public class PersistentDownLinkProcessorImpl implements PersistentDownLinkProces
     @Override
     public void process(String clientId, QueueProtos.DevicePublishMsgProto msg) {
         deviceActorManager.sendMsgToActor(clientId, ProtoConverter.toDevicePublishMsg(msg));
-        clientLogger.logEvent(clientId, "Sent msg to device client actor");
+        clientLogger.logEvent(clientId, this.getClass(), "Sent msg to device client actor");
     }
 }

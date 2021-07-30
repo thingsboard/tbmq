@@ -31,11 +31,11 @@ public class ClientLoggerImpl implements ClientLogger {
 
 
     @Override
-    public void logEvent(String clientId, String eventDescription) {
+    public void logEvent(String clientId, Class eventLocation, String eventDescription) {
         if (!log.isDebugEnabled() || analyzedClientIds == null || analyzedClientIds.isEmpty() || !analyzedClientIds.contains(clientId)) {
             return;
         }
 
-        log.debug("[{}] {}", clientId, eventDescription);
+        log.debug("[{}][{}] {}", clientId, eventLocation.getSimpleName(), eventDescription);
     }
 }

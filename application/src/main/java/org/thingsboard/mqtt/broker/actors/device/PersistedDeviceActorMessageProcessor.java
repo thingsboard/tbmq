@@ -140,7 +140,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
                     publishMsg.getTopic(), publishMsg.getQos(), false,
                     publishMsg.getPayload());
-            clientLogger.logEvent(clientId, "Delivered msg to device client");
+            clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
             clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
         }

@@ -87,11 +87,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
-        clientLogger.logEvent(senderClientId, "Start msg processing");
+        clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
         List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
 
-        clientLogger.logEvent(senderClientId, "Found msg subscribers");
+        clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
         List<Subscription> persistentSubscriptions = new ArrayList<>();
         long notPersistentMessagesProcessingStartTime = System.nanoTime();
@@ -115,7 +115,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         } else {
             callback.onSuccess();
         }
-        clientLogger.logEvent(senderClientId, "Finished msg processing");
+        clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
     }
 
     private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
