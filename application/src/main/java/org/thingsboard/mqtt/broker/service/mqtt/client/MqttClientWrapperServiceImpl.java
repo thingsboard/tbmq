@@ -76,6 +76,7 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
 
     @Override
     public Optional<MqttClient> getMqttClient(String clientId) {
+        // TODO: make async
         return mqttClientService.getMqttClient(clientId);
     }
 

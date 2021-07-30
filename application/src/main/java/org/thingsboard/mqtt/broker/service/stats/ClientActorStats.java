@@ -31,6 +31,8 @@ public interface ClientActorStats {
 
     double getQueueTimeAvg();
 
+    double getQueueTimeMax();
+
     void reset();
 
 }

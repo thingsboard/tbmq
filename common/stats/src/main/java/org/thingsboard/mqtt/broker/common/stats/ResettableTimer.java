@@ -24,16 +24,27 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ResettableTimer {
     private final AtomicInteger logCount = new AtomicInteger(0);
     private final AtomicLong passedNanoseconds = new AtomicLong(0);
+    private final AtomicLong currentMaxValue = new AtomicLong(0);
+
     private final Timer timer;
+    private final boolean storeMaxValue;
 
     public ResettableTimer(Timer timer) {
+        this(timer, false);
+    }
+
+    public ResettableTimer(Timer timer, boolean storeMaxValue) {
         this.timer = timer;
+        this.storeMaxValue = storeMaxValue;
     }
 
     public void logTime(long amount, TimeUnit unit) {
         timer.record(amount, unit);
         passedNanoseconds.addAndGet(TimeUnit.NANOSECONDS.convert(amount, unit));
         logCount.incrementAndGet();
+        if (storeMaxValue && currentMaxValue.get() < unit.toNanos(amount)) {
+            currentMaxValue.getAndSet(amount);
+        }
     }
 
     public double getAvg() {
@@ -43,6 +54,10 @@ public class ResettableTimer {
         return avgNanoTime / 1_000_000;
     }
 
+    public double getMax() {
+        return ((double) currentMaxValue.get()) / 1_000_000;
+    }
+
     public int getCount() {
         return logCount.get();
     }
@@ -50,6 +65,7 @@ public class ResettableTimer {
     public void reset() {
         logCount.getAndSet(0);
         passedNanoseconds.getAndSet(0);
+        currentMaxValue.getAndSet(0);
     }
 
     public Timer getTimer() {

@@ -269,7 +269,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                         .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                         .collect(Collectors.joining(" "));
                 String latencyStatsStr = stats.getLatencyTimers().entrySet().stream()
-                        .map(entry -> entry.getKey() + " = [" + entry.getValue().getCount() + "|" + entry.getValue().getAvg() + "]")
+                        .map(entry -> entry.getKey() + " = [" + entry.getValue().getCount() + "|" + entry.getValue().getAvg() + "|" + entry.getValue().getMax() + "]")
                         .collect(Collectors.joining(" "));
                 log.info("[{}][{}] Latency Stats: {}, Processing Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), latencyStatsStr, msgStatsStr);
                 if (!stats.isActive()) {
@@ -301,7 +301,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         StringBuilder clientActorLogBuilder = new StringBuilder();
         clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")
-                .append(clientActorStats.getQueueTimeAvg()).append("] ");
+                .append(clientActorStats.getQueueTimeAvg()).append(" | ")
+                .append(clientActorStats.getQueueTimeMax()).append("] ")
+        ;
         clientActorStats.getTimers().forEach((msgType, timer) -> {
             clientActorLogBuilder.append(msgType).append(" = [").append(timer.getCount()).append(" | ")
                     .append(timer.getAvg()).append("] ");

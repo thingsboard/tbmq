@@ -76,9 +76,9 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
         counters = List.of(successPublishMsgCounter, successPubRelMsgCounter, tmpTimeoutPublishMsgCounter, tmpTimeoutPubRelMsgCounter,
                 timeoutPublishMsgCounter, timeoutPubRelMsgCounter, successIterationsCounter, failedIterationsCounter);
 
-        this.pubAckLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "puback"));
-        this.pubRecLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubrec"));
-        this.pubCompLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubcomp"));
+        this.pubAckLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "puback"), true);
+        this.pubRecLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubrec"), true);
+        this.pubCompLatencyTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".latency", PACKET_TYPE_TAG, "pubcomp"), true);
         latencyTimers = Map.of(
                 "PUBACK", pubAckLatencyTimer,
                 "PUBREC", pubRecLatencyTimer,

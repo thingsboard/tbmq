@@ -34,7 +34,7 @@ public class DefaultClientActorStats implements ClientActorStats {
 
     public DefaultClientActorStats(StatsFactory statsFactory) {
         this.statsFactory = statsFactory;
-        this.queueTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".msgInQueueTime"));
+        this.queueTimer = new ResettableTimer(statsFactory.createTimer(statsKey + ".msgInQueueTime"), true);
     }
 
     @Override
@@ -61,6 +61,11 @@ public class DefaultClientActorStats implements ClientActorStats {
     @Override
     public double getQueueTimeAvg() {
         return queueTimer.getAvg();
+    }
+
+    @Override
+    public double getQueueTimeMax() {
+        return queueTimer.getMax();
     }
 
     @Override

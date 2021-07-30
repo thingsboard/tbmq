@@ -51,6 +51,11 @@ public class StubClientActorStats implements ClientActorStats {
         return 0;
     }
 
+    @Override
+    public double getQueueTimeMax() {
+        return 0;
+    }
+
 
     @Override
     public void reset() {
