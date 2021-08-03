@@ -16,20 +16,24 @@
 package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
 
     private final ClientMqttActorManager actorManager;
     private final ClientLogger clientLogger;
 
+    @Value("${mqtt.max-in-flight-msgs:1000}")
+    private int maxInFlightMsgs;
+
     @Override
     public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(actorManager, clientLogger, sslHandler);
+        return new MqttSessionHandler(actorManager, clientLogger, sslHandler, maxInFlightMsgs);
     }
 }

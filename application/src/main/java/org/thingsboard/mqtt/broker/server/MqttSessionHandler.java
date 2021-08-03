@@ -57,10 +57,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientSessionCtx clientSessionCtx ;
     private final ClientLogger clientLogger ;
 
-    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger, SslHandler sslHandler) {
+    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger, SslHandler sslHandler, int maxInFlightMsgs) {
         this.clientMqttActorManager = clientMqttActorManager;
         this.clientLogger = clientLogger;
-        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler);
+        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler, maxInFlightMsgs);
     }
 
     @Override

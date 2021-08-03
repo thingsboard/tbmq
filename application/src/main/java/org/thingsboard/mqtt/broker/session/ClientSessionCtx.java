@@ -20,6 +20,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.state.RequestOrderCtx;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
@@ -48,10 +49,14 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final IncomingMessagesCtx incomingMessagesCtx = new IncomingMessagesCtx();
 
+    @Getter
+    private final RequestOrderCtx requestOrderCtx;
 
-    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler) {
+
+    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMsgs) {
         this.sessionId = sessionId;
         this.sslHandler = sslHandler;
+        this.requestOrderCtx = new RequestOrderCtx(maxInFlightMsgs);
     }
 
     public void setChannel(ChannelHandlerContext channel) {

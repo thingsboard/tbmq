@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubAckMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubCompMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
@@ -39,7 +40,8 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
 
-    public boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg) {
+    @Override
+    public boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef) {
         MsgType msgType = msg.getMsgType();
         log.trace("[{}][{}] Processing {} msg.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), msgType);
         keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
@@ -53,7 +55,7 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
                 messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMsg) msg);
                 break;
             case MQTT_PUBLISH_MSG:
-                messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMsg) msg);
+                messageHandlers.getPublishHandler().process(clientSessionCtx, (MqttPublishMsg) msg, actorRef);
                 break;
             case MQTT_PING_MSG:
                 messageHandlers.getPingHandler().process(clientSessionCtx);
@@ -74,5 +76,15 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
                 return false;
         }
         return true;
+    }
+
+    @Override
+    public void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId) {
+        messageHandlers.getPublishHandler().processPubAckResponse(clientSessionCtx, msgId);
+    }
+
+    @Override
+    public void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId) {
+        messageHandlers.getPublishHandler().processPubRecResponse(clientSessionCtx, msgId);
     }
 }

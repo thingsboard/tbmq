@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 import java.util.Map;
@@ -55,8 +56,8 @@ public class IncomingMessagesCtx {
     @Getter
     public static class QoS2PacketInfo {
         private final int packetId;
-        private final AtomicBoolean persisted = new AtomicBoolean(false);
-        private final AtomicInteger packetsToReply = new AtomicInteger(0);
+        @Setter
+        private volatile boolean persisted = false;
 
         public QoS2PacketInfo(int packetId) {
             this.packetId = packetId;
@@ -64,7 +65,7 @@ public class IncomingMessagesCtx {
 
         public QoS2PacketInfo(int packetId, boolean isPersisted) {
             this.packetId = packetId;
-            this.persisted.set(isPersisted);
+            this.persisted = isPersisted;
         }
     }
 }

@@ -21,6 +21,8 @@ import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
@@ -140,6 +142,14 @@ public class ClientActor extends ContextAwareActor {
                     case SUBSCRIPTION_CHANGED_EVENT_MSG:
                         subscriptionChangesManager.processSubscriptionChangedEvent(state.getClientId(), (SubscriptionChangedEventMsg) msg);
                         break;
+
+                    case PUBACK_RESPONSE_MSG:
+                        processPubAckResponseMsg((PubAckResponseMsg) msg);
+                        break;
+
+                    case PUBREC_RESPONSE_MSG:
+                        processPubRecResponseMsg((PubRecResponseMsg) msg);
+                        break;
                     default:
                         success = false;
                 }
@@ -155,6 +165,32 @@ public class ClientActor extends ContextAwareActor {
         } finally {
             clientActorStats.logMsgProcessingTime(msg.getMsgType().toString(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
             clientLogger.logEvent(state.getClientId(), this.getClass(), "Finished msg processing - " + msg.getMsgType());
+        }
+    }
+
+    private void processPubRecResponseMsg(PubRecResponseMsg msg) {
+        try {
+            mqttMessageHandler.processPubRecResponse(state.getCurrentSessionCtx(), msg.getMessageId());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to process PUBREC response for message {}. Exception - {}, message - {}.",
+                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
+                    e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error:", e);
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to PUBREC response. Exception message - " + e.getMessage())));
+        }
+    }
+
+    private void processPubAckResponseMsg(PubAckResponseMsg msg) {
+        try {
+            mqttMessageHandler.processPubAckResponse(state.getCurrentSessionCtx(), msg.getMessageId());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to process PUBACK response for message {}. Exception - {}, message - {}.",
+                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
+                    e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error:", e);
+            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                    "Failed to PUBACK response. Exception message - " + e.getMessage())));
         }
     }
 
@@ -193,7 +229,7 @@ public class ClientActor extends ContextAwareActor {
         }
 
         try {
-            return mqttMessageHandler.process(state.getCurrentSessionCtx(), msg);
+            return mqttMessageHandler.process(state.getCurrentSessionCtx(), msg, getActorRef());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     e.getClass().getSimpleName(), e.getMessage());
@@ -247,7 +283,7 @@ public class ClientActor extends ContextAwareActor {
         }
 
         try {
-            connectService.acceptConnection(state, msg);
+            connectService.acceptConnection(state, msg, getActorRef());
             state.updateSessionState(SessionState.CONNECTED);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),

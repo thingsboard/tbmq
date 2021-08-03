@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service;
+package org.thingsboard.mqtt.broker.actors.client.messages;
 
-import org.thingsboard.mqtt.broker.actors.TbActorRef;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
-public interface MqttMessageHandler {
-    boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef);
+import java.util.UUID;
 
-    void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId);
+@Slf4j
+@Getter
+public class PubAckResponseMsg extends SessionDependentMsg {
 
-    void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId);
+    private final int messageId;
+
+    public PubAckResponseMsg(UUID sessionId, int messageId) {
+        super(sessionId);
+        this.messageId = messageId;
+    }
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.PUBACK_RESPONSE_MSG;
+    }
 }

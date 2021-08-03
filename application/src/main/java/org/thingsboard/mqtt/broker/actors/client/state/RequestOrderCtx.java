@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service;
+package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.TbActorRef;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Getter;
 
-public interface MqttMessageHandler {
-    boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef);
+public class RequestOrderCtx {
+    @Getter
+    private final OrderedProcessingQueue qos1PublishResponseMsgs;
+    @Getter
+    private final OrderedProcessingQueue qos2PublishResponseMsgs;
 
-    void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId);
-
-    void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId);
+    public RequestOrderCtx(int maxAwaitingQueueSize) {
+        this.qos1PublishResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+        this.qos2PublishResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+    }
 }

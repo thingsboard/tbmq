@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
@@ -104,7 +105,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     @Override
-    public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
+    public void acceptConnection(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg, TbActorRef actorRef) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 
@@ -122,7 +123,7 @@ public class ConnectServiceImpl implements ConnectService {
             msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.wasPrevSessionPersistent());
         }
 
-        actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg));
+        actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
     }
 
     private void refuseConnection(ClientSessionCtx clientSessionCtx, Throwable t) {

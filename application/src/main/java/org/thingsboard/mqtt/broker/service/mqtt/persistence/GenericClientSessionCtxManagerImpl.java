@@ -98,7 +98,7 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
 
     private GenericClientSessionCtx toGenericClientSessionCtx(ClientSessionCtx ctx) {
         Set<Integer> qos2PublishPacketIds = ctx.getIncomingMessagesCtx().getAwaitingPacketIds().stream()
-                .filter(qoS2PacketInfo -> qoS2PacketInfo.getPersisted().get())
+                .filter(IncomingMessagesCtx.QoS2PacketInfo::isPersisted)
                 .map(IncomingMessagesCtx.QoS2PacketInfo::getPacketId)
                 .collect(Collectors.toSet());
         return GenericClientSessionCtx.builder()

@@ -42,6 +42,9 @@ public enum MsgType {
     MQTT_PUBREL_MSG,
     MQTT_PUBCOMP_MSG,
 
+    PUBACK_RESPONSE_MSG,
+    PUBREC_RESPONSE_MSG,
+
     // Client Session Inter-Node Management Msg Types
     SESSION_INIT_MSG,
     DISCONNECT_MSG,

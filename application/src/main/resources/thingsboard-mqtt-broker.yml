@@ -276,6 +276,7 @@ security:
 mqtt:
   pre-connect-queue:
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
+  max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   keep-alive:
     # Schedule monitoring for inactive MQTT clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"

@@ -18,6 +18,9 @@ package org.thingsboard.mqtt.broker.service.mqtt.handlers;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.exception.AuthorizationException;
@@ -38,6 +41,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,7 +55,8 @@ public class MqttPublishHandler {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
 
-    public void process(ClientSessionCtx ctx, MqttPublishMsg msg) throws MqttException {
+    // TODO: refactor this
+    public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
         UUID sessionId = ctx.getSessionId();
         String clientId = ctx.getClientId();
         PublishMsg publishMsg = msg.getPublishMsg();
@@ -62,10 +67,13 @@ public class MqttPublishHandler {
         validateClientAccess(ctx, publishMsg.getTopicName());
 
         if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            boolean isPacketStillBeingProcessed = preprocessQoS2Msg(msgId, ctx);
+            ctx.getRequestOrderCtx().getQos2PublishResponseMsgs().addAwaiting(msgId);
+            boolean isPacketStillBeingProcessed = preprocessQoS2Msg(msgId, ctx, actorRef);
             if (isPacketStillBeingProcessed) {
                 return;
             }
+        } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
+            ctx.getRequestOrderCtx().getQos1PublishResponseMsgs().addAwaiting(msgId);
         }
 
         clientLogger.logEvent(clientId, this.getClass(), "Sending PUBLISH");
@@ -74,7 +82,7 @@ public class MqttPublishHandler {
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 clientLogger.logEvent(clientId, this.getClass(), "PUBLISH acknowledged");
                 log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);
-                acknowledgePacket(ctx, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
+                sendMsgFinishEventToActor(actorRef, sessionId, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
             }
 
             @Override
@@ -85,55 +93,58 @@ public class MqttPublishHandler {
         });
     }
 
-    // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean preprocessQoS2Msg(int msgId, ClientSessionCtx ctx) {
-        String clientId = ctx.getClientId();
-        UUID sessionId = ctx.getSessionId();
-        IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
-        if (awaitingPacketInfo != null) {
-            int currentPacketsToReply = awaitingPacketInfo.getPacketsToReply().get();
-            if (awaitingPacketInfo.getPersisted().get() || currentPacketsToReply == 0) {
-                log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
-                acknowledgePacket(ctx, msgId, MqttQoS.EXACTLY_ONCE);
-            } else {
-                log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
-                int actualPacketsToReply = awaitingPacketInfo.getPacketsToReply().compareAndExchange(currentPacketsToReply, currentPacketsToReply + 1);
-                if (actualPacketsToReply != currentPacketsToReply) {
-                    // it means that packet was successfully stored
-                    acknowledgePacket(ctx, msgId, MqttQoS.EXACTLY_ONCE);
-                }
-            }
-            return true;
-        } else {
-            ctx.getIncomingMessagesCtx().await(msgId);
-            return false;
+    public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
+        List<Integer> finishedMsgIds = ctx.getRequestOrderCtx().getQos1PublishResponseMsgs().finish(msgId);
+        for (Integer finishedMsgId : finishedMsgIds) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId));
         }
     }
 
-    private void acknowledgePacket(ClientSessionCtx ctx, int packetId, MqttQoS mqttQoS) {
-        switch (mqttQoS) {
-            case AT_MOST_ONCE:
-                break;
-            case AT_LEAST_ONCE:
-                ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId));
-                break;
-            case EXACTLY_ONCE:
-                int packetsToReply = 1;
-                if (ctx.getSessionInfo().isPersistent()) {
-                    IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(packetId);
-                    if (awaitingPacketInfo == null) {
-                        log.warn("[{}][{}] Couldn't find awaiting packet info for packet {}.", ctx.getClientId(), ctx.getSessionId(), packetId);
-                    } else {
-                        packetsToReply += awaitingPacketInfo.getPacketsToReply().getAndSet(0);
-                        awaitingPacketInfo.getPersisted().getAndSet(true);
-                    }
-                }
-                for (int i = 0; i < packetsToReply; i++) {
-                    ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId));
-                }
-                break;
-            default:
-                throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
+    public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
+        // TODO: test performance impact
+        List<Integer> finishedMsgIds = ctx.getRequestOrderCtx().getQos2PublishResponseMsgs().finishAll(msgId);
+        for (Integer finishedMsgId : finishedMsgIds) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId));
+        }
+        IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
+        if (awaitingPacketInfo != null && !awaitingPacketInfo.isPersisted()) {
+            awaitingPacketInfo.setPersisted(true);
+        }
+    }
+
+    // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
+    private boolean preprocessQoS2Msg(int msgId, ClientSessionCtx ctx, TbActorRef actorRef) {
+        String clientId = ctx.getClientId();
+        UUID sessionId = ctx.getSessionId();
+        IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
+        if (awaitingPacketInfo == null) {
+            ctx.getIncomingMessagesCtx().await(msgId);
+        } else if (!awaitingPacketInfo.isPersisted()) {
+            log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+        } else {
+            log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
+            sendMsgFinishEventToActor(actorRef, sessionId, msgId, MqttQoS.EXACTLY_ONCE);
+        }
+        return awaitingPacketInfo != null;
+    }
+
+    private void sendMsgFinishEventToActor(TbActorRef actorRef, UUID sessionId, int packetId, MqttQoS mqttQoS) {
+        try {
+            switch (mqttQoS) {
+                case AT_MOST_ONCE:
+                    break;
+                case AT_LEAST_ONCE:
+                    actorRef.tell(new PubAckResponseMsg(sessionId, packetId));
+                    break;
+                case EXACTLY_ONCE:
+                    actorRef.tell(new PubRecResponseMsg(sessionId, packetId));
+                    break;
+                default:
+                    throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
+            }
+        } catch (Exception e) {
+            log.error("[{}][{}] Failed to send msg finished event to actor. Exception - {}, message - {}", actorRef.getActorId(), sessionId,
+                    e.getClass().getSimpleName(), e.getMessage());
         }
     }
 

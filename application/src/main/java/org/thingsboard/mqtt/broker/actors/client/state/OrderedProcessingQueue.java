@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service;
+package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.actors.TbActorRef;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
-public interface MqttMessageHandler {
-    boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef);
+import java.util.List;
 
-    void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId);
+public interface OrderedProcessingQueue {
+    void addAwaiting(int msgId) throws FullMsgQueueException;
 
-    void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId);
+    List<Integer> finish(int msgId) throws FullMsgQueueException;
+
+    List<Integer> finishAll(int msgId) throws FullMsgQueueException;
 }
