@@ -31,6 +31,8 @@ public interface StatsManager {
 
     MessagesStats createMsgDispatcherPublishStats();
 
+    ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId);
+
     PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId);
 
     DeviceProcessorStats createDeviceProcessorStats(String consumerId);

@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.service.stats.ClientSessionEventConsumerStats;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component
@@ -50,6 +51,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
     private final ClientSessionCallbackMsgFactory callbackMsgFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionEventActorManager clientSessionEventActorManager;
+    private final StatsManager statsManager;
 
     @Value("${queue.client-session-event.consumers-count}")
     private int consumersCount;
@@ -69,15 +71,16 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         }
     }
 
-    private void initConsumer(int consumerId) {
-        String consumerName = serviceInfoProvider.getServiceId() + "-" + consumerId;
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerName);
+    private void initConsumer(int consumerIndex) {
+        String consumerId = serviceInfoProvider.getServiceId() + "-" + consumerIndex;
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerId);
         eventConsumers.add(eventConsumer);
         eventConsumer.subscribe();
-        consumersExecutor.submit(() -> processClientSessionEvents(eventConsumer));
+        ClientSessionEventConsumerStats stats = statsManager.createClientSessionEventConsumerStats(consumerId);
+        consumersExecutor.submit(() -> processClientSessionEvents(eventConsumer, stats));
     }
 
-    private void processClientSessionEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer) {
+    private void processClientSessionEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer, ClientSessionEventConsumerStats stats) {
         while (!stopped) {
             try {
                 List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
@@ -91,7 +94,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 //          - failures (make sure method can be safely called multiple times)
                 //          - will block till timeout if message is lost in Actor System
                 consumer.commitSync();
+                long packProcessingStart = System.nanoTime();
                 processMessages(msgs);
+                stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
             } catch (Exception e) {
                 if (!stopped) {
                     log.error("Failed to process messages from queue.", e);

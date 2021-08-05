@@ -52,6 +52,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId) {
+        return StubClientSessionEventConsumerStats.STUB_CLIENT_SESSION_EVENT_CONSUMER_STATS;
+    }
+
+    @Override
     public PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId) {
         return StubPublishMsgConsumerStats.STUB_PUBLISH_MSG_CONSUMER_STATS;
     }

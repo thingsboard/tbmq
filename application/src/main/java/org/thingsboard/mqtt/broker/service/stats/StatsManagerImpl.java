@@ -62,6 +62,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
     private final List<PublishMsgConsumerStats> managedPublishMsgConsumerStats = new CopyOnWriteArrayList<>();
+    private final List<ClientSessionEventConsumerStats> managedClientSessionEventConsumerStats = new CopyOnWriteArrayList<>();
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
@@ -93,6 +94,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.trace("Creating MsgDispatcherPublishStats.");
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
         managedStats.add(stats);
+        return stats;
+    }
+
+    @Override
+    public ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId) {
+        log.trace("Creating ClientSessionEventConsumerStats, consumerId - {}.", consumerId);
+        ClientSessionEventConsumerStats stats = new DefaultClientSessionEventConsumerStats(consumerId, statsFactory);
+        managedClientSessionEventConsumerStats.add(stats);
         return stats;
     }
 
@@ -263,6 +272,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                     .collect(Collectors.joining(" "));
             log.info("[{}][{}] Average pack size - {}, pack processing time - {}, msg processing time - {} ms, counters stats: {}", StatsType.PUBLISH_MSG_CONSUMER.getPrintName(), stats.getConsumerId(),
                     stats.getAvgPackSize(), stats.getAvgPackProcessingTime(), stats.getAvgMsgProcessingTime(), countersStats);
+            stats.reset();
+        }
+
+        for (ClientSessionEventConsumerStats stats : managedClientSessionEventConsumerStats) {
+            log.info("[{}][{}] Average pack size - {}, pack processing time - {}", StatsType.CLIENT_SESSION_EVENT_CONSUMER.getPrintName(), stats.getConsumerId(),
+                    stats.getAvgPackSize(), stats.getAvgPackProcessingTime());
             stats.reset();
         }
 
