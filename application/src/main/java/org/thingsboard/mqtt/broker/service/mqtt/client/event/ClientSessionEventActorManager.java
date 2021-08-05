@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 
 public interface ClientSessionEventActorManager {
-    void sendCallbackMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg);
+    void sendSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg);
 }

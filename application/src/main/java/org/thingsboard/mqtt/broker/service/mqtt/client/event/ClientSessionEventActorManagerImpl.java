@@ -40,7 +40,7 @@ public class ClientSessionEventActorManagerImpl implements ClientSessionEventAct
 
 
     @Override
-    public void sendCallbackMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg) {
+    public void sendSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg) {
         TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
         if (clientActorRef == null) {
             clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,

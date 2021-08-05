@@ -58,9 +58,6 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
     @Value("${queue.client-session-event.client-threads-count}")
     private int clientThreadsCount;
 
-    @Value("${queue.client-session-event.acknowledge-wait-timeout-ms:200}")
-    private long ackTimeoutMs;
-
     private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     @Override
@@ -94,10 +91,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 //          - failures (make sure method can be safely called multiple times)
                 //          - will block till timeout if message is lost in Actor System
                 consumer.commitSync();
-                for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
-                    // TODO: process messages in batch and wait for all to finish
-                    processMsg(msg);
-                }
+                processMessages(msgs);
             } catch (Exception e) {
                 if (!stopped) {
                     log.error("Failed to process messages from queue.", e);
@@ -112,49 +106,33 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         log.info("Client Session Event Consumer stopped.");
     }
 
-    private void processMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
-        String clientId = msg.getKey();
+    private void processMessages(List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs) {
+        CountDownLatch latch = new CountDownLatch(msgs.size());
+        for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
+            String clientId = msg.getKey();
 
-        AtomicReference<Throwable> errorRef = new AtomicReference<>();
-        CountDownLatch updateWaiter = new CountDownLatch(1);
+            ClientCallback callback = new ClientCallback() {
+                @Override
+                public void onSuccess() {
+                    latch.countDown();
+                }
 
-        ClientCallback callback = new ClientCallback() {
-            @Override
-            public void onSuccess() {
-                updateWaiter.countDown();
-            }
+                @Override
+                public void onFailure(Throwable t) {
+                    log.warn("[{}] Failed to process {} msg. Exception - {}, reason - {}.",
+                            clientId, msg.getValue().getEventType(), t.getClass().getSimpleName(), t.getMessage());
+                    log.trace("Detailed error:", t);
+                    latch.countDown();
+                }
+            };
 
-            @Override
-            public void onFailure(Throwable t) {
-                errorRef.getAndSet(t);
-                updateWaiter.countDown();
-            }
-        };
-
-        SessionClusterManagementMsg sessionClusterManagementMsg = callbackMsgFactory.createSessionClusterManagementMsg(msg, callback);
-        try {
-            clientSessionEventActorManager.sendCallbackMsg(clientId, sessionClusterManagementMsg);
-        } catch (Exception e) {
-            log.warn("[{}] Failed to send {} msg to actor. Exception - {}, reason - {}.", clientId, sessionClusterManagementMsg.getMsgType(),
-                    e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
-            return;
-        }
-
-        boolean waitSuccessful = false;
-        try {
-            waitSuccessful = updateWaiter.await(ackTimeoutMs, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            errorRef.getAndSet(e);
-        }
-        Throwable error = errorRef.get();
-        if (!waitSuccessful || error != null) {
-            log.warn("[{}] Failed to process {} msg. Reason - {}.",
-                    clientId, sessionClusterManagementMsg.getMsgType(), error != null
-                            ? error.getClass().getSimpleName() + " - " + error.getMessage()
-                            : "timeout waiting");
-            if (error != null) {
-                log.trace("Detailed error:", error);
+            SessionClusterManagementMsg sessionClusterManagementMsg = callbackMsgFactory.createSessionClusterManagementMsg(msg, callback);
+            try {
+                clientSessionEventActorManager.sendSessionClusterManagementMsg(clientId, sessionClusterManagementMsg);
+            } catch (Exception e) {
+                log.warn("[{}] Failed to send {} msg to actor. Exception - {}, reason - {}.", clientId, sessionClusterManagementMsg.getMsgType(),
+                        e.getClass().getSimpleName(), e.getMessage());
+                log.trace("Detailed error: ", e);
             }
         }
     }

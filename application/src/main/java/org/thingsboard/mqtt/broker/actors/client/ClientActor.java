@@ -112,10 +112,10 @@ public class ClientActor extends ContextAwareActor {
                         processConnectionRequestMsg((ConnectionRequestMsg) msg);
                         break;
                     case SESSION_DISCONNECTED_MSG:
-                        sessionClusterManager.processSessionDisconnected(state.getClientId(), ((SessionDisconnectedMsg) msg).getSessionId());
+                        processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
                         break;
                     case CLEAR_SESSION_MSG:
-                        sessionClusterManager.processClearSession(state.getClientId(), ((ClearSessionMsg) msg).getSessionId());
+                        processClearSessionMsg((ClearSessionMsg) msg);
                         break;
                     default:
                         success = false;
@@ -196,7 +196,26 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
-            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo(), msg.getCallback());
+            sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
+            msg.getCallback().onSuccess();
+        } catch (Exception e) {
+            msg.getCallback().onFailure(e);
+        }
+    }
+
+    private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
+        try {
+            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg.getSessionId());
+            msg.getCallback().onSuccess();
+        } catch (Exception e) {
+            msg.getCallback().onFailure(e);
+        }
+    }
+
+    private void processClearSessionMsg(ClearSessionMsg msg) {
+        try {
+            sessionClusterManager.processClearSession(state.getClientId(), msg.getSessionId());
+            msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
         }

@@ -49,14 +49,11 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
             case DISCONNECTED:
-                callback.onSuccess();
-                return new SessionDisconnectedMsg(sessionInfo.getSessionId());
+                return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId());
             case TRY_CLEAR_SESSION_REQUEST:
-                // TODO: think if there's a better solution
-                callback.onSuccess();
-                return new ClearSessionMsg(sessionInfo.getSessionId());
+                return new ClearSessionMsg(callback, sessionInfo.getSessionId());
             default:
-                throw new RuntimeException("Unexpected " + ClientSessionEventType.class.getSimpleName());
+                throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
         }
     }
 

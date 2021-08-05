@@ -88,7 +88,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)
 
     @Override
-    public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo, ClientCallback callback) {
+    public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
         // It is possible that for some time sessions can be connected with the same clientId to different Nodes
         String clientId = sessionInfo.getClientInfo().getClientId();
         UUID sessionId = sessionInfo.getSessionId();
@@ -113,7 +113,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
 
         boolean wasPrevSessionPersistent = currentlyConnectedSession != null && currentlyConnectedSession.getSessionInfo().isPersistent();
-        updateClientSession(sessionInfo, requestInfo, wasPrevSessionPersistent, callback);
+        updateClientSession(sessionInfo, requestInfo, wasPrevSessionPersistent);
     }
 
     @Override
@@ -180,7 +180,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
-    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, boolean wasPrevSessionPersistent, ClientCallback callback) {
+    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, boolean wasPrevSessionPersistent) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
         log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
@@ -196,12 +196,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             log.trace("[{}][{}] Clearing prev persisted session.", clientInfo.getType(), clientInfo.getClientId());
             clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId(), createCallback(() -> {
                 if (finishedOperations.incrementAndGet() >= 2) {
-                    callback.onSuccess();
                     sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, wasPrevSessionPersistent);
                 }
             }, t -> {
                 if (!wasErrorProcessed.getAndSet(true)) {
-                    callback.onFailure(t);
                     sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, wasPrevSessionPersistent);
                 }
             }));
@@ -214,12 +212,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 .build();
         clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession, createCallback(() -> eventResponseSenderExecutor.execute(() -> {
             if (!needPrevSessionClear || finishedOperations.incrementAndGet() >= 2) {
-                callback.onSuccess();
                 sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, wasPrevSessionPersistent);
             }
         }), t -> eventResponseSenderExecutor.execute(() -> {
             if (!needPrevSessionClear || !wasErrorProcessed.getAndSet(true)) {
-                callback.onFailure(t);
                 sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, wasPrevSessionPersistent);
             }
         })));

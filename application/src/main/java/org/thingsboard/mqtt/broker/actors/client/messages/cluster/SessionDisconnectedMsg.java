@@ -18,17 +18,19 @@ package org.thingsboard.mqtt.broker.actors.client.messages.cluster;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
-import org.thingsboard.mqtt.broker.actors.client.messages.AbstractTimedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 import java.util.UUID;
 
 @Slf4j
 @Getter
-public class SessionDisconnectedMsg extends AbstractTimedMsg implements SessionClusterManagementMsg {
+public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
     private final UUID sessionId;
 
-    public SessionDisconnectedMsg(UUID sessionId) {
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId) {
+        super(callback);
         this.sessionId = sessionId;
     }
 
