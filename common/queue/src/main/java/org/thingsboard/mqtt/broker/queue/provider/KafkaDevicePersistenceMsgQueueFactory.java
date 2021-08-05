@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.DevicePersistenceMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
@@ -48,6 +49,8 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
+    @Autowired(required = false)
+    private ConsumerStatsManager consumerStatsManager;
 
     private final DevicePersistenceMsgKafkaSettings devicePersistenceMsgSettings;
 
@@ -82,6 +85,7 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 }

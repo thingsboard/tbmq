@@ -62,7 +62,7 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
         this.defaultTopic = defaultTopic;
         this.topicConfigs = topicConfigs;
         this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
-        this.sendTimer = statsManager != null ? statsManager.createTimer(clientId) : (amount, unit) -> {};
+        this.sendTimer = statsManager != null ? statsManager.createSendTimer(clientId) : (amount, unit) -> {};
     }
 
     @Override

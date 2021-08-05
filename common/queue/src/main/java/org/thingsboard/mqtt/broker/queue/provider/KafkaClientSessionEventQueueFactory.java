@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventKafkaS
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventResponseKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
@@ -49,6 +50,8 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
+    @Autowired(required = false)
+    private ConsumerStatsManager consumerStatsManager;
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> createEventProducer(String serviceId) {
@@ -74,6 +77,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 
@@ -96,6 +100,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionEventResponseProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 }

@@ -40,6 +40,7 @@ public enum StatsType {
     DELIVERY("delivery"),
 
     QUEUE_PRODUCER("producer"),
+    QUEUE_CONSUMER("consumer"),
     ;
 
     private final String printName;

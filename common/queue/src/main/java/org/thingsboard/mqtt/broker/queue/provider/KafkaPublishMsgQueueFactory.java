@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.PublishMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
@@ -48,6 +49,8 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
+    @Autowired(required = false)
+    private ConsumerStatsManager consumerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -79,6 +82,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 }

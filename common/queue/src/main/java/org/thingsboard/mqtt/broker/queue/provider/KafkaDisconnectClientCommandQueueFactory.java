@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
@@ -50,6 +51,8 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
+    @Autowired(required = false)
+    private ConsumerStatsManager consumerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -80,6 +83,7 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 }

@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "false", matchIfMissing = true)
-public class StatsManagerStub implements StatsManager, ActorStatsManager, ProducerStatsManager {
+public class StatsManagerStub implements StatsManager, ActorStatsManager, ProducerStatsManager, ConsumerStatsManager {
     private static final StubTimerStats timerStats = new StubTimerStats();
 
     @Override
@@ -129,12 +130,17 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public Timer createTimer(String clientId) {
+    public Timer createSendTimer(String clientId) {
         return (amount, unit) -> {};
     }
 
     @Override
     public void registerProducerQueue(String queueName, Queue<?> queue) {
 
+    }
+
+    @Override
+    public Timer createCommitTimer(String clientId) {
+        return (amount, unit) -> {};
     }
 }

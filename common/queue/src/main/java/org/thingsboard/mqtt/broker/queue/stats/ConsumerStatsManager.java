@@ -15,10 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue.stats;
 
-import java.util.Queue;
-
-public interface ProducerStatsManager {
-    Timer createSendTimer(String clientId);
-
-    void registerProducerQueue(String queueName, Queue<?> queue);
+public interface ConsumerStatsManager {
+    Timer createCommitTimer(String clientId);
 }

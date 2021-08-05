@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
 @Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
-public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager {
+public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager, ConsumerStatsManager {
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
@@ -64,6 +65,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
+    private final Map<String, ResettableTimer> managedQueueConsumers = new ConcurrentHashMap<>();
     private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
     private ClientActorStats clientActorStats;
@@ -203,9 +205,18 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public Timer createTimer(String clientId) {
+    public Timer createSendTimer(String clientId) {
         ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_PRODUCER.getPrintName(), "producerId", clientId));
         managedQueueProducers.put(clientId, timer);
+        return timer::logTime;
+    }
+
+    @Override
+    public Timer createCommitTimer(String clientId) {
+        ResettableTimer timer = new ResettableTimer(statsFactory.createTimer(StatsType.QUEUE_CONSUMER.getPrintName(),
+                "consumerId", clientId,
+                "operation", "syncCommit"));
+        managedQueueConsumers.put(clientId, timer);
         return timer::logTime;
     }
 
@@ -326,6 +337,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             timer.reset();
         });
         log.info("Queue Producer Send Time Average Stats: {}", queueProducerLogBuilder.toString());
+
+        StringBuilder queueConsumerLogBuilder = new StringBuilder();
+        managedQueueConsumers.forEach((consumerId, timer) -> {
+            queueConsumerLogBuilder.append(consumerId).append(" = [").append(timer.getCount()).append(" | ")
+                    .append(timer.getAvg()).append("] ");
+            timer.reset();
+        });
+        log.info("Queue Consumer Commit Time Average Stats: {}", queueConsumerLogBuilder.toString());
     }
 
     @AllArgsConstructor

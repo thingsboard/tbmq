@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 
@@ -51,6 +52,8 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
+    @Autowired(required = false)
+    private ConsumerStatsManager consumerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -89,6 +92,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
+        consumerBuilder.statsManager(consumerStatsManager);
         return consumerBuilder.build();
     }
 }

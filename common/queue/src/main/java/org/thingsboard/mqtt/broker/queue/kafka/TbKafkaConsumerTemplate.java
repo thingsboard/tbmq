@@ -29,6 +29,8 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.common.AbstractTbQueueConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
+import org.thingsboard.mqtt.broker.queue.stats.Timer;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQueueConsumerTemplate<ConsumerRecord<String, byte[]>, T> {
@@ -50,6 +53,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     private final TbKafkaConsumerStatsService statsService;
     private final String groupId;
+    private final Timer commitTimer;
 
     private final long closeTimeoutMs;
     private final boolean createTopicIfNotExists;
@@ -66,7 +70,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
                                     long closeTimeoutMs,
                                     TbQueueAdmin admin, TbKafkaConsumerStatsService statsService,
                                     Boolean createTopicIfNotExists,
-                                    Map<String, String> topicConfigs) {
+                                    Map<String, String> topicConfigs,
+                                    ConsumerStatsManager statsManager) {
         super(topic);
         properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
         if (groupId != null) {
@@ -91,6 +96,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.decoder = decoder;
         this.topicConfigs = topicConfigs;
         this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
+        this.commitTimer = statsManager != null ? statsManager.createCommitTimer(clientId) : (amount, unit) -> {};
     }
 
     @Override
@@ -142,7 +148,9 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     @Override
     protected void doCommitSync() {
+        long startTime = System.nanoTime();
         consumer.commitSync();
+        commitTimer.logTime(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
     }
 
     @Override
