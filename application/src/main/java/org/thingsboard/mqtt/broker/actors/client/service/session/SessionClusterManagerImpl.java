@@ -93,6 +93,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         String clientId = sessionInfo.getClientInfo().getClientId();
         UUID sessionId = sessionInfo.getSessionId();
 
+        if (isRequestTimedOut(requestInfo.getRequestTime())) {
+            log.debug("[{}][{}] Connection request timed out.", clientId, requestInfo.getRequestId());
+            return;
+        }
+
         log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionId);
 
         ClientSession currentlyConnectedSession = clientSessionService.getClientSession(clientId);
@@ -184,10 +189,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
         log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
-        if (isRequestTimedOut(connectionRequestInfo.getRequestTime())) {
-            log.debug("[{}][{}] Connection request timed out.", clientInfo.getClientId(), connectionRequestInfo.getRequestId());
-            return;
-        }
 
         boolean needPrevSessionClear = wasPrevSessionPersistent && !sessionInfo.isPersistent();
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
