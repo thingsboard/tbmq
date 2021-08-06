@@ -62,7 +62,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(publishMsgSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(publishMsgSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("publish-msg-producer");
         producerBuilder.defaultTopic(publishMsgSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
@@ -74,7 +74,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(publishMsgSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("publish-msg-consumer-" + id);

@@ -70,7 +70,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(clientSubscriptionsSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(clientSubscriptionsSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("client-subscriptions-producer");
         producerBuilder.defaultTopic(clientSubscriptionsSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
@@ -82,7 +82,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSubscriptionsSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(clientSubscriptionsSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-subscriptions-consumer-" + consumerId);

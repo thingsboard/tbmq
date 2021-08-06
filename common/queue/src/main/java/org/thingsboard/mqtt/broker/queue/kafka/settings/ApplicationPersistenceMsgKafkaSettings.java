@@ -15,17 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
+@ConfigurationProperties(prefix = "queue.kafka.application-persisted-msg")
 public class ApplicationPersistenceMsgKafkaSettings {
-    @Value("${queue.kafka.application-persisted-msg.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.application-persisted-msg.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.application-persisted-msg.consumer}")
-    private String consumerProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

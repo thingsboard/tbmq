@@ -15,19 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
+@ConfigurationProperties(prefix = "queue.kafka.disconnect-client-command")
 public class DisconnectClientCommandKafkaSettings {
-    @Value("${queue.kafka.disconnect-client-command.topic-prefix}")
     private String topicPrefix;
-    @Value("${queue.kafka.disconnect-client-command.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.disconnect-client-command.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.disconnect-client-command.consumer}")
-    private String consumerProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

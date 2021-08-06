@@ -64,7 +64,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("application-persisted-msg-producer-" + serviceId);
         producerBuilder.createTopicIfNotExists(false);
         producerBuilder.statsManager(producerStatsManager);
@@ -75,7 +75,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId) {
         // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.clientId("application-persisted-msg-consumer-" + consumerId);
         consumerBuilder.groupId(consumerGroup);

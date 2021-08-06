@@ -15,19 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
+@ConfigurationProperties(prefix = "queue.kafka.basic-downlink-publish-msg")
 public class BasicDownLinkPublishMsgKafkaSettings {
-    @Value("${queue.kafka.basic-downlink-publish-msg.topic-prefix}")
     private String topicPrefix;
-    @Value("${queue.kafka.basic-downlink-publish-msg.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.basic-downlink-publish-msg.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.basic-downlink-publish-msg.consumer}")
-    private String consumerProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

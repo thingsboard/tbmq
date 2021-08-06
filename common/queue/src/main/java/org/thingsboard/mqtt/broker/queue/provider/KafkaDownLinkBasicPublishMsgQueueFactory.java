@@ -64,7 +64,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createProducer(String id) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("basic-downlink-publish-producer-" + id);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
@@ -75,7 +75,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("basic-downlink-publish-consumer-" + consumerId);

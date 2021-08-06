@@ -15,19 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
+@ConfigurationProperties(prefix = "queue.kafka.client-subscriptions")
 public class ClientSubscriptionsKafkaSettings {
-    @Value("${queue.kafka.client-subscriptions.topic}")
     private String topic;
-    @Value("${queue.kafka.client-subscriptions.topic-properties}")
     private String topicProperties;
-    @Value("${queue.kafka.client-subscriptions.producer}")
-    private String producerProperties;
-    @Value("${queue.kafka.client-subscriptions.consumer}")
-    private String consumerProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

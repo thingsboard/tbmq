@@ -71,7 +71,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(clientSessionSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(clientSessionSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("client-session-producer");
         producerBuilder.defaultTopic(clientSessionSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
@@ -83,7 +83,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSessionSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(clientSessionSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(clientSessionSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-session-consumer-" + consumerId);

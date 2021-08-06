@@ -64,7 +64,7 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
-        producerBuilder.properties(producerSettings.toProps(devicePersistenceMsgSettings.getProducerProperties()));
+        producerBuilder.properties(producerSettings.toProps(devicePersistenceMsgSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("device-persisted-msg-producer");
         producerBuilder.defaultTopic(devicePersistenceMsgSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
@@ -76,7 +76,7 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(devicePersistenceMsgSettings.getConsumerProperties()));
+        consumerBuilder.properties(consumerSettings.toProps(devicePersistenceMsgSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(devicePersistenceMsgSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("device-persisted-msg-consumer-" + id);
