@@ -31,9 +31,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
@@ -41,6 +43,8 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Component
 @RequiredArgsConstructor
 public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
+    private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "latest");
+
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
@@ -75,7 +79,11 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId) {
         // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig()));
+
+        Properties props = consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
+        PropertiesUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
+        consumerBuilder.properties(props);
+
         consumerBuilder.topic(topic);
         consumerBuilder.clientId("application-persisted-msg-consumer-" + consumerId);
         consumerBuilder.groupId(consumerGroup);

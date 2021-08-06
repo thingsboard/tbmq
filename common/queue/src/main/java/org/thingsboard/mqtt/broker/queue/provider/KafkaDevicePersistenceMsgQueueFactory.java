@@ -32,9 +32,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
@@ -42,6 +44,8 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Component
 @RequiredArgsConstructor
 public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceMsgQueueFactory {
+    private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
+
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final TbQueueAdmin queueAdmin;
@@ -76,7 +80,11 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(devicePersistenceMsgSettings.getAdditionalConsumerConfig()));
+
+        Properties props = consumerSettings.toProps(devicePersistenceMsgSettings.getAdditionalConsumerConfig());
+        PropertiesUtil.overrideProperties("DeviceMsgQueue-" + id, props, requiredConsumerProperties);
+        consumerBuilder.properties(props);
+
         consumerBuilder.topic(devicePersistenceMsgSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("device-persisted-msg-consumer-" + id);

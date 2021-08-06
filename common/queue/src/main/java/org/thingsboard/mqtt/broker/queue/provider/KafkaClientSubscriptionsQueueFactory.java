@@ -32,9 +32,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
@@ -44,6 +46,7 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Component
 @RequiredArgsConstructor
 public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptionsQueueFactory {
+    private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ClientSubscriptionsKafkaSettings clientSubscriptionsSettings;
@@ -82,7 +85,11 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSubscriptionsSettings.getAdditionalConsumerConfig()));
+
+        Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getAdditionalConsumerConfig());
+        PropertiesUtil.overrideProperties("ClientSubscriptionsQueue-" + consumerId, props, requiredConsumerProperties);
+        consumerBuilder.properties(props);
+
         consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-subscriptions-consumer-" + consumerId);

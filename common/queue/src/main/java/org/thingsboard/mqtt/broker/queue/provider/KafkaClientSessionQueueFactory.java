@@ -32,9 +32,11 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
@@ -44,6 +46,7 @@ import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 @Component
 @RequiredArgsConstructor
 public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory {
+    private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ClientSessionKafkaSettings clientSessionSettings;
@@ -83,8 +86,11 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSessionSettings.getAdditionalConsumerConfig()));
-        consumerBuilder.topic(clientSessionSettings.getTopic());
+
+        Properties props = consumerSettings.toProps(clientSessionSettings.getAdditionalConsumerConfig());
+        PropertiesUtil.overrideProperties("ClientSessionQueue-" + consumerId, props, requiredConsumerProperties);
+        consumerBuilder.properties(props);consumerBuilder.topic(clientSessionSettings.getTopic());
+
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-session-consumer-" + consumerId);
         consumerBuilder.groupId("client-session-group-" + groupId);
