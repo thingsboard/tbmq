@@ -21,10 +21,10 @@
 
     <appender name="fileLogAppender"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.log</file>
+        <file>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>

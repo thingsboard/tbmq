@@ -37,7 +37,7 @@ In case of any issues you can examine service logs for errors.
 For example to see ThingsBoard Mqtt Broker logs execute the following command:
 
 `
-$ docker-compose logs -f tb-mqtt-broker
+$ docker-compose logs -f tb-mqtt-broker-1
 `
 
 Or use `docker-compose ps` to see the state of all the containers.
@@ -55,27 +55,3 @@ Execute the following command to stop and completely remove deployed docker cont
 `
 $ ./scripts/docker-remove-services.sh
 `
-
-Execute the following command to update particular or all services (pull newer docker image and rebuild container):
-
-`
-$ ./scripts/docker-update-service.sh [SERVICE...]
-`
-
-Where:
-
-- `[SERVICE...]` - list of services to update (defined in docker-compose configurations). If not specified all services will be updated.
-
-## Upgrading
-
-In case when database upgrade is needed, execute the following commands:
-
-```
-$ ./scripts/docker-stop-services.sh
-$ ./scripts/docker-upgrade-tb-mqtt-broker.sh --fromVersion=[FROM_VERSION]
-$ ./scripts/docker-start-services.sh
-```
-
-Where:
-
-- `FROM_VERSION` - from which version upgrade should be started.

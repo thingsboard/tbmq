@@ -45,17 +45,19 @@ services:
       - kafka.env
     depends_on:
       - zookeeper
-  tb-mqtt-broker:
+  tb-mqtt-broker-1:
     restart: always
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
     ports:
-      - "1883:1883"
-      - "8083:8083"
+      - "1883"
+      - "8083"
     logging:
       driver: "json-file"
       options:
         max-size: "200m"
         max-file: "30"
+    environment:
+      TB_SERVICE_ID: tb-mqtt-broker-1
     env_file:
       - tb-mqtt-broker.env
     volumes:
@@ -64,3 +66,46 @@ services:
     depends_on:
       - postgres
       - kafka
+  tb-mqtt-broker-2:
+    restart: always
+    image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
+    ports:
+      - "1883"
+      - "8083"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "30"
+    environment:
+      TB_SERVICE_ID: tb-mqtt-broker-2
+    env_file:
+      - tb-mqtt-broker.env
+    volumes:
+      - ./tb-mqtt-broker/conf:/config
+      - ./tb-mqtt-broker/log:/var/log/thingsboard-mqtt-broker
+    depends_on:
+      - postgres
+      - kafka
+  haproxy:
+    restart: always
+    container_name: "${LOAD_BALANCER_NAME}"
+    image: thingsboard/haproxy-certbot:1.3.0
+    volumes:
+      - ./haproxy/config:/config
+      - ./haproxy/letsencrypt:/etc/letsencrypt
+      - ./haproxy/certs.d:/usr/local/etc/haproxy/certs.d
+    ports:
+      - "8083:8083"
+      - "8883:8883"
+      - "1883:1883"
+    cap_add:
+      - NET_ADMIN
+    environment:
+      HTTP_PORT: 8083
+      HTTPS_PORT: 8883
+      MQTT_PORT: 1883
+      FORCE_HTTPS_REDIRECT: "false"
+    links:
+      - tb-mqtt-broker-1
+      - tb-mqtt-broker-2
