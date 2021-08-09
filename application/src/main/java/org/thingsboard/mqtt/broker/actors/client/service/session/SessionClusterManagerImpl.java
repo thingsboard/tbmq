@@ -151,7 +151,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 clientSubscriptionService.clearSubscriptionsAndPersist(clientId, createCallback(() -> log.trace("[{}] Cleared client subscriptions", clientId),
                         t -> log.warn("[{}] Failed to clear client subscriptions. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage()))
                 );
-            } else if (sessionId.equals(clientSession.getSessionInfo().getSessionId())) {
+            } else if (!sessionId.equals(clientSession.getSessionInfo().getSessionId())) {
                 log.info("[{}][{}] Ignoring {} for session - {}.", clientId, clientSession.getSessionInfo().getSessionId(), ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
             } else if (clientSession.isConnected()) {
                 log.info("[{}][{}] Session is connected now, ignoring {}.", clientId, clientSession.getSessionInfo().getSessionId(), ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
