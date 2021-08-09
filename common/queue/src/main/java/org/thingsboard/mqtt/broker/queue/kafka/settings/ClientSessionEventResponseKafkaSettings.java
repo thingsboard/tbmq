@@ -22,11 +22,9 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "queue.kafka.basic-downlink-publish-msg")
+@ConfigurationProperties(prefix = "queue.kafka.client-session-event-response")
 public class ClientSessionEventResponseKafkaSettings {
-    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
     private String topicPrefix;
-    @Value("${queue.kafka.client-session-event-response.topic-properties}")
     private String topicProperties;
     private String additionalProducerConfig;
     private String additionalConsumerConfig;
