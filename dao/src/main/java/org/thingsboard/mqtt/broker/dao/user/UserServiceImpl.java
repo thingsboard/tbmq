@@ -113,6 +113,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void replaceUserCredentials(UserCredentials userCredentials) {
+        log.trace("Executing replaceUserCredentials [{}]", userCredentials);
+        userCredentialsValidator.validate(userCredentials);
+        userCredentialsDao.removeById(userCredentials.getId());
+        userCredentials.setId(null);
+        saveUserCredentialsAndPasswordHistory(userCredentials);
+    }
+
+    @Override
     @Transactional
     public void deleteUser(UUID userId) {
         log.trace("Executing deleteUser [{}]", userId);

@@ -34,6 +34,8 @@ public interface UserService {
 
 	UserCredentials saveUserCredentials(UserCredentials userCredentials);
 
+	void replaceUserCredentials(UserCredentials userCredentials);
+
 	void deleteUser(UUID userId);
 
 	PageData<User> findUsers(PageLink pageLink);
