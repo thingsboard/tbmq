@@ -1,10 +1,9 @@
 # Kubernetes resources configuration for ThingsBoard MQTT Broker
 
-This folder containing scripts and Kubernetes resources configurations to run ThingsBoard in Microservices mode.
+This folder containing scripts and Kubernetes resources configurations to run ThingsBoard MQTT Broker in cluster mode.
 
 ## Prerequisites
 
-ThingsBoard Microservices are running on Kubernetes cluster.
 You need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster.
 If you do not already have a cluster, you can create one by using [Minikube](https://kubernetes.io/docs/setup/minikube).
 
@@ -23,7 +22,7 @@ Execute the following command to deploy third-party resources:
 ```
 
 After a while when all resources will be successfully started you can open `http://{your-cluster-ip}:30001` in your browser (for ex. `http://172.17.0.3:30001`).
-You should see the ThingsBoard login page.
+You should see the ThingsBoard MQTT Broker login page.
 **Note:** you can check your Minikube IP with this command:
 
 ```
@@ -35,15 +34,15 @@ Use the following default credentials:
 - **System Administrator**: sysadmin@thingsboard.org / sysadmin
 
 In case of any issues, you can examine service logs for errors.
-For example to see ThingsBoard node logs execute the following commands:
+For example to see ThingsBoard MQTT Broker node logs execute the following commands:
 
-1) Get the list of the running tb-node pods:
+1) Get the list of the running tb-broker pods:
 
 ```
 kubectl get pods -l app=tb-broker
 ```
 
-2) Fetch logs of the tb-node pod:
+2) Fetch logs of the tb-broker pod:
 
 `
 kubectl logs -f [tb-broker-pod-name]
@@ -51,7 +50,7 @@ kubectl logs -f [tb-broker-pod-name]
 
 Where:
 
-- `tb-broker-pod-name` - tb-node pod name obtained from the list of the running tb-node pods.
+- `tb-broker-pod-name` - tb-broker pod name obtained from the list of the running tb-broker pods.
 
 Or use `kubectl get pods` to see the state of all the pods.
 Or use `kubectl get services` to see the state of all the services.
