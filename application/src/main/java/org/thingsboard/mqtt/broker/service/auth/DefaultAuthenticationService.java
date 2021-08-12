@@ -15,138 +15,53 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import io.netty.handler.ssl.SslHandler;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.util.SslUtil;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import java.nio.charset.StandardCharsets;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DefaultAuthenticationService implements AuthenticationService {
 
-    @Value("${security.mqtt.basic.enabled}")
-    private Boolean basicAuthEnabled;
-    @Value("${security.mqtt.ssl.enabled}")
-    private Boolean sslAuthEnabled;
+    private final List<MqttClientAuthProvider> authProviders;
 
-    private final MqttClientCredentialsService clientCredentialsService;
-    private final BCryptPasswordEncoder passwordEncoder;
+    public DefaultAuthenticationService(MqttClientAuthProviderManager authProviderManager) {
+        this.authProviders = authProviderManager.getActiveAuthProviders();
+    }
 
     @Override
-    public MqttClientCredentials authenticate(String clientId, String username, byte[] passwordBytes, SslHandler sslHandler) throws AuthenticationException {
-        if (!basicAuthEnabled && !sslAuthEnabled) {
-            return null;
-        }
-        log.trace("[{}] Authenticating client", clientId);
-        try {
-            if (basicAuthEnabled) {
-                MqttClientCredentials basicCredentials = authWithBasicCredentials(clientId, username, passwordBytes);
-                if (basicCredentials != null) {
-                    log.trace("[{}] Authenticated with username {}", clientId, username);
-                    return basicCredentials;
-                }
-            }
-            if (sslAuthEnabled && sslHandler != null) {
-                MqttClientCredentials sslCredentials = authWithSSLCredentials(clientId, sslHandler);
-                if (sslCredentials != null) {
-                    log.trace("[{}] Authenticated with ssl certificate", clientId);
-                    return sslCredentials;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("[{}] Failed to authenticate client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+    public AuthorizationRule authenticate(AuthContext authContext) throws AuthenticationException {
+        log.trace("[{}] Authenticating client", authContext.getClientId());
+        AuthResponse authResponse = tryAuthenticateClient(authContext);
+        if (authResponse == null) {
             throw new AuthenticationException("Failed to authenticate client");
+        } else {
+            return authResponse.getAuthorizationRule();
         }
-        throw new AuthenticationException("Could not find basic or ssl credentials!");
     }
 
-    @Override
-    public String getClientCertificateCommonName(SslHandler sslHandler) throws AuthenticationException {
-        X509Certificate[] certificates;
+    private AuthResponse tryAuthenticateClient(AuthContext authContext) throws AuthenticationException {
+        if (authProviders.isEmpty()) {
+            return new AuthResponse(true, null);
+        }
         try {
-            certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
-            return SslUtil.parseCommonName(certificates[0]);
+            for (MqttClientAuthProvider authProvider : authProviders) {
+                AuthResponse authResponse = authProvider.authorize(authContext);
+                if (authResponse.isSuccess()) {
+                    return authResponse;
+                }
+            }
         } catch (Exception e) {
-            log.error("Failed to get client's certificate common name. Reason - {}.", e.getMessage());
-            throw new AuthenticationException("Failed to get client's certificate common name.", e);
-        }
-
-    }
-
-    private MqttClientCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {
-        X509Certificate[] certificates;
-        try {
-            certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
-        } catch (SSLPeerUnverifiedException e) {
-            log.debug("Client SSL certification is disabled.");
-            return null;
-        }
-        if (certificates.length == 0) {
-            log.warn("There are no certificates in the chain.");
-            return null;
-        }
-        for (X509Certificate certificate : certificates) {
-            String commonName = null;
-            try {
-                commonName = SslUtil.parseCommonName(certificate);
-            } catch (CertificateEncodingException e) {
-                throw new AuthenticationException("Couldn't get Common Name from certificate.", e);
-            }
-            log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
-            String sslCredentialsId = ProtocolUtil.sslCredentialsId(commonName);
-            List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(Collections.singletonList(sslCredentialsId));
-            if (!matchingCredentials.isEmpty()) {
-                return matchingCredentials.get(0);
-            }
+            log.warn("[{}] Failed to authenticate client. Exception - {}, reason - {}.", authContext.getClientId(), e.getClass().getSimpleName(), e.getMessage());
+            throw new AuthenticationException("Exception on client authentication");
         }
         return null;
-    }
-
-    private MqttClientCredentials authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {
-        List<String> credentialIds = new ArrayList<>();
-        if (!StringUtils.isEmpty(username)) {
-            credentialIds.add(ProtocolUtil.usernameCredentialsId(username));
-        }
-        if (!StringUtils.isEmpty(clientId)) {
-            credentialIds.add(ProtocolUtil.clientIdCredentialsId(clientId));
-        }
-        if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(clientId)) {
-            credentialIds.add(ProtocolUtil.mixedCredentialsId(username, clientId));
-        }
-        List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(credentialIds);
-        String password = passwordBytes != null ?
-                new String(passwordBytes, StandardCharsets.UTF_8) : null;
-
-        for (MqttClientCredentials matchingCredential : matchingCredentials) {
-            BasicMqttCredentials basicMqttCredentials = JacksonUtil.fromString(matchingCredential.getCredentialsValue(), BasicMqttCredentials.class);
-            if (basicMqttCredentials != null && isMatchingPassword(password, basicMqttCredentials)) {
-                return matchingCredential;
-            }
-        }
-        return null;
-    }
-
-    private boolean isMatchingPassword(String password, BasicMqttCredentials basicMqttCredentials) {
-        return basicMqttCredentials.getPassword() == null
-                || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
     }
 }

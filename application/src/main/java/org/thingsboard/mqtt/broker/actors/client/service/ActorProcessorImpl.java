@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -97,32 +98,23 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private boolean authenticateClient(ClientSessionCtx ctx, String username, byte[] passwordBytes, String clientId) {
+        AuthContext authContext = AuthContext.builder()
+                .clientId(clientId)
+                .username(username)
+                .passwordBytes(passwordBytes)
+                .sslHandler(ctx.getSslHandler())
+                .build();
         try {
             // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
-            MqttClientCredentials clientCredentials = authenticationService.authenticate(clientId, username, passwordBytes, ctx.getSslHandler());
-            configureAuthorizationRule(ctx, clientId, clientCredentials);
+            AuthorizationRule authorizationRule = authenticationService.authenticate(authContext);
+            if (authorizationRule != null) {
+                log.debug("[{}] Authorization rule for client - {}.", clientId, authorizationRule.getPattern().toString());
+            }
+            ctx.setAuthorizationRule(authorizationRule);
             return true;
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
             return false;
         }
     }
-
-    private void configureAuthorizationRule(ClientSessionCtx ctx, String clientId, MqttClientCredentials clientCredentials) throws AuthenticationException {
-        if (clientCredentials == null) {
-            return;
-        }
-        AuthorizationRule authorizationRule = null;
-        if (clientCredentials.getCredentialsType() == ClientCredentialsType.SSL) {
-            String clientCommonName = authenticationService.getClientCertificateCommonName(ctx.getSslHandler());
-            authorizationRule = authorizationRuleService.parseSslAuthorizationRule(clientCredentials.getCredentialsValue(), clientCommonName);
-        } else if (clientCredentials.getCredentialsType() == ClientCredentialsType.MQTT_BASIC) {
-            authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(clientCredentials.getCredentialsValue());
-        }
-        if (authorizationRule != null) {
-            log.debug("[{}] Authorization rule for client - {}.", clientId, authorizationRule.getPattern().toString());
-        }
-        ctx.setAuthorizationRule(authorizationRule);
-    }
-
 }

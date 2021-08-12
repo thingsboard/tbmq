@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth;
+package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-public interface AuthenticationService {
-    AuthorizationRule authenticate(AuthContext authContext) throws AuthenticationException;
+public interface MqttClientAuthProvider {
+    AuthResponse authorize(AuthContext authContext) throws AuthenticationException;
 }

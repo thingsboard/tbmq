@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth;
+package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import io.netty.handler.ssl.SslHandler;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-public interface AuthenticationService {
-    AuthorizationRule authenticate(AuthContext authContext) throws AuthenticationException;
+@Builder
+@Getter
+@AllArgsConstructor
+public class AuthContext {
+    private final String clientId;
+    private final String username;
+    private final byte[] passwordBytes;
+    private final SslHandler sslHandler;
 }
