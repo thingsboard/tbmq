@@ -40,8 +40,7 @@ listener:
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
     netty:
-      # TODO: update default to DISABLED after testing stage
-      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:SIMPLE}"
+      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
@@ -97,8 +96,6 @@ queue:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
-    # TODO: change to 'false' by default (or remove entirely)
-    detect-msg-duplication: "${TB_DEVICE_PERSISTED_MSG_DETECT_MSG_DUPLICATION:true}"
     ack-strategy:
       type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
@@ -112,7 +109,6 @@ queue:
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SUBSCRIPTIONS_ACK_WAIT_TIMEOUT_MS:500}"
   client-session-event:
     consumers-count: "${TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT:2}"
-    client-threads-count: "${TB_CLIENT_SESSION_EVENT_CLIENT_THREADS_COUNT:16}"
     max-pending-requests: "${TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS:10000}"
     poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
   client-session-event-response:
@@ -130,8 +126,6 @@ queue:
     publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
-  cluster-event:
-    poll-interval: "${TB_CLUSTER_EVENT_POLL_INTERVAL:100}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -207,11 +201,6 @@ queue:
       topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
-    cluster-event:
-      topic: "${TB_KAFKA_CLUSTER_EVENT_TOPIC:cluster_event}"
-      topic-properties: "${TB_KAFKA_CLUSTER_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_CLUSTER_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
-      additional-producer-config: "${TB_KAFKA_CLUSTER_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
 
 service:
   id: "${TB_SERVICE_ID:}"
@@ -295,6 +284,8 @@ mqtt:
     zone: "${MQTT_CLIENT_SESSION_CLEANUP_ZONE:UTC}"
     # Specify TTL of persisted inactive sessions in seconds. The current value corresponds to one week
     inactive-session-ttl: "${MQTT_CLIENT_SESSION_CLEANUP_INACTIVE_SESSION_TTL:604800}"
+  version-3-1:
+    max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
   persistent-session:
     device:
       persisted-messages:
@@ -302,10 +293,11 @@ mqtt:
         # Specify TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
         # Cron specification when to run clearing persisted device messages. Defaults to 'every day at 2 o'clock'
-        clean-up-cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
-        clean-up-zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
+        clean-up:
+          cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
+          zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
+          session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_SESSION_CTX_PAGE_SIZE:1000}"
         sql:
-          session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_SESSION_CTX_PAGE_SIZE:1000}"
           update-packet-queue:
             batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:1}"
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE:100}"
@@ -314,9 +306,6 @@ mqtt:
             batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:1}"
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_SIZE:100}"
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
-  version-3-1:
-    max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
-
 db:
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 

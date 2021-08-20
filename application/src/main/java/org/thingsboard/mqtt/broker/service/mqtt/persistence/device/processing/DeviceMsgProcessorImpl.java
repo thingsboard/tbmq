@@ -50,9 +50,6 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     private static final int BLANK_PACKET_ID = -1;
     private static final long BLANK_SERIAL_NUMBER = -1L;
 
-    @Value("${queue.device-persisted-msg.detect-msg-duplication:false}")
-    private boolean detectMsgDuplication;
-
     private final ClientSessionReader clientSessionReader;
     private final ClientLogger clientLogger;
     private final DbConnectionChecker dbConnectionChecker;
@@ -110,7 +107,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         setPacketIdAndSerialNumber(devicePublishMessages, lastPacketIdAndSerialNumbers);
 
         DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
-        DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages, detectMsgDuplication);
+        DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages);
         while (!Thread.interrupted()) {
             try {
                 // TODO: think if we need transaction here

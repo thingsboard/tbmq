@@ -57,14 +57,11 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
     private int consumersCount;
     @Value("${queue.client-session-event.poll-interval}")
     private long pollDuration;
-    @Value("${queue.client-session-event.client-threads-count}")
-    private int clientThreadsCount;
 
     private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     @Override
     public void startConsuming() {
-        this.clientThreadsCount = clientThreadsCount <= 0 ? Runtime.getRuntime().availableProcessors() : clientThreadsCount;
         this.consumersExecutor = Executors.newFixedThreadPool(consumersCount, ThingsBoardThreadFactory.forName("client-session-event-consumer"));
         for (int i = 0; i < consumersCount; i++) {
             initConsumer(i);

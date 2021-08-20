@@ -29,9 +29,9 @@ public class DevicePackProcessingContext {
     private final AtomicBoolean successful = new AtomicBoolean(false);
     private volatile boolean detectMsgDuplication;
 
-    public DevicePackProcessingContext(List<DevicePublishMsg> messages, boolean detectMsgDuplication) {
+    public DevicePackProcessingContext(List<DevicePublishMsg> messages) {
         this.messages = messages;
-        this.detectMsgDuplication = detectMsgDuplication;
+        this.detectMsgDuplication = true;
     }
 
     public void disableMsgDuplicationDetection(){

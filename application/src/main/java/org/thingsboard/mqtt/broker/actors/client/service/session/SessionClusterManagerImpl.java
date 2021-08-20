@@ -257,5 +257,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             eventResponseProducer.stop();
         }
         timeoutExecutor.shutdownNow();
+        if (eventResponseSenderExecutor != null) {
+            eventResponseSenderExecutor.shutdownNow();
+        }
     }
 }
