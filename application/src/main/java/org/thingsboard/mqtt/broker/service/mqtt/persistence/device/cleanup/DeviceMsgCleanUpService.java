@@ -35,8 +35,8 @@ public class DeviceMsgCleanUpService {
     @Value("${mqtt.persistent-session.device.persisted-messages.limit}")
     private int messagesLimit;
 
-    @Scheduled(cron = "${mqtt.persistent-session.device.persisted-messages.clean-up-cron}",
-            zone = "${mqtt.persistent-session.device.persisted-messages.clean-up-zone}")
+    @Scheduled(cron = "${mqtt.persistent-session.device.persisted-messages.clean-up.cron}",
+            zone = "${mqtt.persistent-session.device.persisted-messages.clean-up.zone}")
     public void cleanUp() {
         log.info("Starting cleaning up DEVICE publish messages.");
 
