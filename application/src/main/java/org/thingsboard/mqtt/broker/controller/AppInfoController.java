@@ -34,7 +34,7 @@ public class AppInfoController extends BaseController {
     @Autowired
     private TbActorSystem tbActorSystem;
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
     @ResponseBody
     public Collection<TbActorId> getAllActorIds() throws ThingsboardException {

@@ -38,7 +38,7 @@ public class SubscriptionController extends BaseController {
     @Autowired
     private ClientSubscriptionReader clientSubscriptionReader;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)
     @ResponseBody
     public void clearEmptySubscriptionNodes() throws ThingsboardException {
@@ -49,7 +49,7 @@ public class SubscriptionController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
     @ResponseBody
     public Set<TopicSubscription> getClientSubscriptions(@PathVariable("clientId") String clientId) throws ThingsboardException {

@@ -37,7 +37,7 @@ public class MqttClientCredentialsController extends BaseController {
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
@@ -51,7 +51,7 @@ public class MqttClientCredentialsController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<MqttClientCredentials> getMqttClientCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
@@ -63,7 +63,7 @@ public class MqttClientCredentialsController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.DELETE)
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {

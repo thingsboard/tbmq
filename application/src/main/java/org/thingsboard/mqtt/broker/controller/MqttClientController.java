@@ -37,7 +37,7 @@ public class MqttClientController extends BaseController {
     private MqttClientWrapperService mqttClientWrapperService;
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
     public MqttClient saveMqttClient(@RequestBody MqttClient mqttClient) throws ThingsboardException {
@@ -50,7 +50,7 @@ public class MqttClientController extends BaseController {
     }
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
     @ResponseBody
     public MqttClient getMqttClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
@@ -61,7 +61,7 @@ public class MqttClientController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<MqttClient> getMqttClients(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
@@ -73,7 +73,7 @@ public class MqttClientController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
     public void deleteClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {

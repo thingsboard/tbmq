@@ -115,7 +115,7 @@ public class SwaggerConfiguration {
 
     List<SecurityReference> defaultAuth() {
         AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
-        authorizationScopes[0] = new AuthorizationScope(Authority.ADMIN.name(), "Administrator");
+        authorizationScopes[0] = new AuthorizationScope(Authority.SYS_ADMIN.name(), "Administrator");
         return newArrayList(
                 new SecurityReference("X-Authorization", authorizationScopes));
     }

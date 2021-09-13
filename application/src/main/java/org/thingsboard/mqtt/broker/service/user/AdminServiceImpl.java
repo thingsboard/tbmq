@@ -50,7 +50,7 @@ public class AdminServiceImpl implements AdminService {
     private User toUser(AdminDto adminDto) {
         User user = new User();
         user.setId(adminDto.getId());
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail(adminDto.getEmail());
         user.setFirstName(adminDto.getFirstName());
         user.setLastName(adminDto.getLastName());

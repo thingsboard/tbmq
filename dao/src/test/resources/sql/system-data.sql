@@ -18,7 +18,7 @@
 
 /** Admin **/
 INSERT INTO broker_user ( id, created_time, email, authority )
-VALUES ( '5a797660-4612-11e7-a919-92ebcb67fe33', 1592576748000, 'sysadmin@thingsboard.org', 'ADMIN' );
+VALUES ( '5a797660-4612-11e7-a919-92ebcb67fe33', 1592576748000, 'sysadmin@thingsboard.org', 'SYS_ADMIN' );
 
 INSERT INTO user_credentials ( id, created_time, user_id, enabled, password )
 VALUES ( '61441950-4612-11e7-a919-92ebcb67fe33', 1592576748000, '5a797660-4612-11e7-a919-92ebcb67fe33', true,

@@ -40,7 +40,7 @@ public class ClientSessionController extends BaseController {
     private final ClientSessionPageReader clientSessionPageReader;
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}/clear", method = RequestMethod.DELETE)
     @ResponseBody
     public void clearClientSession(@PathVariable("clientId") String clientId) throws ThingsboardException {
@@ -51,7 +51,7 @@ public class ClientSessionController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
     @ResponseBody
     public ClientSessionInfo getClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
@@ -62,7 +62,7 @@ public class ClientSessionController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<ClientSessionInfo> getClientSessionInfos(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {

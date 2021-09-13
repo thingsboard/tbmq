@@ -40,7 +40,7 @@ public class AdminController extends BaseController {
     @Autowired
     private AdminService adminService;
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
@@ -51,7 +51,7 @@ public class AdminController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
     @ResponseBody
     public void deleteAdmin(@PathVariable("userId") String strUserId) throws ThingsboardException {
@@ -65,7 +65,7 @@ public class AdminController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<User> getAdmins(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {

@@ -34,7 +34,7 @@ public class UserServiceTest extends AbstractServiceTest {
     public void testFindUserByEmail() {
         User user = userService.findUserByEmail("sysadmin@thingsboard.org");
         Assert.assertNotNull(user);
-        Assert.assertEquals(Authority.ADMIN, user.getAuthority());
+        Assert.assertEquals(Authority.SYS_ADMIN, user.getAuthority());
         user = userService.findUserByEmail("fake@thingsboard.org");
         Assert.assertNull(user);
     }
@@ -59,7 +59,7 @@ public class UserServiceTest extends AbstractServiceTest {
     @Test
     public void testSaveUser() {
         User user = new User();
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail("admin2@thingsboard.org");
         User savedUser = userService.saveUser(user);
         Assert.assertNotNull(savedUser);
@@ -87,7 +87,7 @@ public class UserServiceTest extends AbstractServiceTest {
     @Test(expected = DataValidationException.class)
     public void testSaveUserWithSameEmail() {
         User user = new User();
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail("sysadmin@thingsboard.org");
         userService.saveUser(user);
     }
@@ -95,7 +95,7 @@ public class UserServiceTest extends AbstractServiceTest {
     @Test(expected = DataValidationException.class)
     public void testSaveUserWithInvalidEmail() {
         User user = new User();
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail("tenant_thingsboard.org");
         userService.saveUser(user);
     }
@@ -103,7 +103,7 @@ public class UserServiceTest extends AbstractServiceTest {
     @Test(expected = DataValidationException.class)
     public void testSaveUserWithEmptyEmail() {
         User user = new User();
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail(null);
         userService.saveUser(user);
     }
@@ -111,7 +111,7 @@ public class UserServiceTest extends AbstractServiceTest {
     @Test
     public void testDeleteUser() {
         User user = new User();
-        user.setAuthority(Authority.ADMIN);
+        user.setAuthority(Authority.SYS_ADMIN);
         user.setEmail("admin2@thingsboard.org");
         User savedUser = userService.saveUser(user);
         Assert.assertNotNull(savedUser);
