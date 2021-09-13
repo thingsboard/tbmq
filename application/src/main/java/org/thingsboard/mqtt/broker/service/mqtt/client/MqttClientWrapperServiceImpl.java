@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionRead
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -56,28 +57,33 @@ public class MqttClientWrapperServiceImpl implements MqttClientWrapperService {
     }
 
     @Override
-    public void deleteMqttClient(String clientId) throws ThingsboardException {
-        MqttClient mqttClient = mqttClientService.getMqttClient(clientId).orElse(null);
+    public void deleteMqttClient(UUID id) throws ThingsboardException {
+        MqttClient mqttClient = mqttClientService.getMqttClientById(id).orElse(null);
         if (mqttClient == null) {
             throw new ThingsboardException("Cannot find MQTT client", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         if (mqttClient.getType() == ClientType.APPLICATION) {
-            ClientSession clientSession = clientSessionReader.getClientSession(clientId);
+            ClientSession clientSession = clientSessionReader.getClientSession(mqttClient.getClientId());
             if (clientSession != null && clientSession.isConnected()) {
                 throw new ThingsboardException("Cannot delete APPLICATION client for active session", ThingsboardErrorCode.PERMISSION_DENIED);
             }
             // TODO: delete consumer group as well
-            String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
+            String clientTopic = MqttApplicationClientUtil.getTopic(mqttClient.getClientId());
             queueAdmin.deleteTopic(clientTopic);
         }
 
-        mqttClientService.deleteMqttClient(clientId);
+        mqttClientService.deleteMqttClient(id);
     }
 
     @Override
-    public Optional<MqttClient> getMqttClient(String clientId) {
+    public Optional<MqttClient> getMqttClientByClientId(String clientId) {
         // TODO: make async
-        return mqttClientService.getMqttClient(clientId);
+        return mqttClientService.getMqttClientByClientId(clientId);
+    }
+
+    @Override
+    public Optional<MqttClient> getMqttClientById(UUID id) {
+        return mqttClientService.getMqttClientById(id);
     }
 
     @Override

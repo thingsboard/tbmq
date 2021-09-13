@@ -146,7 +146,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId) {
-        ClientInfo clientInfo = mqttClientService.getMqttClient(clientId)
+        ClientInfo clientInfo = mqttClientService.getMqttClientByClientId(clientId)
                 .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
                 .orElse(new ClientInfo(clientId, ClientType.DEVICE));
         boolean isPersistentSession = !msg.isCleanSession();

@@ -21,13 +21,16 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface MqttClientWrapperService {
     MqttClient saveMqttClient(MqttClient mqttClient);
 
-    void deleteMqttClient(String clientId) throws ThingsboardException;
+    void deleteMqttClient(UUID id) throws ThingsboardException;
 
-    Optional<MqttClient> getMqttClient(String clientId);
+    Optional<MqttClient> getMqttClientByClientId(String clientId);
+
+    Optional<MqttClient> getMqttClientById(UUID id);
 
     PageData<MqttClient> getClients(PageLink pageLink);
 }

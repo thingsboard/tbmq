@@ -58,15 +58,21 @@ public class MqttClientServiceImpl implements MqttClientService {
     }
 
     @Override
-    public void deleteMqttClient(String clientId) {
-        log.trace("Executing deleteMqttClient [{}]", clientId);
-        mqttClientDao.removeByClientId(clientId);
+    public void deleteMqttClient(UUID id) {
+        log.trace("Executing deleteMqttClient [{}]", id);
+        mqttClientDao.removeById(id);
     }
 
     @Override
-    public Optional<MqttClient> getMqttClient(String clientId) {
-        log.trace("Executing getMqttClient [{}]", clientId);
+    public Optional<MqttClient> getMqttClientByClientId(String clientId) {
+        log.trace("Executing getMqttClientByClientId [{}]", clientId);
         return Optional.ofNullable(mqttClientDao.findByClientId(clientId));
+    }
+
+    @Override
+    public Optional<MqttClient> getMqttClientById(UUID id) {
+        log.trace("Executing getMqttClientById [{}]", id);
+        return Optional.ofNullable(mqttClientDao.findById(id));
     }
 
     @Override
@@ -88,8 +94,8 @@ public class MqttClientServiceImpl implements MqttClientService {
 
                 @Override
                 protected void validateDataImpl(MqttClient mqttClient) {
-                    if (StringUtils.isEmpty(mqttClient.getName()) || mqttClient.getName().trim().length() == 0) {
-                        throw new DataValidationException("MQTT client name should be specified!");
+                    if (StringUtils.isEmpty(mqttClient.getClientId()) || mqttClient.getClientId().trim().length() == 0) {
+                        throw new DataValidationException("MQTT client ID should be specified!");
                     }
                     if (mqttClient.getType() == null) {
                         throw new DataValidationException("The client type should be specified!");

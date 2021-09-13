@@ -30,6 +30,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.service.mqtt.client.MqttClientWrapperService;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/mqtt/client")
 public class MqttClientController extends BaseController {
@@ -51,11 +53,11 @@ public class MqttClientController extends BaseController {
 
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     @ResponseBody
-    public MqttClient getMqttClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public MqttClient getMqttClient(@PathVariable("id") UUID id) throws ThingsboardException {
         try {
-            return mqttClientWrapperService.getMqttClient(clientId).orElse(null);
+            return mqttClientWrapperService.getMqttClientById(id).orElse(null);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -74,10 +76,10 @@ public class MqttClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
-    public void deleteClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public void deleteClient(@PathVariable("id") UUID id) throws ThingsboardException {
         try {
-            mqttClientWrapperService.deleteMqttClient(clientId);
+            mqttClientWrapperService.deleteMqttClient(id);
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -86,7 +86,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
     @After
     public void clear() throws Exception {
         clearPersistedClient(persistedClient, initClient());
-        mqttClientService.deleteMqttClient(applicationClient.getClientId());
+        mqttClientService.deleteMqttClient(applicationClient.getId());
     }
 
     @Test
