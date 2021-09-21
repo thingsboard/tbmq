@@ -43,7 +43,6 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 @Slf4j
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
-
     @Autowired
     private MqttClientCredentialsDao mqttClientCredentialsDao;
 
@@ -58,10 +57,10 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
         switch (mqttClientCredentials.getCredentialsType()) {
             case MQTT_BASIC:
-                processBasicMqttCredentials(mqttClientCredentials);
+                preprocessBasicMqttCredentials(mqttClientCredentials);
                 break;
             case SSL:
-                processSslMqttCredentials(mqttClientCredentials);
+                preprocessSslMqttCredentials(mqttClientCredentials);
                 break;
             default:
                 throw new DataValidationException("Unknown credentials type!");
@@ -100,21 +99,21 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         return mqttClientCredentialsDao.findAll(pageLink);
     }
 
-    private void processBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
+    private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
-        if (StringUtils.isEmpty(mqttClientCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
+        if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }
         if (mqttCredentials.getPassword() != null) {
             mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
-        if (StringUtils.isEmpty(mqttClientCredentials.getClientId())) {
+        if (StringUtils.isEmpty(mqttCredentials.getClientId())) {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
         } else if (StringUtils.isEmpty(mqttCredentials.getUserName())) {
-            mqttClientCredentials.setCredentialsId(ProtocolUtil.clientIdCredentialsId(mqttClientCredentials.getClientId()));
+            mqttClientCredentials.setCredentialsId(ProtocolUtil.clientIdCredentialsId(mqttCredentials.getClientId()));
         } else {
-            mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttClientCredentials.getClientId()));
+            mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
 
         if (mqttCredentials.getAuthorizationRulePattern() != null) {
@@ -126,7 +125,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
     }
 
-    private void processSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
+    private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         SslMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, SslMqttCredentials.class);
         if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
             throw new DataValidationException("Parent certificate's common name should be specified!");
@@ -186,6 +185,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
                 @Override
                 protected void validateDataImpl(MqttClientCredentials mqttClientCredentials) {
+                    if (mqttClientCredentials.getName() == null) {
+                        throw new DataValidationException("MQTT Client credentials name should be specified!");
+                    }
                     if (mqttClientCredentials.getCredentialsType() == null) {
                         throw new DataValidationException("MQTT Client credentials type should be specified!");
                     }

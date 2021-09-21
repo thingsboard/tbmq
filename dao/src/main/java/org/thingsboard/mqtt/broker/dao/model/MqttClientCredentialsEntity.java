@@ -28,8 +28,8 @@ import javax.persistence.*;
 @Table(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME)
 public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredentials> {
 
-    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_CLIENT_ID_PROPERTY)
-    private String clientId;
+    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY)
+    private String name;
 
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ID_PROPERTY, unique = true)
     private String credentialsId;
@@ -49,7 +49,7 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
             this.setId(mqttClientCredentials.getId());
         }
         this.setCreatedTime(mqttClientCredentials.getCreatedTime());
-        this.clientId = mqttClientCredentials.getClientId();
+        this.name = mqttClientCredentials.getName();
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
@@ -59,7 +59,7 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
     public MqttClientCredentials toData() {
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials(id);
         mqttClientCredentials.setCreatedTime(createdTime);
-        mqttClientCredentials.setClientId(clientId);
+        mqttClientCredentials.setName(name);
         mqttClientCredentials.setCredentialsId(credentialsId);
         mqttClientCredentials.setCredentialsType(credentialsType);
         mqttClientCredentials.setCredentialsValue(credentialsValue);

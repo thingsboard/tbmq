@@ -35,10 +35,20 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
 
+    @Test
+    public void testCreateValidCredentials() throws JsonProcessingException {
+        mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", null));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testCreateCredentialsWithEmptyName() throws JsonProcessingException {
+        mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(null, "client", "user", null));
+    }
+
     @Test(expected = DataValidationException.class)
     public void testCreateDeviceCredentialsWithEmptyCredentialsType() {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
-        clientCredentials.setClientId("TestClient");
+        clientCredentials.setName("TestClient");
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }
 
@@ -52,7 +62,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Test(expected = DataValidationException.class)
     public void testCreateNotValidCredentialsValue() {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
-        clientCredentials.setClientId("TestClient");
+        clientCredentials.setName("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         clientCredentials.setCredentialsValue("NOT_VALID");
         mqttClientCredentialsService.saveCredentials(clientCredentials);
@@ -61,9 +71,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Test(expected = DataValidationException.class)
     public void testCreateNotValidCredentialsValue_WrongAuthPattern() {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
-        clientCredentials.setClientId("TestClient");
+        clientCredentials.setName("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "(not_closed");
+        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", "(not_closed");
         clientCredentials.setCredentialsValue(JacksonUtil.toString(wrongPatternBasicCred));
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }
@@ -71,9 +81,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test(expected = DataValidationException.class)
     public void testCreateDuplicateCredentials() throws JsonProcessingException {
-        MqttClientCredentials clientCredentials = mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("client", "user", null));
+        MqttClientCredentials clientCredentials = mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", null));
         try {
-            mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("client", "user", "password"));
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", "password"));
         } finally {
             mqttClientCredentialsService.deleteCredentials(clientCredentials.getId());
         }
@@ -83,11 +93,11 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingMixed() throws JsonProcessingException {
         MqttClientCredentials client1Credentials = null, client2Credentials = null, client3Credentials = null;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("client1", "test1", "password1"));
+                validMqttClientCredentials("test", "client1", "test1", "password1"));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("client2", "test1", null));
+                validMqttClientCredentials("test", "client2", "test1", null));
         client3Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("client1", "test2", null));
+                validMqttClientCredentials("test", "client1", "test2", null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),
@@ -104,9 +114,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingByUserName() throws JsonProcessingException {
         MqttClientCredentials client1Credentials = null, client2Credentials = null;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials(null, "user1", null));
+                validMqttClientCredentials("test", null, "user1", null));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials(null, "user2", null));
+                validMqttClientCredentials("test", null, "user2", null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),
@@ -122,9 +132,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingByClientId() throws JsonProcessingException {
         MqttClientCredentials client1Credentials = null, client2Credentials = null;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("client1", null, null));
+                validMqttClientCredentials("test", "client1", null, null));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("client2", null, null));
+                validMqttClientCredentials("test", "client2", null, null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),
@@ -136,11 +146,11 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         mqttClientCredentialsService.deleteCredentials(client2Credentials.getId());
     }
 
-    private MqttClientCredentials validMqttClientCredentials(String clientId, String username, String password) throws JsonProcessingException {
+    private MqttClientCredentials validMqttClientCredentials(String credentialsName, String clientId, String username, String password) throws JsonProcessingException {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
-        clientCredentials.setClientId(clientId);
+        clientCredentials.setName(credentialsName);
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(username, password, null);
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, null);
         clientCredentials.setCredentialsValue(mapper.writeValueAsString(basicMqttCredentials));
         return clientCredentials;
     }

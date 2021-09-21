@@ -92,7 +92,7 @@ public class AuthorizationRuleServiceTestSuite {
      */
     @Test
     public void testSuccessfulCredentialsParse_Basic() throws AuthenticationException {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", null, "test/.*");
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", "test", null, "test/.*");
         AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
