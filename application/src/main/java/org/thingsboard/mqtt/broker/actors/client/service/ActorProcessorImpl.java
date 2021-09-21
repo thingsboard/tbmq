@@ -23,9 +23,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
-import org.thingsboard.mqtt.broker.actors.client.util.ClientActorUtil;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -35,6 +32,10 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 
@@ -106,11 +107,12 @@ public class ActorProcessorImpl implements ActorProcessor {
                 .build();
         try {
             // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
-            AuthorizationRule authorizationRule = authenticationService.authenticate(authContext);
-            if (authorizationRule != null) {
-                log.debug("[{}] Authorization rule for client - {}.", clientId, authorizationRule.getPattern().toString());
+            List<AuthorizationRule> authorizationRules = authenticationService.authenticate(authContext);
+            if (authorizationRules != null) {
+                List<String> authPatterns = authorizationRules.stream().map(AuthorizationRule::getPattern).map(Pattern::toString).collect(Collectors.toList());
+                log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
             }
-            ctx.setAuthorizationRule(authorizationRule);
+            ctx.setAuthorizationRules(authorizationRules);
             return true;
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());

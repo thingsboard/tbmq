@@ -19,8 +19,10 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -53,8 +55,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         log.trace("[{}] Successfully authenticated with SSL credentials", authContext.getClientId());
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
-        AuthorizationRule authorizationRule = authorizationRuleService.parseSslAuthorizationRule(sslCredentials.getCredentialsValue(), clientCommonName);
-        return new AuthResponse(true, authorizationRule);
+        SslMqttCredentials credentials = JacksonUtil.fromString(sslCredentials.getCredentialsValue(), SslMqttCredentials.class);
+        List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(credentials, clientCommonName);
+        return new AuthResponse(true, authorizationRules);
     }
 
     private MqttClientCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {

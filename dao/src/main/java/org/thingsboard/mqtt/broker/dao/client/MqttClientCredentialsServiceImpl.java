@@ -131,24 +131,21 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
             throw new DataValidationException("Parent certificate's common name should be specified!");
         }
-        if (mqttCredentials.getPatternRegEx() == null) {
-            throw new DataValidationException("Parent regex should be specified!");
-        }
-        try {
-            Pattern.compile(mqttCredentials.getPatternRegEx());
-        } catch (PatternSyntaxException e) {
-            throw new DataValidationException("Parent regex should be a valid regex!");
-        }
-        if (mqttCredentials.getAuthorizationRulesMapping() == null) {
+        if (mqttCredentials.getAuthorizationRulesMapping() == null || mqttCredentials.getAuthorizationRulesMapping().isEmpty()) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
         }
-        for (String authorizationRulePattern : mqttCredentials.getAuthorizationRulesMapping().values()) {
+        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRule) -> {
             try {
-                Pattern.compile(authorizationRulePattern);
+                Pattern.compile(certificateMatcherRegex);
             } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Authorization rule [" + authorizationRulePattern + "] regex should be a valid regex!");
+                throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
-        }
+            try {
+                Pattern.compile(topicRule);
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException("Topic authorization rule [" + topicRule + "] must be a valid regex");
+            }
+        });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
         mqttClientCredentials.setCredentialsId(credentialsId);

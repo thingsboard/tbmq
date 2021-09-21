@@ -37,13 +37,13 @@ public class DefaultAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public AuthorizationRule authenticate(AuthContext authContext) throws AuthenticationException {
+    public List<AuthorizationRule> authenticate(AuthContext authContext) throws AuthenticationException {
         log.trace("[{}] Authenticating client", authContext.getClientId());
         AuthResponse authResponse = tryAuthenticateClient(authContext);
         if (authResponse == null) {
             throw new AuthenticationException("Failed to authenticate client");
         } else {
-            return authResponse.getAuthorizationRule();
+            return authResponse.getAuthorizationRules();
         }
     }
 

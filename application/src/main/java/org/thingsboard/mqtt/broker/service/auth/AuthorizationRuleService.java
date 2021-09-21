@@ -15,16 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface AuthorizationRuleService {
-    AuthorizationRule parseSslAuthorizationRule(String sslMqttCredentialsValue, String clientCommonName) throws AuthenticationException;
+    List<AuthorizationRule> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException;
 
-    AuthorizationRule parseBasicAuthorizationRule(String basicMqttCredentialsValue) throws AuthenticationException;
+    AuthorizationRule parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException;
 
-    void validateAuthorizationRule(AuthorizationRule authorizationRule, Collection<String> topics) throws AuthorizationException;
+    boolean isAuthorized(String topic, List<AuthorizationRule> authorizationRules);
 }

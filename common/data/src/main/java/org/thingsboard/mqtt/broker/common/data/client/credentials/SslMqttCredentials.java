@@ -26,6 +26,5 @@ import java.util.Map;
 @AllArgsConstructor
 public class SslMqttCredentials {
     private String parentCertCommonName;
-    private String patternRegEx;
     private Map<String, String> authorizationRulesMapping;
 }

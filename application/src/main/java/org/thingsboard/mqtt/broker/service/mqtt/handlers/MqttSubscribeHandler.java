@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
-import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -71,22 +70,25 @@ public class MqttSubscribeHandler {
                 topicValidationService.validateTopicFilter(subscription.getTopic());
             }
         } catch (DataValidationException e) {
-            log.info("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
+            log.warn("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
         }
     }
 
     private void validateClientAccess(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
-        try {
-            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), topicSubscriptions.stream()
-                    .map(TopicSubscription::getTopic)
-                    .collect(Collectors.toList())
-            );
-        } catch (AuthorizationException e) {
-            log.info("[{}][{}] Client doesn't have permission to subscribe to the topic {}",
-                    clientId, ctx.getSessionId(), e.getDeniedTopic());
-            throw new MqttException(e);
+        if (ctx.getAuthorizationRules() == null) {
+            return;
+        }
+        List<String> topics = topicSubscriptions.stream()
+                .map(TopicSubscription::getTopic)
+                .collect(Collectors.toList());
+        for (String topic : topics) {
+            boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
+            if (!isClientAuthorized) {
+                log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
+                        ctx.getClientId(), ctx.getSessionId(), topic);
+                throw new MqttException("Client is not authorized to subscribe to the topic");
+            }
         }
     }
 }

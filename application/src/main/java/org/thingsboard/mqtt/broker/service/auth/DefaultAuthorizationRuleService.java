@@ -18,66 +18,58 @@ package org.thingsboard.mqtt.broker.service.auth;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
     @Override
-    public AuthorizationRule parseSslAuthorizationRule(String sslMqttCredentialsValue, String clientCommonName) throws AuthenticationException {
-        SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslMqttCredentialsValue, SslMqttCredentials.class);
-        if (sslMqttCredentials == null) {
+    public List<AuthorizationRule> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException {
+        if (credentials == null) {
             throw new AuthenticationException("Cannot parse SslMqttCredentials.");
         }
-        Pattern pattern = Pattern.compile(sslMqttCredentials.getPatternRegEx());
-        Matcher commonNameMatcher = pattern.matcher(clientCommonName);
-        if (!commonNameMatcher.find()) {
-            throw new AuthenticationException("Cannot find string for pattern in common name [" + clientCommonName + "]");
-        }
-        String mappingKey;
-        try {
-            mappingKey = commonNameMatcher.group(1);
-        } catch (Exception e) {
-            throw new AuthenticationException("Failed to extract keyword from common name [" + clientCommonName + "]");
-        }
-        String authorizationRulePatternRegEx = sslMqttCredentials.getAuthorizationRulesMapping().get(mappingKey);
-        if (authorizationRulePatternRegEx == null) {
-            throw new AuthenticationException("Cannot find authorization rule pattern for key [" + mappingKey + "]");
+
+        List<AuthorizationRule> authorizationRules = credentials.getAuthorizationRulesMapping().entrySet().stream()
+                .filter(entry -> {
+                    String certificateMatcherRegex = entry.getKey();
+                    Pattern pattern = Pattern.compile(certificateMatcherRegex);
+                    Matcher commonNameMatcher = pattern.matcher(clientCommonName);
+                    return commonNameMatcher.find();
+                })
+                .map(Map.Entry::getValue)
+                .map(topicRule -> new AuthorizationRule(Pattern.compile(topicRule)))
+                .collect(Collectors.toList());
+
+        if (authorizationRules.isEmpty()) {
+            throw new AuthenticationException("Cannot find authorization rules for common name");
         }
 
-        return new AuthorizationRule(Pattern.compile(authorizationRulePatternRegEx));
+        return authorizationRules;
     }
 
     @Override
-    public AuthorizationRule parseBasicAuthorizationRule(String basicMqttCredentialsValue) throws AuthenticationException {
-        BasicMqttCredentials basicMqttCredentials = JacksonUtil.fromString(basicMqttCredentialsValue, BasicMqttCredentials.class);
-        if (basicMqttCredentials == null) {
+    public AuthorizationRule parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException {
+        if (credentials == null) {
             throw new AuthenticationException("Cannot parse BasicMqttCredentials.");
         }
-        if (basicMqttCredentials.getAuthorizationRulePattern() == null) {
+        if (credentials.getAuthorizationRulePattern() == null) {
             return null;
         } else {
-            return new AuthorizationRule(Pattern.compile(basicMqttCredentials.getAuthorizationRulePattern()));
+            return new AuthorizationRule(Pattern.compile(credentials.getAuthorizationRulePattern()));
         }
     }
 
     @Override
-    public void validateAuthorizationRule(AuthorizationRule authorizationRule, Collection<String> topics) throws AuthorizationException {
-        if (authorizationRule == null) {
-            return;
-        }
-        Pattern pattern = authorizationRule.getPattern();
-        for (String topic : topics) {
-            Matcher matcher = pattern.matcher(topic);
-            if (!matcher.matches()) {
-                throw new AuthorizationException(topic);
-            }
-        }
+    public boolean isAuthorized(String topic, List<AuthorizationRule> authorizationRules) {
+        return authorizationRules.stream()
+                .map(AuthorizationRule::getPattern)
+                .map(pattern -> pattern.matcher(topic))
+                .anyMatch(Matcher::matches);
     }
 }

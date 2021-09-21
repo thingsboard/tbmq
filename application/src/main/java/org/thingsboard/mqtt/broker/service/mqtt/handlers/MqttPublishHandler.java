@@ -40,7 +40,6 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -149,12 +148,14 @@ public class MqttPublishHandler {
     }
 
     private void validateClientAccess(ClientSessionCtx ctx, String topic) {
-        try {
-            authorizationRuleService.validateAuthorizationRule(ctx.getAuthorizationRule(), Collections.singleton(topic));
-        } catch (AuthorizationException e) {
-            log.info("[{}][{}] Client doesn't have permission to publish to the topic {}, reason - {}",
-                    ctx.getClientId(), ctx.getSessionId(), e.getDeniedTopic(), e.getMessage());
-            throw new MqttException(e);
+        if (ctx.getAuthorizationRules() == null) {
+            return;
+        }
+        boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
+        if (!isClientAuthorized) {
+            log.warn("[{}][{}] Client is not authorized to publish to the topic {}",
+                    ctx.getClientId(), ctx.getSessionId(), topic);
+            throw new MqttException("Client is not authorized to publish to the topic");
         }
     }
 

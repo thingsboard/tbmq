@@ -19,9 +19,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 public class AuthResponse {
     private final boolean success;
-    private final AuthorizationRule authorizationRule;
+    private final List<AuthorizationRule> authorizationRules;
 }

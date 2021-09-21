@@ -19,6 +19,8 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
+import java.util.List;
+
 public interface AuthenticationService {
-    AuthorizationRule authenticate(AuthContext authContext) throws AuthenticationException;
+    List<AuthorizationRule> authenticate(AuthContext authContext) throws AuthenticationException;
 }

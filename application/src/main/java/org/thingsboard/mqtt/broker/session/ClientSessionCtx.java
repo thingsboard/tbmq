@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.RequestOrderCtx;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -38,7 +39,7 @@ public class ClientSessionCtx implements SessionContext {
     private volatile SessionInfo sessionInfo;
     @Getter
     @Setter
-    private volatile AuthorizationRule authorizationRule;
+    private volatile List<AuthorizationRule> authorizationRules;
 
     @Getter
     private ChannelHandlerContext channel;

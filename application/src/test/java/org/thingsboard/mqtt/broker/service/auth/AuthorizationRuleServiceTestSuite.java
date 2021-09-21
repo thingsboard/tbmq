@@ -23,15 +23,15 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
@@ -51,53 +51,49 @@ public class AuthorizationRuleServiceTestSuite {
     public void testSuccessfulCredentialsParse_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
-                ".*(abc-p01).*",
-                Map.of("abc-p01", "test/.*")
+                Map.of(".*abc-123.*", "test/.*")
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseSslAuthorizationRule(
-                JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
-        Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
+        List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        Assert.assertEquals(1, authorizationRules.size());
+        Assert.assertEquals("test/.*", authorizationRules.get(0).getPattern().pattern());
     }
 
     @Test
     public void testSuccessfulCredentialsParse_Ssl_MultiplePossibleKeys() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
-                ".*(abc-p01|123-qwe|qqq).*",
-                Map.of("abc-p01", "test/.*")
+                Map.of(
+                        ".*abc-p01.*", "1/.*",
+                        ".*qwer1234.*", "2/.*",
+                        ".*4321.*", "3/.*",
+                        ".*nonexistent.*", "4/.*"
+                        )
         );
-        AuthorizationRule authorizationRule = authorizationRuleService.parseSslAuthorizationRule(
-                JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
-        Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
+        List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "qwer1234-abc-p01.4321.ab.abc");
+        Set<String> patterns = authorizationRules.stream().map(authorizationRule -> authorizationRule.getPattern().pattern()).collect(Collectors.toSet());
+        Assert.assertEquals(3, patterns.size());
+        Assert.assertEquals(Set.of("1/.*", "2/.*", "3/.*"), patterns);
     }
 
     @Test(expected = AuthenticationException.class)
-    public void testNonExistentKey_Ssl() throws AuthenticationException {
-        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "parent.com",
-                "(.*)(abc-p01|123-qwe|qqq)(.*)",
-                Map.of("not_valid_key", "test/.*")
-        );
-        authorizationRuleService.parseSslAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
+    public void testEmptyRules() throws AuthenticationException {
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of());
+        authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456789");
     }
 
     @Test(expected = AuthenticationException.class)
     public void testPatternDontMatch_Ssl() throws AuthenticationException {
-        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
-                "parent.com",
-                "(.*)(not_in_common_name)(.*)",
-                Map.of("key", "test/.*")
-        );
-        authorizationRuleService.parseSslAuthorizationRule(JacksonUtil.toString(sslMqttCredentials), "qwer1234-abc-p01.4321.ab.abc");
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of("key", "test/.*"));
+        authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456789");
     }
 
     /*
-        parseSslAuthorizationRule tests
+        parseBasicAuthorizationRule tests
      */
     @Test
     public void testSuccessfulCredentialsParse_Basic() throws AuthenticationException {
         BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", null, "test/.*");
-        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(JacksonUtil.toString(basicMqttCredentials));
+        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
         Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
     }
 
@@ -105,21 +101,31 @@ public class AuthorizationRuleServiceTestSuite {
             validateAuthorizationRule tests
     */
     @Test
-    public void testSuccessfulRuleValidation_Basic() throws AuthorizationException {
-        AuthorizationRule authorizationRule = new AuthorizationRule(Pattern.compile("test/.*"));
-        authorizationRuleService.validateAuthorizationRule(authorizationRule,
-                Arrays.asList("test/AAA", "test/BBB/CCC", "test/", "test/#", "test/+/AAA", "test/+/+"));
+    public void testSuccessfulRuleValidation() {
+        List<AuthorizationRule> authorizationRules = List.of(
+                new AuthorizationRule(Pattern.compile("1/.*")),
+                new AuthorizationRule(Pattern.compile("2/.*"))
+                );
+        Assert.assertTrue(authorizationRuleService.isAuthorized("1/", authorizationRules));
+        Assert.assertTrue(authorizationRuleService.isAuthorized("1/123", authorizationRules));
+        Assert.assertTrue(authorizationRuleService.isAuthorized("2/", authorizationRules));
+        Assert.assertTrue(authorizationRuleService.isAuthorized("2/123", authorizationRules));
+
+        Assert.assertFalse(authorizationRuleService.isAuthorized("3/123", authorizationRules));
     }
 
     @Test
-    public void testSuccessfulRuleValidation_NoRule() throws AuthorizationException {
-        authorizationRuleService.validateAuthorizationRule(null, Collections.singleton("test"));
+    public void testSuccessfulRuleValidation_ruleIntersection() {
+        List<AuthorizationRule> authorizationRules = List.of(
+                new AuthorizationRule(Pattern.compile(".*")),
+                new AuthorizationRule(Pattern.compile("1/.*")),
+                new AuthorizationRule(Pattern.compile("2/.*"))
+                );
+        Assert.assertTrue(authorizationRuleService.isAuthorized("1/123", authorizationRules));
     }
 
-    @Test(expected = AuthorizationException.class)
-    public void testFailedRuleValidation_Basic() throws AuthorizationException {
-        AuthorizationRule authorizationRule = new AuthorizationRule(Pattern.compile("test/.*"));
-        authorizationRuleService.validateAuthorizationRule(authorizationRule,
-                Arrays.asList("test/AAA", "test/BBB/CCC", "not_test/AAA", "test/"));
+    @Test
+    public void testSuccessfulRuleValidation_NoRule() {
+        Assert.assertFalse(authorizationRuleService.isAuthorized("123", Collections.emptyList()));
     }
 }

@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -50,8 +51,9 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
             return new AuthResponse(false, null);
         }
         log.trace("[{}] Authenticated with username {}", authContext.getClientId(), authContext.getUsername());
-        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(basicCredentials.getCredentialsValue());
-        return new AuthResponse(true, authorizationRule);
+        BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
+        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(credentials);
+        return new AuthResponse(true, Collections.singletonList(authorizationRule));
     }
 
     private MqttClientCredentials authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {
