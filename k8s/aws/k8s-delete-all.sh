@@ -15,10 +15,7 @@
 # limitations under the License.
 #
 
-set -e
+kubectl -n thingsboard-mqtt-broker delete svc,sts,deploy,cm,po,ing --all
+kubectl delete -f routes.yml
 
-kubectl apply -f tb-broker-namespace.yml
-kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
-
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker.yml
+kubectl -n thingsboard-mqtt-broker get pvc --no-headers=true | awk '//{print $1}' | xargs kubectl -n thingsboard-mqtt-broker delete --ignore-not-found=true pvc

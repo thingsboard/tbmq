@@ -15,10 +15,6 @@
 # limitations under the License.
 #
 
-
-
-source .env
-
 # configure namespace
 kubectl apply -f tb-broker-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker

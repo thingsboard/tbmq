@@ -1,0 +1,17 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+availabilityZones: [us-east-1a,us-east-1b,us-east-1c]
+
+metadata:
+  name: thingsboard-mqtt-broker-cluster
+  region: us-east-1
+  version: "1.20"
+
+managedNodeGroups:
+  - name: main-node-group
+    instanceType: m5.large
+    desiredCapacity: 1
+    maxSize: 1
+    minSize: 1
+    labels: { type: node }

@@ -17,8 +17,8 @@
 
 set -e
 
-kubectl apply -f tb-broker-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker.yml
+kubectl delete -f tb-broker-configmap.yml
+kubectl delete -f tb-broker.yml
+kubectl delete -f routes.yml

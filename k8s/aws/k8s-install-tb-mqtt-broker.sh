@@ -15,10 +15,15 @@
 # limitations under the License.
 #
 
-set -e
 
+# configure namespace
 kubectl apply -f tb-broker-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
+# install ThingsBoard MQTT Broker
 kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker.yml
+kubectl apply -f database-setup.yml &&
+kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
+kubectl exec tb-db-setup -- sh -c 'export INSTALL_TB=true; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'
+
+kubectl delete pod tb-db-setup

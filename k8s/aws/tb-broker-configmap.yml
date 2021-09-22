@@ -1,0 +1,87 @@
+#
+# Copyright © 2016-2020 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: tb-broker-db-config
+    namespace: thingsboard-mqtt-broker
+    labels:
+        name: tb-broker-db-config
+data:
+    SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+    SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
+    SPRING_DATASOURCE_URL: jdbc:postgresql://tb-broker-db.ctaauzbrgb4h.us-east-1.rds.amazonaws.com:5432/thingsboard_mqtt_broker
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tb-broker-config
+  namespace: thingsboard-mqtt-broker
+  labels:
+    name: tb-broker-config
+data:
+  conf: |
+      # Memory for 6Gi pod (4Gi heap + 2Gi stack and etc)
+      export JAVA_OPTS="$JAVA_OPTS -Xmx4096M -Xms4096M"
+
+      export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
+      export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-heapdump.bin"
+      export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+      export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export LOG_FILENAME=thingsboard-mqtt-broker.out
+      export LOADER_PATH=/usr/share/thingsboard-mqtt-broker/conf
+  logback: |
+      <!DOCTYPE configuration>
+      <configuration scan="true" scanPeriod="10 seconds">
+
+          <appender name="fileLogAppender"
+                    class="ch.qos.logback.core.rolling.RollingFileAppender">
+              <file>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.log</file>
+              <rollingPolicy
+                      class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                  <fileNamePattern>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                  <maxFileSize>100MB</maxFileSize>
+                  <maxHistory>30</maxHistory>
+                  <totalSizeCap>3GB</totalSizeCap>
+              </rollingPolicy>
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+
+          <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+              <encoder>
+                  <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+          </appender>
+
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="WARN"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="WARN"/>
+
+            <logger name="org.apache.kafka" level="WARN"/>
+
+
+          <root level="INFO">
+              <appender-ref ref="fileLogAppender"/>
+              <appender-ref ref="STDOUT"/>
+          </root>
+
+      </configuration>

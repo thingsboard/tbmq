@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Copyright © 2016-2020 The Thingsboard Authors
 #
@@ -15,10 +14,9 @@
 # limitations under the License.
 #
 
-set -e
-
-kubectl apply -f tb-broker-namespace.yml
-kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
-
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker.yml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: thingsboard-mqtt-broker
+  labels:
+    name: thingsboard-mqtt-broker
