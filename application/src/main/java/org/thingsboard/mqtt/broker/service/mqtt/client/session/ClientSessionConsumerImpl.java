@@ -72,7 +72,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     public Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException {
         log.info("Loading client sessions.");
 
-        ClientSessionInfo dummySession = persistDummySession();
+        String dummySessionClientId = persistDummySession();
 
         clientSessionConsumer.subscribe();
 
@@ -91,7 +91,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                         allClientSessions.remove(clientId);
                     } else {
                         ClientSessionInfo clientSession = ProtoConverter.convertToClientSessionInfo(msg.getValue());
-                        if (dummySession.equals(clientSession)) {
+                        if (dummySessionClientId.equals(clientId)) {
                             encounteredDummySession = true;
                         } else {
                             allClientSessions.put(clientId, clientSession);
@@ -105,7 +105,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
             }
         } while (!stopped && !encounteredDummySession);
 
-        clearDummySession(dummySession);
+        clearDummySession(dummySessionClientId);
 
         initializing = false;
 
@@ -154,7 +154,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     }
 
-    private ClientSessionInfo persistDummySession() throws QueuePersistenceException {
+    private String persistDummySession() throws QueuePersistenceException {
         String dummyClientId = UUID.randomUUID().toString();
         ClientSessionInfo dummyClientSessionInfo = ClientSessionInfo.builder()
                 .clientSession(ClientSession.builder()
@@ -169,11 +169,10 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                 .lastUpdateTime(System.currentTimeMillis())
                 .build();
         persistenceService.persistClientSessionInfoSync(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
-        return dummyClientSessionInfo;
+        return dummyClientId;
     }
 
-    private void clearDummySession(ClientSessionInfo dummySession) throws QueuePersistenceException {
-        String clientId = dummySession.getClientSession().getSessionInfo().getClientInfo().getClientId();
+    private void clearDummySession(String clientId) throws QueuePersistenceException {
         persistenceService.persistClientSessionInfoSync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
