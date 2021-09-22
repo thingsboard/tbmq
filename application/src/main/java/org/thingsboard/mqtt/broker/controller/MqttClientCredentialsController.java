@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -54,7 +55,7 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<MqttClientCredentials> getMqttClientCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<ShortMqttClientCredentials> getMqttClientCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
             return checkNotNull(mqttClientCredentialsService.getCredentials(pageLink));

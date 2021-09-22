@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 
@@ -94,10 +96,18 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
-    public PageData<MqttClientCredentials> getCredentials(PageLink pageLink) {
+    public PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink) {
         log.trace("Executing getCredentials, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
-        return mqttClientCredentialsDao.findAll(pageLink);
+        PageData<MqttClientCredentials> pageData = mqttClientCredentialsDao.findAll(pageLink);
+        List<ShortMqttClientCredentials> shortMqttCredentials = pageData.getData().stream()
+                .map(mqttClientCredentials -> ShortMqttClientCredentials.builder()
+                        .id(mqttClientCredentials.getId())
+                        .name(mqttClientCredentials.getName())
+                        .credentialsType(mqttClientCredentials.getCredentialsType())
+                        .build())
+                .collect(Collectors.toList());
+        return new PageData<>(shortMqttCredentials, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
     }
 
     @Override
