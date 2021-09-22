@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -30,6 +31,7 @@ import java.util.List;
 @AllArgsConstructor
 public class DetailedClientSessionInfoDto {
     private String clientId;
+    private UUID sessionId;
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;
