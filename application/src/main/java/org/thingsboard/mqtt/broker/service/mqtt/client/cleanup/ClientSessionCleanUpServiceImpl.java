@@ -21,13 +21,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -37,21 +41,37 @@ import java.util.stream.Collectors;
 public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpService {
     private final ClientSessionReader clientSessionReader;
     private final ClientSessionEventService clientSessionEventService;
+    private final DisconnectClientCommandService disconnectClientCommandService;
 
     @Value("${mqtt.client-session-cleanup.inactive-session-ttl}")
     private int ttl;
 
     @Override
-    public void removeClientSession(String clientId) {
+    public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
+        log.trace("[{}] Removing ClientSession.", clientId);
         ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
-        if (clientSessionInfo == null) {
-            throw new RuntimeException("Client Session doesn't exist for provided clientId.");
+        if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
+            throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         if (clientSessionInfo.getClientSession().isConnected()) {
-            throw new RuntimeException("Client is currently connected!");
+            throw new ThingsboardException("Client is currently connected", ThingsboardErrorCode.GENERAL);
         }
         log.debug("[{}] Cleaning up client session.", clientId);
         clientSessionEventService.requestSessionCleanup(clientSessionInfo.getClientSession().getSessionInfo());
+    }
+
+    @Override
+    public void disconnectClientSession(String clientId, UUID sessionId) throws ThingsboardException {
+        log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
+        ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
+        if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
+            throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
+        }
+        if (!clientSessionInfo.getClientSession().isConnected()) {
+            return;
+        }
+        String serviceId = clientSessionInfo.getClientSession().getSessionInfo().getServiceId();
+        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId);
     }
 
     @Scheduled(cron = "${mqtt.client-session-cleanup.cron}", zone = "${mqtt.client-session-cleanup.zone}")
@@ -73,6 +93,11 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         for (SessionInfo sessionInfo : clientSessionToRemove) {
             clientSessionEventService.requestSessionCleanup(sessionInfo);
         }
+    }
+
+    private boolean sameSession(UUID sessionId, ClientSessionInfo clientSessionInfo) {
+        UUID currentSessionId = clientSessionInfo.getClientSession().getSessionInfo().getSessionId();
+        return sessionId.equals(currentSessionId);
     }
 
     private boolean needsToBeRemoved(long oldestAllowedTime, ClientSessionInfo clientSessionInfo) {

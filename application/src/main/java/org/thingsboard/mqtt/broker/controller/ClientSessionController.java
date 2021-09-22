@@ -42,11 +42,24 @@ public class ClientSessionController extends BaseController {
 
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}/clear", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{clientId}/remove/{sessionId}", method = RequestMethod.DELETE)
     @ResponseBody
-    public void clearClientSession(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public void removeClientSession(@PathVariable("clientId") String clientId,
+                                   @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
         try {
-            clientSessionCleanUpService.removeClientSession(clientId);
+            clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{clientId}/disconnect/{sessionId}", method = RequestMethod.DELETE)
+    @ResponseBody
+    public void disconnectClientSession(@PathVariable("clientId") String clientId,
+                                        @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
+        try {
+            clientSessionCleanUpService.disconnectClientSession(clientId, toUUID(sessionIdStr));
         } catch (Exception e) {
             throw handleException(e);
         }
