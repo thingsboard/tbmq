@@ -25,6 +25,7 @@ message SessionInfoProto {
   int64 sessionIdLSB = 3;
   ClientInfoProto clientInfo = 4;
   bool persistent = 5;
+  ConnectionInfoProto connectionInfo = 6;
 }
 
 message PublishMsgProto {
@@ -44,6 +45,12 @@ message TopicSubscriptionProto {
 message ClientInfoProto {
   string clientId = 1;
   string clientType = 2;
+}
+
+message ConnectionInfoProto {
+  int64 connectedAt = 1;
+  int64 disconnectedAt = 2;
+  int32 keepAlive = 3;
 }
 
 message ClientSessionInfoProto {

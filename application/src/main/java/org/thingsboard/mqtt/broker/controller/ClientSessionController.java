@@ -23,20 +23,21 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageReader;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 @RestController
 @RequestMapping("/api/client-session")
 @RequiredArgsConstructor
 public class ClientSessionController extends BaseController {
     private final ClientSessionCleanUpService clientSessionCleanUpService;
-    private final ClientSessionReader clientSessionReader;
+    private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageReader clientSessionPageReader;
 
 
@@ -54,9 +55,9 @@ public class ClientSessionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
     @ResponseBody
-    public ClientSessionInfo getClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            return clientSessionReader.getClientSessionInfo(clientId);
+            return sessionSubscriptionService.getDetailedClientSessionInfo(clientId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -65,7 +66,7 @@ public class ClientSessionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<ClientSessionInfo> getClientSessionInfos(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<ShortClientSessionInfoDto> getShortClientSessionInfos(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
             return checkNotNull(clientSessionPageReader.getClientSessionInfos(pageLink));

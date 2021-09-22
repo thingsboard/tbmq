@@ -20,11 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -171,10 +171,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     private void finishDisconnect(ClientSession clientSession) {
-        String clientId = clientSession.getSessionInfo().getClientInfo().getClientId();
+        SessionInfo sessionInfo = clientSession.getSessionInfo();
+        String clientId = sessionInfo.getClientInfo().getClientId();
         log.trace("[{}] Finishing client session disconnection.", clientId);
-        if (clientSession.getSessionInfo().isPersistent()) {
-            ClientSession disconnectedClientSession = clientSession.toBuilder().connected(false).build();
+        if (sessionInfo.isPersistent()) {
+            ClientSession disconnectedClientSession = markSessionDisconnected(clientSession);
             clientSessionService.saveClientSession(clientId, disconnectedClientSession, createCallback(() -> log.trace("[{}] Finished disconnect by saving client session", clientId),
                     t -> log.warn("[{}] Failed to finish disconnect and save client session. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage())));
         } else {
@@ -183,6 +184,19 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             clientSubscriptionService.clearSubscriptionsAndPersist(clientId, createCallback(() -> log.trace("[{}] Finished disconnect by clearing client subscriptions", clientId),
                     t -> log.warn("[{}] Failed to finish disconnect and clear client subscriptions. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage())));
         }
+    }
+
+    private ClientSession markSessionDisconnected(ClientSession clientSession) {
+        ConnectionInfo connectionInfo = clientSession.getSessionInfo().getConnectionInfo().toBuilder()
+                .disconnectedAt(System.currentTimeMillis())
+                .build();
+        SessionInfo sessionInfo = clientSession.getSessionInfo().toBuilder()
+                .connectionInfo(connectionInfo)
+                .build();
+        return clientSession.toBuilder()
+                .connected(false)
+                .sessionInfo(sessionInfo)
+                .build();
     }
 
     private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, boolean wasPrevSessionPersistent) {

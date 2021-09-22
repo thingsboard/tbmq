@@ -18,8 +18,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 
 import java.util.List;
 import java.util.Map;
@@ -32,12 +34,19 @@ public class ClientSessionPageReaderImpl implements ClientSessionPageReader {
     private final ClientSessionReader clientSessionReader;
 
     @Override
-    public PageData<ClientSessionInfo> getClientSessionInfos(PageLink pageLink) {
+    public PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink) {
         // TODO: add some sorting
         Map<String, ClientSessionInfo> allClientSessions = clientSessionReader.getAllClientSessions();
-        List<ClientSessionInfo> data = allClientSessions.values().stream()
+        List<ShortClientSessionInfoDto> data = allClientSessions.values().stream()
                 .skip(pageLink.getPage() * pageLink.getPageSize())
                 .limit(pageLink.getPageSize())
+                .map(ClientSessionInfo::getClientSession)
+                .map(clientSession -> ShortClientSessionInfoDto.builder()
+                        .clientId(clientSession.getSessionInfo().getClientInfo().getClientId())
+                        .clientType(clientSession.getSessionInfo().getClientInfo().getType())
+                        .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
+                        .nodeId(clientSession.getSessionInfo().getServiceId())
+                        .build())
                 .collect(Collectors.toList());
         return new PageData<>(data, allClientSessions.size() / pageLink.getPageSize(),
                 allClientSessions.size(),

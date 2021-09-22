@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -149,10 +150,18 @@ public class ConnectServiceImpl implements ConnectService {
         ClientInfo clientInfo = mqttClientService.getMqttClientByClientId(clientId)
                 .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
                 .orElse(new ClientInfo(clientId, ClientType.DEVICE));
+        ConnectionInfo connectionInfo = ConnectionInfo.builder()
+                .keepAlive(msg.getKeepAliveTimeSeconds())
+                .connectedAt(System.currentTimeMillis())
+                .build();
         boolean isPersistentSession = !msg.isCleanSession();
         return SessionInfo.builder()
                 .serviceId(serviceInfoProvider.getServiceId())
-                .sessionId(sessionId).persistent(isPersistentSession).clientInfo(clientInfo).build();
+                .sessionId(sessionId)
+                .persistent(isPersistentSession)
+                .clientInfo(clientInfo)
+                .connectionInfo(connectionInfo)
+                .build();
     }
 
     private void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {

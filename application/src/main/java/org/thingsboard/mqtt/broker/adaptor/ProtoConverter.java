@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -89,23 +90,23 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
-        ClientInfo clientInfo = sessionInfo.getClientInfo();
         return QueueProtos.SessionInfoProto.newBuilder()
                 .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
                 .setPersistent(sessionInfo.isPersistent())
-                .setClientInfo(convertToClientInfoProto(clientInfo))
+                .setClientInfo(convertToClientInfoProto(sessionInfo.getClientInfo()))
+                .setConnectionInfo(convertToConnectionInfoProto(sessionInfo.getConnectionInfo()))
                 .build();
     }
 
     public static SessionInfo convertToSessionInfo(QueueProtos.SessionInfoProto sessionInfoProto) {
-        QueueProtos.ClientInfoProto clientInfoProto = sessionInfoProto.getClientInfo();
         return SessionInfo.builder()
                 .serviceId(sessionInfoProto.getServiceInfo() != null ? sessionInfoProto.getServiceInfo().getServiceId() : null)
                 .sessionId(new UUID(sessionInfoProto.getSessionIdMSB(), sessionInfoProto.getSessionIdLSB()))
                 .persistent(sessionInfoProto.getPersistent())
-                .clientInfo(convertToClientInfo(clientInfoProto))
+                .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
+                .connectionInfo(convertToConnectionInfo(sessionInfoProto.getConnectionInfo()))
                 .build();
     }
 
@@ -113,17 +114,30 @@ public class ProtoConverter {
         return clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
                 .setClientId(clientInfo.getClientId())
                 .setClientType(clientInfo.getType().toString())
-                .build() : null;
+                .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
+    }
+
+    public static QueueProtos.ConnectionInfoProto convertToConnectionInfoProto(ConnectionInfo connectionInfo) {
+        return connectionInfo != null ? QueueProtos.ConnectionInfoProto.newBuilder()
+                .setConnectedAt(connectionInfo.getConnectedAt())
+                .setDisconnectedAt(connectionInfo.getDisconnectedAt())
+                .setKeepAlive(connectionInfo.getKeepAlive())
+                .build() : QueueProtos.ConnectionInfoProto.getDefaultInstance();
     }
 
     public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
-        if (clientInfoProto == null) {
-            return null;
-        }
-        return ClientInfo.builder()
+        return clientInfoProto != null ? ClientInfo.builder()
                 .clientId(clientInfoProto.getClientId())
                 .type(ClientType.valueOf(clientInfoProto.getClientType()))
-                .build();
+                .build() : null;
+    }
+
+    private static ConnectionInfo convertToConnectionInfo(QueueProtos.ConnectionInfoProto connectionInfoProto) {
+        return connectionInfoProto != null ? ConnectionInfo.builder()
+                .connectedAt(connectionInfoProto.getConnectedAt())
+                .disconnectedAt(connectionInfoProto.getDisconnectedAt())
+                .keepAlive(connectionInfoProto.getKeepAlive())
+                .build() : null;
     }
 
     public static QueueProtos.ClientSubscriptionsProto convertToClientSubscriptionsProto(Collection<TopicSubscription> topicSubscriptions) {

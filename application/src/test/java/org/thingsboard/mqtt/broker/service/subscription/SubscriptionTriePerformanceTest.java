@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -154,7 +155,7 @@ public class SubscriptionTriePerformanceTest {
                 }
             } else {
                 SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
-                        new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE));
+                        new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE), new ConnectionInfo(0, 0, 0));
                 String randomTopicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
                 subscriptionTrie.put(randomTopicFilter, sessionInfo);
             }
@@ -170,7 +171,7 @@ public class SubscriptionTriePerformanceTest {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         for (int i = 0; i < NUMBER_OF_SUBSCRIBERS; i++) {
             SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
-                    new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE));
+                    new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE), new ConnectionInfo(0, 0, 0));
             int subscriptionsCount = r.nextInt(MAX_SUBSCRIPTIONS_PER_SESSION) + 1;
             SessionInfoSubscriptions sessionInfoSubscriptions = new SessionInfoSubscriptions(sessionInfo, new HashSet<>());
             for (int j = 0; j < subscriptionsCount; j++) {
