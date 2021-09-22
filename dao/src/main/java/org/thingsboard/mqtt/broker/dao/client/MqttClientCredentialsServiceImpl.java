@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -97,6 +98,12 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         log.trace("Executing getCredentials, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
         return mqttClientCredentialsDao.findAll(pageLink);
+    }
+
+    @Override
+    public Optional<MqttClientCredentials> getCredentialsById(UUID id) {
+        log.trace("Executing getCredentialsById [{}]", id);
+        return Optional.ofNullable(mqttClientCredentialsDao.findById(id));
     }
 
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {

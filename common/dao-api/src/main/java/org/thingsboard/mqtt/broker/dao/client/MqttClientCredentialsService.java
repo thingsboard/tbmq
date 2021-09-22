@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MqttClientCredentialsService {
@@ -30,4 +31,6 @@ public interface MqttClientCredentialsService {
     List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds);
 
     PageData<MqttClientCredentials> getCredentials(PageLink pageLink);
+
+    Optional<MqttClientCredentials> getCredentialsById(UUID id);
 }

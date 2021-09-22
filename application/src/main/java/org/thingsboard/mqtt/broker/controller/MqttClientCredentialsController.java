@@ -64,6 +64,16 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.GET)
+    public MqttClientCredentials getCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
+        try {
+            return mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.DELETE)
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
