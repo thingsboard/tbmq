@@ -58,6 +58,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
     @Value("${queue.client-session-event.poll-interval}")
     private long pollDuration;
 
+    @Value("${queue.client-session-event.batch-wait-timeout-ms:2000}")
+    private long waitTimeoutMs;
+
     private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     @Override
@@ -136,6 +139,16 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                         e.getClass().getSimpleName(), e.getMessage());
                 log.trace("Detailed error: ", e);
             }
+        }
+
+        boolean waitSuccessful = false;
+        try {
+            waitSuccessful = latch.await(waitTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.warn("Batch processing was interrupted");
+        }
+        if (!waitSuccessful) {
+            log.warn("Failed to process {} events in time", latch.getCount());
         }
     }
 
