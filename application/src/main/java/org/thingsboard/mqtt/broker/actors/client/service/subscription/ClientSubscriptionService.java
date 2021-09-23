@@ -26,9 +26,13 @@ import java.util.Set;
 public interface ClientSubscriptionService extends ClientSubscriptionReader {
     void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
 
+    void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);
+
     void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback);
 
     void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions);
+
+    void unsubscribeAndPersist(String clientId, Collection<String> topicFilters);
 
     void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback);
 

@@ -27,10 +27,11 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
@@ -38,6 +39,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectService;
 import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionCommandService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
@@ -59,6 +61,7 @@ public class ClientActor extends ContextAwareActor {
 
     private final SessionClusterManager sessionClusterManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
+    private final SubscriptionCommandService subscriptionCommandService;
     private final ActorProcessor actorProcessor;
     private final ConnectService connectService;
     private final MqttMessageHandler mqttMessageHandler;
@@ -72,6 +75,7 @@ public class ClientActor extends ContextAwareActor {
         super(systemContext);
         this.sessionClusterManager = systemContext.getClientActorContext().getSessionClusterManager();
         this.subscriptionChangesManager = systemContext.getClientActorContext().getSubscriptionChangesManager();
+        this.subscriptionCommandService = systemContext.getClientActorContext().getSubscriptionCommandService();
         this.actorProcessor = systemContext.getClientActorContext().getActorProcessor();
         this.connectService = systemContext.getClientActorContext().getConnectService();
         this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
@@ -106,20 +110,6 @@ public class ClientActor extends ContextAwareActor {
             boolean success = true;
             if (msg instanceof QueueableMqttMsg) {
                 success = processQueueableMqttMsg((QueueableMqttMsg) msg);
-            } else if (msg instanceof SessionClusterManagementMsg) {
-                switch (msg.getMsgType()) {
-                    case CONNECTION_REQUEST_MSG:
-                        processConnectionRequestMsg((ConnectionRequestMsg) msg);
-                        break;
-                    case SESSION_DISCONNECTED_MSG:
-                        processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
-                        break;
-                    case CLEAR_SESSION_MSG:
-                        processClearSessionMsg((ClearSessionMsg) msg);
-                        break;
-                    default:
-                        success = false;
-                }
             } else {
                 switch (msg.getMsgType()) {
                     case SESSION_INIT_MSG:
@@ -130,6 +120,25 @@ public class ClientActor extends ContextAwareActor {
                         break;
                     case DISCONNECT_MSG:
                         actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
+                        break;
+
+                    case CONNECTION_REQUEST_MSG:
+                        processConnectionRequestMsg((ConnectionRequestMsg) msg);
+                        break;
+                    case SESSION_DISCONNECTED_MSG:
+                        processSessionDisconnectedMsg((SessionDisconnectedMsg) msg);
+                        break;
+                    case CLEAR_SESSION_MSG:
+                        processClearSessionMsg((ClearSessionMsg) msg);
+                        break;
+
+                    case SUBSCRIBE_COMMAND_MSG:
+                        SubscribeCommandMsg subscribeCommandMsg = (SubscribeCommandMsg) msg;
+                        subscriptionCommandService.subscribe(state.getClientId(), subscribeCommandMsg.getTopicSubscriptions());
+                        break;
+                    case UNSUBSCRIBE_COMMAND_MSG:
+                        UnsubscribeCommandMsg unsubscribeCommandMsg = (UnsubscribeCommandMsg) msg;
+                        subscriptionCommandService.unsubscribe(state.getClientId(), unsubscribeCommandMsg.getTopics());
                         break;
 
                     case MQTT_CONNECT_MSG:

@@ -55,7 +55,7 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<ShortMqttClientCredentials> getMqttClientCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<ShortMqttClientCredentials> getCredentials(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
             return checkNotNull(mqttClientCredentialsService.getCredentials(pageLink));
@@ -66,7 +66,7 @@ public class MqttClientCredentialsController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.GET)
-    public MqttClientCredentials getCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
+    public MqttClientCredentials getCredentialsById(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
             return mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null);
         } catch (Exception e) {

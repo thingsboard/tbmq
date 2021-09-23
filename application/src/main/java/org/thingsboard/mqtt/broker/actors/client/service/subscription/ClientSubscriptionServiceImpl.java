@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
+import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -62,6 +64,13 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
+    public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        BasicCallback callback = createCallback(() -> log.trace("[{}] Persisted subscribed topic subscriptions", clientId),
+                t -> log.warn("[{}] Failed to persist subscribed topic subscriptions. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage()));
+        subscribeAndPersist(clientId, topicSubscriptions, callback);
+    }
+
+    @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
         log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
         subscribe(clientId, topicSubscriptions);
@@ -81,6 +90,13 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.addAll(topicSubscriptions);
+    }
+
+    @Override
+    public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
+        BasicCallback callback = createCallback(() -> log.trace("[{}] Persisted unsubscribed topics", clientId),
+                t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage()));
+        unsubscribeAndPersist(clientId, topicFilters, callback);
     }
 
     @Override

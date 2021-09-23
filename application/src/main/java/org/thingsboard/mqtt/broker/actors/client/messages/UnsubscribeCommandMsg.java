@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dto;
+package org.thingsboard.mqtt.broker.actors.client.messages;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-@Data
-@Builder
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
-public class SubscriptionInfoDto {
-    private String topic;
-    private MqttQoS qos;
+import java.util.Collection;
+
+@Slf4j
+@Getter
+public class UnsubscribeCommandMsg extends AbstractTimedMsg implements TbActorMsg {
+    private final Collection<String> topics;
+
+    public UnsubscribeCommandMsg(Collection<String> topics) {
+        this.topics = topics;
+    }
+
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.UNSUBSCRIBE_COMMAND_MSG;
+    }
 }

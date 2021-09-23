@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dto;
+package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
-@Data
-@Builder
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
-public class SubscriptionInfoDto {
-    private String topic;
-    private MqttQoS qos;
+import java.util.Collection;
+
+public interface SubscriptionCommandService {
+    void subscribe(String clientId, Collection<TopicSubscription> subscriptions);
+
+    void unsubscribe(String clientId, Collection<String> subscriptions);
 }

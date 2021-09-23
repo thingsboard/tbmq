@@ -18,15 +18,19 @@ package org.thingsboard.mqtt.broker.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -37,6 +41,21 @@ public class SubscriptionController extends BaseController {
     private SubscriptionMaintenanceService subscriptionMaintenanceService;
     @Autowired
     private ClientSubscriptionReader clientSubscriptionReader;
+    @Autowired
+    private ClientSubscriptionAdminService subscriptionAdminService;
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{clientId}", method = RequestMethod.POST)
+    @ResponseBody
+    public void updateSubscriptions(@PathVariable("clientId") String clientId,
+                                    @RequestBody List<SubscriptionInfoDto> subscriptions) throws ThingsboardException {
+        checkNotNull(subscriptions);
+        try {
+            subscriptionAdminService.updateSubscriptions(clientId, subscriptions);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)

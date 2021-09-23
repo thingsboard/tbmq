@@ -26,12 +26,16 @@ import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.Collection;
 import java.util.UUID;
 
 @Slf4j
@@ -93,5 +97,25 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
         } else {
             clientActorRef.tell(new ConnectionAcceptedMsg(sessionId, wasPrevSessionPersistent, lastWillMsg));
         }
+    }
+
+    @Override
+    public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+        if (clientActorRef == null) {
+            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                    new ClientActorCreator(actorSystemContext, clientId, true));
+        }
+        clientActorRef.tellWithHighPriority(new SubscribeCommandMsg(topicSubscriptions));
+    }
+
+    @Override
+    public void unsubscribe(String clientId, Collection<String> topics) {
+        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+        if (clientActorRef == null) {
+            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                    new ClientActorCreator(actorSystemContext, clientId, true));
+        }
+        clientActorRef.tellWithHighPriority(new UnsubscribeCommandMsg(topics));
     }
 }

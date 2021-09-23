@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.util.CollectionsUtil;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public class SubscriptionChangesManagerImpl implements SubscriptionChangesManager {
     private final ClientSubscriptionService clientSubscriptionService;
 
+    // TODO: now it's possible to have parallel updates on subscriptions
     @Override
     public void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg) {
         Set<TopicSubscription> currentTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
@@ -43,23 +44,12 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
             return;
         }
 
-        Set<TopicSubscription> subscribeTopics = getSubscribeTopics(newTopicSubscriptions, currentTopicSubscriptions);
-        Set<TopicSubscription> unsubscribeTopics = getUnsubscribeTopics(newTopicSubscriptions, currentTopicSubscriptions);
+        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions).stream()
+                .map(TopicSubscription::getTopic)
+                .collect(Collectors.toSet());
+        clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
 
-
-        clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics.stream().map(TopicSubscription::getTopic).collect(Collectors.toList()));
-        clientSubscriptionService.subscribeInternally(clientId, subscribeTopics);
-    }
-
-    private Set<TopicSubscription> getSubscribeTopics(Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
-        Set<TopicSubscription> toSubscribe = new HashSet<>(newTopicSubscriptions);
-        toSubscribe.removeAll(currentTopicSubscriptions);
-        return toSubscribe;
-    }
-
-    private Set<TopicSubscription> getUnsubscribeTopics(Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
-        Set<TopicSubscription> toUnsubscribe = new HashSet<>(currentTopicSubscriptions);
-        toUnsubscribe.removeAll(newTopicSubscriptions);
-        return toUnsubscribe;
+        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions);
+        clientSubscriptionService.subscribeInternally(clientId, subscribeTopicSubscriptions);
     }
 }

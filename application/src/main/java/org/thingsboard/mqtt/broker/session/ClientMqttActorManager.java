@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.session;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.Collection;
 import java.util.UUID;
 
 public interface ClientMqttActorManager {
@@ -31,4 +33,8 @@ public interface ClientMqttActorManager {
     void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);
 
     void notifyConnectionAccepted(String clientId, UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg);
+
+    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
+
+    void unsubscribe(String clientId, Collection<String> topics);
 }

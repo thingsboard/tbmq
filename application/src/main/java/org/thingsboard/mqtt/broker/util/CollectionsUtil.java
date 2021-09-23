@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dto;
+package org.thingsboard.mqtt.broker.util;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
-@Data
-@Builder
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
-public class SubscriptionInfoDto {
-    private String topic;
-    private MqttQoS qos;
+public class CollectionsUtil {
+    public static <T> Set<T> getAddedValues(Collection<T> newValues, Collection<T> oldValues) {
+        Set<T> addedValues = new HashSet<>(newValues);
+        addedValues.removeAll(oldValues);
+        return addedValues;
+    }
+
+    public static <T> Set<T> getRemovedValues(Collection<T> newValues, Collection<T> oldValues) {
+        Set<T> removedValues = new HashSet<>(oldValues);
+        removedValues.removeAll(newValues);
+        return removedValues;
+    }
 }
