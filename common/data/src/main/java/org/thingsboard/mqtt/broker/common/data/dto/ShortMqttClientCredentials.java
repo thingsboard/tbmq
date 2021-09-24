@@ -31,4 +31,5 @@ public class ShortMqttClientCredentials {
     private UUID id;
     private String name;
     private ClientCredentialsType credentialsType;
+    private long createdTime;
 }

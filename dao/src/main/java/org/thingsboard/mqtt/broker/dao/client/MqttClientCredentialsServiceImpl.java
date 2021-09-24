@@ -105,6 +105,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                         .id(mqttClientCredentials.getId())
                         .name(mqttClientCredentials.getName())
                         .credentialsType(mqttClientCredentials.getCredentialsType())
+                        .createdTime(mqttClientCredentials.getCreatedTime())
                         .build())
                 .collect(Collectors.toList());
         return new PageData<>(shortMqttCredentials, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
