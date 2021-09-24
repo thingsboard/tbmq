@@ -122,7 +122,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }
-        if (mqttCredentials.getPassword() != null) {
+        if (!StringUtils.isEmpty(mqttCredentials.getPassword())) {
             mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
