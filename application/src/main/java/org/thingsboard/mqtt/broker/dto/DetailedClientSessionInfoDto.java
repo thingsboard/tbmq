@@ -31,7 +31,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class DetailedClientSessionInfoDto {
     private String clientId;
-    private UUID sessionId;
+    private UUID id;
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;

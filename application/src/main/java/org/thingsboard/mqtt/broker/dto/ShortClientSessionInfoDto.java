@@ -22,11 +22,14 @@ import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShortClientSessionInfoDto {
+    private UUID id;
     private String clientId;
     private ConnectionState connectionState;
     private ClientType clientType;

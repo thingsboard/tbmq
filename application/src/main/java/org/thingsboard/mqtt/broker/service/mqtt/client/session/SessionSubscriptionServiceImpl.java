@@ -51,7 +51,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
 
         return DetailedClientSessionInfoDto.builder()
                 .clientId(sessionInfo.getClientInfo().getClientId())
-                .sessionId(sessionInfo.getSessionId())
+                .id(sessionInfo.getSessionId())
                 .clientType(sessionInfo.getClientInfo().getType())
                 .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
                 .nodeId(sessionInfo.getServiceId())
