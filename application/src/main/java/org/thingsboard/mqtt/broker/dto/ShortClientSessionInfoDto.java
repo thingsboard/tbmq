@@ -29,7 +29,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShortClientSessionInfoDto {
-    private UUID id;
+    private String id;
     private String clientId;
     private ConnectionState connectionState;
     private ClientType clientType;

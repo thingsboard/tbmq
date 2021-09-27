@@ -42,7 +42,7 @@ public class ClientSessionPageReaderImpl implements ClientSessionPageReader {
                 .limit(pageLink.getPageSize())
                 .map(ClientSessionInfo::getClientSession)
                 .map(clientSession -> ShortClientSessionInfoDto.builder()
-                        .id(clientSession.getSessionInfo().getSessionId())
+                        .id(clientSession.getSessionInfo().getClientInfo().getClientId())
                         .clientId(clientSession.getSessionInfo().getClientInfo().getClientId())
                         .clientType(clientSession.getSessionInfo().getClientInfo().getType())
                         .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)

@@ -30,8 +30,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetailedClientSessionInfoDto {
+    private String id;
     private String clientId;
-    private UUID id;
+    private UUID sessionId;
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;
