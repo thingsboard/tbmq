@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.transaction.annotation.Transactional;
-import org.thingsboard.mqtt.broker.dao.model.MqttClientEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ApplicationTopicManagerImpl implements ApplicationTopicManager {
+    @Override
+    public void applicationRemovedEvent(String clientId) {
 
-public interface MqttClientRepository extends PagingAndSortingRepository<MqttClientEntity, UUID> {
-    MqttClientEntity findByClientId(String clientId);
-
-    @Transactional
-    void deleteByClientId(String clientId);
+    }
 }

@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.MqttClient;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,25 +27,30 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createApplicationClient;
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLevels;
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
 
@@ -56,12 +60,12 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegrationTest {
-
+    private static final String TEST_CLIENT_ID = "test-application-client";
     private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
             new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
 
     @Autowired
-    private MqttClientService mqttClientService;
+    private MqttClientCredentialsService credentialsService;
     @Autowired
     private ClientSessionReader clientSessionReader;
     @Autowired
@@ -69,12 +73,12 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Autowired
     private ClientSubscriptionReader clientSubscriptionReader;
 
-    private org.thingsboard.mqtt.broker.common.data.MqttClient applicationClient;
+    private MqttClientCredentials applicationCredentials;
     private MqttClient persistedClient;
 
     @Before
     public void init() throws Exception {
-        applicationClient = mqttClientService.saveMqttClient(createApplicationClient());
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
     }
 
     @After
@@ -83,18 +87,18 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             persistedClient.disconnect();
         }
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(true);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
         persistedClient.disconnect();
-        mqttClientService.deleteMqttClient(applicationClient.getId());
+        credentialsService.deleteCredentials(applicationCredentials.getId());
     }
 
     @Test
     public void testSuccessPersistence_afterDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
@@ -108,15 +112,15 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         // need to wait till client is actually stopped
         Thread.sleep(200);
 
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNull(clientSessionCtx);
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
         Assert.assertNotNull(persistedClientSession);
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertFalse(persistedClientSession.isConnected());
         Assert.assertTrue(sessionInfo.isPersistent());
-        Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -124,11 +128,11 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessConnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNotNull(clientSessionCtx);
         persistedClient.disconnect();
         // need to wait till client is actually stopped
@@ -138,7 +142,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_afterReconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
@@ -153,15 +157,15 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
 
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNotNull(clientSessionCtx);
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
         Assert.assertNotNull(persistedClientSession);
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(persistedClientSession.isConnected());
         Assert.assertTrue(sessionInfo.isPersistent());
-        Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -169,7 +173,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_afterReconnectAndChange() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
@@ -191,7 +195,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             persistedClient.on(newTopicNames[i], (s, byteBuf) -> {}, MqttQoS.valueOf(newQoSLevels[i])).get();
         }
 
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size() + newTopicSubscriptions.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS) && persistedTopicSubscriptions.containsAll(newTopicSubscriptions));
     }
@@ -199,7 +203,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_clearPersisted() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
@@ -215,12 +219,12 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
 
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNotNull(clientSessionCtx);
         Assert.assertTrue(persistedClientSession.isConnected());
         Assert.assertFalse(persistedClientSession.getSessionInfo().isPersistent());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }
 
@@ -228,7 +232,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_clearPersistedAndDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(applicationClient.getClientId());
+        config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {});
         persistedClient.connect("localhost", mqttPort).get();
@@ -250,11 +254,11 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         // need to wait till client is actually stopped
         Thread.sleep(200);
 
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
         Assert.assertNull(persistedClientSession);
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(applicationClient.getClientId());
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNull(clientSessionCtx);
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }
 }

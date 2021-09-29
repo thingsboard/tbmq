@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.common.data.MqttClient;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dao.Dao;
+public interface ApplicationTopicService {
+    void createTopic(String clientId);
 
-public interface MqttClientDao extends Dao<MqttClient> {
-    MqttClient findByClientId(String clientId);
-
-    PageData<MqttClient> findAll(PageLink pageLink);
-
-    void removeByClientId(String clientId);
+    void deleteTopic(String clientId);
 }

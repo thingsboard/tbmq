@@ -46,18 +46,18 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     @Override
     public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
-            return new AuthResponse(false, null);
+            return new AuthResponse(false, null, null);
         }
         log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
         MqttClientCredentials sslCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (sslCredentials == null) {
-            return new AuthResponse(false, null);
+            return new AuthResponse(false, null, null);
         }
         log.trace("[{}] Successfully authenticated with SSL credentials", authContext.getClientId());
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         SslMqttCredentials credentials = JacksonUtil.fromString(sslCredentials.getCredentialsValue(), SslMqttCredentials.class);
         List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(credentials, clientCommonName);
-        return new AuthResponse(true, authorizationRules);
+        return new AuthResponse(true, sslCredentials.getClientType(), authorizationRules);
     }
 
     private MqttClientCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {

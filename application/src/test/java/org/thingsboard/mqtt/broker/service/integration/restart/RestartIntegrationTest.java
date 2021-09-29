@@ -33,8 +33,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
@@ -42,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,10 +54,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.clearPersistedClient;
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createApplicationClient;
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLevels;
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
+import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.*;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -61,32 +63,34 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 // Fails if separated on different classes
 public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
+    private static final String TEST_CLIENT_ID = "test-application-client";
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test";
     private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
             new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
 
     @Autowired
-    private MqttClientService mqttClientService;
+    private MqttClientCredentialsService credentialsService;
     @Autowired
     private ClientSessionReader clientSessionReader;
     @Autowired
     private ClientSubscriptionReader clientSubscriptionReader;
 
-    private org.thingsboard.mqtt.broker.common.data.MqttClient applicationClient;
+    private MqttClientCredentials applicationCredentials;
+    private String testClientId;
     private MqttClient persistedClient;
 
 
     @Before
     public void init() throws Exception {
-        applicationClient = mqttClientService.saveMqttClient(createApplicationClient());
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
         persistedClient = initClient();
     }
 
     @After
     public void clear() throws Exception {
         clearPersistedClient(persistedClient, initClient());
-        mqttClientService.deleteMqttClient(applicationClient.getId());
+        credentialsService.deleteCredentials(applicationCredentials.getId());
     }
 
     @Test
@@ -110,13 +114,13 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
         SpringRestarter.getInstance().restart();
 
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(sessionInfo.isPersistent());
-        Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
@@ -131,19 +135,19 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
         SpringRestarter.getInstance().restart();
 
-        ClientSession persistedClientSession = clientSessionReader.getClientSession(applicationClient.getClientId());
+        ClientSession persistedClientSession = clientSessionReader.getClientSession(TEST_CLIENT_ID);
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(sessionInfo.isPersistent());
-        Assert.assertEquals(new ClientInfo(applicationClient.getClientId(), ClientType.APPLICATION), sessionInfo.getClientInfo());
-        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(applicationClient.getClientId());
+        Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
+        Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionReader.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
                 && persistedTopicSubscriptions.containsAll(TEST_TOPIC_SUBSCRIPTIONS));
     }
 
     private MqttClient initClient() throws MqttException {
-        return new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
+        return new MqttClient("tcp://localhost:" + mqttPort, TEST_CLIENT_ID);
     }
 
     private void testPubSub(int startSequence, AtomicReference<AbstractPubSubIntegrationTest.TestPublishMsg> previousMsg) throws Throwable {

@@ -100,6 +100,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private ServiceInfoProvider serviceInfoProvider;
     @Autowired
     private ClientLogger clientLogger;
+    @Autowired
+    private ApplicationTopicService applicationTopicService;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
@@ -151,6 +153,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
+        applicationTopicService.createTopic(clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();

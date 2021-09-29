@@ -15,28 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 
 import java.util.UUID;
 
+@Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class MqttClientCredentials extends BaseData {
-    @Getter
-    @Setter
-    private String name;
-    @Getter
-    @Setter
     private String credentialsId;
-    @Getter
-    @Setter
+    private String name;
+    private ClientType clientType;
     private ClientCredentialsType credentialsType;
-    @Getter
-    @Setter
     private String credentialsValue;
 
     public MqttClientCredentials() {
@@ -49,6 +41,7 @@ public class MqttClientCredentials extends BaseData {
     public MqttClientCredentials(MqttClientCredentials mqttClientCredentials) {
         super(mqttClientCredentials);
         this.name = mqttClientCredentials.name;
+        this.clientType = mqttClientCredentials.clientType;
         this.credentialsId = mqttClientCredentials.credentialsId;
         this.credentialsType = mqttClientCredentials.credentialsType;
     }

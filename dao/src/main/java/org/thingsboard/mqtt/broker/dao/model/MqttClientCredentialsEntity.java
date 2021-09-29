@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
@@ -28,11 +29,15 @@ import javax.persistence.*;
 @Table(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME)
 public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredentials> {
 
+    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ID_PROPERTY, unique = true)
+    private String credentialsId;
+
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY)
     private String name;
 
-    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ID_PROPERTY, unique = true)
-    private String credentialsId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = ModelConstants.MQTT_CLIENT_TYPE_PROPERTY)
+    private ClientType clientType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_TYPE_PROPERTY)
@@ -50,6 +55,7 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
         }
         this.setCreatedTime(mqttClientCredentials.getCreatedTime());
         this.name = mqttClientCredentials.getName();
+        this.clientType = mqttClientCredentials.getClientType();
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
@@ -57,8 +63,10 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
 
     @Override
     public MqttClientCredentials toData() {
-        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials(id);
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setId(id);
         mqttClientCredentials.setCreatedTime(createdTime);
+        mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setName(name);
         mqttClientCredentials.setCredentialsId(credentialsId);
         mqttClientCredentials.setCredentialsType(credentialsType);

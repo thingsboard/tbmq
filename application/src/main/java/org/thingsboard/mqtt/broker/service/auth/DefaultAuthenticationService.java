@@ -17,12 +17,12 @@ package org.thingsboard.mqtt.broker.service.auth;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
 import java.util.List;
 
@@ -37,19 +37,10 @@ public class DefaultAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public List<AuthorizationRule> authenticate(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         log.trace("[{}] Authenticating client", authContext.getClientId());
-        AuthResponse authResponse = tryAuthenticateClient(authContext);
-        if (authResponse == null) {
-            throw new AuthenticationException("Failed to authenticate client");
-        } else {
-            return authResponse.getAuthorizationRules();
-        }
-    }
-
-    private AuthResponse tryAuthenticateClient(AuthContext authContext) throws AuthenticationException {
         if (authProviders.isEmpty()) {
-            return new AuthResponse(true, null);
+            return new AuthResponse(true, ClientType.DEVICE, null);
         }
         try {
             for (MqttClientAuthProvider authProvider : authProviders) {
@@ -62,6 +53,6 @@ public class DefaultAuthenticationService implements AuthenticationService {
             log.warn("[{}] Failed to authenticate client. Exception - {}, reason - {}.", authContext.getClientId(), e.getClass().getSimpleName(), e.getMessage());
             throw new AuthenticationException("Exception on client authentication");
         }
-        return null;
+        throw new AuthenticationException("Failed to authenticate client");
     }
 }

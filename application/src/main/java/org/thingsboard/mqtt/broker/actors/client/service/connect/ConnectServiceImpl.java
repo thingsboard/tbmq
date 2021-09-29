@@ -35,7 +35,6 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.client.MqttClientWrapperService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
@@ -64,7 +63,6 @@ public class ConnectServiceImpl implements ConnectService {
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
-    private final MqttClientWrapperService mqttClientService;
     private final ClientSessionEventService clientSessionEventService;
     private final KeepAliveService keepAliveService;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -83,7 +81,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         validate(sessionCtx, msg);
 
-        sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId));
+        sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType()));
 
         keepAliveService.registerSession(clientId, sessionId, msg.getKeepAliveTimeSeconds());
 
@@ -146,10 +144,8 @@ public class ConnectServiceImpl implements ConnectService {
         }
     }
 
-    private SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId) {
-        ClientInfo clientInfo = mqttClientService.getMqttClientByClientId(clientId)
-                .map(mqttClient -> new ClientInfo(mqttClient.getClientId(), mqttClient.getType()))
-                .orElse(new ClientInfo(clientId, ClientType.DEVICE));
+    private SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId, ClientType clientType) {
+        ClientInfo clientInfo = new ClientInfo(clientId, clientType);
         ConnectionInfo connectionInfo = ConnectionInfo.builder()
                 .keepAlive(msg.getKeepAliveTimeSeconds())
                 .connectedAt(System.currentTimeMillis())

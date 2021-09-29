@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -38,6 +40,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationTopicManager;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
@@ -72,6 +75,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final MsgPersistenceManager msgPersistenceManager;
+    private final ApplicationTopicManager applicationTopicManager;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
 
@@ -117,8 +121,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             finishDisconnect(currentlyConnectedSession);
         }
 
-        boolean wasPrevSessionPersistent = currentlyConnectedSession != null && currentlyConnectedSession.getSessionInfo().isPersistent();
-        updateClientSession(sessionInfo, requestInfo, wasPrevSessionPersistent);
+        PreviousSessionInfo previousSessionInfo = currentlyConnectedSession != null ?
+                new PreviousSessionInfo(currentlyConnectedSession.getSessionInfo().isPersistent(), currentlyConnectedSession.getSessionInfo().getClientInfo().getType())
+                : null;
+        updateClientSession(sessionInfo, requestInfo, previousSessionInfo);
     }
 
     @Override
@@ -199,26 +205,33 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 .build();
     }
 
-    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, boolean wasPrevSessionPersistent) {
+    private void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, PreviousSessionInfo previousSessionInfo) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
+        boolean wasPrevSessionPersistent = previousSessionInfo != null && previousSessionInfo.isPersistent();
         log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
 
-        boolean needPrevSessionClear = wasPrevSessionPersistent && !sessionInfo.isPersistent();
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
         AtomicInteger finishedOperations = new AtomicInteger(0);
+        boolean needPrevSessionClear = wasPrevSessionPersistent && !sessionInfo.isPersistent();
         if (needPrevSessionClear) {
             log.trace("[{}][{}] Clearing prev persisted session.", clientInfo.getType(), clientInfo.getClientId());
             clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId(), createCallback(() -> {
                 if (finishedOperations.incrementAndGet() >= 2) {
-                    sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, wasPrevSessionPersistent);
+                    sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, true);
                 }
             }, t -> {
                 if (!wasErrorProcessed.getAndSet(true)) {
-                    sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, wasPrevSessionPersistent);
+                    sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, true);
                 }
             }));
             msgPersistenceManager.clearPersistedMessages(clientInfo);
+        }
+        boolean applicationRemoved = previousSessionInfo != null && previousSessionInfo.getClientType() == ClientType.APPLICATION
+                && clientInfo.getType() == ClientType.DEVICE;
+        if (applicationRemoved) {
+            msgPersistenceManager.clearPersistedMessages(clientInfo);
+            applicationTopicManager.applicationRemovedEvent(clientInfo.getClientId());
         }
 
         ClientSession clientSession = ClientSession.builder()
@@ -274,5 +287,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (eventResponseSenderExecutor != null) {
             eventResponseSenderExecutor.shutdownNow();
         }
+    }
+
+    @Data
+    private static final class PreviousSessionInfo {
+        private final boolean persistent;
+        private final ClientType clientType;
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
@@ -67,6 +68,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 break;
             default:
                 throw new DataValidationException("Unknown credentials type!");
+        }
+        if (mqttClientCredentials.getClientType() == null) {
+            mqttClientCredentials.setClientType(ClientType.DEVICE);
         }
         log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
         credentialsValidator.validate(mqttClientCredentials);

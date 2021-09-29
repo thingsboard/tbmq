@@ -52,15 +52,6 @@ public class ModelConstants {
 
 
     /**
-     * mqtt_client constants.
-     */
-    public static final String MQTT_CLIENT_COLUMN_FAMILY_NAME = "mqtt_client";
-    public static final String MQTT_CLIENT_CLIENT_ID_PROPERTY = "client_id";
-    public static final String MQTT_CLIENT_NAME_PROPERTY = "name";
-    public static final String MQTT_CLIENT_TYPE_PROPERTY = "type";
-
-
-    /**
      * mqtt_client_credentials constants.
      */
     public static final String MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME = "mqtt_client_credentials";
@@ -68,6 +59,7 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_ID_PROPERTY = "credentials_id";
     public static final String MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY = "credentials_value";
     public static final String MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY = "name";
+    public static final String MQTT_CLIENT_TYPE_PROPERTY = "type";
 
     /**
      * device_publish_msg constants.

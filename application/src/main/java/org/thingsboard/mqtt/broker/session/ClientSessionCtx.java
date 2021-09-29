@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.state.RequestOrderCtx;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
@@ -40,6 +41,9 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     @Setter
     private volatile List<AuthorizationRule> authorizationRules;
+    @Getter
+    @Setter
+    private volatile ClientType clientType;
 
     @Getter
     private ChannelHandlerContext channel;

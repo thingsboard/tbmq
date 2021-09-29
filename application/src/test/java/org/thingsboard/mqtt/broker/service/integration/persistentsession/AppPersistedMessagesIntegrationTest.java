@@ -28,13 +28,17 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientService;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createApplicationClient;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -42,16 +46,17 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.createAppl
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrationTest {
-
+    private static final String TEST_CLIENT_ID = "test-application-client";
     @Autowired
-    private MqttClientService mqttClientService;
+    private MqttClientCredentialsService credentialsService;
 
-    private org.thingsboard.mqtt.broker.common.data.MqttClient applicationClient;
+    private MqttClientCredentials applicationCredentials;
+    private BasicMqttCredentials basicMqttCredentials;
     private MqttClient persistedClient;
 
     @Before
     public void init() {
-        applicationClient = mqttClientService.saveMqttClient(createApplicationClient());
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
     }
 
     @After
@@ -64,14 +69,14 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         persistedClient.connect(connectOptions);
         persistedClient.disconnect();
         persistedClient.close();
-        mqttClientService.deleteMqttClient(applicationClient.getId());
+        credentialsService.deleteCredentials(applicationCredentials.getId());
     }
 
     @Test
     public void testSuccessPersistence_afterReconnect() throws Throwable {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(false);
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
         Waiter waiter = new Waiter();
         persistedClient.subscribe("test", 1, (topic, msg) -> {
@@ -94,7 +99,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
     public void testSuccessPersistence_duringAndAfterDisconnect() throws Throwable {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(false);
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, applicationClient.getClientId());
+        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
         Waiter waiter = new Waiter();
         persistedClient.subscribe("test", 1, (topic, msg) -> {

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -51,10 +53,10 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
-        ClientSessionCtx clientSessionCtx = sessionInitMsg.getClientSessionCtx();
+        ClientSessionCtx sessionCtx = sessionInitMsg.getClientSessionCtx();
 
-        if (clientSessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
-            log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), clientSessionCtx.getSessionId());
+        if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
+            log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), sessionCtx.getSessionId());
             if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
                 state.updateSessionState(SessionState.DISCONNECTING);
                 disconnectService.disconnect(state, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Trying to init the same active session"));
@@ -62,24 +64,37 @@ public class ActorProcessorImpl implements ActorProcessor {
             return;
         }
 
-        boolean clientAuthenticated = authenticateClient(clientSessionCtx, sessionInitMsg.getUsername(), sessionInitMsg.getPasswordBytes(), state.getClientId());
-        if (!clientAuthenticated) {
-            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
-            clientSessionCtx.getChannel().close();
+        AuthResponse authResponse = authenticateClient(sessionCtx.getSslHandler(), sessionInitMsg.getUsername(), sessionInitMsg.getPasswordBytes(), state.getClientId());
+        if (!authResponse.isSuccess()) {
+            sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false));
+            sessionCtx.getChannel().close();
             return;
         }
+
+        finishSessionAuth(sessionCtx, authResponse);
 
         SessionState sessionState = state.getCurrentSessionState();
         if (sessionState != SessionState.DISCONNECTED) {
             log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
-                    state.getClientId(), sessionState, state.getCurrentSessionId(), clientSessionCtx.getSessionId());
+                    state.getClientId(), sessionState, state.getCurrentSessionId(), sessionCtx.getSessionId());
             state.updateSessionState(SessionState.DISCONNECTING);
             disconnectService.disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
         }
 
         state.updateSessionState(SessionState.INITIALIZED);
-        state.setClientSessionCtx(clientSessionCtx);
+        state.setClientSessionCtx(sessionCtx);
         state.clearStopActorCommandId();
+    }
+
+    private void finishSessionAuth(ClientSessionCtx sessionCtx, AuthResponse authResponse) {
+        String clientId = sessionCtx.getClientId();
+        List<AuthorizationRule> authorizationRules = authResponse.getAuthorizationRules();
+        if (authorizationRules != null) {
+            List<String> authPatterns = authorizationRules.stream().map(AuthorizationRule::getPattern).map(Pattern::toString).collect(Collectors.toList());
+            log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
+            sessionCtx.setAuthorizationRules(authorizationRules);
+        }
+        sessionCtx.setClientType(authResponse.getClientType());
     }
 
     @Override
@@ -98,25 +113,19 @@ public class ActorProcessorImpl implements ActorProcessor {
         state.updateSessionState(SessionState.DISCONNECTED);
     }
 
-    private boolean authenticateClient(ClientSessionCtx ctx, String username, byte[] passwordBytes, String clientId) {
+    private AuthResponse authenticateClient(SslHandler sslHandler, String username, byte[] passwordBytes, String clientId) {
         AuthContext authContext = AuthContext.builder()
                 .clientId(clientId)
                 .username(username)
                 .passwordBytes(passwordBytes)
-                .sslHandler(ctx.getSslHandler())
+                .sslHandler(sslHandler)
                 .build();
         try {
             // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
-            List<AuthorizationRule> authorizationRules = authenticationService.authenticate(authContext);
-            if (authorizationRules != null) {
-                List<String> authPatterns = authorizationRules.stream().map(AuthorizationRule::getPattern).map(Pattern::toString).collect(Collectors.toList());
-                log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
-            }
-            ctx.setAuthorizationRules(authorizationRules);
-            return true;
+            return authenticationService.authenticate(authContext);
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", clientId, e.getMessage());
-            return false;
+            return AuthResponse.builder().success(false).build();
         }
     }
 }

@@ -18,6 +18,10 @@ package org.thingsboard.mqtt.broker.service.test.util;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
@@ -43,11 +47,13 @@ public class TestUtils {
         return topicSubscriptions.stream().map(TopicSubscription::getQos).mapToInt(x -> x).toArray();
     }
 
-    public static org.thingsboard.mqtt.broker.common.data.MqttClient createApplicationClient() {
-        org.thingsboard.mqtt.broker.common.data.MqttClient appClient = new org.thingsboard.mqtt.broker.common.data.MqttClient();
-        appClient.setName("test-application-client");
-        appClient.setClientId("test-application-client");
-        appClient.setType(ClientType.APPLICATION);
-        return appClient;
+    public static MqttClientCredentials createApplicationClientCredentials(String clientId) {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, null, null, null);
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setClientType(ClientType.APPLICATION);
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        mqttClientCredentials.setName("ApplicationCredentials");
+        mqttClientCredentials.setCredentialsId(JacksonUtil.toString(basicMqttCredentials));
+        return mqttClientCredentials;
     }
 }
