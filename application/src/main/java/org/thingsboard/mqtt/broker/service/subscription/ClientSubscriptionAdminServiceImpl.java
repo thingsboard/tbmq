@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionRead
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.util.CollectionsUtil;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,12 +52,15 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
                 clientId, oldSubscriptions, newSubscriptions);
 
-        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions).stream()
+        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions,
+                        Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos))
+                .stream()
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toSet());
         clientMqttActorManager.unsubscribe(clientId, unsubscribeTopics);
 
-        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions);
+        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
+                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
         clientMqttActorManager.subscribe(clientId, subscribeTopicSubscriptions);
     }
 }

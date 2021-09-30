@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEve
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.CollectionsUtil;
 
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,12 +45,15 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
             return;
         }
 
-        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions).stream()
+        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions,
+                        Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos))
+                .stream()
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toSet());
         clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
 
-        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions);
+        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions,
+                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
         clientSubscriptionService.subscribeInternally(clientId, subscribeTopicSubscriptions);
     }
 }
