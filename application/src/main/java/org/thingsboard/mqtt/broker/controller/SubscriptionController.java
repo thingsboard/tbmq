@@ -24,13 +24,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
-import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -45,13 +44,13 @@ public class SubscriptionController extends BaseController {
     private ClientSubscriptionAdminService subscriptionAdminService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.POST)
+    @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
-    public void updateSubscriptions(@PathVariable("clientId") String clientId,
-                                    @RequestBody List<SubscriptionInfoDto> subscriptions) throws ThingsboardException {
-        checkNotNull(subscriptions);
+    public void updateSubscriptions(@RequestBody DetailedClientSessionInfoDto detailedClientSessionInfoDto) throws ThingsboardException {
+        checkNotNull(detailedClientSessionInfoDto);
+        checkNotNull(detailedClientSessionInfoDto.getSubscriptions());
         try {
-            subscriptionAdminService.updateSubscriptions(clientId, subscriptions);
+            subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
         } catch (Exception e) {
             throw handleException(e);
         }
