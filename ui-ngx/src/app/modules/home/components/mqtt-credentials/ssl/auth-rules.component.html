@@ -1,0 +1,76 @@
+<!--
+
+    Copyright © 2016-2020 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<form>
+  <mat-expansion-panel [expanded]="true" #matExpansionPanel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules-mapping</div>
+      </mat-panel-title>
+      <mat-panel-description *ngIf="!rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
+        <mat-error translate>mqtt-client-credentials.add-auth-rule-prompt</mat-error>
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <section>
+      <div fxLayout="column" class="tb-auth-rules-list" [formGroup]="rulesMappingFormGroup">
+        <div class="header" fxFlex fxLayout="row">
+          <span class="cell" fxFlex="50" translate>mqtt-client-credentials.certificate-matcher-regex</span>
+          <span class="cell" fxFlex="50" translate>mqtt-client-credentials.topic-rule</span>
+          <span [fxShow]="!disabled" style="width: 40px; min-width: 40px;">&nbsp;</span>
+        </div>
+        <div class="body">
+          <div class="row" fxFlex fxLayout="row"
+               fxLayoutAlign="start center" formArrayName="authorizationRulesMapping"
+               *ngFor="let rulesControl of rulesFormArray().controls; let $index = index">
+            <ng-container [formGroupName]="$index">
+              <mat-form-field class="cell mat-block" fxFlex="50">
+                <input matInput formControlName="certificateMatcherRegex">
+                <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
+                  {{ 'mqtt-client-credentials.cerificate-matcher-regex-required' | translate }}
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field class="cell mat-block" fxFlex="50">
+                <input matInput formControlName="topicRule">
+                <mat-error *ngIf="rulesControl.get('topicRule').invalid">
+                  {{ 'mqtt-client-credentials.topic-rule-required' | translate }}
+                </mat-error>
+              </mat-form-field>
+              <button mat-button mat-icon-button color="primary"
+                      [fxShow]="!disabled"
+                      type="button"
+                      style="width: 40px; min-width: 40px;"
+                      (click)="removeRule($index)"
+                      matTooltip="{{ 'mqtt-client-credentials.remove-rule' | translate }}"
+                      matTooltipPosition="above">
+                <mat-icon>close</mat-icon>
+              </button>
+            </ng-container>
+          </div>
+          <button mat-button mat-raised-button color="primary"
+                  [fxShow]="!disabled"
+                  (click)="addRule()"
+                  type="button"
+                  matTooltip="{{ 'mqtt-client-credentials.add-rule' | translate }}"
+                  matTooltipPosition="above">
+            <mat-icon>add</mat-icon>
+            {{ 'action.add' | translate }}
+          </button>
+        </div>
+      </div>
+    </section>
+  </mat-expansion-panel>
+</form>

@@ -1,0 +1,244 @@
+/**
+ * Copyright © 2016-2020 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import '~@angular/material/theming';
+@import '~@mat-datetimepicker/core/datetimepicker/datetimepicker-theme.scss';
+@import './scss/constants';
+
+@include mat-core();
+
+$tb-primary-color: #1f8b4d;
+$tb-secondary-color: 1b8346;
+$tb-hue3-color: #bcdcca;
+
+$tb-dark-primary-color: #8fc5a6;
+
+$tb-mat-green: (
+  50: #e4f1ea,
+  100: #bcdcca,
+  200: #8fc5a6,
+  300: #62ae82,
+  400: #419c68,
+  500: $tb-primary-color,
+  600: $tb-secondary-color,
+  700: #17783d,
+  800: #126e34,
+  900: #0a5b25,
+  A100: $tb-hue3-color,
+  A200: #5cff89,
+  A400: #29ff64,
+  A700: #0fff52,
+  contrast: (
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $light-primary-text,
+    400: $light-primary-text,
+    500: $light-primary-text,
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $light-primary-text,
+    A400: $light-primary-text,
+    A700: $light-primary-text,
+  )
+);
+
+$tb-primary: mat-palette($tb-mat-green);
+$tb-accent: mat-palette($mat-deep-orange);
+
+$background: (background: map_get($mat-grey, 200));
+
+$tb-theme-background: map_merge($mat-light-theme-background, $background);
+
+$tb-mat-theme: mat-light-theme(
+    $tb-primary,
+    $tb-accent
+);
+
+$tb-theme: map_merge($tb-mat-theme, (background: $tb-theme-background));
+
+$primary: mat-color($tb-primary);
+$accent: mat-color($tb-accent);
+
+$tb-dark-mat-green: (
+  50: #e4f1ea,
+  100: #bcdcca,
+  200: #8fc5a6,
+  300: #62ae82,
+  400: #419c68,
+  500: $tb-dark-primary-color,
+  600: $tb-secondary-color,
+  700: #17783d,
+  800: #126e34,
+  900: #0a5b25,
+  A100: $tb-hue3-color,
+  A200: #5cff89,
+  A400: #29ff64,
+  A700: #0fff52,
+  contrast: (
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $dark-primary-text,
+    400: $dark-primary-text,
+    500: map_get($tb-mat-green, 900),
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $dark-primary-text,
+    A400: $dark-primary-text,
+    A700: $dark-primary-text,
+  )
+);
+
+$tb-dark-primary: mat-palette($tb-dark-mat-green);
+
+$tb-dark-theme-background: (
+  status-bar: black,
+  app-bar:    map_get($tb-dark-mat-green, 900),
+  background: map_get($tb-dark-mat-green, 800),
+  hover:      rgba(white, 0.04),
+  card:       map_get($tb-dark-mat-green, 800),
+  dialog:     map_get($tb-dark-mat-green, 800),
+  disabled-button: rgba(white, 0.12),
+  raised-button: map-get($tb-dark-mat-green, 50),
+  focused-button: $light-focused,
+  selected-button: map_get($tb-dark-mat-green, 900),
+  selected-disabled-button: map_get($tb-dark-mat-green, 800),
+  disabled-button-toggle: black,
+  unselected-chip: map_get($tb-dark-mat-green, 700),
+  disabled-list-option: black,
+  tooltip: map_get($mat-grey, 700),
+);
+
+@function get-tb-dark-theme($primary, $accent, $warn: mat-palette($mat-red)) {
+  @return (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+    is-dark: true,
+    foreground: $mat-dark-theme-foreground,
+    background: $tb-dark-theme-background,
+  );
+}
+
+$tb-dark-theme: get-tb-dark-theme(
+    $tb-dark-primary,
+    $tb-accent
+);
+
+@mixin mat-fab-toolbar-theme($theme) {
+  $primary: map-get($theme, primary);
+  $accent: map-get($theme, accent);
+  $warn: map-get($theme, warn);
+  $background: map-get($theme, background);
+  $foreground: map-get($theme, foreground);
+
+  mat-fab-toolbar {
+    .mat-fab-toolbar-background {
+      background: mat-color($background, app-bar);
+      color: mat-color($foreground, text);
+    }
+    &.mat-primary {
+      .mat-fab-toolbar-background {
+        @include _mat-toolbar-color($primary);
+      }
+    }
+    &.mat-accent {
+      .mat-fab-toolbar-background {
+        @include _mat-toolbar-color($accent);
+      }
+    }
+    &.mat-warn {
+      .mat-fab-toolbar-background {
+        @include _mat-toolbar-color($warn);
+      }
+    }
+  }
+}
+
+@mixin _mat-toolbar-inverse-color($palette) {
+  background: mat-color($palette, default-contrast);
+  color: $dark-primary-text;
+}
+
+@mixin mat-fab-toolbar-inverse-theme($theme) {
+  $primary: map-get($theme, primary);
+  $accent: map-get($theme, accent);
+  $warn: map-get($theme, warn);
+  $background: map-get($theme, foreground);
+  $foreground: map-get($theme, background);
+
+  mat-fab-toolbar {
+    .mat-fab-toolbar-background {
+      background: mat-color($background, app-bar);
+      color: mat-color($foreground, text);
+    }
+    &.mat-primary {
+      .mat-fab-toolbar-background {
+        @include _mat-toolbar-inverse-color($primary);
+      }
+    }
+    mat-toolbar {
+      &.mat-primary {
+        @include _mat-toolbar-inverse-color($primary);
+        button.mat-icon-button {
+          mat-icon {
+            color: mat-color($primary);
+          }
+        }
+      }
+    }
+    .mat-fab {
+      &.mat-primary {
+        background: mat-color($primary, default-contrast);
+        color: mat-color($primary);
+      }
+    }
+  }
+
+}
+
+@mixin tb-components-theme($theme) {
+  $primary: map-get($theme, primary);
+
+  mat-toolbar{
+    &.mat-hue-3 {
+      background-color: mat-color($primary, 'A100');
+    }
+  }
+
+  @include mat-fab-toolbar-theme($tb-theme);
+
+  div.tb-dashboard-page.mobile-app {
+    @include mat-fab-toolbar-inverse-theme($tb-theme);
+  }
+}
+
+.tb-default {
+  @include angular-material-theme($tb-theme);
+  @include mat-datetimepicker-theme($tb-theme);
+  @include tb-components-theme($tb-theme);
+}
+
+.tb-dark {
+  @include angular-material-theme($tb-dark-theme);
+}
+

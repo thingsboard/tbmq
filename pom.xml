@@ -85,6 +85,7 @@
         <module>dao</module>
         <module>application</module>
         <module>msa</module>
+        <module>ui-ngx</module>
     </modules>
 
     <profiles>
