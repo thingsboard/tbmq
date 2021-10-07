@@ -31,8 +31,7 @@ import { BaseData, HasId } from '@shared/models/base-data';
 
 @Component({
   selector: 'tb-mqtt-clients',
-  templateUrl: './mqtt-clients.component.html',
-  styleUrls: ['./mqtt-clients.component.scss']
+  templateUrl: './mqtt-clients.component.html'
 })
 export class MqttClientsComponent extends EntityComponent<ClientSessionInfo> {
 
