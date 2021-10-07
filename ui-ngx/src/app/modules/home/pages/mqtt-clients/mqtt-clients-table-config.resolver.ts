@@ -152,8 +152,12 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
   }
 
   private setCellStyle(connectionState: ConnectionState): any {
-    const color = connectionStateColor.get(connectionState);
-    const fontWeight = connectionState === ConnectionState.CONNECTED ? 500 : 400;
-    return { ...{color}, ...{fontWeight} };
+    const style: any = {
+      color: connectionStateColor.get(connectionState)
+    };
+    if (connectionState === ConnectionState.CONNECTED) {
+      style.fontWeight = 'bold';
+    }
+    return style;
   }
 }
