@@ -3239,6 +3239,7 @@
       "cerificate-matcher-regex-required": "Certificate matcher regex is required",
       "client-id": "Client ID",
       "clients": "Clients",
+      "client-type": "Client type",
       "client-credentials": "Client Credentials",
       "delete-credentials": "Delete Credentials",
       "manage-credentials": "Manage Credentials",

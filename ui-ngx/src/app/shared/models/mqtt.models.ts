@@ -117,6 +117,7 @@ export interface SessionInfo {
 export interface MqttCredentials extends BaseData<ClientId> {
   name: string;
   credentialsId: string;
+  clientType: ClientType;
   credentialsType: MqttCredentialsType;
   credentialsValue: string;
 }

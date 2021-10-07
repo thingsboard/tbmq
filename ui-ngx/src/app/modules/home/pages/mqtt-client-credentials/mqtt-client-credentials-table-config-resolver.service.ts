@@ -34,7 +34,7 @@ import { ImportExportService } from '@home/components/import-export/import-expor
 import { Direction } from '@shared/models/page/sort-order';
 import {
   MqttCredentials,
-  credentialsTypeNames,
+  credentialsTypeNames, clientTypeTranslationMap,
 } from '@shared/models/mqtt.models';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
@@ -71,8 +71,10 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
     this.config.columns.push(
       new DateEntityTableColumn<MqttCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<MqttCredentials>('name', 'mqtt-client-credentials.name', '50%'),
-      new EntityTableColumn<MqttCredentials>('credentialsType', 'mqtt-client-credentials.type', '50%',
+      new EntityTableColumn<MqttCredentials>('name', 'mqtt-client-credentials.name', '30%'),
+      new EntityTableColumn<MqttCredentials>('clientType', 'mqtt-client-credentials.client-type', '30%',
+        (entity) => translate.instant(clientTypeTranslationMap.get(entity.clientType))),
+      new EntityTableColumn<MqttCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
         (entity) => credentialsTypeNames.get(entity.credentialsType))
     );
 
