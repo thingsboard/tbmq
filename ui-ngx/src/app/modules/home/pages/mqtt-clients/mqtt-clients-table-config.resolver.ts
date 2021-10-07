@@ -34,8 +34,6 @@ import { MqttClientsComponent } from '@home/pages/mqtt-clients/mqtt-clients.comp
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { MqttSubscriptionService } from '@core/http/mqtt-subscription.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { of } from 'rxjs';
 
 @Injectable()
 export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig<ClientSessionInfo>> {
