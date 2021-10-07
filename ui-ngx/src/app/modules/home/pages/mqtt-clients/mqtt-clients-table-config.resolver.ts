@@ -133,18 +133,7 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
     if ($event) {
       $event.stopPropagation();
     }
-    this.mqttClientSessionService.disconnectClientSession(clientSession.clientId, clientSession.sessionId).subscribe(
-      () => {
-        this.store.dispatch(
-          new ActionNotificationShow(
-            {
-              message: this.translate.instant('mqtt-client-session.disconnected-notification'),
-              type: 'success'
-            }
-          )
-        );
-      }
-    );
+    this.mqttClientSessionService.disconnectClientSession(clientSession.clientId, clientSession.sessionId).subscribe();
   }
 
   refreshPage($event, entity) {
