@@ -31,9 +31,9 @@ import { BaseData, HasId } from '@shared/models/base-data';
 
 @Component({
   selector: 'tb-mqtt-clients',
-  templateUrl: './mqtt-clients.component.html'
+  templateUrl: './mqtt-sessions.component.html'
 })
-export class MqttClientsComponent extends EntityComponent<ClientSessionInfo> {
+export class MqttSessionsComponent extends EntityComponent<ClientSessionInfo> {
 
   @Input() entityForm: FormGroup;
 

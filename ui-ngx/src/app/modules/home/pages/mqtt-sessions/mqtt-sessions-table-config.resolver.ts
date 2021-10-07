@@ -30,13 +30,13 @@ import {
   connectionStateColor,
   connectionStateTranslationMap
 } from '@shared/models/mqtt.models';
-import { MqttClientsComponent } from '@home/pages/mqtt-clients/mqtt-clients.component';
+import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { MqttSubscriptionService } from '@core/http/mqtt-subscription.service';
 
 @Injectable()
-export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig<ClientSessionInfo>> {
+export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfig<ClientSessionInfo>> {
 
   private readonly config: EntityTableConfig<ClientSessionInfo> = new EntityTableConfig<ClientSessionInfo>();
 
@@ -46,7 +46,7 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
               private mqttSubscriptionService: MqttSubscriptionService,
               private translate: TranslateService) {
 
-    this.config.entityComponent = MqttClientsComponent;
+    this.config.entityComponent = MqttSessionsComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT);
     this.config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT);
     this.config.tableTitle = this.translate.instant('mqtt-client-session.sessions');

@@ -18,19 +18,19 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { MqttClientsComponent } from '@home/pages/mqtt-clients/mqtt-clients.component';
-import { MqttClientsRoutingModule } from '@home/pages/mqtt-clients/mqtt-clients-routing.module';
+import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
+import { MqttSessionsRoutingModule } from '@home/pages/mqtt-sessions/mqtt-sessions-routing.module';
 
 @NgModule({
   declarations: [
-    MqttClientsComponent
+    MqttSessionsComponent
   ],
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
-    MqttClientsRoutingModule
+    MqttSessionsRoutingModule
   ]
 })
 
-export class MqttClientsModule { }
+export class MqttSessionsModule { }

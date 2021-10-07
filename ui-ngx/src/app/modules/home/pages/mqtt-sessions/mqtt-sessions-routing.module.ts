@@ -19,7 +19,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { Authority } from '@shared/models/authority.enum';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { MqttClientsTableConfigResolver } from '@home/pages/mqtt-clients/mqtt-clients-table-config.resolver';
+import { MqttSessionsTableConfigResolver } from '@home/pages/mqtt-sessions/mqtt-sessions-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -40,7 +40,7 @@ const routes: Routes = [
           title: 'mqtt-client-session.sessions'
         },
         resolve: {
-          entitiesTableConfig: MqttClientsTableConfigResolver
+          entitiesTableConfig: MqttSessionsTableConfigResolver
         }
       }
     ]
@@ -51,8 +51,8 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
   providers: [
-    MqttClientsTableConfigResolver
+    MqttSessionsTableConfigResolver
   ]
 })
 
-export class MqttClientsRoutingModule { }
+export class MqttSessionsRoutingModule { }

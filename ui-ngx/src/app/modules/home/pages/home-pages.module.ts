@@ -36,13 +36,13 @@ import { DeviceProfileModule } from './device-profile/device-profile.module';
 import { ApiUsageModule } from '@home/pages/api-usage/api-usage.module';
 import { EdgeModule } from '@home/pages/edge/edge.module';
 import { OtaUpdateModule } from '@home/pages/ota-update/ota-update.module';
-import { MqttClientsModule } from '@home/pages/mqtt-clients/mqtt-clients.module';
+import { MqttSessionsModule } from '@home/pages/mqtt-sessions/mqtt-sessions.module';
 import { MqttClientCredentialsModule } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.module';
 
 @NgModule({
   exports: [
     ProfileModule,
-    MqttClientsModule,
+    MqttSessionsModule,
     MqttClientCredentialsModule
   ],
   providers: [
