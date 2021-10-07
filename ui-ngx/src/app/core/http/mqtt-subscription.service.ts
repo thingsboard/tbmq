@@ -34,7 +34,7 @@ export class MqttSubscriptionService {
   }
 
   public updateClientSubscriptions(session: ClientSessionInfo, config?: RequestConfig): Observable<ClientSessionInfo> {
-    return this.http.post<ClientSessionInfo>(`/api/subscription/${session.clientId}`, session.subscriptions, defaultHttpOptionsFromConfig(config));
+    return this.http.post<ClientSessionInfo>(`/api/subscription`, session, defaultHttpOptionsFromConfig(config));
   }
 
   public clearEmptySubscriptionNodes(config?: RequestConfig) {

@@ -72,13 +72,8 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
     );
 
     this.config.loadEntity = id => this.loadEntity(id);
-    this.config.saveEntity = session => this.saveEntity(session);
+    this.config.saveEntity = session => this.mqttSubscriptionService.updateClientSubscriptions(session);
     this.config.onEntityAction = action => this.onClientSessionAction(action);
-  }
-
-  private saveEntity(session: ClientSessionInfo) {
-    this.mqttSubscriptionService.updateClientSubscriptions(session).subscribe();
-    return of(session);
   }
 
   resolve(): EntityTableConfig<ClientSessionInfo> {
@@ -97,9 +92,6 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
         return true;
       case 'disconnect':
         this.disconnectClient(action.event, action.entity);
-        return true;
-      case 'refresh':
-        this.refreshPage(action.event, action.entity);
         return true;
     }
     return false;
@@ -134,10 +126,6 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
       $event.stopPropagation();
     }
     this.mqttClientSessionService.disconnectClientSession(clientSession.clientId, clientSession.sessionId).subscribe();
-  }
-
-  refreshPage($event, entity) {
-    this.config.table.updateData(true);
   }
 
   private setCellStyle(connectionState: ConnectionState): any {
