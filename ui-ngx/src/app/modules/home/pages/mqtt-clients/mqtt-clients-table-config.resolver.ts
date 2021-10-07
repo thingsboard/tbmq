@@ -63,11 +63,7 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
       new EntityTableColumn<ClientSessionInfo>('clientId', 'mqtt-client-session.client-id', '25%'),
       new EntityTableColumn<ClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
-        (entity) => ({
-          color: entity.connectionState === ConnectionState.CONNECTED
-            ? connectionStateColor.get(ConnectionState.CONNECTED)
-            : connectionStateColor.get(ConnectionState.DISCONNECTED)
-        })
+        (entity) => (this.setCellStyle(entity.connectionState))
       ),
       new EntityTableColumn<ClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
       new EntityTableColumn<ClientSessionInfo>('clientType', 'mqtt-client-session.client-type', '25%',
@@ -153,5 +149,11 @@ export class MqttClientsTableConfigResolver implements Resolve<EntityTableConfig
 
   refreshPage($event, entity) {
     this.config.table.updateData(true);
+  }
+
+  private setCellStyle(connectionState: ConnectionState): any {
+    const color = connectionStateColor.get(connectionState);
+    const fontWeight = connectionState === ConnectionState.CONNECTED ? 500 : 400;
+    return { ...{color}, ...{fontWeight} };
   }
 }
