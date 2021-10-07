@@ -315,11 +315,11 @@ export const entityTypeTranslations = new Map<EntityType | AliasEntityType, Enti
         typePlural: 'entity.type-mqtt-clients',
         list: 'entity.list-of-mqtt-clients',
         nameStartsWith: 'entity.mqtt-client-name-starts-with',
-        details: 'mqtt-client.client-details',
-        add: 'mqtt-client.add',
-        noEntities: 'mqtt-client.no-clients-text',
-        search: 'mqtt-client.search',
-        selectedEntities: 'mqtt-client.selected-clients'
+        details: 'mqtt-client-credentials.client-details',
+        add: 'mqtt-client-credentials.add',
+        noEntities: 'mqtt-client-credentials.no-clients-text',
+        search: 'mqtt-client-credentials.search',
+        selectedEntities: 'mqtt-client-credentials.selected-clients'
       }
     ],
   ]

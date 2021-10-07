@@ -21,8 +21,6 @@ import { AssignToCustomerDialogComponent } from '@modules/home/dialogs/assign-to
 import { AddEntitiesToCustomerDialogComponent } from '@modules/home/dialogs/add-entities-to-customer-dialog.component';
 import { HomeDialogsService } from './home-dialogs.service';
 import { AddEntitiesToEdgeDialogComponent } from '@home/dialogs/add-entities-to-edge-dialog.component';
-import { EditMqttClientProfileDialogComponent } from '@home/dialogs/edit-mqtt-client-profile-dialog.component';
-import { EditMqttClientCredentialsProfileDialogComponent } from '@home/dialogs/edit-mqtt-client-credentials-profile-dialog.component';
 import { ManageCredentialsDialogComponent } from '@home/dialogs/manage-credentials-dialog.component';
 import { MqttCredentialsComponent } from '@home/components/mqtt-credentials/mqtt-credentials.component';
 import { MqttCredentialsBasicComponent } from '@home/components/mqtt-credentials/basic/basic.component';
@@ -35,8 +33,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     AssignToCustomerDialogComponent,
     AddEntitiesToCustomerDialogComponent,
     AddEntitiesToEdgeDialogComponent,
-    EditMqttClientProfileDialogComponent,
-    EditMqttClientCredentialsProfileDialogComponent,
     ManageCredentialsDialogComponent,
     MqttCredentialsComponent,
     MqttCredentialsBasicComponent,
@@ -51,8 +47,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     AssignToCustomerDialogComponent,
     AddEntitiesToCustomerDialogComponent,
     AddEntitiesToEdgeDialogComponent,
-    EditMqttClientProfileDialogComponent,
-    EditMqttClientCredentialsProfileDialogComponent,
     ManageCredentialsDialogComponent,
     MqttCredentialsComponent,
     MqttCredentialsBasicComponent,

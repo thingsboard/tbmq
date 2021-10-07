@@ -37,49 +37,49 @@
     <div fxFlex fxLayout="row">
       <div fxFlex="50" style="margin-right: 10px">
         <mat-form-field *ngIf="isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client.node</mat-label>
+          <mat-label translate>mqtt-client-session.node</mat-label>
           <input matInput formControlName="nodeId" readonly>
         </mat-form-field>
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.client-id</mat-label>
+          <mat-label translate>mqtt-client-session.client-id</mat-label>
           <input matInput formControlName="clientId" readonly>
         </mat-form-field>
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.client-type</mat-label>
+          <mat-label translate>mqtt-client-session.client-type</mat-label>
           <input matInput formControlName="clientType" readonly>
         </mat-form-field>
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.username</mat-label>
+          <mat-label translate>mqtt-client-session.username</mat-label>
           <input matInput formControlName="username" readonly>
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client.note</mat-label>
+          <mat-label translate>mqtt-client-session.note</mat-label>
           <input matInput formControlName="note" readonly>
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client.keep-alive</mat-label>
+          <mat-label translate>mqtt-client-session.keep-alive</mat-label>
           <input matInput formControlName="keepAliveSeconds" readonly>
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client.connected-at</mat-label>
+          <mat-label translate>mqtt-client-session.connected-at</mat-label>
           <input matInput formControlName="connectedAt" readonly>
         </mat-form-field>
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.connected-status</mat-label>
+          <mat-label translate>mqtt-client-session.connected-status</mat-label>
           <input matInput [ngStyle]="getColor()" formControlName="connectionState" readonly>
         </mat-form-field>
         <mat-form-field *ngIf="!isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client.disconnected-at</mat-label>
+          <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
           <input matInput formControlName="disconnectedAt" readonly>
         </mat-form-field>
       </div>
       <div fxFlex="50" style="margin-right: 10px">
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.clean-session</mat-label>
+          <mat-label translate>mqtt-client-session.clean-session</mat-label>
           <input matInput formControlName="cleanSession" readonly>
         </mat-form-field>
         <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client.subscriptions-count</mat-label>
+          <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
           <input matInput formControlName="subscriptionsCount" readonly>
         </mat-form-field>
       </div>
