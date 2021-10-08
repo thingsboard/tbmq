@@ -40,8 +40,8 @@ export enum ClientType {
 
 export const clientTypeTranslationMap = new Map<ClientType, string>(
   [
-    [ClientType.DEVICE, 'mqtt-client.device'],
-    [ClientType.APPLICATION, 'mqtt-client.application']
+    [ClientType.DEVICE, 'mqtt-client.type-device'],
+    [ClientType.APPLICATION, 'mqtt-client.type-application']
   ]
 );
 

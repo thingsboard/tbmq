@@ -57,13 +57,13 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.clientId : '';
 
     this.config.columns.push(
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client-session.client-id', '25%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => (this.setCellStyle(entity.connectionState))
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client-session.client-type', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '25%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       )
     );

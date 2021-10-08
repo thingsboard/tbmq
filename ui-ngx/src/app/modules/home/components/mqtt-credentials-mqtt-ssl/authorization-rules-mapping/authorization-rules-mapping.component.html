@@ -22,7 +22,7 @@
         <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules-mapping</div>
       </mat-panel-title>
       <mat-panel-description *ngIf="!rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
-        <mat-error translate>mqtt-client-credentials.add-auth-rule-prompt</mat-error>
+        <mat-error translate>mqtt-client-credentials.add-authorization-rules-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>
     <section>
@@ -64,7 +64,7 @@
                   [fxShow]="!disabled"
                   (click)="addRule()"
                   type="button"
-                  matTooltip="{{ 'mqtt-client-credentials.add-rule' | translate }}"
+                  matTooltip="{{ 'mqtt-client-credentials.add-authorization-rules' | translate }}"
                   matTooltipPosition="above">
             <mat-icon>add</mat-icon>
             {{ 'action.add' | translate }}

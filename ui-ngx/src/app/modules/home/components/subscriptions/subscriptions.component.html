@@ -33,7 +33,7 @@
           <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
                  required name="topicFilterTopic" formControlName="topic">
           <mat-error *ngIf="topicFilter.invalid">
-            {{ 'mqtt-client-session.topic-filter-required-prompt' | translate }}
+            {{ 'mqtt-client-session.topic-filter-required' | translate }}
           </mat-error>
         </mat-form-field>
         <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block"
