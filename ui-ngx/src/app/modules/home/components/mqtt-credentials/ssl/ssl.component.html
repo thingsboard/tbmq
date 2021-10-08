@@ -20,7 +20,7 @@
     <mat-label translate>mqtt-client-credentials.parent-certificate-common-name</mat-label>
     <input matInput formControlName="parentCertCommonName">
     <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
-      {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
+      {{ 'mqtt-client-credentials.parent-certificate-common-name-required' | translate }}
     </mat-error>
   </mat-form-field>
   <tb-auth-rules

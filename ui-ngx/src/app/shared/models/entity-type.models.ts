@@ -311,8 +311,8 @@ export const entityTypeTranslations = new Map<EntityType | AliasEntityType, Enti
     [
       EntityType.MQTT_CLIENT,
       {
-        type: 'mqtt-client-credentials.type-credentials',
-        typePlural: 'mqtt-client-credentials.type-credentials',
+        type: 'mqtt-client-credentials.type-client-credentials',
+        typePlural: 'mqtt-client-credentials.type-clients-credentials',
         list: 'mqtt-client-credentials.list-of-credentials',
         nameStartsWith: 'mqtt-client-credentials.credentials-name-starts-with',
         details: 'mqtt-client-credentials.credentials-details',
