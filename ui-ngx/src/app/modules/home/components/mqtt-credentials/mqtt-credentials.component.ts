@@ -24,14 +24,14 @@ import {
   Validator, Validators
 } from '@angular/forms';
 import { Subject } from 'rxjs';
-import {
-  MqttCredentials,
-  MqttCredentialsType,
-  credentialsTypeNames,
-  MqttCredentialsTypes
-} from '@shared/models/mqtt.models';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull } from '@core/utils';
+import {
+  credentialsTypeNames,
+  MqttClientCredentials,
+  MqttCredentialsType,
+  MqttCredentialsTypes
+} from '@shared/models/mqtt-client-crenetials.model';
 
 @Component({
   selector: 'tb-mqtt-credentials',
@@ -54,7 +54,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
   @Input()
   disabled: boolean;
 
-  @Input() mqttCredentials: MqttCredentials;
+  @Input() mqttCredentials: MqttClientCredentials;
 
   get credentialsType(): MqttCredentialsType {
     return this.mqttCredentials.credentialsType;
@@ -101,7 +101,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     this.destroy$.complete();
   }
 
-  writeValue(value: MqttCredentials | null): void {
+  writeValue(value: MqttClientCredentials | null): void {
     if (isDefinedAndNotNull(value)) {
       this.credentialsFormGroup.patchValue({
         name: value.name,

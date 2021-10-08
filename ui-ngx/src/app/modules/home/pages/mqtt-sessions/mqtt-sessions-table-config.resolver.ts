@@ -23,22 +23,21 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { DialogService } from '@core/services/dialog.service';
-import {
-  ClientSessionInfo,
-  clientTypeTranslationMap,
-  ConnectionState,
-  connectionStateColor,
-  connectionStateTranslationMap
-} from '@shared/models/mqtt.models';
 import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { MqttSubscriptionService } from '@core/http/mqtt-subscription.service';
+import {
+  ConnectionState,
+  connectionStateColor,
+  connectionStateTranslationMap
+} from '@shared/models/mqtt-session.model';
+import { DetailedClientSessionInfo, clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
 
 @Injectable()
-export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfig<ClientSessionInfo>> {
+export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfig<DetailedClientSessionInfo>> {
 
-  private readonly config: EntityTableConfig<ClientSessionInfo> = new EntityTableConfig<ClientSessionInfo>();
+  private readonly config: EntityTableConfig<DetailedClientSessionInfo> = new EntityTableConfig<DetailedClientSessionInfo>();
 
   constructor(private store: Store<AppState>,
               private dialogService: DialogService,
@@ -58,13 +57,13 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.clientId : '';
 
     this.config.columns.push(
-      new EntityTableColumn<ClientSessionInfo>('clientId', 'mqtt-client-session.client-id', '25%'),
-      new EntityTableColumn<ClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client-session.client-id', '25%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => (this.setCellStyle(entity.connectionState))
       ),
-      new EntityTableColumn<ClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
-      new EntityTableColumn<ClientSessionInfo>('clientType', 'mqtt-client-session.client-type', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client-session.client-type', '25%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       )
     );
@@ -74,7 +73,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.config.onEntityAction = action => this.onClientSessionAction(action);
   }
 
-  resolve(): EntityTableConfig<ClientSessionInfo> {
+  resolve(): EntityTableConfig<DetailedClientSessionInfo> {
     this.config.entitiesFetchFunction = pageLink => this.mqttClientSessionService.getShortClientSessionInfos(pageLink);
     return this.config;
   }
@@ -83,7 +82,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     return this.mqttClientSessionService.getDetailedClientSessionInfo(id);
   }
 
-  onClientSessionAction(action: EntityAction<ClientSessionInfo>): boolean {
+  onClientSessionAction(action: EntityAction<DetailedClientSessionInfo>): boolean {
     switch (action.action) {
       case 'remove':
         this.removeSession(action.event, action.entity);
@@ -95,7 +94,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     return false;
   }
 
-  removeSession($event: Event, clientSession: ClientSessionInfo) {
+  removeSession($event: Event, clientSession: DetailedClientSessionInfo) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -126,7 +125,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.mqttClientSessionService.disconnectClientSession(clientSession.clientId, clientSession.sessionId).subscribe();
   }
 
-  private setCellStyle(connectionState: ConnectionState): any {
+  private setCellStyle(connectionState: ConnectionState) {
     const style: any = {
       color: connectionStateColor.get(connectionState)
     };

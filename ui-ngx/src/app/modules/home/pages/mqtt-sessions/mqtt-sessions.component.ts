@@ -14,36 +14,40 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, Inject, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ChangeDetectorRef, Component, Inject, Input } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import {
-  ClientSessionInfo,
-  ClientType,
-  clientTypeTranslationMap, ConnectionState, connectionStateColor, connectionStateTranslationMap,
-} from '@shared/models/mqtt.models';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { DatePipe } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
-import { BaseData, HasId } from '@shared/models/base-data';
+import { DetailedClientSessionInfo, ClientType, clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
+import {
+  ConnectionState,
+  connectionStateColor,
+  connectionStateTranslationMap,
+  TopicSubscription
+} from '@shared/models/mqtt-session.model';
+import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
 
 @Component({
   selector: 'tb-mqtt-clients',
   templateUrl: './mqtt-sessions.component.html'
 })
-export class MqttSessionsComponent extends EntityComponent<ClientSessionInfo> {
+export class MqttSessionsComponent extends EntityComponent<DetailedClientSessionInfo> {
 
   @Input() entityForm: FormGroup;
+
+  sessionDetailsForm: FormGroup;
 
   mqttClientTypes = Object.values(ClientType);
   connectionStateTranslationMap = connectionStateTranslationMap;
   clientTypeTranslationMap = clientTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
-              @Inject('entity') protected entityValue: ClientSessionInfo,
-              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<ClientSessionInfo>,
+              @Inject('entity') protected entityValue: DetailedClientSessionInfo,
+              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<DetailedClientSessionInfo>,
               public fb: FormBuilder,
               protected cd: ChangeDetectorRef,
               private datePipe: DatePipe,
@@ -59,30 +63,26 @@ export class MqttSessionsComponent extends EntityComponent<ClientSessionInfo> {
     }
   }
 
-  buildForm(entity: ClientSessionInfo): FormGroup {
+  buildForm(entity: DetailedClientSessionInfo): FormGroup {
     return  this.fb.group({
-        clientId: [entity ? entity.clientId : null],
-        clientType: [entity ? entity.clientType : null],
-        nodeId: [entity ? entity.nodeId : null],
-        username: [entity ? entity.username : null],
-        note: [entity ? entity.note : null],
-        keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
-        connectedAt: [entity ? entity.connectedAt : null],
-        connectionState: [entity ? entity.connectionState : null],
-        persistent: [entity ? entity.persistent : null],
-        disconnectedAt: [entity ? entity.disconnectedAt : null],
-        cleanSession: [entity ? !entity.persistent : null],
-        subscriptionsCount: [entity ? entity.subscriptions.length : null],
-        subscriptions: [entity ? entity.subscriptions : null]
+      clientId: [entity ? entity.clientId : null],
+      clientType: [entity ? entity.clientType : null],
+      nodeId: [entity ? entity.nodeId : null],
+      keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
+      connectedAt: [entity ? entity.connectedAt : null],
+      connectionState: [entity ? entity.connectionState : null],
+      persistent: [entity ? entity.persistent : null],
+      disconnectedAt: [entity ? entity.disconnectedAt : null],
+      cleanSession: [entity ? !entity.persistent : null],
+      subscriptionsCount: [entity ? entity.subscriptions.length : null],
+      subscriptions: [entity ? entity.subscriptions : null]
     });
   }
 
-  updateForm(entity: ClientSessionInfo) {
+  updateForm(entity: DetailedClientSessionInfo) {
     this.entityForm.patchValue({clientId: entity.clientId}, {emitEvent: false} );
     this.entityForm.patchValue({clientType: entity.clientType}, {emitEvent: false} );
     this.entityForm.patchValue({nodeId: entity.nodeId}, {emitEvent: false} );
-    this.entityForm.patchValue({username: entity.username}, {emitEvent: false} );
-    this.entityForm.patchValue({note: entity.note}, {emitEvent: false} );
     this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds}, {emitEvent: false} );
     this.entityForm.patchValue({connectedAt: entity.connectedAt}, {emitEvent: false} );
     this.entityForm.patchValue({connectionState: entity.connectionState}, {emitEvent: false} );
@@ -98,8 +98,6 @@ export class MqttSessionsComponent extends EntityComponent<ClientSessionInfo> {
     this.entityForm.get('clientId').disable({emitEvent: false});
     this.entityForm.get('clientType').disable({emitEvent: false});
     this.entityForm.get('nodeId').disable({emitEvent: false});
-    this.entityForm.get('username').disable({emitEvent: false});
-    this.entityForm.get('note').disable({emitEvent: false});
     this.entityForm.get('keepAliveSeconds').disable({emitEvent: false});
     this.entityForm.get('connectedAt').disable({emitEvent: false});
     this.entityForm.get('connectionState').disable({emitEvent: false});
@@ -115,6 +113,16 @@ export class MqttSessionsComponent extends EntityComponent<ClientSessionInfo> {
 
   getColor(): {color: string} {
     return {color: connectionStateColor.get(this.entityForm.get('connectionState').value)};
+  }
+
+  getLength() {
+    if (this.entityForm) {
+      const subscriptions: TopicSubscription[] = this.entityForm.get('subscriptions').value;
+      return isNotNullOrUndefined(subscriptions) ? subscriptions.length : 0;
+    } else {
+      return;
+    }
+
   }
 
 }

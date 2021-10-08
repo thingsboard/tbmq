@@ -22,16 +22,13 @@ import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, FormGroup, FormGroupDirective, NgForm } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import {
-  MqttCredentials,
-  MqttCredentialsType,
-  ClientType
-} from '@shared/models/mqtt.models';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { ClientType } from '@shared/models/mqtt-client.model';
+import { MqttClientCredentials, MqttCredentialsType } from '@shared/models/mqtt-client-crenetials.model';
 
 export interface ManageCredentialsDialogData {
-  mqttClientCredentials: MqttCredentials;
+  mqttClientCredentials: MqttClientCredentials;
 }
 
 @Component({
@@ -40,11 +37,11 @@ export interface ManageCredentialsDialogData {
   providers: [{provide: ErrorStateMatcher, useExisting: ManageCredentialsDialogComponent}],
   styleUrls: []
 })
-export class ManageCredentialsDialogComponent extends DialogComponent<ManageCredentialsDialogComponent, MqttCredentials> implements OnInit, ErrorStateMatcher {
+export class ManageCredentialsDialogComponent extends DialogComponent<ManageCredentialsDialogComponent, MqttClientCredentials> implements OnInit, ErrorStateMatcher {
 
   mqttCredentialsFormGroup: FormGroup;
   mqttCredentialsTypes = Object.values(ClientType);
-  mqttCredentials: MqttCredentials;
+  mqttCredentials: MqttClientCredentials;
   mqttCredentialsType: MqttCredentialsType;
 
   mqttClientCredentials = this.data.mqttClientCredentials;
@@ -58,7 +55,7 @@ export class ManageCredentialsDialogComponent extends DialogComponent<ManageCred
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private translate: TranslateService,
               @SkipSelf() private errorStateMatcher: ErrorStateMatcher,
-              public dialogRef: MatDialogRef<ManageCredentialsDialogComponent, MqttCredentials>,
+              public dialogRef: MatDialogRef<ManageCredentialsDialogComponent, MqttClientCredentials>,
               public fb: FormBuilder) {
     super(store, router, dialogRef);
   }

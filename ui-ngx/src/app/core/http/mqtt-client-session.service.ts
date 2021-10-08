@@ -20,7 +20,8 @@ import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ClientType, ConnectionState, ClientSessionInfo, MqttQoS } from '@shared/models/mqtt.models';
+import { DetailedClientSessionInfo, ClientType } from '@shared/models/mqtt-client.model';
+import { ConnectionState, MqttQoS } from '@shared/models/mqtt-session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -31,12 +32,12 @@ export class MqttClientSessionService {
     private http: HttpClient
   ) { }
 
-  public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<ClientSessionInfo> {
-    return this.http.get<ClientSessionInfo>(`/api/client-session/${clientId}`, defaultHttpOptionsFromConfig(config));
+  public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
+    return this.http.get<DetailedClientSessionInfo>(`/api/client-session/${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<ClientSessionInfo>> {
-    return this.http.get<PageData<ClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+  public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
+    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public removeClientSession(clientId: string, sessionId: string, config?: RequestConfig) {

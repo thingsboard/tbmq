@@ -18,28 +18,28 @@ import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import {
-  MqttCredentialsType,
-  credentialsTypeNames,
-  MqttCredentials
-} from '@shared/models/mqtt.models';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import {
+  credentialsTypeNames,
+  MqttClientCredentials,
+  MqttCredentialsType
+} from '@shared/models/mqtt-client-crenetials.model';
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
   templateUrl: './mqtt-client-credentials.component.html',
   styleUrls: ['./mqtt-client-credentials.component.scss']
 })
-export class MqttClientCredentialsComponent extends EntityComponent<MqttCredentials> {
+export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCredentials> {
 
   credentialsType = MqttCredentialsType;
   credentialsTypes = Object.values(MqttCredentialsType);
   credentialsTypeTranslationMap = credentialsTypeNames;
 
   constructor(protected store: Store<AppState>,
-              @Inject('entity') protected entityValue: MqttCredentials,
-              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttCredentials>,
+              @Inject('entity') protected entityValue: MqttClientCredentials,
+              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttClientCredentials>,
               public fb: FormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
@@ -53,7 +53,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttCredenti
     }
   }
 
-  buildForm(entity: MqttCredentials): FormGroup {
+  buildForm(entity: MqttClientCredentials): FormGroup {
     const form = this.fb.group(
       {
         name: [entity ? entity.name : '', [Validators.required]],
@@ -67,7 +67,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttCredenti
     return form;
   }
 
-  updateForm(entity: MqttCredentials) {
+  updateForm(entity: MqttClientCredentials) {
     this.entityForm.patchValue({name: entity.name} );
     this.entityForm.patchValue({credentialsType: entity.credentialsType} );
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );

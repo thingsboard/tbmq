@@ -18,7 +18,8 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { ClientSessionInfo, TopicSubscription } from '@shared/models/mqtt.models';
+import { TopicSubscription } from '@shared/models/mqtt-session.model';
+import { DetailedClientSessionInfo } from '@shared/models/mqtt-client.model';
 
 @Injectable({
   providedIn: 'root'
@@ -33,8 +34,8 @@ export class MqttSubscriptionService {
     return this.http.get<Array<TopicSubscription>>(`/api/subscription/${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public updateClientSubscriptions(session: ClientSessionInfo, config?: RequestConfig): Observable<ClientSessionInfo> {
-    return this.http.post<ClientSessionInfo>(`/api/subscription`, session, defaultHttpOptionsFromConfig(config));
+  public updateClientSubscriptions(session: DetailedClientSessionInfo, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
+    return this.http.post<DetailedClientSessionInfo>(`/api/subscription`, session, defaultHttpOptionsFromConfig(config));
   }
 
   public clearEmptySubscriptionNodes(config?: RequestConfig) {

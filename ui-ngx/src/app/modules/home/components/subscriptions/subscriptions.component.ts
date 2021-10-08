@@ -27,11 +27,11 @@ import {
   Validator,
   Validators
 } from '@angular/forms';
-import { MqttQoS, mqttQoSTypes, TopicSubscription } from '@shared/models/mqtt.models';
 import { PageComponent } from '@shared/components/page.component';
 import { Subscription } from 'rxjs';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
+import { MqttQoS, mqttQoSTypes, TopicSubscription } from '@shared/models/mqtt-session.model';
 
 @Component({
   selector: 'tb-subscriptions',

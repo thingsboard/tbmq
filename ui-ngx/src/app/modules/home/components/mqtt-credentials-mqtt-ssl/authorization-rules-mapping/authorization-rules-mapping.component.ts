@@ -28,8 +28,8 @@ import {
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { SslMqttCredentials } from '@shared/models/mqtt.models';
 import { Subscription } from 'rxjs';
+import { SslMqttCredentials } from '@shared/models/mqtt-client-crenetials.model';
 
 export interface AuthorizationRulesMap {
   certificateMatcherRegex: string;

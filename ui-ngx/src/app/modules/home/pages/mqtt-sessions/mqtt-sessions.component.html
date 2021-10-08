@@ -48,14 +48,6 @@
           <mat-label translate>mqtt-client-session.client-type</mat-label>
           <input matInput formControlName="clientType" readonly>
         </mat-form-field>
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-session.username</mat-label>
-          <input matInput formControlName="username" readonly>
-        </mat-form-field>
-        <mat-form-field *ngIf="isConnected()" class="mat-block">
-          <mat-label translate>mqtt-client-session.note</mat-label>
-          <input matInput formControlName="note" readonly>
-        </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.keep-alive</mat-label>
           <input matInput formControlName="keepAliveSeconds" readonly>

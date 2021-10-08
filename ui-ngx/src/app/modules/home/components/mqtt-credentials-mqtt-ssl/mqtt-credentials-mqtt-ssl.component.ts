@@ -27,7 +27,7 @@ import {
   Validators
 } from '@angular/forms';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { BasicMqttCredentials } from '@shared/models/mqtt.models';
+import { BasicMqttCredentials } from '@shared/models/mqtt-client-crenetials.model';
 
 @Component({
   selector: 'tb-mqtt-credentials-mqtt-ssl',
