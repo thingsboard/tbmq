@@ -70,7 +70,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.columns.push(
       new DateEntityTableColumn<MqttClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%'),
-      new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client-credentials.client-type', '30%',
+      new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
         (entity) => translate.instant(clientTypeTranslationMap.get(entity.clientType))),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
         (entity) => credentialsTypeNames.get(entity.credentialsType))
