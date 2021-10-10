@@ -65,7 +65,7 @@
           <input matInput formControlName="disconnectedAt" readonly>
         </mat-form-field>
       </div>
-      <div fxFlex="50" style="margin-right: 10px">
+      <div [formGroup]="sessionDetailsForm" fxFlex="50" style="margin-right: 10px">
         <mat-form-field class="mat-block">
           <mat-label translate>mqtt-client-session.clean-session</mat-label>
           <input matInput formControlName="cleanSession" readonly>

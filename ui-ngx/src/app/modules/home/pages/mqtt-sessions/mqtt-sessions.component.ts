@@ -22,7 +22,7 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { DatePipe } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
-import { DetailedClientSessionInfo, ClientType, clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
+import { ClientType, clientTypeTranslationMap, DetailedClientSessionInfo } from '@shared/models/mqtt-client.model';
 import {
   ConnectionState,
   connectionStateColor,
@@ -64,7 +64,8 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
   }
 
   buildForm(entity: DetailedClientSessionInfo): FormGroup {
-    return  this.fb.group({
+    this.buildSessionDetailsForm(entity);
+    return this.fb.group({
       clientId: [entity ? entity.clientId : null],
       clientType: [entity ? entity.clientType : null],
       nodeId: [entity ? entity.nodeId : null],
@@ -73,8 +74,6 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
       connectionState: [entity ? entity.connectionState : null],
       persistent: [entity ? entity.persistent : null],
       disconnectedAt: [entity ? entity.disconnectedAt : null],
-      cleanSession: [entity ? !entity.persistent : null],
-      subscriptionsCount: [entity ? entity.subscriptions.length : null],
       subscriptions: [entity ? entity.subscriptions : null]
     });
   }
@@ -88,9 +87,9 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
     this.entityForm.patchValue({connectionState: entity.connectionState}, {emitEvent: false} );
     this.entityForm.patchValue({persistent: entity.persistent}, {emitEvent: false} );
     this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt}, {emitEvent: false} );
-    this.entityForm.patchValue({cleanSession: !entity.persistent}, {emitEvent: false} );
-    this.entityForm.patchValue({subscriptionsCount: entity.subscriptions.length}, {emitEvent: false} );
     this.entityForm.patchValue({subscriptions: entity.subscriptions}, {emitEvent: false} );
+    this.sessionDetailsForm.patchValue({cleanSession: !entity.persistent}, {emitEvent: false} );
+    this.sessionDetailsForm.patchValue({subscriptionsCount: entity.subscriptions.length}, {emitEvent: false} );
   }
 
   updateFormState() {
@@ -103,8 +102,8 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
     this.entityForm.get('connectionState').disable({emitEvent: false});
     this.entityForm.get('persistent').disable({emitEvent: false});
     this.entityForm.get('disconnectedAt').disable({emitEvent: false});
-    this.entityForm.get('cleanSession').disable({emitEvent: false});
-    this.entityForm.get('subscriptionsCount').disable({emitEvent: false});
+    this.sessionDetailsForm.get('cleanSession').disable({emitEvent: false});
+    this.sessionDetailsForm.get('subscriptionsCount').disable({emitEvent: false});
   }
 
   isConnected(): boolean {
@@ -123,6 +122,13 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
       return;
     }
 
+  }
+
+  private buildSessionDetailsForm(entity: DetailedClientSessionInfo) {
+    this.sessionDetailsForm = this.fb.group({
+      cleanSession: [entity ? !entity.persistent : null],
+      subscriptionsCount: [entity ? entity.subscriptions.length : null]
+    });
   }
 
 }
