@@ -37,7 +37,8 @@ export enum EntityType {
   TB_RESOURCE = 'TB_RESOURCE',
   OTA_PACKAGE = 'OTA_PACKAGE',
   RPC = 'RPC',
-  MQTT_CLIENT = 'MQTT_CLIENT'
+  MQTT_CLIENT_CREDENTIALS = 'MQTT_CLIENT_CREDENTIALS',
+  MQTT_SESSION = 'MQTT_SESSION'
 }
 
 export enum AliasEntityType {
@@ -309,19 +310,33 @@ export const entityTypeTranslations = new Map<EntityType | AliasEntityType, Enti
       }
     ],
     [
-      EntityType.MQTT_CLIENT,
+      EntityType.MQTT_CLIENT_CREDENTIALS,
       {
         type: 'mqtt-client-credentials.type-client-credentials',
         typePlural: 'mqtt-client-credentials.type-clients-credentials',
-        list: 'mqtt-client-credentials.list-of-credentials',
-        nameStartsWith: 'mqtt-client-credentials.credentials-name-starts-with',
-        details: 'mqtt-client-credentials.credentials-details',
+        list: 'mqtt-client-credentials.list-of-client-credentials',
+        nameStartsWith: 'mqtt-client-credentials.client-credentials-name-starts-with',
+        details: 'mqtt-client-credentials.client-credentials-details',
         add: 'mqtt-client-credentials.add',
-        noEntities: 'mqtt-client-credentials.no-credentials-text',
+        noEntities: 'mqtt-client-credentials.no-client-credentials-text',
         search: 'mqtt-client-credentials.search',
-        selectedEntities: 'mqtt-client-credentials.selected-clients'
+        selectedEntities: 'mqtt-client-credentials.selected-client-credentials'
       }
     ],
+    [
+      EntityType.MQTT_SESSION,
+      {
+        type: 'mqtt-client-session.type-session',
+        typePlural: 'mqtt-client-session.type-sessions',
+        list: 'mqtt-client-session.list-of-sessions',
+        nameStartsWith: 'mqtt-client-session.session-name-starts-with',
+        details: 'mqtt-client-session.session-details',
+        add: 'mqtt-client-session.add',
+        noEntities: 'mqtt-client-session.no-session-text',
+        search: 'mqtt-client-session.search',
+        selectedEntities: 'mqtt-client-session.selected-sessions'
+      }
+    ]
   ]
 );
 
@@ -412,9 +427,15 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       }
     ],
     [
-      EntityType.MQTT_CLIENT,
+      EntityType.MQTT_CLIENT_CREDENTIALS,
       {
-        helpLinkId: 'mqttClients'
+        helpLinkId: 'mqttClientCredentials'
+      }
+    ],
+    [
+      EntityType.MQTT_SESSION,
+      {
+        helpLinkId: 'mqttSession'
       }
     ]
   ]

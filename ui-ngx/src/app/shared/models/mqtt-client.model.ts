@@ -1,7 +1,6 @@
-import { EntityId } from '@shared/models/id/entity-id';
-import { EntityType } from '@shared/models/entity-type.models';
 import { BaseData } from '@shared/models/base-data';
-import { ConnectionState, SessionInfo, TopicSubscription } from '@shared/models/mqtt-session.model';
+import { DetailedClientSessionInfo } from '@shared/models/mqtt-session.model';
+import { ClientId } from '@shared/models/id/mqtt-client.id';
 
 export interface Client extends ClientInfo, DetailedClientSessionInfo, BaseData<ClientId> {
 }
@@ -9,28 +8,6 @@ export interface Client extends ClientInfo, DetailedClientSessionInfo, BaseData<
 export interface ClientInfo {
   clientId: string;
   type: ClientType;
-}
-
-export interface DetailedClientSessionInfo extends BaseData<ClientId> {
-  clientId: string;
-  sessionId: string;
-  connectionState: ConnectionState;
-  clientType: ClientType;
-  nodeId: string;
-  persistent: boolean;
-  subscriptions: TopicSubscription[];
-  keepAliveSeconds: number;
-  connectedAt: number;
-  disconnectedAt: number;
-}
-
-export class ClientId implements EntityId {
-  entityType = EntityType.MQTT_CLIENT;
-  id: string;
-
-  constructor(id: string) {
-    this.id = id;
-  }
 }
 
 export enum ClientType {
@@ -44,8 +21,3 @@ export const clientTypeTranslationMap = new Map<ClientType, string>(
     [ClientType.APPLICATION, 'mqtt-client.type-application']
   ]
 );
-
-export interface ClientSession {
-  connected: boolean;
-  sessionInfo: SessionInfo;
-}

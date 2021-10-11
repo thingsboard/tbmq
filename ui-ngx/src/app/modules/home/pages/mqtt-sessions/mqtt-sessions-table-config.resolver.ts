@@ -30,9 +30,9 @@ import { MqttSubscriptionService } from '@core/http/mqtt-subscription.service';
 import {
   ConnectionState,
   connectionStateColor,
-  connectionStateTranslationMap
+  connectionStateTranslationMap, DetailedClientSessionInfo
 } from '@shared/models/mqtt-session.model';
-import { DetailedClientSessionInfo, clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
+import { clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
 
 @Injectable()
 export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfig<DetailedClientSessionInfo>> {
@@ -46,8 +46,8 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
               private translate: TranslateService) {
 
     this.config.entityComponent = MqttSessionsComponent;
-    this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT);
-    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT);
+    this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_SESSION);
+    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_SESSION);
     this.config.tableTitle = this.translate.instant('mqtt-client-session.sessions');
 
     this.config.addEnabled = false;
@@ -125,7 +125,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.mqttClientSessionService.disconnectClientSession(clientSession.clientId, clientSession.sessionId).subscribe();
   }
 
-  private setCellStyle(connectionState: ConnectionState) {
+  private setCellStyle(connectionState: ConnectionState): any {
     const style: any = {
       color: connectionStateColor.get(connectionState)
     };

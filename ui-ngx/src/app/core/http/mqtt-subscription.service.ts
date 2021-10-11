@@ -18,8 +18,7 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { TopicSubscription } from '@shared/models/mqtt-session.model';
-import { DetailedClientSessionInfo } from '@shared/models/mqtt-client.model';
+import { DetailedClientSessionInfo, TopicSubscription } from '@shared/models/mqtt-session.model';
 
 @Injectable({
   providedIn: 'root'

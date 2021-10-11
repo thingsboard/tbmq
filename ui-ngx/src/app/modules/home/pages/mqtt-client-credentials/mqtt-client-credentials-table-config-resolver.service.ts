@@ -55,10 +55,10 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
               private datePipe: DatePipe,
               private dialog: MatDialog) {
 
-    this.config.entityType = EntityType.MQTT_CLIENT;
+    this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     this.config.entityComponent = MqttClientCredentialsComponent;
-    this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT);
-    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT);
+    this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     this.config.defaultSortOrder = { property: 'name', direction: Direction.ASC };
     this.config.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
 
@@ -87,18 +87,18 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
     this.config.cellActionDescriptors.push(
       {
-        name: this.translate.instant('mqtt-client-credentials.manage-credentials'),
+        name: this.translate.instant('mqtt-client-credentials.manage-client-credentials'),
         mdiIcon: 'mdi:badge-account-horizontal-outline',
         isEnabled: () => true,
         onAction: ($event, entity) => this.manageCredentials($event, entity)
       }
     );
 
-    this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-title',
+    this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title',
       { mqttClientTitle: mqttClient.name });
-    this.config.deleteEntityContent = () => this.translate.instant('mqtt-client-credentials.delete-client-text');
-    this.config.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-credentials-title', {count});
-    this.config.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-credentials-text');
+    this.config.deleteEntityContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
+    this.config.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title', {count});
+    this.config.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
 
 
     this.config.loadEntity = id => this.loadEntity(id);

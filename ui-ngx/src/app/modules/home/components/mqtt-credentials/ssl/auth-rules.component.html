@@ -19,10 +19,10 @@
   <mat-expansion-panel [expanded]="true" #matExpansionPanel>
     <mat-expansion-panel-header>
       <mat-panel-title>
-        <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules-mapping</div>
+        <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules</div>
       </mat-panel-title>
       <mat-panel-description *ngIf="!rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
-        <mat-error translate>mqtt-client-credentials.add-auth-rule-prompt</mat-error>
+        <mat-error translate>mqtt-client-credentials.add-authorization-rule-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>
     <section>
@@ -40,7 +40,7 @@
               <mat-form-field class="cell mat-block" fxFlex="50">
                 <input matInput formControlName="certificateMatcherRegex">
                 <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
-                  {{ 'mqtt-client-credentials.cerificate-matcher-regex-required' | translate }}
+                  {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
                 </mat-error>
               </mat-form-field>
               <mat-form-field class="cell mat-block" fxFlex="50">
@@ -64,7 +64,7 @@
                   [fxShow]="!disabled"
                   (click)="addRule()"
                   type="button"
-                  matTooltip="{{ 'mqtt-client-credentials.add-auth-rule' | translate }}"
+                  matTooltip="{{ 'mqtt-client-credentials.add-authorization-rules' | translate }}"
                   matTooltipPosition="above">
             <mat-icon>add</mat-icon>
             {{ 'action.add' | translate }}

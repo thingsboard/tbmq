@@ -17,7 +17,7 @@
 -->
 <section [formGroup]="credentialsMqttFormGroup">
   <mat-form-field class="mat-block">
-    <mat-label translate>mqtt-client-credentials.client-id</mat-label>
+    <mat-label translate>mqtt-client.client-id</mat-label>
     <input matInput formControlName="clientId">
     <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
       {{ 'mqtt-client-credentials.client-id-pattern' | translate }}

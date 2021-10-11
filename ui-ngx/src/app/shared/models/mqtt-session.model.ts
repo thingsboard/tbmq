@@ -1,4 +1,19 @@
-import { ClientInfo } from '@shared/models/mqtt-client.model';
+import { ClientInfo, ClientType } from '@shared/models/mqtt-client.model';
+import { BaseData } from '@shared/models/base-data';
+import { SessionId } from '@shared/models/id/mqtt-session.id';
+
+export interface DetailedClientSessionInfo extends BaseData<SessionId> {
+  clientId: string;
+  sessionId: string;
+  connectionState: ConnectionState;
+  clientType: ClientType;
+  nodeId: string;
+  persistent: boolean;
+  subscriptions: TopicSubscription[];
+  keepAliveSeconds: number;
+  connectedAt: number;
+  disconnectedAt: number;
+}
 
 export interface SessionInfo {
   serviceId: string;
@@ -37,7 +52,8 @@ export const mqttQoSTypes = [
   {
     value: MqttQoS.EXACTLY_ONCE,
     name: 'mqtt-client-session.qos-exactly-once'
-  }];
+  }
+];
 
 export enum ConnectionState {
   CONNECTED = 'CONNECTED',

@@ -22,11 +22,11 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { DatePipe } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
-import { ClientType, clientTypeTranslationMap, DetailedClientSessionInfo } from '@shared/models/mqtt-client.model';
+import { ClientType, clientTypeTranslationMap} from '@shared/models/mqtt-client.model';
 import {
   ConnectionState,
   connectionStateColor,
-  connectionStateTranslationMap,
+  connectionStateTranslationMap, DetailedClientSessionInfo,
   TopicSubscription
 } from '@shared/models/mqtt-session.model';
 import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';

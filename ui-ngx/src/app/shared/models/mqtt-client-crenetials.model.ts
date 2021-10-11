@@ -1,5 +1,6 @@
 import { BaseData } from '@shared/models/base-data';
-import { ClientId, ClientType } from '@shared/models/mqtt-client.model';
+import { ClientType } from '@shared/models/mqtt-client.model';
+import { ClientId } from '@shared/models/id/mqtt-client.id';
 
 export enum MqttCredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
