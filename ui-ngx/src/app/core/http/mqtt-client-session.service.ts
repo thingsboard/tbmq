@@ -22,6 +22,9 @@ import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { ClientType } from '@shared/models/mqtt-client.model';
 import { ConnectionState, DetailedClientSessionInfo, MqttQoS } from '@shared/models/mqtt-session.model';
+import { map } from 'rxjs/operators';
+import { isNotEmptyStr } from '@core/utils';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +40,42 @@ export class MqttClientSessionService {
   }
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
-    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config))
+      .pipe(map((data) => {
+        var filterData;
+        if (isNotEmptyStr(pageLink.textSearch)) {
+          filterData = data.data.filter((obj) => !obj.clientId.indexOf(pageLink.textSearch));
+        } else {
+          filterData = data.data;
+        }
+        var sortProperty = pageLink.sortOrder.property;
+        filterData = filterData.sort(function(a, b) {
+          var valueA = a[sortProperty];
+          var valueB = b[sortProperty];
+          if (sortProperty === typeof "string") {
+            valueA.toLowerCase();
+            valueB.toLowerCase();
+          }
+          if (pageLink.sortOrder.direction === Direction.ASC) {
+            if (valueA < valueB) {
+              return -1;
+            }
+            if (valueA > valueB) {
+              return 1;
+            }
+            return 0;
+          } else {
+            if (valueA < valueB) {
+              return 1;
+            }
+            if (valueA > valueB) {
+              return -1;
+            }
+            return 0;
+          }
+        });
+        return {...data, ...{data: filterData}};
+      }));
   }
 
   public removeClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
