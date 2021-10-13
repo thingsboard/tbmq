@@ -16,12 +16,11 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ClientType } from '@shared/models/mqtt-client.model';
-import { ConnectionState, DetailedClientSessionInfo, MqttQoS } from '@shared/models/mqtt-session.model';
+import { DetailedClientSessionInfo } from '@shared/models/mqtt-session.model';
 import { map } from 'rxjs/operators';
 import { isNotEmptyStr } from '@core/utils';
 import { Direction } from '@shared/models/page/sort-order';
@@ -78,10 +77,14 @@ export class MqttClientSessionService {
       }));
   }
 
+
+  public updateShortClientSessionInfo(session: DetailedClientSessionInfo, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
+    return this.http.post<DetailedClientSessionInfo>(`/api/subscription`, session, defaultHttpOptionsFromConfig(config));
+  }
+
   public removeClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
     return this.http.delete(`/api/client-session/${clientId}/remove/${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
-
   public disconnectClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
     return this.http.delete(`/api/client-session/${clientId}/disconnect/${sessionId}`, defaultHttpOptionsFromConfig(config));
   }

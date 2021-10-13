@@ -26,7 +26,6 @@ import { DialogService } from '@core/services/dialog.service';
 import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { EntityAction } from '@home/models/entity/entity-component.models';
-import { MqttSubscriptionService } from '@core/http/mqtt-subscription.service';
 import {
   ConnectionState,
   connectionStateColor,
@@ -42,7 +41,6 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
   constructor(private store: Store<AppState>,
               private dialogService: DialogService,
               private mqttClientSessionService: MqttClientSessionService,
-              private mqttSubscriptionService: MqttSubscriptionService,
               private translate: TranslateService) {
 
     this.config.entityComponent = MqttSessionsComponent;
@@ -69,7 +67,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     );
 
     this.config.loadEntity = id => this.loadEntity(id);
-    this.config.saveEntity = session => this.mqttSubscriptionService.updateClientSubscriptions(session);
+    this.config.saveEntity = session => this.mqttClientSessionService.updateShortClientSessionInfo(session);
     this.config.onEntityAction = action => this.onClientSessionAction(action);
   }
 

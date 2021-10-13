@@ -35,14 +35,4 @@ export class MqttAdminService {
     return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
   }
 
-  public deleteAdmin(userId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/admin/${userId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getAdmins(pageLink: PageLink,
-                   config?: RequestConfig): Observable<PageData<User>> {
-    return this.http.get<PageData<User>>(`/api/admin${pageLink.toQuery()}`,
-      defaultHttpOptionsFromConfig(config));
-  }
-
 }
