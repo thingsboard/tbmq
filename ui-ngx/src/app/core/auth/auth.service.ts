@@ -215,61 +215,16 @@ export class AuthService {
     );
   }
 
-  private forceDefaultPlace(authState?: AuthState, path?: string, params?: any): boolean {
-    if (authState && authState.authUser) {
-      if (authState.authUser.authority === Authority.TENANT_ADMIN || authState.authUser.authority === Authority.CUSTOMER_USER) {
-        if ((this.userHasDefaultDashboard(authState) && authState.forceFullscreen) || authState.authUser.isPublic) {
-          if (path === 'profile') {
-            if (this.userHasProfile(authState.authUser)) {
-              return false;
-            } else {
-              return true;
-            }
-          } else if (path.startsWith('dashboard.') || path.startsWith('dashboards.') &&
-              authState.allowedDashboardIds.indexOf(params.dashboardId) > -1) {
-            return false;
-          } else {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
   public defaultUrl(isAuthenticated: boolean, authState?: AuthState, path?: string, params?: any): UrlTree {
     let result: UrlTree = null;
     if (isAuthenticated) {
-      if (!path || path === 'login' || this.forceDefaultPlace(authState, path, params)) {
+      if (!path || path === 'login') {
         if (this.redirectUrl) {
           const redirectUrl = this.redirectUrl;
           this.redirectUrl = null;
           result = this.router.parseUrl(redirectUrl);
         } else {
           result = this.router.parseUrl('clientCredentials');
-        }
-        if (authState.authUser.authority === Authority.TENANT_ADMIN || authState.authUser.authority === Authority.CUSTOMER_USER) {
-          if (this.userHasDefaultDashboard(authState)) {
-            const dashboardId = authState.userDetails.additionalInfo.defaultDashboardId;
-            if (authState.forceFullscreen) {
-              result = this.router.parseUrl(`dashboard/${dashboardId}`);
-            } else {
-              result = this.router.parseUrl(`dashboards/${dashboardId}`);
-            }
-          } else if (authState.authUser.isPublic) {
-            result = this.router.parseUrl(`dashboard/${authState.lastPublicDashboardId}`);
-          }
-        } else if (authState.authUser.authority === Authority.SYS_ADMIN) {
-          // TODO deaflynx: does MQTT broker needs checkUpdates for admin?
-          // this.adminService.checkUpdates().subscribe((updateMessage) => {
-          //   if (updateMessage && updateMessage.updateAvailable) {
-          //     this.store.dispatch(new ActionNotificationShow(
-          //       {message: updateMessage.message,
-          //                  type: 'info',
-          //                  verticalPosition: 'bottom',
-          //                  horizontalPosition: 'right'}));
-          //   }
-          // });
         }
       }
     } else {
@@ -324,14 +279,6 @@ export class AuthService {
           password
         };
         return this.http.post<LoginResponse>('/api/auth/login', loginRequest, defaultHttpOptions()).pipe(
-          mergeMap((loginResponse: LoginResponse) => {
-              this.updateAndValidateTokens(loginResponse.token, loginResponse.refreshToken, false);
-              return this.procceedJwtTokenValidate();
-            }
-          )
-        );
-      } else if (!username && !password) {
-        return this.http.post<LoginResponse>('/api/auth/login', {"username":"sysadmin@thingsboard.org", "password":"sysadmin"}, defaultHttpOptions()).pipe(
           mergeMap((loginResponse: LoginResponse) => {
               this.updateAndValidateTokens(loginResponse.token, loginResponse.refreshToken, false);
               return this.procceedJwtTokenValidate();
@@ -395,28 +342,15 @@ export class AuthService {
           this.userService.getUser(authPayload.authUser.userId).subscribe(
             (user) => {
               authPayload.userDetails = user;
-              authPayload.forceFullscreen = false;
-              if (this.userForceFullscreen(authPayload)) {
-                authPayload.forceFullscreen = true;
+              let userLang;
+              if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
+                userLang = authPayload.userDetails.additionalInfo.lang;
+              } else {
+                userLang = null;
               }
-
-              this.loadFakeSystemParams().subscribe(
-                (sysParams) => {
-                  authPayload = {...authPayload, ...sysParams};
-                  let userLang;
-                  if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
-                    userLang = authPayload.userDetails.additionalInfo.lang;
-                  } else {
-                    userLang = null;
-                  }
-                  this.notifyUserLang(userLang);
-                  loadUserSubject.next(authPayload);
-                  // loadUserSubject.complete();
-                },
-                (err) => {
-                  loadUserSubject.error(err);
-                  this.logout();
-                });
+              this.notifyUserLang(userLang);
+              loadUserSubject.next(authPayload);
+              loadUserSubject.complete();
             },
             (err) => {
               loadUserSubject.error(err);
@@ -461,10 +395,6 @@ export class AuthService {
       }, catchError((err) => {
         return of({});
       })));
-  }
-
-  private loadFakeSystemParams(): Observable<SysParamsState> {
-    return of({userTokenAccessEnabled: true, allowedDashboardIds: [], edgesSupportEnabled: false});
   }
 
   public refreshJwtToken(loadUserElseStoreJwtToken = true): Observable<LoginResponse> {

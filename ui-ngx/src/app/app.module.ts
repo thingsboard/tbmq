@@ -28,7 +28,8 @@ import { DashboardRoutingModule } from '@modules/dashboard/dashboard-routing.mod
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '**',
+  {
+    path: '**',
     redirectTo: 'clientCredentials'
   }
 ];
