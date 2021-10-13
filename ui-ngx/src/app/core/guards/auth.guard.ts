@@ -20,9 +20,9 @@ import { AuthService } from '../auth/auth.service';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { selectAuth } from '../auth/auth.selectors';
-import { catchError, map, mergeMap, skipWhile, take } from 'rxjs/operators';
+import { catchError, mergeMap, skipWhile, take } from 'rxjs/operators';
 import { AuthState } from '../auth/auth.models';
-import { forkJoin, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { enterZone } from '@core/operator/enterZone';
 import { Authority } from '@shared/models/authority.enum';
 import { DialogService } from '@core/services/dialog.service';
@@ -60,7 +60,6 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     return this.getAuthState().pipe(
       mergeMap((authState) => {
         const url: string = state.url;
-
         let lastChild = state.root;
         const urlSegments: string[] = [];
         if (lastChild.url) {
@@ -72,69 +71,31 @@ export class AuthGuard implements CanActivate, CanActivateChild {
             urlSegments.push(...lastChild.url.map(segment => segment.path));
           }
         }
-        const path = urlSegments.join('.');
-        const publicId = this.utils.getQueryParam('publicId');
         const data = lastChild.data || {};
-        const params = lastChild.params || {};
         const isPublic = data.module === 'public';
 
         if (!authState.isAuthenticated) {
-          if (publicId && publicId.length > 0) {
-            this.authService.setUserFromJwtToken(null, null, false);
-            this.authService.reloadUser();
-            return of(false);
-          } else if (!isPublic) {
+          if (!isPublic) {
             this.authService.redirectUrl = url;
-            // this.authService.gotoDefaultPlace(false);
             return of(this.authService.defaultUrl(false));
           } else {
             return of(true);
-/*            if (path === 'login') {
-              return forkJoin([this.authService.loadOAuth2Clients()]).pipe(
-                map(() => {
-                  return true;
-                })
-              );
-            } else {
-              return of(true);
-            }*/
           }
         } else {
-          if (authState.authUser.isPublic) {
-            if (this.authService.parsePublicId() !== publicId) {
-              if (publicId && publicId.length > 0) {
-                this.authService.setUserFromJwtToken(null, null, false);
-                this.authService.reloadUser();
-              } else {
-                this.authService.logout();
-              }
-              return of(false);
-            }
-          }
-          if (this.mobileService.isMobileApp() && !path.startsWith('dashboard.')) {
-            this.mobileService.handleMobileNavigation(path, params);
+          const authority = Authority[authState.authUser.authority];
+          if (data.auth && data.auth.indexOf(authority) === -1) {
+            this.dialogService.forbidden();
             return of(false);
-          }
-          const defaultUrl = this.authService.defaultUrl(true, authState, path, params);
-          if (defaultUrl) {
-            // this.authService.gotoDefaultPlace(true);
-            return of(defaultUrl);
-          } else {
-            const authority = Authority[authState.authUser.authority];
-            if (data.auth && data.auth.indexOf(authority) === -1) {
-              this.dialogService.forbidden();
-              return of(false);
-            } else if (data.redirectTo) {
-              let redirect;
-              if (isObject(data.redirectTo)) {
-                redirect = data.redirectTo[authority];
-              } else {
-                redirect = data.redirectTo;
-              }
-              return of(this.router.parseUrl(redirect));
+          } else if (data.redirectTo) {
+            let redirect;
+            if (isObject(data.redirectTo)) {
+              redirect = data.redirectTo[authority];
             } else {
-              return of(true);
+              redirect = data.redirectTo;
             }
+            return of(this.router.parseUrl(redirect));
+          } else {
+            return of(true);
           }
         }
       }),
