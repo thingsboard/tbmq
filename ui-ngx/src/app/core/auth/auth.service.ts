@@ -41,11 +41,10 @@ import { PageLink } from '@shared/models/page/page-link';
 import { DashboardInfo } from '@shared/models/dashboard.models';
 import { PageData } from '@app/shared/models/page/page-data';
 import { AdminService } from '@core/http/admin.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { OAuth2ClientInfo, PlatformType } from '@shared/models/oauth2.models';
-import { isDefinedAndNotNull, isMobileApp } from '@core/utils';
+import { isMobileApp } from '@core/utils';
 
 @Injectable({
     providedIn: 'root'
@@ -339,7 +338,7 @@ export class AuthService {
             }
           );
         } else if (authPayload.authUser.userId) {
-          this.userService.getUser(authPayload.authUser.userId).subscribe(
+          this.userService.getMqttAdminUser().subscribe(
             (user) => {
               authPayload.userDetails = user;
               let userLang;

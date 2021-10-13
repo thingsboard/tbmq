@@ -51,8 +51,7 @@ export class UserService {
   }
 
   public getUser(userId: string, config?: RequestConfig): Observable<User> {
-    // return this.http.get<User>(`/api/user/${userId}`, defaultHttpOptionsFromConfig(config));
-    return this.http.get<User>(`/api/auth/user`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<User>(`/api/user/${userId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public saveUser(user: User, sendActivationMail: boolean = false,
@@ -82,6 +81,10 @@ export class UserService {
       url += `?userCredentialsEnabled=${userCredentialsEnabled}`;
     }
     return this.http.post<User>(url, null, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getMqttAdminUser(config?: RequestConfig): Observable<User> {
+    return this.http.get<User>(`/api/auth/user`, defaultHttpOptionsFromConfig(config));
   }
 
 }
