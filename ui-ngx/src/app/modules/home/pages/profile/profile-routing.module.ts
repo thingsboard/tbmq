@@ -24,7 +24,6 @@ import { User } from '@shared/models/user.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UserService } from '@core/http/user.service';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { Observable } from 'rxjs';
 
 @Injectable()
@@ -35,8 +34,7 @@ export class UserProfileResolver implements Resolve<User> {
   }
 
   resolve(): Observable<User> {
-    const userId = getCurrentAuthUser(this.store).userId;
-    return this.userService.getUser(userId);
+    return this.userService.getMqttAdminUser();
   }
 }
 
