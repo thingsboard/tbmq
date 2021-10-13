@@ -17,7 +17,6 @@
 import { NgModule } from '@angular/core';
 
 import { AdminModule } from './admin/admin.module';
-import { HomeLinksModule } from './home-links/home-links.module';
 import { ProfileModule } from './profile/profile.module';
 import { TenantModule } from '@modules/home/pages/tenant/tenant.module';
 import { CustomerModule } from '@modules/home/pages/customer/customer.module';

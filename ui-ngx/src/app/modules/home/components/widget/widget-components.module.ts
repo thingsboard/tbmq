@@ -35,7 +35,6 @@ import { TripAnimationComponent } from './trip-animation/trip-animation.componen
 import { PhotoCameraInputWidgetComponent } from './lib/photo-camera-input.component';
 import { GatewayFormComponent } from './lib/gateway/gateway-form.component';
 import { ImportExportService } from '@home/components/import-export/import-export.service';
-import { NavigationCardsWidgetComponent } from '@home/components/widget/lib/navigation-cards-widget.component';
 import { NavigationCardWidgetComponent } from '@home/components/widget/lib/navigation-card-widget.component';
 import { EdgesOverviewWidgetComponent } from '@home/components/widget/lib/edges-overview-widget.component';
 import { JsonInputWidgetComponent } from '@home/components/widget/lib/json-input-widget.component';
@@ -59,7 +58,6 @@ import { MarkdownWidgetComponent } from '@home/components/widget/lib/markdown-wi
       TripAnimationComponent,
       PhotoCameraInputWidgetComponent,
       GatewayFormComponent,
-      NavigationCardsWidgetComponent,
       NavigationCardWidgetComponent,
       QrCodeWidgetComponent,
       MarkdownWidgetComponent
@@ -83,7 +81,6 @@ import { MarkdownWidgetComponent } from '@home/components/widget/lib/markdown-wi
     TripAnimationComponent,
     PhotoCameraInputWidgetComponent,
     GatewayFormComponent,
-    NavigationCardsWidgetComponent,
     NavigationCardWidgetComponent,
     QrCodeWidgetComponent,
     MarkdownWidgetComponent
