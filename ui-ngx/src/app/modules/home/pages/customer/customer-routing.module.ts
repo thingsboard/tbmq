@@ -27,7 +27,6 @@ import { DashboardsTableConfigResolver } from '@modules/home/pages/dashboard/das
 import { DashboardPageComponent } from '@home/components/dashboard-page/dashboard-page.component';
 import { BreadCrumbConfig } from '@shared/components/breadcrumb';
 import { dashboardBreadcumbLabelFunction, DashboardResolver } from '@home/pages/dashboard/dashboard-routing.module';
-import { EdgesTableConfigResolver } from '@home/pages/edge/edges-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -95,22 +94,6 @@ const routes: Routes = [
         },
         resolve: {
           entitiesTableConfig: AssetsTableConfigResolver
-        }
-      },
-      {
-        path: ':customerId/edgeInstances',
-        component: EntitiesTableComponent,
-        data: {
-          auth: [Authority.TENANT_ADMIN],
-          title: 'customer.edges',
-          edgesType: 'customer',
-          breadcrumb: {
-            label: 'customer.edges',
-            icon: 'router'
-          }
-        },
-        resolve: {
-          entitiesTableConfig: EdgesTableConfigResolver
         }
       },
       {

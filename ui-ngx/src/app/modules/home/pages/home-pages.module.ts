@@ -33,7 +33,6 @@ import { MODULES_MAP } from '@shared/public-api';
 import { modulesMap } from '../../common/modules-map';
 import { DeviceProfileModule } from './device-profile/device-profile.module';
 import { ApiUsageModule } from '@home/pages/api-usage/api-usage.module';
-import { EdgeModule } from '@home/pages/edge/edge.module';
 import { OtaUpdateModule } from '@home/pages/ota-update/ota-update.module';
 import { MqttSessionsModule } from '@home/pages/mqtt-sessions/mqtt-sessions.module';
 import { MqttClientCredentialsModule } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.module';
