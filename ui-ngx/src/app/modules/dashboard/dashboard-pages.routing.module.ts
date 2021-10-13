@@ -17,12 +17,9 @@
 import { Injectable, NgModule } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
 
-import { Authority } from '@shared/models/authority.enum';
-import { DashboardPageComponent } from '@home/components/dashboard-page/dashboard-page.component';
 import { Dashboard } from '@app/shared/models/dashboard.models';
 import { DashboardService } from '@core/http/dashboard.service';
 import { DashboardUtilsService } from '@core/services/dashboard-utils.service';
-import { DashboardResolver } from '@app/modules/home/pages/dashboard/dashboard-routing.module';
 import { UtilsService } from '@core/services/utils.service';
 import { Widget } from '@app/shared/models/widget.models';
 import { MODULES_MAP } from '../../shared/models/constants';
@@ -57,39 +54,8 @@ export class WidgetEditorDashboardResolver implements Resolve<Dashboard> {
   }
 }
 
-const routes: Routes = [
-  {
-    path: 'dashboard/:dashboardId',
-    component: DashboardPageComponent,
-    data: {
-      breadcrumb: {
-        skip: true
-      },
-      auth: [Authority.TENANT_ADMIN, Authority.CUSTOMER_USER],
-      title: 'dashboard.dashboard',
-      widgetEditMode: false,
-      singlePageMode: true
-    },
-    resolve: {
-      dashboard: DashboardResolver
-    }
-  },
-  {
-    path: 'widget-editor',
-    component: DashboardPageComponent,
-    data: {
-      breadcrumb: {
-        skip: true
-      },
-      auth: [Authority.SYS_ADMIN, Authority.TENANT_ADMIN],
-      title: 'widget.editor',
-      widgetEditMode: true,
-      singlePageMode: true
-    },
-    resolve: {
-      dashboard: WidgetEditorDashboardResolver
-    }
-  }
+const routes: Routes = [{
+}
 ];
 
 @NgModule({
@@ -97,7 +63,6 @@ const routes: Routes = [
   exports: [RouterModule],
   providers: [
     WidgetEditorDashboardResolver,
-    DashboardResolver,
     {
       provide: MODULES_MAP,
       useValue: modulesMap
