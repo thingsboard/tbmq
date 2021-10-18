@@ -28,8 +28,6 @@ import { EventTableComponent } from '@home/components/event/event-table.componen
 import { EventFilterPanelComponent } from '@home/components/event/event-filter-panel.component';
 import { RelationTableComponent } from '@home/components/relation/relation-table.component';
 import { RelationDialogComponent } from '@home/components/relation/relation-dialog.component';
-import { AlarmTableHeaderComponent } from '@home/components/alarm/alarm-table-header.component';
-import { AlarmTableComponent } from '@home/components/alarm/alarm-table.component';
 import { AttributeTableComponent } from '@home/components/attribute/attribute-table.component';
 import { AddAttributeDialogComponent } from '@home/components/attribute/add-attribute-dialog.component';
 import { EditAttributeValuePanelComponent } from '@home/components/attribute/edit-attribute-value-panel.component';
@@ -165,8 +163,6 @@ import { AuthorizationRulesMappingComponent } from '@home/components/mqtt-creden
       RelationTableComponent,
       RelationDialogComponent,
       RelationFiltersComponent,
-      AlarmTableHeaderComponent,
-      AlarmTableComponent,
       AttributeTableComponent,
       AddAttributeDialogComponent,
       EditAttributeValuePanelComponent,
@@ -291,7 +287,6 @@ import { AuthorizationRulesMappingComponent } from '@home/components/mqtt-creden
     EdgeDownlinkTableComponent,
     RelationTableComponent,
     RelationFiltersComponent,
-    AlarmTableComponent,
     AttributeTableComponent,
     AliasesEntitySelectComponent,
     AliasesEntityAutocompleteComponent,

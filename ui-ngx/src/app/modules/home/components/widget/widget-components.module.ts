@@ -19,8 +19,6 @@ import { CommonModule } from '@angular/common';
 import { SharedModule } from '@app/shared/shared.module';
 import { EntitiesTableWidgetComponent } from '@home/components/widget/lib/entities-table-widget.component';
 import { DisplayColumnsPanelComponent } from '@home/components/widget/lib/display-columns-panel.component';
-import { AlarmsTableWidgetComponent } from '@home/components/widget/lib/alarms-table-widget.component';
-import { AlarmFilterPanelComponent } from '@home/components/widget/lib/alarm-filter-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
 import { TimeseriesTableWidgetComponent } from '@home/components/widget/lib/timeseries-table-widget.component';
 import { EntitiesHierarchyWidgetComponent } from '@home/components/widget/lib/entities-hierarchy-widget.component';
@@ -45,9 +43,7 @@ import { MarkdownWidgetComponent } from '@home/components/widget/lib/markdown-wi
   declarations:
     [
       DisplayColumnsPanelComponent,
-      AlarmFilterPanelComponent,
       EntitiesTableWidgetComponent,
-      AlarmsTableWidgetComponent,
       TimeseriesTableWidgetComponent,
       EntitiesHierarchyWidgetComponent,
       EdgesOverviewWidgetComponent,
@@ -70,7 +66,6 @@ import { MarkdownWidgetComponent } from '@home/components/widget/lib/markdown-wi
   ],
   exports: [
     EntitiesTableWidgetComponent,
-    AlarmsTableWidgetComponent,
     TimeseriesTableWidgetComponent,
     EntitiesHierarchyWidgetComponent,
     EdgesOverviewWidgetComponent,

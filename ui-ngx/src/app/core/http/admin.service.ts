@@ -35,7 +35,7 @@ export class AdminService {
     private http: HttpClient
   ) { }
 
-  public getAdminSettings<T>(key: string, config?: RequestConfig): Observable<AdminSettings<T>> {
+  /*public getAdminSettings<T>(key: string, config?: RequestConfig): Observable<AdminSettings<T>> {
     return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig(config));
   }
 
@@ -66,5 +66,5 @@ export class AdminService {
 
   public checkUpdates(config?: RequestConfig): Observable<UpdateMessage> {
     return this.http.get<UpdateMessage>(`/api/admin/updates`, defaultHttpOptionsFromConfig(config));
-  }
+  }*/
 }

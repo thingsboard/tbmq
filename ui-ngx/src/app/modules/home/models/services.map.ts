@@ -41,7 +41,6 @@ export const ServicesMap = new Map<string, Type<any>>(
   [
    ['broadcastService', BroadcastService],
    ['deviceService', DeviceService],
-   ['alarmService', AlarmService],
    ['assetService', AssetService],
    ['entityViewService', EntityViewService],
    ['customerService', CustomerService],
