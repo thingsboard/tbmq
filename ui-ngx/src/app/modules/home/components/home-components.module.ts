@@ -140,10 +140,6 @@ import { WidgetContainerComponent } from '@home/components/widget/widget-contain
 import { SnmpDeviceProfileTransportModule } from '@home/components/profile/device/snpm/snmp-device-profile-transport.module';
 import { DeviceCredentialsModule } from '@home/components/device/device-credentials.module';
 import { DeviceProfileCommonModule } from '@home/components/profile/device/common/device-profile-common.module';
-import { SubscriptionsComponent } from '@home/components/subscriptions/subscriptions.component';
-import { MqttCredentialsMqttBasicComponent } from '@home/components/mqtt-credentials-mqtt-basic/mqtt-credentials-mqtt-basic.component';
-import { MqttCredentialsMqttSslComponent } from '@home/components/mqtt-credentials-mqtt-ssl/mqtt-credentials-mqtt-ssl.component';
-import { AuthorizationRulesMappingComponent } from '@home/components/mqtt-credentials-mqtt-ssl/authorization-rules-mapping/authorization-rules-mapping.component';
 
 @NgModule({
   declarations:
@@ -260,11 +256,7 @@ import { AuthorizationRulesMappingComponent } from '@home/components/mqtt-creden
       DashboardStateDialogComponent,
       DashboardImageDialogComponent,
       EmbedDashboardDialogComponent,
-      DisplayWidgetTypesPanelComponent,
-      SubscriptionsComponent,
-      MqttCredentialsMqttBasicComponent,
-      MqttCredentialsMqttSslComponent,
-      AuthorizationRulesMappingComponent
+      DisplayWidgetTypesPanelComponent
     ],
   imports: [
     CommonModule,
@@ -374,11 +366,7 @@ import { AuthorizationRulesMappingComponent } from '@home/components/mqtt-creden
     DashboardStateDialogComponent,
     DashboardImageDialogComponent,
     EmbedDashboardDialogComponent,
-    DisplayWidgetTypesPanelComponent,
-    SubscriptionsComponent,
-    MqttCredentialsMqttBasicComponent,
-    MqttCredentialsMqttSslComponent,
-    AuthorizationRulesMappingComponent
+    DisplayWidgetTypesPanelComponent
   ],
   providers: [
     WidgetComponentService,

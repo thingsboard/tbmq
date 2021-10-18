@@ -25,7 +25,6 @@ import {
   Validator, Validators
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { AuthorizationRulesMap } from '@home/components/mqtt-credentials-mqtt-ssl/authorization-rules-mapping/authorization-rules-mapping.component';
 
 @Component({
   selector: 'tb-auth-rules',
@@ -137,7 +136,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   private prepareValues(authorizationRulesMapping: any) {
     const newObj = {};
-    authorizationRulesMapping.forEach( (obj: AuthorizationRulesMap) => {
+    authorizationRulesMapping.forEach( (obj: any) => {
       const key = obj.certificateMatcherRegex;
       newObj[key] = obj.topicRule;
     });

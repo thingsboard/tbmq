@@ -20,10 +20,12 @@ import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
 import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
 import { MqttSessionsRoutingModule } from '@home/pages/mqtt-sessions/mqtt-sessions-routing.module';
+import { SubscriptionsComponent } from '@home/components/subscriptions/subscriptions.component';
 
 @NgModule({
   declarations: [
-    MqttSessionsComponent
+    MqttSessionsComponent,
+    SubscriptionsComponent
   ],
   imports: [
     CommonModule,

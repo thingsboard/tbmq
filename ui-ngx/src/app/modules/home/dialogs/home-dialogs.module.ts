@@ -22,10 +22,6 @@ import { AddEntitiesToCustomerDialogComponent } from '@modules/home/dialogs/add-
 import { HomeDialogsService } from './home-dialogs.service';
 import { AddEntitiesToEdgeDialogComponent } from '@home/dialogs/add-entities-to-edge-dialog.component';
 import { ManageCredentialsDialogComponent } from '@home/dialogs/manage-credentials-dialog.component';
-import { MqttCredentialsComponent } from '@home/components/mqtt-credentials/mqtt-credentials.component';
-import { MqttCredentialsBasicComponent } from '@home/components/mqtt-credentials/basic/basic.component';
-import { MqttCredentialsSslComponent } from '@home/components/mqtt-credentials/ssl/ssl.component';
-import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-rules.component';
 
 @NgModule({
   declarations:
@@ -33,11 +29,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     AssignToCustomerDialogComponent,
     AddEntitiesToCustomerDialogComponent,
     AddEntitiesToEdgeDialogComponent,
-    ManageCredentialsDialogComponent,
-    MqttCredentialsComponent,
-    MqttCredentialsBasicComponent,
-    MqttCredentialsSslComponent,
-    AuthRulesComponent
+    ManageCredentialsDialogComponent
   ],
   imports: [
     CommonModule,
@@ -47,11 +39,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     AssignToCustomerDialogComponent,
     AddEntitiesToCustomerDialogComponent,
     AddEntitiesToEdgeDialogComponent,
-    ManageCredentialsDialogComponent,
-    MqttCredentialsComponent,
-    MqttCredentialsBasicComponent,
-    MqttCredentialsSslComponent,
-    AuthRulesComponent
+    ManageCredentialsDialogComponent
   ],
   providers: [
     HomeDialogsService
