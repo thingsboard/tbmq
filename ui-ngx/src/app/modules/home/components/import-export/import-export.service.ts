@@ -39,10 +39,6 @@ import { catchError, map, mergeMap, tap } from 'rxjs/operators';
 import { DashboardUtilsService } from '@core/services/dashboard-utils.service';
 import { EntityService } from '@core/http/entity.service';
 import { Widget, WidgetSize, WidgetType, WidgetTypeDetails } from '@shared/models/widget.models';
-import {
-  EntityAliasesDialogComponent,
-  EntityAliasesDialogData
-} from '@home/components/alias/entity-aliases-dialog.component';
 import { ItemBufferService, WidgetItem } from '@core/services/item-buffer.service';
 import { FileType, ImportWidgetResult, JSON_TYPE, WidgetsBundleItem, ZIP_TYPE } from './import-export.models';
 import { AliasEntityType, EntityType } from '@shared/models/entity-type.models';
@@ -689,27 +685,7 @@ export class ImportExportService {
     const allowedEntityTypes: Array<EntityType | AliasEntityType> =
       this.entityService.prepareAllowedEntityTypesList(null, true);
 
-    return this.dialog.open<EntityAliasesDialogComponent, EntityAliasesDialogData,
-      EntityAliases>(EntityAliasesDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        entityAliases: missingEntityAliases,
-        widgets,
-        customTitle,
-        isSingleWidget,
-        disableAdd: true,
-        allowedEntityTypes
-      }
-    }).afterClosed().pipe(
-      map((updatedEntityAliases) => {
-        if (updatedEntityAliases) {
-          return updatedEntityAliases;
-        } else {
-          throw new Error('Unable to resolve missing entity aliases!');
-        }
-      }
-    ));
+    return null;
   }
 
   private prepareAliasesInfo(aliasesInfo: AliasesInfo): AliasesInfo {

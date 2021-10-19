@@ -33,15 +33,10 @@ import { DashboardComponent } from '@home/components/dashboard/dashboard.compone
 import { WidgetComponent } from '@home/components/widget/widget.component';
 import { WidgetComponentService } from '@home/components/widget/widget-component.service';
 import { LegendComponent } from '@home/components/widget/legend.component';
-import { AliasesEntitySelectPanelComponent } from '@home/components/alias/aliases-entity-select-panel.component';
-import { AliasesEntitySelectComponent } from '@home/components/alias/aliases-entity-select.component';
 import { WidgetConfigComponent } from '@home/components/widget/widget-config.component';
-import { EntityAliasesDialogComponent } from '@home/components/alias/entity-aliases-dialog.component';
 import { EntityFilterViewComponent } from '@home/components/entity/entity-filter-view.component';
-import { EntityAliasDialogComponent } from '@home/components/alias/entity-alias-dialog.component';
 import { EntityFilterComponent } from '@home/components/entity/entity-filter.component';
 import { RelationFiltersComponent } from '@home/components/relation/relation-filters.component';
-import { EntityAliasSelectComponent } from '@home/components/alias/entity-alias-select.component';
 import { DataKeysComponent } from '@home/components/widget/data-keys.component';
 import { DataKeyConfigDialogComponent } from '@home/components/widget/data-key-config-dialog.component';
 import { DataKeyConfigComponent } from '@home/components/widget/data-key-config.component';
@@ -63,7 +58,6 @@ import { EventContentDialogComponent } from '@home/components/event/event-conten
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
 import { SelectTargetLayoutDialogComponent } from '@home/components/dashboard/select-target-layout-dialog.component';
 import { SelectTargetStateDialogComponent } from '@home/components/dashboard/select-target-state-dialog.component';
-import { AliasesEntityAutocompleteComponent } from '@home/components/alias/aliases-entity-autocomplete.component';
 import { BooleanFilterPredicateComponent } from '@home/components/filter/boolean-filter-predicate.component';
 import { StringFilterPredicateComponent } from '@home/components/filter/string-filter-predicate.component';
 import { NumericFilterPredicateComponent } from '@home/components/filter/numeric-filter-predicate.component';
@@ -131,7 +125,6 @@ import { AlarmDurationPredicateValueComponent } from '@home/components/profile/a
 import { DashboardImageDialogComponent } from '@home/components/dashboard-page/dashboard-image-dialog.component';
 import { WidgetContainerComponent } from '@home/components/widget/widget-container.component';
 import { SnmpDeviceProfileTransportModule } from '@home/components/profile/device/snpm/snmp-device-profile-transport.module';
-import { DeviceCredentialsModule } from '@home/components/device/device-credentials.module';
 import { DeviceProfileCommonModule } from '@home/components/profile/device/common/device-profile-common.module';
 
 @NgModule({
@@ -151,11 +144,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       AttributeTableComponent,
       AddAttributeDialogComponent,
       EditAttributeValuePanelComponent,
-      AliasesEntitySelectPanelComponent,
-      AliasesEntitySelectComponent,
-      AliasesEntityAutocompleteComponent,
-      EntityAliasesDialogComponent,
-      EntityAliasDialogComponent,
       DashboardComponent,
       WidgetContainerComponent,
       WidgetComponent,
@@ -163,7 +151,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       WidgetConfigComponent,
       EntityFilterViewComponent,
       EntityFilterComponent,
-      EntityAliasSelectComponent,
       DataKeysComponent,
       DataKeyConfigComponent,
       DataKeyConfigDialogComponent,
@@ -251,7 +238,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     Lwm2mProfileComponentsModule,
     SnmpDeviceProfileTransportModule,
     StatesControllerModule,
-    DeviceCredentialsModule,
     DeviceProfileCommonModule
   ],
   exports: [
@@ -263,10 +249,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     RelationTableComponent,
     RelationFiltersComponent,
     AttributeTableComponent,
-    AliasesEntitySelectComponent,
-    AliasesEntityAutocompleteComponent,
-    EntityAliasesDialogComponent,
-    EntityAliasDialogComponent,
     DashboardComponent,
     WidgetContainerComponent,
     WidgetComponent,
@@ -274,7 +256,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     WidgetConfigComponent,
     EntityFilterViewComponent,
     EntityFilterComponent,
-    EntityAliasSelectComponent,
     DataKeysComponent,
     DataKeyConfigComponent,
     DataKeyConfigDialogComponent,

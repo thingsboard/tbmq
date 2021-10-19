@@ -85,11 +85,6 @@ import { WidgetComponentService } from '../../components/widget/widget-component
 import { FormBuilder } from '@angular/forms';
 import { ItemBufferService } from '@core/services/item-buffer.service';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  EntityAliasesDialogComponent,
-  EntityAliasesDialogData
-} from '@home/components/alias/entity-aliases-dialog.component';
-import { EntityAliases } from '@app/shared/models/alias.models';
 import { EditWidgetComponent } from '@home/components/dashboard-page/edit-widget.component';
 import {
   AddWidgetDialogComponent,
@@ -648,25 +643,6 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
   }
 
   public openEntityAliases($event: Event) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.dialog.open<EntityAliasesDialogComponent, EntityAliasesDialogData,
-      EntityAliases>(EntityAliasesDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        entityAliases: deepClone(this.dashboard.configuration.entityAliases),
-        widgets: this.dashboardUtils.getWidgetsArray(this.dashboard),
-        isSingleEntityAlias: false,
-        allowedEntityTypes: this.allowedEntityTypes
-      }
-    }).afterClosed().subscribe((entityAliases) => {
-      if (entityAliases) {
-        this.dashboard.configuration.entityAliases = entityAliases;
-        this.entityAliasesUpdated();
-      }
-    });
   }
 
   public openFilters($event: Event) {

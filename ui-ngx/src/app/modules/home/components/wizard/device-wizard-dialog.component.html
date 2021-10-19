@@ -154,11 +154,6 @@
         <ng-template matStepLabel>{{ 'device.credentials' | translate }}</ng-template>
         <form [formGroup]="credentialsFormGroup" style="padding-bottom: 16px;">
           <mat-checkbox style="padding-bottom: 16px;" formControlName="setCredential">{{ 'device.wizard.add-credentials' | translate }}</mat-checkbox>
-          <tb-device-credentials
-            [fxShow]="credentialsFormGroup.get('setCredential').value"
-            [deviceTransportType]="deviceTransportType"
-            formControlName="credential">
-          </tb-device-credentials>
         </form>
       </mat-step>
       <mat-step [stepControl]="customerFormGroup" [optional]="true">

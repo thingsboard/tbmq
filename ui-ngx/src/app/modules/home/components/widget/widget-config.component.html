@@ -159,13 +159,6 @@
                         </ng-template>
                         <ng-template [ngSwitchCase]="datasourceControl.get('type').value === datasourceType.entity ||
                                                  datasourceControl.get('type').value === datasourceType.entityCount ? datasourceControl.get('type').value : ''">
-                          <tb-entity-alias-select
-                            [showLabel]="true"
-                            [tbRequired]="true"
-                            [aliasController]="aliasController"
-                            [formControl]="datasourceControl.get('entityAliasId')"
-                            [callbacks]="widgetConfigCallbacks">
-                          </tb-entity-alias-select>
                           <tb-filter-select
                             [showLabel]="true"
                             [aliasController]="aliasController"
@@ -231,13 +224,6 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <div [formGroup]="targetDeviceSettings" style="padding: 0 5px;">
-          <tb-entity-alias-select fxFlex
-            [tbRequired]="!widgetEditMode"
-            [aliasController]="aliasController"
-            [allowedEntityTypes]="[entityTypes.DEVICE]"
-            [callbacks]="widgetConfigCallbacks"
-            formControlName="targetDeviceAliasId">
-          </tb-entity-alias-select>
         </div>
       </mat-expansion-panel>
       <mat-expansion-panel class="tb-datasources" *ngIf="widgetType === widgetTypes.alarm &&
@@ -262,13 +248,6 @@
             </mat-form-field>
             <section class="tb-datasource" [ngSwitch]="alarmSourceSettings.get('type').value">
               <ng-template [ngSwitchCase]="datasourceType.entity">
-                <tb-entity-alias-select
-                  [showLabel]="true"
-                  [tbRequired]="alarmSourceSettings.get('type').value === datasourceType.entity"
-                  [aliasController]="aliasController"
-                  formControlName="entityAliasId"
-                  [callbacks]="widgetConfigCallbacks">
-                </tb-entity-alias-select>
                 <tb-filter-select
                   [showLabel]="true"
                   [aliasController]="aliasController"

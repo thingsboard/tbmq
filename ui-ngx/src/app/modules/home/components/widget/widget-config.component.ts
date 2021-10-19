@@ -56,10 +56,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
 import { Observable, of, Subscription } from 'rxjs';
 import { WidgetConfigCallbacks } from '@home/components/widget/widget-config.component.models';
-import {
-  EntityAliasDialogComponent,
-  EntityAliasDialogData
-} from '@home/components/alias/entity-alias-dialog.component';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { EntityService } from '@core/http/entity.service';
@@ -146,7 +142,6 @@ export class WidgetConfigComponent extends PageComponent implements OnInit, Cont
   datasourceTypesTranslations = datasourceTypeTranslationMap;
 
   widgetConfigCallbacks: WidgetConfigCallbacks = {
-    createEntityAlias: this.createEntityAlias.bind(this),
     createFilter: this.createFilter.bind(this),
     generateDataKey: this.generateDataKey.bind(this),
     fetchEntityKeys: this.fetchEntityKeys.bind(this),
@@ -779,24 +774,7 @@ export class WidgetConfigComponent extends PageComponent implements OnInit, Cont
 
   private createEntityAlias(alias: string, allowedEntityTypes: Array<EntityType>): Observable<EntityAlias> {
     const singleEntityAlias: EntityAlias = {id: null, alias, filter: {resolveMultiple: false}};
-    return this.dialog.open<EntityAliasDialogComponent, EntityAliasDialogData,
-      EntityAlias>(EntityAliasDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        isAdd: true,
-        allowedEntityTypes,
-        entityAliases: this.entityAliases,
-        alias: singleEntityAlias
-      }
-    }).afterClosed().pipe(
-      tap((entityAlias) => {
-        if (entityAlias) {
-          this.entityAliases[entityAlias.id] = entityAlias;
-          this.aliasController.updateEntityAliases(this.entityAliases);
-        }
-      })
-    );
+    return null;
   }
 
   private createFilter(filter: string): Observable<Filter> {
