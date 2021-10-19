@@ -21,8 +21,6 @@ import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dia
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
-import { AuditLogDetailsDialogComponent } from '@home/components/audit-log/audit-log-details-dialog.component';
-import { AuditLogTableComponent } from '@home/components/audit-log/audit-log-table.component';
 import { EventTableHeaderComponent } from '@home/components/event/event-table-header.component';
 import { EventTableComponent } from '@home/components/event/event-table.component';
 import { EventFilterPanelComponent } from '@home/components/event/event-filter-panel.component';
@@ -114,9 +112,6 @@ import { EditAlarmDetailsDialogComponent } from '@home/components/profile/alarm/
 import { AlarmRuleConditionDialogComponent } from '@home/components/profile/alarm/alarm-rule-condition-dialog.component';
 import { DefaultTenantProfileConfigurationComponent } from '@home/components/profile/tenant/default-tenant-profile-configuration.component';
 import { TenantProfileConfigurationComponent } from '@home/components/profile/tenant/tenant-profile-configuration.component';
-import { SmsProviderConfigurationComponent } from '@home/components/sms/sms-provider-configuration.component';
-import { AwsSnsProviderConfigurationComponent } from '@home/components/sms/aws-sns-provider-configuration.component';
-import { TwilioSmsProviderConfigurationComponent } from '@home/components/sms/twilio-sms-provider-configuration.component';
 import { Lwm2mProfileComponentsModule } from '@home/components/profile/device/lwm2m/lwm2m-profile-components.module';
 import { DashboardPageComponent } from '@home/components/dashboard-page/dashboard-page.component';
 import { DashboardToolbarComponent } from '@home/components/dashboard-page/dashboard-toolbar.component';
@@ -131,8 +126,6 @@ import { ManageDashboardStatesDialogComponent } from '@home/components/dashboard
 import { DashboardStateDialogComponent } from '@home/components/dashboard-page/states/dashboard-state-dialog.component';
 import { EmbedDashboardDialogComponent } from '@home/components/widget/dialog/embed-dashboard-dialog.component';
 import { EMBED_DASHBOARD_DIALOG_TOKEN } from '@home/components/widget/dialog/embed-dashboard-dialog-token';
-import { EdgeDownlinkTableComponent } from '@home/components/edge/edge-downlink-table.component';
-import { EdgeDownlinkTableHeaderComponent } from '@home/components/edge/edge-downlink-table-header.component';
 import { DisplayWidgetTypesPanelComponent } from '@home/components/dashboard-page/widget-types-panel.component';
 import { AlarmDurationPredicateValueComponent } from '@home/components/profile/alarm/alarm-duration-predicate-value.component';
 import { DashboardImageDialogComponent } from '@home/components/dashboard-page/dashboard-image-dialog.component';
@@ -148,14 +141,10 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       AddEntityDialogComponent,
       DetailsPanelComponent,
       EntityDetailsPanelComponent,
-      AuditLogTableComponent,
-      AuditLogDetailsDialogComponent,
       EventContentDialogComponent,
       EventTableHeaderComponent,
       EventTableComponent,
       EventFilterPanelComponent,
-      EdgeDownlinkTableHeaderComponent,
-      EdgeDownlinkTableComponent,
       RelationTableComponent,
       RelationDialogComponent,
       RelationFiltersComponent,
@@ -241,9 +230,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       DeviceWizardDialogComponent,
       AlarmScheduleDialogComponent,
       EditAlarmDetailsDialogComponent,
-      SmsProviderConfigurationComponent,
-      AwsSnsProviderConfigurationComponent,
-      TwilioSmsProviderConfigurationComponent,
       DashboardToolbarComponent,
       DashboardPageComponent,
       DashboardLayoutComponent,
@@ -273,10 +259,7 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     AddEntityDialogComponent,
     DetailsPanelComponent,
     EntityDetailsPanelComponent,
-    AuditLogTableComponent,
     EventTableComponent,
-    EdgeDownlinkTableHeaderComponent,
-    EdgeDownlinkTableComponent,
     RelationTableComponent,
     RelationFiltersComponent,
     AttributeTableComponent,
@@ -351,9 +334,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     EditAlarmDetailsDialogComponent,
     DeviceProfileProvisionConfigurationComponent,
     AlarmScheduleComponent,
-    SmsProviderConfigurationComponent,
-    AwsSnsProviderConfigurationComponent,
-    TwilioSmsProviderConfigurationComponent,
     DashboardToolbarComponent,
     DashboardPageComponent,
     DashboardLayoutComponent,
