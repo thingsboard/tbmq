@@ -76,6 +76,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   removeRule(index: number) {
+    this.rulesMappingFormGroup.markAsDirty();
     (this.rulesMappingFormGroup.get('authorizationRulesMapping') as FormArray).removeAt(index);
   }
 

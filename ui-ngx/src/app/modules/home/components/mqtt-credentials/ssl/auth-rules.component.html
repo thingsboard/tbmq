@@ -21,7 +21,7 @@
       <mat-panel-title>
         <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules</div>
       </mat-panel-title>
-      <mat-panel-description *ngIf="!rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
+      <mat-panel-description *ngIf="rulesMappingFormGroup.dirty && !rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
         <mat-error translate>mqtt-client-credentials.add-authorization-rule-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>

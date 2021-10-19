@@ -39,7 +39,7 @@
     <tb-toggle-password matSuffix></tb-toggle-password>
   </mat-form-field>
   <tb-error style="margin-top: -12px; display: block;"
-            *ngIf="!disabled"
+            *ngIf="credentialsMqttFormGroup.dirty"
             [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
             ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''"></tb-error>
 </section>
