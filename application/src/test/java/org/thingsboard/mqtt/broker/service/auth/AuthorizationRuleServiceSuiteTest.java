@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class AuthorizationRuleServiceTestSuite {
+public class AuthorizationRuleServiceSuiteTest {
     private AuthorizationRuleService authorizationRuleService;
 
     @Before

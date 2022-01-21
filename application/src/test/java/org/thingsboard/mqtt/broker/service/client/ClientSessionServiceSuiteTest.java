@@ -41,7 +41,7 @@ import java.util.UUID;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ClientSessionServiceTestSuite {
+public class ClientSessionServiceSuiteTest {
     private static final String TEST_SERVICE_ID = "testServiceId";
     private static final String DEFAULT_CLIENT_ID = "test";
     private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;

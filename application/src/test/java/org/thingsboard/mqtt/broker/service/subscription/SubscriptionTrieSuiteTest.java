@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class SubscriptionTrieTestSuite {
+public class SubscriptionTrieSuiteTest {
 
     private ConcurrentMapSubscriptionTrie<String> subscriptionTrie;
     private AtomicInteger subscriptionCounter;

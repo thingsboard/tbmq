@@ -22,5 +22,5 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class KeepAliveTestSuite {
+public class KeepAliveSuiteTest {
 }

@@ -26,7 +26,7 @@ import java.util.Random;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class TopicValidationTestSuit {
+public class TopicValidationSuitTest {
 
     private DefaultTopicValidationService topicValidationService;
 
