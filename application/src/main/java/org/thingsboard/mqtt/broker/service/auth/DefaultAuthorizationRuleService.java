@@ -43,7 +43,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(topicRule -> new AuthorizationRule(Pattern.compile(topicRule)))
+                .map(topicRules -> new AuthorizationRule(topicRules.stream().map(Pattern::compile).collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
         if (authorizationRules.isEmpty()) {
@@ -61,15 +61,16 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
         if (credentials.getAuthorizationRulePattern() == null) {
             return null;
         } else {
-            return new AuthorizationRule(Pattern.compile(credentials.getAuthorizationRulePattern()));
+            return new AuthorizationRule(List.of(Pattern.compile(credentials.getAuthorizationRulePattern())));
         }
     }
 
     @Override
     public boolean isAuthorized(String topic, List<AuthorizationRule> authorizationRules) {
         return authorizationRules.stream()
-                .map(AuthorizationRule::getPattern)
-                .map(pattern -> pattern.matcher(topic))
-                .anyMatch(Matcher::matches);
+                .map(AuthorizationRule::getPatterns)
+                .anyMatch(patterns -> patterns.stream()
+                        .map(pattern -> pattern.matcher(topic))
+                        .anyMatch(Matcher::matches));
     }
 }

@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
@@ -73,7 +73,7 @@ public class SubscriptionTriePerformanceTest {
     }
 
     @Before
-    public void before(){
+    public void before() {
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         Mockito.when(statsManagerMock.createSubscriptionSizeCounter()).thenReturn(new AtomicInteger());
         Mockito.when(statsManagerMock.createSubscriptionTrieNodesCounter()).thenReturn(new AtomicLong());
@@ -81,7 +81,7 @@ public class SubscriptionTriePerformanceTest {
     }
 
     @Test
-    public void testSingleThread() throws Exception{
+    public void testSingleThread() throws Exception {
         List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
 
         List<String> topicFilters = initializeTopicFilters(levelSuppliers);
@@ -109,7 +109,7 @@ public class SubscriptionTriePerformanceTest {
     }
 
     @Test
-    public void testMultipleThreads() throws Exception{
+    public void testMultipleThreads() throws Exception {
         List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
 
         List<String> topicFilters = initializeTopicFilters(levelSuppliers);
@@ -147,7 +147,7 @@ public class SubscriptionTriePerformanceTest {
     private void simulateSubscribers(List<String> topicFilters, CountDownLatch processingPublishers) {
         while (processingPublishers.getCount() > 0) {
             ThreadLocalRandom r = ThreadLocalRandom.current();
-            if (r.nextBoolean()){
+            if (r.nextBoolean()) {
                 SessionInfoSubscriptions sessionInfoSubscriptions = this.sessionInfoSubscriptionsList.get(r.nextInt(this.sessionInfoSubscriptionsList.size()));
                 for (String topicFilter : sessionInfoSubscriptions.topicFilters) {
                     subscriptionTrie.delete(topicFilter,

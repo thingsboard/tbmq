@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.Random;
@@ -105,7 +105,7 @@ public class TopicValidationTestSuit {
             if (i % 10 == 0) {
                 builder.append('/');
             } else {
-                builder.append((char)(r.nextInt(26) + 'a'));
+                builder.append((char) (r.nextInt(26) + 'a'));
             }
         }
         return builder.toString();
@@ -128,13 +128,11 @@ public class TopicValidationTestSuit {
         topicValidationService.validateTopicFilter(topic);
     }
 
-
-
     private String generateManySegmentsTopic(int maxSegmentsSize) {
         Random r = new Random();
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < maxSegmentsSize + 1; i++) {
-            builder.append((char)(r.nextInt(26) + 'a'));
+            builder.append((char) (r.nextInt(26) + 'a'));
             builder.append('/');
         }
         return builder.toString();

@@ -17,9 +17,9 @@ package org.thingsboard.mqtt.broker.dao.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -47,16 +47,18 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 @Slf4j
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
-    @Autowired
-    private MqttClientCredentialsDao mqttClientCredentialsDao;
-
+    private final MqttClientCredentialsDao mqttClientCredentialsDao;
     // TODO: move encoder out of DAO level
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public MqttClientCredentialsServiceImpl(MqttClientCredentialsDao mqttClientCredentialsDao, BCryptPasswordEncoder passwordEncoder) {
+        this.mqttClientCredentialsDao = mqttClientCredentialsDao;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
-        if(mqttClientCredentials.getCredentialsType() == null){
+        if (mqttClientCredentials.getCredentialsType() == null) {
             throw new DataValidationException("MQTT Client credentials type should be specified");
         }
         switch (mqttClientCredentials.getCredentialsType()) {
@@ -153,19 +155,19 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
             throw new DataValidationException("Parent certificate's common name should be specified!");
         }
-        if (mqttCredentials.getAuthorizationRulesMapping() == null || mqttCredentials.getAuthorizationRulesMapping().isEmpty()) {
+        if (CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
         }
-        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRule) -> {
+        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRules) -> {
             try {
                 Pattern.compile(certificateMatcherRegex);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
             try {
-                Pattern.compile(topicRule);
+                topicRules.forEach(Pattern::compile);
             } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Topic authorization rule [" + topicRule + "] must be a valid regex");
+                throw new DataValidationException("Topic authorization rule [" + topicRules + "] must be a valid regex");
             }
         });
 

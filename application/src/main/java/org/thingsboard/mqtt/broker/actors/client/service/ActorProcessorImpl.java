@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -90,8 +91,14 @@ public class ActorProcessorImpl implements ActorProcessor {
         String clientId = sessionCtx.getClientId();
         List<AuthorizationRule> authorizationRules = authResponse.getAuthorizationRules();
         if (authorizationRules != null && !authorizationRules.isEmpty()) {
-            List<String> authPatterns = authorizationRules.stream().map(AuthorizationRule::getPattern).map(Pattern::toString).collect(Collectors.toList());
-            log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
+            if (log.isDebugEnabled()) {
+                Set<String> authPatterns = authorizationRules.stream()
+                        .map(AuthorizationRule::getPatterns).collect(Collectors.toList())
+                        .stream().flatMap(List::stream)
+                        .map(Pattern::toString)
+                        .collect(Collectors.toSet());
+                log.debug("[{}] Authorization rules for client - {}.", clientId, authPatterns);
+            }
             sessionCtx.setAuthorizationRules(authorizationRules);
         }
         sessionCtx.setClientType(authResponse.getClientType());
