@@ -43,7 +43,7 @@ public class IntegrationTestInitService {
             });
         }
 
-        connectingSubscribers.await(2, TimeUnit.SECONDS);
+        connectingSubscribers.await();
 
         CountDownLatch processingPublishers = new CountDownLatch(PUBLISHERS_COUNT);
         for (int i = 0; i < PUBLISHERS_COUNT; i++) {
@@ -54,7 +54,7 @@ public class IntegrationTestInitService {
             });
         }
 
-        processingPublishers.await(2, TimeUnit.SECONDS);
+        processingPublishers.await();
 
         subscribersWaiter.await(1, TimeUnit.SECONDS, SUBSCRIBERS_COUNT);
     }

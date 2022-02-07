@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.keepalive;
+package org.thingsboard.mqtt.broker.common.util;
 
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+public class MqttClientCredentialsUtil {
 
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-@Ignore
-// TODO: 07.02.22 implement tests
-public class KeepAliveSuiteTest {
+    public static <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
+        T credentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), credentialsClassType);
+        if (credentials == null) {
+            throw new IllegalArgumentException("Invalid credentials body for mqtt credentials!");
+        }
+        return credentials;
+    }
+
 }

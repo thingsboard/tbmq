@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
@@ -50,10 +50,10 @@ public class TestUtils {
     public static MqttClientCredentials createApplicationClientCredentials(String clientId) {
         BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, null, null, null);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
-        mqttClientCredentials.setClientType(ClientType.APPLICATION);
+        mqttClientCredentials.setClientType(ClientType.DEVICE);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         mqttClientCredentials.setName("ApplicationCredentials");
-        mqttClientCredentials.setCredentialsId(JacksonUtil.toString(basicMqttCredentials));
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return mqttClientCredentials;
     }
 }

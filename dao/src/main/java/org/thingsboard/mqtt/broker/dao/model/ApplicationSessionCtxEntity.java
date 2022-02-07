@@ -23,7 +23,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
 
 import javax.persistence.Column;
@@ -53,7 +53,8 @@ public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY)
     private JsonNode pubRelMsgInfos;
 
-    public ApplicationSessionCtxEntity() {}
+    public ApplicationSessionCtxEntity() {
+    }
 
     public ApplicationSessionCtxEntity(ApplicationSessionCtx applicationSessionCtx) {
         this.clientId = applicationSessionCtx.getClientId();

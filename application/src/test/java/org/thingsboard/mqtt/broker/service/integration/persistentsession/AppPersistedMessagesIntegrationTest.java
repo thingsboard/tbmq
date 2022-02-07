@@ -17,11 +17,11 @@ package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +29,10 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -46,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 @ContextConfiguration(classes = AppPersistedMessagesIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-@Ignore
 public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrationTest {
     private static final String TEST_CLIENT_ID = "test-application-client";
     @Autowired
@@ -59,6 +55,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
     @Before
     public void init() {
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
+        basicMqttCredentials = new BasicMqttCredentials(RandomStringUtils.randomAlphabetic(5), "", null, null);
     }
 
     @After
@@ -94,7 +91,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(200, TimeUnit.MILLISECONDS);
+        waiter.await(10000, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -121,6 +118,6 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(200, TimeUnit.MILLISECONDS, 2);
+        waiter.await(10000, TimeUnit.MILLISECONDS, 2);
     }
 }

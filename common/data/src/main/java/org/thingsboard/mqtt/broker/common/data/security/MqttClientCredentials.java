@@ -15,7 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security;
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 
@@ -40,10 +42,11 @@ public class MqttClientCredentials extends BaseData {
 
     public MqttClientCredentials(MqttClientCredentials mqttClientCredentials) {
         super(mqttClientCredentials);
-        this.name = mqttClientCredentials.name;
-        this.clientType = mqttClientCredentials.clientType;
-        this.credentialsId = mqttClientCredentials.credentialsId;
-        this.credentialsType = mqttClientCredentials.credentialsType;
+        this.name = mqttClientCredentials.getName();
+        this.clientType = mqttClientCredentials.getClientType();
+        this.credentialsId = mqttClientCredentials.getCredentialsId();
+        this.credentialsType = mqttClientCredentials.getCredentialsType();
+        this.credentialsValue = mqttClientCredentials.getCredentialsValue();
     }
 
 }

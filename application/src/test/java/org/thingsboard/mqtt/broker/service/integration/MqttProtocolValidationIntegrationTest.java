@@ -20,7 +20,6 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -34,7 +33,6 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 @ContextConfiguration(classes = MqttProtocolValidationIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-@Ignore
 public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Test(expected = MqttException.class)
@@ -44,7 +42,7 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
         connectOptions.setCleanSession(false);
         try {
             testClient.connect(connectOptions);
-        } catch (MqttException e){
+        } catch (MqttException e) {
             Assert.assertFalse(testClient.isConnected());
             throw e;
         }

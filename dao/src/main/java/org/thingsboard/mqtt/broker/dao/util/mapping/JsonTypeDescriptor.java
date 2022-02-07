@@ -19,12 +19,10 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
 import org.hibernate.usertype.DynamicParameterizedType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.util.Properties;
 
-/**
- * Created by Valerii Sosliuk on 5/12/2017.
- */
 public class JsonTypeDescriptor
         extends AbstractTypeDescriptor<Object>
         implements DynamicParameterizedType {
@@ -33,13 +31,13 @@ public class JsonTypeDescriptor
 
     @Override
     public void setParameterValues(Properties parameters) {
-        jsonObjectClass = ( (ParameterType) parameters.get( PARAMETER_TYPE ) )
+        jsonObjectClass = ((ParameterType) parameters.get(PARAMETER_TYPE))
                 .getReturnedClass();
 
     }
 
     public JsonTypeDescriptor() {
-        super( Object.class, new MutableMutabilityPlan<Object>() {
+        super(Object.class, new MutableMutabilityPlan<Object>() {
             @Override
             protected Object deepCopyNotNull(Object value) {
                 return JacksonUtil.clone(value);
@@ -49,10 +47,10 @@ public class JsonTypeDescriptor
 
     @Override
     public boolean areEqual(Object one, Object another) {
-        if ( one == another ) {
+        if (one == another) {
             return true;
         }
-        if ( one == null || another == null ) {
+        if (one == null || another == null) {
             return false;
         }
         return JacksonUtil.toJsonNode(JacksonUtil.toString(one)).equals(
@@ -69,24 +67,24 @@ public class JsonTypeDescriptor
         return JacksonUtil.fromString(string, jsonObjectClass);
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     @Override
     public <X> X unwrap(Object value, Class<X> type, WrapperOptions options) {
-        if ( value == null ) {
+        if (value == null) {
             return null;
         }
-        if ( String.class.isAssignableFrom( type ) ) {
+        if (String.class.isAssignableFrom(type)) {
             return (X) toString(value);
         }
-        if ( Object.class.isAssignableFrom( type ) ) {
+        if (Object.class.isAssignableFrom(type)) {
             return (X) JacksonUtil.toJsonNode(toString(value));
         }
-        throw unknownUnwrap( type );
+        throw unknownUnwrap(type);
     }
 
     @Override
     public <X> Object wrap(X value, WrapperOptions options) {
-        if ( value == null ) {
+        if (value == null) {
             return null;
         }
         return fromString(value.toString());

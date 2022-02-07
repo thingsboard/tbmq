@@ -29,10 +29,11 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MqttClientAuthProviderManagerImpl implements MqttClientAuthProviderManager {
+
     @Value("${security.mqtt.basic.enabled}")
-    private Boolean basicAuthEnabled;
+    private boolean basicAuthEnabled;
     @Value("${security.mqtt.ssl.enabled}")
-    private Boolean sslAuthEnabled;
+    private boolean sslAuthEnabled;
 
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;

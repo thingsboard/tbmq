@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.dao.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -28,10 +27,10 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.List;
@@ -48,12 +47,9 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
-    // TODO: move encoder out of DAO level
-    private final BCryptPasswordEncoder passwordEncoder;
 
-    public MqttClientCredentialsServiceImpl(MqttClientCredentialsDao mqttClientCredentialsDao, BCryptPasswordEncoder passwordEncoder) {
+    public MqttClientCredentialsServiceImpl(MqttClientCredentialsDao mqttClientCredentialsDao) {
         this.mqttClientCredentialsDao = mqttClientCredentialsDao;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -128,10 +124,6 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
-        }
-        if (!StringUtils.isEmpty(mqttCredentials.getPassword())) {
-            mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
-            mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
         if (StringUtils.isEmpty(mqttCredentials.getClientId())) {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
