@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -30,8 +32,6 @@ import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;
@@ -53,8 +53,7 @@ public class ClientSessionServiceSuiteTest {
                     .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_TYPE))
                     .serviceId(TEST_SERVICE_ID)
                     .build())
-            .build()
-            ;
+            .build();
 
     private ClientSessionService clientSessionService;
 
@@ -63,7 +62,6 @@ public class ClientSessionServiceSuiteTest {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
-//        Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
         this.clientSessionService = new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock);
         this.clientSessionService.init(Collections.emptyMap());
     }
@@ -88,9 +86,15 @@ public class ClientSessionServiceSuiteTest {
                         .persistent(false)
                         .build())
                 .build();
-        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {}, t -> {}));
-        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {}, t -> {}));
-        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
+        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
+        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
 
         Set<String> persistedClients = clientSessionService.getPersistentClientSessionInfos().keySet();
         Assert.assertEquals(2, persistedClients.size());
@@ -104,6 +108,8 @@ public class ClientSessionServiceSuiteTest {
                         .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID + "_not_valid", ClientType.DEVICE))
                         .build())
                 .build();
-        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
     }
 }

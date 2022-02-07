@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.Collections;
+import java.util.List;
 
 @DaoSqlTest
 public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
@@ -73,7 +74,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", "(not_closed");
+        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", List.of("(not_closed"));
         clientCredentials.setCredentialsValue(JacksonUtil.toString(wrongPatternBasicCred));
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }

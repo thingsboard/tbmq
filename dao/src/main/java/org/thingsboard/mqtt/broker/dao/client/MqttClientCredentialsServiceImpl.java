@@ -141,9 +141,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
 
-        if (mqttCredentials.getAuthorizationRulePattern() != null) {
+        if (!CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulePatterns())) {
             try {
-                Pattern.compile(mqttCredentials.getAuthorizationRulePattern());
+                mqttCredentials.getAuthorizationRulePatterns().forEach(Pattern::compile);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Authorization rule pattern should be a valid regex!");
             }

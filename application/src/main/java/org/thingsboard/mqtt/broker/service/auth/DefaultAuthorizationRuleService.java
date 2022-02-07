@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.auth;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -43,7 +44,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(topicRules -> new AuthorizationRule(topicRules.stream().map(Pattern::compile).collect(Collectors.toList())))
+                .map(topicRules -> new AuthorizationRule(compilePatterns(topicRules)))
                 .collect(Collectors.toList());
 
         if (authorizationRules.isEmpty()) {
@@ -58,11 +59,16 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
         if (credentials == null) {
             throw new AuthenticationException("Cannot parse BasicMqttCredentials.");
         }
-        if (credentials.getAuthorizationRulePattern() == null) {
+        if (CollectionUtils.isEmpty(credentials.getAuthorizationRulePatterns())) {
             return null;
         } else {
-            return new AuthorizationRule(List.of(Pattern.compile(credentials.getAuthorizationRulePattern())));
+            List<Pattern> patterns = compilePatterns(credentials.getAuthorizationRulePatterns());
+            return new AuthorizationRule(patterns);
         }
+    }
+
+    private List<Pattern> compilePatterns(List<String> authorizationRulePatterns) {
+        return authorizationRulePatterns.stream().map(Pattern::compile).collect(Collectors.toList());
     }
 
     @Override
