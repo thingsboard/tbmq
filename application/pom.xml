@@ -251,6 +251,9 @@
                     <systemPropertyVariables>
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
                     </systemPropertyVariables>
+                    <excludes>
+                        <exclude>**/sql/*Test.java</exclude>
+                    </excludes>
                     <includes>
                         <include>**/*TestSuite.java</include>
                     </includes>
