@@ -24,6 +24,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.*;
 @ContextConfiguration(classes = RestartIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
+@Ignore
 // Fails if separated on different classes
 public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
     private static final String TEST_CLIENT_ID = "test-application-client";

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
 @ContextConfiguration(classes = TopicsIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
+@Ignore
 public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
 
     private static final String BASIC_TOPIC = "use-case/country/city/store/department/group/device";

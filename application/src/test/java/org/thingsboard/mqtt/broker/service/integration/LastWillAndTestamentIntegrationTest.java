@@ -20,6 +20,7 @@ import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeoutException;
 @ContextConfiguration(classes = LastWillAndTestamentIntegrationTest.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
+@Ignore
 public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrationTest {
     private static final String TEST_TOPIC = "test";
     private static final String TEST_MESSAGE = "test_message";

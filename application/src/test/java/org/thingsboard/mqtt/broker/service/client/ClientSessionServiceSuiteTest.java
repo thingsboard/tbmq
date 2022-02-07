@@ -51,6 +51,7 @@ public class ClientSessionServiceSuiteTest {
                     .sessionId(UUID.randomUUID())
                     .persistent(true)
                     .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_TYPE))
+                    .serviceId(TEST_SERVICE_ID)
                     .build())
             .build()
             ;
@@ -62,7 +63,7 @@ public class ClientSessionServiceSuiteTest {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
-        Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
+//        Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
         this.clientSessionService = new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock);
         this.clientSessionService.init(Collections.emptyMap());
     }
