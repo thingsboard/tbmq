@@ -55,7 +55,6 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         Assert.assertNotNull(savedMqttClientCredentials.getId());
         Assert.assertTrue(savedMqttClientCredentials.getCreatedTime() > 0);
         Assert.assertNotNull(savedMqttClientCredentials.getCredentialsId());
-        Assert.assertNull(savedMqttClientCredentials.getClientId());
     }
 
     @Test
@@ -88,10 +87,11 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setCredentialsType(mqttBasic);
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
+        mqttClientCredentials.setName("name");
         return mqttClientCredentials;
     }
 
     private BasicMqttCredentials getBasicMqttCredentials(List<String> authorizationRulePatterns) {
-        return new BasicMqttCredentials("username", "password", authorizationRulePatterns);
+        return new BasicMqttCredentials("clientId", "username", "password", authorizationRulePatterns);
     }
 }

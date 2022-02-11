@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.concurrentunit.Waiter;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.After;
@@ -60,12 +60,14 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
     @After
     public void clear() throws Exception {
+        log.warn("After test finish...");
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
         }
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
         persistedClient.connect(connectOptions);
+        log.warn("After test finish... Persisted client connected: {}", isConnected());
         persistedClient.disconnect();
         persistedClient.close();
         credentialsService.deleteCredentials(applicationCredentials.getId());
@@ -77,9 +79,8 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         connectOptions.setCleanSession(false);
         persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
-        Waiter waiter = new Waiter();
+        log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> {
-            waiter.resume();
         });
         persistedClient.disconnect();
 
@@ -91,7 +92,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(10000, TimeUnit.MILLISECONDS);
+        log.warn("Persisted client connected: {}", isConnected());
     }
 
     @Test
@@ -100,9 +101,8 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         connectOptions.setCleanSession(false);
         persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
-        Waiter waiter = new Waiter();
+        log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> {
-            waiter.resume();
         });
 
         MqttClient publishingClient = new MqttClient("tcp://localhost:" + mqttPort, "publishing_client");
@@ -118,6 +118,12 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(10000, TimeUnit.MILLISECONDS, 2);
+        log.warn("Persisted client connected: {}", isConnected());
+    }
+
+    private boolean isConnected() {
+        return Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> persistedClient.isConnected(), Boolean::booleanValue);
     }
 }
