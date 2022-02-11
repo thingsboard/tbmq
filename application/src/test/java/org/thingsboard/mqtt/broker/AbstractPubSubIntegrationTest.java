@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.junit.ClassRule;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +31,11 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 
 @ActiveProfiles("test")
 @Import(AbstractPubSubIntegrationTest.KafkaTestContainersConfiguration.class)
@@ -51,12 +58,33 @@ public abstract class AbstractPubSubIntegrationTest {
         public boolean isLast;
     }
 
+    @ClassRule
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
+
+    public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
+        @Override
+        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+            if (bean instanceof TbKafkaConsumerSettings) {
+                TbKafkaConsumerSettings kafkaSettings = (TbKafkaConsumerSettings) bean;
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaProducerSettings) {
+                TbKafkaProducerSettings kafkaSettings = (TbKafkaProducerSettings) bean;
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaAdminSettings) {
+                TbKafkaAdminSettings kafkaAdminSettings = (TbKafkaAdminSettings) bean;
+                kafkaAdminSettings.setServers(kafka.getBootstrapServers());
+            }
+            return bean;
+        }
+    }
 
     @TestConfiguration
     static class KafkaTestContainersConfiguration {
         @Bean
-        IntegrationTestSuite.ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
-            return new IntegrationTestSuite.ReplaceKafkaPropertiesBeanPostProcessor();
+        ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
+            return new ReplaceKafkaPropertiesBeanPostProcessor();
         }
     }
 

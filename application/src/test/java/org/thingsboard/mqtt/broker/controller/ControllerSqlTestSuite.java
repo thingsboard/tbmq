@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker.controller;
 
 import org.junit.ClassRule;
 import org.junit.extensions.cpsuite.ClasspathSuite;
@@ -24,9 +24,9 @@ import java.util.Arrays;
 
 @RunWith(ClasspathSuite.class)
 @ClasspathSuite.ClassnameFilters({
-        "org.thingsboard.mqtt.broker.service.integration.*Test",
+        "org.thingsboard.mqtt.broker.controller.sql.*Test",
 })
-public class IntegrationTestSuite {
+public class ControllerSqlTestSuite {
 
     @ClassRule
     public static CustomSqlUnit sqlUnit = new CustomSqlUnit(
