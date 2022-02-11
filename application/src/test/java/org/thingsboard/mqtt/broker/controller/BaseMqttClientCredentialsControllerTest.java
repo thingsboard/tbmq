@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 @Slf4j
+// TODO: 11.02.22 implement real tests
 public abstract class BaseMqttClientCredentialsControllerTest extends AbstractControllerTest {
 
     @Before
@@ -35,7 +36,17 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
     }
 
     @Test
-    public void test() throws Exception {
+    public void saveMqttClientCredentialsTest() {
+        Assert.assertEquals(1, 1);
+    }
+
+    @Test
+    public void getMqttClientCredentialsTest() {
+        Assert.assertEquals(1, 1);
+    }
+
+    @Test
+    public void deleteCredentialsTest() {
         Assert.assertEquals(1, 1);
     }
 
