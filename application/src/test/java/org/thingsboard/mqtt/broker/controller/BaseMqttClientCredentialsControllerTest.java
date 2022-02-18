@@ -20,6 +20,15 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 // TODO: 11.02.22 implement real tests
@@ -36,8 +45,33 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
     }
 
     @Test
-    public void saveMqttClientCredentialsTest() {
-        Assert.assertEquals(1, 1);
+    public void saveMqttClientCredentialsTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
+
+        MqttClientCredentials savedMqttClientCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+
+        Assert.assertNotNull(savedMqttClientCredentials);
+        Assert.assertNotNull(savedMqttClientCredentials.getId());
+        Assert.assertTrue(savedMqttClientCredentials.getCreatedTime() > 0);
+        Assert.assertNotNull(savedMqttClientCredentials.getCredentialsId());
+        Assert.assertNull(savedMqttClientCredentials.getClientId());
+    }
+
+    @Test
+    public void saveMqttClientCredentialsWithNullCredentialsTypeTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(null, basicMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void saveMqttClientCredentialsWithInvalidAuthRulePatternsTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(Collections.singletonList("not_closed"));
+        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -50,4 +84,14 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         Assert.assertEquals(1, 1);
     }
 
+    private MqttClientCredentials getMqttClientCredentials(ClientCredentialsType mqttBasic, BasicMqttCredentials basicMqttCredentials) {
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setCredentialsType(mqttBasic);
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
+        return mqttClientCredentials;
+    }
+
+    private BasicMqttCredentials getBasicMqttCredentials(List<String> authorizationRulePatterns) {
+        return new BasicMqttCredentials("username", "password", authorizationRulePatterns);
+    }
 }
