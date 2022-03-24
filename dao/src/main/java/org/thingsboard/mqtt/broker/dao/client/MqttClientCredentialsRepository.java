@@ -15,14 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface MqttClientCredentialsRepository extends PagingAndSortingRepository<MqttClientCredentialsEntity, UUID> {
+
     MqttClientCredentialsEntity findByCredentialsId(String credentialsId);
 
     List<MqttClientCredentialsEntity> findByCredentialsIdIn(List<String> credentialsIds);
+
+    @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
+            "LOWER(c.searchText) LIKE LOWER(CONCAT(:textSearch, '%'))")
+    Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,
+                                              Pageable pageable);
 }

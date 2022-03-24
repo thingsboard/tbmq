@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.dto;
+package org.thingsboard.mqtt.broker.common.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.UUID;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShortMqttClientCredentials implements HasId {
-    private UUID id;
-    private String name;
-    private ClientType clientType;
-    private ClientCredentialsType credentialsType;
-    private long createdTime;
+public abstract class SearchTextBased extends BaseData {
+
+    private static final long serialVersionUID = -539812997348227609L;
+
+    public SearchTextBased() {
+        super();
+    }
+
+    public SearchTextBased(UUID id) {
+        super(id);
+    }
+
+    public SearchTextBased(SearchTextBased searchTextBased) {
+        super(searchTextBased);
+    }
+
+    @JsonIgnore
+    public abstract String getSearchText();
+
 }

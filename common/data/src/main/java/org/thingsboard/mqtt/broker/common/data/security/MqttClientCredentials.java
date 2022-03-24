@@ -15,16 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security;
 
-import lombok.*;
-import org.thingsboard.mqtt.broker.common.data.BaseData;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
 
 import java.util.UUID;
 
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class MqttClientCredentials extends BaseData {
+public class MqttClientCredentials extends SearchTextBased {
     private String credentialsId;
     private String name;
     private ClientType clientType;
@@ -38,12 +40,18 @@ public class MqttClientCredentials extends BaseData {
         super(id);
     }
 
+    @Override
+    public String getSearchText() {
+        return getName();
+    }
+
     public MqttClientCredentials(MqttClientCredentials mqttClientCredentials) {
         super(mqttClientCredentials);
-        this.name = mqttClientCredentials.name;
-        this.clientType = mqttClientCredentials.clientType;
-        this.credentialsId = mqttClientCredentials.credentialsId;
-        this.credentialsType = mqttClientCredentials.credentialsType;
+        this.name = mqttClientCredentials.getName();
+        this.clientType = mqttClientCredentials.getClientType();
+        this.credentialsId = mqttClientCredentials.getCredentialsId();
+        this.credentialsType = mqttClientCredentials.getCredentialsType();
+        this.credentialsValue = mqttClientCredentials.getCredentialsValue();
     }
 
 }
