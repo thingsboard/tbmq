@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,8 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
 
     @Override
     public PageData<MqttClientCredentials> findAll(PageLink pageLink) {
-        return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(DaoUtil.toPageable(pageLink)));
+        return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(
+                Objects.toString(pageLink.getTextSearch(), ""),
+                DaoUtil.toPageable(pageLink)));
     }
 }

@@ -21,7 +21,11 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -46,6 +50,9 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY)
     private String credentialsValue;
 
+    @Column(name = ModelConstants.SEARCH_TEXT_PROPERTY)
+    private String searchText;
+
     public MqttClientCredentialsEntity() {
     }
 
@@ -59,6 +66,7 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
+        this.searchText = mqttClientCredentials.getSearchText();
     }
 
     @Override

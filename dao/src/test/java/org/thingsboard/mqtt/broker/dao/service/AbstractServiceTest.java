@@ -26,8 +26,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.thingsboard.mqtt.broker.common.data.id.HasId;
 
 import java.io.IOException;
+import java.util.Comparator;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AbstractServiceTest.class, loader = AnnotationConfigContextLoader.class)
@@ -45,6 +47,13 @@ public abstract class AbstractServiceTest {
 
     public JsonNode readFromResource(String resourceName) throws IOException {
         return mapper.readTree(this.getClass().getClassLoader().getResourceAsStream(resourceName));
+    }
+
+    public class IdComparator<D extends HasId> implements Comparator<D> {
+        @Override
+        public int compare(D o1, D o2) {
+            return o1.getId().compareTo(o2.getId());
+        }
     }
 
 }

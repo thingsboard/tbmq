@@ -20,6 +20,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -28,11 +31,15 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 @DaoSqlTest
 public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
+
+    private IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
+
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
 
@@ -145,6 +152,50 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
         mqttClientCredentialsService.deleteCredentials(client1Credentials.getId());
         mqttClientCredentialsService.deleteCredentials(client2Credentials.getId());
+    }
+
+    @Test
+    public void testFindMqttClientCredentials() throws JsonProcessingException {
+        List<ShortMqttClientCredentials> mqttClientCredentialsList = new ArrayList<>();
+        for (int i = 0; i < 178; i++) {
+            MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(
+                    validMqttClientCredentials(
+                            "Credentials" + i,
+                            "clientId" + i,
+                            "username" + i,
+                            "password" + i));
+            ShortMqttClientCredentials shortMqttClientCredentials = new ShortMqttClientCredentials(
+                    savedCredentials.getId(),
+                    savedCredentials.getName(),
+                    savedCredentials.getClientType(),
+                    savedCredentials.getCredentialsType(),
+                    savedCredentials.getCreatedTime());
+            mqttClientCredentialsList.add(shortMqttClientCredentials);
+        }
+
+        List<ShortMqttClientCredentials> loadedMqttClientCredentialsList = new ArrayList<>();
+        PageLink pageLink = new PageLink(23);
+        PageData<ShortMqttClientCredentials> pageData;
+        do {
+            pageData = mqttClientCredentialsService.getCredentials(pageLink);
+            loadedMqttClientCredentialsList.addAll(pageData.getData());
+            if (pageData.hasNext()) {
+                pageLink = pageLink.nextPageLink();
+            }
+        } while (pageData.hasNext());
+
+        Collections.sort(mqttClientCredentialsList, idComparator);
+        Collections.sort(loadedMqttClientCredentialsList, idComparator);
+
+        Assert.assertEquals(mqttClientCredentialsList, loadedMqttClientCredentialsList);
+
+        loadedMqttClientCredentialsList.forEach(smcc ->
+                mqttClientCredentialsService.deleteCredentials(smcc.getId()));
+
+        pageLink = new PageLink(33);
+        pageData = mqttClientCredentialsService.getCredentials(pageLink);
+        Assert.assertFalse(pageData.hasNext());
+        Assert.assertTrue(pageData.getData().isEmpty());
     }
 
     private MqttClientCredentials validMqttClientCredentials(String credentialsName, String clientId, String username, String password) throws JsonProcessingException {

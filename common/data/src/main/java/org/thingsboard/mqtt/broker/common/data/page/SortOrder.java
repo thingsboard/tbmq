@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.dto;
+package org.thingsboard.mqtt.broker.common.data.page;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
-
-import java.util.UUID;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShortMqttClientCredentials implements HasId {
-    private UUID id;
-    private String name;
-    private ClientType clientType;
-    private ClientCredentialsType credentialsType;
-    private long createdTime;
+public class SortOrder {
+
+    private final String property;
+    private final Direction direction;
+
+    public SortOrder(String property) {
+        this(property, Direction.ASC);
+    }
+
+    public SortOrder(String property, Direction direction) {
+        this.property = property;
+        this.direction = direction;
+    }
+
+    public enum Direction {
+        ASC, DESC
+    }
+
 }
