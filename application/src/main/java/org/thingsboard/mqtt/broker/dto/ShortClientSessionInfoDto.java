@@ -18,20 +18,48 @@ package org.thingsboard.mqtt.broker.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
-import java.util.UUID;
+import java.util.Comparator;
+import java.util.function.Function;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class ShortClientSessionInfoDto {
-    private String id;
+
     private String clientId;
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;
+
+    public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
+        switch (sortOrder.getProperty()) {
+            case "clientId":
+                return getComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
+            case "connectionState":
+                return getComparator(sortOrder.getDirection(), csi -> csi.getConnectionState().name());
+            case "clientType":
+                return getComparator(sortOrder.getDirection(), csi -> csi.getClientType().name());
+            case "nodeId":
+                return getComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getNodeId);
+            default:
+                return null;
+        }
+    }
+
+    private static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder.Direction direction,
+                                                                       Function<ShortClientSessionInfoDto, String> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
 }

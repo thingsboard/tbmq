@@ -25,9 +25,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -40,11 +39,9 @@ public class SubscriptionController extends BaseController {
     @Autowired
     private SubscriptionMaintenanceService subscriptionMaintenanceService;
     @Autowired
-    private ClientSubscriptionReader clientSubscriptionReader;
+    private ClientSubscriptionCache clientSubscriptionCache;
     @Autowired
     private ClientSubscriptionAdminService subscriptionAdminService;
-    @Autowired
-    private SessionSubscriptionService sessionSubscriptionService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
@@ -76,7 +73,7 @@ public class SubscriptionController extends BaseController {
     @ResponseBody
     public Set<TopicSubscription> getClientSubscriptions(@PathVariable("clientId") String clientId) throws ThingsboardException {
         try {
-            return clientSubscriptionReader.getClientSubscriptions(clientId);
+            return clientSubscriptionCache.getClientSubscriptions(clientId);
         } catch (Exception e) {
             throw handleException(e);
         }

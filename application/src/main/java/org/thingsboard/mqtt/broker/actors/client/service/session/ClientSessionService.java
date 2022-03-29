@@ -17,13 +17,14 @@ package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 import java.util.Map;
 
-public interface ClientSessionService extends ClientSessionReader {
+public interface ClientSessionService extends ClientSessionCache {
+
     void init(Map<String, ClientSessionInfo> clientSessionInfos);
 
     void startListening(ClientSessionConsumer clientSessionConsumer);

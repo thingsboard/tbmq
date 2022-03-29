@@ -28,14 +28,14 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionReader;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import javax.annotation.PostConstruct;
@@ -52,13 +52,13 @@ import java.util.stream.Collectors;
 public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Autowired
-    private SubscriptionReader subscriptionReader;
+    private SubscriptionCache subscriptionCache;
     @Autowired
     private StatsManager statsManager;
     @Autowired
     private MsgPersistenceManager msgPersistenceManager;
     @Autowired
-    private ClientSessionReader clientSessionReader;
+    private ClientSessionCache clientSessionCache;
     @Autowired
     private DownLinkProxy downLinkProxy;
     @Autowired
@@ -88,7 +88,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionReader.getSubscriptions(publishMsgProto.getTopicName());
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionCache.getSubscriptions(publishMsgProto.getTopicName());
         List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
@@ -124,7 +124,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
                     String clientId = clientSubscription.getValue().getClientId();
-                    ClientSession clientSession = clientSessionReader.getClientSession(clientId);
+                    ClientSession clientSession = clientSessionCache.getClientSession(clientId);
                     if (clientSession == null) {
                         log.debug("[{}] Client session not found for existent client subscription.", clientId);
                         return null;

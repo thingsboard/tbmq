@@ -19,7 +19,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 
@@ -50,7 +49,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     private static final int BLANK_PACKET_ID = -1;
     private static final long BLANK_SERIAL_NUMBER = -1L;
 
-    private final ClientSessionReader clientSessionReader;
+    private final ClientSessionCache clientSessionCache;
     private final ClientLogger clientLogger;
     private final DbConnectionChecker dbConnectionChecker;
     private final DownLinkProxy downLinkProxy;
@@ -70,7 +69,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         boolean isDbConnected = dbConnectionChecker.isDbConnected()
                 && (lastPacketIdAndSerialNumbers = tryGetLastPacketIdAndSerialNumber(clientIds)) != null;
         if (isDbConnected) {
-            persistDeviceMsgs(devicePublishMessages, lastPacketIdAndSerialNumbers, consumerId, stats);;
+            persistDeviceMsgs(devicePublishMessages, lastPacketIdAndSerialNumbers, consumerId, stats);
         }
 
         for (String clientId : clientIds) {
@@ -82,7 +81,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     @Override
     public void deliverMessages(List<DevicePublishMsg> devicePublishMessages) {
         for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
-            ClientSession clientSession = clientSessionReader.getClientSession(devicePublishMsg.getClientId());
+            ClientSession clientSession = clientSessionCache.getClientSession(devicePublishMsg.getClientId());
             if (clientSession == null) {
                 log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
             } else if (!clientSession.isConnected()) {

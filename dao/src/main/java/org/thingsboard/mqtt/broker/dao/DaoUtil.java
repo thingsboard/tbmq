@@ -18,16 +18,24 @@ package org.thingsboard.mqtt.broker.dao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public abstract class DaoUtil {
 
     private DaoUtil() {
     }
+
     public static <T> List<T> convertDataList(Collection<? extends ToData<T>> toDataList) {
         List<T> list = Collections.emptyList();
         if (toDataList != null && !toDataList.isEmpty()) {
@@ -58,7 +66,23 @@ public abstract class DaoUtil {
     }
 
     public static Pageable toPageable(PageLink pageLink) {
-        return PageRequest.of(pageLink.getPage(), pageLink.getPageSize());
+        return toPageable(pageLink, Collections.emptyMap());
+    }
+
+    public static Pageable toPageable(PageLink pageLink, Map<String, String> columnMap) {
+        return PageRequest.of(pageLink.getPage(), pageLink.getPageSize(), toSort(pageLink.getSortOrder(), columnMap));
+    }
+
+    public static Sort toSort(SortOrder sortOrder, Map<String, String> columnMap) {
+        if (sortOrder == null) {
+            return Sort.unsorted();
+        } else {
+            String property = sortOrder.getProperty();
+            if (columnMap.containsKey(property)) {
+                property = columnMap.get(property);
+            }
+            return Sort.by(Sort.Direction.fromString(sortOrder.getDirection().name()), property);
+        }
     }
 
     public static <T> PageData<T> toPageData(Page<? extends ToData<T>> page) {

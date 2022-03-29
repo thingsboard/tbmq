@@ -22,7 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.util.CollectionsUtil;
 
@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdminService {
-    private final ClientSessionReader sessionReader;
-    private final ClientSubscriptionReader subscriptionReader;
+    private final ClientSessionCache sessionReader;
+    private final ClientSubscriptionCache subscriptionReader;
     private final ClientMqttActorManager clientMqttActorManager;
 
     @Override
