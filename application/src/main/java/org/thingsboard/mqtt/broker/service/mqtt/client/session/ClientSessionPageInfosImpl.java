@@ -22,7 +22,9 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,27 +32,50 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClientSessionPageReaderImpl implements ClientSessionPageReader {
-    private final ClientSessionReader clientSessionReader;
+public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
+
+    private final ClientSessionCache clientSessionCache;
 
     @Override
     public PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink) {
-        // TODO: add some sorting
-        Map<String, ClientSessionInfo> allClientSessions = clientSessionReader.getAllClientSessions();
-        List<ShortClientSessionInfoDto> data = allClientSessions.values().stream()
-                .skip(pageLink.getPage() * pageLink.getPageSize())
+        Map<String, ClientSessionInfo> allClientSessions = clientSessionCache.getAllClientSessions();
+
+        List<ClientSessionInfo> filteredByTextSearch = filterClientSessionInfos(allClientSessions, pageLink);
+
+        List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
+                .skip((long) pageLink.getPage() * pageLink.getPageSize())
                 .limit(pageLink.getPageSize())
                 .map(ClientSessionInfo::getClientSession)
                 .map(clientSession -> ShortClientSessionInfoDto.builder()
-                        .id(clientSession.getSessionInfo().getClientInfo().getClientId())
                         .clientId(clientSession.getSessionInfo().getClientInfo().getClientId())
                         .clientType(clientSession.getSessionInfo().getClientInfo().getType())
                         .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
                         .nodeId(clientSession.getSessionInfo().getServiceId())
                         .build())
+                .sorted(sorted(pageLink))
                 .collect(Collectors.toList());
-        return new PageData<>(data, allClientSessions.size() / pageLink.getPageSize(),
-                allClientSessions.size(),
-                pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < allClientSessions.size());
+
+        return new PageData<>(data,
+                filteredByTextSearch.size() / pageLink.getPageSize(),
+                filteredByTextSearch.size(),
+                pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < filteredByTextSearch.size());
+    }
+
+    private Comparator<? super ShortClientSessionInfoDto> sorted(PageLink pageLink) {
+        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
+                Comparator.nullsLast(ShortClientSessionInfoDto.getComparator(pageLink.getSortOrder()));
+    }
+
+    private List<ClientSessionInfo> filterClientSessionInfos(Map<String, ClientSessionInfo> allClientSessions, PageLink pageLink) {
+        return allClientSessions.values().stream()
+                .filter(clientSessionInfo -> filter(pageLink, clientSessionInfo.getClientSession()))
+                .collect(Collectors.toList());
+    }
+
+    private boolean filter(PageLink pageLink, ClientSession clientSession) {
+        if (pageLink.getTextSearch() != null) {
+            return clientSession.getSessionInfo().getClientInfo().getClientId().contains(pageLink.getTextSearch());
+        }
+        return true;
     }
 }

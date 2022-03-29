@@ -26,8 +26,8 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionReader;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpService {
-    private final ClientSessionReader clientSessionReader;
+    private final ClientSessionCache clientSessionCache;
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
 
@@ -49,7 +49,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     @Override
     public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
         log.trace("[{}] Removing ClientSession.", clientId);
-        ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
@@ -63,7 +63,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     @Override
     public void disconnectClientSession(String clientId, UUID sessionId) throws ThingsboardException {
         log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
-        ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
@@ -80,7 +80,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         log.info("Starting cleaning up stale ClientSessions.");
 
         long oldestAllowedTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
-        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionReader.getPersistentClientSessionInfos();
+        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionCache.getPersistentClientSessionInfos();
 
 
         List<SessionInfo> clientSessionToRemove = persistedClientSessionInfos.values().stream()

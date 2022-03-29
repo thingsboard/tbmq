@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import java.util.Set;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 
-public interface ClientSubscriptionReader {
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
+public interface ClientSessionPageInfos {
+
+    PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink);
+
 }

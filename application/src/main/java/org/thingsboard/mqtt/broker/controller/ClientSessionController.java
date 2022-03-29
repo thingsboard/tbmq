@@ -23,14 +23,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageReader;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 
 @RestController
 @RequestMapping("/api/client-session")
@@ -38,14 +38,14 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPage
 public class ClientSessionController extends BaseController {
     private final ClientSessionCleanUpService clientSessionCleanUpService;
     private final SessionSubscriptionService sessionSubscriptionService;
-    private final ClientSessionPageReader clientSessionPageReader;
+    private final ClientSessionPageInfos clientSessionPageInfos;
 
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}/remove/{sessionId}", method = RequestMethod.DELETE)
     @ResponseBody
     public void removeClientSession(@PathVariable("clientId") String clientId,
-                                   @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
+                                    @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
         try {
             clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
         } catch (Exception e) {
@@ -79,10 +79,14 @@ public class ClientSessionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<ShortClientSessionInfoDto> getShortClientSessionInfos(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<ShortClientSessionInfoDto> getShortClientSessionInfos(@RequestParam int pageSize,
+                                                                          @RequestParam int page,
+                                                                          @RequestParam(required = false) String textSearch,
+                                                                          @RequestParam(required = false) String sortProperty,
+                                                                          @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
-            PageLink pageLink = new PageLink(pageSize, page);
-            return checkNotNull(clientSessionPageReader.getClientSessionInfos(pageLink));
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(clientSessionPageInfos.getClientSessionInfos(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionReader;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Set;
@@ -35,19 +35,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SessionSubscriptionServiceImpl implements SessionSubscriptionService {
-    private final ClientSessionReader clientSessionReader;
-    private final ClientSubscriptionReader subscriptionReader;
+    private final ClientSessionCache clientSessionCache;
+    private final ClientSubscriptionCache subscriptionCache;
 
     @Override
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) throws ThingsboardException {
-        ClientSessionInfo clientSessionInfo = clientSessionReader.getClientSessionInfo(clientId);
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
             throw new ThingsboardException(ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         ClientSession clientSession = clientSessionInfo.getClientSession();
         SessionInfo sessionInfo = clientSession.getSessionInfo();
         ConnectionInfo connectionInfo = sessionInfo.getConnectionInfo();
-        Set<TopicSubscription> subscriptions = subscriptionReader.getClientSubscriptions(clientId);
+        Set<TopicSubscription> subscriptions = subscriptionCache.getClientSubscriptions(clientId);
 
         return DetailedClientSessionInfoDto.builder()
                 .id(sessionInfo.getClientInfo().getClientId())
