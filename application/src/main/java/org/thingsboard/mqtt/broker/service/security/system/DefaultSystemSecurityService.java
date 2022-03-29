@@ -22,10 +22,13 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
 
 @Service
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
+    @Autowired
+    private UserService userService;
     @Autowired
     private BCryptPasswordEncoder encoder;
 
@@ -38,5 +41,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         if (!userCredentials.isEnabled()) {
             throw new DisabledException("User is not active");
         }
+
+        userService.onUserLoginSuccessful(userCredentials.getUserId());
     }
 }

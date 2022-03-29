@@ -54,6 +54,8 @@ public class AdminServiceImpl implements AdminService {
         user.setEmail(adminDto.getEmail());
         user.setFirstName(adminDto.getFirstName());
         user.setLastName(adminDto.getLastName());
+        user.setAdditionalInfo(adminDto.getAdditionalInfo());
+        user.setCreatedTime(adminDto.getCreatedTime());
         return user;
     }
 }
