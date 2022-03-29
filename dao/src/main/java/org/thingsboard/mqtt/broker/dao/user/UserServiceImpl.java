@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.user;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +49,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
 public class UserServiceImpl implements UserService {
 
     public static final String USER_PASSWORD_HISTORY = "userPasswordHistory";
+    private static final String LAST_LOGIN_TS = "lastLoginTs";
 
     private static final int DEFAULT_TOKEN_LENGTH = 30;
     public static final String INCORRECT_USER_ID = "Incorrect userId ";
@@ -141,6 +144,23 @@ public class UserServiceImpl implements UserService {
         return userDao.findAll(pageLink);
     }
 
+    @Override
+    public void onUserLoginSuccessful(UUID userId) {
+        log.trace("Executing onUserLoginSuccessful [{}]", userId);
+        User user = findUserById(userId);
+        setLastLoginTs(user);
+        saveUser(user);
+    }
+
+    private void setLastLoginTs(User user) {
+        JsonNode additionalInfo = user.getAdditionalInfo();
+        if (!(additionalInfo instanceof ObjectNode)) {
+            additionalInfo = JacksonUtil.newObjectNode();
+        }
+        ((ObjectNode) additionalInfo).put(LAST_LOGIN_TS, System.currentTimeMillis());
+        user.setAdditionalInfo(additionalInfo);
+    }
+
     private UserCredentials saveUserCredentialsAndPasswordHistory(UserCredentials userCredentials) {
         UserCredentials result = userCredentialsDao.save(userCredentials);
         User user = findUserById(userCredentials.getUserId());
@@ -157,7 +177,8 @@ public class UserServiceImpl implements UserService {
         }
         if (additionalInfo.has(USER_PASSWORD_HISTORY)) {
             JsonNode userPasswordHistoryJson = additionalInfo.get(USER_PASSWORD_HISTORY);
-            Map<String, String> userPasswordHistoryMap = objectMapper.convertValue(userPasswordHistoryJson, Map.class);
+            Map<String, String> userPasswordHistoryMap = objectMapper.convertValue(userPasswordHistoryJson, new TypeReference<>() {
+            });
             userPasswordHistoryMap.put(Long.toString(System.currentTimeMillis()), userCredentials.getPassword());
             userPasswordHistoryJson = objectMapper.valueToTree(userPasswordHistoryMap);
             ((ObjectNode) additionalInfo).replace(USER_PASSWORD_HISTORY, userPasswordHistoryJson);
@@ -194,32 +215,32 @@ public class UserServiceImpl implements UserService {
     };
 
     private final DataValidator<UserCredentials> userCredentialsValidator = new DataValidator<>() {
-                @Override
-                protected void validateCreate(UserCredentials userCredentials) {
-                    throw new IncorrectParameterException("Creation of new user credentials is prohibited.");
-                }
+        @Override
+        protected void validateCreate(UserCredentials userCredentials) {
+            throw new IncorrectParameterException("Creation of new user credentials is prohibited.");
+        }
 
-                @Override
-                protected void validateDataImpl(UserCredentials userCredentials) {
-                    if (userCredentials.getUserId() == null) {
-                        throw new DataValidationException("User credentials should be assigned to user!");
-                    }
-                    if (userCredentials.isEnabled()) {
-                        if (StringUtils.isEmpty(userCredentials.getPassword())) {
-                            throw new DataValidationException("Enabled user credentials should have password!");
-                        }
-                        if (StringUtils.isNotEmpty(userCredentials.getActivateToken())) {
-                            throw new DataValidationException("Enabled user credentials can't have activate token!");
-                        }
-                    }
-                    UserCredentials existingUserCredentialsEntity = userCredentialsDao.findById(userCredentials.getId());
-                    if (existingUserCredentialsEntity == null) {
-                        throw new DataValidationException("Unable to update non-existent user credentials!");
-                    }
-                    User user = findUserById(userCredentials.getUserId());
-                    if (user == null) {
-                        throw new DataValidationException("Can't assign user credentials to non-existent user!");
-                    }
+        @Override
+        protected void validateDataImpl(UserCredentials userCredentials) {
+            if (userCredentials.getUserId() == null) {
+                throw new DataValidationException("User credentials should be assigned to user!");
+            }
+            if (userCredentials.isEnabled()) {
+                if (StringUtils.isEmpty(userCredentials.getPassword())) {
+                    throw new DataValidationException("Enabled user credentials should have password!");
                 }
-            };
+                if (StringUtils.isNotEmpty(userCredentials.getActivateToken())) {
+                    throw new DataValidationException("Enabled user credentials can't have activate token!");
+                }
+            }
+            UserCredentials existingUserCredentialsEntity = userCredentialsDao.findById(userCredentials.getId());
+            if (existingUserCredentialsEntity == null) {
+                throw new DataValidationException("Unable to update non-existent user credentials!");
+            }
+            User user = findUserById(userCredentials.getUserId());
+            if (user == null) {
+                throw new DataValidationException("Can't assign user credentials to non-existent user!");
+            }
+        }
+    };
 }

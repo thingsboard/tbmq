@@ -23,20 +23,22 @@ import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import java.util.UUID;
 
 public interface UserService {
-	
-	User saveUser(User user);
 
-	User findUserByEmail(String email);
+    User saveUser(User user);
 
-	User findUserById(UUID userId);
+    User findUserByEmail(String email);
 
-	UserCredentials findUserCredentialsByUserId(UUID userId);
+    User findUserById(UUID userId);
 
-	UserCredentials saveUserCredentials(UserCredentials userCredentials);
+    UserCredentials findUserCredentialsByUserId(UUID userId);
 
-	void replaceUserCredentials(UserCredentials userCredentials);
+    UserCredentials saveUserCredentials(UserCredentials userCredentials);
 
-	void deleteUser(UUID userId);
+    void replaceUserCredentials(UserCredentials userCredentials);
 
-	PageData<User> findUsers(PageLink pageLink);
+    void deleteUser(UUID userId);
+
+    PageData<User> findUsers(PageLink pageLink);
+
+    void onUserLoginSuccessful(UUID userId);
 }
