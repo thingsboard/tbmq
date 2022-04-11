@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.util.mapping;
+package org.thingsboard.mqtt.broker.common.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,9 +22,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 
-/**
- * Created by Valerii Sosliuk on 5/12/2017.
- */
 public class JacksonUtil {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -77,8 +74,8 @@ public class JacksonUtil {
             throw new IllegalArgumentException(e);
         }
     }
-    
-    public static ObjectNode newObjectNode(){
+
+    public static ObjectNode newObjectNode() {
         return OBJECT_MAPPER.createObjectNode();
     }
 

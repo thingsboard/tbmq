@@ -20,12 +20,14 @@ import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.nio.charset.StandardCharsets;
@@ -82,12 +84,14 @@ public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrati
         connectOptions.setKeepAliveInterval(1);
         connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
         lastWillClient.connect(connectOptions);
-        waiter.await(2, TimeUnit.SECONDS);
+        waiter.await();
         subClient.disconnect();
         subClient.close();
     }
 
-    public void testLastWillOnProtocolError() throws Throwable {
+    @Test
+    @Ignore
+    public void testLastWillOnProtocolError() {
         // TODO implement own MqttClient with possibility to violate MQTT protocol and trigger LastWill msg
     }
 }

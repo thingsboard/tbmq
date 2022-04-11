@@ -222,7 +222,11 @@
             <artifactId>takari-cpsuite</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.thingsboard</groupId>
             <artifactId>netty-mqtt</artifactId>
@@ -251,6 +255,9 @@
                     <systemPropertyVariables>
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
                     </systemPropertyVariables>
+                    <excludes>
+                        <exclude>**/sql/*Test.java</exclude>
+                    </excludes>
                     <includes>
                         <include>**/*TestSuite.java</include>
                     </includes>

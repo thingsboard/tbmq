@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 @Slf4j
@@ -42,7 +43,7 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
         connectOptions.setCleanSession(false);
         try {
             testClient.connect(connectOptions);
-        } catch (MqttException e){
+        } catch (MqttException e) {
             Assert.assertFalse(testClient.isConnected());
             throw e;
         }

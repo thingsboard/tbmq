@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.client.credentials;
+package org.thingsboard.mqtt.broker.service.mqtt.keepalive;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.List;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SslMqttCredentials {
-    private String parentCertCommonName;
-    private Map<String, List<String>> authorizationRulesMapping;
+@Slf4j
+@RunWith(MockitoJUnitRunner.class)
+@Ignore
+// TODO: 07.02.22 implement tests
+public class KeepAliveSuiteTest {
 }

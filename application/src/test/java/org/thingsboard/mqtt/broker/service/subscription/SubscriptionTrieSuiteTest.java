@@ -21,7 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -34,14 +34,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class SubscriptionTrieTestSuite {
+public class SubscriptionTrieSuiteTest {
 
     private ConcurrentMapSubscriptionTrie<String> subscriptionTrie;
     private AtomicInteger subscriptionCounter;
     private AtomicLong nodesCounter;
 
     @Before
-    public void before(){
+    public void before() {
         this.subscriptionCounter = new AtomicInteger(0);
         this.nodesCounter = new AtomicLong(0);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
@@ -51,7 +51,7 @@ public class SubscriptionTrieTestSuite {
     }
 
     @Test
-    public void testSaveSameSession(){
+    public void testSaveSameSession() {
         subscriptionTrie.put("1/2", "test");
         Assert.assertEquals(1, subscriptionTrie.get("1/2").size());
         subscriptionTrie.put("1/2", "test");
@@ -59,7 +59,7 @@ public class SubscriptionTrieTestSuite {
     }
 
     @Test
-    public void testDelete(){
+    public void testDelete() {
         subscriptionTrie.put("1/2", "test");
         subscriptionTrie.delete("1/2", s -> s.equals("test"));
         List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/2");
@@ -67,7 +67,7 @@ public class SubscriptionTrieTestSuite {
     }
 
     @Test
-    public void testGet(){
+    public void testGet() {
         subscriptionTrie.put("1/22/3", "test1");
         subscriptionTrie.put("1/+/3", "test2");
         subscriptionTrie.put("1/#", "test3");
@@ -80,27 +80,27 @@ public class SubscriptionTrieTestSuite {
         subscriptionTrie.put("1/+/#", "test10");
         List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/22/3");
         Assert.assertEquals(Set.of(
-                new ValueWithTopicFilter<>("test1", "1/22/3"),
-                new ValueWithTopicFilter<>("test2", "1/+/3"),
-                new ValueWithTopicFilter<>("test3", "1/#"),
-                new ValueWithTopicFilter<>("test4", "1/22/#"),
-                new ValueWithTopicFilter<>("test7", "#"),
-                new ValueWithTopicFilter<>("test8", "+/22/3"),
-                new ValueWithTopicFilter<>("test9", "+/22/+"),
-                new ValueWithTopicFilter<>("test10", "1/+/#")
+                        new ValueWithTopicFilter<>("test1", "1/22/3"),
+                        new ValueWithTopicFilter<>("test2", "1/+/3"),
+                        new ValueWithTopicFilter<>("test3", "1/#"),
+                        new ValueWithTopicFilter<>("test4", "1/22/#"),
+                        new ValueWithTopicFilter<>("test7", "#"),
+                        new ValueWithTopicFilter<>("test8", "+/22/3"),
+                        new ValueWithTopicFilter<>("test9", "+/22/+"),
+                        new ValueWithTopicFilter<>("test10", "1/+/#")
                 ),
                 new HashSet<>(result));
     }
 
     @Test
-    public void testTopicsWith$(){
+    public void testTopicsWith$() {
         subscriptionTrie.put("#", "test1");
         subscriptionTrie.put("+/monitor/Clients", "test2");
         subscriptionTrie.put("$SYS/#", "test3");
         subscriptionTrie.put("$SYS/monitor/+", "test4");
         List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("$SYS/monitor/Clients");
         Assert.assertEquals(Set.of(new ValueWithTopicFilter<>("test3", "$SYS/#"),
-                new ValueWithTopicFilter<>("test4", "$SYS/monitor/+")
+                        new ValueWithTopicFilter<>("test4", "$SYS/monitor/+")
                 ),
                 new HashSet<>(result));
     }

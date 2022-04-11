@@ -31,7 +31,6 @@ import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import java.io.IOException;
 import java.util.Comparator;
 
-
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AbstractServiceTest.class, loader = AnnotationConfigContextLoader.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

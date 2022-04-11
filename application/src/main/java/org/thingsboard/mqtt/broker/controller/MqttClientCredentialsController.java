@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,11 +26,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 
 @RestController
@@ -37,6 +43,8 @@ public class MqttClientCredentialsController extends BaseController {
 
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -44,9 +52,16 @@ public class MqttClientCredentialsController extends BaseController {
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
         checkNotNull(mqttClientCredentials);
         try {
-            return checkNotNull(
-                    mqttClientCredentialsService.saveCredentials(mqttClientCredentials)
-            );
+            if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType()) {
+                BasicMqttCredentials mqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
+
+                if (!StringUtils.isEmpty(mqttCredentials.getPassword())) {
+                    mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
+                    mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
+                }
+            }
+
+            return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
         } catch (Exception e) {
             throw handleException(e);
         }

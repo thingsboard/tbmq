@@ -25,10 +25,10 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", "(not_closed");
+        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", List.of("(not_closed"));
         clientCredentials.setCredentialsValue(JacksonUtil.toString(wrongPatternBasicCred));
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }

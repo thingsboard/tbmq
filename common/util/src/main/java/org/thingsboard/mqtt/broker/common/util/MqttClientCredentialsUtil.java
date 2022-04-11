@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.client.credentials;
+package org.thingsboard.mqtt.broker.common.util;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
-import java.util.List;
-import java.util.Map;
+public class MqttClientCredentialsUtil {
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SslMqttCredentials {
-    private String parentCertCommonName;
-    private Map<String, List<String>> authorizationRulesMapping;
+    public static <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
+        T credentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), credentialsClassType);
+        if (credentials == null) {
+            throw new IllegalArgumentException("Invalid credentials body for mqtt credentials!");
+        }
+        return credentials;
+    }
+
 }

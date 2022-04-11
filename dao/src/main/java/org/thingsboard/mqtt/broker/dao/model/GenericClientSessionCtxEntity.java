@@ -15,14 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
 
 import javax.persistence.Column;
@@ -49,7 +48,8 @@ public class GenericClientSessionCtxEntity implements ToData<GenericClientSessio
     @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY)
     private JsonNode qos2PublishPacketIds;
 
-    public GenericClientSessionCtxEntity() {}
+    public GenericClientSessionCtxEntity() {
+    }
 
     public GenericClientSessionCtxEntity(GenericClientSessionCtx genericClientSessionCtx) {
         this.clientId = genericClientSessionCtx.getClientId();

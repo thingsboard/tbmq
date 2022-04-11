@@ -17,9 +17,8 @@ package org.thingsboard.mqtt.broker.dao.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -28,10 +27,10 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.List;
@@ -47,16 +46,15 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 @Slf4j
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
-    @Autowired
-    private MqttClientCredentialsDao mqttClientCredentialsDao;
+    private final MqttClientCredentialsDao mqttClientCredentialsDao;
 
-    // TODO: move encoder out of DAO level
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    public MqttClientCredentialsServiceImpl(MqttClientCredentialsDao mqttClientCredentialsDao) {
+        this.mqttClientCredentialsDao = mqttClientCredentialsDao;
+    }
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
-        if(mqttClientCredentials.getCredentialsType() == null){
+        if (mqttClientCredentials.getCredentialsType() == null) {
             throw new DataValidationException("MQTT Client credentials type should be specified");
         }
         switch (mqttClientCredentials.getCredentialsType()) {
@@ -127,10 +125,6 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }
-        if (!StringUtils.isEmpty(mqttCredentials.getPassword())) {
-            mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
-            mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
-        }
         if (StringUtils.isEmpty(mqttCredentials.getClientId())) {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
         } else if (StringUtils.isEmpty(mqttCredentials.getUserName())) {
@@ -139,9 +133,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
 
-        if (mqttCredentials.getAuthorizationRulePattern() != null) {
+        if (!CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulePatterns())) {
             try {
-                Pattern.compile(mqttCredentials.getAuthorizationRulePattern());
+                mqttCredentials.getAuthorizationRulePatterns().forEach(Pattern::compile);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Authorization rule pattern should be a valid regex!");
             }
@@ -153,19 +147,19 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
             throw new DataValidationException("Parent certificate's common name should be specified!");
         }
-        if (mqttCredentials.getAuthorizationRulesMapping() == null || mqttCredentials.getAuthorizationRulesMapping().isEmpty()) {
+        if (CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
         }
-        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRule) -> {
+        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRules) -> {
             try {
                 Pattern.compile(certificateMatcherRegex);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
             try {
-                Pattern.compile(topicRule);
+                topicRules.forEach(Pattern::compile);
             } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Topic authorization rule [" + topicRule + "] must be a valid regex");
+                throw new DataValidationException("Topic authorization rule [" + topicRules + "] must be a valid regex");
             }
         });
 

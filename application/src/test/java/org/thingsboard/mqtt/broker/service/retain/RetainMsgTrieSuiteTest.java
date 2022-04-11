@@ -20,7 +20,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.ConcurrentMapRetainMsgTrie;
 
 import java.util.Collections;
@@ -30,17 +30,17 @@ import java.util.Set;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class RetainMsgTrieTestSuite {
+public class RetainMsgTrieSuiteTest {
 
     private ConcurrentMapRetainMsgTrie<String> retainMsgTrie;
 
     @Before
-    public void before(){
+    public void before() {
         this.retainMsgTrie = new ConcurrentMapRetainMsgTrie<>();
     }
 
     @Test
-    public void testDelete(){
+    public void testDelete() {
         retainMsgTrie.put("1/2", "test");
         retainMsgTrie.delete("1/2");
         List<String> result = retainMsgTrie.get("#");
@@ -48,7 +48,7 @@ public class RetainMsgTrieTestSuite {
     }
 
     @Test
-    public void testGetSingleLevel(){
+    public void testGetSingleLevel() {
         retainMsgTrie.put("1/11/3", "test1");
         retainMsgTrie.put("1/22/3", "test2");
         retainMsgTrie.put("1/33/3", "test3");
@@ -59,7 +59,7 @@ public class RetainMsgTrieTestSuite {
     }
 
     @Test
-    public void testGetMultipleLevel(){
+    public void testGetMultipleLevel() {
         retainMsgTrie.put("1/11/3", "test1");
         retainMsgTrie.put("1/22/3", "test2");
         retainMsgTrie.put("1/33/3", "test3");
@@ -73,7 +73,7 @@ public class RetainMsgTrieTestSuite {
     }
 
     @Test
-    public void testGetWith$(){
+    public void testGetWith$() {
         retainMsgTrie.put("$SYS/monitor/Clients", "test1");
         Assert.assertTrue(retainMsgTrie.get("#").isEmpty());
         Assert.assertTrue(retainMsgTrie.get("+/monitor/Clients").isEmpty());

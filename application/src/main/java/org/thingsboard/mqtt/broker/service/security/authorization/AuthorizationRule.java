@@ -18,10 +18,13 @@ package org.thingsboard.mqtt.broker.service.security.authorization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 @AllArgsConstructor
 @Getter
 public class AuthorizationRule {
-    private final Pattern pattern;
+
+    private final List<Pattern> patterns;
+
 }

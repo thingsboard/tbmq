@@ -16,7 +16,8 @@
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.concurrentunit.Waiter;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.After;
@@ -28,14 +29,11 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
-import org.thingsboard.mqtt.broker.service.integration.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -57,16 +55,19 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
     @Before
     public void init() {
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
+        basicMqttCredentials = new BasicMqttCredentials(RandomStringUtils.randomAlphabetic(5), "", null, null);
     }
 
     @After
     public void clear() throws Exception {
+        log.warn("After test finish...");
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
         }
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
         persistedClient.connect(connectOptions);
+        log.warn("After test finish... Persisted client connected: {}", isConnected());
         persistedClient.disconnect();
         persistedClient.close();
         credentialsService.deleteCredentials(applicationCredentials.getId());
@@ -78,9 +79,8 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         connectOptions.setCleanSession(false);
         persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
-        Waiter waiter = new Waiter();
+        log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> {
-            waiter.resume();
         });
         persistedClient.disconnect();
 
@@ -92,7 +92,7 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(200, TimeUnit.MILLISECONDS);
+        log.warn("Persisted client connected: {}", isConnected());
     }
 
     @Test
@@ -101,9 +101,8 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
         connectOptions.setCleanSession(false);
         persistedClient = new MqttClient("tcp://localhost:" + mqttPort, basicMqttCredentials.getClientId());
         persistedClient.connect(connectOptions);
-        Waiter waiter = new Waiter();
+        log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> {
-            waiter.resume();
         });
 
         MqttClient publishingClient = new MqttClient("tcp://localhost:" + mqttPort, "publishing_client");
@@ -119,6 +118,12 @@ public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrati
 
         persistedClient.connect(connectOptions);
 
-        waiter.await(200, TimeUnit.MILLISECONDS, 2);
+        log.warn("Persisted client connected: {}", isConnected());
+    }
+
+    private boolean isConnected() {
+        return Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> persistedClient.isConnected(), Boolean::booleanValue);
     }
 }

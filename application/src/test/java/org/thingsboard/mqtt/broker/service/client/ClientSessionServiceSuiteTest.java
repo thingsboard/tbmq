@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -30,8 +32,6 @@ import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Collections;
@@ -41,7 +41,7 @@ import java.util.UUID;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ClientSessionServiceTestSuite {
+public class ClientSessionServiceSuiteTest {
     private static final String TEST_SERVICE_ID = "testServiceId";
     private static final String DEFAULT_CLIENT_ID = "test";
     private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;
@@ -51,9 +51,9 @@ public class ClientSessionServiceTestSuite {
                     .sessionId(UUID.randomUUID())
                     .persistent(true)
                     .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_TYPE))
+                    .serviceId(TEST_SERVICE_ID)
                     .build())
-            .build()
-            ;
+            .build();
 
     private ClientSessionService clientSessionService;
 
@@ -62,7 +62,6 @@ public class ClientSessionServiceTestSuite {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
-        Mockito.when(serviceInfoProviderMock.getServiceId()).thenReturn(TEST_SERVICE_ID);
         this.clientSessionService = new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock);
         this.clientSessionService.init(Collections.emptyMap());
     }
@@ -87,9 +86,15 @@ public class ClientSessionServiceTestSuite {
                         .persistent(false)
                         .build())
                 .build();
-        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {}, t -> {}));
-        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {}, t -> {}));
-        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
+        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
+        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
 
         Set<String> persistedClients = clientSessionService.getPersistentClientSessionInfos().keySet();
         Assert.assertEquals(2, persistedClients.size());
@@ -103,6 +108,8 @@ public class ClientSessionServiceTestSuite {
                         .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID + "_not_valid", ClientType.DEVICE))
                         .build())
                 .build();
-        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {}, t -> {}));
+        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
     }
 }

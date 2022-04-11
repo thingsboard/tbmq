@@ -17,13 +17,15 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -39,9 +41,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
 
-    private final MqttClientCredentialsService clientCredentialsService;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final AuthorizationRuleService authorizationRuleService;
+    private final MqttClientCredentialsService clientCredentialsService;
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
+                                       MqttClientCredentialsService clientCredentialsService,
+                                       @Lazy BCryptPasswordEncoder passwordEncoder) {
+        this.authorizationRuleService = authorizationRuleService;
+        this.clientCredentialsService = clientCredentialsService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {

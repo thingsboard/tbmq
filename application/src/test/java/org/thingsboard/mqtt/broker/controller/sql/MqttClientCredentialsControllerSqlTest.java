@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.keepalive;
+package org.thingsboard.mqtt.broker.controller.sql;
 
+import org.thingsboard.mqtt.broker.controller.BaseMqttClientCredentialsControllerTest;
+import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
-import lombok.extern.slf4j.Slf4j;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-public class KeepAliveTestSuite {
+@DaoSqlTest
+public class MqttClientCredentialsControllerSqlTest extends BaseMqttClientCredentialsControllerTest {
 }

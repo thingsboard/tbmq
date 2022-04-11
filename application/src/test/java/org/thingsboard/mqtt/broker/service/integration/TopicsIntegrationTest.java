@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -23,11 +22,11 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.Arrays;

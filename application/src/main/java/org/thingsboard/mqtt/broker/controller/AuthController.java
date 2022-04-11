@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,7 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
@@ -46,7 +45,8 @@ public class AuthController extends BaseController {
 
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/user", method = RequestMethod.GET)
-    public @ResponseBody User getUser() throws ThingsboardException {
+    @ResponseBody
+    public User getUser() throws ThingsboardException {
         try {
             SecurityUser securityUser = getCurrentUser();
             return userService.findUserById(securityUser.getId());

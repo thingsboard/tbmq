@@ -20,7 +20,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -35,14 +35,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class AuthorizationRuleServiceTestSuite {
+public class AuthorizationRuleServiceSuiteTest {
     private AuthorizationRuleService authorizationRuleService;
 
     @Before
     public void init() {
         this.authorizationRuleService = new DefaultAuthorizationRuleService();
     }
-
 
     /*
         parseSslAuthorizationRule tests
@@ -51,11 +50,11 @@ public class AuthorizationRuleServiceTestSuite {
     public void testSuccessfulCredentialsParse_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
-                Map.of(".*abc-123.*", "test/.*")
+                Map.of(".*abc-123.*", List.of("test/.*"))
         );
         List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
         Assert.assertEquals(1, authorizationRules.size());
-        Assert.assertEquals("test/.*", authorizationRules.get(0).getPattern().pattern());
+        Assert.assertEquals("test/.*", authorizationRules.get(0).getPatterns().get(0).pattern());
     }
 
     @Test
@@ -63,16 +62,20 @@ public class AuthorizationRuleServiceTestSuite {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials(
                 "parent.com",
                 Map.of(
-                        ".*abc-p01.*", "1/.*",
-                        ".*qwer1234.*", "2/.*",
-                        ".*4321.*", "3/.*",
-                        ".*nonexistent.*", "4/.*"
-                        )
+                        ".*abc-p01.*", List.of("1/.*", "5/.*"),
+                        ".*qwer1234.*", List.of("2/.*"),
+                        ".*4321.*", List.of("3/.*"),
+                        ".*nonexistent.*", List.of("4/.*")
+                )
         );
         List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "qwer1234-abc-p01.4321.ab.abc");
-        Set<String> patterns = authorizationRules.stream().map(authorizationRule -> authorizationRule.getPattern().pattern()).collect(Collectors.toSet());
-        Assert.assertEquals(3, patterns.size());
-        Assert.assertEquals(Set.of("1/.*", "2/.*", "3/.*"), patterns);
+        Set<String> patterns = authorizationRules.stream()
+                .map(AuthorizationRule::getPatterns).collect(Collectors.toList())
+                .stream().flatMap(List::stream)
+                .map(Pattern::pattern)
+                .collect(Collectors.toSet());
+        Assert.assertEquals(4, patterns.size());
+        Assert.assertEquals(Set.of("1/.*", "5/.*", "2/.*", "3/.*"), patterns);
     }
 
     @Test(expected = AuthenticationException.class)
@@ -83,7 +86,7 @@ public class AuthorizationRuleServiceTestSuite {
 
     @Test(expected = AuthenticationException.class)
     public void testPatternDontMatch_Ssl() throws AuthenticationException {
-        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of("key", "test/.*"));
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of("key", List.of("test/.*")));
         authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456789");
     }
 
@@ -92,9 +95,9 @@ public class AuthorizationRuleServiceTestSuite {
      */
     @Test
     public void testSuccessfulCredentialsParse_Basic() throws AuthenticationException {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", "test", null, "test/.*");
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", "test", null, List.of("test/.*"));
         AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
-        Assert.assertEquals("test/.*", authorizationRule.getPattern().pattern());
+        Assert.assertTrue(authorizationRule.getPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test/.*"));
     }
 
     /*
@@ -103,9 +106,9 @@ public class AuthorizationRuleServiceTestSuite {
     @Test
     public void testSuccessfulRuleValidation() {
         List<AuthorizationRule> authorizationRules = List.of(
-                new AuthorizationRule(Pattern.compile("1/.*")),
-                new AuthorizationRule(Pattern.compile("2/.*"))
-                );
+                new AuthorizationRule(List.of(Pattern.compile("1/.*"))),
+                new AuthorizationRule(List.of(Pattern.compile("2/.*")))
+        );
         Assert.assertTrue(authorizationRuleService.isAuthorized("1/", authorizationRules));
         Assert.assertTrue(authorizationRuleService.isAuthorized("1/123", authorizationRules));
         Assert.assertTrue(authorizationRuleService.isAuthorized("2/", authorizationRules));
@@ -117,10 +120,10 @@ public class AuthorizationRuleServiceTestSuite {
     @Test
     public void testSuccessfulRuleValidation_ruleIntersection() {
         List<AuthorizationRule> authorizationRules = List.of(
-                new AuthorizationRule(Pattern.compile(".*")),
-                new AuthorizationRule(Pattern.compile("1/.*")),
-                new AuthorizationRule(Pattern.compile("2/.*"))
-                );
+                new AuthorizationRule(List.of(Pattern.compile(".*"))),
+                new AuthorizationRule(List.of(Pattern.compile("1/.*"))),
+                new AuthorizationRule(List.of(Pattern.compile("2/.*")))
+        );
         Assert.assertTrue(authorizationRuleService.isAuthorized("1/123", authorizationRules));
     }
 
