@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
@@ -90,7 +91,8 @@ public class ConnectServiceImpl implements ConnectService {
             @Override
             public void onSuccess(ConnectionResponse connectionResponse) {
                 if (connectionResponse.isSuccess()) {
-                    clientMqttActorManager.notifyConnectionAccepted(clientId, sessionId, connectionResponse.isWasPrevSessionPersistent(), msg.getLastWillMsg());
+                    clientMqttActorManager.notifyConnectionAccepted(clientId, new ConnectionAcceptedMsg(
+                            sessionId, connectionResponse.isWasPrevSessionPersistent(), msg.getLastWillMsg()));
                 } else {
                     refuseConnection(sessionCtx, null);
                 }
@@ -139,8 +141,8 @@ public class ConnectServiceImpl implements ConnectService {
         } catch (Exception e) {
             log.debug("[{}][{}] Failed to send CONN_ACK response.", clientId, sessionId);
         } finally {
-            clientMqttActorManager.disconnect(clientId, sessionId,
-                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client"));
+            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(sessionId,
+                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client")));
         }
     }
 

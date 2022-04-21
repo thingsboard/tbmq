@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
@@ -81,7 +82,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId, sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
-            clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process persisted messages"));
+            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                    sessionCtx.getSessionId(),
+                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process persisted messages")));
         }
     }
 
@@ -131,7 +134,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     deliverPersistedMsg(persistedMessage);
                 }
             } catch (Exception e) {
-                clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process missed persisted messages"));
+                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                        sessionCtx.getSessionId(),
+                        new DisconnectReason(
+                                DisconnectReasonType.ON_ERROR, "Failed to process missed persisted messages")));
             }
         }
         processedAnyMsg = true;
@@ -142,7 +148,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     publishMsg.getPayload());
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
-            clientMqttActorManager.disconnect(clientId, sessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg"));
+            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                    sessionCtx.getSessionId(),
+                    new DisconnectReason(
+                            DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg")));
         }
     }
 

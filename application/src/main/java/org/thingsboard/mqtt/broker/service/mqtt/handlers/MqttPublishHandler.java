@@ -19,11 +19,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
-import org.thingsboard.mqtt.broker.exception.AuthorizationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -87,7 +87,9 @@ public class MqttPublishHandler {
             @Override
             public void onFailure(Throwable t) {
                 log.warn("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg.getPacketId(), t);
-                clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg"));
+                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                        sessionId,
+                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg")));
             }
         });
     }

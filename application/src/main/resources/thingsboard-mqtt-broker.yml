@@ -66,8 +66,7 @@ listener:
       # Type of the trust store
       trust_store_type: "${SECURITY_MQTT_SSL_TRUST_STORE_TYPE:JKS}"
     netty:
-      # TODO: update default to DISABLED after testing stage
-      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:SIMPLE}"
+      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
@@ -223,8 +222,7 @@ actors:
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
     processing-metrics:
-      # TODO: disable by default for production
-      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:true}"
+      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
   persisted-device:
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"

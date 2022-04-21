@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
@@ -57,10 +59,10 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
                 .stream()
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toSet());
-        clientMqttActorManager.unsubscribe(clientId, unsubscribeTopics);
+        clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
 
         Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
                 Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
-        clientMqttActorManager.subscribe(clientId, subscribeTopicSubscriptions);
+        clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(subscribeTopicSubscriptions));
     }
 }

@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -55,8 +56,8 @@ public class KeepAliveServiceImpl implements KeepAliveService {
                 it.remove();
                 log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
                         keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
-                clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), sessionId,
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long"));
+                clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), new DisconnectMsg(sessionId,
+                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
             }
         }
     }

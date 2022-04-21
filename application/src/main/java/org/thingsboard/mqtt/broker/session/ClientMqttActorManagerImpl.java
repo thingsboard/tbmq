@@ -32,16 +32,11 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-
-import java.util.Collection;
-import java.util.UUID;
 
 @Slf4j
 @Service
 public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
-    private ActorSystemContext actorSystemContext;
+    private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
     public ClientMqttActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
@@ -50,28 +45,27 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void initSession(String clientId, String username, byte[] passwordBytes, ClientSessionCtx clientSessionCtx, boolean isClientIdGenerated) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    public void initSession(String clientId, boolean isClientIdGenerated, SessionInitMsg sessionInitMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                    new ClientActorCreator(actorSystemContext, clientId, isClientIdGenerated));
+            clientActorRef = createRootActor(clientId, isClientIdGenerated);
         }
-        clientActorRef.tellWithHighPriority(new SessionInitMsg(clientSessionCtx, username, passwordBytes));
+        clientActorRef.tellWithHighPriority(sessionInitMsg);
     }
 
     @Override
-    public void disconnect(String clientId, UUID sessionId, DisconnectReason reason) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    public void disconnect(String clientId, DisconnectMsg disconnectMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, sessionId);
+            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
         } else {
-            clientActorRef.tellWithHighPriority(new DisconnectMsg(sessionId, reason));
+            clientActorRef.tellWithHighPriority(disconnectMsg);
         }
     }
 
     @Override
     public void connect(String clientId, MqttConnectMsg connectMsg) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
         } else {
@@ -81,7 +75,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
 
     @Override
     public void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process MQTT message, sessionId - {}, msgType - {}.", clientId, mqttMsg.getSessionId(), mqttMsg.getMsgType());
         } else {
@@ -90,32 +84,39 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void notifyConnectionAccepted(String clientId, UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    public void notifyConnectionAccepted(String clientId, ConnectionAcceptedMsg connectionAcceptedMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            log.warn("[{}] Cannot find client actor to process connection accepted, sessionId - {}.", clientId, sessionId);
+            log.warn("[{}] Cannot find client actor to process connection accepted, sessionId - {}.", clientId, connectionAcceptedMsg.getSessionId());
         } else {
-            clientActorRef.tell(new ConnectionAcceptedMsg(sessionId, wasPrevSessionPersistent, lastWillMsg));
+            clientActorRef.tell(connectionAcceptedMsg);
         }
     }
 
     @Override
-    public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    public void subscribe(String clientId, SubscribeCommandMsg subscribeCommandMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                    new ClientActorCreator(actorSystemContext, clientId, true));
+            clientActorRef = createRootActor(clientId, true);
         }
-        clientActorRef.tellWithHighPriority(new SubscribeCommandMsg(topicSubscriptions));
+        clientActorRef.tellWithHighPriority(subscribeCommandMsg);
     }
 
     @Override
-    public void unsubscribe(String clientId, Collection<String> topics) {
-        TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    public void unsubscribe(String clientId, UnsubscribeCommandMsg unsubscribeCommandMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                    new ClientActorCreator(actorSystemContext, clientId, true));
+            clientActorRef = createRootActor(clientId, true);
         }
-        clientActorRef.tellWithHighPriority(new UnsubscribeCommandMsg(topics));
+        clientActorRef.tellWithHighPriority(unsubscribeCommandMsg);
+    }
+
+    private TbActorRef createRootActor(String clientId, boolean isClientIdGenerated) {
+        return actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                new ClientActorCreator(actorSystemContext, clientId, isClientIdGenerated));
+    }
+
+    private TbActorRef getActor(String clientId) {
+        return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
     }
 }
