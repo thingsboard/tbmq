@@ -19,4 +19,8 @@ public class BrokerConstants {
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
+
+
+    public static final String SERVICE_ID_HEADER = "serviceId";
+
 }

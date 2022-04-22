@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -113,7 +114,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
 
     private TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> generateRequest(String clientId, QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
         TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> request = new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto);
-        request.getHeaders().put(SubscriptionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
+        request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }
 

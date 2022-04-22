@@ -22,8 +22,6 @@ import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionCache;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
@@ -34,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class SubscriptionServiceImpl implements SubscriptionService, SubscriptionCache, SubscriptionMaintenanceService {
+public class SubscriptionServiceImpl implements SubscriptionService {
+
     private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
     private final SubscriptionTimerStats subscriptionTimerStats;
 

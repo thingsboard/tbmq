@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,11 +22,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Set;
@@ -36,12 +35,17 @@ import java.util.Set;
 @RequestMapping("/api/subscription")
 public class SubscriptionController extends BaseController {
 
-    @Autowired
-    private SubscriptionMaintenanceService subscriptionMaintenanceService;
-    @Autowired
-    private ClientSubscriptionCache clientSubscriptionCache;
-    @Autowired
-    private ClientSubscriptionAdminService subscriptionAdminService;
+    private final SubscriptionService subscriptionService;
+    private final ClientSubscriptionCache clientSubscriptionCache;
+    private final ClientSubscriptionAdminService subscriptionAdminService;
+
+    public SubscriptionController(SubscriptionService subscriptionService,
+                                  ClientSubscriptionCache clientSubscriptionCache,
+                                  ClientSubscriptionAdminService subscriptionAdminService) {
+        this.subscriptionService = subscriptionService;
+        this.clientSubscriptionCache = clientSubscriptionCache;
+        this.subscriptionAdminService = subscriptionAdminService;
+    }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
@@ -61,7 +65,7 @@ public class SubscriptionController extends BaseController {
     @ResponseBody
     public void clearEmptySubscriptionNodes() throws ThingsboardException {
         try {
-            subscriptionMaintenanceService.clearEmptyTopicNodes();
+            subscriptionService.clearEmptyTopicNodes();
         } catch (Exception e) {
             throw handleException(e);
         }

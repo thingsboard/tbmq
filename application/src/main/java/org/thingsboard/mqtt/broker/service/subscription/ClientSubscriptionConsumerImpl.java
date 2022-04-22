@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -125,7 +126,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     int ignoredSubscriptions = 0;
                     for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
-                        String serviceId = bytesToString(msg.getHeaders().get(SubscriptionConst.SERVICE_ID_HEADER));
+                        String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
                         Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
                         boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
                         if (accepted) {

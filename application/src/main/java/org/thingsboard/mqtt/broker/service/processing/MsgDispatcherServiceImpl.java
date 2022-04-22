@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -35,7 +35,6 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import javax.annotation.PostConstruct;
@@ -51,23 +50,28 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
-    @Autowired
-    private SubscriptionCache subscriptionCache;
-    @Autowired
-    private StatsManager statsManager;
-    @Autowired
-    private MsgPersistenceManager msgPersistenceManager;
-    @Autowired
-    private ClientSessionCache clientSessionCache;
-    @Autowired
-    private DownLinkProxy downLinkProxy;
-    @Autowired
-    private ClientLogger clientLogger;
-    @Autowired
-    private PublishMsgQueuePublisher publishMsgQueuePublisher;
+    private final SubscriptionService subscriptionService;
+    private final StatsManager statsManager;
+    private final MsgPersistenceManager msgPersistenceManager;
+    private final ClientSessionCache clientSessionCache;
+    private final DownLinkProxy downLinkProxy;
+    private final ClientLogger clientLogger;
+    private final PublishMsgQueuePublisher publishMsgQueuePublisher;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
+
+    public MsgDispatcherServiceImpl(SubscriptionService subscriptionService, StatsManager statsManager,
+                                    MsgPersistenceManager msgPersistenceManager, ClientSessionCache clientSessionCache,
+                                    DownLinkProxy downLinkProxy, ClientLogger clientLogger, PublishMsgQueuePublisher publishMsgQueuePublisher) {
+        this.subscriptionService = subscriptionService;
+        this.statsManager = statsManager;
+        this.msgPersistenceManager = msgPersistenceManager;
+        this.clientSessionCache = clientSessionCache;
+        this.downLinkProxy = downLinkProxy;
+        this.clientLogger = clientLogger;
+        this.publishMsgQueuePublisher = publishMsgQueuePublisher;
+    }
 
     @PostConstruct
     public void init() {
@@ -87,8 +91,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
+
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionCache.getSubscriptions(publishMsgProto.getTopicName());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
+                subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
