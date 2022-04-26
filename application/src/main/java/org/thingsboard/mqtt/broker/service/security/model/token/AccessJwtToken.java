@@ -21,9 +21,9 @@ import io.jsonwebtoken.Claims;
 public final class AccessJwtToken implements JwtToken {
     private final String rawToken;
     @JsonIgnore
-    private transient Claims claims;
+    private final transient Claims claims;
 
-    protected AccessJwtToken(final String token, Claims claims) {
+    AccessJwtToken(final String token, Claims claims) {
         this.rawToken = token;
         this.claims = claims;
     }

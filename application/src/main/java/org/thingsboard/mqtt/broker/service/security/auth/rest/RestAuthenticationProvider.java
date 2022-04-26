@@ -54,10 +54,10 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         UserPrincipal userPrincipal =  (UserPrincipal) principal;
         String username = userPrincipal.getUserName();
         String password = (String) authentication.getCredentials();
-        return authenticateByUsernameAndPassword(authentication, userPrincipal, username, password);
+        return authenticateByUsernameAndPassword(username, password);
     }
 
-    private Authentication authenticateByUsernameAndPassword(Authentication authentication, UserPrincipal userPrincipal, String username, String password) {
+    private Authentication authenticateByUsernameAndPassword(String username, String password) {
         User user = userService.findUserByEmail(username);
         if (user == null) {
             throw new UsernameNotFoundException("User not found: " + username);

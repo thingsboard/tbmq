@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.security.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
@@ -27,10 +26,13 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 @Service
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private BCryptPasswordEncoder encoder;
+    private final UserService userService;
+    private final BCryptPasswordEncoder encoder;
+
+    public DefaultSystemSecurityService(UserService userService, BCryptPasswordEncoder encoder) {
+        this.userService = userService;
+        this.encoder = encoder;
+    }
 
     @Override
     public void validateUserCredentials(UserCredentials userCredentials, String username, String password) throws AuthenticationException {
