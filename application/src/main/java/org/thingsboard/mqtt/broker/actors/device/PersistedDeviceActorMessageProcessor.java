@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcesso
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -97,9 +98,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     inFlightPacketIds.add(persistedMessage.getPacketId());
                 }
                 lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
-                publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, persistedMessage.getPacketId(),
-                        persistedMessage.getTopic(), persistedMessage.getQos(), isDup,
-                        persistedMessage.getPayload());
+                PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
+                publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
                 break;
             case PUBREL:
                 publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, persistedMessage.getPacketId());
@@ -143,9 +143,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         processedAnyMsg = true;
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
-            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg.getPacketId(),
-                    publishMsg.getTopic(), publishMsg.getQos(), false,
-                    publishMsg.getPayload());
+            PublishMsg pubMsg = getPublishMsg(publishMsg, false);
+            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
             clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
@@ -153,6 +152,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     new DisconnectReason(
                             DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg")));
         }
+    }
+
+    private PublishMsg getPublishMsg(DevicePublishMsg publishMsg, boolean isDup) {
+        return PublishMsg.builder()
+                .packetId(publishMsg.getPacketId())
+                .topicName(publishMsg.getTopic())
+                .payload(publishMsg.getPayload())
+                .qosLevel(publishMsg.getQos())
+                .isDup(isDup)
+                .build();
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {

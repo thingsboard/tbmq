@@ -274,9 +274,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         switch (msg.getPacketType()) {
                             case PUBLISH:
                                 PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                                publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.getPacketId(),
-                                        publishMsg.getTopicName(), publishMsg.getQosLevel(),
-                                        publishMsg.isDup(), publishMsg.getPayload());
+                                publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
                                 break;
                             case PUBREL:
                                 publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, msg.getPacketId());

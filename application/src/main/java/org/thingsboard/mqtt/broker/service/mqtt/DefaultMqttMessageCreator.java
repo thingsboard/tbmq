@@ -93,12 +93,12 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
-    public MqttPublishMessage createPubMsg(int packetId, String topic, int mqttQoS, boolean isDup, byte[] payloadBytes) {
+    public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
         MqttFixedHeader mqttFixedHeader =
-                new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, MqttQoS.valueOf(mqttQoS), false, 0);
-        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, packetId);
+                new MqttFixedHeader(MqttMessageType.PUBLISH, pubMsg.isDup(), MqttQoS.valueOf(pubMsg.getQosLevel()), false, 0);
+        MqttPublishVariableHeader header = new MqttPublishVariableHeader(pubMsg.getTopicName(), pubMsg.getPacketId());
         ByteBuf payload = ALLOCATOR.buffer();
-        payload.writeBytes(payloadBytes);
+        payload.writeBytes(pubMsg.getPayload());
         return new MqttPublishMessage(mqttFixedHeader, header, payload);
     }
 
