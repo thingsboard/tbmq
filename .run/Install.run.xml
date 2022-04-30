@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Install" type="Application" factoryName="Application" activateToolWindowBeforeRun="false">
+    <option name="ALTERNATIVE_JRE_PATH" value="11" />
+    <envs>
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/tb_mqtt_broker" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication" />
+    <module name="application" />
+    <option name="VM_PARAMETERS" value="-Dinstall.data_dir=$PROJECT_DIR$/application/target/data" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
