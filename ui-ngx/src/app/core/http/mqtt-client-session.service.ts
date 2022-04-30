@@ -39,8 +39,8 @@ export class MqttClientSessionService {
   }
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
-    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config))
-      .pipe(map((data) => {
+    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+      /*.pipe(map((data) => {
         var filterData;
         if (isNotEmptyStr(pageLink.textSearch)) {
           filterData = data.data.filter((obj) => !obj.clientId.indexOf(pageLink.textSearch));
@@ -74,7 +74,7 @@ export class MqttClientSessionService {
           }
         });
         return {...data, ...{data: filterData}};
-      }));
+      }));*/
   }
 
 

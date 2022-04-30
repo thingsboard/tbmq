@@ -46,11 +46,9 @@ export class MqttClientCredentialsService {
   }
 
   public getMqttClientsCredentials(pageLink: PageLink, config?: RequestConfig): Observable<PageData<MqttClientCredentials>> {
-    if (pageLink.textSearch) {
-
-    }
-    return this.http.get<PageData<MqttClientCredentials>>(`/api/mqtt/client/credentials${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config))
-      .pipe(map((data) => {
+    return this.http.get<PageData<MqttClientCredentials>>(`/api/mqtt/client/credentials${pageLink.toQuery()}`,
+      defaultHttpOptionsFromConfig(config));
+      /*.pipe(map((data) => {
         var filterData;
         if (isNotEmptyStr(pageLink.textSearch)) {
           filterData = data.data.filter((obj) => !obj.name.indexOf(pageLink.textSearch));
@@ -84,7 +82,7 @@ export class MqttClientCredentialsService {
           }
         });
         return {...data, ...{data: filterData}};
-    }));
+    }));*/
   }
 
   public getMqttClientCredentials(credentialsId: string, config?: RequestConfig): Observable<MqttClientCredentials> {
