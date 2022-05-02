@@ -14,7 +14,17 @@
 /// limitations under the License.
 ///
 
-import { Component, ComponentFactoryResolver, Inject, Injector, OnInit, SkipSelf, ViewChild } from '@angular/core';
+import {
+  AfterContentChecked,
+  ChangeDetectorRef,
+  Component,
+  ComponentFactoryResolver,
+  Inject,
+  Injector,
+  OnInit,
+  SkipSelf,
+  ViewChild
+} from '@angular/core';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
@@ -37,7 +47,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./add-entity-dialog.component.scss']
 })
 export class AddEntityDialogComponent extends
-  DialogComponent<AddEntityDialogComponent, BaseData<HasId>> implements OnInit, ErrorStateMatcher {
+  DialogComponent<AddEntityDialogComponent, BaseData<HasId>> implements OnInit, ErrorStateMatcher, AfterContentChecked {
 
   entityComponent: EntityComponent<BaseData<HasId>>;
   detailsForm: FormGroup;
@@ -57,6 +67,7 @@ export class AddEntityDialogComponent extends
               public dialogRef: MatDialogRef<AddEntityDialogComponent, BaseData<HasId>>,
               private componentFactoryResolver: ComponentFactoryResolver,
               private injector: Injector,
+              private changeDetectorRef: ChangeDetectorRef,
               @SkipSelf() private errorStateMatcher: ErrorStateMatcher) {
     super(store, router, dialogRef);
   }
@@ -118,5 +129,9 @@ export class AddEntityDialogComponent extends
         }
       );
     }
+  }
+
+  ngAfterContentChecked(): void  {
+    this.changeDetectorRef.detectChanges();
   }
 }
