@@ -1,8 +1,9 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Install" type="Application" factoryName="Application" activateToolWindowBeforeRun="false">
     <option name="ALTERNATIVE_JRE_PATH" value="11" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
-      <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/tb_mqtt_broker" />
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication" />
     <module name="application" />
