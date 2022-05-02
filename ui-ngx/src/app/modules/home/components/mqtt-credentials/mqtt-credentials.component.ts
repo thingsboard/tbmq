@@ -74,7 +74,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
   constructor(public fb: FormBuilder) {
     this.credentialsFormGroup = this.fb.group({
       name: [null],
-      credentialsType: [MqttCredentialsType.MQTT_BASIC],
+      credentialsType: [null],
       credentialsId: [null],
       credentialsValue: [null]
     });

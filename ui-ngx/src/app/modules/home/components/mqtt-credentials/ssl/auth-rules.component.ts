@@ -131,15 +131,29 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   updateView(value: any) {
+    value.authorizationRulesMapping = this.formatValue(value.authorizationRulesMapping);
     this.rulesMappingFormGroup.patchValue(value, { emitEvent: false });
     this.propagateChange(this.prepareValues(value.authorizationRulesMapping));
+  }
+
+  private formatValue(authorizationRulesMapping) {
+    const newValue = [];
+    authorizationRulesMapping.forEach(
+      rule => {
+        newValue.push({
+          certificateMatcherRegex: rule.certificateMatcherRegex,
+          topicRule: Array.isArray(rule.topicRule) ? rule.topicRule[0] : rule.topicRule
+        })
+      }
+    );
+    return newValue;
   }
 
   private prepareValues(authorizationRulesMapping: any) {
     const newObj = {};
     authorizationRulesMapping.forEach( (obj: any) => {
       const key = obj.certificateMatcherRegex;
-      newObj[key] = obj.topicRule;
+      newObj[key] = [obj.topicRule];
     });
     return newObj;
   }
