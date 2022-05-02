@@ -40,41 +40,6 @@ export class MqttClientSessionService {
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
     return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
-      /*.pipe(map((data) => {
-        var filterData;
-        if (isNotEmptyStr(pageLink.textSearch)) {
-          filterData = data.data.filter((obj) => !obj.clientId.indexOf(pageLink.textSearch));
-        } else {
-          filterData = data.data;
-        }
-        var sortProperty = pageLink.sortOrder.property;
-        filterData = filterData.sort(function(a, b) {
-          var valueA = a[sortProperty];
-          var valueB = b[sortProperty];
-          if (sortProperty === typeof "string") {
-            valueA.toLowerCase();
-            valueB.toLowerCase();
-          }
-          if (pageLink.sortOrder.direction === Direction.ASC) {
-            if (valueA < valueB) {
-              return -1;
-            }
-            if (valueA > valueB) {
-              return 1;
-            }
-            return 0;
-          } else {
-            if (valueA < valueB) {
-              return 1;
-            }
-            if (valueA > valueB) {
-              return -1;
-            }
-            return 0;
-          }
-        });
-        return {...data, ...{data: filterData}};
-      }));*/
   }
 
 
