@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.will;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -30,17 +29,19 @@ import javax.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
 public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
-    @Autowired
-    private MsgDispatcherService msgDispatcherService;
-    @Autowired
-    private StatsManager statsManager;
+    private final MsgDispatcherService msgDispatcherService;
+    private final StatsManager statsManager;
+
+    public DefaultLastWillService(MsgDispatcherService msgDispatcherService, StatsManager statsManager) {
+        this.msgDispatcherService = msgDispatcherService;
+        this.statsManager = statsManager;
+    }
 
     @PostConstruct
     public void init() {

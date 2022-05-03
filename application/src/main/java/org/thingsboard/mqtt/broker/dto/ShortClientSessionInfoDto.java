@@ -34,6 +34,7 @@ import java.util.function.Function;
 @EqualsAndHashCode
 public class ShortClientSessionInfoDto {
 
+    private String id;
     private String clientId;
     private ConnectionState connectionState;
     private ClientType clientType;
@@ -41,6 +42,7 @@ public class ShortClientSessionInfoDto {
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
         switch (sortOrder.getProperty()) {
+            case "id":
             case "clientId":
                 return getComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
             case "connectionState":
