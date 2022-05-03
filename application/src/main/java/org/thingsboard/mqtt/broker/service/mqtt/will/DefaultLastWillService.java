@@ -37,10 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
-    @Autowired
-    private MsgDispatcherService msgDispatcherService;
-    @Autowired
-    private StatsManager statsManager;
+    private final MsgDispatcherService msgDispatcherService;
+    private final StatsManager statsManager;
+
+    public DefaultLastWillService(MsgDispatcherService msgDispatcherService, StatsManager statsManager) {
+        this.msgDispatcherService = msgDispatcherService;
+        this.statsManager = statsManager;
+    }
 
     @PostConstruct
     public void init() {
