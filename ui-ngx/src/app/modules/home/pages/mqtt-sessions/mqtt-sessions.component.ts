@@ -20,16 +20,12 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { DatePipe } from '@angular/common';
-import { TranslateService } from '@ngx-translate/core';
 import { ClientType, clientTypeTranslationMap} from '@shared/models/mqtt-client.model';
 import {
   ConnectionState,
   connectionStateColor,
-  connectionStateTranslationMap, DetailedClientSessionInfo,
-  TopicSubscription
+  connectionStateTranslationMap, DetailedClientSessionInfo
 } from '@shared/models/mqtt-session.model';
-import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
 
 @Component({
   selector: 'tb-mqtt-clients',
@@ -49,9 +45,7 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
               @Inject('entity') protected entityValue: DetailedClientSessionInfo,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<DetailedClientSessionInfo>,
               public fb: FormBuilder,
-              protected cd: ChangeDetectorRef,
-              private datePipe: DatePipe,
-              private translate: TranslateService) {
+              protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
@@ -84,7 +78,7 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
     this.entityForm.patchValue({nodeId: entity.nodeId}, {emitEvent: false} );
     this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds}, {emitEvent: false} );
     this.entityForm.patchValue({connectedAt: entity.connectedAt}, {emitEvent: false} );
-    this.entityForm.patchValue({connectionState: entity.connectionState}, {emitEvent: false} );
+    this.entityForm.patchValue({connectionState: this.transformConnectedState(entity.connectionState)}, {emitEvent: false} );
     this.entityForm.patchValue({persistent: entity.persistent}, {emitEvent: false} );
     this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt}, {emitEvent: false} );
     this.entityForm.patchValue({subscriptions: entity.subscriptions}, {emitEvent: false} );
@@ -106,22 +100,26 @@ export class MqttSessionsComponent extends EntityComponent<DetailedClientSession
     this.sessionDetailsForm.get('subscriptionsCount').disable({emitEvent: false});
   }
 
+  prepareFormValue(formValue: DetailedClientSessionInfo): any {
+    let preparedValue = super.prepareFormValue(formValue);
+    preparedValue.connectionState = preparedValue.connectionState.toUpperCase();
+    return preparedValue;
+  }
+
   isConnected(): boolean {
-    return this.entityForm.get('connectionState').value === ConnectionState.CONNECTED;
+    if (this.entityForm.get('connectionState').value) {
+      return this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
+    }
   }
 
   getColor(): {color: string} {
-    return {color: connectionStateColor.get(this.entityForm.get('connectionState').value)};
+    if (this.entityForm.get('connectionState').value) {
+      return {color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())};
+    }
   }
 
-  getLength() {
-    if (this.entityForm) {
-      const subscriptions: TopicSubscription[] = this.entityForm.get('subscriptions').value;
-      return isNotNullOrUndefined(subscriptions) ? subscriptions.length : 0;
-    } else {
-      return;
-    }
-
+  private transformConnectedState(value: string): string {
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
   }
 
   private buildSessionDetailsForm(entity: DetailedClientSessionInfo) {
