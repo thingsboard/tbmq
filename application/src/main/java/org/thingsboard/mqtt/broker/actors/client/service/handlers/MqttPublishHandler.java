@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
@@ -54,41 +56,55 @@ public class MqttPublishHandler {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
 
-    // TODO: refactor this
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
-        UUID sessionId = ctx.getSessionId();
-        String clientId = ctx.getClientId();
         PublishMsg publishMsg = msg.getPublishMsg();
         int msgId = publishMsg.getPacketId();
 
-        log.trace("[{}][{}] Processing publish msg: {}", clientId, sessionId, msgId);
-        topicValidationService.validateTopic(publishMsg.getTopicName());
-        validateClientAccess(ctx, publishMsg.getTopicName());
+        log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), msgId);
+        validatePubMsg(ctx, publishMsg);
 
         if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            ctx.getRequestOrderCtx().getQos2PublishResponseMsgs().addAwaiting(msgId);
-            boolean isPacketStillBeingProcessed = preprocessQoS2Msg(msgId, ctx, actorRef);
-            if (isPacketStillBeingProcessed) {
-                return;
-            }
+            if (processExactlyOnce(ctx, actorRef, msgId)) return;
         } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
-            ctx.getRequestOrderCtx().getQos1PublishResponseMsgs().addAwaiting(msgId);
+            processAtLeastOnce(ctx, msgId);
         }
 
-        clientLogger.logEvent(clientId, this.getClass(), "Sending PUBLISH");
+        clientLogger.logEvent(ctx.getClientId(), this.getClass(), "Sending PUBLISH");
+        persistPubMsg(ctx, publishMsg, actorRef);
+    }
+
+    private void validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
+        topicValidationService.validateTopic(publishMsg.getTopicName());
+        validateClientAccess(ctx, publishMsg.getTopicName());
+    }
+
+    private boolean processExactlyOnce(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
+        addAwaiting(ctx.getRequestOrderCtx().getQos2PublishResponseMsgs(), msgId);
+        return preprocessQoS2Msg(ctx, actorRef, msgId);
+    }
+
+    private void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
+        addAwaiting(ctx.getRequestOrderCtx().getQos1PublishResponseMsgs(), msgId);
+    }
+
+    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMsgs, int msgId) {
+        qosPublishResponseMsgs.addAwaiting(msgId);
+    }
+
+    private void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                clientLogger.logEvent(clientId, this.getClass(), "PUBLISH acknowledged");
-                log.trace("[{}][{}] Successfully acknowledged msg: {}", clientId, sessionId, msgId);
-                sendMsgFinishEventToActor(actorRef, sessionId, msgId, MqttQoS.valueOf(publishMsg.getQosLevel()));
+                clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
+                log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
+                sendMsgFinishEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.warn("[{}][{}] Failed to publish msg: {}", clientId, sessionId, publishMsg.getPacketId(), t);
-                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                        sessionId,
+                log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+                clientMqttActorManager.disconnect(ctx.getClientId(), new DisconnectMsg(
+                        ctx.getSessionId(),
                         new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg")));
             }
         });
@@ -114,7 +130,7 @@ public class MqttPublishHandler {
     }
 
     // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean preprocessQoS2Msg(int msgId, ClientSessionCtx ctx, TbActorRef actorRef) {
+    private boolean preprocessQoS2Msg(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
         String clientId = ctx.getClientId();
         UUID sessionId = ctx.getSessionId();
         IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
@@ -150,7 +166,7 @@ public class MqttPublishHandler {
     }
 
     private void validateClientAccess(ClientSessionCtx ctx, String topic) {
-        if (ctx.getAuthorizationRules() == null) {
+        if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
             return;
         }
         boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());

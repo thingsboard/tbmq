@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
@@ -30,7 +31,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationServic
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,18 +57,20 @@ public class MqttSubscribeHandler {
         validateClientAccess(ctx, topicSubscriptions);
 
         // TODO: it's possible that client will get messages for topic before SUB_ACK
-        List<Integer> grantedQoSList = topicSubscriptions.stream().map(TopicSubscription::getQos).collect(Collectors.toList());
+        List<Integer> grantedQoSList = getQoSListFromTopicSubscriptions(topicSubscriptions);
+
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
-        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions, CallbackUtil.createCallback(() -> ctx.getChannel().writeAndFlush(subAckMessage),
-                t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}", clientId, sessionId, t.getClass().getSimpleName(), t.getMessage()))
+        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions,
+                CallbackUtil.createCallback(
+                        () -> ctx.getChannel().writeAndFlush(subAckMessage),
+                        t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
+                                clientId, sessionId, t.getClass().getSimpleName(), t.getMessage()))
         );
     }
 
-    private void validateSubscriptions(String clientId, UUID sessionId, Collection<TopicSubscription> subscriptions) {
+    private void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
         try {
-            for (TopicSubscription subscription : subscriptions) {
-                topicValidationService.validateTopicFilter(subscription.getTopic());
-            }
+            subscriptions.forEach(subscription -> topicValidationService.validateTopicFilter(subscription.getTopic()));
         } catch (DataValidationException e) {
             log.warn("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
@@ -76,19 +78,25 @@ public class MqttSubscribeHandler {
     }
 
     private void validateClientAccess(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        if (ctx.getAuthorizationRules() == null) {
+        if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
             return;
         }
-        List<String> topics = topicSubscriptions.stream()
-                .map(TopicSubscription::getTopic)
-                .collect(Collectors.toList());
-        for (String topic : topics) {
+        List<String> topics = getTopicsListFromTopicSubscriptions(topicSubscriptions);
+        topics.forEach(topic -> {
             boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
             if (!isClientAuthorized) {
                 log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
                         ctx.getClientId(), ctx.getSessionId(), topic);
                 throw new MqttException("Client is not authorized to subscribe to the topic");
             }
-        }
+        });
+    }
+
+    private List<Integer> getQoSListFromTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
+        return topicSubscriptions.stream().map(TopicSubscription::getQos).collect(Collectors.toList());
+    }
+
+    private List<String> getTopicsListFromTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
+        return topicSubscriptions.stream().map(TopicSubscription::getTopic).collect(Collectors.toList());
     }
 }

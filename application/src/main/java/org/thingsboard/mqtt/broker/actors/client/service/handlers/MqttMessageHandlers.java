@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Getter
 public class MqttMessageHandlers {
-    // TODO: move handlers to actor packet (it can only be executed in one thread for one client)
+    // TODO: it can only be executed in one thread for one client
     private final MqttSubscribeHandler subscribeHandler;
     private final MqttUnsubscribeHandler unsubscribeHandler;
     private final MqttPublishHandler publishHandler;

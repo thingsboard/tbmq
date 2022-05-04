@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,21 +23,19 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+@Slf4j
 @Service
 @AllArgsConstructor
-@Slf4j
-public class MqttPubRecHandler {
+public class MqttPubRelHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        log.trace("[{}][{}] Received PUBREL msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubRec(messageId, ctx);
-        } else {
-            // Cannot respond with PUBREL if PUBLISH message is not 'discarded'
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRelMsg(messageId));
+            msgPersistenceManager.processPubRel(messageId, ctx);
         }
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId));
     }
 }

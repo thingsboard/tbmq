@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.AllArgsConstructor;
@@ -41,8 +41,11 @@ public class MqttUnsubscribeHandler {
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
 
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId());
-        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(), CallbackUtil.createCallback(() -> ctx.getChannel().writeAndFlush(unSubAckMessage),
-                t -> log.warn("[{}][{}] Fail to process client unsubscription. Exception - {}, reason - {}", clientId, sessionId, t.getClass().getSimpleName(), t.getMessage())));
+        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(),
+                CallbackUtil.createCallback(
+                        () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
+                        t -> log.warn("[{}][{}] Fail to process client unsubscription. Exception - {}, reason - {}",
+                                clientId, sessionId, t.getClass().getSimpleName(), t.getMessage())));
     }
 
 }

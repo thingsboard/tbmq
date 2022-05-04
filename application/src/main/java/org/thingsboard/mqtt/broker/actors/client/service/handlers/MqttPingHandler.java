@@ -13,29 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.handlers;
+package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-@Slf4j
 @Service
 @AllArgsConstructor
-public class MqttPubRelHandler {
-
-    private final MsgPersistenceManager msgPersistenceManager;
+@Slf4j
+public class MqttPingHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
 
-    public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        log.trace("[{}][{}] Received PUBREL msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
-        if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubRel(messageId, ctx);
-        }
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId));
+    public void process(ClientSessionCtx ctx) {
+        log.trace("[{}][{}] Received PING msg.", ctx.getClientId(), ctx.getSessionId());
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 }
