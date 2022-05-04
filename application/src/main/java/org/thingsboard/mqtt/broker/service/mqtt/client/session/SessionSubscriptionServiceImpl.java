@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,13 +58,18 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
                 .nodeId(sessionInfo.getServiceId())
                 .persistent(sessionInfo.isPersistent())
-                .subscriptions(subscriptions.stream()
-                        .map(topicSubscription -> new SubscriptionInfoDto(topicSubscription.getTopic(), MqttQoS.valueOf(topicSubscription.getQos())))
-                        .collect(Collectors.toList()))
+                .subscriptions(collectSubscriptions(subscriptions))
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
                 .disconnectedAt(connectionInfo.getDisconnectedAt())
-                .build()
-                ;
+                .build();
+    }
+
+    private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {
+        return subscriptions.stream()
+                .map(topicSubscription -> new SubscriptionInfoDto(
+                        topicSubscription.getTopic(),
+                        MqttQoS.valueOf(topicSubscription.getQos())))
+                .collect(Collectors.toList());
     }
 }

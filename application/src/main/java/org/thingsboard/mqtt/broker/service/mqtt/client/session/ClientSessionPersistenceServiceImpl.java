@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -109,7 +110,7 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
 
     private TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> generateRequest(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
         TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> request = new TbProtoQueueMsg<>(clientId, clientSessionInfoProto);
-        request.getHeaders().put(ClientSessionConst.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
+        request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }
 

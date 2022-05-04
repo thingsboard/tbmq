@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -41,7 +42,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConst.EMPTY_CLIENT_SESSION_INFO_PROTO;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 
 @Slf4j
@@ -130,7 +130,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                     }
                     for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
                         String clientId = msg.getKey();
-                        String serviceId = bytesToString(msg.getHeaders().get(ClientSessionConst.SERVICE_ID_HEADER));
+                        String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
                         if (isClientSessionInfoProtoEmpty(msg.getValue())) {
                             callback.accept(clientId, serviceId, null);
                         } else {
@@ -173,7 +173,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     }
 
     private void clearDummySession(String clientId) throws QueuePersistenceException {
-        persistenceService.persistClientSessionInfoSync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO);
+        persistenceService.persistClientSessionInfoSync(clientId, BrokerConstants.EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
     private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
