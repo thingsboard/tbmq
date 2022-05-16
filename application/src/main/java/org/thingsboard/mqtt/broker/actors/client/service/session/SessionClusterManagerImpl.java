@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
@@ -58,7 +59,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
 
 @Slf4j
 @Service
@@ -281,6 +281,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}][{}] Successfully sent response.", clientId, connectionRequestInfo.getRequestId());
             }
+
             @Override
             public void onFailure(Throwable t) {
                 log.debug("[{}][{}] Failed to send response. Exception - {}, reason - {}.", clientId, connectionRequestInfo.getRequestId(), t.getClass().getSimpleName(), t.getMessage());
@@ -291,7 +292,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private DefaultTbQueueMsgHeaders createResponseHeaders(UUID requestId) {
         DefaultTbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();
-        headers.put(REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
+        headers.put(BrokerConstants.REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
         return headers;
     }
 

@@ -51,9 +51,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_TIME;
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.RESPONSE_TOPIC_HEADER;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_ID_HEADER;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.RESPONSE_TOPIC_HEADER;
 
 @Slf4j
 @Service
@@ -237,12 +237,12 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     @PreDestroy
     public void destroy() {
         stopped = true;
-        
+
         responseConsumerExecutor.shutdownNow();
         if (cleanupStaleRequestsScheduler != null) {
             cleanupStaleRequestsScheduler.shutdownNow();
         }
-        
+
         if (eventProducer != null) {
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
