@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Set;
 
@@ -29,13 +30,11 @@ public class ClientLoggerImpl implements ClientLogger {
     @Value("${analysis.log.analyzed-client-ids:}")
     private Set<String> analyzedClientIds;
 
-
     @Override
-    public void logEvent(String clientId, Class eventLocation, String eventDescription) {
-        if (!log.isDebugEnabled() || analyzedClientIds == null || analyzedClientIds.isEmpty() || !analyzedClientIds.contains(clientId)) {
+    public void logEvent(String clientId, Class<?> eventLocation, String eventDescription) {
+        if (!log.isDebugEnabled() || CollectionUtils.isEmpty(analyzedClientIds) || !analyzedClientIds.contains(clientId)) {
             return;
         }
-
         log.debug("[{}][{}] {}", clientId, eventLocation.getSimpleName(), eventDescription);
     }
 }

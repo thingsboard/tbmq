@@ -19,7 +19,6 @@ import com.google.common.io.Resources;
 import io.netty.handler.ssl.SslHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -70,17 +69,22 @@ public class MqttSslHandlerProvider {
             SSLContext sslContext = SSLContext.getInstance(sslProtocol);
             TrustManager[] trustManagers = tmf != null ? tmf.getTrustManagers() : null;
             sslContext.init(kmf.getKeyManagers(), trustManagers, null);
-            SSLEngine sslEngine = sslContext.createSSLEngine();
-            sslEngine.setUseClientMode(false);
-            sslEngine.setWantClientAuth(tmf != null);
-            sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
-            sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
-            sslEngine.setEnableSessionCreation(true);
+            SSLEngine sslEngine = getSslEngine(sslContext, tmf);
             return new SslHandler(sslEngine);
         } catch (Exception e) {
             log.error("Unable to set up SSL context. Reason: " + e.getMessage(), e);
             throw new RuntimeException("Failed to get SSL handler", e);
         }
+    }
+
+    private SSLEngine getSslEngine(SSLContext sslContext, TrustManagerFactory tmf) {
+        SSLEngine sslEngine = sslContext.createSSLEngine();
+        sslEngine.setUseClientMode(false);
+        sslEngine.setWantClientAuth(tmf != null);
+        sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
+        sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
+        sslEngine.setEnableSessionCreation(true);
+        return sslEngine;
     }
 
     private KeyManagerFactory initKeyStore() throws Exception {
@@ -95,7 +99,7 @@ public class MqttSslHandlerProvider {
     }
 
     private TrustManagerFactory initTrustStore() throws Exception {
-        if (StringUtils.isEmpty(trustStoreFile)){
+        if (StringUtils.isEmpty(trustStoreFile)) {
             return null;
         }
         File tsFile = getFile(trustStoreFile);

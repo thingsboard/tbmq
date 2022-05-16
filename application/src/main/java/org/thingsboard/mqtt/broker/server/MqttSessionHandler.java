@@ -155,7 +155,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // TODO push msg to the client before closing
+        // TODO: push msg to the client before closing
         String exceptionMessage = null;
         if (cause.getCause() instanceof SSLHandshakeException) {
             log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());

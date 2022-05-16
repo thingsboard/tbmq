@@ -21,8 +21,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 @ConditionalOnProperty(prefix = "listener.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
 public class MqttSslServerBootstrap {
@@ -48,8 +49,7 @@ public class MqttSslServerBootstrap {
     @Value("${listener.ssl.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
 
-    @Autowired
-    private MqttSslChannelInitializer mqttSslChannelInitializer;
+    private final MqttSslChannelInitializer mqttSslChannelInitializer;
 
     private Channel serverChannel;
     private EventLoopGroup bossGroup;
