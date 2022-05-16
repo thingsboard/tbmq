@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -38,10 +38,10 @@ import java.io.IOException;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class ThingsboardErrorResponseHandler implements AccessDeniedHandler {
 
-    @Autowired
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
@@ -92,17 +92,13 @@ public class ThingsboardErrorResponseHandler implements AccessDeniedHandler {
                 status = HttpStatus.FORBIDDEN;
                 break;
             case INVALID_ARGUMENTS:
+            case BAD_REQUEST_PARAMS:
                 status = HttpStatus.BAD_REQUEST;
                 break;
             case ITEM_NOT_FOUND:
                 status = HttpStatus.NOT_FOUND;
                 break;
-            case BAD_REQUEST_PARAMS:
-                status = HttpStatus.BAD_REQUEST;
-                break;
             case GENERAL:
-                status = HttpStatus.INTERNAL_SERVER_ERROR;
-                break;
             default:
                 status = HttpStatus.INTERNAL_SERVER_ERROR;
                 break;
@@ -131,7 +127,7 @@ public class ThingsboardErrorResponseHandler implements AccessDeniedHandler {
         } else if (authenticationException instanceof JwtExpiredTokenException) {
             mapper.writeValue(response.getWriter(), ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED));
         } else if (authenticationException instanceof UserPasswordExpiredException) {
-            UserPasswordExpiredException expiredException = (UserPasswordExpiredException)authenticationException;
+            UserPasswordExpiredException expiredException = (UserPasswordExpiredException) authenticationException;
             String resetToken = expiredException.getResetToken();
             mapper.writeValue(response.getWriter(), ThingsboardCredentialsExpiredResponse.of(expiredException.getMessage(), resetToken));
         } else {

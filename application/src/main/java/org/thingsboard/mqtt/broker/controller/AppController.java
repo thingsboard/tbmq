@@ -15,8 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -30,19 +29,18 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import java.util.Collection;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/app")
 public class AppController extends BaseController {
-    @Autowired
-    private TbActorSystem tbActorSystem;
-    @Autowired
-    private ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
+    private final TbActorSystem tbActorSystem;
+    private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
     @ResponseBody
     public Collection<TbActorId> getAllActorIds() throws ThingsboardException {
         try {
-           return tbActorSystem.getAllActorIds();
+            return tbActorSystem.getAllActorIds();
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -40,7 +40,6 @@ public class ClientSessionController extends BaseController {
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
 
-
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{clientId}/remove/{sessionId}", method = RequestMethod.DELETE)
     @ResponseBody

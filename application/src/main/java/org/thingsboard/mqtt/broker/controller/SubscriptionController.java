@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,20 +33,13 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import java.util.Set;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/subscription")
 public class SubscriptionController extends BaseController {
 
     private final SubscriptionService subscriptionService;
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientSubscriptionAdminService subscriptionAdminService;
-
-    public SubscriptionController(SubscriptionService subscriptionService,
-                                  ClientSubscriptionCache clientSubscriptionCache,
-                                  ClientSubscriptionAdminService subscriptionAdminService) {
-        this.subscriptionService = subscriptionService;
-        this.clientSubscriptionCache = clientSubscriptionCache;
-        this.subscriptionAdminService = subscriptionAdminService;
-    }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
