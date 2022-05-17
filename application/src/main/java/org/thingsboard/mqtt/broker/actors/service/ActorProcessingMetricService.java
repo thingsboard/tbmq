@@ -15,9 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.service;
 
-import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 public interface ActorProcessingMetricService {
-    void logMsgProcessingTime(TbActorId actorId, MsgType msgType, long time);
+    void logMsgProcessingTime(MsgType msgType, long time);
 }

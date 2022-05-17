@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 
@@ -41,7 +40,7 @@ public class MsgTypeActorProcessingMetricService implements ActorProcessingMetri
     private final StatsFactory statsFactory;
 
     @Override
-    public void logMsgProcessingTime(TbActorId actorId, MsgType msgType, long time) {
+    public void logMsgProcessingTime(MsgType msgType, long time) {
         Timer timer = timers.computeIfAbsent(msgType, t -> statsFactory.createTimer(ACTOR_MSG_PROCESSING_STATS_NAME,
                 MSG_TYPE_TAG_NAME, msgType.toString()));
         timer.record(time, TimeUnit.MILLISECONDS);
