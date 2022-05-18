@@ -59,7 +59,6 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
         return orderedFinishedMsgs;
     }
 
-    // TODO: write tests for this logic
     @Override
     public List<Integer> finishAll(int msgId) throws FullMsgQueueException {
         long numberOfAwaitingMsgs = awaitingMsgIds.stream().filter(i -> i == msgId).count();
@@ -79,7 +78,6 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
                 finishedMsgIds.remove(firstAwaitingMsg);
                 awaitingMsgIds.poll();
                 orderedFinishedMsgs.add(firstAwaitingMsg);
-                isSequenceBroken = false;
             } else {
                 isSequenceBroken = true;
             }
