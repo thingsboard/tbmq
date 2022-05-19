@@ -32,28 +32,54 @@ import java.util.stream.Collectors;
 public class SubscriptionChangesManagerImpl implements SubscriptionChangesManager {
     private final ClientSubscriptionService clientSubscriptionService;
 
-    // TODO: now it's possible to have parallel updates on subscriptions
     @Override
     public void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg) {
         Set<TopicSubscription> currentTopicSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
         Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
-        log.debug("[{}] Updating Client's subscriptions, new subscriptions size - {}, current subscriptions size - {}.",
-                clientId, newTopicSubscriptions.size(), currentTopicSubscriptions.size());
+
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Updating Client's subscriptions, new subscriptions size - {}, current subscriptions size - {}.",
+                    clientId, newTopicSubscriptions.size(), currentTopicSubscriptions.size());
+        }
 
         if (newTopicSubscriptions.isEmpty()) {
             clientSubscriptionService.clearSubscriptionsInternally(clientId);
             return;
         }
 
-        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions,
-                        Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos))
-                .stream()
+        processUnsubscribe(clientId, newTopicSubscriptions, currentTopicSubscriptions);
+
+        processSubscribe(clientId, newTopicSubscriptions, currentTopicSubscriptions);
+    }
+
+    private void processUnsubscribe(String clientId, Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
+        Set<TopicSubscription> removedSubscriptions = getRemovedSubscriptions(newTopicSubscriptions, currentTopicSubscriptions);
+        Set<String> unsubscribeTopics = getUnsubscribeTopics(removedSubscriptions);
+        clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
+    }
+
+    private Set<TopicSubscription> getRemovedSubscriptions(Set<TopicSubscription> newTopicSubscriptions,
+                                                           Set<TopicSubscription> currentTopicSubscriptions) {
+        return CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions, getComparator());
+    }
+
+    private void processSubscribe(String clientId, Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
+        Set<TopicSubscription> addedTopicSubscriptions = getAddedSubscriptions(newTopicSubscriptions, currentTopicSubscriptions);
+        clientSubscriptionService.subscribeInternally(clientId, addedTopicSubscriptions);
+    }
+
+    private Set<TopicSubscription> getAddedSubscriptions(Set<TopicSubscription> newTopicSubscriptions,
+                                                         Set<TopicSubscription> currentTopicSubscriptions) {
+        return CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions, getComparator());
+    }
+
+    private Comparator<TopicSubscription> getComparator() {
+        return Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos);
+    }
+
+    private Set<String> getUnsubscribeTopics(Set<TopicSubscription> removedSubscriptions) {
+        return removedSubscriptions.stream()
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toSet());
-        clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
-
-        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions,
-                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
-        clientSubscriptionService.subscribeInternally(clientId, subscribeTopicSubscriptions);
     }
 }
