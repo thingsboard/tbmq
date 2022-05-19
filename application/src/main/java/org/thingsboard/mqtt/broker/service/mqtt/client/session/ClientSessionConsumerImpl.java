@@ -21,9 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
@@ -31,7 +28,6 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -43,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
+import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
 @Slf4j
 @Component
@@ -156,18 +153,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     private String persistDummySession() throws QueuePersistenceException {
         String dummyClientId = UUID.randomUUID().toString();
-        ClientSessionInfo dummyClientSessionInfo = ClientSessionInfo.builder()
-                .clientSession(ClientSession.builder()
-                        .connected(false)
-                        .sessionInfo(SessionInfo.builder()
-                                .serviceId(serviceInfoProvider.getServiceId())
-                                .persistent(false)
-                                .sessionId(UUID.randomUUID())
-                                .clientInfo(new ClientInfo(dummyClientId, ClientType.DEVICE))
-                                .build())
-                        .build())
-                .lastUpdateTime(System.currentTimeMillis())
-                .build();
+        ClientSessionInfo dummyClientSessionInfo = getClientSessionInfo(dummyClientId, serviceInfoProvider.getServiceId(), false);
         persistenceService.persistClientSessionInfoSync(dummyClientId, ProtoConverter.convertToClientSessionInfoProto(dummyClientSessionInfo));
         return dummyClientId;
     }

@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -85,10 +86,7 @@ public class BrokerInitializer {
             initClientSubscriptions(allClientSessions);
 
 
-            Map<String, ClientSessionInfo> currentNodeSessions = allClientSessions.values().stream()
-                    .filter(this::sessionWasOnThisNode)
-                    .collect(Collectors.toMap(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId(),
-                            Function.identity()));
+            Map<String, ClientSessionInfo> currentNodeSessions = filterSessions(allClientSessions);
             clearNonPersistentClients(currentNodeSessions);
 
             clientSessionService.startListening(clientSessionConsumer);
@@ -96,40 +94,42 @@ public class BrokerInitializer {
             startSubscriptionListening();
 
             log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
-            disconnectClientCommandConsumer.startConsuming();
-            clientSessionEventConsumer.startConsuming();
-            deviceMsgQueueConsumer.startConsuming();
-            publishMsgConsumerService.startConsuming();
-            basicDownLinkConsumer.startConsuming();
-            persistentDownLinkConsumer.startConsuming();
+            startConsuming();
         } catch (Exception e) {
             log.error("Failed to initialize broker. Exception - {}, reason - {}", e.getClass().getSimpleName(), e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
+    private void startConsuming() {
+        disconnectClientCommandConsumer.startConsuming();
+        clientSessionEventConsumer.startConsuming();
+        deviceMsgQueueConsumer.startConsuming();
+        publishMsgConsumerService.startConsuming();
+        basicDownLinkConsumer.startConsuming();
+        persistentDownLinkConsumer.startConsuming();
+    }
+
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
         Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} persisted client subscriptions.", allClientSubscriptions.size());
+
         Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
         for (String clientId : loadedClientIds) {
             if (!allClientSessions.containsKey(clientId)) {
                 allClientSubscriptions.remove(clientId);
             }
         }
+
         log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
         clientSubscriptionService.init(allClientSubscriptions);
     }
 
-    private Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
+    Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
         log.info("Loaded {} persisted client sessions.", allClientSessions.size());
 
-        Map<String, ClientSessionInfo> currentNodeSessions = allClientSessions.values().stream()
-                .filter(this::sessionWasOnThisNode)
-                .map(this::markDisconnected)
-                .collect(Collectors.toMap(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId(),
-                        Function.identity()));
+        Map<String, ClientSessionInfo> currentNodeSessions = filterSessionsAndDisconnect(allClientSessions);
         log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
 
         allClientSessions.putAll(currentNodeSessions);
@@ -139,6 +139,22 @@ public class BrokerInitializer {
         return allClientSessions;
     }
 
+    private Map<String, ClientSessionInfo> filterSessions(Map<String, ClientSessionInfo> allClientSessions) {
+        return filterCurrentNodeSessions(allClientSessions)
+                .collect(Collectors.toMap(this::getClientId, Function.identity()));
+    }
+
+    private Map<String, ClientSessionInfo> filterSessionsAndDisconnect(Map<String, ClientSessionInfo> allClientSessions) {
+        return filterCurrentNodeSessions(allClientSessions)
+                .map(this::markDisconnected)
+                .collect(Collectors.toMap(this::getClientId, Function.identity()));
+    }
+
+    private Stream<ClientSessionInfo> filterCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
+        return allClientSessions.values().stream()
+                .filter(this::sessionWasOnThisNode);
+    }
+
     private void startSubscriptionListening() {
         clientSubscriptionConsumer.listen((clientId, serviceId, topicSubscriptions) -> {
             if (serviceInfoProvider.getServiceId().equals(serviceId)) {
@@ -146,11 +162,10 @@ public class BrokerInitializer {
                 return false;
             }
 
-            TbActorRef clientActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+            TbActorRef clientActorRef = getActor(clientId);
             if (clientActorRef == null) {
                 // TODO: get ClientInfo and check if clientId is generated
-                clientActorRef = actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                        new ClientActorCreator(actorSystemContext, clientId, true));
+                clientActorRef = createRootActor(clientId);
             }
 
             clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
@@ -158,8 +173,17 @@ public class BrokerInitializer {
         });
     }
 
-    public void clearNonPersistentClients(Map<String, ClientSessionInfo> thisNodeClientSessions) {
-        thisNodeClientSessions.values().stream()
+    private TbActorRef createRootActor(String clientId) {
+        return actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
+                new ClientActorCreator(actorSystemContext, clientId, true));
+    }
+
+    private TbActorRef getActor(String clientId) {
+        return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
+    }
+
+    public void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
+        currentNodeSessions.values().stream()
                 .filter(clientSessionInfo -> !isPersistent(clientSessionInfo))
                 .map(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo())
                 .forEach(clientSessionEventService::requestSessionCleanup);
@@ -176,11 +200,13 @@ public class BrokerInitializer {
 
     private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
         return clientSessionInfo.toBuilder()
-                .clientSession(
-                        clientSessionInfo.getClientSession().toBuilder()
-                                .connected(false)
-                                .build()
-                )
+                .clientSession(clientSessionInfo.getClientSession().toBuilder()
+                        .connected(false)
+                        .build())
                 .build();
+    }
+
+    private String getClientId(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId();
     }
 }
