@@ -56,27 +56,35 @@ public class ClientSessionInfoFactory {
                 .build();
     }
 
-    private static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+    public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+        return getSessionInfo(false, serviceId, clientInfo, connectionInfo);
+    }
+
+    public static SessionInfo getSessionInfo(boolean persistent, String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
         return SessionInfo.builder()
                 .sessionId(UUID.randomUUID())
-                .persistent(false)
+                .persistent(persistent)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
                 .connectionInfo(connectionInfo)
                 .build();
     }
 
-    private static ConnectionInfo getConnectionInfo() {
+    public static ConnectionInfo getConnectionInfo() {
         return ConnectionInfo.builder()
                 .connectedAt(System.currentTimeMillis())
                 .keepAlive(100000)
                 .build();
     }
 
-    private static ClientInfo getClientInfo(String clientId) {
+    public static ClientInfo getClientInfo(String clientId) {
+        return getClientInfo(clientId, ClientType.DEVICE);
+    }
+
+    public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
         return ClientInfo.builder()
                 .clientId(clientId)
-                .type(ClientType.DEVICE)
+                .type(clientType)
                 .build();
     }
 }

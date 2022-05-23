@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.client;
+package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -22,8 +22,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
-import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionServiceImpl;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -38,10 +36,12 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.Mockito.spy;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class ClientSessionServiceSuiteTest {
+public class ClientSessionServiceImplTest {
+
     private static final String TEST_SERVICE_ID = "testServiceId";
     private static final String DEFAULT_CLIENT_ID = "test";
     private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;
@@ -62,7 +62,7 @@ public class ClientSessionServiceSuiteTest {
         ClientSessionPersistenceService clientSessionPersistenceServiceMock = Mockito.mock(ClientSessionPersistenceService.class);
         StatsManager statsManagerMock = Mockito.mock(StatsManager.class);
         ServiceInfoProvider serviceInfoProviderMock = Mockito.mock(ServiceInfoProvider.class);
-        this.clientSessionService = new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock);
+        this.clientSessionService = spy(new ClientSessionServiceImpl(clientSessionPersistenceServiceMock, serviceInfoProviderMock, statsManagerMock));
         this.clientSessionService.init(Collections.emptyMap());
     }
 
@@ -126,4 +126,5 @@ public class ClientSessionServiceSuiteTest {
         }, t -> {
         }));
     }
+
 }
