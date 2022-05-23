@@ -67,48 +67,62 @@ public class ClientSessionServiceSuiteTest {
     }
 
     @Test
-    public void testGetPersistedClients() {
-        ClientSession persistentSession1 = DEFAULT_CLIENT_SESSION.toBuilder()
-                .sessionInfo(DEFAULT_CLIENT_SESSION.getSessionInfo().toBuilder()
-                        .clientInfo(new ClientInfo("persistent_1", ClientType.DEVICE))
-                        .persistent(true)
-                        .build())
-                .build();
-        ClientSession persistentSession2 = DEFAULT_CLIENT_SESSION.toBuilder()
-                .sessionInfo(DEFAULT_CLIENT_SESSION.getSessionInfo().toBuilder()
-                        .clientInfo(new ClientInfo("persistent_2", ClientType.DEVICE))
-                        .persistent(true)
-                        .build())
-                .build();
-        ClientSession notPersistentSession = DEFAULT_CLIENT_SESSION.toBuilder()
-                .sessionInfo(DEFAULT_CLIENT_SESSION.getSessionInfo().toBuilder()
-                        .clientInfo(new ClientInfo("not_persistent", ClientType.DEVICE))
-                        .persistent(false)
-                        .build())
-                .build();
-        clientSessionService.saveClientSession("persistent_1", persistentSession1, CallbackUtil.createCallback(() -> {
-        }, t -> {
-        }));
-        clientSessionService.saveClientSession("persistent_2", persistentSession2, CallbackUtil.createCallback(() -> {
-        }, t -> {
-        }));
-        clientSessionService.saveClientSession("not_persistent", notPersistentSession, CallbackUtil.createCallback(() -> {
-        }, t -> {
-        }));
+    public void givenSessions_whenSaveAndGetPersistentSessions_thenReturnResult() {
+        ClientSession persistentSession1 = prepareSession("persistent_1", true);
+        ClientSession persistentSession2 = prepareSession("persistent_2", true);
+        ClientSession notPersistentSession = prepareSession("not_persistent", false);
 
-        Set<String> persistedClients = clientSessionService.getPersistentClientSessionInfos().keySet();
+        saveClientSession("persistent_1", persistentSession1);
+        saveClientSession("persistent_2", persistentSession2);
+        saveClientSession("not_persistent", notPersistentSession);
+
+        Set<String> persistedClients = getPersistedClients();
         Assert.assertEquals(2, persistedClients.size());
         Assert.assertTrue(persistedClients.contains("persistent_1") && persistedClients.contains("persistent_2"));
     }
 
+    @Test
+    public void givenSession_whenSaveAndClearSession_thenReturnResult() {
+        ClientSession persistentSession = prepareSession("persistent", true);
+
+        saveClientSession("persistent", persistentSession);
+
+        Set<String> persistedClients = getPersistedClients();
+        Assert.assertEquals(1, persistedClients.size());
+        Assert.assertTrue(persistedClients.contains("persistent"));
+
+        clearClientSession();
+        persistedClients = getPersistedClients();
+        Assert.assertTrue(persistedClients.isEmpty());
+    }
+
     @Test(expected = MqttException.class)
-    public void testFail_differentClientIds() {
-        ClientSession notValidClientSession = DEFAULT_CLIENT_SESSION.toBuilder()
+    public void givenSession_whenSaveWithDifferentClientIds_thenThrowException() {
+        ClientSession notValidClientSession = prepareSession(DEFAULT_CLIENT_ID + "_not_valid", false);
+        saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession);
+    }
+
+    private ClientSession prepareSession(String clientId, boolean persistent) {
+        return DEFAULT_CLIENT_SESSION.toBuilder()
                 .sessionInfo(DEFAULT_CLIENT_SESSION.getSessionInfo().toBuilder()
-                        .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID + "_not_valid", ClientType.DEVICE))
+                        .clientInfo(new ClientInfo(clientId, ClientType.DEVICE))
+                        .persistent(persistent)
                         .build())
                 .build();
-        clientSessionService.saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession, CallbackUtil.createCallback(() -> {
+    }
+
+    private Set<String> getPersistedClients() {
+        return clientSessionService.getPersistentClientSessionInfos().keySet();
+    }
+
+    private void saveClientSession(String clientId, ClientSession clientSession) {
+        clientSessionService.saveClientSession(clientId, clientSession, CallbackUtil.createCallback(() -> {
+        }, t -> {
+        }));
+    }
+
+    private void clearClientSession() {
+        clientSessionService.clearClientSession("persistent", CallbackUtil.createCallback(() -> {
         }, t -> {
         }));
     }
