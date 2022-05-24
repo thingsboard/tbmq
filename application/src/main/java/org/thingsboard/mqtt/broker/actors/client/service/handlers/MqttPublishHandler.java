@@ -64,7 +64,7 @@ public class MqttPublishHandler {
         validatePubMsg(ctx, publishMsg);
 
         if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            if (processExactlyOnce(ctx, actorRef, msgId)) return;
+            if (processExactlyOnceAndCheckIfAlreadyWaiting(ctx, actorRef, msgId)) return;
         } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
             processAtLeastOnce(ctx, msgId);
         }
@@ -78,12 +78,12 @@ public class MqttPublishHandler {
         validateClientAccess(ctx, publishMsg.getTopicName());
     }
 
-    private boolean processExactlyOnce(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
+    boolean processExactlyOnceAndCheckIfAlreadyWaiting(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
         addAwaiting(ctx.getRequestOrderCtx().getQos2PublishResponseMsgs(), msgId);
-        return preprocessQoS2Msg(ctx, actorRef, msgId);
+        return preProcessQoS2Msg(ctx, actorRef, msgId);
     }
 
-    private void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
+    void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
         addAwaiting(ctx.getRequestOrderCtx().getQos1PublishResponseMsgs(), msgId);
     }
 
@@ -91,7 +91,7 @@ public class MqttPublishHandler {
         qosPublishResponseMsgs.addAwaiting(msgId);
     }
 
-    private void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
+    void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -112,25 +112,25 @@ public class MqttPublishHandler {
 
     public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
         List<Integer> finishedMsgIds = ctx.getRequestOrderCtx().getQos1PublishResponseMsgs().finish(msgId);
-        for (Integer finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId));
-        }
+        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId)));
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
-        // TODO: test performance impact
         List<Integer> finishedMsgIds = ctx.getRequestOrderCtx().getQos2PublishResponseMsgs().finishAll(msgId);
-        for (Integer finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId));
-        }
+        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId)));
+
         IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
-        if (awaitingPacketInfo != null && !awaitingPacketInfo.isPersisted()) {
+        if (isNotPersisted(awaitingPacketInfo)) {
             awaitingPacketInfo.setPersisted(true);
         }
     }
 
+    private boolean isNotPersisted(IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo) {
+        return awaitingPacketInfo != null && !awaitingPacketInfo.isPersisted();
+    }
+
     // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean preprocessQoS2Msg(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
+    private boolean preProcessQoS2Msg(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
         String clientId = ctx.getClientId();
         UUID sessionId = ctx.getSessionId();
         IncomingMessagesCtx.QoS2PacketInfo awaitingPacketInfo = ctx.getIncomingMessagesCtx().getAwaitingPacket(msgId);
@@ -165,7 +165,7 @@ public class MqttPublishHandler {
         }
     }
 
-    private void validateClientAccess(ClientSessionCtx ctx, String topic) {
+    void validateClientAccess(ClientSessionCtx ctx, String topic) {
         if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
             return;
         }
