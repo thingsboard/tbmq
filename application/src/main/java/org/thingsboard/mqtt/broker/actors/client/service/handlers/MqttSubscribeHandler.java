@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -36,7 +36,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MqttSubscribeHandler {
 
@@ -60,15 +60,20 @@ public class MqttSubscribeHandler {
         List<Integer> grantedQoSList = getQoSListFromTopicSubscriptions(topicSubscriptions);
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
+        subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
+    }
+
+    private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions, MqttSubAckMessage subAckMessage) {
+        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions,
                 CallbackUtil.createCallback(
                         () -> ctx.getChannel().writeAndFlush(subAckMessage),
                         t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
-                                clientId, sessionId, t.getClass().getSimpleName(), t.getMessage()))
+                                clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
         );
     }
 
-    private void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
+    void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
         try {
             subscriptions.forEach(subscription -> topicValidationService.validateTopicFilter(subscription.getTopic()));
         } catch (DataValidationException e) {
@@ -77,7 +82,7 @@ public class MqttSubscribeHandler {
         }
     }
 
-    private void validateClientAccess(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+    void validateClientAccess(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
         if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
             return;
         }
