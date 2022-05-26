@@ -60,9 +60,15 @@ public class ClientSessionInfoFactory {
         return getSessionInfo(false, serviceId, clientInfo, connectionInfo);
     }
 
-    public static SessionInfo getSessionInfo(boolean persistent, String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+    public static SessionInfo getSessionInfo(boolean persistent, String serviceId,
+                                             ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+        return getSessionInfo(UUID.randomUUID(), persistent, serviceId, clientInfo, connectionInfo);
+    }
+
+    public static SessionInfo getSessionInfo(UUID sessionId, boolean persistent, String serviceId,
+                                             ClientInfo clientInfo, ConnectionInfo connectionInfo) {
         return SessionInfo.builder()
-                .sessionId(UUID.randomUUID())
+                .sessionId(sessionId)
                 .persistent(persistent)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
@@ -71,9 +77,17 @@ public class ClientSessionInfoFactory {
     }
 
     public static ConnectionInfo getConnectionInfo() {
+        return getConnectionInfo(100000);
+    }
+
+    public static ConnectionInfo getConnectionInfo(int keepAlive) {
+        return getConnectionInfo(keepAlive, System.currentTimeMillis());
+    }
+
+    public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt) {
         return ConnectionInfo.builder()
-                .connectedAt(System.currentTimeMillis())
-                .keepAlive(100000)
+                .connectedAt(connectedAt)
+                .keepAlive(keepAlive)
                 .build();
     }
 
