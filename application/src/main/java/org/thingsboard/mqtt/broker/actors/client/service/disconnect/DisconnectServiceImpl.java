@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
@@ -34,18 +34,14 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DisconnectServiceImpl implements DisconnectService {
 
-    @Autowired
-    private KeepAliveService keepAliveService;
-    @Autowired
-    private LastWillService lastWillService;
-    @Autowired
-    private ClientSessionCtxService clientSessionCtxService;
-    @Autowired
-    private MsgPersistenceManager msgPersistenceManager;
-    @Autowired
-    private ClientSessionEventService clientSessionEventService;
+    private final KeepAliveService keepAliveService;
+    private final LastWillService lastWillService;
+    private final ClientSessionCtxService clientSessionCtxService;
+    private final MsgPersistenceManager msgPersistenceManager;
+    private final ClientSessionEventService clientSessionEventService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, DisconnectReason reason) {
@@ -62,25 +58,36 @@ public class DisconnectServiceImpl implements DisconnectService {
             clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-            log.warn("Detailed error: ", e);
+            log.trace("Detailed error: ", e);
         }
 
-        try {
-            clientSessionEventService.notifyClientDisconnected(actorState.getCurrentSessionCtx().getSessionInfo().getClientInfo(), actorState.getCurrentSessionId());
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to notify client disconnected. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-        }
+        notifyClientDisconnected(actorState);
 
+        closeChannel(sessionCtx);
+
+        log.debug("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
+    }
+
+    void closeChannel(ClientSessionCtx sessionCtx) {
         try {
             sessionCtx.getChannel().close();
         } catch (Exception e) {
             log.debug("[{}][{}] Failed to close channel. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
         }
-
-        log.debug("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
     }
 
-    private void clearClientSession(ClientActorStateInfo actorState, DisconnectReasonType disconnectReasonType) {
+    void notifyClientDisconnected(ClientActorStateInfo actorState) {
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        try {
+            clientSessionEventService.notifyClientDisconnected(
+                    sessionCtx.getSessionInfo().getClientInfo(),
+                    actorState.getCurrentSessionId());
+        } catch (Exception e) {
+            log.warn("[{}][{}] Failed to notify client disconnected. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
+        }
+    }
+
+    void clearClientSession(ClientActorStateInfo actorState, DisconnectReasonType disconnectReasonType) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
 
@@ -90,20 +97,25 @@ public class DisconnectServiceImpl implements DisconnectService {
         keepAliveService.unregisterSession(sessionId);
 
         boolean sendLastWill = !DisconnectReasonType.ON_DISCONNECT_MSG.equals(disconnectReasonType);
-        lastWillService.removeLastWill(sessionId, sendLastWill);
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            try {
-                msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
-                msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
-            } catch (Exception e) {
-                if (e instanceof TransactionException) {
-                    log.warn("[{}][{}] Couldn't properly stop processing persisted messages and saving QoS 2 packets.", clientInfo.getClientId(), sessionId);
-                } else {
-                    throw e;
-                }
+            processPersistenceDisconnect(sessionCtx, clientInfo, sessionId);
+        }
+
+        clientSessionCtxService.unregisterSession(clientInfo.getClientId());
+    }
+
+    void processPersistenceDisconnect(ClientSessionCtx sessionCtx, ClientInfo clientInfo, UUID sessionId) {
+        try {
+            msgPersistenceManager.stopProcessingPersistedMessages(clientInfo);
+            msgPersistenceManager.saveAwaitingQoS2Packets(sessionCtx);
+        } catch (Exception e) {
+            if (e instanceof TransactionException) {
+                log.warn("[{}][{}] Couldn't properly stop processing persisted messages and saving QoS 2 packets.", clientInfo.getClientId(), sessionId);
+            } else {
+                throw e;
             }
         }
-        clientSessionCtxService.unregisterSession(clientInfo.getClientId());
     }
 }

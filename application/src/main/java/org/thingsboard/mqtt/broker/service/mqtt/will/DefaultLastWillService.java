@@ -60,7 +60,7 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void removeLastWill(UUID sessionId, boolean sendMsg) {
+    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg) {
         MsgWithSessionInfo lastWillMsg = lastWillMessages.get(sessionId);
         if (lastWillMsg == null) {
             log.trace("[{}] No last will msg.", sessionId);
@@ -70,20 +70,24 @@ public class DefaultLastWillService implements LastWillService {
         log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
-            msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
-                    new TbQueueCallback() {
-                        @Override
-                        public void onSuccess(TbQueueMsgMetadata metadata) {
-                            log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            log.warn("[{}] Failed to acknowledge last will msg. Reason - {}.", sessionId, t.getMessage());
-                            log.trace("Detailed error:", t);
-                        }
-                    });
+            persistPublishMsg(lastWillMsg, sessionId);
         }
+    }
+
+    private void persistPublishMsg(MsgWithSessionInfo lastWillMsg, UUID sessionId) {
+        msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
+                new TbQueueCallback() {
+                    @Override
+                    public void onSuccess(TbQueueMsgMetadata metadata) {
+                        log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        log.warn("[{}] Failed to acknowledge last will msg. Reason - {}.", sessionId, t.getMessage());
+                        log.trace("Detailed error:", t);
+                    }
+                });
     }
 
     @AllArgsConstructor
