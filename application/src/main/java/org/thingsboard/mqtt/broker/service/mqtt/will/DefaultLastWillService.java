@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -32,16 +33,12 @@ import java.util.concurrent.ConcurrentMap;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
     private final MsgDispatcherService msgDispatcherService;
     private final StatsManager statsManager;
-
-    public DefaultLastWillService(MsgDispatcherService msgDispatcherService, StatsManager statsManager) {
-        this.msgDispatcherService = msgDispatcherService;
-        this.statsManager = statsManager;
-    }
 
     @PostConstruct
     public void init() {
@@ -50,7 +47,10 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        log.trace("[{}][{}] Saving last will msg, topic - [{}]", sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
+        if (log.isTraceEnabled())
+            log.trace("[{}][{}] Saving last will msg, topic - [{}]",
+                    sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
+
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientInfo().getClientId(), sessionId);
@@ -74,7 +74,7 @@ public class DefaultLastWillService implements LastWillService {
         }
     }
 
-    private void persistPublishMsg(MsgWithSessionInfo lastWillMsg, UUID sessionId) {
+    void persistPublishMsg(MsgWithSessionInfo lastWillMsg, UUID sessionId) {
         msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
                 new TbQueueCallback() {
                     @Override
