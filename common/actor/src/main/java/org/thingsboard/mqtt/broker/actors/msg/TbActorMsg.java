@@ -23,7 +23,7 @@ public interface TbActorMsg {
 
     /**
      * Executed when the target TbActor is stopped or destroyed.
-     * Implementation should cleanup the resources.
+     * Implementation should clean up the resources.
      */
     default void onTbActorStopped(TbActorId actorId) {
     }

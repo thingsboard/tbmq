@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
@@ -25,12 +26,10 @@ import java.util.Collection;
 
 @Slf4j
 @Getter
+@RequiredArgsConstructor
 public class SubscribeCommandMsg extends AbstractTimedMsg implements TbActorMsg {
-    private final Collection<TopicSubscription> topicSubscriptions;
 
-    public SubscribeCommandMsg(Collection<TopicSubscription> topicSubscriptions) {
-        this.topicSubscriptions = topicSubscriptions;
-    }
+    private final Collection<TopicSubscription> topicSubscriptions;
 
     @Override
     public MsgType getMsgType() {
