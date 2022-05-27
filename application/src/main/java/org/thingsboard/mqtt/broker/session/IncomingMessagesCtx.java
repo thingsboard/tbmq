@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,6 +53,7 @@ public class IncomingMessagesCtx {
     }
 
     @Getter
+    @EqualsAndHashCode
     public static class QoS2PacketInfo {
         private final int packetId;
         @Setter

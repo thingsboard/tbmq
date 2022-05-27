@@ -27,11 +27,11 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import javax.annotation.PreDestroy;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Slf4j
 @Service
@@ -43,14 +43,18 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
 
     @Override
     public void resendPersistedPubRelMessages(ClientSessionCtx clientSessionCtx) {
-        Set<Integer> awaitingQoS2PacketIds = genericClientSessionCtxService.findGenericClientSessionCtx(clientSessionCtx.getClientId())
-                .map(GenericClientSessionCtx::getQos2PublishPacketIds)
-                .orElse(Collections.emptySet());
+        Set<Integer> awaitingQoS2PacketIds = getAwaitingQoS2PacketIds(clientSessionCtx);
+
         IncomingMessagesCtx incomingMessagesCtx = clientSessionCtx.getIncomingMessagesCtx();
         incomingMessagesCtx.loadPersistedPackets(awaitingQoS2PacketIds);
-        for (Integer packetId : awaitingQoS2PacketIds) {
-            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId));
-        }
+
+        awaitingQoS2PacketIds.forEach(packetId -> clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId)));
+    }
+
+    private Set<Integer> getAwaitingQoS2PacketIds(ClientSessionCtx clientSessionCtx) {
+        return genericClientSessionCtxService.findGenericClientSessionCtx(clientSessionCtx.getClientId())
+                .map(GenericClientSessionCtx::getQos2PublishPacketIds)
+                .orElse(Collections.emptySet());
     }
 
     @Override
@@ -76,35 +80,60 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     public void destroy() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        List<GenericClientSessionCtx> genericCtxList = clientSessionCtxService.getAllClientSessionCtx().stream()
-                .filter(clientSessionCtx -> clientSessionCtx.getSessionInfo().isPersistent())
-                .map(this::toGenericClientSessionCtx)
-                .collect(Collectors.toList());
-        if (genericCtxList.isEmpty()) {
+
+        Collection<ClientSessionCtx> allClientSessionCtx = getAllClientSessionCtx();
+        List<GenericClientSessionCtx> allGenericCtxList = toGenericClientSessionCtxList(allClientSessionCtx);
+
+        if (allGenericCtxList.isEmpty()) {
             log.info("No client contexts to save.");
             return;
         }
-        log.info("Trying to save {} client contexts.", genericCtxList.size());
-        try {
-            genericClientSessionCtxService.saveAllGenericClientSessionCtx(genericCtxList);
-            log.info("Successfully saved client contexts.");
-        } catch (Exception e) {
-            log.warn("Failed to save client contexts. Exception - {}, reason: {}.", e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
-        }
+
+        saveAllGenericClientSessionCtx(allGenericCtxList);
+
         stopWatch.stop();
         log.info("Persisting client contexts took {} ms.", stopWatch.getTime());
     }
 
+    private void saveAllGenericClientSessionCtx(List<GenericClientSessionCtx> genericCtxList) {
+        log.info("Trying to save {} client contexts.", genericCtxList.size());
+        try {
+            genericClientSessionCtxService.saveAllGenericClientSessionCtx(genericCtxList);
+        } catch (Exception e) {
+            log.warn("Failed to save client contexts. Exception - {}, reason: {}.", e.getClass().getSimpleName(), e.getMessage());
+            log.trace("Detailed error: ", e);
+        }
+        log.info("Successfully saved client contexts.");
+    }
+
+    private Collection<ClientSessionCtx> getAllClientSessionCtx() {
+        return clientSessionCtxService.getAllClientSessionCtx();
+    }
+
+    private List<GenericClientSessionCtx> toGenericClientSessionCtxList(Collection<ClientSessionCtx> allClientSessionCtx) {
+        return allClientSessionCtx.stream()
+                .filter(clientSessionCtx -> clientSessionCtx.getSessionInfo().isPersistent())
+                .map(this::toGenericClientSessionCtx)
+                .collect(Collectors.toList());
+    }
+
     private GenericClientSessionCtx toGenericClientSessionCtx(ClientSessionCtx ctx) {
-        Set<Integer> qos2PublishPacketIds = ctx.getIncomingMessagesCtx().getAwaitingPacketIds().stream()
-                .filter(IncomingMessagesCtx.QoS2PacketInfo::isPersisted)
-                .map(IncomingMessagesCtx.QoS2PacketInfo::getPacketId)
-                .collect(Collectors.toSet());
+        Set<Integer> qos2PublishPacketIds = getQos2PublishPacketIds(ctx);
+        return buildGenericClientSessionCtx(ctx, qos2PublishPacketIds);
+    }
+
+    private GenericClientSessionCtx buildGenericClientSessionCtx(ClientSessionCtx ctx, Set<Integer> qos2PublishPacketIds) {
         return GenericClientSessionCtx.builder()
                 .clientId(ctx.getClientId())
                 .lastUpdatedTime(System.currentTimeMillis())
                 .qos2PublishPacketIds(qos2PublishPacketIds)
                 .build();
+    }
+
+    private Set<Integer> getQos2PublishPacketIds(ClientSessionCtx ctx) {
+        return ctx.getIncomingMessagesCtx().getAwaitingPacketIds().stream()
+                .filter(IncomingMessagesCtx.QoS2PacketInfo::isPersisted)
+                .map(IncomingMessagesCtx.QoS2PacketInfo::getPacketId)
+                .collect(Collectors.toSet());
     }
 }
