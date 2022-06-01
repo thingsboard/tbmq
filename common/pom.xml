@@ -39,6 +39,7 @@
         <module>util</module>
         <module>stats</module>
         <module>actor</module>
+        <module>cache</module>
     </modules>
 
 </project>

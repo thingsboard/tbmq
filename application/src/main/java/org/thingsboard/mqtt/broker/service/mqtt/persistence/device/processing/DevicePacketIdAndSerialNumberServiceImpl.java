@@ -38,22 +38,31 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
 
     @Override
     public Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Collection<String> clientIds) {
-        return deviceSessionCtxService.findAllContexts(clientIds).stream()
-                .collect(Collectors.toMap(DeviceSessionCtx::getClientId,
-                        deviceSessionCtx -> new PacketIdAndSerialNumber(new AtomicInteger(deviceSessionCtx.getLastPacketId()),
-                                new AtomicLong(deviceSessionCtx.getLastSerialNumber()))));
+        return deviceSessionCtxService.findAllContexts(clientIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        DeviceSessionCtx::getClientId,
+                        deviceSessionCtx ->
+                                new PacketIdAndSerialNumber(
+                                        new AtomicInteger(deviceSessionCtx.getLastPacketId()),
+                                        new AtomicLong(deviceSessionCtx.getLastSerialNumber())
+                                )));
     }
 
     @Override
     public void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers) {
         List<DeviceSessionCtx> deviceSessionContexts = clientsLastPacketIdAndSerialNumbers.entrySet().stream()
-                .map(entry -> DeviceSessionCtx.builder()
-                        .clientId(entry.getKey())
-                        .lastUpdatedTime(System.currentTimeMillis())
-                        .lastSerialNumber(entry.getValue().getSerialNumber().get())
-                        .lastPacketId(entry.getValue().getPacketId().get())
-                        .build())
+                .map(this::buildDeviceSessionCtx)
                 .collect(Collectors.toList());
         deviceSessionCtxService.saveDeviceSessionContexts(deviceSessionContexts);
+    }
+
+    private DeviceSessionCtx buildDeviceSessionCtx(Map.Entry<String, PacketIdAndSerialNumber> entry) {
+        return DeviceSessionCtx.builder()
+                .clientId(entry.getKey())
+                .lastUpdatedTime(System.currentTimeMillis())
+                .lastSerialNumber(entry.getValue().getSerialNumber().get())
+                .lastPacketId(entry.getValue().getPacketId().get())
+                .build();
     }
 }

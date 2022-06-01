@@ -71,6 +71,7 @@
         <commons-lang3.version>3.4</commons-lang3.version>
         <jackson.version>2.11.3</jackson.version>
         <awaitility.version>4.1.0</awaitility.version>
+        <caffeine.version>2.6.1</caffeine.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jjwt.version>0.7.0</jjwt.version>
         <bouncycastle.version>1.64</bouncycastle.version>
@@ -744,6 +745,11 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>
+                <artifactId>cache</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker.common</groupId>
                 <artifactId>util</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -895,6 +901,11 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-tx</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
