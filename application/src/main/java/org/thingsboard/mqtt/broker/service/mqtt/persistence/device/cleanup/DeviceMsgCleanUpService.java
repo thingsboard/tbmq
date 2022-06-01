@@ -41,16 +41,24 @@ public class DeviceMsgCleanUpService {
         log.info("Starting cleaning up DEVICE publish messages.");
 
         // TODO: sync with other nodes
-        try {
-            cleanUpDao.cleanUpByTime(ttl);
-        } catch (Exception e) {
-            log.error("Failed to clear persisted DEVICE messages by time.", e);
-        }
+        cleanUpByTime();
 
+        cleanUpBySize();
+    }
+
+    private void cleanUpBySize() {
         try {
             cleanUpDao.cleanUpBySize(messagesLimit);
         } catch (Exception e) {
             log.error("Failed to clear persisted DEVICE messages by size.", e);
+        }
+    }
+
+    private void cleanUpByTime() {
+        try {
+            cleanUpDao.cleanUpByTime(ttl);
+        } catch (Exception e) {
+            log.error("Failed to clear persisted DEVICE messages by time.", e);
         }
     }
 }

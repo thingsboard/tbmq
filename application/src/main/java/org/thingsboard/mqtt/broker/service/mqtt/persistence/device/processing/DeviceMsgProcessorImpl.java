@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -58,13 +58,14 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     private final DevicePacketIdAndSerialNumberService serialNumberService;
 
     @Override
-    public List<DevicePublishMsg> persistMessages(List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> messages, DeviceProcessorStats stats, String consumerId) {
+    public List<DevicePublishMsg> persistMessages(List<TbProtoQueueMsg<PublishMsgProto>> messages, DeviceProcessorStats stats, String consumerId) {
         Set<String> clientIds = messages.stream().map(TbProtoQueueMsg::getKey).collect(Collectors.toSet());
         for (String clientId : clientIds) {
             clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msg");
         }
 
         List<DevicePublishMsg> devicePublishMessages = toDevicePublishMsgs(messages);
+
         Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers = null;
         boolean isDbConnected = dbConnectionChecker.isDbConnected()
                 && (lastPacketIdAndSerialNumbers = tryGetLastPacketIdAndSerialNumber(clientIds)) != null;
@@ -90,9 +91,15 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
             } else {
                 String targetServiceId = clientSession.getSessionInfo().getServiceId();
                 if (messageWasPersisted(devicePublishMsg)) {
-                    downLinkProxy.sendPersistentMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.toDevicePublishMsgProto(devicePublishMsg));
+                    downLinkProxy.sendPersistentMsg(
+                            targetServiceId,
+                            devicePublishMsg.getClientId(),
+                            ProtoConverter.toDevicePublishMsgProto(devicePublishMsg));
                 } else {
-                    downLinkProxy.sendBasicMsg(targetServiceId, devicePublishMsg.getClientId(), ProtoConverter.convertToPublishProtoMessage(devicePublishMsg));
+                    downLinkProxy.sendBasicMsg(
+                            targetServiceId,
+                            devicePublishMsg.getClientId(),
+                            ProtoConverter.convertToPublishProtoMessage(devicePublishMsg));
                 }
             }
         }
@@ -102,7 +109,9 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         return !devicePublishMsg.getPacketId().equals(BLANK_PACKET_ID) && !devicePublishMsg.getSerialNumber().equals(BLANK_SERIAL_NUMBER);
     }
 
-    private void persistDeviceMsgs(List<DevicePublishMsg> devicePublishMessages, Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String consumerId, DeviceProcessorStats stats) {
+    private void persistDeviceMsgs(List<DevicePublishMsg> devicePublishMessages,
+                                   Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
+                                   String consumerId, DeviceProcessorStats stats) {
         setPacketIdAndSerialNumber(devicePublishMessages, lastPacketIdAndSerialNumbers);
 
         DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
@@ -131,9 +140,13 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         }
     }
 
-    private void setPacketIdAndSerialNumber(List<DevicePublishMsg> devicePublishMessages, Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers) {
+    private void setPacketIdAndSerialNumber(List<DevicePublishMsg> devicePublishMessages,
+                                            Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers) {
         for (DevicePublishMsg devicePublishMessage : devicePublishMessages) {
-            PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getAndIncrementPacketIdAndSerialNumberDto(lastPacketIdAndSerialNumbers, devicePublishMessage.getClientId());
+            PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getAndIncrementPacketIdAndSerialNumber(
+                    lastPacketIdAndSerialNumbers,
+                    devicePublishMessage.getClientId());
+
             devicePublishMessage.setPacketId(packetIdAndSerialNumberDto.getPacketId());
             devicePublishMessage.setSerialNumber(packetIdAndSerialNumberDto.getSerialNumber());
         }
@@ -148,7 +161,8 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         }
     }
 
-    private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumberDto(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String clientId) {
+    private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
+                                                                              String clientId) {
         PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
                 new PacketIdAndSerialNumber(new AtomicInteger(1), new AtomicLong(0)));
         AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
@@ -164,7 +178,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         private final long serialNumber;
     }
 
-    private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs) {
+    private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
         return msgs.stream()
                 .map(protoMsg -> ProtoConverter.toDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue()))
                 .map(devicePublishMsg -> devicePublishMsg.toBuilder()
