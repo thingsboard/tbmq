@@ -34,7 +34,7 @@ public class ThingsBoardForkJoinWorkerThreadFactory implements ForkJoinPool.Fork
     @Override
     public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
         ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-        thread.setName(namePrefix +"-"+thread.getPoolIndex()+"-"+threadNumber.getAndIncrement());
+        thread.setName(namePrefix + "-" + thread.getPoolIndex() + "-" + threadNumber.getAndIncrement());
         return thread;
     }
 

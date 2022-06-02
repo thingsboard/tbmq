@@ -29,14 +29,13 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.BasicDownLinkPublishMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
@@ -58,7 +57,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
 
     @PostConstruct
     public void init() {
-        this.topicConfigs = getConfigs(basicDownLinkPublishMsgKafkaSettings.getTopicProperties());
+        this.topicConfigs = QueueUtil.getConfigs(basicDownLinkPublishMsgKafkaSettings.getTopicProperties());
     }
 
     @Override

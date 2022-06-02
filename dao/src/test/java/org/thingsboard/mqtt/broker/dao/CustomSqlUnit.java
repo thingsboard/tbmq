@@ -29,10 +29,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
-
-/**
- * Created by Valerii Sosliuk on 6/24/2017.
- */
 @Slf4j
 public class CustomSqlUnit extends ExternalResource {
 

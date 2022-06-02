@@ -29,10 +29,10 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSubscriptionsKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
@@ -40,7 +40,6 @@ import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
@@ -62,7 +61,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
 
     @PostConstruct
     public void init() {
-        this.topicConfigs = getConfigs(clientSubscriptionsSettings.getTopicProperties());
+        this.topicConfigs = QueueUtil.getConfigs(clientSubscriptionsSettings.getTopicProperties());
         String configuredLogCleanupPolicy = topicConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Client subscriptions clean-up policy should be " + COMPACT_POLICY + ".");
@@ -87,7 +86,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
         Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getAdditionalConsumerConfig());
-        PropertiesUtil.overrideProperties("ClientSubscriptionsQueue-" + consumerId, props, requiredConsumerProperties);
+        QueueUtil.overrideProperties("ClientSubscriptionsQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
         consumerBuilder.topic(clientSubscriptionsSettings.getTopic());

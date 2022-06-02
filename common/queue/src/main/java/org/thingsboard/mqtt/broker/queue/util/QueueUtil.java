@@ -13,15 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.thingsboard.mqtt.broker.queue.util;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 
+@Slf4j
 public class QueueUtil {
+
+    public static Map<String, String> getConfigs(String properties) {
+        if (StringUtils.isEmpty(properties)) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> configs = new HashMap<>();
+        for (String property : properties.split(";")) {
+            int delimiterPosition = property.indexOf(":");
+            String key = property.substring(0, delimiterPosition);
+            String value = property.substring(delimiterPosition + 1);
+            configs.put(key, value);
+        }
+        return configs;
+    }
+
+    public static void overrideProperties(String name, Properties props, Map<String, String> newProps) {
+        newProps.forEach((key, value) -> {
+            if (props.containsKey(key)) {
+                log.warn("[{}] Property with key {} will be overwritten. Old value - {}, new value - {}",
+                        name, key, props.getProperty(key), value);
+            }
+            props.put(key, value);
+        });
+    }
+
     public static TbQueueCallback createQueueCallback(Consumer<TbQueueMsgMetadata> onSuccess,
                                                       Consumer<Throwable> onFailure) {
         return new TbQueueCallback() {

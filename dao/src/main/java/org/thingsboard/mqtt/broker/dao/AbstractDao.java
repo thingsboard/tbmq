@@ -26,9 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * @author Valerii Sosliuk
- */
 @Slf4j
 public abstract class AbstractDao<E extends BaseEntity<D>, D>
         implements Dao<D> {

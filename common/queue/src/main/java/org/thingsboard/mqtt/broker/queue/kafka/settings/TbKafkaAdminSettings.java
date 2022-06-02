@@ -19,10 +19,9 @@ import lombok.Setter;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Properties;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Setter
 @Component
@@ -37,7 +36,7 @@ public class TbKafkaAdminSettings {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         if (config != null) {
-            getConfigs(config).forEach(props::put);
+            QueueUtil.getConfigs(config).forEach(props::put);
         }
         return props;
     }

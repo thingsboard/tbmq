@@ -24,9 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/**
- * Created by ashvayka on 18.04.18.
- */
 @Component
 @Slf4j
 public class InstallScripts {

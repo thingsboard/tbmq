@@ -30,11 +30,10 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventKafkaS
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionEventResponseKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 @Slf4j
 @Component
@@ -59,7 +58,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         producerBuilder.properties(producerSettings.toProps(clientSessionEventSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("client-session-event-producer-" + serviceId);
         producerBuilder.defaultTopic(clientSessionEventSettings.getTopic());
-        producerBuilder.topicConfigs(getConfigs(clientSessionEventSettings.getTopicProperties()));
+        producerBuilder.topicConfigs(QueueUtil.getConfigs(clientSessionEventSettings.getTopicProperties()));
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
         return producerBuilder.build();
@@ -70,7 +69,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(clientSessionEventSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(clientSessionEventSettings.getTopic());
-        consumerBuilder.topicConfigs(getConfigs(clientSessionEventSettings.getTopicProperties()));
+        consumerBuilder.topicConfigs(QueueUtil.getConfigs(clientSessionEventSettings.getTopicProperties()));
         consumerBuilder.clientId("client-session-event-consumer-" + consumerName);
         consumerBuilder.groupId("client-session-event-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionEventProto.parseFrom(msg.getData()), msg.getHeaders(),
@@ -94,7 +93,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(clientSessionEventResponseSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(clientSessionEventResponseSettings.getTopicPrefix() + "." + serviceId);
-        consumerBuilder.topicConfigs(getConfigs(clientSessionEventResponseSettings.getTopicProperties()));
+        consumerBuilder.topicConfigs(QueueUtil.getConfigs(clientSessionEventResponseSettings.getTopicProperties()));
         consumerBuilder.clientId("client-session-event-response-consumer-" + serviceId);
         consumerBuilder.groupId("client-session-event-response-consumer-group-" + serviceId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionEventResponseProto.parseFrom(msg.getData()), msg.getHeaders()));
