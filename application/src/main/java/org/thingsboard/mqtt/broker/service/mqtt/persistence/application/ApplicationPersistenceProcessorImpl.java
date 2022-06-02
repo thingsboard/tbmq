@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import com.google.common.collect.Sets;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -77,33 +77,23 @@ import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.u
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
     private final ConcurrentMap<String, ApplicationPackProcessingContext> processingContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
 
-    @Autowired
-    private ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
-    @Autowired
-    private ApplicationSubmitStrategyFactory submitStrategyFactory;
-    @Autowired
-    private ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
-    @Autowired
-    private PublishMsgDeliveryService publishMsgDeliveryService;
-    @Autowired
-    private TbQueueAdmin queueAdmin;
-    @Autowired
-    private StatsManager statsManager;
-    @Autowired
-    private ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
-    @Autowired
-    private ClientMqttActorManager clientMqttActorManager;
-    @Autowired
-    private ServiceInfoProvider serviceInfoProvider;
-    @Autowired
-    private ClientLogger clientLogger;
-    @Autowired
-    private ApplicationTopicService applicationTopicService;
+    private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
+    private final ApplicationSubmitStrategyFactory submitStrategyFactory;
+    private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final TbQueueAdmin queueAdmin;
+    private final StatsManager statsManager;
+    private final ApplicationPersistedMsgCtxService unacknowledgedPersistedMsgCtxService;
+    private final ClientMqttActorManager clientMqttActorManager;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientLogger clientLogger;
+    private final ApplicationTopicService applicationTopicService;
 
     private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
@@ -159,7 +149,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer;
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer;
         consumer = initConsumer(clientId);
         Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
             try {
@@ -209,8 +199,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     // TODO: make async
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> initConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
                 .createConsumer(getTopic(clientId), getConsumerGroup(clientId), serviceInfoProvider.getServiceId() + "-" + clientId);
         try {
             consumer.assignPartition(0);
@@ -227,7 +217,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private void processPersistedMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer,
+    private void processPersistedMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                           ClientSessionCtx clientSessionCtx, ClientActorStateInfo clientState) {
         String clientId = clientSessionCtx.getClientId();
         UUID sessionId = clientSessionCtx.getSessionId();
@@ -246,7 +236,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         while (isClientConnected(sessionId, clientState)) {
             try {
-                List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
                 if (publishProtoMessages.isEmpty() && pendingPubRelMessages.isEmpty()) {
                     continue;
                 }
@@ -300,7 +290,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         submitStrategy.update(decision.getReprocessMap());
                     }
                 }
-                log.trace("[{}] Pack processing took {} ms, pack size - {}", clientId, (double)(System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
+                log.trace("[{}] Pack processing took {} ms, pack size - {}",
+                        clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
 
             } catch (Exception e) {
                 // TODO: think if we need to drop session in this case
@@ -318,13 +309,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     }
 
-    private List<PersistedPublishMsg> extractPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx, ApplicationPersistedMsgCtx persistedMsgCtx, List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> publishProtoMessages) {
+    private List<PersistedPublishMsg> extractPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
+                                                                      ApplicationPersistedMsgCtx persistedMsgCtx,
+                                                                      List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
         return publishProtoMessages.stream()
                 .map(msg -> {
                     Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
                     int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
                     boolean isDup = msgPacketId != null;
-                    QueueProtos.PublishMsgProto persistedMsgProto = msg.getValue();
+                    PublishMsgProto persistedMsgProto = msg.getValue();
                     PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
                             .packetId(packetId)
                             .isDup(isDup)
@@ -336,7 +329,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
-        // TODO: think if it's not enough to check for Thread.interrupted()
         return !Thread.interrupted()
                 && clientState.getCurrentSessionId().equals(sessionId)
                 && clientState.getCurrentSessionState() == SessionState.CONNECTED;

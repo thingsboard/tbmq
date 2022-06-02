@@ -96,7 +96,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         this.decoder = decoder;
         this.topicConfigs = topicConfigs;
         this.createTopicIfNotExists = createTopicIfNotExists != null ? createTopicIfNotExists : true;
-        this.commitTimer = statsManager != null ? statsManager.createCommitTimer(clientId) : (amount, unit) -> {};
+        this.commitTimer = statsManager != null ? statsManager.createCommitTimer(clientId) : (amount, unit) -> {
+        };
     }
 
     @Override
@@ -112,7 +113,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         if (createTopicIfNotExists) {
             admin.createTopicIfNotExists(topic, topicConfigs);
         }
-        consumer.assign(Collections.singletonList(new TopicPartition(topic, partition)));
+        consumer.assign(Collections.singletonList(newTopicPartition(topic, partition)));
     }
 
     @Override
@@ -123,7 +124,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         int numberOfPartitions = admin.getNumberOfPartitions(topic);
         List<TopicPartition> allTopicPartitions = new ArrayList<>();
         for (int i = 0; i < numberOfPartitions; i++) {
-            allTopicPartitions.add(new TopicPartition(topic, i));
+            allTopicPartitions.add(newTopicPartition(topic, i));
         }
         consumer.assign(allTopicPartitions);
 
@@ -155,7 +156,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     @Override
     protected void doCommit(String topic, int partition, long offset) {
-        Map<TopicPartition, OffsetAndMetadata> offsetMap = Map.of(new TopicPartition(topic, partition), new OffsetAndMetadata(offset));
+        Map<TopicPartition, OffsetAndMetadata> offsetMap = Map.of(newTopicPartition(topic, partition), new OffsetAndMetadata(offset));
         consumer.commitAsync(offsetMap, (offsets, exception) -> {
             if (exception != null) {
                 log.warn("[{}][{}] Failed to commit offset {}.", topic, partition, offset);
@@ -177,14 +178,20 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
 
     @Override
     public long doGetEndOffset(String topic, int partition) {
-        TopicPartition topicPartition = new TopicPartition(topic, partition);
+        TopicPartition topicPartition = newTopicPartition(topic, partition);
         return consumer.endOffsets(Collections.singletonList(topicPartition)).getOrDefault(topicPartition, 0L);
     }
 
     @Override
     public Optional<Long> doGetCommittedOffset(String topic, int partition) {
-        return Optional.ofNullable(consumer.committed(new TopicPartition(topic, partition)))
-                .map(OffsetAndMetadata::offset);
+        TopicPartition topicPartition = newTopicPartition(topic, partition);
+        return Optional.ofNullable(
+                consumer.committed(Collections.singleton(topicPartition)).get(topicPartition)
+        ).map(OffsetAndMetadata::offset);
+    }
+
+    private TopicPartition newTopicPartition(String topic, int partition) {
+        return new TopicPartition(topic, partition);
     }
 
 
