@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.user;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.User;
@@ -28,10 +28,10 @@ import org.thingsboard.mqtt.broker.dao.model.UserEntity;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class DefaultUserDao extends AbstractDao<UserEntity, User> implements UserDao {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Override
     protected Class<UserEntity> getEntityClass() {

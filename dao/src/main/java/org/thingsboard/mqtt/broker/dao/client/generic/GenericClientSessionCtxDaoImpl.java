@@ -16,11 +16,13 @@
 package org.thingsboard.mqtt.broker.dao.client.generic;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
+import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
 
 import java.util.Collection;
@@ -30,7 +32,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GenericClientSessionCtxDaoImpl implements GenericClientSessionCtxDao {
+public class GenericClientSessionCtxDaoImpl extends JpaAbstractDaoListeningExecutorService implements GenericClientSessionCtxDao {
     private final GenericClientSessionCtxRepository genericClientSessionCtxRepository;
     private final InsertGenericClientSessionCtxRepository insertGenericClientSessionCtxRepository;
 
@@ -46,12 +48,17 @@ public class GenericClientSessionCtxDaoImpl implements GenericClientSessionCtxDa
     }
 
     @Override
-    public GenericClientSessionCtx find(String clientId) {
+    public GenericClientSessionCtx findByClientId(String clientId) {
         return DaoUtil.getData(genericClientSessionCtxRepository.findByClientId(clientId));
     }
 
     @Override
-    public List<GenericClientSessionCtx> find() {
+    public ListenableFuture<GenericClientSessionCtx> findByClientIdAsync(String clientId) {
+        return service.submit(() -> findByClientId(clientId));
+    }
+
+    @Override
+    public List<GenericClientSessionCtx> findAll() {
         List<GenericClientSessionCtxEntity> entities = Lists.newArrayList(genericClientSessionCtxRepository.findAll());
         return DaoUtil.convertDataList(entities);
     }

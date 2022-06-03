@@ -15,8 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.generic;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -29,10 +30,10 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class GenericClientSessionCtxServiceImpl implements GenericClientSessionCtxService {
 
-    @Autowired
-    private GenericClientSessionCtxDao genericClientSessionCtxDao;
+    private final GenericClientSessionCtxDao genericClientSessionCtxDao;
 
     @Override
     public void saveAllGenericClientSessionCtx(Collection<GenericClientSessionCtx> genericClientSessionContexts) {
@@ -63,7 +64,13 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
     @Override
     public Optional<GenericClientSessionCtx> findGenericClientSessionCtx(String clientId) {
         log.trace("Executing findGenericClientSessionCtx [{}]", clientId);
-        return Optional.ofNullable(genericClientSessionCtxDao.find(clientId));
+        return Optional.ofNullable(genericClientSessionCtxDao.findByClientId(clientId));
+    }
+
+    @Override
+    public ListenableFuture<GenericClientSessionCtx> findGenericClientSessionCtxAsync(String clientId) {
+        log.trace("Executing findGenericClientSessionCtxAsync [{}]", clientId);
+        return genericClientSessionCtxDao.findByClientIdAsync(clientId);
     }
 
     private void validate(GenericClientSessionCtx genericClientSessionCtx) {

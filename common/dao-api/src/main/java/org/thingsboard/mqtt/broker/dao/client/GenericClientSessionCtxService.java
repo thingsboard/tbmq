@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.client;
 
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 
 import java.util.Collection;
@@ -29,4 +30,6 @@ public interface GenericClientSessionCtxService {
     void deleteGenericClientSessionCtx(String clientId);
 
     Optional<GenericClientSessionCtx> findGenericClientSessionCtx(String clientId);
+
+    ListenableFuture<GenericClientSessionCtx> findGenericClientSessionCtxAsync(String clientId);
 }

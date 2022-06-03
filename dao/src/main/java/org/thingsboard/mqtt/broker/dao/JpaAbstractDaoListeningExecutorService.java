@@ -15,21 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.UUID;
+@Slf4j
+public abstract class JpaAbstractDaoListeningExecutorService {
 
-public interface Dao<T> {
-
-    List<T> find();
-
-    T findById(UUID id);
-
-    ListenableFuture<T> findByIdAsync(UUID id);
-
-    T save(T t);
-
-    boolean removeById(UUID id);
+    @Autowired
+    protected JpaExecutorService service;
 
 }

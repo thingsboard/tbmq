@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 
 import java.util.List;
@@ -22,9 +23,11 @@ import java.util.List;
 public interface ApplicationSessionCtxDao {
     ApplicationSessionCtx save(ApplicationSessionCtx applicationSessionCtx);
 
-    ApplicationSessionCtx find(String clientId);
+    ApplicationSessionCtx findByClientId(String clientId);
 
-    List<ApplicationSessionCtx> find();
+    ListenableFuture<ApplicationSessionCtx> findByClientIdAsync(String clientId);
+
+    List<ApplicationSessionCtx> findAll();
 
     void remove(String clientId);
 

@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.generic;
+package org.thingsboard.mqtt.broker.common.util;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 
-public interface GenericClientSessionCtxDao {
-    GenericClientSessionCtx save(GenericClientSessionCtx genericClientSessionCtx);
+public interface ListeningExecutor extends Executor {
 
-    GenericClientSessionCtx findByClientId(String clientId);
+    <T> ListenableFuture<T> executeAsync(Callable<T> task);
 
-    ListenableFuture<GenericClientSessionCtx> findByClientIdAsync(String clientId);
+    default <T> ListenableFuture<T> submit(Callable<T> task) {
+        return executeAsync(task);
+    }
 
-    List<GenericClientSessionCtx> findAll();
-
-    void remove(String clientId);
-
-    void saveAll(Collection<GenericClientSessionCtx> genericClientSessionContexts);
 }

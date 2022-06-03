@@ -15,21 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
 
-import java.util.List;
-import java.util.UUID;
+@Component
+public class JpaExecutorService extends AbstractListeningExecutor {
 
-public interface Dao<T> {
+    @Value("${spring.datasource.hikari.maximumPoolSize}")
+    private int poolSize;
 
-    List<T> find();
-
-    T findById(UUID id);
-
-    ListenableFuture<T> findByIdAsync(UUID id);
-
-    T save(T t);
-
-    boolean removeById(UUID id);
+    @Override
+    protected int getThreadPollSize() {
+        return poolSize;
+    }
 
 }
