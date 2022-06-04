@@ -31,7 +31,7 @@ public class HsqlInsertDeviceSessionCtxRepository implements InsertDeviceSession
     private static final String INSERT_OR_UPDATE =
             "MERGE INTO device_session_ctx USING(VALUES ?, ?, ?, ?) " +
                     "D (client_id, last_updated_time, last_serial_number, last_packet_id) " +
-                    "ON device_session_ctx.client_id=D.client_id) " +
+                    "ON device_session_ctx.client_id=D.client_id " +
                     "WHEN MATCHED THEN UPDATE SET device_session_ctx.last_serial_number = D.last_serial_number, " +
                     "device_session_ctx.last_packet_id = D.last_packet_id, device_session_ctx.last_updated_time = D.last_updated_time " +
                     "WHEN NOT MATCHED THEN INSERT (client_id, last_updated_time, last_serial_number, last_packet_id) " +

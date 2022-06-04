@@ -38,7 +38,7 @@ import java.util.List;
 @DaoSqlTest
 public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
-    private IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
+    private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
 
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
@@ -184,8 +184,8 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
             }
         } while (pageData.hasNext());
 
-        Collections.sort(mqttClientCredentialsList, idComparator);
-        Collections.sort(loadedMqttClientCredentialsList, idComparator);
+        mqttClientCredentialsList.sort(idComparator);
+        loadedMqttClientCredentialsList.sort(idComparator);
 
         Assert.assertEquals(mqttClientCredentialsList, loadedMqttClientCredentialsList);
 

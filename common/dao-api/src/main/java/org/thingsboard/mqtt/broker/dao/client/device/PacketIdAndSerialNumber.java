@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
+package org.thingsboard.mqtt.broker.dao.client.device;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +24,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 @RequiredArgsConstructor
 public class PacketIdAndSerialNumber {
+
     private final AtomicInteger packetId;
     private final AtomicLong serialNumber;
+
+    public static PacketIdAndSerialNumber of(int packetId, long serialNumber) {
+        return new PacketIdAndSerialNumber(
+                new AtomicInteger(packetId),
+                new AtomicLong(serialNumber));
+    }
 }
