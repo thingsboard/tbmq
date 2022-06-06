@@ -32,7 +32,8 @@ import java.util.Set;
 @DaoSqlTest
 public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTest {
 
-    static final String CLIENT_ID = "clientId";
+    static final String CLIENT_ID1 = "clientId1";
+    static final String CLIENT_ID2 = "clientId2";
 
     @Autowired
     private DevicePacketIdAndSerialNumberService packetIdAndSerialNumberService;
@@ -46,38 +47,103 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         cache = cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
     }
 
-    // TODO: 04/06/2022 add more test cases
-
     @Test
     public void testCachePersistence() {
-        Objects.requireNonNull(cache, "Cache manager is null").evict(CLIENT_ID);
+        checkCacheNonNullAndEvict(CLIENT_ID1);
 
-        Map<String, PacketIdAndSerialNumber> toSaveMap = Map.of(CLIENT_ID, PacketIdAndSerialNumber.of(10, 100));
-        packetIdAndSerialNumberService.saveLastSerialNumbers(toSaveMap);
+        Map<String, PacketIdAndSerialNumber> toSaveMap = prepareOneClientMapToSave(10, 100);
+        saveToDb(toSaveMap);
 
-        PacketIdAndSerialNumber fromCache = getFromCache();
-        Assert.assertNull(fromCache);
+        getFromCacheAndAssertNull(CLIENT_ID1);
 
-        Map<String, PacketIdAndSerialNumber> map = packetIdAndSerialNumberService.getLastPacketIdAndSerialNumber(Set.of(CLIENT_ID));
-        Assert.assertEquals(1, map.size());
-        Assert.assertEquals(10, map.get(CLIENT_ID).getPacketId().get());
-        Assert.assertEquals(100, map.get(CLIENT_ID).getSerialNumber().get());
+        Map<String, PacketIdAndSerialNumber> map = getFromDb(CLIENT_ID1);
+        assertResultFromDb(map, CLIENT_ID1, 10, 100);
 
-        fromCache = getFromCache();
-        Assert.assertNotNull(fromCache);
+        PacketIdAndSerialNumber fromCache = getFromCacheAndAssertNotNull(CLIENT_ID1);
         Assert.assertEquals(10, fromCache.getPacketId().get());
         Assert.assertEquals(100, fromCache.getSerialNumber().get());
 
-        toSaveMap = Map.of(CLIENT_ID, PacketIdAndSerialNumber.of(20, 200));
-        packetIdAndSerialNumberService.saveLastSerialNumbers(toSaveMap);
+        toSaveMap = prepareOneClientMapToSave(20, 200);
+        saveToDb(toSaveMap);
 
-        fromCache = getFromCache();
+        getFromCacheAndAssertNull(CLIENT_ID1);
+    }
+
+    private Map<String, PacketIdAndSerialNumber> prepareOneClientMapToSave(int packetId, int serialNumber) {
+        return Map.of(CLIENT_ID1, PacketIdAndSerialNumber.of(packetId, serialNumber));
+    }
+
+    @Test
+    public void testCachePersistenceTwoClients() {
+        checkCacheNonNullAndEvict(CLIENT_ID1);
+        checkCacheNonNullAndEvict(CLIENT_ID2);
+
+        Map<String, PacketIdAndSerialNumber> toSaveMap = prepareTwoClientsMapToSave();
+        saveToDb(toSaveMap);
+
+        getFromCacheAndAssertNull(CLIENT_ID1);
+        getFromCacheAndAssertNull(CLIENT_ID2);
+
+        Map<String, PacketIdAndSerialNumber> map = getFromDb(CLIENT_ID1);
+        assertResultFromDb(map, CLIENT_ID1, 10, 100);
+
+        PacketIdAndSerialNumber fromCache = getFromCacheAndAssertNotNull(CLIENT_ID1);
+        Assert.assertEquals(10, fromCache.getPacketId().get());
+        Assert.assertEquals(100, fromCache.getSerialNumber().get());
+
+        getFromCacheAndAssertNull(CLIENT_ID2);
+
+        map = getFromDb(CLIENT_ID2);
+        assertResultFromDb(map, CLIENT_ID2, 20, 200);
+
+        fromCache = getFromCacheAndAssertNotNull(CLIENT_ID2);
+        Assert.assertEquals(20, fromCache.getPacketId().get());
+        Assert.assertEquals(200, fromCache.getSerialNumber().get());
+
+        toSaveMap = prepareTwoClientsMapToSave();
+        saveToDb(toSaveMap);
+
+        getFromCacheAndAssertNull(CLIENT_ID1);
+        getFromCacheAndAssertNull(CLIENT_ID2);
+    }
+
+    private void saveToDb(Map<String, PacketIdAndSerialNumber> toSaveMap) {
+        packetIdAndSerialNumberService.saveLastSerialNumbers(toSaveMap);
+    }
+
+    private Map<String, PacketIdAndSerialNumber> getFromDb(String clientId) {
+        return packetIdAndSerialNumberService.getLastPacketIdAndSerialNumber(Set.of(clientId));
+    }
+
+    private void assertResultFromDb(Map<String, PacketIdAndSerialNumber> map, String clientId, int expectedPacketId, int expectedSerialNumb) {
+        Assert.assertEquals(1, map.size());
+        Assert.assertEquals(expectedPacketId, map.get(clientId).getPacketId().get());
+        Assert.assertEquals(expectedSerialNumb, map.get(clientId).getSerialNumber().get());
+    }
+
+    private Map<String, PacketIdAndSerialNumber> prepareTwoClientsMapToSave() {
+        return Map.of(
+                CLIENT_ID1, PacketIdAndSerialNumber.of(10, 100),
+                CLIENT_ID2, PacketIdAndSerialNumber.of(20, 200)
+        );
+    }
+
+    private PacketIdAndSerialNumber getFromCacheAndAssertNotNull(String clientId) {
+        PacketIdAndSerialNumber fromCache = getFromCache(clientId);
+        Assert.assertNotNull(fromCache);
+        return fromCache;
+    }
+
+    private void getFromCacheAndAssertNull(String clientId) {
+        PacketIdAndSerialNumber fromCache = getFromCache(clientId);
         Assert.assertNull(fromCache);
     }
 
-    private PacketIdAndSerialNumber getFromCache() {
-        return cache.get(CLIENT_ID, PacketIdAndSerialNumber.class);
+    private PacketIdAndSerialNumber getFromCache(String clientId) {
+        return cache.get(clientId, PacketIdAndSerialNumber.class);
     }
 
-
+    private void checkCacheNonNullAndEvict(String clientId) {
+        Objects.requireNonNull(cache, "Cache manager is null").evict(clientId);
+    }
 }
