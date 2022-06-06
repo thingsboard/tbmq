@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.user;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +26,15 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 
 @Service
-@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
+
     private final UserService userService;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    public AdminServiceImpl(UserService userService, @Lazy BCryptPasswordEncoder passwordEncoder) {
+        this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     @Transactional
