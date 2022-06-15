@@ -25,7 +25,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
-import org.thingsboard.mqtt.broker.actors.client.state.RequestOrderCtx;
+import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -34,9 +34,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import java.util.Collections;
 import java.util.List;
@@ -80,8 +80,8 @@ public class MqttPublishHandlerTest {
         ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
         when(ctx.getChannel()).thenReturn(channelHandlerContext);
 
-        when(ctx.getRequestOrderCtx()).thenReturn(new RequestOrderCtx(10));
-        when(ctx.getIncomingMessagesCtx()).thenReturn(new IncomingMessagesCtx());
+        when(ctx.getPubResponseProcessingCtx()).thenReturn(new PubResponseProcessingCtx(10));
+        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(new AwaitingPubRelPacketsCtx());
     }
 
     @Test
@@ -108,7 +108,7 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void testProcessPubRecResponse() {
-        mqttPublishHandler.processExactlyOnceAndCheckIfAlreadyWaiting(ctx, actorRef, 1);
+        mqttPublishHandler.processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
 
         mqttPublishHandler.processPubRecResponse(ctx, 1);
 
@@ -120,12 +120,12 @@ public class MqttPublishHandlerTest {
         PublishMsg publishMsg = getPublishMsg(1, 2);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
-        verify(mqttPublishHandler, times(1)).processExactlyOnceAndCheckIfAlreadyWaiting(ctx, actorRef, 1);
+        verify(mqttPublishHandler, times(1)).processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
 
         publishMsg = getPublishMsg(2, 1);
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
 
-        verify(mqttPublishHandler, times(1)).processAtLeastOnce(ctx, 2);
+        verify(mqttPublishHandler, times(1)).processAtLeastOnce(eq(ctx), eq(2));
         verify(mqttPublishHandler, times(2)).persistPubMsg(eq(ctx), any(), eq(actorRef));
     }
 

@@ -23,8 +23,8 @@ import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import javax.annotation.PreDestroy;
 import java.util.Collection;
@@ -45,8 +45,8 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     public void resendPersistedPubRelMessages(ClientSessionCtx clientSessionCtx) {
         Set<Integer> awaitingQoS2PacketIds = getAwaitingQoS2PacketIds(clientSessionCtx);
 
-        IncomingMessagesCtx incomingMessagesCtx = clientSessionCtx.getIncomingMessagesCtx();
-        incomingMessagesCtx.loadPersistedPackets(awaitingQoS2PacketIds);
+        AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = clientSessionCtx.getAwaitingPubRelPacketsCtx();
+        awaitingPubRelPacketsCtx.loadPersistedPackets(awaitingQoS2PacketIds);
 
         awaitingQoS2PacketIds.forEach(packetId -> clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId)));
     }
@@ -59,7 +59,7 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
 
     @Override
     public void processPubRel(int packetId, ClientSessionCtx ctx) {
-        boolean completed = ctx.getIncomingMessagesCtx().complete(packetId);
+        boolean completed = ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), packetId);
         if (!completed) {
             log.debug("[{}][{}] Couldn't find packetId {} for incoming PUBREL message.", ctx.getClientId(), ctx.getSessionId(), packetId);
         }
@@ -131,9 +131,9 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     }
 
     private Set<Integer> getQos2PublishPacketIds(ClientSessionCtx ctx) {
-        return ctx.getIncomingMessagesCtx().getAwaitingPacketIds().stream()
-                .filter(IncomingMessagesCtx.QoS2PacketInfo::isPersisted)
-                .map(IncomingMessagesCtx.QoS2PacketInfo::getPacketId)
+        return ctx.getAwaitingPubRelPacketsCtx().getAwaitingPackets().stream()
+                .filter(AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo::isPersisted)
+                .map(AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo::getPacketId)
                 .collect(Collectors.toSet());
     }
 }

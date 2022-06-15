@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Slf4j
@@ -28,14 +27,20 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @AllArgsConstructor
 public class MqttPubRelHandler {
 
-    private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
         log.trace("[{}][{}] Received PUBREL msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
-        if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubRel(messageId, ctx);
-        }
+
+        completePubRel(ctx, messageId);
+
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId));
+    }
+
+    void completePubRel(ClientSessionCtx ctx, int messageId) {
+        boolean completed = ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), messageId);
+        if (!completed) {
+            log.debug("[{}][{}] Couldn't find packetId {} for incoming PUBREL message.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        }
     }
 }

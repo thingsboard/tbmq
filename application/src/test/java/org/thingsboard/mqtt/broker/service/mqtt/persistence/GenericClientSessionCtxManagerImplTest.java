@@ -26,8 +26,8 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.IncomingMessagesCtx;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +53,7 @@ public class GenericClientSessionCtxManagerImplTest {
     GenericClientSessionCtxManagerImpl genericClientSessionCtxManager;
 
     ClientSessionCtx ctx;
-    IncomingMessagesCtx incomingMessagesCtx;
+    AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx;
 
     @Before
     public void setUp() throws Exception {
@@ -65,8 +65,8 @@ public class GenericClientSessionCtxManagerImplTest {
 
         ctx = mock(ClientSessionCtx.class);
 
-        incomingMessagesCtx = mock(IncomingMessagesCtx.class);
-        when(ctx.getIncomingMessagesCtx()).thenReturn(incomingMessagesCtx);
+        awaitingPubRelPacketsCtx = mock(AwaitingPubRelPacketsCtx.class);
+        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(awaitingPubRelPacketsCtx);
     }
 
     @Test
@@ -77,12 +77,12 @@ public class GenericClientSessionCtxManagerImplTest {
         GenericClientSessionCtx clientSessionCtx = getClientSessionCtx();
         when(genericClientSessionCtxService.findGenericClientSessionCtx(any())).thenReturn(Optional.of(clientSessionCtx));
 
-        IncomingMessagesCtx incomingMessagesCtx = new IncomingMessagesCtx();
-        when(ctx.getIncomingMessagesCtx()).thenReturn(incomingMessagesCtx);
+        AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
+        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(awaitingPubRelPacketsCtx);
 
         genericClientSessionCtxManager.resendPersistedPubRelMessages(ctx);
 
-        Collection<IncomingMessagesCtx.QoS2PacketInfo> awaitingPacketIds = incomingMessagesCtx.getAwaitingPacketIds();
+        Collection<AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo> awaitingPacketIds = awaitingPubRelPacketsCtx.getAwaitingPackets();
         Assertions.assertTrue(
                 awaitingPacketIds.contains(getQos2PacketInfo(1)) &&
                         awaitingPacketIds.contains(getQos2PacketInfo(2)) &&
@@ -95,12 +95,12 @@ public class GenericClientSessionCtxManagerImplTest {
     @Test
     public void testProcessPubRel() {
         genericClientSessionCtxManager.processPubRel(1, ctx);
-        verify(incomingMessagesCtx, times(1)).complete(eq(1));
+        verify(awaitingPubRelPacketsCtx, times(1)).complete(eq(ctx.getClientId()), eq(1));
     }
 
     @Test
     public void testSaveAwaitingQoS2Packets() {
-        when(incomingMessagesCtx.getAwaitingPacketIds()).thenReturn(Collections.emptyList());
+        when(awaitingPubRelPacketsCtx.getAwaitingPackets()).thenReturn(Collections.emptyList());
 
         genericClientSessionCtxManager.saveAwaitingQoS2Packets(ctx);
         verify(genericClientSessionCtxService, times(1)).saveGenericClientSessionCtx(any());
@@ -129,15 +129,15 @@ public class GenericClientSessionCtxManagerImplTest {
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         when(sessionInfo.isPersistent()).thenReturn(true);
 
-        when(incomingMessagesCtx.getAwaitingPacketIds()).thenReturn(Collections.emptyList());
+        when(awaitingPubRelPacketsCtx.getAwaitingPackets()).thenReturn(Collections.emptyList());
 
         genericClientSessionCtxManager.destroy();
 
         verify(genericClientSessionCtxService, times(1)).saveAllGenericClientSessionCtx(any());
     }
 
-    private IncomingMessagesCtx.QoS2PacketInfo getQos2PacketInfo(int packetId) {
-        return new IncomingMessagesCtx.QoS2PacketInfo(packetId, true);
+    private AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo getQos2PacketInfo(int packetId) {
+        return new AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo(packetId, true);
     }
 
     private GenericClientSessionCtx getClientSessionCtx() {

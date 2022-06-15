@@ -17,14 +17,14 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import lombok.Getter;
 
-public class RequestOrderCtx {
+public class PubResponseProcessingCtx {
     @Getter
-    private final OrderedProcessingQueue qos1PublishResponseMsgs;
+    private final OrderedProcessingQueue qos1PubAckResponseMsgs;
     @Getter
-    private final OrderedProcessingQueue qos2PublishResponseMsgs;
+    private final OrderedProcessingQueue qos2PubRecResponseMsgs;
 
-    public RequestOrderCtx(int maxAwaitingQueueSize) {
-        this.qos1PublishResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
-        this.qos2PublishResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+    public PubResponseProcessingCtx(int maxAwaitingQueueSize) {
+        this.qos1PubAckResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+        this.qos2PubRecResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
     }
 }
