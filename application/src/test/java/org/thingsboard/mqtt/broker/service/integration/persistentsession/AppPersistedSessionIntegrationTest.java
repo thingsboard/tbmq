@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLevels;
 import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
@@ -109,8 +111,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             }, MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
-        // need to wait till client is actually stopped
-        Thread.sleep(200);
+        awaitUntilDisconnected();
 
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNull(clientSessionCtx);
@@ -136,8 +137,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNotNull(clientSessionCtx);
         persistedClient.disconnect();
-        // need to wait till client is actually stopped
-        Thread.sleep(200);
+        awaitUntilDisconnected();
     }
 
     @Test
@@ -265,8 +265,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             }, MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
-        // need to wait till client is actually stopped
-        Thread.sleep(200);
+        awaitUntilDisconnected();
 
         ClientSession persistedClientSession = clientSessionCache.getClientSession(TEST_CLIENT_ID);
         Assert.assertNull(persistedClientSession);
@@ -274,5 +273,11 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         Assert.assertNull(clientSessionCtx);
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
+    }
+
+    private void awaitUntilDisconnected() {
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> !persistedClient.isConnected());
     }
 }
