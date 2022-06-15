@@ -93,12 +93,6 @@ public class GenericClientSessionCtxManagerImplTest {
     }
 
     @Test
-    public void testProcessPubRel() {
-        genericClientSessionCtxManager.processPubRel(1, ctx);
-        verify(awaitingPubRelPacketsCtx, times(1)).complete(eq(ctx.getClientId()), eq(1));
-    }
-
-    @Test
     public void testSaveAwaitingQoS2Packets() {
         when(awaitingPubRelPacketsCtx.getAwaitingPackets()).thenReturn(Collections.emptyList());
 

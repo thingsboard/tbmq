@@ -58,14 +58,6 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     }
 
     @Override
-    public void processPubRel(int packetId, ClientSessionCtx ctx) {
-        boolean completed = ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), packetId);
-        if (!completed) {
-            log.debug("[{}][{}] Couldn't find packetId {} for incoming PUBREL message.", ctx.getClientId(), ctx.getSessionId(), packetId);
-        }
-    }
-
-    @Override
     public void saveAwaitingQoS2Packets(ClientSessionCtx ctx) {
         GenericClientSessionCtx genericClientSessionCtx = toGenericClientSessionCtx(ctx);
         genericClientSessionCtxService.saveGenericClientSessionCtx(genericClientSessionCtx);

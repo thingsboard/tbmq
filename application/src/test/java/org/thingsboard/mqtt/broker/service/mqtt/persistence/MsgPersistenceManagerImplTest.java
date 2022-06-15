@@ -195,13 +195,6 @@ public class MsgPersistenceManagerImplTest {
     }
 
     @Test
-    public void testProcessPubRel() {
-        msgPersistenceManager.processPubRel(1, ctx);
-
-        verify(genericClientSessionCtxManager, times(1)).processPubRel(eq(1), eq(ctx));
-    }
-
-    @Test
     public void testProcessPubComp() {
         when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.processPubComp(1, ctx);

@@ -181,11 +181,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPubRel(int packetId, ClientSessionCtx clientSessionCtx) {
-        genericClientSessionCtxManager.processPubRel(packetId, clientSessionCtx);
-    }
-
-    @Override
     public void processPubComp(int packetId, ClientSessionCtx clientSessionCtx) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();

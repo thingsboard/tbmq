@@ -33,8 +33,6 @@ public interface MsgPersistenceManager {
 
     void processPubComp(int packetId, ClientSessionCtx clientSessionCtx);
 
-    void processPubRel(int packetId, ClientSessionCtx clientSessionCtx);
-
     void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
 
     void saveAwaitingQoS2Packets(ClientSessionCtx clientSessionCtx);
