@@ -87,6 +87,27 @@ class ClientSubscriptionServiceImplTest {
     }
 
     @Test
+    public void givenClientTopicSubscriptions_whenSubscribeAndPersist_thenOk() {
+        clientSubscriptionService.subscribeAndPersist("clientId1", Set.of(getTopicSubscription("topic11")));
+
+        Set<TopicSubscription> clientSubscriptions = getAndVerifyClientSubscriptionsForClient("clientId1", 2);
+
+        verify(subscriptionPersistenceService, times(1)).persistClientSubscriptionsAsync(
+                eq("clientId1"), eq(clientSubscriptions), any());
+    }
+
+    @Test
+    public void givenClientTopicSubscriptions_whenSubscribeInternallyAndUnsubscribeAndPersist_thenOk() {
+        clientSubscriptionService.subscribeInternally("clientId1", Set.of(getTopicSubscription("topic11")));
+        clientSubscriptionService.unsubscribeAndPersist("clientId1", Set.of("topic1"));
+
+        Set<TopicSubscription> clientSubscriptions = getAndVerifyClientSubscriptionsForClient("clientId1", 1);
+
+        verify(subscriptionPersistenceService, times(1)).persistClientSubscriptionsAsync(
+                eq("clientId1"), eq(clientSubscriptions), any());
+    }
+
+    @Test
     public void givenClientTopicSubscriptions_whenClearSubscriptionsAndPersist_thenOk() {
         clientSubscriptionService.clearSubscriptionsAndPersist("clientId1", null);
 

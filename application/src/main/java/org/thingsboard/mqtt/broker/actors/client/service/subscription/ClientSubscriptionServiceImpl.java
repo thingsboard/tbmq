@@ -65,17 +65,18 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        BasicCallback callback = createCallback(() -> log.trace("[{}] Persisted subscribed topic subscriptions", clientId),
-                t -> log.warn("[{}] Failed to persist subscribed topic subscriptions. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage()));
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Persisted subscribed topic subscriptions", clientId),
+                t -> log.warn("[{}] Failed to persist subscribed topic subscriptions. Exception - {}, reason - {}",
+                        clientId, t.getClass().getSimpleName(), t.getMessage()));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
         log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
-        subscribe(clientId, topicSubscriptions);
+        Set<TopicSubscription> clientSubscriptions = subscribe(clientId, topicSubscriptions);
 
-        Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, clientSubscriptions, callback);
     }
 
@@ -85,26 +86,28 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         subscribe(clientId, topicSubscriptions);
     }
 
-    private void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+    private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.addAll(topicSubscriptions);
+        return clientSubscriptions;
     }
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
-        BasicCallback callback = createCallback(() -> log.trace("[{}] Persisted unsubscribed topics", clientId),
-                t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}", clientId, t.getClass().getSimpleName(), t.getMessage()));
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Persisted unsubscribed topics", clientId),
+                t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}",
+                        clientId, t.getClass().getSimpleName(), t.getMessage()));
         unsubscribeAndPersist(clientId, topicFilters, callback);
     }
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
         log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
-        unsubscribe(clientId, topicFilters);
+        Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
 
-        Set<TopicSubscription> updatedClientSubscriptions = clientSubscriptionsMap.get(clientId);
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
     }
 
@@ -114,11 +117,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         unsubscribe(clientId, topicFilters);
     }
 
-    private void unsubscribe(String clientId, Collection<String> topicFilters) {
+    private Set<TopicSubscription> unsubscribe(String clientId, Collection<String> topicFilters) {
         subscriptionService.unsubscribe(clientId, topicFilters);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscription -> topicFilters.contains(topicSubscription.getTopic()));
+        return clientSubscriptions;
     }
 
     @Override
@@ -150,6 +154,4 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
-
-
 }
