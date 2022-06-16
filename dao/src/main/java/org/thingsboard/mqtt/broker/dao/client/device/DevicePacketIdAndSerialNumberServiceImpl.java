@@ -43,6 +43,7 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
 
     @Override
     public Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Set<String> clientIds) {
+        log.debug("Trying to find PacketIdAndSerialNumbers for clients: {}", clientIds);
         Map<String, PacketIdAndSerialNumber> result = Maps.newHashMap();
         Cache cache = getCache();
 
@@ -56,8 +57,11 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
             }
         });
 
-        Collection<DeviceSessionCtx> deviceSessionsFromDb = findSessionsByClientIds(clientIdsFromDb);
-        result.putAll(updateCacheAndToMap(deviceSessionsFromDb, cache));
+        if (!clientIdsFromDb.isEmpty()) {
+            log.debug("Did not find in cache, getting PacketIdAndSerialNumbers from DB for: {}", clientIdsFromDb);
+            Collection<DeviceSessionCtx> deviceSessionsFromDb = findSessionsByClientIds(clientIdsFromDb);
+            result.putAll(updateCacheAndToMap(deviceSessionsFromDb, cache));
+        }
 
         return result;
     }
@@ -80,18 +84,22 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
     }
 
     private Collection<DeviceSessionCtx> findSessionsByClientIds(Set<String> clientIds) {
+        log.trace("Processing findSessionsByClientIds: {}", clientIds);
         return deviceSessionCtxService.findAllContexts(clientIds);
     }
 
     @Override
     public void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers) {
+        if (log.isTraceEnabled()) {
+            log.trace("Processing saveLastSerialNumbers for clients: {}", clientsLastPacketIdAndSerialNumbers.keySet());
+        }
         List<DeviceSessionCtx> deviceSessionContexts = clientsLastPacketIdAndSerialNumbers.entrySet().stream()
                 .map(this::buildDeviceSessionCtx)
                 .collect(Collectors.toList());
         deviceSessionCtxService.saveDeviceSessionContexts(deviceSessionContexts);
 
         Cache cache = getCache();
-        deviceSessionContexts.forEach(deviceSessionCtx -> cache.evict(deviceSessionCtx.getClientId()));
+        deviceSessionContexts.forEach(deviceSessionCtx -> cache.put(deviceSessionCtx.getClientId(), newPacketIdAndSerialNumber(deviceSessionCtx)));
     }
 
     private DeviceSessionCtx buildDeviceSessionCtx(Map.Entry<String, PacketIdAndSerialNumber> entry) {

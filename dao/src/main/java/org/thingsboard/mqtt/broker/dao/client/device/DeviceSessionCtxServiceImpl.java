@@ -49,6 +49,7 @@ public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
     public void removeDeviceSessionContext(String clientId) {
         log.trace("Executing removeDeviceSessionContext [{}]", clientId);
         try {
+            // TODO: 16.06.22 clear cache
             deviceSessionCtxDao.removeById(clientId);
         } catch (EmptyResultDataAccessException noDataException) {
             log.debug("[{}] No session for clientId.", clientId);

@@ -52,9 +52,7 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         checkCacheNonNullAndEvict(CLIENT_ID1);
 
         Map<String, PacketIdAndSerialNumber> toSaveMap = prepareOneClientMapToSave(10, 100);
-        saveToDb(toSaveMap);
-
-        getFromCacheAndAssertNull(CLIENT_ID1);
+        saveToDbAndCache(toSaveMap);
 
         Map<String, PacketIdAndSerialNumber> map = getFromDb(CLIENT_ID1);
         assertResultFromDb(map, CLIENT_ID1, 10, 100);
@@ -64,9 +62,11 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         Assert.assertEquals(100, fromCache.getSerialNumber().get());
 
         toSaveMap = prepareOneClientMapToSave(20, 200);
-        saveToDb(toSaveMap);
+        saveToDbAndCache(toSaveMap);
 
-        getFromCacheAndAssertNull(CLIENT_ID1);
+        fromCache = getFromCacheAndAssertNotNull(CLIENT_ID1);
+        Assert.assertEquals(20, fromCache.getPacketId().get());
+        Assert.assertEquals(200, fromCache.getSerialNumber().get());
     }
 
     private Map<String, PacketIdAndSerialNumber> prepareOneClientMapToSave(int packetId, int serialNumber) {
@@ -78,11 +78,8 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         checkCacheNonNullAndEvict(CLIENT_ID1);
         checkCacheNonNullAndEvict(CLIENT_ID2);
 
-        Map<String, PacketIdAndSerialNumber> toSaveMap = prepareTwoClientsMapToSave();
-        saveToDb(toSaveMap);
-
-        getFromCacheAndAssertNull(CLIENT_ID1);
-        getFromCacheAndAssertNull(CLIENT_ID2);
+        Map<String, PacketIdAndSerialNumber> toSaveMap = prepareTwoClientsMapToSave(10, 20);
+        saveToDbAndCache(toSaveMap);
 
         Map<String, PacketIdAndSerialNumber> map = getFromDb(CLIENT_ID1);
         assertResultFromDb(map, CLIENT_ID1, 10, 100);
@@ -91,8 +88,6 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         Assert.assertEquals(10, fromCache.getPacketId().get());
         Assert.assertEquals(100, fromCache.getSerialNumber().get());
 
-        getFromCacheAndAssertNull(CLIENT_ID2);
-
         map = getFromDb(CLIENT_ID2);
         assertResultFromDb(map, CLIENT_ID2, 20, 200);
 
@@ -100,14 +95,17 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         Assert.assertEquals(20, fromCache.getPacketId().get());
         Assert.assertEquals(200, fromCache.getSerialNumber().get());
 
-        toSaveMap = prepareTwoClientsMapToSave();
-        saveToDb(toSaveMap);
+        toSaveMap = prepareTwoClientsMapToSave(30, 40);
+        saveToDbAndCache(toSaveMap);
 
-        getFromCacheAndAssertNull(CLIENT_ID1);
-        getFromCacheAndAssertNull(CLIENT_ID2);
+        getFromCacheAndAssertNotNull(CLIENT_ID1);
+        fromCache = getFromCacheAndAssertNotNull(CLIENT_ID2);
+
+        Assert.assertEquals(40, fromCache.getPacketId().get());
+        Assert.assertEquals(400, fromCache.getSerialNumber().get());
     }
 
-    private void saveToDb(Map<String, PacketIdAndSerialNumber> toSaveMap) {
+    private void saveToDbAndCache(Map<String, PacketIdAndSerialNumber> toSaveMap) {
         packetIdAndSerialNumberService.saveLastSerialNumbers(toSaveMap);
     }
 
@@ -121,10 +119,10 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         Assert.assertEquals(expectedSerialNumb, map.get(clientId).getSerialNumber().get());
     }
 
-    private Map<String, PacketIdAndSerialNumber> prepareTwoClientsMapToSave() {
+    private Map<String, PacketIdAndSerialNumber> prepareTwoClientsMapToSave(int packetId1, int packetId2) {
         return Map.of(
-                CLIENT_ID1, PacketIdAndSerialNumber.of(10, 100),
-                CLIENT_ID2, PacketIdAndSerialNumber.of(20, 200)
+                CLIENT_ID1, PacketIdAndSerialNumber.of(packetId1, packetId1 * 10L),
+                CLIENT_ID2, PacketIdAndSerialNumber.of(packetId2, packetId2 * 10L)
         );
     }
 
@@ -132,11 +130,6 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
         PacketIdAndSerialNumber fromCache = getFromCache(clientId);
         Assert.assertNotNull(fromCache);
         return fromCache;
-    }
-
-    private void getFromCacheAndAssertNull(String clientId) {
-        PacketIdAndSerialNumber fromCache = getFromCache(clientId);
-        Assert.assertNull(fromCache);
     }
 
     private PacketIdAndSerialNumber getFromCache(String clientId) {
