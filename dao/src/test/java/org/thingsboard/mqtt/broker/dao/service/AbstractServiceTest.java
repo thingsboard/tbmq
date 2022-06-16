@@ -49,7 +49,7 @@ public abstract class AbstractServiceTest {
         return mapper.readTree(this.getClass().getClassLoader().getResourceAsStream(resourceName));
     }
 
-    public class IdComparator<D extends HasId> implements Comparator<D> {
+    public static class IdComparator<D extends HasId> implements Comparator<D> {
         @Override
         public int compare(D o1, D o2) {
             return o1.getId().compareTo(o2.getId());

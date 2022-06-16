@@ -103,13 +103,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         validatePageLink(pageLink);
         PageData<MqttClientCredentials> pageData = mqttClientCredentialsDao.findAll(pageLink);
         List<ShortMqttClientCredentials> shortMqttCredentials = pageData.getData().stream()
-                .map(mqttClientCredentials -> ShortMqttClientCredentials.builder()
-                        .id(mqttClientCredentials.getId())
-                        .name(mqttClientCredentials.getName())
-                        .clientType(mqttClientCredentials.getClientType())
-                        .credentialsType(mqttClientCredentials.getCredentialsType())
-                        .createdTime(mqttClientCredentials.getCreatedTime())
-                        .build())
+                .map(MqttClientCredentialsUtil::toShortMqttClientCredentials)
                 .collect(Collectors.toList());
         return new PageData<>(shortMqttCredentials, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
     }

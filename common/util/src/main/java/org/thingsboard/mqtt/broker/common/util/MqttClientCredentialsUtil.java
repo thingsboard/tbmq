@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 public class MqttClientCredentialsUtil {
@@ -27,4 +28,13 @@ public class MqttClientCredentialsUtil {
         return credentials;
     }
 
+    public static ShortMqttClientCredentials toShortMqttClientCredentials(MqttClientCredentials mqttClientCredentials) {
+        return ShortMqttClientCredentials.builder()
+                .id(mqttClientCredentials.getId())
+                .name(mqttClientCredentials.getName())
+                .clientType(mqttClientCredentials.getClientType())
+                .credentialsType(mqttClientCredentials.getCredentialsType())
+                .createdTime(mqttClientCredentials.getCreatedTime())
+                .build();
+    }
 }

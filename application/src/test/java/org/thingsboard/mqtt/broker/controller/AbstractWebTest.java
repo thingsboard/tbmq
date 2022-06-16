@@ -23,6 +23,7 @@ import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
@@ -47,12 +48,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.config.SecurityConfiguration;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.RefreshTokenRequest;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
@@ -299,6 +303,30 @@ public abstract class AbstractWebTest extends AbstractPubSubIntegrationTest {
         MvcResult result = mockMvc.perform(postRequest).andReturn();
         result.getAsyncResult(timeout);
         return mockMvc.perform(asyncDispatch(result));
+    }
+
+    protected <T> T doGetTypedWithPageLink(String urlTemplate, TypeReference<T> responseType,
+                                           PageLink pageLink,
+                                           Object... urlVariables) throws Exception {
+        List<Object> pageLinkVariables = new ArrayList<>();
+        urlTemplate += "pageSize={pageSize}&page={page}";
+        pageLinkVariables.add(pageLink.getPageSize());
+        pageLinkVariables.add(pageLink.getPage());
+        if (StringUtils.isNotEmpty(pageLink.getTextSearch())) {
+            urlTemplate += "&textSearch={textSearch}";
+            pageLinkVariables.add(pageLink.getTextSearch());
+        }
+        if (pageLink.getSortOrder() != null) {
+            urlTemplate += "&sortProperty={sortProperty}&sortOrder={sortOrder}";
+            pageLinkVariables.add(pageLink.getSortOrder().getProperty());
+            pageLinkVariables.add(pageLink.getSortOrder().getDirection().name());
+        }
+
+        Object[] vars = new Object[urlVariables.length + pageLinkVariables.size()];
+        System.arraycopy(urlVariables, 0, vars, 0, urlVariables.length);
+        System.arraycopy(pageLinkVariables.toArray(), 0, vars, urlVariables.length, pageLinkVariables.size());
+
+        return readResponse(doGet(urlTemplate, vars).andExpect(status().isOk()), responseType);
     }
 
     protected ResultActions doDelete(String urlTemplate, String... params) throws Exception {
