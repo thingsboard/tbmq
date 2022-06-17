@@ -28,7 +28,7 @@ public class PacketIdAndSerialNumber {
     private final AtomicInteger packetId;
     private final AtomicLong serialNumber;
 
-    public static PacketIdAndSerialNumber of(int packetId, long serialNumber) {
+    public static PacketIdAndSerialNumber newInstance(int packetId, long serialNumber) {
         return new PacketIdAndSerialNumber(
                 new AtomicInteger(packetId),
                 new AtomicLong(serialNumber));

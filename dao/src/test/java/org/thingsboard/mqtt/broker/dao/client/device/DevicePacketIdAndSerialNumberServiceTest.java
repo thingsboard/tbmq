@@ -70,7 +70,7 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
     }
 
     private Map<String, PacketIdAndSerialNumber> prepareOneClientMapToSave(int packetId, int serialNumber) {
-        return Map.of(CLIENT_ID1, PacketIdAndSerialNumber.of(packetId, serialNumber));
+        return Map.of(CLIENT_ID1, PacketIdAndSerialNumber.newInstance(packetId, serialNumber));
     }
 
     @Test
@@ -121,8 +121,8 @@ public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTes
 
     private Map<String, PacketIdAndSerialNumber> prepareTwoClientsMapToSave(int packetId1, int packetId2) {
         return Map.of(
-                CLIENT_ID1, PacketIdAndSerialNumber.of(packetId1, packetId1 * 10L),
-                CLIENT_ID2, PacketIdAndSerialNumber.of(packetId2, packetId2 * 10L)
+                CLIENT_ID1, PacketIdAndSerialNumber.newInstance(packetId1, packetId1 * 10L),
+                CLIENT_ID2, PacketIdAndSerialNumber.newInstance(packetId2, packetId2 * 10L)
         );
     }
 
