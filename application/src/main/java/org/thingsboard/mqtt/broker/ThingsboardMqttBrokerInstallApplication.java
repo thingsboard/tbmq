@@ -30,7 +30,8 @@ import java.util.Properties;
 @ComponentScan({"org.thingsboard.mqtt.broker.install",
         "org.thingsboard.mqtt.broker.service.install",
         "org.thingsboard.mqtt.broker.service.user",
-        "org.thingsboard.mqtt.broker.dao"})
+        "org.thingsboard.mqtt.broker.dao",
+        "org.thingsboard.mqtt.broker.cache"})
 public class ThingsboardMqttBrokerInstallApplication {
 
     private static final String SPRING_CONFIG_NAME_KEY = "--spring.config.name";
