@@ -13,13 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
+package org.thingsboard.mqtt.broker.dao.client.device;
 
-import java.util.Collection;
-import java.util.Map;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public interface DevicePacketIdAndSerialNumberService {
-    Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Collection<String> clientIds);
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-    void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers);
+@Getter
+@RequiredArgsConstructor
+public class PacketIdAndSerialNumber {
+
+    private final AtomicInteger packetId;
+    private final AtomicLong serialNumber;
+
+    public static PacketIdAndSerialNumber newInstance(int packetId, long serialNumber) {
+        return new PacketIdAndSerialNumber(
+                new AtomicInteger(packetId),
+                new AtomicLong(serialNumber));
+    }
 }

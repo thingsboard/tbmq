@@ -18,10 +18,8 @@ package org.thingsboard.mqtt.broker.dao.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.runner.RunWith;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -39,11 +37,6 @@ import java.util.Comparator;
 public abstract class AbstractServiceTest {
 
     protected ObjectMapper mapper = new ObjectMapper();
-
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     public JsonNode readFromResource(String resourceName) throws IOException {
         return mapper.readTree(this.getClass().getClassLoader().getResourceAsStream(resourceName));

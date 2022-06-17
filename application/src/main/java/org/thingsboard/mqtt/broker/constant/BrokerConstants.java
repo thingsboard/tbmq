@@ -32,6 +32,4 @@ public class BrokerConstants {
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
     public static final String REQUEST_TIME = "requestTime";
 
-    //cache
-    public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
 }
