@@ -23,19 +23,15 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import java.util.UUID;
 
 @Slf4j
+@Getter
 public class ConnectionAcceptedMsg extends SessionDependentMsg {
-    private final boolean wasPrevSessionPersistent;
-    @Getter
+    private final boolean isPrevSessionPersistent;
     private final PublishMsg lastWillMsg;
 
-    public ConnectionAcceptedMsg(UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg) {
+    public ConnectionAcceptedMsg(UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
         super(sessionId);
-        this.wasPrevSessionPersistent = wasPrevSessionPersistent;
+        this.isPrevSessionPersistent = isPrevSessionPersistent;
         this.lastWillMsg = lastWillMsg;
-    }
-
-    public boolean wasPrevSessionPersistent() {
-        return wasPrevSessionPersistent;
     }
 
     @Override

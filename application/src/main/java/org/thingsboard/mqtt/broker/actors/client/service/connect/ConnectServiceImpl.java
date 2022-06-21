@@ -127,14 +127,14 @@ public class ConnectServiceImpl implements ConnectService {
         clientSessionCtxService.registerSession(sessionCtx);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.wasPrevSessionPersistent());
+            msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.isPrevSessionPersistent());
         }
 
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
     }
 
     private void pushConnAckMsg(ClientSessionCtx sessionCtx, ConnectionAcceptedMsg connectionAcceptedMsg) {
-        boolean sessionPresent = connectionAcceptedMsg.wasPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
+        boolean sessionPresent = connectionAcceptedMsg.isPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
         sessionCtx.getChannel().writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED, sessionPresent));
     }
 
