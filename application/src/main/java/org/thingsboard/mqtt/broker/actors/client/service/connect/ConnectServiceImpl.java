@@ -101,7 +101,7 @@ public class ConnectServiceImpl implements ConnectService {
 
             private void notifyConnectionAccepted(ConnectionResponse connectionResponse) {
                 clientMqttActorManager.notifyConnectionAccepted(clientId, new ConnectionAcceptedMsg(
-                        sessionId, connectionResponse.isWasPrevSessionPersistent(), msg.getLastWillMsg()));
+                        sessionId, connectionResponse.isPrevSessionPersistent(), msg.getLastWillMsg()));
             }
 
             @Override
