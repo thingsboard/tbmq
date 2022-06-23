@@ -43,21 +43,22 @@ import static org.junit.Assert.assertTrue;
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class QoSVerificationIntegrationTest extends AbstractPubSubIntegrationTest {
+    static final int QOS_1 = 1;
 
     // TODO: 22/06/2022 implement qos tests
 
     @Test
-    @Ignore
-    public void test() throws Throwable {
+    @Ignore // ignored since it will fail due to logic missing
+    public void qoS1DeliveryValidationTest() throws Throwable {
 
         AtomicInteger counter = new AtomicInteger(0);
-        CountDownLatch receivedResponses = new CountDownLatch(1);
+        CountDownLatch receivedResponses = new CountDownLatch(2);
 
         MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
-//        subClient.setManualAcks(true);
+        subClient.setManualAcks(true);
         subClient.connect();
-        subClient.subscribe("test", 1, (topic, message) -> {
-            log.error("[{}] Received msg: {}", topic, message);
+        subClient.subscribe("test", QOS_1, (topic, message) -> {
+            log.error("[{}] Received msg with id: {}", topic, message.getId());
 
             counter.incrementAndGet();
             receivedResponses.countDown();
@@ -67,14 +68,18 @@ public class QoSVerificationIntegrationTest extends AbstractPubSubIntegrationTes
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
         pubClient.connect(connectOptions);
-        pubClient.publish("test", "data".getBytes(), 1, false);
+        pubClient.publish("test", "data".getBytes(), QOS_1, false);
 
-        boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
         assertTrue(await);
 
+        subClient.messageArrivedComplete(1, QOS_1);
+
+        pubClient.disconnect();
+        subClient.disconnect();
         pubClient.close();
         subClient.close();
 
-        assertThat(counter.get(), greaterThanOrEqualTo(1));
+        assertThat(counter.get(), greaterThanOrEqualTo(2));
     }
 }
