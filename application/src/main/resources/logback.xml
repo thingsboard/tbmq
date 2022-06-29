@@ -25,13 +25,13 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.service.subscription.ConcurrentMapSubscriptionTrie" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.dao.messages.sql.SqlDeviceMsgCleanUpDao" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.ClientActor" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManagerImpl" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionServiceImpl" level="DEBUG"/>
-    <logger name="org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveServiceImpl" level="DEBUG"/>
-    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessorImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="WARN"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="WARN"/>
+    <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.DefaultTbActorSystem" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.session.ClientMqttActorManagerImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl" level="TRACE"/>
 
     <logger name="org.apache.kafka" level="WARN"/>
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>

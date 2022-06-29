@@ -75,6 +75,11 @@ data:
 
             <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="WARN"/>
             <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="WARN"/>
+            <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.DefaultTbActorSystem" level="TRACE"/>
+            <logger name="org.thingsboard.mqtt.broker.session.ClientMqttActorManagerImpl" level="DEBUG"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl" level="TRACE"/>
 
             <logger name="org.apache.kafka" level="WARN"/>
 
