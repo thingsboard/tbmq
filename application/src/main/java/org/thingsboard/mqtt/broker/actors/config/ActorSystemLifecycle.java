@@ -15,14 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.actors.config;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -30,8 +34,10 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -46,6 +52,9 @@ public class ActorSystemLifecycle {
     private final ClientActorConfiguration clientActorConfiguration;
     private final ClientSessionEventService clientSessionEventService;
 
+    @Value("${actors.system.disconnect-wait-timeout-ms:2000}")
+    private long waitTimeoutMs;
+
     @PostConstruct
     public void init() {
         actorSystem.createDispatcher(PERSISTED_DEVICE_DISPATCHER_NAME, initDispatcherExecutor(PERSISTED_DEVICE_DISPATCHER_NAME, deviceActorConfiguration.getDispatcherSize()));
@@ -53,7 +62,9 @@ public class ActorSystemLifecycle {
     }
 
     @PreDestroy
-    public void destroy() {
+    public void destroy() throws InterruptedException {
+        // TODO: 29/06/2022 remove the sleep
+        Thread.sleep(4000);
         log.info("Stopping actor system.");
         actorSystem.stop();
         log.info("Actor system stopped.");
@@ -61,14 +72,29 @@ public class ActorSystemLifecycle {
     }
 
     private void notifyAboutDisconnectedClients() {
+        log.trace("Process notify about disconnected clients.");
         Collection<ClientSessionCtx> clientSessionContexts = clientSessionCtxService.getAllClientSessionCtx();
         if (clientSessionContexts.isEmpty()) {
+            log.trace("No client sessions left to notify about disconnect.");
             return;
         }
 
+        CountDownLatch latch = new CountDownLatch(clientSessionContexts.size());
+        TbQueueCallback callback = new DisconnectCallback(latch);
+
         log.info("Trying to send DISCONNECTED event for {} client contexts.", clientSessionContexts.size());
         for (ClientSessionCtx sessionCtx : clientSessionContexts) {
-            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId());
+            clientSessionEventService.notifyClientDisconnected(sessionCtx.getSessionInfo().getClientInfo(), sessionCtx.getSessionId(), callback);
+        }
+
+        boolean waitSuccessful = false;
+        try {
+            waitSuccessful = latch.await(waitTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.warn("Disconnect notifications processing was interrupted");
+        }
+        if (!waitSuccessful) {
+            log.warn("Failed to process [{}] disconnect notifications in time", latch.getCount());
         }
     }
 
@@ -81,6 +107,24 @@ public class ActorSystemLifecycle {
             return Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(dispatcherName));
         } else {
             return ThingsBoardExecutors.newWorkStealingPool(poolSize, dispatcherName);
+        }
+    }
+
+    @AllArgsConstructor
+    private static class DisconnectCallback implements TbQueueCallback {
+
+        private final CountDownLatch countDownLatch;
+
+        @Override
+        public void onSuccess(TbQueueMsgMetadata metadata) {
+            log.info("Disconnect request sent successfully: {}", metadata);
+            countDownLatch.countDown();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.info("Failed to send disconnect request. Reason - {}.", t.getMessage());
+            countDownLatch.countDown();
         }
     }
 }

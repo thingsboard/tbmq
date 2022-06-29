@@ -101,26 +101,51 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             return Futures.immediateFailedFuture(new RuntimeException("Cannot send CONNECTION_REQUEST. Pending request map is full!"));
         }
 
-        return sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createConnectionRequestEventProto(sessionInfo), true);
+        return sendEvent(
+                sessionInfo.getClientInfo().getClientId(),
+                eventFactory.createConnectionRequestEventProto(sessionInfo),
+                true,
+                null);
     }
 
     @Override
-    // TODO: use ClientId instead of ClientInfo (and change protocol to not use SessionInfo - use anyof keyword)
     public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId) {
-        sendEvent(clientInfo.getClientId(), eventFactory.createDisconnectedEventProto(clientInfo, sessionId), false);
+        sendEvent(
+                clientInfo.getClientId(),
+                eventFactory.createDisconnectedEventProto(clientInfo, sessionId),
+                false,
+                null);
+    }
+
+    @Override
+    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback) {
+        sendEvent(
+                clientInfo.getClientId(),
+                eventFactory.createDisconnectedEventProto(clientInfo, sessionId),
+                false,
+                callback);
     }
 
     @Override
     public void requestSessionCleanup(SessionInfo sessionInfo) {
-        sendEvent(sessionInfo.getClientInfo().getClientId(), eventFactory.createTryClearSessionRequestEventProto(sessionInfo), false);
+        sendEvent(
+                sessionInfo.getClientInfo().getClientId(),
+                eventFactory.createTryClearSessionRequestEventProto(sessionInfo),
+                false,
+                null);
     }
 
     @Override
     public void requestApplicationTopicRemoved(String clientId) {
-        sendEvent(clientId, eventFactory.createApplicationTopicRemoveRequestProto(clientId), false);
+        sendEvent(
+                clientId,
+                eventFactory.createApplicationTopicRemoveRequestProto(clientId),
+                false,
+                null);
     }
 
-    private ListenableFuture<ConnectionResponse> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto, boolean isAwaitingResponse) {
+    private ListenableFuture<ConnectionResponse> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto,
+                                                           boolean isAwaitingResponse, TbQueueCallback callback) {
         UUID requestId = UUID.randomUUID();
         TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);
 
@@ -130,7 +155,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             pendingRequests.putIfAbsent(requestId, eventFuture);
         }
         log.trace("[{}][{}][{}] Sending client session event request.", clientId, eventProto.getEventType(), requestId);
-        eventProducer.send(eventRequest, new TbQueueCallback() {
+        TbQueueCallback tbQueueCallback = new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 log.trace("[{}][{}][{}] Request sent: {}", clientId, eventProto.getEventType(), requestId, metadata);
@@ -144,7 +169,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
                     future.setException(t);
                 }
             }
-        });
+        };
+        eventProducer.send(eventRequest, callback != null ? callback : tbQueueCallback);
         return future;
     }
 
@@ -155,7 +181,6 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         eventRequest.getHeaders().put(RESPONSE_TOPIC_HEADER, BytesUtil.stringToBytes(eventResponseConsumer.getTopic()));
         return eventRequest;
     }
-
 
     private void startProcessingEventResponses() {
         eventResponseConsumer.subscribe();

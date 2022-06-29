@@ -157,7 +157,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         stopped = true;
         eventConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            consumersExecutor.shutdown();
         }
     }
 }

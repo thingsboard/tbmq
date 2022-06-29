@@ -52,7 +52,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             return;
         }
 
-        log.trace("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        log.info("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
         try {
             clearClientSession(actorState, reason.getType());
@@ -77,6 +77,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     }
 
     void notifyClientDisconnected(ClientActorStateInfo actorState) {
+        log.trace("Executing notifyClientDisconnected");
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
             clientSessionEventService.notifyClientDisconnected(

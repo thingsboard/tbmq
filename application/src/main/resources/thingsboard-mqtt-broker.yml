@@ -15,6 +15,7 @@
 #
 
 server:
+  shutdown: "${SERVER_SHUTDOWN:graceful}" # graceful or immediate
   # Server bind address (has no effect if web-environment is disabled).
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # Server bind port (has no effect if web-environment is disabled).
@@ -223,6 +224,7 @@ actors:
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
     processing-metrics:
       enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
+    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
   persisted-device:
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"
@@ -249,6 +251,8 @@ spring:
     password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
+
+spring.lifecycle.timeout-per-shutdown-phase: "1m"
 
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "true"
 spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
