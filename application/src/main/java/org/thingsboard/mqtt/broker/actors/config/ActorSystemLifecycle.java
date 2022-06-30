@@ -112,13 +112,13 @@ public class ActorSystemLifecycle {
 
         @Override
         public void onSuccess(TbQueueMsgMetadata metadata) {
-            log.info("Disconnect request sent successfully: {}", metadata);
+            log.trace("Disconnect request sent successfully: {}", metadata);
             countDownLatch.countDown();
         }
 
         @Override
         public void onFailure(Throwable t) {
-            log.info("Failed to send disconnect request. Reason - {}.", t.getMessage());
+            log.warn("Failed to send disconnect request. Reason - {}.", t.getMessage());
             countDownLatch.countDown();
         }
     }
