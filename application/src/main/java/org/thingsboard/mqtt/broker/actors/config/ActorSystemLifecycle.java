@@ -63,11 +63,6 @@ public class ActorSystemLifecycle {
 
     @PreDestroy
     public void destroy() throws InterruptedException {
-        // TODO: 29/06/2022 remove the sleep
-        Thread.sleep(4000);
-        log.info("Stopping actor system.");
-        actorSystem.stop();
-        log.info("Actor system stopped.");
         notifyAboutDisconnectedClients();
     }
 

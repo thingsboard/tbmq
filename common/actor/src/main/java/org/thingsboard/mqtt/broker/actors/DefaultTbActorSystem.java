@@ -197,23 +197,25 @@ public class DefaultTbActorSystem implements TbActorSystem {
     }
 
     @Override
-    public void stop() {
+    public Set<TbActorId> getAllActorIds() {
+        return new HashSet<>(actors.keySet());
+    }
+
+    public void destroy() {
+        log.info("Stopping actor system.");
         dispatchers.values().forEach(dispatcher -> {
             dispatcher.getExecutor().shutdown();
             try {
-                dispatcher.getExecutor().awaitTermination(3, TimeUnit.SECONDS);
+                boolean terminationSuccessful = dispatcher.getExecutor().awaitTermination(3, TimeUnit.SECONDS);
+                log.info("[{}] Dispatcher termination is: [{}]", dispatcher.getDispatcherId(), terminationSuccessful ? "successful" : "failed");
             } catch (InterruptedException e) {
-                log.warn("[{}] Failed to stop dispatcher", dispatcher.getDispatcherId(), e);
+                log.warn("[{}] Failed to stop dispatcher due to interruption!", dispatcher.getDispatcherId(), e);
             }
         });
         if (scheduler != null) {
             scheduler.shutdownNow();
         }
         actors.clear();
-    }
-
-    @Override
-    public Set<TbActorId> getAllActorIds() {
-        return new HashSet<>(actors.keySet());
+        log.info("Actor system stopped.");
     }
 }

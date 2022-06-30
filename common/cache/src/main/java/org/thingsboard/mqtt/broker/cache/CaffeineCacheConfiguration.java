@@ -106,7 +106,7 @@ public class CaffeineCacheConfiguration {
     }
 
     @PreDestroy
-    public void stopActorSystem() {
+    public void destroy() {
         if (scheduler != null) {
             scheduler.shutdown();
         }
