@@ -190,6 +190,7 @@ public class DefaultTbActorSystem implements TbActorSystem {
                 stop(child);
             }
         }
+        log.debug("Stopping actor with id [{}]!", actorId);
         TbActorMailbox mailbox = actors.remove(actorId);
         if (mailbox != null) {
             mailbox.destroy();

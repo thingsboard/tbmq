@@ -52,7 +52,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             return;
         }
 
-        log.info("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
 
         try {
             clearClientSession(actorState, reason.getType());
