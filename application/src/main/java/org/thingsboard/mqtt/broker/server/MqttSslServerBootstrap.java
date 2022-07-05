@@ -17,10 +17,12 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
+import io.netty.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +33,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +51,10 @@ public class MqttSslServerBootstrap {
     private Integer bossGroupThreadCount;
     @Value("${listener.ssl.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
+    @Value("${listener.ssl.netty.shutdown_quiet_period:0}")
+    private Integer shutdownQuietPeriod;
+    @Value("${listener.ssl.netty.shutdown_timeout:5}")
+    private Integer shutdownTimeout;
 
     private final MqttSslChannelInitializer mqttSslChannelInitializer;
 
@@ -68,7 +75,7 @@ public class MqttSslServerBootstrap {
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(mqttSslChannelInitializer)
-        ;
+                .childOption(ChannelOption.SO_KEEPALIVE, true);
 
         serverChannel = b.bind(host, port).sync().channel();
         log.info("[SSL Server] Mqtt server started!");
@@ -77,18 +84,30 @@ public class MqttSslServerBootstrap {
     @PreDestroy
     public void shutdown() throws InterruptedException {
         log.info("[SSL Server] Stopping MQTT server!");
-        try {
-            if (serverChannel != null) {
-                serverChannel.close().sync();
-            }
-        } finally {
-            if (workerGroup != null) {
-                workerGroup.shutdownGracefully();
-            }
-            if (bossGroup != null) {
-                bossGroup.shutdownGracefully();
-            }
+
+        Future<?> bossFuture = null;
+        Future<?> workerFuture = null;
+
+        if (serverChannel != null) {
+            serverChannel.close().sync();
         }
+
+        if (bossGroup != null) {
+            bossFuture = bossGroup.shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.SECONDS);
+        }
+        if (workerGroup != null) {
+            workerFuture = workerGroup.shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.SECONDS);
+        }
+
+        log.info("[SSL Server] Awaiting shutdown gracefully boss and worker groups...");
+
+        if (bossFuture != null) {
+            bossFuture.sync();
+        }
+        if (workerFuture != null) {
+            workerFuture.sync();
+        }
+
         log.info("[SSL Server] MQTT server stopped!");
     }
 }
