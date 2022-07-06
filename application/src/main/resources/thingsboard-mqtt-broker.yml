@@ -45,6 +45,7 @@ listener:
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${TCP_NETTY_SO_KEEPALIVE:true}"
       shutdown_quiet_period: "${TCP_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
       shutdown_timeout: "${TCP_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
   ssl:
@@ -73,6 +74,7 @@ listener:
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${SSL_NETTY_SO_KEEPALIVE:true}"
       shutdown_quiet_period: "${SSL_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
       shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
 

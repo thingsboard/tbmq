@@ -51,6 +51,9 @@ public class MqttSslServerBootstrap {
     private Integer bossGroupThreadCount;
     @Value("${listener.ssl.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
+    @Value("${listener.ssl.netty.so_keep_alive}")
+    private boolean keepAlive;
+
     @Value("${listener.ssl.netty.shutdown_quiet_period:0}")
     private Integer shutdownQuietPeriod;
     @Value("${listener.ssl.netty.shutdown_timeout:5}")
@@ -75,7 +78,7 @@ public class MqttSslServerBootstrap {
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(mqttSslChannelInitializer)
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
+                .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
 
         serverChannel = b.bind(host, port).sync().channel();
         log.info("[SSL Server] Mqtt server started!");

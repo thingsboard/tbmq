@@ -51,6 +51,9 @@ public class MqttTcpServerBootstrap {
     private Integer bossGroupThreadCount;
     @Value("${listener.tcp.netty.worker_group_thread_count}")
     private Integer workerGroupThreadCount;
+    @Value("${listener.tcp.netty.so_keep_alive}")
+    private boolean keepAlive;
+
     @Value("${listener.tcp.netty.shutdown_quiet_period:0}")
     private Integer shutdownQuietPeriod;
     @Value("${listener.tcp.netty.shutdown_timeout:5}")
@@ -75,7 +78,7 @@ public class MqttTcpServerBootstrap {
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(mqttTcpChannelInitializer)
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
+                .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
 
         serverChannel = b.bind(host, port).sync().channel();
         log.info("[TCP Server] Mqtt server started!");
