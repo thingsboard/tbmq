@@ -26,7 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ApplicationPackProcessingContext {
+public class ApplicationPackProcessingCtx {
 
     @Getter
     private final ConcurrentMap<Integer, PersistedPublishMsg> publishPendingMsgMap = new ConcurrentHashMap<>();
@@ -40,7 +40,7 @@ public class ApplicationPackProcessingContext {
     @Getter
     private final Collection<PersistedPubRelMsg> newPubRelPackets;
 
-    public ApplicationPackProcessingContext(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
+    public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
         this.processingStartTimeNanos = System.nanoTime();
         this.stats = stats;
         this.newPubRelPackets = newPubRelPackets;

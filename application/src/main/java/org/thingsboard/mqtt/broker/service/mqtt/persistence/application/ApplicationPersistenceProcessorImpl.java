@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingContext;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingResult;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
@@ -80,7 +80,7 @@ import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.u
 @RequiredArgsConstructor
 public class ApplicationPersistenceProcessorImpl implements ApplicationPersistenceProcessor {
 
-    private final ConcurrentMap<String, ApplicationPackProcessingContext> processingContextMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ApplicationPackProcessingCtx> processingContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Future<?>> processingFutures = new ConcurrentHashMap<>();
 
     private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
@@ -110,7 +110,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubAck(String clientId, int packetId) {
         log.trace("[{}] Acknowledged packet {}", clientId, packetId);
-        ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = processingContextMap.get(clientId);
         if (processingContext == null) {
             log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
         } else {
@@ -122,7 +122,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
         String clientId = clientSessionCtx.getClientId();
         log.trace("[{}] Received packet {}", clientId, packetId);
-        ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = processingContextMap.get(clientId);
         if (processingContext == null) {
             log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
             publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
@@ -134,7 +134,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubComp(String clientId, int packetId) {
         log.trace("[{}] Completed packet {}", clientId, packetId);
-        ApplicationPackProcessingContext processingContext = processingContextMap.get(clientId);
+        ApplicationPackProcessingCtx processingContext = processingContextMap.get(clientId);
         if (processingContext == null) {
             log.warn("[{}] Cannot find processing context for client. PacketId - {}.", clientId, packetId);
         } else {
@@ -183,7 +183,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             }
         }
-        ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
+        ApplicationPackProcessingCtx processingContext = processingContextMap.remove(clientId);
         unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
     }
 
@@ -256,7 +256,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 // TODO: refactor this
                 pendingPubRelMessages = Sets.newConcurrentHashSet();
                 while (isClientConnected(sessionId, clientState)) {
-                    ApplicationPackProcessingContext ctx = new ApplicationPackProcessingContext(submitStrategy, pendingPubRelMessages, stats);
+                    ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(submitStrategy, pendingPubRelMessages, stats);
                     int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);
@@ -339,7 +339,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         processingFutures.forEach((clientId, future) -> {
             future.cancel(true);
             log.info("[{}] Saving processing context before shutting down.", clientId);
-            ApplicationPackProcessingContext processingContext = processingContextMap.remove(clientId);
+            ApplicationPackProcessingCtx processingContext = processingContextMap.remove(clientId);
             try {
                 unacknowledgedPersistedMsgCtxService.saveContext(clientId, processingContext);
             } catch (Exception e) {

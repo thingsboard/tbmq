@@ -29,6 +29,6 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationMsgInfo {
-    private Long offset;
+    private long offset;
     private int packetId;
 }
