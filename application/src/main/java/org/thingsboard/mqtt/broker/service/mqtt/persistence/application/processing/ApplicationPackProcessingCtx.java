@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 
-import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -38,9 +38,9 @@ public class ApplicationPackProcessingCtx {
     private final CountDownLatch processingTimeoutLatch;
     // TODO: wrap in separate class
     @Getter
-    private final Collection<PersistedPubRelMsg> newPubRelPackets;
+    private final Set<PersistedPubRelMsg> newPubRelPackets;
 
-    public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, Collection<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
+    public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, Set<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
         this.processingStartTimeNanos = System.nanoTime();
         this.stats = stats;
         this.newPubRelPackets = newPubRelPackets;

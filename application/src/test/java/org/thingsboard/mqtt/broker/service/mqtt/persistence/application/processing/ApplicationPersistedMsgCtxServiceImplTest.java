@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -103,7 +104,7 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
         when(applicationPackProcessingCtx.getPubRelPendingMsgMap())
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPubRelMsg(1, 100))));
         when(applicationPackProcessingCtx.getNewPubRelPackets())
-                .thenReturn(List.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300)));
+                .thenReturn(Set.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300)));
 
         applicationPersistedMsgCtxService.saveContext(CLIENT_ID, applicationPackProcessingCtx);
 
