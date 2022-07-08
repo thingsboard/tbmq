@@ -72,9 +72,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil.getConsumerGroup;
-import static org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil.getTopic;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -95,7 +92,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ClientLogger clientLogger;
     private final ApplicationTopicService applicationTopicService;
 
-    private final ExecutorService persistedMsgsConsumeExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
+    private final ExecutorService persistedMsgsConsumerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
 
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
@@ -149,9 +146,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         log.debug("[{}] Starting persisted messages processing.", clientId);
         ClientSessionCtx clientSessionCtx = clientState.getCurrentSessionCtx();
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer;
-        consumer = initConsumer(clientId);
-        Future<?> future = persistedMsgsConsumeExecutor.submit(() -> {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId);
+        Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
             try {
                 processPersistedMessages(consumer, clientSessionCtx, clientState);
             } catch (Exception e) {
@@ -200,8 +196,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     // TODO: make async
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
-                .createConsumer(getTopic(clientId), getConsumerGroup(clientId), serviceInfoProvider.getServiceId() + "-" + clientId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = createConsumer(clientId);
         try {
             consumer.assignPartition(0);
 
@@ -212,9 +207,18 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
             return consumer;
         } catch (Exception e) {
+            log.error("[{}] Failed to init application client consumer. Reason: {}", clientId, e.getMessage());
             consumer.unsubscribeAndClose();
             throw e;
         }
+    }
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String clientId) {
+        return applicationPersistenceMsgQueueFactory
+                .createConsumer(
+                        MqttApplicationClientUtil.getTopic(clientId),
+                        MqttApplicationClientUtil.getConsumerGroup(clientId),
+                        serviceInfoProvider.getServiceId() + "-" + clientId);
     }
 
     private void processPersistedMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
@@ -318,14 +322,18 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
                     boolean isDup = msgPacketId != null;
                     PublishMsgProto persistedMsgProto = msg.getValue();
-                    PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
-                            .packetId(packetId)
-                            .isDup(isDup)
-                            .build();
+                    PublishMsg publishMsg = toPubMsg(persistedMsgProto, packetId, isDup);
                     return new PersistedPublishMsg(publishMsg, msg.getOffset());
                 })
                 .sorted(Comparator.comparingLong(PersistedPublishMsg::getPacketOffset))
                 .collect(Collectors.toList());
+    }
+
+    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, boolean isDup) {
+        return ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
+                .packetId(packetId)
+                .isDup(isDup)
+                .build();
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
@@ -346,6 +354,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 log.warn("[{}] Failed to save APPLICATION context.", clientId);
             }
         });
-        persistedMsgsConsumeExecutor.shutdownNow();
+        persistedMsgsConsumerExecutor.shutdown();
+        try {
+            boolean terminationSuccessful = persistedMsgsConsumerExecutor.awaitTermination(3, TimeUnit.SECONDS);
+            log.info("Application persistence consumers' executor termination is: [{}]", terminationSuccessful ? "successful" : "failed");
+        } catch (InterruptedException e) {
+            log.warn("Failed to stop application persistence consumers' executor gracefully due to interruption!", e);
+        }
     }
 }
