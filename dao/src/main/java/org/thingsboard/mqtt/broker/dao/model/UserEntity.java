@@ -24,14 +24,18 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @TypeDef(name = "json", typeClass = JsonStringType.class)
 @Table(name = ModelConstants.USER_COLUMN_FAMILY_NAME)
-public class UserEntity extends BaseEntity<User> {
+public class UserEntity extends BaseSqlEntity<User> {
 
     @Enumerated(EnumType.STRING)
     @Column(name = ModelConstants.USER_AUTHORITY_PROPERTY)

@@ -31,7 +31,7 @@ import javax.persistence.Table;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME)
-public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredentials> {
+public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredentials> implements SearchTextEntity<MqttClientCredentials> {
 
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ID_PROPERTY, unique = true)
     private String credentialsId;
@@ -80,5 +80,10 @@ public class MqttClientCredentialsEntity extends BaseEntity<MqttClientCredential
         mqttClientCredentials.setCredentialsType(credentialsType);
         mqttClientCredentials.setCredentialsValue(credentialsValue);
         return mqttClientCredentials;
+    }
+
+    @Override
+    public String getSearchTextSource() {
+        return name;
     }
 }

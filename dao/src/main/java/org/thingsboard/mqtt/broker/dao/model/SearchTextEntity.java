@@ -15,16 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
-import java.util.UUID;
+public interface SearchTextEntity<D> extends BaseEntity<D> {
 
-public interface BaseEntity<D> extends ToData<D> {
+    String getSearchTextSource();
 
-    UUID getId();
-
-    void setId(UUID id);
-
-    long getCreatedTime();
-
-    void setCreatedTime(long createdTime);
+    void setSearchText(String searchText);
 
 }

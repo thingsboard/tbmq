@@ -28,7 +28,7 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.USER_CREDENTIALS_COLUMN_FAMILY_NAME)
-public final class UserCredentialsEntity extends BaseEntity<UserCredentials> {
+public final class UserCredentialsEntity extends BaseSqlEntity<UserCredentials> {
 
     @Column(name = ModelConstants.USER_CREDENTIALS_USER_ID_PROPERTY, unique = true)
     private UUID userId;

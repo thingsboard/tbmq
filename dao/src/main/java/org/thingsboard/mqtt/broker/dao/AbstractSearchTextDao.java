@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.model;
+package org.thingsboard.mqtt.broker.dao;
 
-import java.util.UUID;
+import org.thingsboard.mqtt.broker.dao.model.BaseEntity;
+import org.thingsboard.mqtt.broker.dao.model.SearchTextEntity;
 
-public interface BaseEntity<D> extends ToData<D> {
+public abstract class AbstractSearchTextDao<E extends BaseEntity<D>, D> extends AbstractDao<E, D> {
 
-    UUID getId();
-
-    void setId(UUID id);
-
-    long getCreatedTime();
-
-    void setCreatedTime(long createdTime);
-
+    @Override
+    protected void setSearchText(E entity) {
+        ((SearchTextEntity) entity).setSearchText(((SearchTextEntity) entity).getSearchTextSource().toLowerCase());
+    }
 }
