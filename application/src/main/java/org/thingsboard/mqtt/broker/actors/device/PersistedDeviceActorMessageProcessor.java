@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -77,15 +78,12 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.stopActorCommandUUID = null;
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
         try {
-            for (DevicePublishMsg persistedMessage : persistedMessages) {
-                deliverPersistedMsg(persistedMessage);
-            }
+            persistedMessages.forEach(this::deliverPersistedMsg);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId, sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId,
+                    sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
-            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                    sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to process persisted messages")));
+            disconnect("Failed to process persisted messages");
         }
     }
 
@@ -107,7 +105,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             default:
                 break;
         }
-
     }
 
     public void processDeviceDisconnect(TbActorCtx actorCtx) {
@@ -123,35 +120,46 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             return;
         }
-        if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
-            // TODO: think if it's OK
-            long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
-            log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
-                    clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
-            List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
-            try {
-                for (DevicePublishMsg persistedMessage : persistedMessages) {
-                    deliverPersistedMsg(persistedMessage);
-                }
-            } catch (Exception e) {
-                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                        sessionCtx.getSessionId(),
-                        new DisconnectReason(
-                                DisconnectReasonType.ON_ERROR, "Failed to process missed persisted messages")));
-            }
-        }
+
+        checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(publishMsg);
         processedAnyMsg = true;
+
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
             PublishMsg pubMsg = getPublishMsg(publishMsg, false);
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
-            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                    sessionCtx.getSessionId(),
-                    new DisconnectReason(
-                            DisconnectReasonType.ON_ERROR, "Failed to send PUBLISH msg")));
+            log.warn("[{}] Failed to send PUBLISH msg", clientId, e);
+            disconnect("Failed to send PUBLISH msg");
         }
+    }
+
+    private void checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(DevicePublishMsg publishMsg) {
+        if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
+            long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
+            log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
+                    clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+
+            List<DevicePublishMsg> persistedMessages = findMissedPersistedMsgs(publishMsg, nextPersistedSerialNumber);
+            try {
+                persistedMessages.forEach(this::deliverPersistedMsg);
+            } catch (Exception e) {
+                log.warn("[{}] Failed to process missed persisted messages", clientId, e);
+                disconnect("Failed to process missed persisted messages");
+            }
+        }
+    }
+
+    private List<DevicePublishMsg> findMissedPersistedMsgs(DevicePublishMsg publishMsg, long nextPersistedSerialNumber) {
+        return deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+    }
+
+    private void disconnect(String message) {
+        clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                sessionCtx.getSessionId(),
+                new DisconnectReason(
+                        DisconnectReasonType.ON_ERROR, message)));
     }
 
     private PublishMsg getPublishMsg(DevicePublishMsg publishMsg, boolean isDup) {
@@ -192,7 +200,12 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {
-        deviceMsgService.tryRemovePersistedMessage(clientId, msg.getPacketId());
+        ListenableFuture<Void> resultFuture = deviceMsgService.tryRemovePersistedMessage(clientId, msg.getPacketId());
+        DonAsynchron.withCallback(
+                resultFuture,
+                unused -> log.debug("[{}] Removed persisted msg {} from the DB", clientId, msg.getPacketId()),
+                throwable -> log.warn("[{}] Failed to remove persisted msg {} from the DB", clientId, msg.getPacketId(), throwable)
+        );
     }
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {
