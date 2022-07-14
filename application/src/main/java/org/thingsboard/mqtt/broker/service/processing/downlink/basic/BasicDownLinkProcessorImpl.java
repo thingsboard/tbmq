@@ -51,13 +51,18 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
         } catch (Exception e) {
-            log.debug("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
-            clientMqttActorManager.disconnect(clientId,
-                    new DisconnectMsg(
-                            clientSessionCtx.getSessionId(),
-                            new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to deliver PUBLISH msg")));
+            disconnect(clientId, clientSessionCtx);
         }
+    }
+
+    private void disconnect(String clientId, ClientSessionCtx clientSessionCtx) {
+        clientMqttActorManager.disconnect(
+                clientId,
+                new DisconnectMsg(
+                        clientSessionCtx.getSessionId(),
+                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to deliver PUBLISH msg")));
     }
 
     private PublishMsg getPublishMsg(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto msg) {
