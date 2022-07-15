@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
@@ -31,19 +32,29 @@ import static org.mockito.Mockito.verify;
 class MqttPubAckHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
+    RetransmissionService retransmissionService;
     MqttPubAckHandler mqttPubAckHandler;
 
     @BeforeEach
     void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
-        mqttPubAckHandler = spy(new MqttPubAckHandler(msgPersistenceManager));
+        retransmissionService = mock(RetransmissionService.class);
+        mqttPubAckHandler = spy(new MqttPubAckHandler(msgPersistenceManager, retransmissionService));
+    }
+
+    @Test
+    void testProcessPersistent() {
+        ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
+        ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
+        mqttPubAckHandler.process(ctx, 1);
+        verify(msgPersistenceManager, times(1)).processPubAck(ctx, 1);
     }
 
     @Test
     void testProcess() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
+        ctx.setSessionInfo(SessionInfo.builder().persistent(false).build());
         mqttPubAckHandler.process(ctx, 1);
-        verify(msgPersistenceManager, times(1)).processPubAck(1, ctx);
+        verify(retransmissionService, times(1)).onPubAckReceived(ctx, 1);
     }
 }

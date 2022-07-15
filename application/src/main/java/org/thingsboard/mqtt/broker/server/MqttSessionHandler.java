@@ -188,7 +188,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         if (clientId == null) {
             log.debug("[{}] Session wasn't initialized yet, closing channel. Reason - {}.", sessionId, reason);
             try {
-                clientSessionCtx.getChannel().close();
+                clientSessionCtx.closeChannel();
             } catch (Exception e) {
                 log.debug("[{}] Failed to close channel. Reason - {}.", sessionId, e.getMessage());
             }

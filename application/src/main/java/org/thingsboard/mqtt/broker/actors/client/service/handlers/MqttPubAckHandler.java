@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
@@ -28,11 +29,14 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 public class MqttPubAckHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
+    private final RetransmissionService retransmissionService;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
         log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubAck(messageId, ctx);
+            msgPersistenceManager.processPubAck(ctx, messageId);
+        } else {
+            retransmissionService.onPubAckReceived(ctx, messageId);
         }
     }
 }

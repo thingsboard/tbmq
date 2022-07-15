@@ -70,7 +70,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     void closeChannel(ClientSessionCtx sessionCtx) {
         try {
-            sessionCtx.getChannel().close();
+            sessionCtx.closeChannel();
         } catch (Exception e) {
             log.debug("[{}][{}] Failed to close channel. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
         }

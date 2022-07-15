@@ -88,7 +88,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     void sendConnectionRefusedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
         MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false);
         sessionCtx.getChannel().writeAndFlush(msg);
-        sessionCtx.getChannel().close();
+        sessionCtx.closeChannel();
     }
 
     private void disconnectCurrentSession(ClientActorState state, ClientSessionCtx sessionCtx) {

@@ -159,7 +159,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPubAck(int packetId, ClientSessionCtx clientSessionCtx) {
+    public void processPubAck(ClientSessionCtx clientSessionCtx, int packetId) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
@@ -170,7 +170,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPubRec(int packetId, ClientSessionCtx clientSessionCtx) {
+    public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {
@@ -181,7 +181,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void processPubComp(int packetId, ClientSessionCtx clientSessionCtx) {
+    public void processPubComp(ClientSessionCtx clientSessionCtx, int packetId) {
         ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
         String clientId = clientInfo.getClientId();
         if (clientInfo.getType() == APPLICATION) {

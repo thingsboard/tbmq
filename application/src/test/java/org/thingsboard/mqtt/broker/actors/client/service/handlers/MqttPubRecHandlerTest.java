@@ -15,14 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -32,6 +34,7 @@ import static org.mockito.Mockito.when;
 class MqttPubRecHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
+    RetransmissionService retransmissionService;
     MqttMessageGenerator mqttMessageGenerator;
     MqttPubRecHandler mqttPubRecHandler;
     ClientSessionCtx ctx;
@@ -39,8 +42,9 @@ class MqttPubRecHandlerTest {
     @BeforeEach
     void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
+        retransmissionService = mock(RetransmissionService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
-        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, mqttMessageGenerator));
+        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, retransmissionService, mqttMessageGenerator));
 
         ctx = mock(ClientSessionCtx.class);
     }
@@ -49,17 +53,16 @@ class MqttPubRecHandlerTest {
     void testProcessPersistent() {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(true));
         mqttPubRecHandler.process(ctx, 1);
-        verify(msgPersistenceManager, times(1)).processPubRec(1, ctx);
+        verify(msgPersistenceManager, times(1)).processPubRec(eq(ctx), eq(1));
     }
 
     @Test
     void testProcessNonPersistent() {
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(false));
 
         mqttPubRecHandler.process(ctx, 1);
-        verify(mqttMessageGenerator, times(1)).createPubRelMsg(1);
+        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1));
+        verify(retransmissionService, times(1)).onPubRecReceived(eq(ctx), any());
     }
 
     private SessionInfo getSessionInfo(boolean persistent) {

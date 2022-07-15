@@ -27,11 +27,11 @@ import java.util.List;
 public interface MsgPersistenceManager {
     void processPublish(PublishMsgProto publishMsgProto, List<Subscription> persistentSubscriptions, PublishMsgCallback callback);
 
-    void processPubAck(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubAck(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void processPubRec(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubRec(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void processPubComp(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubComp(ClientSessionCtx clientSessionCtx, int packetId);
 
     void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
 

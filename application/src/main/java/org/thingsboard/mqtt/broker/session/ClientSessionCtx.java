@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
@@ -23,10 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 public class ClientSessionCtx implements SessionContext {
@@ -57,6 +61,8 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
 
+    @Getter
+    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
 
     public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMsgs) {
         this.sessionId = sessionId;
@@ -71,5 +77,14 @@ public class ClientSessionCtx implements SessionContext {
     public String getClientId() {
         return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
                 sessionInfo.getClientInfo().getClientId() : null;
+    }
+
+    public void closeChannel() {
+        log.debug("[{}] Closing channel...", getClientId());
+        ChannelFuture channelFuture = this.channel.close();
+        channelFuture.addListener(future -> {
+            pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+            pendingPublishes.clear();
+        });
     }
 }
