@@ -64,13 +64,14 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         }
     }
 
-    public void startPublishRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, ChannelFuture channelFuture) {
+    public void sendPublishWithRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
         log.trace("[{}][{}] Executing startPublishRetransmission", sessionCtx.getClientId(), mqttPubMsg);
         ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = sessionCtx.getPendingPublishes();
 
         MqttPendingPublish pendingPublish = newMqttPendingPublish(sessionCtx, mqttPubMsg);
         pendingPublishes.put(pendingPublish.getPacketId(), pendingPublish);
 
+        ChannelFuture channelFuture = sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
         channelFuture.addListener(result -> {
             pendingPublish.setSent(true);
             if (result.cause() != null) {

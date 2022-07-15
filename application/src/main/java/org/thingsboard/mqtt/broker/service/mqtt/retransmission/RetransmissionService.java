@@ -15,14 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retransmission;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface RetransmissionService {
 
-    void startPublishRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, ChannelFuture channelFuture);
+    void sendPublishWithRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 
     void onPubAckReceived(ClientSessionCtx ctx, int messageId);
 

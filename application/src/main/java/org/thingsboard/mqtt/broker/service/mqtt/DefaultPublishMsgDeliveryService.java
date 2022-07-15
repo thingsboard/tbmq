@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +47,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         long startTime = System.nanoTime();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         try {
-            ChannelFuture channelFuture = sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
-            retransmissionService.startPublishRetransmission(sessionCtx, mqttPubMsg, channelFuture);
+            retransmissionService.sendPublishWithRetransmission(sessionCtx, mqttPubMsg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());

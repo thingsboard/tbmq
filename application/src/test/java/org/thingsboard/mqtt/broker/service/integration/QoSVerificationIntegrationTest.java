@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
@@ -40,6 +41,10 @@ import static org.junit.Assert.assertThat;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = QoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
+@TestPropertySource(properties = {
+        "mqtt.retransmission.initial-delay=1",
+        "mqtt.retransmission.period=1"
+})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class QoSVerificationIntegrationTest extends AbstractPubSubIntegrationTest {
