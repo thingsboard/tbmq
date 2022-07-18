@@ -54,21 +54,33 @@ public class QoSVerificationIntegrationTest extends AbstractPubSubIntegrationTes
 
     @Test
     public void qoS1DeliveryValidationTest() throws Throwable {
-        process(QOS_1);
+        process(QOS_1, true);
     }
 
     @Test
     public void qoS2DeliveryValidationTest() throws Throwable {
-        process(QOS_2);
+        process(QOS_2, true);
     }
 
-    private void process(int qos) throws MqttException, InterruptedException {
+    @Test
+    public void qoS1PersistentDeliveryValidationTest() throws Throwable {
+        process(QOS_1, false);
+    }
+
+    @Test
+    public void qoS2PersistentDeliveryValidationTest() throws Throwable {
+        process(QOS_2, false);
+    }
+
+    private void process(int qos, boolean subscriberCleanSession) throws MqttException, InterruptedException {
         AtomicInteger counter = new AtomicInteger(0);
         CountDownLatch receivedResponses = new CountDownLatch(2);
 
         MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
         subClient.setManualAcks(true);
-        subClient.connect();
+        MqttConnectOptions subConnectOptions = new MqttConnectOptions();
+        subConnectOptions.setCleanSession(subscriberCleanSession);
+        subClient.connect(subConnectOptions);
         subClient.subscribe("test", qos, (topic, message) -> {
             log.error("[{}] Received msg with id: {}, isDup: {}", topic, message.getId(), message.isDuplicate());
 

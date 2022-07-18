@@ -104,6 +104,18 @@ public class RetransmissionServiceImpl implements RetransmissionService {
                 retransmissionPeriod);
     }
 
+    private MqttPendingPublish newMqttPendingPublish(ClientSessionCtx sessionCtx,
+                                                     MqttMessage mqttPubRelMsg) {
+        return new MqttPendingPublish(
+                sessionCtx,
+                ((MqttMessageIdVariableHeader) mqttPubRelMsg.variableHeader()).messageId(),
+                null,
+                mqttPubRelMsg.fixedHeader().qosLevel(),
+                null,
+                retransmissionInitDelay,
+                retransmissionPeriod);
+    }
+
     @Override
     public void onPubAckReceived(ClientSessionCtx ctx, int messageId) {
         log.trace("[{}][{}] Executing onPubAckReceived", ctx.getClientId(), messageId);
@@ -121,10 +133,12 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         log.trace("[{}][{}] Executing onPubRecReceived", ctx.getClientId(), pubRelMsg);
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(((MqttMessageIdVariableHeader) pubRelMsg.variableHeader()).messageId());
         if (pendingPublish == null) {
-            return;
+            log.debug("[{}] Sending persisted PUBREL packet {}", ctx.getClientId(), pubRelMsg);
+            pendingPublish = newMqttPendingPublish(ctx, pubRelMsg);
+            ctx.getPendingPublishes().put(pendingPublish.getPacketId(), pendingPublish);
+        } else {
+            pendingPublish.onPubAckReceived();
         }
-        pendingPublish.onPubAckReceived();
-
         ctx.getChannel().writeAndFlush(pubRelMsg);
 
         pendingPublish.setPubRelMessage(pubRelMsg);
@@ -138,7 +152,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         if (pendingPublish == null) {
             return;
         }
-        pendingPublish.getPayload().release();
+        if (pendingPublish.getPayload() != null) {
+            pendingPublish.getPayload().release();
+        }
         ctx.getPendingPublishes().remove(messageId);
         pendingPublish.onPubCompReceived();
     }

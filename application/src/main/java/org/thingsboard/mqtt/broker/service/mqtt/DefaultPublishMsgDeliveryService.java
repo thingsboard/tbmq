@@ -62,7 +62,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
         try {
-            sessionCtx.getChannel().writeAndFlush(mqttPubRelMsg);
+            retransmissionService.onPubRecReceived(sessionCtx, mqttPubRelMsg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());

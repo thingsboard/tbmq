@@ -34,7 +34,6 @@ public class MqttPendingPublish {
     private final ClientSessionCtx sessionCtx;
     private final int packetId;
     private final ByteBuf payload;
-    private final MqttPublishMessage message;
     private final MqttQoS qos;
     private final int retransmissionInitDelay;
     private final int retransmissionPeriod;
@@ -51,7 +50,6 @@ public class MqttPendingPublish {
         this.packetId = packetId;
         this.payload = payload;
         this.qos = qos;
-        this.message = message;
         this.retransmissionInitDelay = retransmissionInitDelay;
         this.retransmissionPeriod = retransmissionPeriod;
 

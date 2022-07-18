@@ -48,6 +48,7 @@ class MqttPubCompHandlerTest {
         ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubComp(ctx, 1);
+        verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);
     }
 
     @Test

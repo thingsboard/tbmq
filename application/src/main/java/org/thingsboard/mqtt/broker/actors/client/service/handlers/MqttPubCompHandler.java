@@ -35,8 +35,7 @@ public class MqttPubCompHandler {
         log.trace("[{}][{}] Received PUBCOMP msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubComp(ctx, messageId);
-        } else {
-            retransmissionService.onPubCompReceived(ctx, messageId);
         }
+        retransmissionService.onPubCompReceived(ctx, messageId);
     }
 }

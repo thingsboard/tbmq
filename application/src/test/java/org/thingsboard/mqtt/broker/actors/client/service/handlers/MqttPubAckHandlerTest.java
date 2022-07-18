@@ -48,6 +48,7 @@ class MqttPubAckHandlerTest {
         ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
         mqttPubAckHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubAck(ctx, 1);
+        verify(retransmissionService, times(1)).onPubAckReceived(ctx, 1);
     }
 
     @Test
