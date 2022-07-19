@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.StopActorCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;

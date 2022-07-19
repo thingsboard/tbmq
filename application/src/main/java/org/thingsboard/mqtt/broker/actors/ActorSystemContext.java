@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.service.ActorProcessingMetricService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
