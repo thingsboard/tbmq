@@ -103,8 +103,8 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPublishMsg(buildPubMsg(), 100))));
         when(applicationPackProcessingCtx.getPubRelPendingMsgMap())
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPubRelMsg(1, 100))));
-        when(applicationPackProcessingCtx.getNewPubRelPackets())
-                .thenReturn(Set.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300)));
+        when(applicationPackProcessingCtx.getPubRelMsgCtx())
+                .thenReturn(new ApplicationPubRelMsgCtx(Set.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300))));
 
         applicationPersistedMsgCtxService.saveContext(CLIENT_ID, applicationPackProcessingCtx);
 

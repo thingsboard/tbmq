@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationProcessingDecision;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPubRelMsgCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedMsg;
@@ -62,7 +63,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -233,12 +233,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         // TODO: make consistent with logic for DEVICES
         clientSessionCtx.getMsgIdSeq().updateMsgIdSequence(persistedMsgCtx.getLastPacketId());
 
-        Set<PersistedPubRelMsg> pendingPubRelMessages = persistedCtxToPendingPubRelMsgs(persistedMsgCtx);
+        ApplicationPubRelMsgCtx applicationPubRelMsgCtx = persistedMsgCtxToPubRelMsgCtx(persistedMsgCtx);
 
         while (isClientConnected(sessionId, clientState)) {
             try {
                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
-                if (publishProtoMessages.isEmpty() && pendingPubRelMessages.isEmpty()) {
+                if (publishProtoMessages.isEmpty() && applicationPubRelMsgCtx.nothingToDeliver()) {
                     continue;
                 }
 
@@ -246,7 +246,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
                 ApplicationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(clientId);
 
-                List<PersistedPubRelMsg> pubRelMessagesToDeliver = toSortedPubRelMessagesToDeliver(pendingPubRelMessages);
+                List<PersistedPubRelMsg> pubRelMessagesToDeliver = applicationPubRelMsgCtx.toSortedPubRelMessagesToDeliver();
                 List<PersistedPublishMsg> publishMessagesToDeliver = toSortedPublishMessagesToDeliver(
                         clientSessionCtx,
                         persistedMsgCtx,
@@ -256,9 +256,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 List<PersistedMsg> messagesToDeliver = collectMessagesToDeliver(pubRelMessagesToDeliver, publishMessagesToDeliver);
                 submitStrategy.init(messagesToDeliver);
 
-                pendingPubRelMessages = Sets.newConcurrentHashSet();
+                applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
                 while (isClientConnected(sessionId, clientState)) {
-                    ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(submitStrategy, pendingPubRelMessages, stats);
+                    ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
                     processingContextMap.put(clientId, ctx);
 
                     process(submitStrategy, clientSessionCtx, clientId);
@@ -312,12 +312,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         });
     }
 
-    private List<PersistedPubRelMsg> toSortedPubRelMessagesToDeliver(Set<PersistedPubRelMsg> pendingPubRelMessages) {
-        return pendingPubRelMessages.stream()
-                .sorted(Comparator.comparingLong(PersistedMsg::getPacketOffset))
-                .collect(Collectors.toList());
-    }
-
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
                                                         List<PersistedPublishMsg> publishMessagesToDeliver) {
         List<PersistedMsg> messagesToDeliver = new ArrayList<>();
@@ -326,10 +320,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return messagesToDeliver;
     }
 
-    private Set<PersistedPubRelMsg> persistedCtxToPendingPubRelMsgs(ApplicationPersistedMsgCtx persistedMsgCtx) {
-        return persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
-                .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
-                .collect(Collectors.toSet());
+    private ApplicationPubRelMsgCtx persistedMsgCtxToPubRelMsgCtx(ApplicationPersistedMsgCtx persistedMsgCtx) {
+        return new ApplicationPubRelMsgCtx(
+                persistedMsgCtx.getPubRelMsgIds().entrySet().stream()
+                        .map(entry -> new PersistedPubRelMsg(entry.getValue(), entry.getKey()))
+                        .collect(Collectors.toSet())
+        );
     }
 
     private List<PersistedPublishMsg> toSortedPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,

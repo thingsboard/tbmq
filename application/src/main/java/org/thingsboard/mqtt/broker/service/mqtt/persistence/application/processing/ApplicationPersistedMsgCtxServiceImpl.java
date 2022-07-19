@@ -83,7 +83,7 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
     private Stream<PersistedPubRelMsg> toPubRelMsgStream(ApplicationPackProcessingCtx processingContext) {
         return Streams.concat(
                 processingContext.getPubRelPendingMsgMap().values().stream(),
-                processingContext.getNewPubRelPackets().stream()
+                processingContext.getPubRelMsgCtx().getPubRelMessagesToDeliver().stream()
         );
     }
 

@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -36,14 +35,13 @@ public class ApplicationPackProcessingCtx {
     private final ApplicationProcessorStats stats;
     private final long processingStartTimeNanos;
     private final CountDownLatch processingTimeoutLatch;
-    // TODO: wrap in separate class
     @Getter
-    private final Set<PersistedPubRelMsg> newPubRelPackets;
+    private final ApplicationPubRelMsgCtx pubRelMsgCtx;
 
-    public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, Set<PersistedPubRelMsg> newPubRelPackets, ApplicationProcessorStats stats) {
+    public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, ApplicationPubRelMsgCtx pubRelMsgCtx, ApplicationProcessorStats stats) {
         this.processingStartTimeNanos = System.nanoTime();
         this.stats = stats;
-        this.newPubRelPackets = newPubRelPackets;
+        this.pubRelMsgCtx = pubRelMsgCtx;
         for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
@@ -75,7 +73,7 @@ public class ApplicationPackProcessingCtx {
         stats.logPubRecLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
         PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
         if (msg != null) {
-            newPubRelPackets.add(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
+            pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
             onPublishMsgSuccess(packetId);
         } else {
             log.debug("Couldn't find PUBLISH packet {} to process PUBREC msg.", packetId);
