@@ -257,6 +257,7 @@ spring:
     password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
+      maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}" # 10 minutes
 
 spring.lifecycle.timeout-per-shutdown-phase: "1m"
 
