@@ -20,7 +20,7 @@
     <option name="ALTERNATIVE_JRE_PATH" value="11" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
-      <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker" />
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:postgresql://localhost:5432/tb_mqtt" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication" />
     <module name="application" />
