@@ -15,24 +15,35 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest.IdComparator;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
-// TODO: 11.02.22 implement real tests
 public abstract class BaseMqttClientCredentialsControllerTest extends AbstractControllerTest {
+
+    private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
 
     @Before
     public void beforeTest() throws Exception {
@@ -42,56 +53,189 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
     @After
     public void afterTest() throws Exception {
         loginSysAdmin();
+
+        PageData<MqttClientCredentials> pageData = doGetTypedWithPageLink("/api/mqtt/client/credentials?",
+                new TypeReference<>() {
+                }, new PageLink(10_000));
+        List<MqttClientCredentials> loadedMqttClientCredentialsList = new ArrayList<>(pageData.getData());
+        for (MqttClientCredentials mqttClientCredentials : loadedMqttClientCredentialsList) {
+            doDelete("/api/mqtt/client/credentials/" + mqttClientCredentials.getId()).andExpect(status().isOk());
+        }
     }
 
     @Test
-    public void saveMqttClientCredentialsTest() throws Exception {
-        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(null);
-        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
+    public void saveBasicMqttClientCredentialsTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
 
-        MqttClientCredentials savedMqttClientCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+        saveMqttClientCredentialsAndAssertResult(mqttClientCredentials);
+    }
 
-        Assert.assertNotNull(savedMqttClientCredentials);
-        Assert.assertNotNull(savedMqttClientCredentials.getId());
-        Assert.assertTrue(savedMqttClientCredentials.getCreatedTime() > 0);
-        Assert.assertNotNull(savedMqttClientCredentials.getCredentialsId());
+    @Test
+    public void saveSslMqttClientCredentialsTest() throws Exception {
+        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn");
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
+
+        saveMqttClientCredentialsAndAssertResult(mqttClientCredentials);
+    }
+
+    private void saveMqttClientCredentialsAndAssertResult(MqttClientCredentials mqttClientCredentials) throws Exception {
+        MqttClientCredentials savedMqttCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+
+        Assert.assertNotNull(savedMqttCredentials);
+        Assert.assertNotNull(savedMqttCredentials.getId());
+        Assert.assertTrue(savedMqttCredentials.getCreatedTime() > 0);
+        Assert.assertNotNull(savedMqttCredentials.getCredentialsId());
+        Assert.assertEquals(ClientType.DEVICE, savedMqttCredentials.getClientType());
+
+        MqttClientCredentials foundMqttCredentials = doGet("/api/mqtt/client/credentials/" + savedMqttCredentials.getId().toString(), MqttClientCredentials.class);
+        Assert.assertEquals(foundMqttCredentials.getName(), savedMqttCredentials.getName());
+        Assert.assertEquals(foundMqttCredentials.getCredentialsId(), savedMqttCredentials.getCredentialsId());
+    }
+
+    @Test
+    public void saveMqttClientCredentialsWithNullNameTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials, null);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void saveMqttClientCredentialsWithNullCredentialsValueTest() throws Exception {
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, null);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
     @Test
     public void saveMqttClientCredentialsWithNullCredentialsTypeTest() throws Exception {
-        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(null);
-        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(null, basicMqttCredentials);
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(null, basicMqttCredentials);
 
         doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
     @Test
     public void saveMqttClientCredentialsWithInvalidAuthRulePatternsTest() throws Exception {
-        BasicMqttCredentials basicMqttCredentials = getBasicMqttCredentials(Collections.singletonList("not_closed"));
-        MqttClientCredentials mqttClientCredentials = getMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(Collections.singletonList("["));
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
 
         doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
     @Test
-    public void getMqttClientCredentialsTest() {
-        Assert.assertEquals(1, 1);
+    public void saveSslMqttClientCredentialsWithEmptyParentCertCnTest() throws Exception {
+        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
     @Test
-    public void deleteCredentialsTest() {
-        Assert.assertEquals(1, 1);
+    public void saveSslMqttClientCredentialsWithEmptyAuthorizationRulesMappingTest() throws Exception {
+        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Collections.emptyMap());
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
     }
 
-    private MqttClientCredentials getMqttClientCredentials(ClientCredentialsType mqttBasic, BasicMqttCredentials basicMqttCredentials) {
+    @Test
+    public void saveSslMqttClientCredentialsWithInvalidAuthorizationRulesMappingTest() throws Exception {
+        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Map.of("sigfox", List.of("[")));
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void saveSslMqttClientCredentialsWithInvalidCertificateMatcherRegexTest() throws Exception {
+        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Map.of("[", List.of("storegateway/.*")));
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
+
+        doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getMqttClientCredentialsTest() throws Exception {
+        List<ShortMqttClientCredentials> mqttClientCredentialsList = new ArrayList<>();
+        for (int i = 0; i < 178; i++) {
+            BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(
+                    "clientId" + i,
+                    "userName" + i,
+                    "pass" + i,
+                    null);
+            MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials, "name" + i);
+            MqttClientCredentials savedMqttCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+            mqttClientCredentialsList.add(MqttClientCredentialsUtil.toShortMqttClientCredentials(savedMqttCredentials));
+        }
+        List<ShortMqttClientCredentials> loadedMqttClientCredentialsList = new ArrayList<>();
+        PageLink pageLink = new PageLink(23);
+        PageData<ShortMqttClientCredentials> pageData;
+        do {
+            pageData = doGetTypedWithPageLink("/api/mqtt/client/credentials?",
+                    new TypeReference<>() {
+                    }, pageLink);
+
+            loadedMqttClientCredentialsList.addAll(pageData.getData());
+            if (pageData.hasNext()) {
+                pageLink = pageLink.nextPageLink();
+            }
+        } while (pageData.hasNext());
+
+        mqttClientCredentialsList.sort(idComparator);
+        loadedMqttClientCredentialsList.sort(idComparator);
+
+        Assert.assertEquals(mqttClientCredentialsList, loadedMqttClientCredentialsList);
+    }
+
+    @Test
+    public void deleteCredentialsTest() throws Exception {
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(null);
+        MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials);
+
+        MqttClientCredentials savedMqttClientCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+        Assert.assertNotNull(savedMqttClientCredentials);
+
+        doDelete("/api/mqtt/client/credentials/" + savedMqttClientCredentials.getId())
+                .andExpect(status().isOk());
+        doDelete("/api/mqtt/client/credentials/" + savedMqttClientCredentials.getId())
+                .andExpect(status().is5xxServerError());
+    }
+
+    private MqttClientCredentials newBasicMqttClientCredentials(ClientCredentialsType credentialsType, BasicMqttCredentials basicMqttCredentials) {
+        return newBasicMqttClientCredentials(credentialsType, basicMqttCredentials, "name");
+    }
+
+    private MqttClientCredentials newBasicMqttClientCredentials(ClientCredentialsType credentialsType, BasicMqttCredentials basicMqttCredentials, String name) {
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
-        mqttClientCredentials.setCredentialsType(mqttBasic);
+        mqttClientCredentials.setCredentialsType(credentialsType);
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
+        mqttClientCredentials.setName(name);
+        return mqttClientCredentials;
+    }
+
+    private MqttClientCredentials newSslMqttClientCredentials(SslMqttCredentials sslMqttCredentials) {
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.SSL);
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(sslMqttCredentials));
         mqttClientCredentials.setName("name");
         return mqttClientCredentials;
     }
 
-    private BasicMqttCredentials getBasicMqttCredentials(List<String> authorizationRulePatterns) {
-        return new BasicMqttCredentials("clientId", "username", "password", authorizationRulePatterns);
+    private BasicMqttCredentials newBasicMqttCredentials(List<String> authorizationRulePatterns) {
+        return newBasicMqttCredentials("clientId", "username", "password", authorizationRulePatterns);
+    }
+
+    private BasicMqttCredentials newBasicMqttCredentials(String clientId, String username, String password, List<String> authorizationRulePatterns) {
+        return new BasicMqttCredentials(clientId, username, password, authorizationRulePatterns);
+    }
+
+    private SslMqttCredentials newSslMqttCredentials(String parentCertCn) {
+        return newSslMqttCredentials(parentCertCn, Map.of("sigfox", List.of("storegateway/.*")));
+    }
+
+    private SslMqttCredentials newSslMqttCredentials(String parentCertCn, Map<String, List<String>> authorizationRulesMapping) {
+        return new SslMqttCredentials(parentCertCn, authorizationRulesMapping);
     }
 }

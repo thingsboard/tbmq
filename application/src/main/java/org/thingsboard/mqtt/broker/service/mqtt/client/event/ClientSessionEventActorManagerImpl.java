@@ -30,14 +30,13 @@ import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 @Slf4j
 @Service
 public class ClientSessionEventActorManagerImpl implements ClientSessionEventActorManager {
-    private ActorSystemContext actorSystemContext;
+    private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
     public ClientSessionEventActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
         this.actorSystemContext = actorSystemContext;
         this.actorSystem = actorSystem;
     }
-
 
     @Override
     public void sendSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg sessionClusterManagementMsg) {

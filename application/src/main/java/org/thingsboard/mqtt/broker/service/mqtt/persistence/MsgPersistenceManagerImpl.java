@@ -15,26 +15,25 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
@@ -42,30 +41,56 @@ import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
-    @Autowired
-    private GenericClientSessionCtxManager genericClientSessionCtxManager;
-
-    @Autowired
-    private ApplicationMsgQueuePublisher applicationMsgQueuePublisher;
-    @Autowired
-    private ApplicationPersistenceProcessor applicationPersistenceProcessor;
-
-    @Autowired
-    private DeviceMsgQueuePublisher deviceMsgQueuePublisher;
-    @Autowired
-    private DevicePersistenceProcessor devicePersistenceProcessor;
-    @Autowired
-    private ClientLogger clientLogger;
+    private final GenericClientSessionCtxManager genericClientSessionCtxManager;
+    private final ApplicationMsgQueuePublisher applicationMsgQueuePublisher;
+    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    private final DeviceMsgQueuePublisher deviceMsgQueuePublisher;
+    private final DevicePersistenceProcessor devicePersistenceProcessor;
+    private final ClientLogger clientLogger;
 
     // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
 
     @Override
-    public void processPublish(QueueProtos.PublishMsgProto publishMsgProto, Collection<Subscription> persistentSubscriptions, PublishMsgCallback callback) {
+    public void processPublish(PublishMsgProto publishMsgProto, List<Subscription> persistentSubscriptions, PublishMsgCallback callback) {
         List<Subscription> deviceSubscriptions = new ArrayList<>();
         List<Subscription> applicationSubscriptions = new ArrayList<>();
 
+        fillSubscriptions(persistentSubscriptions, deviceSubscriptions, applicationSubscriptions);
+
+        int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions);
+        PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
+
+        String senderClientId = ProtoConverter.getClientId(publishMsgProto);
+        clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
+
+        deviceSubscriptions.forEach(deviceSubscription ->
+                deviceMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(deviceSubscription),
+                        createReceiverPublishMsg(deviceSubscription, publishMsgProto),
+                        callbackWrapper));
+        applicationSubscriptions.forEach(applicationSubscription ->
+                applicationMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(applicationSubscription),
+                        createReceiverPublishMsg(applicationSubscription, publishMsgProto),
+                        callbackWrapper));
+
+        clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
+    }
+
+    private String getClientIdFromSubscription(Subscription subscription) {
+        return subscription.getSessionInfo().getClientInfo().getClientId();
+    }
+
+    private int getCallbackCount(List<Subscription> deviceSubscriptions, List<Subscription> applicationSubscriptions) {
+        return applicationSubscriptions.size() + deviceSubscriptions.size();
+    }
+
+    private void fillSubscriptions(List<Subscription> persistentSubscriptions,
+                                   List<Subscription> deviceSubscriptions,
+                                   List<Subscription> applicationSubscriptions) {
         for (Subscription msgSubscription : persistentSubscriptions) {
             ClientInfo clientInfo = msgSubscription.getSessionInfo().getClientInfo();
             ClientType clientType = clientInfo.getType();
@@ -77,22 +102,9 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 log.warn("[{}] Persistence for clientType {} is not supported.", clientInfo.getClientId(), clientType);
             }
         }
-        int callbackCount = applicationSubscriptions.size() + deviceSubscriptions.size();
-        PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
-        String senderClientId = ProtoConverter.getClientId(publishMsgProto);
-        clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
-        for (Subscription deviceSubscription : deviceSubscriptions) {
-            String deviceClientId = deviceSubscription.getSessionInfo().getClientInfo().getClientId();
-            deviceMsgQueuePublisher.sendMsg(deviceClientId, createReceiverPublishMsg(deviceSubscription, publishMsgProto), callbackWrapper);
-        }
-        for (Subscription applicationSubscription : applicationSubscriptions) {
-            String applicationClientId = applicationSubscription.getSessionInfo().getClientInfo().getClientId();
-            applicationMsgQueuePublisher.sendMsg(applicationClientId, createReceiverPublishMsg(applicationSubscription, publishMsgProto),callbackWrapper);
-        }
-        clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
-    private QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {
+    private PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, PublishMsgProto publishMsgProto) {
         int minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
         return publishMsgProto.toBuilder()
                 .setPacketId(0)
@@ -104,6 +116,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     public void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
+
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
@@ -165,11 +178,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.processPubRec(clientId, packetId);
         }
-    }
-
-    @Override
-    public void processPubRel(int packetId, ClientSessionCtx clientSessionCtx) {
-        genericClientSessionCtxManager.processPubRel(packetId, clientSessionCtx);
     }
 
     @Override

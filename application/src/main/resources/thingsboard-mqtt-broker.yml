@@ -15,6 +15,7 @@
 #
 
 server:
+  shutdown: "${SERVER_SHUTDOWN:graceful}" # graceful or immediate
   # Server bind address (has no effect if web-environment is disabled).
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # Server bind port (has no effect if web-environment is disabled).
@@ -44,6 +45,9 @@ listener:
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${TCP_NETTY_SO_KEEPALIVE:true}"
+      shutdown_quiet_period: "${TCP_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
+      shutdown_timeout: "${TCP_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
   ssl:
     enabled: "${LISTENER_SSL_ENABLED:false}"
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
@@ -66,11 +70,13 @@ listener:
       # Type of the trust store
       trust_store_type: "${SECURITY_MQTT_SSL_TRUST_STORE_TYPE:JKS}"
     netty:
-      # TODO: update default to DISABLED after testing stage
-      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:SIMPLE}"
+      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
       max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${SSL_NETTY_SO_KEEPALIVE:true}"
+      shutdown_quiet_period: "${SSL_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
+      shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
 
 queue:
   publish-msg:
@@ -223,8 +229,8 @@ actors:
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
     processing-metrics:
-      # TODO: disable by default for production
-      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:true}"
+      enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
+    disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
   persisted-device:
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"
@@ -251,6 +257,8 @@ spring:
     password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
+
+spring.lifecycle.timeout-per-shutdown-phase: "1m"
 
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "true"
 spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
@@ -319,6 +327,19 @@ mqtt:
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
 db:
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
+
+cache:
+  # caffeine only
+  type: "${CACHE_TYPE:caffeine}"
+  stats:
+    enabled: "${CACHE_STATS_ENABLED:true}"
+    intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
+
+caffeine:
+  specs:
+    packetIdAndSerialNumber:
+      timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
+      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
 
 stats:
   enabled: "${STATS_ENABLED:true}"

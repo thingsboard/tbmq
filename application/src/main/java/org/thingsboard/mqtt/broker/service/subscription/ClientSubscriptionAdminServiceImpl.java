@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
@@ -35,32 +37,44 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdminService {
-    private final ClientSessionCache sessionReader;
-    private final ClientSubscriptionCache subscriptionReader;
+    private final ClientSessionCache clientSessionCache;
+    private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientMqttActorManager clientMqttActorManager;
 
     @Override
     public void updateSubscriptions(String clientId, List<SubscriptionInfoDto> subscriptions) throws ThingsboardException {
-        ClientSession clientSession = sessionReader.getClientSession(clientId);
+        ClientSession clientSession = clientSessionCache.getClientSession(clientId);
         if (clientSession == null) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
-        Set<TopicSubscription> oldSubscriptions = subscriptionReader.getClientSubscriptions(clientId);
-        Set<TopicSubscription> newSubscriptions = subscriptions.stream()
-                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopic(), subscriptionInfoDto.getQos().value()))
-                .collect(Collectors.toSet());
+        Set<TopicSubscription> oldSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
+        Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
         log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
                 clientId, oldSubscriptions, newSubscriptions);
 
-        Set<String> unsubscribeTopics = CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions,
+        Set<String> unsubscribeTopics = prepareTopicsForUnsubscribe(newSubscriptions, oldSubscriptions);
+        clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
+
+        Set<TopicSubscription> subscribeTopicSubscriptions = prepareTopicsForSubscribe(newSubscriptions, oldSubscriptions);
+        clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(subscribeTopicSubscriptions));
+    }
+
+    private Set<TopicSubscription> prepareTopicsForSubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
+        return CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
+                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
+    }
+
+    private Set<String> prepareTopicsForUnsubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
+        return CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions,
                         Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos))
                 .stream()
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toSet());
-        clientMqttActorManager.unsubscribe(clientId, unsubscribeTopics);
+    }
 
-        Set<TopicSubscription> subscribeTopicSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
-                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
-        clientMqttActorManager.subscribe(clientId, subscribeTopicSubscriptions);
+    private Set<TopicSubscription> collectNewSubscriptions(List<SubscriptionInfoDto> subscriptions) {
+        return subscriptions.stream()
+                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopic(), subscriptionInfoDto.getQos().value()))
+                .collect(Collectors.toSet());
     }
 }

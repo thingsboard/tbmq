@@ -18,8 +18,10 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -45,15 +47,32 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             return;
         }
         try {
-            publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, clientSessionCtx.getMsgIdSeq().nextMsgId(),
-                    msg.getTopicName(), msg.getQos(), false, msg.getPayload().toByteArray());
+            PublishMsg publishMsg = getPublishMsg(clientSessionCtx, msg);
+            publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
         } catch (Exception e) {
-            log.debug("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error: ", e);
-            clientMqttActorManager.disconnect(clientId, clientSessionCtx.getSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
-                    "Failed to deliver PUBLISH msg"));
+            disconnect(clientId, clientSessionCtx);
         }
+    }
+
+    private void disconnect(String clientId, ClientSessionCtx clientSessionCtx) {
+        clientMqttActorManager.disconnect(
+                clientId,
+                new DisconnectMsg(
+                        clientSessionCtx.getSessionId(),
+                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to deliver PUBLISH msg")));
+    }
+
+    private PublishMsg getPublishMsg(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto msg) {
+        return PublishMsg.builder()
+                .packetId(clientSessionCtx.getMsgIdSeq().nextMsgId())
+                .topicName(msg.getTopicName())
+                .payload(msg.getPayload().toByteArray())
+                .qosLevel(msg.getQos())
+                .isDup(false)
+                .build();
     }
 
 }

@@ -15,26 +15,26 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-
-import java.util.Collection;
-import java.util.UUID;
 
 public interface ClientMqttActorManager {
-    void initSession(String clientId, String username, byte[] passwordBytes, ClientSessionCtx clientSessionCtx, boolean isClientIdGenerated);
+    void initSession(String clientId, boolean isClientIdGenerated, SessionInitMsg sessionInitMsg);
 
-    void disconnect(String clientId, UUID sessionId, DisconnectReason reason);
+    void disconnect(String clientId, DisconnectMsg disconnectMsg);
 
     void connect(String clientId, MqttConnectMsg connectMsg);
 
     void processMqttMsg(String clientId, QueueableMqttMsg mqttMsg);
 
-    void notifyConnectionAccepted(String clientId, UUID sessionId, boolean wasPrevSessionPersistent, PublishMsg lastWillMsg);
+    void notifyConnectionAccepted(String clientId, ConnectionAcceptedMsg connectionAcceptedMsg);
 
-    void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
+    void subscribe(String clientId, SubscribeCommandMsg subscribeCommandMsg);
 
-    void unsubscribe(String clientId, Collection<String> topics);
+    void unsubscribe(String clientId, UnsubscribeCommandMsg unsubscribeCommandMsg);
 }

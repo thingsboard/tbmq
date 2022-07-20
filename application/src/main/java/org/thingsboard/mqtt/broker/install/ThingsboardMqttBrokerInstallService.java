@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.install;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -28,19 +28,15 @@ import org.thingsboard.mqtt.broker.service.install.SystemDataLoaderService;
 @Service
 @Profile("install")
 @Slf4j
+@RequiredArgsConstructor
 public class ThingsboardMqttBrokerInstallService {
 
     @Value("${install.upgrade:false}")
     private Boolean isUpgrade;
 
-    @Autowired
-    private DatabaseSchemaService databaseSchemaService;
-
-    @Autowired
-    private ApplicationContext context;
-
-    @Autowired
-    private SystemDataLoaderService systemDataLoaderService;
+    private final DatabaseSchemaService databaseSchemaService;
+    private final ApplicationContext context;
+    private final SystemDataLoaderService systemDataLoaderService;
 
     public void performInstall() {
         try {

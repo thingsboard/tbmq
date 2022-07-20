@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Slf4j
 @Service
 public class DeviceActorManagerImpl implements DeviceActorManager {
-    private ActorSystemContext actorSystemContext;
+    private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
     public DeviceActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
@@ -48,7 +48,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     @Override
     public void notifyClientConnected(ClientSessionCtx clientSessionCtx) {
         String clientId = clientSessionCtx.getClientId();
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             deviceActorRef = actorSystem.createRootActor(ActorSystemLifecycle.PERSISTED_DEVICE_DISPATCHER_NAME,
                     new PersistedDeviceActorCreator(actorSystemContext, clientId));
@@ -59,7 +59,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
 
     @Override
     public void notifyClientDisconnected(String clientId) {
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for disconnect event.", clientId);
         } else {
@@ -69,7 +69,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
 
     @Override
     public void sendMsgToActor(String clientId, DevicePublishMsg devicePublishMsg) {
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.trace("[{}] No active actor for device.", clientId);
         } else {
@@ -79,7 +79,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
 
     @Override
     public void notifyPacketAcknowledged(String clientId, int packetId) {
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for packet acknowledge event, packetId - {}.", clientId, packetId);
         } else {
@@ -89,7 +89,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
 
     @Override
     public void notifyPacketReceived(String clientId, int packetId) {
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for packet received event, packetId - {}.", clientId, packetId);
         } else {
@@ -99,11 +99,15 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
 
     @Override
     public void notifyPacketCompleted(String clientId, int packetId) {
-        TbActorRef deviceActorRef = actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for packet completed event, packetId - {}.", clientId, packetId);
         } else {
             deviceActorRef.tell(new PacketCompletedEventMsg(packetId));
         }
+    }
+
+    private TbActorRef getActorByClientId(String clientId) {
+        return actorSystem.getActor(new TbTypeActorId(ActorType.PERSISTED_DEVICE, clientId));
     }
 }

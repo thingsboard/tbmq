@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -35,7 +36,6 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import javax.annotation.PostConstruct;
@@ -49,22 +49,16 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
-    @Autowired
-    private SubscriptionCache subscriptionCache;
-    @Autowired
-    private StatsManager statsManager;
-    @Autowired
-    private MsgPersistenceManager msgPersistenceManager;
-    @Autowired
-    private ClientSessionCache clientSessionCache;
-    @Autowired
-    private DownLinkProxy downLinkProxy;
-    @Autowired
-    private ClientLogger clientLogger;
-    @Autowired
-    private PublishMsgQueuePublisher publishMsgQueuePublisher;
+    private final SubscriptionService subscriptionService;
+    private final StatsManager statsManager;
+    private final MsgPersistenceManager msgPersistenceManager;
+    private final ClientSessionCache clientSessionCache;
+    private final DownLinkProxy downLinkProxy;
+    private final ClientLogger clientLogger;
+    private final PublishMsgQueuePublisher publishMsgQueuePublisher;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -87,8 +81,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
+
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters = subscriptionCache.getSubscriptions(publishMsgProto.getTopicName());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
+                subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
@@ -107,8 +104,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
 
         if (!persistentSubscriptions.isEmpty()) {
-            // TODO: convert Proto msg to PublishMsg
-            // TODO: process messages one by one (retrying to save message could lead to wrong order)
             long persistentMessagesProcessingStartTime = System.nanoTime();
             msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
             publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
@@ -120,7 +115,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
         long startTime = System.nanoTime();
-        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions = filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
+        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
+                filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
+
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
                     String clientId = clientSubscription.getValue().getClientId();
@@ -138,12 +135,21 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptions;
     }
 
-    private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+
         return clientSubscriptionWithTopicFilters.stream()
-                .collect(Collectors.toMap(clientSubscriptionWithTopicFilter -> clientSubscriptionWithTopicFilter.getValue().getClientId(),
+                .collect(Collectors.toMap(
+                        clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
                         Function.identity(),
-                        (first, second) -> first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second))
+                        this::getSubscriptionWithHigherQos)
+                )
                 .values();
+    }
+
+    private ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
+                                                                                  ValueWithTopicFilter<ClientSubscription> second) {
+        return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
     }
 
     private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {

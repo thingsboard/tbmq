@@ -73,6 +73,10 @@
         </dependency>
         <dependency>
             <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
             <artifactId>queue</artifactId>
         </dependency>
         <dependency>

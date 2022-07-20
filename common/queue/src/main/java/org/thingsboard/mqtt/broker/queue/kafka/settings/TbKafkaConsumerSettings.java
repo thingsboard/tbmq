@@ -19,10 +19,9 @@ import lombok.Setter;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Properties;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Setter
 @Component
@@ -59,7 +58,7 @@ public class TbKafkaConsumerSettings {
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
         props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
         if (customProperties != null) {
-            getConfigs(customProperties).forEach(props::put);
+            QueueUtil.getConfigs(customProperties).forEach(props::put);
         }
         return props;
     }

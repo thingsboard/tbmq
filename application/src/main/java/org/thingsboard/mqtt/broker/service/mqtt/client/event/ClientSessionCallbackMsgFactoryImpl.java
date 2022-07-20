@@ -16,14 +16,13 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.messages.CallbackMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -32,9 +31,9 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 import java.util.UUID;
 
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_ID_HEADER;
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.REQUEST_TIME;
-import static org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConst.RESPONSE_TOPIC_HEADER;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_ID_HEADER;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.constant.BrokerConstants.RESPONSE_TOPIC_HEADER;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToLong;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
@@ -47,20 +46,24 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
         SessionInfo sessionInfo;
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
             case CONNECTION_REQUEST:
-                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
+                sessionInfo = getSessionInfo(eventProto);
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
             case DISCONNECTED:
-                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
+                sessionInfo = getSessionInfo(eventProto);
                 return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId());
             case TRY_CLEAR_SESSION_REQUEST:
-                sessionInfo = ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
+                sessionInfo = getSessionInfo(eventProto);
                 return new ClearSessionMsg(callback, sessionInfo.getSessionId());
             case REMOVE_APPLICATION_TOPIC_REQUEST:
                 return new RemoveApplicationTopicRequestMsg(callback);
             default:
                 throw new RuntimeException("Unexpected ClientSessionEventType - " + ClientSessionEventType.class.getSimpleName());
         }
+    }
+
+    private SessionInfo getSessionInfo(QueueProtos.ClientSessionEventProto eventProto) {
+        return ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
     }
 
     private ConnectionRequestInfo getConnectionRequestInfo(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {

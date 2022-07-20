@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.client.application;
 
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 
 import java.util.Optional;
@@ -26,4 +27,6 @@ public interface ApplicationSessionCtxService {
     void deleteApplicationSessionCtx(String clientId);
 
     Optional<ApplicationSessionCtx> findApplicationSessionCtx(String clientId);
+
+    ListenableFuture<ApplicationSessionCtx> findApplicationSessionCtxAsync(String clientId);
 }

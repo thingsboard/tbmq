@@ -16,8 +16,8 @@
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -30,20 +30,15 @@ import javax.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
     private final MsgDispatcherService msgDispatcherService;
     private final StatsManager statsManager;
-
-    public DefaultLastWillService(MsgDispatcherService msgDispatcherService, StatsManager statsManager) {
-        this.msgDispatcherService = msgDispatcherService;
-        this.statsManager = statsManager;
-    }
 
     @PostConstruct
     public void init() {
@@ -52,7 +47,10 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        log.trace("[{}][{}] Saving last will msg, topic - [{}]", sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
+        if (log.isTraceEnabled())
+            log.trace("[{}][{}] Saving last will msg, topic - [{}]",
+                    sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
+
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientInfo().getClientId(), sessionId);
@@ -62,7 +60,7 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void removeLastWill(UUID sessionId, boolean sendMsg) {
+    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg) {
         MsgWithSessionInfo lastWillMsg = lastWillMessages.get(sessionId);
         if (lastWillMsg == null) {
             log.trace("[{}] No last will msg.", sessionId);
@@ -72,20 +70,24 @@ public class DefaultLastWillService implements LastWillService {
         log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
-            msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
-                    new TbQueueCallback() {
-                        @Override
-                        public void onSuccess(TbQueueMsgMetadata metadata) {
-                            log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            log.warn("[{}] Failed to acknowledge last will msg. Reason - {}.", sessionId, t.getMessage());
-                            log.trace("Detailed error:", t);
-                        }
-                    });
+            persistPublishMsg(lastWillMsg, sessionId);
         }
+    }
+
+    void persistPublishMsg(MsgWithSessionInfo lastWillMsg, UUID sessionId) {
+        msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
+                new TbQueueCallback() {
+                    @Override
+                    public void onSuccess(TbQueueMsgMetadata metadata) {
+                        log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        log.warn("[{}] Failed to acknowledge last will msg. Reason - {}.", sessionId, t.getMessage());
+                        log.trace("Detailed error:", t);
+                    }
+                });
     }
 
     @AllArgsConstructor

@@ -31,13 +31,13 @@ spec:
         path: logback.xml
   containers:
   - name: tb-db-setup
-    imagePullPolicy: Always
-    image: vzikratyi/tb-mqtt-broker:1.0.0-SNAPSHOT
+    imagePullPolicy: Never
+    image: thingsboard/tb-mqtt-broker:1.0.0-SNAPSHOT
     envFrom:
-    - configMapRef:
-        name: tb-broker-db-config
+      - configMapRef:
+          name: tb-broker-db-config
     volumeMounts:
       - mountPath: /config
         name: tb-broker-config
-    command: ['sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;']
+    command: [ 'sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;' ]
   restartPolicy: Never

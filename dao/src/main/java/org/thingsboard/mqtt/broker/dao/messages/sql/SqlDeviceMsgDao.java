@@ -25,8 +25,8 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.messages.DeletePacketInfo;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgDao;
-import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
 import org.thingsboard.mqtt.broker.dao.messages.LowLevelDeviceMsgRepository;
+import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlBlockingQueuePool;
@@ -109,7 +109,6 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     private void initDeletePacketQueue() {
         Function<DeletePacketInfo, Integer> deleteQueueIndexHashFunction = deletePacketInfo -> deletePacketInfo.getClientId().hashCode();
-        // TODO: made this params dynamic (increase batch size for higher load)
         TbSqlQueueParams deletePacketQueueParams = TbSqlQueueParams.builder()
                 .queueName("DeletePacketQueue")
                 .batchSize(deletePacketQueueConfiguration.getBatchSize())

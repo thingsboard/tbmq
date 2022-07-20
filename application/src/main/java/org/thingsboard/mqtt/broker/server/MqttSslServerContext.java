@@ -16,16 +16,16 @@
 package org.thingsboard.mqtt.broker.server;
 
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 @Getter
+@RequiredArgsConstructor
 public class MqttSslServerContext {
 
-    @Autowired
-    private MqttSslHandlerProvider sslHandlerProvider;
+    private final MqttSslHandlerProvider sslHandlerProvider;
 
     @Value("${listener.ssl.netty.max_payload_size}")
     private Integer maxPayloadSize;

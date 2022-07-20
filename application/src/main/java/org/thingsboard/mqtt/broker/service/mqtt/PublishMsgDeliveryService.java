@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface PublishMsgDeliveryService {
-    // TODO: pass PublishMsg instead of all the fields
-    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, int packetId, String topic, int qos, boolean isDup, byte[] payload);
+
+    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg);
 
     void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId);
 }

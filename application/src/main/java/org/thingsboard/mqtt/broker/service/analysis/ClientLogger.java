@@ -16,5 +16,5 @@
 package org.thingsboard.mqtt.broker.service.analysis;
 
 public interface ClientLogger {
-    void logEvent(String clientId, Class eventLocation, String eventDescription);
+    void logEvent(String clientId, Class<?> eventLocation, String eventDescription);
 }

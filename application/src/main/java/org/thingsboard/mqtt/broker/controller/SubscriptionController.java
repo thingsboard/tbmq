@@ -15,33 +15,31 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionMaintenanceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Set;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/subscription")
 public class SubscriptionController extends BaseController {
 
-    @Autowired
-    private SubscriptionMaintenanceService subscriptionMaintenanceService;
-    @Autowired
-    private ClientSubscriptionCache clientSubscriptionCache;
-    @Autowired
-    private ClientSubscriptionAdminService subscriptionAdminService;
+    private final SubscriptionService subscriptionService;
+    private final ClientSubscriptionCache clientSubscriptionCache;
+    private final ClientSubscriptionAdminService subscriptionAdminService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
@@ -62,16 +60,16 @@ public class SubscriptionController extends BaseController {
     @ResponseBody
     public void clearEmptySubscriptionNodes() throws ThingsboardException {
         try {
-            subscriptionMaintenanceService.clearEmptyTopicNodes();
+            subscriptionService.clearEmptyTopicNodes();
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
+    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.GET)
     @ResponseBody
-    public Set<TopicSubscription> getClientSubscriptions(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public Set<TopicSubscription> getClientSubscriptions(@RequestParam String clientId) throws ThingsboardException {
         try {
             return clientSubscriptionCache.getClientSubscriptions(clientId);
         } catch (Exception e) {

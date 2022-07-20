@@ -23,8 +23,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "mqtt.persistent-session.device.persisted-messages.sql.delete-packet-queue")
 @Data
 public class DeletePacketQueueConfiguration {
-    private int batchThreads = 1;
-    private int batchSize = 100;
-    private int maxDelay = 50;
-
+    private int batchThreads;
+    private int batchSize;
+    private int maxDelay;
 }

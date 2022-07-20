@@ -15,26 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
-import lombok.Data;
-
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
 import java.util.UUID;
 
-@Data
-@MappedSuperclass
-public abstract class BaseEntity<D> implements ToData<D> {
-    @Id
-    @Column(name = ModelConstants.ID_PROPERTY, columnDefinition = "uuid")
-    protected UUID id;
+public interface BaseEntity<D> extends ToData<D> {
 
-    @Column(name = ModelConstants.CREATED_TIME_PROPERTY)
-    protected long createdTime;
+    UUID getId();
 
-    public void setCreatedTime(long createdTime) {
-        if (createdTime > 0) {
-            this.createdTime = createdTime;
-        }
-    }
+    void setId(UUID id);
+
+    long getCreatedTime();
+
+    void setCreatedTime(long createdTime);
+
 }

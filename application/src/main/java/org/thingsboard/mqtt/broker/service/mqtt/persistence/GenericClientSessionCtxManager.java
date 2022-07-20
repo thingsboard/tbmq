@@ -20,8 +20,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 public interface GenericClientSessionCtxManager {
     void resendPersistedPubRelMessages(ClientSessionCtx clientSessionCtx);
 
-    void processPubRel(int packetId, ClientSessionCtx ctx);
-
     void saveAwaitingQoS2Packets(ClientSessionCtx ctx);
 
     void clearAwaitingQoS2Packets(String clientId);

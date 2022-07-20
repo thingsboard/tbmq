@@ -55,6 +55,10 @@
             <groupId>org.thingsboard.mqtt-broker.common</groupId>
             <artifactId>data</artifactId>
         </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

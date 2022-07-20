@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.dao.AbstractDao;
+import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
@@ -31,10 +31,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
-public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCredentialsEntity, MqttClientCredentials> implements MqttClientCredentialsDao {
+@RequiredArgsConstructor
+public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttClientCredentialsEntity, MqttClientCredentials>
+        implements MqttClientCredentialsDao {
 
-    @Autowired
-    private MqttClientCredentialsRepository mqttClientCredentialsRepository;
+    private final MqttClientCredentialsRepository mqttClientCredentialsRepository;
 
     @Override
     protected Class<MqttClientCredentialsEntity> getEntityClass() {

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
@@ -38,7 +39,7 @@ import java.util.List;
 @DaoSqlTest
 public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
-    private IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
+    private final IdComparator<ShortMqttClientCredentials> idComparator = new IdComparator<>();
 
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
@@ -164,13 +165,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
                             "clientId" + i,
                             "username" + i,
                             "password" + i));
-            ShortMqttClientCredentials shortMqttClientCredentials = new ShortMqttClientCredentials(
-                    savedCredentials.getId(),
-                    savedCredentials.getName(),
-                    savedCredentials.getClientType(),
-                    savedCredentials.getCredentialsType(),
-                    savedCredentials.getCreatedTime());
-            mqttClientCredentialsList.add(shortMqttClientCredentials);
+            mqttClientCredentialsList.add(MqttClientCredentialsUtil.toShortMqttClientCredentials(savedCredentials));
         }
 
         List<ShortMqttClientCredentials> loadedMqttClientCredentialsList = new ArrayList<>();
@@ -184,8 +179,8 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
             }
         } while (pageData.hasNext());
 
-        Collections.sort(mqttClientCredentialsList, idComparator);
-        Collections.sort(loadedMqttClientCredentialsList, idComparator);
+        mqttClientCredentialsList.sort(idComparator);
+        loadedMqttClientCredentialsList.sort(idComparator);
 
         Assert.assertEquals(mqttClientCredentialsList, loadedMqttClientCredentialsList);
 

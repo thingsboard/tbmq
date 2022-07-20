@@ -21,6 +21,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import java.util.UUID;
 
 public interface LastWillService {
+
     void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg);
-    void removeLastWill(UUID sessionId, boolean sendMsg);
+
+    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg);
 }

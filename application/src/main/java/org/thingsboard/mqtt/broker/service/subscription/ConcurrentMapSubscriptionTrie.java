@@ -153,7 +153,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         }
         Node<T> x = getNode(root, topicFilter, 0);
         if (x != null) {
-            List<T> valuesToDelete = x.values.stream().filter(deletionFilter).collect(Collectors.toList());
+            Set<T> valuesToDelete = x.values.stream().filter(deletionFilter).collect(Collectors.toSet());
             if (valuesToDelete.isEmpty()) {
                 return false;
             }

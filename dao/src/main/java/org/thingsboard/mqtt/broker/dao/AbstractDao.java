@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao;
 
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +27,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * @author Valerii Sosliuk
- */
 @Slf4j
 public abstract class AbstractDao<E extends BaseEntity<D>, D>
+        extends JpaAbstractDaoListeningExecutorService
         implements Dao<D> {
 
     protected abstract Class<E> getEntityClass();
@@ -68,6 +67,11 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
         return DaoUtil.getData(entity);
     }
 
+    @Override
+    public ListenableFuture<D> findByIdAsync(UUID key) {
+        log.debug("Get entity by key async {}", key);
+        return service.submit(() -> DaoUtil.getData(getCrudRepository().findById(key)));
+    }
 
     @Override
     @Transactional

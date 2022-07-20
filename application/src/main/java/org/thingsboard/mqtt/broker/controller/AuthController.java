@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -36,12 +36,11 @@ import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 public class AuthController extends BaseController {
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-    @Autowired
-    private JwtTokenFactory tokenFactory;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtTokenFactory tokenFactory;
 
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/user", method = RequestMethod.GET)

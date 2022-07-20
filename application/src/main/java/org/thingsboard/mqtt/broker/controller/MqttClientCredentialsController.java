@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -38,13 +38,12 @@ import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/mqtt/client/credentials")
 public class MqttClientCredentialsController extends BaseController {
 
-    @Autowired
-    private MqttClientCredentialsService mqttClientCredentialsService;
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)

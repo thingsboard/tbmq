@@ -45,8 +45,6 @@ public interface TbActorSystem {
 
     void stop(TbActorId actorId);
 
-    void stop();
-
     void broadcastToChildren(TbActorId parent, TbActorMsg msg);
 
     void broadcastToChildren(TbActorId parent, Predicate<TbActorId> childFilter, TbActorMsg msg);

@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,12 +39,11 @@ public class ClientSessionController extends BaseController {
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
 
-
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}/remove/{sessionId}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/remove", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
     @ResponseBody
-    public void removeClientSession(@PathVariable("clientId") String clientId,
-                                    @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
+    public void removeClientSession(@RequestParam String clientId,
+                                    @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
         try {
             clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
         } catch (Exception e) {
@@ -54,10 +52,10 @@ public class ClientSessionController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}/disconnect/{sessionId}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/disconnect", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
     @ResponseBody
-    public void disconnectClientSession(@PathVariable("clientId") String clientId,
-                                        @PathVariable("sessionId") String sessionIdStr) throws ThingsboardException {
+    public void disconnectClientSession(@RequestParam String clientId,
+                                        @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
         try {
             clientSessionCleanUpService.disconnectClientSession(clientId, toUUID(sessionIdStr));
         } catch (Exception e) {
@@ -66,9 +64,9 @@ public class ClientSessionController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
+    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.GET)
     @ResponseBody
-    public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@RequestParam String clientId) throws ThingsboardException {
         try {
             return sessionSubscriptionService.getDetailedClientSessionInfo(clientId);
         } catch (Exception e) {

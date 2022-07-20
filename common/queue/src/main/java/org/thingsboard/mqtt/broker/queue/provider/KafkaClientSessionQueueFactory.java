@@ -29,10 +29,10 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ClientSessionKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
@@ -40,7 +40,6 @@ import java.util.Properties;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.CLEANUP_POLICY_PROPERTY;
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT_POLICY;
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
@@ -62,7 +61,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
 
     @PostConstruct
     public void init() {
-        this.topicConfigs = getConfigs(clientSessionSettings.getTopicProperties());
+        this.topicConfigs = QueueUtil.getConfigs(clientSessionSettings.getTopicProperties());
         String configuredLogCleanupPolicy = topicConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {
             log.warn("Client session clean-up policy should be " + COMPACT_POLICY + ".");
@@ -87,7 +86,7 @@ public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
         Properties props = consumerSettings.toProps(clientSessionSettings.getAdditionalConsumerConfig());
-        PropertiesUtil.overrideProperties("ClientSessionQueue-" + consumerId, props, requiredConsumerProperties);
+        QueueUtil.overrideProperties("ClientSessionQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
         consumerBuilder.topic(clientSessionSettings.getTopic());
 

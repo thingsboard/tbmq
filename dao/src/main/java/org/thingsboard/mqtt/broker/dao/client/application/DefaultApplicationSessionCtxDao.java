@@ -16,21 +16,22 @@
 package org.thingsboard.mqtt.broker.dao.client.application;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
+import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
 import org.thingsboard.mqtt.broker.dao.model.ApplicationSessionCtxEntity;
 
 import java.util.List;
 
 @Slf4j
 @Component
-// TODO: make some methods async to properly work
-public class DefaultApplicationSessionCtxDao implements ApplicationSessionCtxDao {
-    @Autowired
-    private ApplicationSessionCtxRepository applicationSessionCtxRepository;
+@RequiredArgsConstructor
+public class DefaultApplicationSessionCtxDao extends JpaAbstractDaoListeningExecutorService implements ApplicationSessionCtxDao {
+    private final ApplicationSessionCtxRepository applicationSessionCtxRepository;
 
     @Override
     public ApplicationSessionCtx save(ApplicationSessionCtx applicationSessionCtx) {
@@ -38,12 +39,17 @@ public class DefaultApplicationSessionCtxDao implements ApplicationSessionCtxDao
     }
 
     @Override
-    public ApplicationSessionCtx find(String clientId) {
+    public ApplicationSessionCtx findByClientId(String clientId) {
         return DaoUtil.getData(applicationSessionCtxRepository.findByClientId(clientId));
     }
 
     @Override
-    public List<ApplicationSessionCtx> find() {
+    public ListenableFuture<ApplicationSessionCtx> findByClientIdAsync(String clientId) {
+        return service.submit(() -> findByClientId(clientId));
+    }
+
+    @Override
+    public List<ApplicationSessionCtx> findAll() {
         List<ApplicationSessionCtxEntity> entities = Lists.newArrayList(applicationSessionCtxRepository.findAll());
         return DaoUtil.convertDataList(entities);
     }

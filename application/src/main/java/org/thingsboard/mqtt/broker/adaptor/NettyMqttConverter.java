@@ -89,9 +89,11 @@ public class NettyMqttConverter {
                 .topicName(mqttPublishMessage.variableHeader().topicName())
                 .qosLevel(mqttPublishMessage.fixedHeader().qosLevel().value())
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())
+                .isDup(mqttPublishMessage.fixedHeader().isDup())
                 .payload(payloadBytes)
                 .build();
     }
+
     private static PublishMsg extractLastWillPublishMsg(MqttConnectMessage msg) {
         return PublishMsg.builder()
                 .packetId(-1)

@@ -29,12 +29,10 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationRemovedEventK
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Map;
 import java.util.Properties;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
@@ -54,7 +52,7 @@ public class KafkaApplicationRemovedEventQueueFactory implements ApplicationRemo
         producerBuilder.properties(producerSettings.toProps(kafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId("application-removed-event-producer-" + serviceId);
         producerBuilder.defaultTopic(kafkaSettings.getTopic());
-        producerBuilder.topicConfigs(getConfigs(kafkaSettings.getTopicProperties()));
+        producerBuilder.topicConfigs(QueueUtil.getConfigs(kafkaSettings.getTopicProperties()));
         producerBuilder.admin(queueAdmin);
         return producerBuilder.build();
     }
@@ -63,10 +61,10 @@ public class KafkaApplicationRemovedEventQueueFactory implements ApplicationRemo
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         Properties props = consumerSettings.toProps(kafkaSettings.getAdditionalConsumerConfig());
-        PropertiesUtil.overrideProperties("ApplicationRemovedEventQueue-" + serviceId, props, requiredConsumerProperties);
+        QueueUtil.overrideProperties("ApplicationRemovedEventQueue-" + serviceId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
         consumerBuilder.topic(kafkaSettings.getTopic());
-        consumerBuilder.topicConfigs(getConfigs(kafkaSettings.getTopicProperties()));
+        consumerBuilder.topicConfigs(QueueUtil.getConfigs(kafkaSettings.getTopicProperties()));
         consumerBuilder.clientId("application-removed-event-consumer-" + serviceId);
         consumerBuilder.groupId("application-removed-event-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ApplicationRemovedEventProto.parseFrom(msg.getData()), msg.getHeaders(),

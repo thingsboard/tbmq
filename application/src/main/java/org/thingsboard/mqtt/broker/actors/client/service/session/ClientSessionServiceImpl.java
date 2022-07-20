@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
@@ -34,8 +35,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-
-import static org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConst.EMPTY_CLIENT_SESSION_INFO_PROTO;
 
 /*
     Not thread-safe for the same clientId
@@ -90,7 +89,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, BrokerConstants.EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }
 
     @Override

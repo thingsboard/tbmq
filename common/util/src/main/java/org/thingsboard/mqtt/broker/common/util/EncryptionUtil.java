@@ -18,9 +18,6 @@ package org.thingsboard.mqtt.broker.common.util;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
-/**
- * @author Valerii Sosliuk
- */
 public class EncryptionUtil {
 
     private EncryptionUtil() {

@@ -157,7 +157,13 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         stopped = true;
         eventConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            consumersExecutor.shutdown();
+            try {
+                boolean terminationSuccessful = consumersExecutor.awaitTermination(3, TimeUnit.SECONDS);
+                log.info("Client session event consumers executor termination is: [{}]", terminationSuccessful ? "successful" : "failed");
+            } catch (InterruptedException e) {
+                log.warn("Failed to stop client session event consumers executor gracefully due to interruption!", e);
+            }
         }
     }
 }

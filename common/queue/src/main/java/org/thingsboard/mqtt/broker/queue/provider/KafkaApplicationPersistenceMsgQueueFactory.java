@@ -29,15 +29,13 @@ import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationPersistenceMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.util.PropertiesUtil;
+import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Properties;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Slf4j
 @Component
@@ -57,7 +55,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
 
     @PostConstruct
     public void init() {
-        this.topicConfigs = getConfigs(applicationPersistenceMsgSettings.getTopicProperties());
+        this.topicConfigs = QueueUtil.getConfigs(applicationPersistenceMsgSettings.getTopicProperties());
         String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
         if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
             log.warn("Application persistent message topic must have only 1 partition.");
@@ -81,7 +79,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
         Properties props = consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
-        PropertiesUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
+        QueueUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
         consumerBuilder.topic(topic);

@@ -38,7 +38,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
     @Override
     public boolean process(TbActorMsg msg) {
         if (log.isTraceEnabled()) {
-            log.debug("[{}] Processing msg: {}", getActorId(), msg.getMsgType());
+            log.trace("[{}] Processing msg: {}", getActorId(), msg.getMsgType());
         } else if (log.isDebugEnabled()) {
             log.debug("[{}] Processing msg: {}", getActorId(), msg);
         }
@@ -50,7 +50,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
             }
         } finally {
             stopWatch.stop();
-            systemContext.getActorProcessingMetricService().logMsgProcessingTime(getActorId(), msg.getMsgType(), stopWatch.getTime());
+            systemContext.getActorProcessingMetricService().logMsgProcessingTime(msg.getMsgType(), stopWatch.getTime());
             stopWatch.reset();
         }
         return false;

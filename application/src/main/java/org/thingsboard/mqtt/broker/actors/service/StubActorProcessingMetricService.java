@@ -17,13 +17,12 @@ package org.thingsboard.mqtt.broker.actors.service;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 @Service
 @ConditionalOnProperty(prefix = "actors.system.processing-metrics", value = "enabled", havingValue = "false", matchIfMissing = true)
 public class StubActorProcessingMetricService implements ActorProcessingMetricService {
     @Override
-    public void logMsgProcessingTime(TbActorId actorId, MsgType msgType, long time) {
+    public void logMsgProcessingTime(MsgType msgType, long time) {
     }
 }

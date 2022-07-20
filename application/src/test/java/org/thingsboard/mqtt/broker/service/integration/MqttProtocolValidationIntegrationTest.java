@@ -38,14 +38,15 @@ public class MqttProtocolValidationIntegrationTest extends AbstractPubSubIntegra
 
     @Test(expected = MqttException.class)
     public void testEmptyClientWithNoCleanSession() throws Throwable {
-        MqttClient testClient = new MqttClient("tcp://localhost:" + mqttPort, "");
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setCleanSession(false);
-        try {
-            testClient.connect(connectOptions);
-        } catch (MqttException e) {
-            Assert.assertFalse(testClient.isConnected());
-            throw e;
+        try (MqttClient testClient = new MqttClient("tcp://localhost:" + mqttPort, "")) {
+            MqttConnectOptions connectOptions = new MqttConnectOptions();
+            connectOptions.setCleanSession(false);
+            try {
+                testClient.connect(connectOptions);
+            } catch (MqttException e) {
+                Assert.assertFalse(testClient.isConnected());
+                throw e;
+            }
         }
     }
 }

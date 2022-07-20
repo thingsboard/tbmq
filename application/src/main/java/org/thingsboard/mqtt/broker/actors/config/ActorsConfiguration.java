@@ -37,7 +37,7 @@ public class ActorsConfiguration {
         return new TbActorSystemSettings(actorThroughput, schedulerPoolSize, maxActorInitAttempts);
     }
 
-    @Bean
+    @Bean(destroyMethod = "destroy")
     public TbActorSystem actorSystem(TbActorSystemSettings actorSystemSettings, ActorStatsManager actorStatsManager) {
         return new DefaultTbActorSystem(actorSystemSettings, actorStatsManager);
     }

@@ -19,10 +19,9 @@ import lombok.Setter;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Properties;
-
-import static org.thingsboard.mqtt.broker.queue.util.ParseConfigUtil.getConfigs;
 
 @Setter
 @Component
@@ -54,7 +53,7 @@ public class TbKafkaProducerSettings {
         props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMs);
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
         if (customProperties != null) {
-            getConfigs(customProperties).forEach(props::put);
+            QueueUtil.getConfigs(customProperties).forEach(props::put);
         }
         return props;
     }

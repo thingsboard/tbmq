@@ -29,6 +29,7 @@ import java.util.Set;
 @Getter
 @RequiredArgsConstructor
 public class SubscriptionChangedEventMsg extends AbstractTimedMsg implements TbActorMsg {
+
     private final Set<TopicSubscription> topicSubscriptions;
 
     @Override

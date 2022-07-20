@@ -21,12 +21,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,25 +44,23 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     private final ClientMqttActorManager clientMqttActorManager;
 
     @Scheduled(fixedRateString = "${mqtt.keep-alive.monitoring-delay-ms}")
-    private void processKeepAlive() {
-        for (Iterator<Map.Entry<UUID, KeepAliveInfo>> it = keepAliveInfoMap.entrySet().iterator(); it.hasNext();) {
-            Map.Entry<UUID, KeepAliveInfo> entry = it.next();
+    void processKeepAlive() {
+        for (Map.Entry<UUID, KeepAliveInfo> entry : keepAliveInfoMap.entrySet()) {
             UUID sessionId = entry.getKey();
             KeepAliveInfo keepAliveInfo = entry.getValue();
             long lastPacketTime = keepAliveInfo.getLastPacketTime().get();
             if (isInactive(keepAliveInfo.getKeepAliveSeconds(), lastPacketTime)
                     && keepAliveInfo.getLastPacketTime().compareAndSet(lastPacketTime, CLEARED_KEEP_ALIVE_VALUE)) {
-                it.remove();
+                keepAliveInfoMap.remove(sessionId);
                 log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
                         keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
-                clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), sessionId,
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long"));
+                clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), new DisconnectMsg(sessionId,
+                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
             }
         }
     }
 
-    private boolean isInactive(int keepAliveSeconds, long lastPacketTime) {
-        // TODO: rebuild to nanos
+    boolean isInactive(int keepAliveSeconds, long lastPacketTime) {
         long now = System.currentTimeMillis();
         long actualKeepAliveMs = (long) (TimeUnit.SECONDS.toMillis(keepAliveSeconds) * 1.5);
         return lastPacketTime + actualKeepAliveMs < now;
@@ -95,6 +93,10 @@ public class KeepAliveServiceImpl implements KeepAliveService {
             log.warn("[{}] LastPacketTime is already cleared", sessionId);
             throw new MqttException("LastPacketTime is already cleared for session " + sessionId);
         }
+    }
+
+    int getKeepAliveInfoSize() {
+        return keepAliveInfoMap.size();
     }
 
     @AllArgsConstructor

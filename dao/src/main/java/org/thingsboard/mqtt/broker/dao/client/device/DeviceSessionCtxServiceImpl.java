@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.device;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,10 +27,10 @@ import java.util.Collection;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
 
-    @Autowired
-    private DeviceSessionCtxDao deviceSessionCtxDao;
+    private final DeviceSessionCtxDao deviceSessionCtxDao;
 
     @Override
     public void saveDeviceSessionContexts(Collection<DeviceSessionCtx> deviceSessionContexts) {

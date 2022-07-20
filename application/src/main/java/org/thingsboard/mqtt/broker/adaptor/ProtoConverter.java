@@ -204,7 +204,7 @@ public class ProtoConverter {
     public static ConnectionResponse toConnectionResponse(QueueProtos.ClientSessionEventResponseProto clientSessionEventResponseProto) {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
-                .wasPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
+                .isPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
                 .build();
     }
 }

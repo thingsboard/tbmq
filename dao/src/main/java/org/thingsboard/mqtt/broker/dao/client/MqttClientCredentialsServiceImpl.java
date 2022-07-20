@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
@@ -103,13 +103,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         validatePageLink(pageLink);
         PageData<MqttClientCredentials> pageData = mqttClientCredentialsDao.findAll(pageLink);
         List<ShortMqttClientCredentials> shortMqttCredentials = pageData.getData().stream()
-                .map(mqttClientCredentials -> ShortMqttClientCredentials.builder()
-                        .id(mqttClientCredentials.getId())
-                        .name(mqttClientCredentials.getName())
-                        .clientType(mqttClientCredentials.getClientType())
-                        .credentialsType(mqttClientCredentials.getCredentialsType())
-                        .createdTime(mqttClientCredentials.getCreatedTime())
-                        .build())
+                .map(MqttClientCredentialsUtil::toShortMqttClientCredentials)
                 .collect(Collectors.toList());
         return new PageData<>(shortMqttCredentials, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
     }
@@ -168,16 +162,11 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     private <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
-        T credentials;
         try {
-            credentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), credentialsClassType);
-            if (credentials == null) {
-                throw new IllegalArgumentException();
-            }
+            return MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, credentialsClassType);
         } catch (IllegalArgumentException e) {
-            throw new DataValidationException("Invalid credentials body for mqtt credentials!");
+            throw new DataValidationException("Could not parse client credentials!", e);
         }
-        return credentials;
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =

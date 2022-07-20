@@ -33,6 +33,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -54,8 +56,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Getter
     private final UUID sessionId = UUID.randomUUID();
     private String clientId;
-    private final ClientSessionCtx clientSessionCtx ;
-    private final ClientLogger clientLogger ;
+    private final ClientSessionCtx clientSessionCtx;
+    private final ClientLogger clientLogger;
 
     public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger, SslHandler sslHandler, int maxInFlightMsgs) {
         this.clientMqttActorManager = clientMqttActorManager;
@@ -98,13 +100,13 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
 
         if (StringUtils.isEmpty(clientId)) {
-            throw new ProtocolViolationException("Received " + msgType +" while session wasn't initialized");
+            throw new ProtocolViolationException("Received " + msgType + " while session wasn't initialized");
         }
 
         clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
         switch (msgType) {
             case DISCONNECT:
-                clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG)));
                 break;
             case CONNECT:
                 clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
@@ -140,7 +142,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientId = connectMessage.payload().clientIdentifier();
         boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
         clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-        clientMqttActorManager.initSession(clientId, connectMessage.payload().userName(), connectMessage.payload().passwordInBytes(), clientSessionCtx, isClientIdGenerated);
+        clientMqttActorManager.initSession(clientId, isClientIdGenerated, new SessionInitMsg(
+                clientSessionCtx,
+                connectMessage.payload().userName(),
+                connectMessage.payload().passwordInBytes()));
     }
 
     @Override
@@ -150,8 +155,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // TODO push msg to the client before closing
-        String exceptionMessage = null;
+        String exceptionMessage;
         if (cause.getCause() instanceof SSLHandshakeException) {
             log.warn("[{}] Exception on SSL handshake. Reason - {}", sessionId, cause.getCause().getMessage());
             exceptionMessage = cause.getCause().getMessage();
@@ -174,7 +178,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void operationComplete(Future<? super Void> future) {
         if (clientId != null) {
-            clientMqttActorManager.disconnect(clientId, sessionId, new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED));
+            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                    sessionId,
+                    new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED)));
         }
     }
 
@@ -187,7 +193,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 log.debug("[{}] Failed to close channel. Reason - {}.", sessionId, e.getMessage());
             }
         } else {
-            clientMqttActorManager.disconnect(clientId, sessionId, reason);
+            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(sessionId, reason));
         }
     }
 }

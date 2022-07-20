@@ -26,7 +26,7 @@ public class ApplicationPackProcessingResult {
     @Getter
     private final Map<Integer, PersistedPubRelMsg> pubRelPendingMap;
 
-    public ApplicationPackProcessingResult(ApplicationPackProcessingContext ctx) {
+    public ApplicationPackProcessingResult(ApplicationPackProcessingCtx ctx) {
         this.publishPendingMap = new HashMap<>(ctx.getPublishPendingMsgMap());
         this.pubRelPendingMap = new HashMap<>(ctx.getPubRelPendingMsgMap());
     }

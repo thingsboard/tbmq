@@ -19,19 +19,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
 @RunWith(MockitoJUnitRunner.class)
 class ClientSessionPageInfosImplTest {
@@ -67,14 +62,6 @@ class ClientSessionPageInfosImplTest {
                 "test5", getClientSessionInfo("test5"),
                 "test4", getClientSessionInfo("test4"),
                 "test3", getClientSessionInfo("test3"));
-    }
-
-    private ClientSessionInfo getClientSessionInfo(String clientId) {
-        ClientInfo clientInfo = ClientInfo.builder().clientId(clientId).type(ClientType.DEVICE).build();
-        ConnectionInfo connectionInfo = ConnectionInfo.builder().connectedAt(System.currentTimeMillis()).keepAlive(100000).build();
-        SessionInfo sessionInfo = SessionInfo.builder().sessionId(UUID.randomUUID()).serviceId("serviceId").clientInfo(clientInfo).connectionInfo(connectionInfo).build();
-        ClientSession clientSession = ClientSession.builder().connected(true).sessionInfo(sessionInfo).build();
-        return ClientSessionInfo.builder().lastUpdateTime(System.currentTimeMillis()).clientSession(clientSession).build();
     }
 
     @Test

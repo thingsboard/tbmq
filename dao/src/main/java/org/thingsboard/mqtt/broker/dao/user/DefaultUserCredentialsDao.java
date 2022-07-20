@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.user;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
@@ -26,10 +26,10 @@ import org.thingsboard.mqtt.broker.dao.model.UserCredentialsEntity;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class DefaultUserCredentialsDao extends AbstractDao<UserCredentialsEntity, UserCredentials> implements UserCredentialsDao {
 
-    @Autowired
-    private UserCredentialsRepository userCredentialsRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
 
     @Override
     protected Class<UserCredentialsEntity> getEntityClass() {

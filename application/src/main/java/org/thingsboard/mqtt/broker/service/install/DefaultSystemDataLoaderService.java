@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.install;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,14 +24,13 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
-
 @Service
 @Profile("install")
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminService adminService;
 
     @Bean
     protected BCryptPasswordEncoder passwordEncoder() {

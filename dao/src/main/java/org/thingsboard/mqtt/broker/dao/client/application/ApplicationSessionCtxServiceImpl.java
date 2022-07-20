@@ -15,8 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
@@ -26,10 +27,10 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ApplicationSessionCtxServiceImpl implements ApplicationSessionCtxService {
 
-    @Autowired
-    private ApplicationSessionCtxDao applicationSessionCtxDao;
+    private final ApplicationSessionCtxDao applicationSessionCtxDao;
 
     @Override
     public ApplicationSessionCtx saveApplicationSessionCtx(ApplicationSessionCtx applicationSessionCtx) {
@@ -47,7 +48,13 @@ public class ApplicationSessionCtxServiceImpl implements ApplicationSessionCtxSe
     @Override
     public Optional<ApplicationSessionCtx> findApplicationSessionCtx(String clientId) {
         log.trace("Executing findApplicationSessionCtx [{}]", clientId);
-        return Optional.ofNullable(applicationSessionCtxDao.find(clientId));
+        return Optional.ofNullable(applicationSessionCtxDao.findByClientId(clientId));
+    }
+
+    @Override
+    public ListenableFuture<ApplicationSessionCtx> findApplicationSessionCtxAsync(String clientId) {
+        log.trace("Executing findApplicationSessionCtxAsync [{}]", clientId);
+        return applicationSessionCtxDao.findByClientIdAsync(clientId);
     }
 
     private void validate(ApplicationSessionCtx applicationSessionCtx) {
