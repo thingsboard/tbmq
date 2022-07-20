@@ -47,10 +47,18 @@ public class TestUtils {
         return topicSubscriptions.stream().map(TopicSubscription::getQos).mapToInt(x -> x).toArray();
     }
 
-    public static MqttClientCredentials createApplicationClientCredentials(String clientId) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, null, null, null);
+    public static MqttClientCredentials createApplicationClientCredentials(String clientId, String username) {
+        return getMqttClientCredentials(clientId, username, ClientType.APPLICATION);
+    }
+
+    public static MqttClientCredentials createDeviceClientCredentials(String clientId, String username) {
+        return getMqttClientCredentials(clientId, username, ClientType.DEVICE);
+    }
+
+    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, ClientType clientType) {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, null, null);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
-        mqttClientCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         mqttClientCredentials.setName("ApplicationCredentials");
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));

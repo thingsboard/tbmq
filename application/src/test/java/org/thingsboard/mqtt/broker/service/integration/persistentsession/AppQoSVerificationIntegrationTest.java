@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -24,27 +24,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.service.integration.AbstractQoSVerificationIntegrationTest;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = QoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = AppQoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.retransmission.initial-delay=1",
-        "mqtt.retransmission.period=1"
+        "mqtt.retransmission.period=1",
+        "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class QoSVerificationIntegrationTest extends AbstractQoSVerificationIntegrationTest {
-
-    @Test
-    public void qoS1DeliveryValidationTest() throws Throwable {
-        process(QOS_1, true);
-    }
-
-    @Test
-    public void qoS2DeliveryValidationTest() throws Throwable {
-        process(QOS_2, true);
-    }
+public class AppQoSVerificationIntegrationTest extends AbstractQoSVerificationIntegrationTest {
 
     @Test
     public void qoS1PersistentDeliveryValidationTest() throws Throwable {

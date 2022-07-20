@@ -81,7 +81,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Before
     public void init() throws Exception {
-        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(TEST_CLIENT_ID, null));
         persistedClient = initClient();
     }
 
