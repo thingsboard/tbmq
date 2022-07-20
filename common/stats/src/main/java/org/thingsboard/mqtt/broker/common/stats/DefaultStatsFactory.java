@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.common.stats;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -29,9 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToDoubleFunction;
 
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.FAILED_MSGS;
+import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.STATS_NAME_TAG;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.SUCCESSFUL_MSGS;
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TOTAL_MSGS;
-import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.STATS_NAME_TAG;
 
 @Service
 public class DefaultStatsFactory implements StatsFactory {

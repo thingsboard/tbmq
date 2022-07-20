@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,18 @@ public class TestUtils {
         return topicSubscriptions.stream().map(TopicSubscription::getQos).mapToInt(x -> x).toArray();
     }
 
-    public static MqttClientCredentials createApplicationClientCredentials(String clientId) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, null, null, null);
+    public static MqttClientCredentials createApplicationClientCredentials(String clientId, String username) {
+        return getMqttClientCredentials(clientId, username, ClientType.APPLICATION);
+    }
+
+    public static MqttClientCredentials createDeviceClientCredentials(String clientId, String username) {
+        return getMqttClientCredentials(clientId, username, ClientType.DEVICE);
+    }
+
+    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, ClientType clientType) {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, null, null);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
-        mqttClientCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         mqttClientCredentials.setName("ApplicationCredentials");
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));

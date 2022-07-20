@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,8 +103,8 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPublishMsg(buildPubMsg(), 100))));
         when(applicationPackProcessingCtx.getPubRelPendingMsgMap())
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPubRelMsg(1, 100))));
-        when(applicationPackProcessingCtx.getNewPubRelPackets())
-                .thenReturn(Set.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300)));
+        when(applicationPackProcessingCtx.getPubRelMsgCtx())
+                .thenReturn(new ApplicationPubRelMsgCtx(Set.of(new PersistedPubRelMsg(2, 200), new PersistedPubRelMsg(3, 300))));
 
         applicationPersistedMsgCtxService.saveContext(CLIENT_ID, applicationPackProcessingCtx);
 

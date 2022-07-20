@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Service
@@ -28,11 +29,13 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 public class MqttPubCompHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
+    private final RetransmissionService retransmissionService;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
         log.trace("[{}][{}] Received PUBCOMP msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         if (ctx.getSessionInfo().isPersistent()) {
-            msgPersistenceManager.processPubComp(messageId, ctx);
+            msgPersistenceManager.processPubComp(ctx, messageId);
         }
+        retransmissionService.onPubCompReceived(ctx, messageId);
     }
 }

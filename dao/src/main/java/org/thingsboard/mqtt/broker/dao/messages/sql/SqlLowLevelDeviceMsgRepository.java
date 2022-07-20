@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.messages.DeletePacketInfo;
-import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
 import org.thingsboard.mqtt.broker.dao.messages.LowLevelDeviceMsgRepository;
+import org.thingsboard.mqtt.broker.dao.messages.UpdatePacketTypeInfo;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
 import java.sql.PreparedStatement;

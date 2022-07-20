@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
 
     @Before
     public void init() throws Exception {
-        applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID));
+        applicationCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(TEST_CLIENT_ID, null));
         persistedClient = initClient();
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import java.util.List;
 public interface MsgPersistenceManager {
     void processPublish(PublishMsgProto publishMsgProto, List<Subscription> persistentSubscriptions, PublishMsgCallback callback);
 
-    void processPubAck(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubAck(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void processPubRec(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubRec(ClientSessionCtx clientSessionCtx, int packetId);
 
-    void processPubComp(int packetId, ClientSessionCtx clientSessionCtx);
+    void processPubComp(ClientSessionCtx clientSessionCtx, int packetId);
 
     void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
 

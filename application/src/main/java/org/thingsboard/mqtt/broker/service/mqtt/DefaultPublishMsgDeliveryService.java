@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2020 The Thingsboard Authors
+ * Copyright © 2016-2022 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -29,21 +30,26 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryService {
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final RetransmissionService retransmissionService;
     private final DeliveryTimerStats deliveryTimerStats;
 
-    public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator, StatsManager statsManager) {
+    public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
+                                            RetransmissionService retransmissionService,
+                                            StatsManager statsManager) {
         this.mqttMessageGenerator = mqttMessageGenerator;
+        this.retransmissionService = retransmissionService;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
     }
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
+        log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
         long startTime = System.nanoTime();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         try {
-            sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
+            retransmissionService.sendPublishWithRetransmission(sessionCtx, mqttPubMsg);
         } catch (Exception e) {
-            log.debug("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
+            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.trace("Detailed error:", e);
             throw e;
@@ -53,11 +59,12 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
+        log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
         try {
-            sessionCtx.getChannel().writeAndFlush(mqttPubRelMsg);
+            retransmissionService.onPubRecReceived(sessionCtx, mqttPubRelMsg);
         } catch (Exception e) {
-            log.debug("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
+            log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.trace("Detailed error:", e);
             throw e;
