@@ -21,37 +21,33 @@ import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { DetailedClientSessionInfo } from '@shared/models/mqtt-session.model';
-import { map } from 'rxjs/operators';
-import { isNotEmptyStr } from '@core/utils';
-import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MqttClientSessionService {
 
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private http: HttpClient) {
+  }
 
   public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
-    return this.http.get<DetailedClientSessionInfo>(`/api/client-session/${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<DetailedClientSessionInfo>(`/api/client-session?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
     return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
-
   public updateShortClientSessionInfo(session: DetailedClientSessionInfo, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
     return this.http.post<DetailedClientSessionInfo>(`/api/subscription`, session, defaultHttpOptionsFromConfig(config));
   }
 
   public removeClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/client-session/${clientId}/remove/${sessionId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete(`/api/client-session/remove?clientId=${clientId}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
+
   public disconnectClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/client-session/${clientId}/disconnect/${sessionId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete(`/api/client-session/disconnect?clientId=${clientId}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
 
 }
