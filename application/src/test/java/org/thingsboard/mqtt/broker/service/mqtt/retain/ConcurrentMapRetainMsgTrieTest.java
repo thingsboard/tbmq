@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.retain;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.service.mqtt.retain.ConcurrentMapRetainMsgTrie;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Slf4j
 @RunWith(MockitoJUnitRunner.class)
-public class RetainMsgTrieSuiteTest {
+public class ConcurrentMapRetainMsgTrieTest {
 
     private ConcurrentMapRetainMsgTrie<String> retainMsgTrie;
 
@@ -45,6 +42,19 @@ public class RetainMsgTrieSuiteTest {
         retainMsgTrie.delete("1/2");
         List<String> result = retainMsgTrie.get("#");
         Assert.assertEquals(Collections.emptyList(), result);
+    }
+
+    @Test
+    public void testSize() {
+        retainMsgTrie.put("1/1", "test1");
+        retainMsgTrie.put("1/2", "test2");
+        retainMsgTrie.put("1/3", "test3");
+        retainMsgTrie.put("1/4", "test4");
+        retainMsgTrie.put("1/5", "test5");
+        retainMsgTrie.delete("1/2");
+        retainMsgTrie.put("1/5", "test55");
+        retainMsgTrie.delete("1/3");
+        Assert.assertEquals(3, retainMsgTrie.size());
     }
 
     @Test
@@ -80,5 +90,4 @@ public class RetainMsgTrieSuiteTest {
         Assert.assertEquals(Set.of("test1"), new HashSet<>(retainMsgTrie.get("$SYS/#")));
         Assert.assertEquals(Set.of("test1"), new HashSet<>(retainMsgTrie.get("$SYS/monitor/+")));
     }
-
 }
