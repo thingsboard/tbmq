@@ -29,6 +29,7 @@ import { MqttClientCredentials, MqttCredentialsType } from '@shared/models/mqtt-
 
 export interface ManageCredentialsDialogData {
   mqttClientCredentials: MqttClientCredentials;
+  isEdit: boolean;
 }
 
 @Component({
@@ -45,6 +46,7 @@ export class ManageCredentialsDialogComponent extends DialogComponent<ManageCred
   mqttCredentialsType: MqttCredentialsType;
 
   mqttClientCredentials = this.data.mqttClientCredentials;
+  isEdit = this.data.isEdit || false;
 
   submitted = false;
   loadingCredentials = true;

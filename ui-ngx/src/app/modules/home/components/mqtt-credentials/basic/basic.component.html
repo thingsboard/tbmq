@@ -30,7 +30,7 @@
       {{ 'mqtt-client-credentials.user-name-required' | translate }}
     </mat-error>
   </mat-form-field>
-  <mat-form-field class="mat-block">
+  <mat-form-field class="mat-block" *ngIf="!entity?.id && !isEdit">
     <mat-label translate>mqtt-client-credentials.password</mat-label>
     <input matInput formControlName="password"
            autocomplete="new-password"
@@ -41,5 +41,14 @@
   <tb-error style="margin-top: -12px; display: block;"
             *ngIf="credentialsMqttFormGroup.dirty"
             [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
-            ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''"></tb-error>
+            ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
+  </tb-error>
+  <button mat-button mat-raised-button color="primary"
+          *ngIf="entity?.id || isEdit"
+          type="button"
+          [disabled]="disabled" (click)="changePassword()">
+    {{'profile.change-password' | translate}}
+  </button>
+  <div fxLayout="row" style="padding-bottom: 16px;">
+  </div>
 </section>

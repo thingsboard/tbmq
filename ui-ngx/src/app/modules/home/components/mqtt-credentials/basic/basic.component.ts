@@ -28,6 +28,13 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
+import { MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  ChangeMqttBasicPasswordDialogComponent,
+  ChangeMqttBasicPasswordDialogData
+} from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
+import { Observable } from 'rxjs/internal/Observable';
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -50,12 +57,19 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @Input()
   disabled: boolean;
 
+  @Input()
+  entity: MqttClientCredentials;
+
+  @Input()
+  isEdit: boolean;
+
   credentialsMqttFormGroup: FormGroup;
 
   private destroy$ = new Subject();
   private propagateChange = (v: any) => {};
 
-  constructor(public fb: FormBuilder) {
+  constructor(public fb: FormBuilder,
+              private dialog: MatDialog) {
     this.credentialsMqttFormGroup = this.fb.group({
       clientId: [null],
       userName: [null],
@@ -114,6 +128,17 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
       this.credentialsMqttFormGroup.get('userName').setValidators([]);
     }
     this.credentialsMqttFormGroup.get('userName').updateValueAndValidity({emitEvent: false});
+  }
+
+  changePassword(): Observable<boolean> {
+    return this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
+      boolean>(ChangeMqttBasicPasswordDialogComponent, {
+        disableClose: true,
+        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        data: {
+          clientId: this.credentialsMqttFormGroup.get('clientId').value
+        }
+      }).afterClosed();
   }
 
   private atLeastOne(validator: ValidatorFn, controls: string[] = null) {

@@ -146,7 +146,8 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        mqttClientCredentials
+        mqttClientCredentials,
+        isEdit: true
       }
     })
       .afterClosed()
@@ -156,14 +157,4 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
         }
       });
   }
-
-  onMqttClientCredentialsAction(action: EntityAction<MqttClientCredentials>): boolean {
-    switch (action.action) {
-      case 'open':
-        // this.openEditClientCredentialsProfile(action.event, action.entity);
-        return true;
-    }
-    return false;
-  }
-
 }

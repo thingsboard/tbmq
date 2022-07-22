@@ -16,14 +16,11 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
-import { map } from 'rxjs/operators';
-import { isNotEmptyStr } from '@core/utils';
-import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable({
   providedIn: 'root'
@@ -54,4 +51,7 @@ export class MqttClientCredentialsService {
     return this.http.get<MqttClientCredentials>(`/api/mqtt/client/credentials/${credentialsId}`, defaultHttpOptionsFromConfig(config));
   }
 
+  public changePassword(currentPassword: string, newPassword: string, clientId: string): Observable<boolean> {
+    return of(true);
+  }
 }
