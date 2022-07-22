@@ -56,7 +56,6 @@ public class MqttSubscribeHandler {
 
         validateClientAccess(ctx, topicSubscriptions);
 
-        // TODO: it's possible that client will get messages for topic before SUB_ACK
         List<Integer> grantedQoSList = getQoSListFromTopicSubscriptions(topicSubscriptions);
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
