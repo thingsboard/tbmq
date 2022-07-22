@@ -75,7 +75,6 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     this.credentialsFormGroup = this.fb.group({
       name: [null],
       credentialsType: [null],
-      credentialsId: [null],
       credentialsValue: [null]
     });
     this.credentialsFormGroup.valueChanges.pipe(
@@ -106,7 +105,6 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
       this.credentialsFormGroup.patchValue({
         name: value.name,
         credentialsType: value.credentialsType,
-        credentialsId: value.credentialsId,
         credentialsValue: value.credentialsValue
       }, {emitEvent: false});
       this.updateValidators();
@@ -142,7 +140,6 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
 
   credentialsTypeChanged(): void {
     this.credentialsFormGroup.patchValue({
-      credentialsId: null,
       credentialsValue: null
     });
     this.updateValidators();
@@ -152,16 +149,12 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     const credentialsType = this.credentialsFormGroup.get('credentialsType').value as MqttCredentialsType;
     switch (credentialsType) {
       case MqttCredentialsType.SSL:
-        this.credentialsFormGroup.get('credentialsId').setValidators([Validators.required]);
-        this.credentialsFormGroup.get('credentialsId').updateValueAndValidity({emitEvent: false});
         this.credentialsFormGroup.get('credentialsValue').setValidators([]);
         this.credentialsFormGroup.get('credentialsValue').updateValueAndValidity({emitEvent: false});
         break;
       case MqttCredentialsType.MQTT_BASIC:
         this.credentialsFormGroup.get('credentialsValue').setValidators([Validators.required]);
         this.credentialsFormGroup.get('credentialsValue').updateValueAndValidity({emitEvent: false});
-        this.credentialsFormGroup.get('credentialsId').setValidators([]);
-        this.credentialsFormGroup.get('credentialsId').updateValueAndValidity({emitEvent: false});
         break;
     }
   }
