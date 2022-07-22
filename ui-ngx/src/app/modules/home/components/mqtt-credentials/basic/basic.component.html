@@ -30,7 +30,7 @@
       {{ 'mqtt-client-credentials.user-name-required' | translate }}
     </mat-error>
   </mat-form-field>
-  <mat-form-field class="mat-block" *ngIf="!entity?.id && !isEdit">
+  <mat-form-field class="mat-block" *ngIf="!entity?.id">
     <mat-label translate>mqtt-client-credentials.password</mat-label>
     <input matInput formControlName="password"
            autocomplete="new-password"
@@ -44,7 +44,7 @@
             ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
   </tb-error>
   <button mat-button mat-raised-button color="primary"
-          *ngIf="entity?.id || isEdit"
+          *ngIf="entity?.id"
           type="button"
           [disabled]="disabled" (click)="changePassword()">
     {{'profile.change-password' | translate}}

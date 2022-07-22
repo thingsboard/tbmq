@@ -51,7 +51,8 @@ export class MqttClientCredentialsService {
     return this.http.get<MqttClientCredentials>(`/api/mqtt/client/credentials/${credentialsId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public changePassword(currentPassword: string, newPassword: string, clientId: string): Observable<boolean> {
+  public changePassword(currentPassword: string, newPassword: string, credentialsId: string): Observable<boolean> {
+    console.log(currentPassword, newPassword, credentialsId);
     return of(true);
   }
 }

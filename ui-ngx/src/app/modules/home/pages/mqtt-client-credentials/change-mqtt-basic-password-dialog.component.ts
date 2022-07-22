@@ -26,7 +26,7 @@ import { Router } from '@angular/router';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 
 export interface ChangeMqttBasicPasswordDialogData {
-  clientId: string;
+  credentialsId: string;
 }
 
 @Component({
@@ -38,7 +38,7 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
   ChangeMqttBasicPasswordDialogData> implements OnInit {
 
   changePassword: FormGroup;
-  clientId: string = this.data.clientId;
+  credentialsId = this.data.credentialsId;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -48,7 +48,6 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
               public fb: FormBuilder,
               private mqttClientCredentialsService: MqttClientCredentialsService) {
     super(store, router, dialogRef);
-
   }
 
   ngOnInit(): void {
@@ -71,7 +70,7 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
       this.mqttClientCredentialsService.changePassword(
         this.changePassword.get('currentPassword').value,
         this.changePassword.get('newPassword').value,
-        this.clientId).subscribe(() => {
+        this.credentialsId).subscribe(() => {
           this.dialogRef.close(true);
       });
     }

@@ -60,9 +60,6 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @Input()
   entity: MqttClientCredentials;
 
-  @Input()
-  isEdit: boolean;
-
   credentialsMqttFormGroup: FormGroup;
 
   private destroy$ = new Subject();
@@ -131,12 +128,13 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   }
 
   changePassword(): Observable<boolean> {
+    // @ts-ignore
     return this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
       boolean>(ChangeMqttBasicPasswordDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
-          clientId: this.credentialsMqttFormGroup.get('clientId').value
+          credentialsId: this.entity?.id
         }
       }).afterClosed();
   }

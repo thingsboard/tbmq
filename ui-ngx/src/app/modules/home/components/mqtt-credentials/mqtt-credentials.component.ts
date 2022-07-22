@@ -55,13 +55,10 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
   disabled: boolean;
 
   @Input()
-  mqttCredentials: MqttClientCredentials;
-
-  @Input()
-  isEdit: boolean;
+  entity: MqttClientCredentials;
 
   get credentialsType(): MqttCredentialsType {
-    return this.mqttCredentials.credentialsType;
+    return this.entity.credentialsType;
   }
 
   mqttCredentialsType = MqttCredentialsType;
