@@ -107,6 +107,9 @@ queue:
       # For RETRY_ALL only
       retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}" # Number of retries, 0 is unlimited
       pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:3}" # Time in seconds to wait in consumer thread before retries
+  retained-msg:
+    poll-interval: "${TB_RETAINED_MSG_POLL_INTERVAL:100}"
+    acknowledge-wait-timeout-ms: "${TB_RETAINED_MSG_ACK_WAIT_TIMEOUT_MS:500}"
   client-session:
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
@@ -178,6 +181,11 @@ queue:
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    retained-msg:
+      topic: "${TB_KAFKA_RETAINED_MSG_TOPIC:retained_msg}"
+      topic-properties: "${TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session:
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"

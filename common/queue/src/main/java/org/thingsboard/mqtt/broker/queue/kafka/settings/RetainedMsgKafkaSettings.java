@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-import java.util.Map;
-
-public interface ClientSessionConsumer {
-
-    Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException;
-
-    void listen(ClientSessionChangesCallback callback);
-
+@Data
+@Component
+@ConfigurationProperties(prefix = "queue.kafka.retained-msg")
+public class RetainedMsgKafkaSettings {
+    private String topic;
+    private String topicProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 }

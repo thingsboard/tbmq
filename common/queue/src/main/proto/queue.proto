@@ -53,6 +53,11 @@ message ConnectionInfoProto {
   int32 keepAlive = 3;
 }
 
+message RetainedMsgProto {
+    bytes payload = 1;
+    int32 qos = 2;
+}
+
 message ClientSessionInfoProto {
   bool connected = 1;
   SessionInfoProto sessionInfo = 2;

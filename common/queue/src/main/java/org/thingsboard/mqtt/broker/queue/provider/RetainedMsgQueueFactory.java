@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-import java.util.Map;
+public interface RetainedMsgQueueFactory {
 
-public interface ClientSessionConsumer {
+    TbQueueProducer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createProducer();
 
-    Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException;
-
-    void listen(ClientSessionChangesCallback callback);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createConsumer(String consumerId, String groupId);
 
 }

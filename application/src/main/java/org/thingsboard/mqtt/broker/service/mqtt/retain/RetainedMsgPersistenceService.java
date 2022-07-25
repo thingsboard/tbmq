@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-import java.util.Map;
+public interface RetainedMsgPersistenceService {
 
-public interface ClientSessionConsumer {
+    void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback);
 
-    Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException;
-
-    void listen(ClientSessionChangesCallback callback);
+    void persistRetainedMsgSync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) throws QueuePersistenceException;
 
 }

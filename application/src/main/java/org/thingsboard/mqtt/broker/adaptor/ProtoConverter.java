@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
@@ -205,6 +206,13 @@ public class ProtoConverter {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
                 .isPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
+                .build();
+    }
+
+    public static QueueProtos.RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
+        return QueueProtos.RetainedMsgProto.newBuilder()
+                .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
+                .setQos(retainedMsg.getQosLevel())
                 .build();
     }
 }

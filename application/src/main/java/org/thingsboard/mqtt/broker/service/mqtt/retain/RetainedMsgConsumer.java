@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 
 import java.util.Map;
 
-public interface ClientSessionConsumer {
+public interface RetainedMsgConsumer {
 
-    Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException;
+    Map<String, RetainedMsg> initLoad() throws QueuePersistenceException;
 
-    void listen(ClientSessionChangesCallback callback);
-
+    void listen(RetainedMsgChangesCallback callback);
 }

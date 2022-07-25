@@ -26,6 +26,7 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
 
     public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
+    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
 
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
