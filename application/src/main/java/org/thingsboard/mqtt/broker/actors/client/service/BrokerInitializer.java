@@ -85,9 +85,7 @@ public class BrokerInitializer {
 
             initClientSubscriptions(allClientSessions);
 
-
-            Map<String, ClientSessionInfo> currentNodeSessions = filterSessions(allClientSessions);
-            clearNonPersistentClients(currentNodeSessions);
+            clearNonPersistentClientsOnCurrentNode(allClientSessions);
 
             clientSessionService.startListening(clientSessionConsumer);
 
@@ -101,6 +99,11 @@ public class BrokerInitializer {
         }
     }
 
+    private void clearNonPersistentClientsOnCurrentNode(Map<String, ClientSessionInfo> allClientSessions) {
+        Map<String, ClientSessionInfo> currentNodeSessions = filterSessions(allClientSessions);
+        clearNonPersistentClients(currentNodeSessions);
+    }
+
     private void startConsuming() {
         disconnectClientCommandConsumer.startConsuming();
         clientSessionEventConsumer.startConsuming();
@@ -112,22 +115,27 @@ public class BrokerInitializer {
 
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
         Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
-        log.info("Loaded {} persisted client subscriptions.", allClientSubscriptions.size());
+        log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
+        removeSubscriptionIfSessionIsAbsent(allClientSessions, allClientSubscriptions);
+
+        log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
+        clientSubscriptionService.init(allClientSubscriptions);
+    }
+
+    private void removeSubscriptionIfSessionIsAbsent(Map<String, ClientSessionInfo> allClientSessions,
+                                                     Map<String, Set<TopicSubscription>> allClientSubscriptions) {
         Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
         for (String clientId : loadedClientIds) {
             if (!allClientSessions.containsKey(clientId)) {
                 allClientSubscriptions.remove(clientId);
             }
         }
-
-        log.info("Initializing SubscriptionManager with {} client subscriptions.", allClientSubscriptions.size());
-        clientSubscriptionService.init(allClientSubscriptions);
     }
 
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
-        log.info("Loaded {} persisted client sessions.", allClientSessions.size());
+        log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
 
         Map<String, ClientSessionInfo> currentNodeSessions = filterSessionsAndDisconnect(allClientSessions);
         log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
