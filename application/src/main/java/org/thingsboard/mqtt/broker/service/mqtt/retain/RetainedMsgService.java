@@ -15,14 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import org.thingsboard.mqtt.broker.exception.RetainMsgTrieClearException;
 
-@AllArgsConstructor
-@Data
-public class RetainedMsg {
+import java.util.List;
 
-    private final byte[] payload;
-    private final int qosLevel;
+public interface RetainedMsgService {
 
+    void saveRetainedMsg(String topic, RetainedMsg retainedMsg);
+
+    void clearRetainedMsg(String topic);
+
+    List<RetainedMsg> getRetainedMessages(String topicFilter);
+
+    void clearEmptyTopicNodes() throws RetainMsgTrieClearException;
 }

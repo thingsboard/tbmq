@@ -13,35 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.stats.timer;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import java.util.concurrent.TimeUnit;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 
-public class StubTimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats, RetainedMsgTimerStats {
+import java.util.Collections;
+import java.util.List;
 
-    @Override
-    public void logSubscriptionsLookup(long amount, TimeUnit unit) {
+public class StubRetainedMsgConsumerStats implements RetainedMsgConsumerStats {
+
+    public static StubRetainedMsgConsumerStats STUB_RETAINED_MSG_CONSUMER_STATS = new StubRetainedMsgConsumerStats();
+
+    private StubRetainedMsgConsumerStats() {
     }
 
     @Override
-    public void logClientSessionsLookup(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logNotPersistentMessagesProcessing(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
-    }
-
-    @Override
-    public void logDelivery(long amount, TimeUnit unit) {
+    public void logTotal(int totalRetainedMsgs) {
 
     }
 
     @Override
-    public void logRetainedMsgLookup(long amount, TimeUnit unit) {
+    public void log(int newRetainedMsgCount, int clearedRetainedMsgCount) {
+
+    }
+
+    @Override
+    public List<StatsCounter> getStatsCounters() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void reset() {
 
     }
 }

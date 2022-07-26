@@ -43,6 +43,9 @@ public class StatsConstantNames {
     public static final String ACCEPTED_SUBSCRIPTIONS = "acceptedSubscriptions";
     public static final String IGNORED_SUBSCRIPTIONS = "ignoredSubscriptions";
 
+    public static final String TOTAL_RETAINED_MSGS = "totalRetainedMsgs";
+    public static final String NEW_RETAINED_MSGS = "newRetainedMsgs";
+    public static final String CLEARED_RETAINED_MSGS = "clearedRetainedMsgs";
 
     public static final String STATS_NAME_TAG = "statsName";
 }

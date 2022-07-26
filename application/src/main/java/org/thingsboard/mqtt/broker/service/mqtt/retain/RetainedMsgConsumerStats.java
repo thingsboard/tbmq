@@ -15,14 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 
-@AllArgsConstructor
-@Data
-public class RetainedMsg {
+import java.util.List;
 
-    private final byte[] payload;
-    private final int qosLevel;
+public interface RetainedMsgConsumerStats {
 
+    void logTotal(int totalRetainedMsgs);
+
+    void log(int newRetainedMsgCount, int clearedRetainedMsgCount);
+
+    List<StatsCounter> getStatsCounters();
+
+    void reset();
 }

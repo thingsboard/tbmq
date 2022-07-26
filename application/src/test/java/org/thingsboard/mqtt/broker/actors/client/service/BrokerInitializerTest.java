@@ -19,8 +19,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
@@ -33,6 +35,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
@@ -43,46 +47,51 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 
-// TODO: 19/05/2022 add more tests and verify BrokerInitializer logic
-@RunWith(MockitoJUnitRunner.class)
+// TODO: 19/05/2022 add more tests
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = BrokerInitializer.class)
 public class BrokerInitializerTest {
 
-    @Mock
+    @MockBean
     ClientSubscriptionConsumer clientSubscriptionConsumer;
-    @Mock
+    @MockBean
     ClientSessionConsumer clientSessionConsumer;
-    @Mock
+    @MockBean
+    RetainedMsgConsumer retainedMsgConsumer;
+    @MockBean
     ClientSubscriptionService clientSubscriptionService;
-    @Mock
+    @MockBean
     ClientSessionService clientSessionService;
-    @Mock
+    @MockBean
+    RetainedMsgListenerService retainedMsgListenerService;
+    @MockBean
     ActorSystemContext actorSystemContext;
-    @Mock
+    @MockBean
     TbActorSystem actorSystem;
-    @Mock
+    @MockBean
     ClientSessionEventService clientSessionEventService;
-    @Mock
+    @MockBean
     ServiceInfoProvider serviceInfoProvider;
-    @Mock
+    @MockBean
     DisconnectClientCommandConsumer disconnectClientCommandConsumer;
-    @Mock
+    @MockBean
     ClientSessionEventConsumer clientSessionEventConsumer;
-    @Mock
+    @MockBean
     DeviceMsgQueueConsumer deviceMsgQueueConsumer;
-    @Mock
+    @MockBean
     PublishMsgConsumerService publishMsgConsumerService;
-    @Mock
+    @MockBean
     BasicDownLinkConsumer basicDownLinkConsumer;
-    @Mock
+    @MockBean
     PersistentDownLinkConsumer persistentDownLinkConsumer;
 
+    @SpyBean
     BrokerInitializer brokerInitializer;
 
     @Before
     public void setUp() {
-        brokerInitializer = spy(init());
+
     }
 
     @Test
@@ -114,12 +123,5 @@ public class BrokerInitializerTest {
         allClientSessions.put("clientId1", ClientSessionInfoFactory.getClientSessionInfo("clientId1", "serviceId1"));
         allClientSessions.put("clientId2", ClientSessionInfoFactory.getClientSessionInfo("clientId2", "serviceId2"));
         return allClientSessions;
-    }
-
-    private BrokerInitializer init() {
-        return new BrokerInitializer(clientSubscriptionConsumer, clientSessionConsumer, clientSubscriptionService,
-                clientSessionService, actorSystemContext, actorSystem, clientSessionEventService,
-                serviceInfoProvider, disconnectClientCommandConsumer, clientSessionEventConsumer,
-                deviceMsgQueueConsumer, publishMsgConsumerService, basicDownLinkConsumer, persistentDownLinkConsumer);
     }
 }

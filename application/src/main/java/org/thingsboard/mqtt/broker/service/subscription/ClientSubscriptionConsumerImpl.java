@@ -150,7 +150,6 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                 }
             }
         });
-
     }
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {

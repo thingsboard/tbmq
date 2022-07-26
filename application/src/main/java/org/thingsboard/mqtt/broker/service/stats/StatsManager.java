@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
 import java.util.Map;
@@ -40,11 +42,17 @@ public interface StatsManager {
 
     ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats();
 
+    RetainedMsgConsumerStats getRetainedMsgConsumerStats();
+
     void clearApplicationProcessorStats(String clientId);
 
     AtomicInteger createSubscriptionSizeCounter();
 
+    AtomicInteger createRetainMsgSizeCounter();
+
     AtomicLong createSubscriptionTrieNodesCounter();
+
+    AtomicLong createRetainMsgTrieNodesCounter();
 
     void registerLastWillStats(Map<?, ?> lastWillMsgsMap);
 
@@ -57,6 +65,8 @@ public interface StatsManager {
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
     SubscriptionTimerStats getSubscriptionTimerStats();
+
+    RetainedMsgTimerStats getRetainedMsgTimerStats();
 
     PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats();
 

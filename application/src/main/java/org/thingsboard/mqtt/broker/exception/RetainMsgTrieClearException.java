@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+public class RetainMsgTrieClearException extends Exception {
 
-@AllArgsConstructor
-@Data
-public class RetainedMsg {
+    public RetainMsgTrieClearException(String message) {
+        super(message);
+    }
 
-    private final byte[] payload;
-    private final int qosLevel;
+    public RetainMsgTrieClearException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
+    public RetainMsgTrieClearException(Throwable cause) {
+        super(cause);
+    }
+
+    public RetainMsgTrieClearException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

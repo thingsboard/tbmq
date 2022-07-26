@@ -215,4 +215,8 @@ public class ProtoConverter {
                 .setQos(retainedMsg.getQosLevel())
                 .build();
     }
+
+    public static RetainedMsg convertToRetainedMsg(QueueProtos.RetainedMsgProto retainedMsgProto) {
+        return new RetainedMsg(retainedMsgProto.getPayload().toByteArray(), retainedMsgProto.getQos());
+    }
 }

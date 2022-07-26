@@ -50,7 +50,7 @@ public class DeviceMsgCleanUpServiceTest {
     DeviceMsgCleanUpService deviceMsgCleanUpService;
 
     @Test
-    public void whenWaitTwoSecond_thenScheduledIsCalledAtLeastTenTimes() {
+    public void whenWaitThreeSeconds_thenScheduledIsCalledAtLeastOneTime() {
         await()
                 .atMost(3, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(deviceMsgCleanUpService, atLeast(1)).cleanUp());

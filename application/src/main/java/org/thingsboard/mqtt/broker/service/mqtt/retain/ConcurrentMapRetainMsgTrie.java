@@ -16,20 +16,47 @@
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.exception.RetainMsgTrieClearException;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@Slf4j
+@Service
 public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
-    private final AtomicInteger size = new AtomicInteger();
-    private final Node<T> root = new Node<>();
 
+    private final AtomicInteger size;
+    private final AtomicLong nodesCount;
+    private final Node<T> root = new Node<>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    @Setter
+    @Value("${mqtt.retain-msg-trie.wait-for-clear-lock-ms}")
+    private int waitForClearLockMs;
+
+    public ConcurrentMapRetainMsgTrie(StatsManager statsManager) {
+        this.size = statsManager.createRetainMsgSizeCounter();
+        this.nodesCount = statsManager.createRetainMsgTrieNodesCounter();
+    }
+
+    @EqualsAndHashCode
     private static class Node<T> {
         private final AtomicReference<T> value = new AtomicReference<>();
         private final ConcurrentMap<String, Node<T>> children = new ConcurrentHashMap<>();
@@ -104,27 +131,37 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
 
     @Override
     public void put(String topic, T val) {
+        log.trace("Executing put [{}] [{}]", topic, val);
         if (topic == null || val == null) {
             throw new IllegalArgumentException("Topic or value cannot be null");
         }
-        put(root, topic, val, 0);
+        lock.readLock().lock();
+        try {
+            put(root, topic, val, 0);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private void put(Node<T> x, String topic, T val, int prevDelimiterIndex) {
         if (prevDelimiterIndex >= topic.length()) {
             T prevValue = x.value.getAndSet(val);
-            if (prevValue == null){
+            if (prevValue == null) {
                 size.getAndIncrement();
             }
         } else {
             String segment = getSegment(topic, prevDelimiterIndex);
-            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> new Node<>(segment));
+            Node<T> nextNode = x.children.computeIfAbsent(segment, s -> {
+                nodesCount.incrementAndGet();
+                return new Node<>(segment);
+            });
             put(nextNode, topic, val, prevDelimiterIndex + segment.length() + 1);
         }
     }
 
     @Override
     public void delete(String topic) {
+        log.trace("Executing delete [{}]", topic);
         if (topic == null) {
             throw new IllegalArgumentException("Topic cannot be null");
         }
@@ -149,6 +186,57 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
     @Override
     public int size() {
         return size.get();
+    }
+
+    @Override
+    public void clearEmptyNodes() throws RetainMsgTrieClearException {
+        log.trace("Executing clearEmptyNodes");
+        acquireClearTrieLock();
+        long nodesBefore = nodesCount.get();
+        long clearStartTime = System.currentTimeMillis();
+        try {
+            clearEmptyChildren(root);
+            long nodesAfter = nodesCount.get();
+            long clearEndTime = System.currentTimeMillis();
+            log.debug("Clearing trie took {} ms, cleared {} nodes.",
+                    clearEndTime - clearStartTime, nodesBefore - nodesAfter);
+        } catch (Exception e) {
+            long nodesAfter = nodesCount.get();
+            log.error("Failed on clearing empty nodes. Managed to clear {} nodes. Reason - {}.",
+                    nodesBefore - nodesAfter, e.getMessage());
+            log.debug("Detailed error:", e);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private boolean clearEmptyChildren(ConcurrentMapRetainMsgTrie.Node<T> node) {
+        boolean isNodeEmpty = node.value.get() == null;
+        for (Map.Entry<String, ConcurrentMapRetainMsgTrie.Node<T>> entry : node.children.entrySet()) {
+            ConcurrentMapRetainMsgTrie.Node<T> value = entry.getValue();
+            boolean isChildEmpty = clearEmptyChildren(value);
+            if (isChildEmpty) {
+                node.children.remove(entry.getKey());
+                nodesCount.decrementAndGet();
+            } else {
+                isNodeEmpty = false;
+            }
+        }
+
+        return isNodeEmpty;
+    }
+
+    private void acquireClearTrieLock() throws RetainMsgTrieClearException {
+        boolean successfullyAcquiredLock = false;
+        try {
+            successfullyAcquiredLock = lock.writeLock().tryLock(waitForClearLockMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.warn("Acquiring lock was interrupted.");
+        }
+        if (!successfullyAcquiredLock) {
+            throw new RetainMsgTrieClearException("Couldn't acquire lock for clearing trie. " +
+                    "There are a lot of clients sending retained messages right now.");
+        }
     }
 
     private String getSegment(String key, int prevDelimiterIndex) {

@@ -35,8 +35,11 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.DefaultRetainedMsgConsumerStats;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 
@@ -69,6 +72,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final Map<String, ResettableTimer> managedQueueConsumers = new ConcurrentHashMap<>();
     private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
+    private RetainedMsgConsumerStats retainedMsgConsumerStats;
     private ClientActorStats clientActorStats;
 
     @Value("${stats.application-processor.enabled}")
@@ -81,6 +85,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void init() {
         this.timerStats = new TimerStats(statsFactory);
         this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
+        this.retainedMsgConsumerStats = new DefaultRetainedMsgConsumerStats(statsFactory);
         this.clientActorStats = new DefaultClientActorStats(statsFactory);
     }
 
@@ -139,6 +144,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public RetainedMsgConsumerStats getRetainedMsgConsumerStats() {
+        return retainedMsgConsumerStats;
+    }
+
+    @Override
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
         ApplicationProcessorStats stats = managedApplicationProcessorStats.get(clientId);
@@ -151,6 +161,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.trace("Creating SubscriptionSizeCounter.");
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
+        return sizeGauge;
+    }
+
+    @Override
+    public AtomicInteger createRetainMsgSizeCounter() {
+        log.trace("Creating RetainMsgSizeCounter.");
+        AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
+        gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
     }
 
@@ -205,6 +223,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public AtomicLong createRetainMsgTrieNodesCounter() {
+        log.trace("Creating RetainMsgTrieNodesCounter.");
+        AtomicLong sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), new AtomicLong(0));
+        gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), sizeGauge::get));
+        return sizeGauge;
+    }
+
+    @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
         log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}.", queueName, queueIndex);
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.SQL_QUEUE.getPrintName() + "." + queueName,
@@ -237,6 +263,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public SubscriptionTimerStats getSubscriptionTimerStats() {
+        return timerStats;
+    }
+
+    @Override
+    public RetainedMsgTimerStats getRetainedMsgTimerStats() {
         return timerStats;
     }
 
@@ -312,6 +343,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                 .collect(Collectors.joining(" "));
         log.info("[{}] Stats: {}", StatsType.CLIENT_SUBSCRIPTIONS_CONSUMER.getPrintName(), statsStr);
         managedClientSubscriptionConsumerStats.reset();
+
+        String retainedMsgStatsStr = retainedMsgConsumerStats.getStatsCounters().stream()
+                .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                .collect(Collectors.joining(" "));
+        log.info("[{}] Stats: {}", StatsType.RETAINED_MSG_CONSUMER.getPrintName(), retainedMsgStatsStr);
+        retainedMsgConsumerStats.reset();
 
         StringBuilder gaugeLogBuilder = new StringBuilder();
         for (Gauge gauge : gauges) {

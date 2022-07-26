@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import org.thingsboard.mqtt.broker.exception.RetainMsgTrieClearException;
+
 import java.util.List;
 
 public interface RetainMsgTrie<T> {
@@ -26,4 +28,6 @@ public interface RetainMsgTrie<T> {
     void delete(String topic);
 
     int size();
+
+    void clearEmptyNodes() throws RetainMsgTrieClearException;
 }

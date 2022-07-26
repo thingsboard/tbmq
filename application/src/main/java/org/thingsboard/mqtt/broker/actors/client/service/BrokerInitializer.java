@@ -39,6 +39,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventS
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
@@ -59,9 +62,11 @@ public class BrokerInitializer {
 
     private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final ClientSessionConsumer clientSessionConsumer;
+    private final RetainedMsgConsumer retainedMsgConsumer;
 
     private final ClientSubscriptionService clientSubscriptionService;
     private final ClientSessionService clientSessionService;
+    private final RetainedMsgListenerService retainedMsgListenerService;
 
     private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
@@ -91,12 +96,21 @@ public class BrokerInitializer {
 
             startSubscriptionListening();
 
+            initRetainedMessages();
+            retainedMsgListenerService.startListening(retainedMsgConsumer);
+
             log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
             startConsuming();
         } catch (Exception e) {
             log.error("Failed to initialize broker. Exception - {}, reason - {}", e.getClass().getSimpleName(), e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    private void initRetainedMessages() throws QueuePersistenceException {
+        Map<String, RetainedMsg> allRetainedMessages = retainedMsgConsumer.initLoad();
+        log.info("Loaded {} stored retained messages from Kafka.", allRetainedMessages.size());
+        retainedMsgListenerService.init(allRetainedMessages);
     }
 
     private void clearNonPersistentClientsOnCurrentNode(Map<String, ClientSessionInfo> allClientSessions) {

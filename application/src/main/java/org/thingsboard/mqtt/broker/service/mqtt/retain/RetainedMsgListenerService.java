@@ -15,14 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Map;
 
-@AllArgsConstructor
-@Data
-public class RetainedMsg {
+public interface RetainedMsgListenerService {
 
-    private final byte[] payload;
-    private final int qosLevel;
+    void init(Map<String, RetainedMsg> retainedMsgMap);
+
+    void startListening(RetainedMsgConsumer retainedMsgConsumer);
 
 }

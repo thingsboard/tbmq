@@ -312,6 +312,13 @@ mqtt:
     # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
     clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
+  retain-msg-trie:
+    # Wait for clients to pause updating retained messages for topics so that application can clear RetainMsgTrie.
+    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail.
+    wait-for-clear-lock-ms: "${MQTT_RETAIN_MSG_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
+    # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
+    clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
+    clear-nodes-zone: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_ZONE:UTC}"
   client-session-cleanup:
     # Cron specification when to run clearing old and not active client sessions. Defaults to 'every day at 1 o'clock'
     cron: "${MQTT_CLIENT_SESSION_CLEANUP_CRON:0 0 1 * * *}"

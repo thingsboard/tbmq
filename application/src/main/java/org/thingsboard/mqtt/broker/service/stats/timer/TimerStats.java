@@ -24,10 +24,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats {
+public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingTimerStats, DeliveryTimerStats, RetainedMsgTimerStats {
     private final List<ResettableTimer> timers;
 
     private final ResettableTimer subscriptionLookupTimer;
+    private final ResettableTimer retainedMsgLookupTimer;
     private final ResettableTimer clientSessionsLookupTimer;
     private final ResettableTimer notPersistentMessagesProcessingTimer;
     private final ResettableTimer persistentMessagesProcessingTimer;
@@ -35,14 +36,15 @@ public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingT
 
     public TimerStats(StatsFactory statsFactory) {
         this.subscriptionLookupTimer = new ResettableTimer(statsFactory.createTimer(StatsType.SUBSCRIPTION_LOOKUP.getPrintName()));
+        this.retainedMsgLookupTimer = new ResettableTimer(statsFactory.createTimer(StatsType.RETAINED_MSG_LOOKUP.getPrintName()));
         this.clientSessionsLookupTimer = new ResettableTimer(statsFactory.createTimer(StatsType.CLIENT_SESSIONS_LOOKUP.getPrintName()));
         this.notPersistentMessagesProcessingTimer = new ResettableTimer(statsFactory.createTimer(StatsType.NOT_PERSISTENT_MESSAGES_PROCESSING.getPrintName()));
         this.persistentMessagesProcessingTimer = new ResettableTimer(statsFactory.createTimer(StatsType.PERSISTENT_MESSAGES_PROCESSING.getPrintName()));
         this.deliveryTimer = new ResettableTimer(statsFactory.createTimer(StatsType.DELIVERY.getPrintName()));
 
         this.timers = Arrays.asList(
-                subscriptionLookupTimer, clientSessionsLookupTimer, notPersistentMessagesProcessingTimer, persistentMessagesProcessingTimer,
-                deliveryTimer
+                subscriptionLookupTimer, retainedMsgLookupTimer, clientSessionsLookupTimer,
+                notPersistentMessagesProcessingTimer, persistentMessagesProcessingTimer, deliveryTimer
         );
     }
 
@@ -73,5 +75,10 @@ public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingT
     @Override
     public void logDelivery(long amount, TimeUnit unit) {
         deliveryTimer.logTime(amount, unit);
+    }
+
+    @Override
+    public void logRetainedMsgLookup(long amount, TimeUnit unit) {
+        retainedMsgLookupTimer.logTime(amount, unit);
     }
 }

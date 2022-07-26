@@ -25,8 +25,11 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumerStats;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.StubRetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
+import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 
@@ -77,11 +80,21 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public RetainedMsgConsumerStats getRetainedMsgConsumerStats() {
+        return StubRetainedMsgConsumerStats.STUB_RETAINED_MSG_CONSUMER_STATS;
+    }
+
+    @Override
     public void clearApplicationProcessorStats(String clientId) {
     }
 
     @Override
     public AtomicInteger createSubscriptionSizeCounter() {
+        return new AtomicInteger(0);
+    }
+
+    @Override
+    public AtomicInteger createRetainMsgSizeCounter() {
         return new AtomicInteger(0);
     }
 
@@ -111,6 +124,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public RetainedMsgTimerStats getRetainedMsgTimerStats() {
+        return timerStats;
+    }
+
+    @Override
     public PublishMsgProcessingTimerStats getPublishMsgProcessingTimerStats() {
         return timerStats;
     }
@@ -135,8 +153,14 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public AtomicLong createRetainMsgTrieNodesCounter() {
+        return new AtomicLong(0);
+    }
+
+    @Override
     public Timer createSendTimer(String clientId) {
-        return (amount, unit) -> {};
+        return (amount, unit) -> {
+        };
     }
 
     @Override
