@@ -13,37 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 
-import java.util.Collections;
 import java.util.List;
 
-public class StubRetainedMsgConsumerStats implements RetainedMsgConsumerStats {
+public interface RetainedMsgConsumerStats {
 
-    public static StubRetainedMsgConsumerStats STUB_RETAINED_MSG_CONSUMER_STATS = new StubRetainedMsgConsumerStats();
+    void logTotal(int totalRetainedMsgs);
 
-    private StubRetainedMsgConsumerStats() {
-    }
+    void log(int newRetainedMsgCount, int clearedRetainedMsgCount);
 
-    @Override
-    public void logTotal(int totalRetainedMsgs) {
+    List<StatsCounter> getStatsCounters();
 
-    }
-
-    @Override
-    public void log(int newRetainedMsgCount, int clearedRetainedMsgCount) {
-
-    }
-
-    @Override
-    public List<StatsCounter> getStatsCounters() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void reset() {
-
-    }
+    void reset();
 }
