@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+
 import java.util.Map;
 
 public interface RetainedMsgListenerService {
@@ -22,5 +24,17 @@ public interface RetainedMsgListenerService {
     void init(Map<String, RetainedMsg> retainedMsgMap);
 
     void startListening(RetainedMsgConsumer retainedMsgConsumer);
+
+    void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg);
+
+    void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg, BasicCallback callback);
+
+    void cacheRetainedMsg(String topic, RetainedMsg retainedMsg);
+
+    void clearRetainedMsgAndPersist(String topic);
+
+    void clearRetainedMsgAndPersist(String topic, BasicCallback callback);
+
+    void clearRetainedMsg(String topic);
 
 }

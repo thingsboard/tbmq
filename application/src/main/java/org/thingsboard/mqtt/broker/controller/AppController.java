@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 
 import java.util.Collection;
 
@@ -32,8 +33,10 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @RequestMapping("/api/app")
 public class AppController extends BaseController {
+
     private final TbActorSystem tbActorSystem;
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
+    private final RetainedMsgService retainedMsgService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
@@ -52,6 +55,17 @@ public class AppController extends BaseController {
     public void removeApplicationTopics() throws ThingsboardException {
         try {
             applicationRemovedEventProcessor.processEvents();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)
+    @ResponseBody
+    public void clearEmptyRetainedMsgNodes() throws ThingsboardException {
+        try {
+            retainedMsgService.clearEmptyTopicNodes();
         } catch (Exception e) {
             throw handleException(e);
         }

@@ -51,6 +51,11 @@ public class ConcurrentMapRetainMsgTrieTest {
     }
 
     @Test
+    public void testNoRetainMsgForTopic() {
+        Assert.assertTrue(retainMsgTrie.get("1/2").isEmpty());
+    }
+
+    @Test
     public void testSaveSameTopic() {
         retainMsgTrie.put("1/2", "test1");
         Assert.assertEquals(1, retainMsgTrie.get("1/2").size());

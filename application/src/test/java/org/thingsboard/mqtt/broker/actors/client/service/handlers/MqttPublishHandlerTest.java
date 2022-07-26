@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
@@ -65,6 +67,8 @@ public class MqttPublishHandlerTest {
     ClientMqttActorManager clientMqttActorManager;
     @MockBean
     ClientLogger clientLogger;
+    @MockBean
+    RetainedMsgListenerService retainedMsgListenerService;
 
     @SpyBean
     MqttPublishHandler mqttPublishHandler;
@@ -129,11 +133,54 @@ public class MqttPublishHandlerTest {
         verify(mqttPublishHandler, times(2)).persistPubMsg(eq(ctx), any(), eq(actorRef));
     }
 
+    @Test
+    public void testProcessRetainMsg() {
+        PublishMsg publishMsg = getPublishMsg(1, 2, true);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+        verify(mqttPublishHandler, times(1)).processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
+
+        verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), any(), eq(actorRef));
+        verify(retainedMsgListenerService, times(1)).cacheRetainedMsgAndPersist(eq("test"), any());
+    }
+
+    @Test
+    public void testProcessEmptyRetainMsg() {
+        PublishMsg publishMsg = emptyPublishMsg();
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), any(), eq(actorRef));
+        verify(retainedMsgListenerService, times(1)).clearRetainedMsgAndPersist(eq("test"));
+    }
+
+    @Test
+    public void testUnsetRetainedFlag() {
+        PublishMsg publishMsg = getPublishMsg(1, 2, true);
+        Assert.assertTrue(publishMsg.isRetained());
+
+        PublishMsg updatedPubMsg = mqttPublishHandler.unsetRetainedFlag(publishMsg);
+
+        Assert.assertEquals(1, updatedPubMsg.getPacketId());
+        Assert.assertEquals("test", updatedPubMsg.getTopicName());
+        Assert.assertEquals(2, updatedPubMsg.getQosLevel());
+        Assert.assertFalse(updatedPubMsg.isRetained());
+        Assert.assertFalse(updatedPubMsg.isDup());
+    }
+
     private MqttPublishMsg createMqttPubMsg(PublishMsg publishMsg) {
         return new MqttPublishMsg(UUID.randomUUID(), publishMsg);
     }
 
     private PublishMsg getPublishMsg(int packetId, int qos) {
-        return new PublishMsg(packetId, "test", "data".getBytes(), qos, false, false);
+        return getPublishMsg(packetId, qos, false);
+    }
+
+    private PublishMsg getPublishMsg(int packetId, int qos, boolean isRetained) {
+        return new PublishMsg(packetId, "test", "data".getBytes(), qos, isRetained, false);
+    }
+
+    private PublishMsg emptyPublishMsg() {
+        return new PublishMsg(1, "test", new byte[0], 1, true, false);
     }
 }

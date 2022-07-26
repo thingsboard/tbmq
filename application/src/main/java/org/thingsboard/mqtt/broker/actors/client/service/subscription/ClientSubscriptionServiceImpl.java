@@ -66,8 +66,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         BasicCallback callback = createCallback(
-                () -> log.trace("[{}] Persisted subscribed topic subscriptions", clientId),
-                t -> log.warn("[{}] Failed to persist subscribed topic subscriptions. Exception - {}, reason - {}",
+                () -> log.trace("[{}] Persisted topic subscriptions", clientId),
+                t -> log.warn("[{}] Failed to persist topic subscriptions. Exception - {}, reason - {}",
                         clientId, t.getClass().getSimpleName(), t.getMessage()));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }

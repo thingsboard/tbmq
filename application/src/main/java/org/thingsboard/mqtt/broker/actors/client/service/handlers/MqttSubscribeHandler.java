@@ -27,11 +27,14 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,6 +47,7 @@ public class MqttSubscribeHandler {
     private final ClientSubscriptionService clientSubscriptionService;
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final RetainedMsgService retainedMsgService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -66,10 +70,25 @@ public class MqttSubscribeHandler {
         String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions,
                 CallbackUtil.createCallback(
-                        () -> ctx.getChannel().writeAndFlush(subAckMessage),
+                        () -> {
+                            ctx.getChannel().writeAndFlush(subAckMessage);
+
+                            List<String> topics = getTopicsListFromTopicSubscriptions(topicSubscriptions);
+                            Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopics(topics);
+//                            retainedMsgSet.forEach(retainedMsg -> ctx.getChannel().writeAndFlush());
+                            // TODO: 26/07/2022 finish
+                        },
                         t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
                                 clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
         );
+    }
+
+    Set<RetainedMsg> getRetainedMessagesForTopics(List<String> topics) {
+        return topics
+                .stream()
+                .map(retainedMsgService::getRetainedMessages)
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
     }
 
     void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {

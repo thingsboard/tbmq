@@ -18,9 +18,15 @@ package org.thingsboard.mqtt.broker.service.mqtt.retain;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.Map;
+
+import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
 @Slf4j
 @Service
@@ -28,6 +34,7 @@ import java.util.Map;
 public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerService {
 
     private final RetainedMsgService retainedMsgService;
+    private final RetainedMsgPersistenceService retainedMsgPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
 
     @Override
@@ -35,13 +42,60 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         log.info("Restoring stored retained messages for {} topics.", retainedMsgMap.size());
         retainedMsgMap.forEach((topic, retainedMsg) -> {
             log.trace("[{}] Restoring retained msg - {}.", topic, retainedMsg);
-            retainedMsgService.saveRetainedMsg(topic, retainedMsg);
+            cacheRetainedMsg(topic, retainedMsg);
         });
     }
 
     @Override
     public void startListening(RetainedMsgConsumer retainedMsgConsumer) {
         retainedMsgConsumer.listen(this::processRetainedMsgUpdate);
+    }
+
+    @Override
+    public void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg) {
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Persisted retained msg", topic),
+                t -> log.warn("[{}] Failed to persist retained msg. Exception - {}, reason - {}",
+                        topic, t.getClass().getSimpleName(), t.getMessage()));
+        cacheRetainedMsgAndPersist(topic, retainedMsg, callback);
+    }
+
+    @Override
+    public void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg, BasicCallback callback) {
+        log.trace("[{}] Executing cacheRetainedMsgAndPersist {}.", topic, retainedMsg);
+        cacheRetainedMsg(topic, retainedMsg);
+
+        QueueProtos.RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback);
+    }
+
+    @Override
+    public void cacheRetainedMsg(String topic, RetainedMsg retainedMsg) {
+        log.trace("[{}] Executing cacheRetainedMsg {}.", topic, retainedMsg);
+        retainedMsgService.saveRetainedMsg(topic, retainedMsg);
+    }
+
+    @Override
+    public void clearRetainedMsgAndPersist(String topic) {
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Persisted cleared retained msg", topic),
+                t -> log.warn("[{}] Failed to persist cleared retained msg. Exception - {}, reason - {}",
+                        topic, t.getClass().getSimpleName(), t.getMessage()));
+        clearRetainedMsgAndPersist(topic, callback);
+    }
+
+    @Override
+    public void clearRetainedMsgAndPersist(String topic, BasicCallback callback) {
+        log.trace("[{}] Executing clearRetainedMsgAndPersist", topic);
+        clearRetainedMsg(topic);
+
+        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, BrokerConstants.EMPTY_RETAINED_MSG_PROTO, callback);
+    }
+
+    @Override
+    public void clearRetainedMsg(String topic) {
+        log.trace("[{}] Executing clearRetainedMsg", topic);
+        retainedMsgService.clearRetainedMsg(topic);
     }
 
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
@@ -51,10 +105,10 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         }
         if (retainedMsg == null) {
             log.trace("[{}][{}] Clearing remote retained msg.", serviceId, topic);
-            retainedMsgService.clearRetainedMsg(topic);
+            clearRetainedMsg(topic);
         } else {
             log.trace("[{}][{}] Saving remote retained msg.", serviceId, topic);
-            retainedMsgService.saveRetainedMsg(topic, retainedMsg);
+            cacheRetainedMsg(topic, retainedMsg);
         }
     }
 }
