@@ -156,7 +156,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private String persistDummyRetainedMsg() throws QueuePersistenceException {
         String dummyTopic = DUMMY_TOPIC_PREFIX + RandomStringUtils.randomAlphanumeric(8);
-        RetainedMsg retainedMsg = new RetainedMsg(DUMMY_PAYLOAD, 0);
+        RetainedMsg retainedMsg = new RetainedMsg(dummyTopic, DUMMY_PAYLOAD, 0);
         persistenceService.persistRetainedMsgSync(dummyTopic, ProtoConverter.convertToRetainedMsgProto(retainedMsg));
         return dummyTopic;
     }

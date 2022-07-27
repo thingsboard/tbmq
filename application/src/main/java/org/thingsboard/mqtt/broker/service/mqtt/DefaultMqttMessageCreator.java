@@ -32,6 +32,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.util.List;
 
@@ -94,11 +95,23 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
+        return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), false,
+                pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload());
+    }
+
+    @Override
+    public MqttPublishMessage createPubRetainMsg(int msgId, RetainedMsg retainedMsg) {
+        return getMqttPublishMessage(false, retainedMsg.getQosLevel(), true,
+                retainedMsg.getTopic(), msgId, retainedMsg.getPayload());
+    }
+
+    private MqttPublishMessage getMqttPublishMessage(boolean isDup, int qos, boolean isRetain,
+                                                     String topic, int packetId, byte[] payloadBytes) {
         MqttFixedHeader mqttFixedHeader =
-                new MqttFixedHeader(MqttMessageType.PUBLISH, pubMsg.isDup(), MqttQoS.valueOf(pubMsg.getQosLevel()), false, 0);
-        MqttPublishVariableHeader header = new MqttPublishVariableHeader(pubMsg.getTopicName(), pubMsg.getPacketId());
+                new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, MqttQoS.valueOf(qos), isRetain, 0);
+        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, packetId);
         ByteBuf payload = ALLOCATOR.buffer();
-        payload.writeBytes(pubMsg.getPayload());
+        payload.writeBytes(payloadBytes);
         return new MqttPublishMessage(mqttFixedHeader, header, payload);
     }
 

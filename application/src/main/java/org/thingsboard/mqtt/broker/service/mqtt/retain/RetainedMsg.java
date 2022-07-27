@@ -24,6 +24,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class RetainedMsg {
 
+    private final String topic;
     private final byte[] payload;
     private final int qosLevel;
 

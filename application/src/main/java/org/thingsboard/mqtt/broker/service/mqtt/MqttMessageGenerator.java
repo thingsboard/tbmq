@@ -21,6 +21,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.util.List;
 
@@ -36,6 +37,8 @@ public interface MqttMessageGenerator {
     MqttMessage createPubRecMsg(int requestId);
 
     MqttPublishMessage createPubMsg(PublishMsg pubMsg);
+
+    MqttPublishMessage createPubRetainMsg(int msgId, RetainedMsg retainedMsg);
 
     MqttMessage createPingRespMsg();
 

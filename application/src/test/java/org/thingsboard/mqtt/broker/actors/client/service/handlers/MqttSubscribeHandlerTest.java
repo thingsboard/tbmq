@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
@@ -59,6 +60,7 @@ class MqttSubscribeHandlerTest {
     TopicValidationService topicValidationService;
     AuthorizationRuleService authorizationRuleService;
     RetainedMsgService retainedMsgService;
+    PublishMsgDeliveryService publishMsgDeliveryService;
     MqttSubscribeHandler mqttSubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -70,8 +72,9 @@ class MqttSubscribeHandlerTest {
         topicValidationService = mock(TopicValidationService.class);
         authorizationRuleService = mock(AuthorizationRuleService.class);
         retainedMsgService = mock(RetainedMsgService.class);
+        publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
         mqttSubscribeHandler = spy(new MqttSubscribeHandler(mqttMessageGenerator, clientSubscriptionService, topicValidationService,
-                authorizationRuleService, retainedMsgService));
+                authorizationRuleService, retainedMsgService, publishMsgDeliveryService));
 
         ctx = mock(ClientSessionCtx.class);
         when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));
@@ -144,9 +147,20 @@ class MqttSubscribeHandlerTest {
         when(retainedMsgService.getRetainedMessages(eq("four"))).thenReturn(List.of(
                 newRetainedMsg("payload6", 1), newRetainedMsg("payload1", 1)
         ));
+        when(retainedMsgService.getRetainedMessages(eq("five"))).thenReturn(List.of(
+                newRetainedMsg("payload6", 2), newRetainedMsg("payload4", 1)
+        ));
 
-        Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopics(List.of("one", "two", "three", "four"));
-        assertEquals(6, retainedMsgSet.size());
+        Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
+                List.of(
+                        getTopicSubscription("one", 1),
+                        getTopicSubscription("two", 2),
+                        getTopicSubscription("three", 1),
+                        getTopicSubscription("four", 1),
+                        getTopicSubscription("five", 0)
+                )
+        );
+        assertEquals(7, retainedMsgSet.size());
     }
 
     private List<TopicSubscription> getTopicSubscriptions() {
@@ -157,10 +171,14 @@ class MqttSubscribeHandlerTest {
     }
 
     private TopicSubscription getTopicSubscription(String topic) {
-        return new TopicSubscription(topic, 1);
+        return getTopicSubscription(topic, 1);
+    }
+
+    private TopicSubscription getTopicSubscription(String topic, int qos) {
+        return new TopicSubscription(topic, qos);
     }
 
     private RetainedMsg newRetainedMsg(String payload, int qos) {
-        return new RetainedMsg(payload.getBytes(StandardCharsets.UTF_8), qos);
+        return new RetainedMsg("#", payload.getBytes(StandardCharsets.UTF_8), qos);
     }
 }

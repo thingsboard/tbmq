@@ -54,8 +54,9 @@ message ConnectionInfoProto {
 }
 
 message RetainedMsgProto {
-    bytes payload = 1;
-    int32 qos = 2;
+  bytes payload = 1;
+  int32 qos = 2;
+  string topic = 3;
 }
 
 message ClientSessionInfoProto {

@@ -213,10 +213,11 @@ public class ProtoConverter {
         return QueueProtos.RetainedMsgProto.newBuilder()
                 .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
                 .setQos(retainedMsg.getQosLevel())
+                .setTopic(retainedMsg.getTopic())
                 .build();
     }
 
     public static RetainedMsg convertToRetainedMsg(QueueProtos.RetainedMsgProto retainedMsgProto) {
-        return new RetainedMsg(retainedMsgProto.getPayload().toByteArray(), retainedMsgProto.getQos());
+        return new RetainedMsg(retainedMsgProto.getTopic(), retainedMsgProto.getPayload().toByteArray(), retainedMsgProto.getQos());
     }
 }

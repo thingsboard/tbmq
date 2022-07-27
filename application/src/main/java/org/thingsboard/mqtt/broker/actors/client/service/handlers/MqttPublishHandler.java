@@ -94,7 +94,7 @@ public class MqttPublishHandler {
     }
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        return new RetainedMsg(publishMsg.getPayload(), publishMsg.getQosLevel());
+        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel());
     }
 
     PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {

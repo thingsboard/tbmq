@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
@@ -48,6 +49,7 @@ public class MqttSubscribeHandler {
     private final TopicValidationService topicValidationService;
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -72,23 +74,46 @@ public class MqttSubscribeHandler {
                 CallbackUtil.createCallback(
                         () -> {
                             ctx.getChannel().writeAndFlush(subAckMessage);
-
-                            List<String> topics = getTopicsListFromTopicSubscriptions(topicSubscriptions);
-                            Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopics(topics);
-//                            retainedMsgSet.forEach(retainedMsg -> ctx.getChannel().writeAndFlush());
-                            // TODO: 26/07/2022 finish
+                            processRetainedMessages(ctx, topicSubscriptions);
                         },
                         t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
                                 clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
         );
     }
 
-    Set<RetainedMsg> getRetainedMessagesForTopics(List<String> topics) {
-        return topics
+    private void processRetainedMessages(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+        Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(topicSubscriptions);
+        retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishMsgToClient(ctx, retainedMsg));
+    }
+
+    Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
+        return topicSubscriptions
                 .stream()
-                .map(retainedMsgService::getRetainedMessages)
+                .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
+    }
+
+    private List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
+        List<RetainedMsg> retainedMessages = getRetainedMessages(topicSubscription);
+        return retainedMessages
+                .stream()
+                .map(retainedMsg -> {
+                    int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
+                    return newRetainedMsg(retainedMsg, minQoSValue);
+                }).collect(Collectors.toList());
+    }
+
+    private List<RetainedMsg> getRetainedMessages(TopicSubscription topicSubscription) {
+        return retainedMsgService.getRetainedMessages(topicSubscription.getTopic());
+    }
+
+    private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
+        return new RetainedMsg(retainedMsg.getTopic(), retainedMsg.getPayload(), minQoSValue);
+    }
+
+    private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {
+        return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
     }
 
     void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {

@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
@@ -44,8 +45,20 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
         log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
-        long startTime = System.nanoTime();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
+        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+    }
+
+    @Override
+    public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg) {
+        log.trace("[{}] Sending Retained msg to client {}", sessionCtx.getClientId(), retainedMsg);
+        int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
+        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
+        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+    }
+
+    private void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+        long startTime = System.nanoTime();
         try {
             retransmissionService.sendPublishWithRetransmission(sessionCtx, mqttPubMsg);
         } catch (Exception e) {

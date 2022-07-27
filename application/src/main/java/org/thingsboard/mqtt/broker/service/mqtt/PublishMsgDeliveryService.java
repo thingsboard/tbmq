@@ -15,11 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface PublishMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg);
+
+    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg);
 
     void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId);
 }
