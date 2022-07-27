@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -38,6 +40,7 @@ public class DefaultLastWillService implements LastWillService {
     private final ConcurrentMap<UUID, MsgWithSessionInfo> lastWillMessages = new ConcurrentHashMap<>();
 
     private final MsgDispatcherService msgDispatcherService;
+    private final RetainedMsgProcessor retainedMsgProcessor;
     private final StatsManager statsManager;
 
     @PostConstruct
@@ -61,8 +64,8 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg) {
-        MsgWithSessionInfo lastWillMsg = lastWillMessages.get(sessionId);
-        if (lastWillMsg == null) {
+        MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
+        if (lastWillMsgWithSessionInfo == null) {
             log.trace("[{}] No last will msg.", sessionId);
             return;
         }
@@ -70,12 +73,16 @@ public class DefaultLastWillService implements LastWillService {
         log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
-            persistPublishMsg(lastWillMsg, sessionId);
+            PublishMsg publishMsg = lastWillMsgWithSessionInfo.getPublishMsg();
+            if (publishMsg.isRetained()) {
+                publishMsg = retainedMsgProcessor.process(publishMsg);
+            }
+            persistPublishMsg(lastWillMsgWithSessionInfo.getSessionInfo(), publishMsg, sessionId);
         }
     }
 
-    void persistPublishMsg(MsgWithSessionInfo lastWillMsg, UUID sessionId) {
-        msgDispatcherService.persistPublishMsg(lastWillMsg.sessionInfo, lastWillMsg.publishMsg,
+    void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, UUID sessionId) {
+        msgDispatcherService.persistPublishMsg(sessionInfo, publishMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -91,6 +98,7 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @AllArgsConstructor
+    @Data
     public static class MsgWithSessionInfo {
         private final PublishMsg publishMsg;
         private final SessionInfo sessionInfo;

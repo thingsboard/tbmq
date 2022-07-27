@@ -34,8 +34,7 @@ import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
@@ -57,7 +56,7 @@ public class MqttPublishHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
-    private final RetainedMsgListenerService retainedMsgListenerService;
+    private final RetainedMsgProcessor retainedMsgProcessor;
 
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
         PublishMsg publishMsg = msg.getPublishMsg();
@@ -73,32 +72,11 @@ public class MqttPublishHandler {
         }
 
         if (publishMsg.isRetained()) {
-            publishMsg = processRetainedMsg(publishMsg);
+            publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 
         clientLogger.logEvent(ctx.getClientId(), this.getClass(), "Sending PUBLISH");
         persistPubMsg(ctx, publishMsg, actorRef);
-    }
-
-    private PublishMsg processRetainedMsg(PublishMsg publishMsg) {
-        if (payloadIsEmpty(publishMsg)) {
-            retainedMsgListenerService.clearRetainedMsgAndPersist(publishMsg.getTopicName());
-        } else {
-            retainedMsgListenerService.cacheRetainedMsgAndPersist(publishMsg.getTopicName(), newRetainedMsg(publishMsg));
-        }
-        return unsetRetainedFlag(publishMsg);
-    }
-
-    private boolean payloadIsEmpty(PublishMsg publishMsg) {
-        return publishMsg.getPayload().length == 0;
-    }
-
-    private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel());
-    }
-
-    PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {
-        return publishMsg.toBuilder().isRetained(false).build();
     }
 
     private void validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {

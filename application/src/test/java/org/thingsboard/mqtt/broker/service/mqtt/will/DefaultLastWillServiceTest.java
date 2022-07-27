@@ -21,6 +21,7 @@ import org.mockito.verification.VerificationMode;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.when;
 class DefaultLastWillServiceTest {
 
     MsgDispatcherService msgDispatcherService;
+    RetainedMsgProcessor retainedMsgProcessor;
     StatsManager statsManager;
     DefaultLastWillService lastWillService;
 
@@ -46,8 +48,9 @@ class DefaultLastWillServiceTest {
     @BeforeEach
     void setUp() {
         msgDispatcherService = mock(MsgDispatcherService.class);
+        retainedMsgProcessor = mock(RetainedMsgProcessor.class);
         statsManager = mock(StatsManager.class);
-        lastWillService = spy(new DefaultLastWillService(msgDispatcherService, statsManager));
+        lastWillService = spy(new DefaultLastWillService(msgDispatcherService, retainedMsgProcessor, statsManager));
 
         sessionInfo = mock(SessionInfo.class);
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -77,7 +80,7 @@ class DefaultLastWillServiceTest {
     }
 
     private void verifyPersistPublishMsg(VerificationMode mode) {
-        verify(lastWillService, mode).persistPublishMsg(any(), any());
+        verify(lastWillService, mode).persistPublishMsg(any(), any(), any());
     }
 
     private void saveLastWillMsg() {
