@@ -47,11 +47,7 @@ public class RetainedMsgIntegrationTest extends AbstractPubSubIntegrationTest {
     @After
     public void clear() throws MqttException {
         log.warn("Removing retained msg after test finished...");
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
-        pubClient.connect();
-        pubClient.publish(TEST_RETAIN_TOPIC, new byte[0], 1, true);
-        pubClient.disconnect();
-        pubClient.close();
+        createPubClientPublishRetainedMsgAndClose(new byte[0]);
     }
 
     @Test
@@ -59,27 +55,14 @@ public class RetainedMsgIntegrationTest extends AbstractPubSubIntegrationTest {
         CountDownLatch receivedResponses = new CountDownLatch(1);
         AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
-        pubClient.connect();
-        pubClient.publish(TEST_RETAIN_TOPIC, "online".getBytes(), 1, true);
-        pubClient.disconnect();
-        pubClient.close();
+        createPubClientPublishRetainedMsgAndClose("online".getBytes());
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
-        subClient.connect();
-        subClient.subscribe("test/+", 1, (topic, message) -> {
-            log.error("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
-            if (message.isRetained()) {
-                receivedRetainedMsg.set(true);
-            }
-            receivedResponses.countDown();
-        });
+        MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("test/+", receivedRetainedMsg, receivedResponses);
 
         boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);
 
-        subClient.disconnect();
-        subClient.close();
+        disconnectAndCloseClient(subClient);
 
         assertTrue(receivedRetainedMsg.get());
     }
@@ -89,28 +72,41 @@ public class RetainedMsgIntegrationTest extends AbstractPubSubIntegrationTest {
         CountDownLatch receivedResponses = new CountDownLatch(1);
         AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
 
+        MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("#", receivedRetainedMsg, receivedResponses);
+
+        createPubClientPublishRetainedMsgAndClose("online".getBytes());
+
+        boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        disconnectAndCloseClient(subClient);
+
+        assertFalse(receivedRetainedMsg.get());
+    }
+
+    private MqttClient createSubClientSubscribeToRetainedMsgTopicAndCheckMsg(String topicFilter, AtomicBoolean receivedRetainedMsg,
+                                                                             CountDownLatch receivedResponses) throws MqttException {
         MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
         subClient.connect();
-        subClient.subscribe("#", 1, (topic, message) -> {
+        subClient.subscribe(topicFilter, 1, (topic, message) -> {
             log.error("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
             if (message.isRetained()) {
                 receivedRetainedMsg.set(true);
             }
             receivedResponses.countDown();
         });
+        return subClient;
+    }
 
+    private void createPubClientPublishRetainedMsgAndClose(byte[] payload) throws MqttException {
         MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
         pubClient.connect();
-        pubClient.publish(TEST_RETAIN_TOPIC, "online".getBytes(), 1, true);
-        pubClient.disconnect();
-        pubClient.close();
+        pubClient.publish(TEST_RETAIN_TOPIC, payload, 1, true);
+        disconnectAndCloseClient(pubClient);
+    }
 
-        boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
-
-        subClient.disconnect();
-        subClient.close();
-
-        assertFalse(receivedRetainedMsg.get());
+    private void disconnectAndCloseClient(MqttClient client) throws MqttException {
+        client.disconnect();
+        client.close();
     }
 }
