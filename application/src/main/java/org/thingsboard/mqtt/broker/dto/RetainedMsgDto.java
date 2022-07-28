@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.dto;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.nio.charset.StandardCharsets;
 

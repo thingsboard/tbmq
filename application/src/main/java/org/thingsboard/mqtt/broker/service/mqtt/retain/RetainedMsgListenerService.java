@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
 import java.util.Map;
 
