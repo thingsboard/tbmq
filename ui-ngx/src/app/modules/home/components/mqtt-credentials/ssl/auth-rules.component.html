@@ -37,13 +37,13 @@
                fxLayoutAlign="start center" formArrayName="authorizationRulesMapping"
                *ngFor="let rulesControl of rulesFormArray().controls; let $index = index">
             <ng-container [formGroupName]="$index">
-              <mat-form-field class="cell mat-block" fxFlex>
+              <mat-form-field class="cell" fxFlex>
                 <input matInput formControlName="certificateMatcherRegex">
                 <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
                   {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
                 </mat-error>
               </mat-form-field>
-              <mat-form-field class="cell mat-block" fxFlex>
+              <mat-form-field class="cell" fxFlex>
                 <input matInput formControlName="topicRule">
                 <mat-error *ngIf="rulesControl.get('topicRule').invalid">
                   {{ 'mqtt-client-credentials.topic-rule-required' | translate }}
