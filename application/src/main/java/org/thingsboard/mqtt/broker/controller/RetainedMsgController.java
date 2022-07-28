@@ -19,40 +19,39 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.actors.TbActorId;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
-
-import java.util.Collection;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgDto;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/app")
-public class AppController extends BaseController {
+@RequestMapping("/api/retained-msg")
+public class RetainedMsgController extends BaseController {
 
-    private final TbActorSystem tbActorSystem;
-    private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
+    private final RetainedMsgService retainedMsgService;
+    private final RetainedMsgListenerService retainedMsgListenerService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
+    @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)
     @ResponseBody
-    public Collection<TbActorId> getAllActorIds() throws ThingsboardException {
+    public void clearEmptyRetainedMsgNodes() throws ThingsboardException {
         try {
-            return tbActorSystem.getAllActorIds();
+            retainedMsgService.clearEmptyTopicNodes();
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/remove-topics", method = RequestMethod.DELETE)
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"topicName"}, method = RequestMethod.GET)
     @ResponseBody
-    public void removeApplicationTopics() throws ThingsboardException {
+    public RetainedMsgDto getRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         try {
-            applicationRemovedEventProcessor.processEvents();
+            return checkNotNull(retainedMsgListenerService.getRetainedMsgForTopic(topicName));
         } catch (Exception e) {
             throw handleException(e);
         }

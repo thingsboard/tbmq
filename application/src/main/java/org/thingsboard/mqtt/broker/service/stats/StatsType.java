@@ -25,6 +25,7 @@ public enum StatsType {
     CONNECTED_SESSIONS("connectedSessions"),
     ALL_CLIENT_SESSIONS("allClientSessions"),
     CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
+    RETAINED_MESSAGES("retainedMessages"),
     SUBSCRIPTION_TRIE_NODES("subscriptionTrieNodes"),
     RETAIN_MSG_TRIE_NODES("retainMsgTrieNodes"),
     ACTIVE_APP_PROCESSORS("activeAppProcessors"),

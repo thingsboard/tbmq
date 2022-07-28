@@ -37,4 +37,6 @@ public interface RetainedMsgListenerService {
 
     void clearRetainedMsg(String topic);
 
+    RetainedMsgDto getRetainedMsgForTopic(String topic);
+
 }

@@ -61,6 +61,8 @@ public interface StatsManager {
 
     void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
 
+    void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap);
+
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
     SubscriptionTimerStats getSubscriptionTimerStats();

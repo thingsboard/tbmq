@@ -109,6 +109,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap) {
+
+    }
+
+    @Override
     public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
     }
 

@@ -199,6 +199,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap) {
+        log.trace("Registering RetainedMsgStats.");
+        statsFactory.createGauge(StatsType.RETAINED_MESSAGES.getPrintName(), retainedMessagesMap, Map::size);
+        gauges.add(new Gauge(StatsType.RETAINED_MESSAGES.getPrintName(), retainedMessagesMap::size));
+    }
+
+    @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
         log.trace("Registering ActiveApplicationProcessorsStats.");
         statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);

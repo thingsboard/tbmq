@@ -23,8 +23,11 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
@@ -36,13 +39,19 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     private final RetainedMsgService retainedMsgService;
     private final RetainedMsgPersistenceService retainedMsgPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final StatsManager statsManager;
+
+    private ConcurrentMap<String, RetainedMsg> retainedMessagesMap;
 
     @Override
     public void init(Map<String, RetainedMsg> retainedMsgMap) {
+        this.retainedMessagesMap = new ConcurrentHashMap<>(retainedMsgMap);
+        statsManager.registerRetainedMsgStats(retainedMessagesMap);
+
         log.info("Restoring stored retained messages for {} topics.", retainedMsgMap.size());
         retainedMsgMap.forEach((topic, retainedMsg) -> {
             log.trace("[{}] Restoring retained msg - {}.", topic, retainedMsg);
-            cacheRetainedMsg(topic, retainedMsg);
+            retainedMsgService.saveRetainedMsg(topic, retainedMsg);
         });
     }
 
@@ -73,6 +82,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     public void cacheRetainedMsg(String topic, RetainedMsg retainedMsg) {
         log.trace("[{}] Executing cacheRetainedMsg {}.", topic, retainedMsg);
         retainedMsgService.saveRetainedMsg(topic, retainedMsg);
+        retainedMessagesMap.put(topic, retainedMsg);
     }
 
     @Override
@@ -96,6 +106,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     public void clearRetainedMsg(String topic) {
         log.trace("[{}] Executing clearRetainedMsg", topic);
         retainedMsgService.clearRetainedMsg(topic);
+        retainedMessagesMap.remove(topic);
+    }
+
+    @Override
+    public RetainedMsgDto getRetainedMsgForTopic(String topic) {
+        log.trace("[{}] Executing getRetainedMsgForTopic", topic);
+        RetainedMsg retainedMsg = retainedMessagesMap.getOrDefault(topic, null);
+        return retainedMsg != null ? RetainedMsgDto.newInstance(retainedMsg) : null;
     }
 
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
