@@ -3215,6 +3215,7 @@
       "search": "Search Client Credentials",
       "selected-client-credentials": "{ count, plural, 1 {1 credentials} other {# credentials} } selected",
       "password": "Password",
+      "password-changed": "Password successfully changed",
       "parent-certificate-common-name": "Parent certificate common name",
       "parent-certificate-common-name-required": "Parent certificate common name is required",
       "username": "Username",
