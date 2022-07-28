@@ -35,7 +35,7 @@
 <div class="mat-padding" fxLayout="column">
   <form [formGroup]="entityForm">
     <div fxFlex fxLayout="row">
-      <div fxFlex="50" style="margin-right: 10px">
+      <div fxFlex style="margin-right: 10px">
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.node</mat-label>
           <input matInput formControlName="nodeId" readonly>
@@ -71,7 +71,7 @@
                  readonly>
         </mat-form-field>
       </div>
-      <div [formGroup]="sessionDetailsForm" fxFlex="50" style="margin-right: 10px">
+      <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
         <mat-form-field class="mat-block">
           <mat-label translate>mqtt-client-session.clean-session</mat-label>
           <input matInput formControlName="cleanSession" readonly>

@@ -54,3 +54,9 @@
     }
   }
 }
+
+:host ::ng-deep {
+  .mat-form-field-infix {
+    width: 100%;
+  }
+}

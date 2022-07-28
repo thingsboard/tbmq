@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<form>
+<form style="min-width: 500px">
   <mat-expansion-panel [expanded]="true" #matExpansionPanel>
     <mat-expansion-panel-header>
       <mat-panel-title>
@@ -28,8 +28,8 @@
     <section>
       <div fxLayout="column" class="tb-auth-rules-list" [formGroup]="rulesMappingFormGroup">
         <div class="header" fxFlex fxLayout="row">
-          <span class="cell" fxFlex="50" translate>mqtt-client-credentials.certificate-matcher-regex</span>
-          <span class="cell" fxFlex="50" translate>mqtt-client-credentials.topic-rule</span>
+          <span class="cell" fxFlex translate>mqtt-client-credentials.certificate-matcher-regex</span>
+          <span class="cell" fxFlex translate>mqtt-client-credentials.topic-rule</span>
           <span [fxShow]="!disabled" style="width: 40px; min-width: 40px;">&nbsp;</span>
         </div>
         <div class="body">
@@ -37,13 +37,13 @@
                fxLayoutAlign="start center" formArrayName="authorizationRulesMapping"
                *ngFor="let rulesControl of rulesFormArray().controls; let $index = index">
             <ng-container [formGroupName]="$index">
-              <mat-form-field class="cell mat-block" fxFlex="50">
+              <mat-form-field class="cell mat-block" fxFlex>
                 <input matInput formControlName="certificateMatcherRegex">
                 <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
                   {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
                 </mat-error>
               </mat-form-field>
-              <mat-form-field class="cell mat-block" fxFlex="50">
+              <mat-form-field class="cell mat-block" fxFlex>
                 <input matInput formControlName="topicRule">
                 <mat-error *ngIf="rulesControl.get('topicRule').invalid">
                   {{ 'mqtt-client-credentials.topic-rule-required' | translate }}
