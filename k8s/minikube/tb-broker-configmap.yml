@@ -80,6 +80,7 @@ data:
             <logger name="org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl" level="TRACE"/>
             <logger name="org.thingsboard.mqtt.broker.actors.client.service.handlers.MqttPublishHandler" level="TRACE"/>
             <logger name="org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManagerImpl" level="TRACE"/>
+            <logger name="org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerServiceImpl" level="TRACE"/>
 
             <logger name="org.apache.kafka" level="WARN"/>
 
