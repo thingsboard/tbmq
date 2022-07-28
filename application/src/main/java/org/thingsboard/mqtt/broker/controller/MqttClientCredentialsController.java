@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -36,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 
 @RestController
 @RequiredArgsConstructor
@@ -97,6 +99,29 @@ public class MqttClientCredentialsController extends BaseController {
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
             mqttClientCredentialsService.deleteCredentials(toUUID(strCredentialsId));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.POST)
+    public void changeMqttBasicCredentialsPassword(@PathVariable("credentialsId") String strCredentialsId,
+                                                   @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
+        try {
+            MqttClientCredentials mqttClientCredentials = getCredentialsById(strCredentialsId);
+            if (mqttClientCredentials.getCredentialsType() != ClientCredentialsType.MQTT_BASIC) {
+                throw new ThingsboardException("MQTT credentials should be of 'MQTT_BASIC' type!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+            }
+
+            BasicMqttCredentials basicMqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
+
+            validatePassword(passwordEncoder, changePasswordRequest, basicMqttCredentials.getPassword());
+
+            basicMqttCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+            mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
+
+            mqttClientCredentialsService.saveCredentials(mqttClientCredentials);
         } catch (Exception e) {
             throw handleException(e);
         }

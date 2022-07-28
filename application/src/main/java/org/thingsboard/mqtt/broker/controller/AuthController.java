@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,10 +27,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.User;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
@@ -57,19 +56,14 @@ public class AuthController extends BaseController {
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/changePassword", method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.OK)
-    public ObjectNode changePassword(@RequestBody JsonNode changePasswordRequest) throws ThingsboardException {
+    public ObjectNode changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
         try {
-            String currentPassword = changePasswordRequest.get("currentPassword").asText();
-            String newPassword = changePasswordRequest.get("newPassword").asText();
             SecurityUser securityUser = getCurrentUser();
             UserCredentials userCredentials = userService.findUserCredentialsByUserId(securityUser.getId());
-            if (!passwordEncoder.matches(currentPassword, userCredentials.getPassword())) {
-                throw new ThingsboardException("Current password doesn't match!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-            }
-            if (passwordEncoder.matches(newPassword, userCredentials.getPassword())) {
-                throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-            }
-            userCredentials.setPassword(passwordEncoder.encode(newPassword));
+
+            validatePassword(passwordEncoder, changePasswordRequest, userCredentials.getPassword());
+
+            userCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
             userService.replaceUserCredentials(userCredentials);
 
             ObjectNode response = JacksonUtil.newObjectNode();

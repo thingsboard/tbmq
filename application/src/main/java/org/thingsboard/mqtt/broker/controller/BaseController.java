@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -32,6 +33,7 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
+import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
@@ -132,6 +134,21 @@ public abstract class BaseController {
             return new PageLink(pageSize, page, textSearch, sort);
         } else {
             return new PageLink(pageSize, page, textSearch);
+        }
+    }
+
+    void validatePassword(BCryptPasswordEncoder passwordEncoder,
+                          ChangePasswordRequest changePasswordRequest,
+                          String currentRealPassword) throws ThingsboardException {
+
+        String currentPassword = changePasswordRequest.getCurrentPassword();
+        String newPassword = changePasswordRequest.getNewPassword();
+
+        if (!passwordEncoder.matches(currentPassword, currentRealPassword)) {
+            throw new ThingsboardException("Current password doesn't match!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+        if (passwordEncoder.matches(newPassword, currentRealPassword)) {
+            throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
     }
 }
