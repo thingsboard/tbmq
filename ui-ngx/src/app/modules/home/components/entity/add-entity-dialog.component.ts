@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -25,20 +25,20 @@ import {
   SkipSelf,
   ViewChild
 } from '@angular/core';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { FormControl, FormGroup, FormGroupDirective, NgForm } from '@angular/forms';
-import { EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { BaseData, HasId } from '@shared/models/base-data';
-import { EntityId } from '@shared/models/id/entity-id';
-import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { EntityComponent } from './entity.component';
-import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { Router } from '@angular/router';
+import {ErrorStateMatcher} from '@angular/material/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {FormControl, FormGroup, FormGroupDirective, NgForm} from '@angular/forms';
+import {EntityTypeResource, EntityTypeTranslation} from '@shared/models/entity-type.models';
+import {BaseData, HasId} from '@shared/models/base-data';
+import {EntityId} from '@shared/models/id/entity-id';
+import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
+import {EntityComponent} from './entity.component';
+import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
+import {AddEntityDialogData} from '@home/models/entity/entity-component.models';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'tb-add-entity-dialog',

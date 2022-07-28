@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import {Component, forwardRef, Input, OnInit} from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -37,9 +37,9 @@ import {
   timeOfDayToUTCTimestamp,
   utcTimestampToTimeOfDay
 } from '@shared/models/device.models';
-import { isDefined, isDefinedAndNotNull } from '@core/utils';
-import { MatCheckboxChange } from '@angular/material/checkbox';
-import { getDefaultTimezone } from '@shared/models/time/time.models';
+import {isDefined, isDefinedAndNotNull} from '@core/utils';
+import {MatCheckboxChange} from '@angular/material/checkbox';
+import {getDefaultTimezone} from '@shared/models/time/time.models';
 
 @Component({
   selector: 'tb-alarm-schedule',

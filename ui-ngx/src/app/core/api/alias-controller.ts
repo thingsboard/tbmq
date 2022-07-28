@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,26 @@
 /// limitations under the License.
 ///
 
-import { AliasInfo, IAliasController, StateControllerHolder, StateEntityInfo } from '@core/api/widget-api.models';
-import { forkJoin, Observable, of, ReplaySubject, Subject } from 'rxjs';
-import { Datasource, DatasourceType, datasourceTypeTranslationMap } from '@app/shared/models/widget.models';
-import { deepClone, isEqual } from '@core/utils';
-import { EntityService } from '@core/http/entity.service';
-import { UtilsService } from '@core/services/utils.service';
-import { AliasFilterType, EntityAliases, SingleEntityFilter } from '@shared/models/alias.models';
-import { EntityInfo } from '@shared/models/entity.models';
-import { map, mergeMap } from 'rxjs/operators';
+import {AliasInfo, IAliasController, StateControllerHolder, StateEntityInfo} from '@core/api/widget-api.models';
+import {forkJoin, Observable, of, ReplaySubject, Subject} from 'rxjs';
+import {Datasource, DatasourceType, datasourceTypeTranslationMap} from '@app/shared/models/widget.models';
+import {deepClone, isEqual} from '@core/utils';
+import {EntityService} from '@core/http/entity.service';
+import {UtilsService} from '@core/services/utils.service';
+import {AliasFilterType, EntityAliases, SingleEntityFilter} from '@shared/models/alias.models';
+import {EntityInfo} from '@shared/models/entity.models';
+import {map, mergeMap} from 'rxjs/operators';
 import {
-  defaultEntityDataPageLink, Filter, FilterInfo, filterInfoToKeyFilters, Filters, KeyFilter, singleEntityDataPageLink,
+  defaultEntityDataPageLink,
+  Filter,
+  FilterInfo,
+  filterInfoToKeyFilters,
+  Filters,
+  KeyFilter,
+  singleEntityDataPageLink,
   updateDatasourceFromEntityInfo
 } from '@shared/models/query/query.models';
-import { TranslateService } from '@ngx-translate/core';
+import {TranslateService} from '@ngx-translate/core';
 
 export class AliasController implements IAliasController {
 

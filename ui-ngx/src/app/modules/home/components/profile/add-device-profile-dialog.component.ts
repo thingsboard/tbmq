@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,14 @@
 /// limitations under the License.
 ///
 
-import {
-  AfterViewInit,
-  Component,
-  ComponentFactoryResolver,
-  Inject,
-  Injector,
-  SkipSelf,
-  ViewChild
-} from '@angular/core';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { Router } from '@angular/router';
+import {AfterViewInit, Component, ComponentFactoryResolver, Inject, Injector, SkipSelf, ViewChild} from '@angular/core';
+import {ErrorStateMatcher} from '@angular/material/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {Router} from '@angular/router';
 import {
   createDeviceProfileConfiguration,
   createDeviceProfileTransportConfiguration,
@@ -42,14 +34,14 @@ import {
   deviceTransportTypeHintMap,
   deviceTransportTypeTranslationMap
 } from '@shared/models/device.models';
-import { DeviceProfileService } from '@core/http/device-profile.service';
-import { EntityType } from '@shared/models/entity-type.models';
-import { MatHorizontalStepper } from '@angular/material/stepper';
-import { RuleChainId } from '@shared/models/id/rule-chain-id';
-import { StepperSelectionEvent } from '@angular/cdk/stepper';
-import { deepTrim } from '@core/utils';
-import { ServiceType } from '@shared/models/queue.models';
-import { DashboardId } from '@shared/models/id/dashboard-id';
+import {DeviceProfileService} from '@core/http/device-profile.service';
+import {EntityType} from '@shared/models/entity-type.models';
+import {MatHorizontalStepper} from '@angular/material/stepper';
+import {RuleChainId} from '@shared/models/id/rule-chain-id';
+import {StepperSelectionEvent} from '@angular/cdk/stepper';
+import {deepTrim} from '@core/utils';
+import {ServiceType} from '@shared/models/queue.models';
+import {DashboardId} from '@shared/models/id/dashboard-id';
 
 export interface AddDeviceProfileDialogData {
   deviceProfileName: string;

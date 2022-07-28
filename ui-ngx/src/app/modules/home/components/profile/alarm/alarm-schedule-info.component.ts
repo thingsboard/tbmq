@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,21 +14,22 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Input, OnInit } from '@angular/core';
-import { ControlValueAccessor, FormBuilder, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {ChangeDetectorRef, Component, forwardRef, Input, OnInit} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {
   AlarmSchedule,
   AlarmScheduleType,
-  AlarmScheduleTypeTranslationMap, dayOfWeekTranslations,
-  getAlarmScheduleRangeText, utcTimestampToTimeOfDay
+  dayOfWeekTranslations,
+  getAlarmScheduleRangeText,
+  utcTimestampToTimeOfDay
 } from '@shared/models/device.models';
-import { MatDialog } from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {
   AlarmScheduleDialogComponent,
   AlarmScheduleDialogData
 } from '@home/components/profile/alarm/alarm-schedule-dialog.component';
-import { deepClone, isDefinedAndNotNull } from '@core/utils';
-import { TranslateService } from '@ngx-translate/core';
+import {deepClone, isDefinedAndNotNull} from '@core/utils';
+import {TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-alarm-schedule-info',

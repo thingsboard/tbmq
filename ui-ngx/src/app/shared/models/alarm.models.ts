@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2020 The Thingsboard Authors
+/// Copyright © 2016-2022 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
-import { TenantId } from '@shared/models/id/tenant-id';
-import { AlarmId } from '@shared/models/id/alarm-id';
-import { EntityId } from '@shared/models/id/entity-id';
-import { TimePageLink } from '@shared/models/page/page-link';
-import { NULL_UUID } from '@shared/models/id/has-uuid';
-import { EntityType } from '@shared/models/entity-type.models';
-import { CustomerId } from '@shared/models/id/customer-id';
+import {BaseData} from '@shared/models/base-data';
+import {TenantId} from '@shared/models/id/tenant-id';
+import {AlarmId} from '@shared/models/id/alarm-id';
+import {EntityId} from '@shared/models/id/entity-id';
+import {TimePageLink} from '@shared/models/page/page-link';
+import {NULL_UUID} from '@shared/models/id/has-uuid';
+import {EntityType} from '@shared/models/entity-type.models';
+import {CustomerId} from '@shared/models/id/customer-id';
 
 export enum AlarmSeverity {
   CRITICAL = 'CRITICAL',
