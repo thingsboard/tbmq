@@ -44,11 +44,12 @@ public class SubscriptionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
-    public void updateSubscriptions(@RequestBody DetailedClientSessionInfoDto detailedClientSessionInfoDto) throws ThingsboardException {
+    public DetailedClientSessionInfoDto updateSubscriptions(@RequestBody DetailedClientSessionInfoDto detailedClientSessionInfoDto) throws ThingsboardException {
         checkNotNull(detailedClientSessionInfoDto);
         checkNotNull(detailedClientSessionInfoDto.getSubscriptions());
         try {
             subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
+            return detailedClientSessionInfoDto;
         } catch (Exception e) {
             throw handleException(e);
         }

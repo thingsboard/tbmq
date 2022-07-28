@@ -1,0 +1,54 @@
+<!--
+
+    Copyright © 2016-2020 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="credentialsMqttFormGroup">
+  <mat-form-field class="mat-block">
+    <mat-label translate>mqtt-client.client-id</mat-label>
+    <input matInput formControlName="clientId">
+    <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
+      {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
+    </mat-error>
+  </mat-form-field>
+  <mat-form-field class="mat-block">
+    <mat-label translate>mqtt-client-credentials.username</mat-label>
+    <input matInput formControlName="userName" [required]="!!credentialsMqttFormGroup.get('password').value">
+    <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
+      {{ 'mqtt-client-credentials.user-name-required' | translate }}
+    </mat-error>
+  </mat-form-field>
+  <mat-form-field class="mat-block" *ngIf="!entity?.id">
+    <mat-label translate>mqtt-client-credentials.password</mat-label>
+    <input matInput formControlName="password"
+           autocomplete="new-password"
+           (ngModelChange)="passwordChanged()"
+           type="password">
+    <tb-toggle-password matSuffix></tb-toggle-password>
+  </mat-form-field>
+  <tb-error style="margin-top: -12px; display: block;"
+            *ngIf="credentialsMqttFormGroup.dirty"
+            [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
+            ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
+  </tb-error>
+  <button mat-button mat-raised-button color="primary"
+          *ngIf="entity?.id"
+          type="button"
+          [disabled]="disabled" (click)="changePassword()">
+    {{'profile.change-password' | translate}}
+  </button>
+  <div fxLayout="row" style="padding-bottom: 16px;">
+  </div>
+</section>
