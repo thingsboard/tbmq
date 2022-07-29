@@ -66,7 +66,6 @@ import { NgxHmCarouselModule } from 'ngx-hm-carousel';
 import { UserMenuComponent } from '@shared/components/user-menu.component';
 import { NospacePipe } from '@shared/pipe/nospace.pipe';
 import { TranslateModule } from '@ngx-translate/core';
-import { TbCheckboxComponent } from '@shared/components/tb-checkbox.component';
 import { HelpComponent } from '@shared/components/help.component';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { MillisecondsToTimeStringPipe } from '@shared/pipe/milliseconds-to-time-string.pipe';
@@ -77,42 +76,27 @@ import { TimeintervalComponent } from '@shared/components/time/timeinterval.comp
 import { DatetimePeriodComponent } from '@shared/components/time/datetime-period.component';
 import { EnumToArrayPipe } from '@shared/pipe/enum-to-array.pipe';
 import { ClipboardModule } from 'ngx-clipboard';
-import { ValueInputComponent } from '@shared/components/value-input.component';
 import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { DatetimeComponent } from '@shared/components/time/datetime.component';
-import { SocialSharePanelComponent } from '@shared/components/socialshare-panel.component';
-import { JsonObjectEditComponent } from '@shared/components/json-object-edit.component';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { CircularProgressDirective } from '@shared/components/circular-progress.directive';
-import {
-  FabActionsDirective,
-  FabToolbarComponent,
-  FabTriggerDirective
-} from '@shared/components/fab-toolbar.component';
 import { KeyboardShortcutPipe } from '@shared/pipe/keyboard-shortcut.pipe';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { TruncatePipe } from '@shared/pipe/truncate.pipe';
 import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
 import { ColorPickerDialogComponent } from '@shared/components/dialog/color-picker-dialog.component';
 import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
-import { ColorInputComponent } from '@shared/components/color-input.component';
-import { JsFuncComponent } from '@shared/components/js-func.component';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { TodoDialogComponent } from '@shared/components/dialog/todo-dialog.component';
 import { MaterialIconsDialogComponent } from '@shared/components/dialog/material-icons-dialog.component';
 import { MaterialIconSelectComponent } from '@shared/components/material-icon-select.component';
-import { ImageInputComponent } from '@shared/components/image-input.component';
-import { FileInputComponent } from '@shared/components/file-input.component';
-import { JsonContentComponent } from '@shared/components/json-content.component';
 import { TbCheatSheetComponent } from '@shared/components/cheatsheet.component';
 import { TbHotkeysDirective } from '@shared/components/hotkeys.directive';
 import { TbJsonToStringDirective } from '@shared/components/directives/tb-json-to-string.directive';
-import { JsonObjectEditDialogComponent } from '@shared/components/dialog/json-object-edit-dialog.component';
 import { DndModule } from 'ngx-drag-drop';
-import { ContactComponent } from '@shared/components/contact.component';
 import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
 import { FileSizePipe } from '@shared/pipe/file-size.pipe';
 import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
@@ -154,7 +138,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TbHotkeysDirective,
     TbAnchorComponent,
     HelpComponent,
-    TbCheckboxComponent,
     TbSnackBarComponent,
     TbErrorComponent,
     TbCheatSheetComponent,
@@ -167,23 +150,12 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     DatetimePeriodComponent,
     DatetimeComponent,
     TimezoneSelectComponent,
-    ValueInputComponent,
-    SocialSharePanelComponent,
-    JsonObjectEditComponent,
-    JsonContentComponent,
-    JsFuncComponent,
-    FabTriggerDirective,
-    FabActionsDirective,
-    FabToolbarComponent,
     ConfirmDialogComponent,
     AlertDialogComponent,
     TodoDialogComponent,
     ColorPickerDialogComponent,
     MaterialIconsDialogComponent,
-    ColorInputComponent,
     MaterialIconSelectComponent,
-    ImageInputComponent,
-    FileInputComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     EnumToArrayPipe,
@@ -193,8 +165,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FileSizePipe,
     KeyboardShortcutPipe,
     TbJsonToStringDirective,
-    JsonObjectEditDialogComponent,
-    ContactComponent,
     CopyButtonComponent,
     TogglePasswordComponent,
     MqttCredentialsComponent,
@@ -271,7 +241,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TbHotkeysDirective,
     TbAnchorComponent,
     HelpComponent,
-    TbCheckboxComponent,
     TbErrorComponent,
     TbCheatSheetComponent,
     BreadcrumbComponent,
@@ -283,14 +252,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     DatetimePeriodComponent,
     DatetimeComponent,
     TimezoneSelectComponent,
-    SocialSharePanelComponent,
-    JsonObjectEditComponent,
-    JsonContentComponent,
-    JsFuncComponent,
-    FabTriggerDirective,
-    FabActionsDirective,
-    FabToolbarComponent,
-    ValueInputComponent,
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
@@ -341,10 +302,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TodoDialogComponent,
     ColorPickerDialogComponent,
     MaterialIconsDialogComponent,
-    ColorInputComponent,
     MaterialIconSelectComponent,
-    ImageInputComponent,
-    FileInputComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     EnumToArrayPipe,
@@ -354,8 +312,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     KeyboardShortcutPipe,
     FileSizePipe,
     TranslateModule,
-    JsonObjectEditDialogComponent,
-    ContactComponent,
     CopyButtonComponent,
     TogglePasswordComponent,
     MqttCredentialsComponent,
