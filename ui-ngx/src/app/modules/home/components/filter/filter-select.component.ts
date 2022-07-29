@@ -35,7 +35,6 @@ import { TruncatePipe } from '@shared/pipe/truncate.pipe';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { ENTER } from '@angular/cdk/keycodes';
 import { ErrorStateMatcher } from '@angular/material/core';
-import { FilterSelectCallbacks } from '@home/components/filter/filter-select.component.models';
 import { Filter } from '@shared/models/query/query.models';
 
 @Component({
@@ -60,9 +59,6 @@ export class FilterSelectComponent implements ControlValueAccessor, OnInit, Afte
 
   @Input()
   aliasController: IAliasController;
-
-  @Input()
-  callbacks: FilterSelectCallbacks;
 
   @Input()
   showLabel: boolean;
@@ -229,21 +225,5 @@ export class FilterSelectComponent implements ControlValueAccessor, OnInit, Afte
   createFilter($event: Event, filter: string) {
     $event.preventDefault();
     this.creatingFilter = true;
-    if (this.callbacks && this.callbacks.createFilter) {
-      this.callbacks.createFilter(filter).subscribe((newFilter) => {
-          if (!newFilter) {
-            setTimeout(() => {
-              this.filterInput.nativeElement.blur();
-              this.filterInput.nativeElement.focus();
-            }, 0);
-          } else {
-            this.filterList.push(newFilter);
-            this.modelValue = newFilter.id;
-            this.selectFilterFormGroup.get('filter').patchValue(newFilter, {emitEvent: true});
-            this.propagateChange(this.modelValue);
-          }
-        }
-      );
-    }
   }
 }

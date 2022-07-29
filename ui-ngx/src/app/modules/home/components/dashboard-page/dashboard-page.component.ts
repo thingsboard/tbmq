@@ -85,7 +85,6 @@ import { WidgetComponentService } from '../../components/widget/widget-component
 import { FormBuilder } from '@angular/forms';
 import { ItemBufferService } from '@core/services/item-buffer.service';
 import { MatDialog } from '@angular/material/dialog';
-import { EditWidgetComponent } from '@home/components/dashboard-page/edit-widget.component';
 import {
   AddWidgetDialogComponent,
   AddWidgetDialogData
@@ -283,8 +282,6 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
   }
   set rightLayoutOpened(rightLayoutOpened: boolean) {
   }
-
-  @ViewChild('tbEditWidget') editWidgetComponent: EditWidgetComponent;
 
   @ViewChild('dashboardWidgetSelect') dashboardWidgetSelectComponent: DashboardWidgetSelectComponent;
 
@@ -1011,15 +1008,11 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
   }
 
   onRevertWidgetEdit() {
-    if (this.editWidgetComponent.widgetFormGroup.dirty) {
-      this.editWidgetComponent.widgetFormGroup.markAsPristine();
-      this.editingWidget = deepClone(this.editingWidgetOriginal);
-      this.editingWidgetLayout = deepClone(this.editingWidgetLayoutOriginal);
-    }
+
   }
 
   saveWidget() {
-    this.editWidgetComponent.widgetFormGroup.markAsPristine();
+
     const widget = deepClone(this.editingWidget);
     const widgetLayout = deepClone(this.editingWidgetLayout);
     const id = this.editingWidgetOriginal.id;

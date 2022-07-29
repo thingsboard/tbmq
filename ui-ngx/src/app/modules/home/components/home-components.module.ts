@@ -30,23 +30,10 @@ import { AttributeTableComponent } from '@home/components/attribute/attribute-ta
 import { AddAttributeDialogComponent } from '@home/components/attribute/add-attribute-dialog.component';
 import { EditAttributeValuePanelComponent } from '@home/components/attribute/edit-attribute-value-panel.component';
 import { DashboardComponent } from '@home/components/dashboard/dashboard.component';
-import { WidgetComponent } from '@home/components/widget/widget.component';
 import { WidgetComponentService } from '@home/components/widget/widget-component.service';
-import { LegendComponent } from '@home/components/widget/legend.component';
-import { WidgetConfigComponent } from '@home/components/widget/widget-config.component';
 import { EntityFilterViewComponent } from '@home/components/entity/entity-filter-view.component';
 import { EntityFilterComponent } from '@home/components/entity/entity-filter.component';
 import { RelationFiltersComponent } from '@home/components/relation/relation-filters.component';
-import { DataKeysComponent } from '@home/components/widget/data-keys.component';
-import { DataKeyConfigDialogComponent } from '@home/components/widget/data-key-config-dialog.component';
-import { DataKeyConfigComponent } from '@home/components/widget/data-key-config.component';
-import { LegendConfigPanelComponent } from '@home/components/widget/legend-config-panel.component';
-import { LegendConfigComponent } from '@home/components/widget/legend-config.component';
-import { ManageWidgetActionsComponent } from '@home/components/widget/action/manage-widget-actions.component';
-import { WidgetActionDialogComponent } from '@home/components/widget/action/widget-action-dialog.component';
-import { CustomActionPrettyResourcesTabsComponent } from '@home/components/widget/action/custom-action-pretty-resources-tabs.component';
-import { CustomActionPrettyEditorComponent } from '@home/components/widget/action/custom-action-pretty-editor.component';
-import { MobileActionEditorComponent } from '@home/components/widget/action/mobile-action-editor.component';
 import { CustomDialogService } from '@home/components/widget/dialog/custom-dialog.service';
 import { CustomDialogContainerComponent } from '@home/components/widget/dialog/custom-dialog-container.component';
 import { ImportExportService } from '@home/components/import-export/import-export.service';
@@ -96,7 +83,6 @@ import { AlarmRuleComponent } from '@home/components/profile/alarm/alarm-rule.co
 import { AlarmRuleConditionComponent } from '@home/components/profile/alarm/alarm-rule-condition.component';
 import { FilterTextComponent } from '@home/components/filter/filter-text.component';
 import { AddDeviceProfileDialogComponent } from '@home/components/profile/add-device-profile-dialog.component';
-import { RuleChainAutocompleteComponent } from '@home/components/rule-chain/rule-chain-autocomplete.component';
 import { DeviceProfileProvisionConfigurationComponent } from '@home/components/profile/device-profile-provision-configuration.component';
 import { AlarmScheduleComponent } from '@home/components/profile/alarm/alarm-schedule.component';
 import { DeviceWizardDialogComponent } from '@home/components/wizard/device-wizard-dialog.component';
@@ -111,19 +97,15 @@ import { DashboardPageComponent } from '@home/components/dashboard-page/dashboar
 import { DashboardToolbarComponent } from '@home/components/dashboard-page/dashboard-toolbar.component';
 import { StatesControllerModule } from '@home/components/dashboard-page/states/states-controller.module';
 import { DashboardLayoutComponent } from '@home/components/dashboard-page/layout/dashboard-layout.component';
-import { EditWidgetComponent } from '@home/components/dashboard-page/edit-widget.component';
 import { DashboardWidgetSelectComponent } from '@home/components/dashboard-page/dashboard-widget-select.component';
 import { AddWidgetDialogComponent } from '@home/components/dashboard-page/add-widget-dialog.component';
 import { ManageDashboardLayoutsDialogComponent } from '@home/components/dashboard-page/layout/manage-dashboard-layouts-dialog.component';
 import { DashboardSettingsDialogComponent } from '@home/components/dashboard-page/dashboard-settings-dialog.component';
 import { ManageDashboardStatesDialogComponent } from '@home/components/dashboard-page/states/manage-dashboard-states-dialog.component';
 import { DashboardStateDialogComponent } from '@home/components/dashboard-page/states/dashboard-state-dialog.component';
-import { EmbedDashboardDialogComponent } from '@home/components/widget/dialog/embed-dashboard-dialog.component';
-import { EMBED_DASHBOARD_DIALOG_TOKEN } from '@home/components/widget/dialog/embed-dashboard-dialog-token';
 import { DisplayWidgetTypesPanelComponent } from '@home/components/dashboard-page/widget-types-panel.component';
 import { AlarmDurationPredicateValueComponent } from '@home/components/profile/alarm/alarm-duration-predicate-value.component';
 import { DashboardImageDialogComponent } from '@home/components/dashboard-page/dashboard-image-dialog.component';
-import { WidgetContainerComponent } from '@home/components/widget/widget-container.component';
 import { SnmpDeviceProfileTransportModule } from '@home/components/profile/device/snpm/snmp-device-profile-transport.module';
 import { DeviceProfileCommonModule } from '@home/components/profile/device/common/device-profile-common.module';
 
@@ -145,22 +127,8 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       AddAttributeDialogComponent,
       EditAttributeValuePanelComponent,
       DashboardComponent,
-      WidgetContainerComponent,
-      WidgetComponent,
-      LegendComponent,
-      WidgetConfigComponent,
       EntityFilterViewComponent,
       EntityFilterComponent,
-      DataKeysComponent,
-      DataKeyConfigComponent,
-      DataKeyConfigDialogComponent,
-      LegendConfigPanelComponent,
-      LegendConfigComponent,
-      ManageWidgetActionsComponent,
-      WidgetActionDialogComponent,
-      CustomActionPrettyResourcesTabsComponent,
-      CustomActionPrettyEditorComponent,
-      MobileActionEditorComponent,
       CustomDialogContainerComponent,
       ImportDialogComponent,
       ImportDialogCsvComponent,
@@ -209,7 +177,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       DeviceProfileComponent,
       DeviceProfileDialogComponent,
       AddDeviceProfileDialogComponent,
-      RuleChainAutocompleteComponent,
       AlarmScheduleInfoComponent,
       DeviceProfileProvisionConfigurationComponent,
       AlarmScheduleComponent,
@@ -220,7 +187,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       DashboardToolbarComponent,
       DashboardPageComponent,
       DashboardLayoutComponent,
-      EditWidgetComponent,
       DashboardWidgetSelectComponent,
       AddWidgetDialogComponent,
       ManageDashboardLayoutsDialogComponent,
@@ -228,7 +194,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
       ManageDashboardStatesDialogComponent,
       DashboardStateDialogComponent,
       DashboardImageDialogComponent,
-      EmbedDashboardDialogComponent,
       DisplayWidgetTypesPanelComponent
     ],
   imports: [
@@ -250,21 +215,8 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     RelationFiltersComponent,
     AttributeTableComponent,
     DashboardComponent,
-    WidgetContainerComponent,
-    WidgetComponent,
-    LegendComponent,
-    WidgetConfigComponent,
     EntityFilterViewComponent,
     EntityFilterComponent,
-    DataKeysComponent,
-    DataKeyConfigComponent,
-    DataKeyConfigDialogComponent,
-    LegendConfigComponent,
-    ManageWidgetActionsComponent,
-    WidgetActionDialogComponent,
-    CustomActionPrettyResourcesTabsComponent,
-    CustomActionPrettyEditorComponent,
-    MobileActionEditorComponent,
     CustomDialogContainerComponent,
     ImportDialogComponent,
     ImportDialogCsvComponent,
@@ -306,7 +258,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     DeviceProfileComponent,
     DeviceProfileDialogComponent,
     AddDeviceProfileDialogComponent,
-    RuleChainAutocompleteComponent,
     DeviceWizardDialogComponent,
     AlarmScheduleInfoComponent,
     AlarmScheduleComponent,
@@ -318,7 +269,6 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     DashboardToolbarComponent,
     DashboardPageComponent,
     DashboardLayoutComponent,
-    EditWidgetComponent,
     DashboardWidgetSelectComponent,
     AddWidgetDialogComponent,
     ManageDashboardLayoutsDialogComponent,
@@ -326,14 +276,13 @@ import { DeviceProfileCommonModule } from '@home/components/profile/device/commo
     ManageDashboardStatesDialogComponent,
     DashboardStateDialogComponent,
     DashboardImageDialogComponent,
-    EmbedDashboardDialogComponent,
     DisplayWidgetTypesPanelComponent
   ],
   providers: [
     WidgetComponentService,
     CustomDialogService,
-    ImportExportService,
-    {provide: EMBED_DASHBOARD_DIALOG_TOKEN, useValue: EmbedDashboardDialogComponent}
+    ImportExportService
   ]
 })
-export class HomeComponentsModule { }
+export class HomeComponentsModule {
+}

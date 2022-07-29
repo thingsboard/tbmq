@@ -59,6 +59,7 @@ export class WidgetComponentService {
 
   private init$: Observable<any>;
 
+
   private missingWidgetType: WidgetInfo;
   private errorWidgetType: WidgetInfo;
   private editingWidgetType: WidgetType;

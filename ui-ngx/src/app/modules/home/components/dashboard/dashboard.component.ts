@@ -55,7 +55,6 @@ import { SafeStyle } from '@angular/platform-browser';
 import { distinct } from 'rxjs/operators';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { UtilsService } from '@core/services/utils.service';
-import { WidgetComponentAction, WidgetComponentActionType } from '@home/components/widget/widget-container.component';
 
 @Component({
   selector: 'tb-dashboard',
@@ -349,48 +348,6 @@ export class DashboardComponent extends PageComponent implements IDashboardCompo
     }
   }
 
-  private openWidgetContextMenu($event: MouseEvent, widget: DashboardWidget) {
-    if (this.callbacks && this.callbacks.prepareWidgetContextMenu) {
-      const items = this.callbacks.prepareWidgetContextMenu($event, widget.widget);
-      if (items && items.length) {
-        $event.preventDefault();
-        $event.stopPropagation();
-        this.widgetContextMenuEvent = $event;
-        this.widgetMenuPosition.x = $event.clientX + 'px';
-        this.widgetMenuPosition.y = $event.clientY + 'px';
-        this.widgetMenuTrigger.menuData = { items, widget: widget.widget };
-        this.widgetMenuTrigger.openMenu();
-      }
-    }
-  }
-
-  onWidgetFullscreenChanged(expanded: boolean) {
-    this.isWidgetExpanded = expanded;
-  }
-
-  onWidgetComponentAction(action: WidgetComponentAction, widget: DashboardWidget) {
-    const $event = action.event;
-    switch (action.actionType) {
-      case WidgetComponentActionType.MOUSE_DOWN:
-        this.widgetMouseDown($event, widget);
-        break;
-      case WidgetComponentActionType.CLICKED:
-        this.widgetClicked($event, widget);
-        break;
-      case WidgetComponentActionType.CONTEXT_MENU:
-        this.openWidgetContextMenu($event, widget);
-        break;
-      case WidgetComponentActionType.EDIT:
-        this.editWidget($event, widget);
-        break;
-      case WidgetComponentActionType.EXPORT:
-        this.exportWidget($event, widget);
-        break;
-      case WidgetComponentActionType.REMOVE:
-        this.removeWidget($event, widget);
-        break;
-    }
-  }
 
   private widgetMouseDown($event: Event, widget: DashboardWidget) {
     if (this.callbacks && this.callbacks.onWidgetMouseDown) {
