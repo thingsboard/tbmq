@@ -15,66 +15,12 @@
 ///
 
 import { EntityType } from '@shared/models/entity-type.models';
-import { AttributeData } from './telemetry/telemetry.models';
-import { EntityId } from '@shared/models/id/entity-id';
-
-export interface EntityInfo {
-  name?: string;
-  label?: string;
-  entityType?: EntityType;
-  id?: string;
-  entityDescription?: string;
-}
-
-export interface EntityInfoData {
-  id: EntityId;
-  name: string;
-}
-
-export interface ImportEntityData {
-  name: string;
-  type: string;
-  label: string;
-  gateway: boolean;
-  description: string;
-  accessToken: string;
-  attributes: {
-    server: AttributeData[],
-    shared: AttributeData[]
-  };
-  timeseries: AttributeData[];
-}
-
-export interface EdgeImportEntityData extends ImportEntityData {
-  secret: string;
-  routingKey: string;
-  cloudEndpoint: string;
-  edgeLicenseKey: string;
-}
-
-export interface ImportEntitiesResultInfo {
-  create?: {
-    entity: number;
-  };
-  update?: {
-    entity: number;
-  };
-  error?: {
-    entity: number;
-  };
-}
 
 export interface EntityField {
   keyName: string;
   value: string;
   name: string;
   time?: boolean;
-}
-
-export interface EntitiesKeysByQuery {
-  attribute: Array<string>;
-  timeseries: Array<string>;
-  entityTypes: EntityType[];
 }
 
 export const entityFields: {[fieldName: string]: EntityField} = {

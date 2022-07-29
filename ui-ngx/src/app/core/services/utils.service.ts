@@ -22,7 +22,6 @@ import { WINDOW } from '@core/services/window.service';
 import { ExceptionData } from '@app/shared/models/error.models';
 import {
   baseUrl,
-  createLabelFromDatasource,
   deepClone,
   deleteNullProperties,
   guid,
@@ -31,15 +30,10 @@ import {
   isString,
   isUndefined
 } from '@core/utils';
-import { WindowMessage } from '@shared/models/window-message.model';
 import { TranslateService } from '@ngx-translate/core';
 import { customTranslationsPrefix, i18nPrefix } from '@app/shared/models/constants';
-import { DataKey, Datasource, DatasourceType, KeyInfo } from '@shared/models/widget.models';
 import { EntityType } from '@shared/models/entity-type.models';
-import { DataKeyType } from '@app/shared/models/telemetry/telemetry.models';
-import { alarmFields } from '@shared/models/alarm.models';
 import { materialColors } from '@app/shared/models/material.models';
-import { WidgetInfo } from '@home/models/widget-component.models';
 import jsonSchemaDefaults from 'json-schema-defaults';
 import materialIconsCodepoints from '!raw-loader!material-design-icons/iconfont/codepoints';
 import { Observable, of, ReplaySubject } from 'rxjs';
@@ -65,14 +59,6 @@ for (const func of Object.keys(predefinedFunctions)) {
   predefinedFunctionsList.push(func);
 }
 
-const defaultAlarmFields: Array<string> = [
-  alarmFields.createdTime.keyName,
-  alarmFields.originator.keyName,
-  alarmFields.type.keyName,
-  alarmFields.severity.keyName,
-  alarmFields.status.keyName
-];
-
 const commonMaterialIcons: Array<string> = ['more_horiz', 'more_vert', 'open_in_new',
   'visibility', 'play_arrow', 'arrow_back', 'arrow_downward',
   'arrow_forward', 'arrow_upwards', 'close', 'refresh', 'menu', 'show_chart', 'multiline_chart', 'pie_chart', 'insert_chart', 'people',
@@ -87,26 +73,6 @@ const commonMaterialIcons: Array<string> = ['more_horiz', 'more_vert', 'open_in_
 export class UtilsService {
 
   iframeMode = false;
-  widgetEditMode = false;
-  editWidgetInfo: WidgetInfo = null;
-
-  defaultDataKey: DataKey = {
-    name: 'f(x)',
-    type: DataKeyType.function,
-    label: 'Sin',
-    color: this.getMaterialColor(0),
-    funcBody: this.getPredefinedFunctionBody('Sin'),
-    settings: {},
-    _hash: Math.random()
-  };
-
-  defaultDatasource: Datasource = {
-    type: DatasourceType.function,
-    name: DatasourceType.function,
-    dataKeys: [deepClone(this.defaultDataKey)]
-  };
-
-  defaultAlarmDataKeys: Array<DataKey> = [];
 
   materialIcons: Array<string> = [];
 
@@ -119,14 +85,6 @@ export class UtilsService {
     } catch (e) {
       // ie11 fix
     }
-    if (frame) {
-      this.iframeMode = true;
-      const dataWidgetAttr = frame.getAttribute('data-widget');
-      if (dataWidgetAttr && dataWidgetAttr.length) {
-        this.editWidgetInfo = JSON.parse(dataWidgetAttr);
-        this.widgetEditMode = true;
-      }
-    }
   }
 
   public getPredefinedFunctionsList(): Array<string> {
@@ -137,36 +95,6 @@ export class UtilsService {
     return predefinedFunctions[func];
   }
 
-  public getDefaultDatasource(dataKeySchema: any): Datasource {
-    const datasource = deepClone(this.defaultDatasource);
-    if (isDefined(dataKeySchema)) {
-      datasource.dataKeys[0].settings = this.generateObjectFromJsonSchema(dataKeySchema);
-    }
-    return datasource;
-  }
-
-  private initDefaultAlarmDataKeys() {
-    for (let i = 0; i < defaultAlarmFields.length; i++) {
-      const name = defaultAlarmFields[i];
-      const dataKey: DataKey = {
-        name,
-        type: DataKeyType.alarm,
-        label: this.translate.instant(alarmFields[name].name),
-        color: this.getMaterialColor(i),
-        settings: {},
-        _hash: Math.random()
-      };
-      this.defaultAlarmDataKeys.push(dataKey);
-    }
-  }
-
-  public getDefaultAlarmDataKeys(): Array<DataKey> {
-    if (!this.defaultAlarmDataKeys.length) {
-      this.initDefaultAlarmDataKeys();
-    }
-    return deepClone(this.defaultAlarmDataKeys);
-  }
-
   public generateObjectFromJsonSchema(schema: any): any {
     const obj = jsonSchemaDefaults(schema);
     deleteNullProperties(obj);
@@ -175,13 +103,6 @@ export class UtilsService {
 
   public processWidgetException(exception: any): ExceptionData {
     const data = this.parseException(exception, -6);
-    if (this.widgetEditMode) {
-      const message: WindowMessage = {
-        type: 'widgetException',
-        data
-      };
-      this.window.parent.postMessage(JSON.stringify(message), '*');
-    }
     return data;
   }
 
@@ -263,31 +184,6 @@ export class UtilsService {
     return guid();
   }
 
-  public validateDatasources(datasources: Array<Datasource>): Array<Datasource> {
-    datasources.forEach((datasource) => {
-      // @ts-ignore
-      if (datasource.type === 'device') {
-        datasource.type = DatasourceType.entity;
-        datasource.entityType = EntityType.DEVICE;
-        if (datasource.deviceId) {
-          datasource.entityId = datasource.deviceId;
-        } else if (datasource.deviceAliasId) {
-          datasource.entityAliasId = datasource.deviceAliasId;
-        }
-        if (datasource.deviceName) {
-          datasource.entityName = datasource.deviceName;
-        }
-      }
-      if (datasource.type === DatasourceType.entity && datasource.entityId) {
-        datasource.name = datasource.entityName;
-      }
-      if (!datasource.dataKeys) {
-        datasource.dataKeys = [];
-      }
-    });
-    return datasources;
-  }
-
   public getMaterialIcons(): Observable<Array<string>> {
     if (this.materialIcons.length) {
       return of(this.materialIcons);
@@ -318,43 +214,6 @@ export class UtilsService {
     return materialColors[colorIndex].value;
   }
 
-  public createKey(keyInfo: KeyInfo, type: DataKeyType, index: number = -1): DataKey {
-    let label;
-    if (type === DataKeyType.alarm && !keyInfo.label) {
-      const alarmField = alarmFields[keyInfo.name];
-      if (alarmField) {
-        label = this.translate.instant(alarmField.name);
-      }
-    }
-    if (!label) {
-      label = keyInfo.label || keyInfo.name;
-    }
-    const dataKey: DataKey = {
-      name: keyInfo.name,
-      type,
-      label,
-      funcBody: keyInfo.funcBody,
-      settings: {},
-      _hash: Math.random()
-    };
-    if (keyInfo.units) {
-      dataKey.units = keyInfo.units;
-    }
-    if (isDefined(keyInfo.decimals)) {
-      dataKey.decimals = keyInfo.decimals;
-    }
-    if (keyInfo.color) {
-      dataKey.color = keyInfo.color;
-    } else if (index > -1) {
-      dataKey.color = this.getMaterialColor(index);
-    }
-    if (keyInfo.postFuncBody && keyInfo.postFuncBody.length) {
-      dataKey.usePostProcessing = true;
-      dataKey.postFuncBody = keyInfo.postFuncBody;
-    }
-    return dataKey;
-  }
-
   /* public createAdditionalDataKey(dataKey: DataKey, datasource: Datasource, timeUnit: string,
     datasources: Datasource[], additionalKeysNumber: number): DataKey {
     const additionalDataKey = deepClone(dataKey);
@@ -374,22 +233,6 @@ export class UtilsService {
     additionalDataKey._hash = Math.random();
     return additionalDataKey;
   }*/
-
-  public createLabelFromDatasource(datasource: Datasource, pattern: string): string {
-    return createLabelFromDatasource(datasource, pattern);
-  }
-
-  public generateColors(datasources: Array<Datasource>) {
-    let index = 0;
-    datasources.forEach((datasource) => {
-      datasource.dataKeys.forEach((dataKey) => {
-        if (!dataKey.color) {
-          dataKey.color = this.getMaterialColor(index);
-        }
-        index++;
-      });
-    });
-  }
 
   public currentPerfTime(): number {
     return this.window.performance && this.window.performance.now ?

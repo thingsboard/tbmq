@@ -81,18 +81,8 @@ import { ValueInputComponent } from '@shared/components/value-input.component';
 import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
-import { DashboardAutocompleteComponent } from '@shared/components/dashboard-autocomplete.component';
-import { EntitySubTypeAutocompleteComponent } from '@shared/components/entity/entity-subtype-autocomplete.component';
-import { EntitySubTypeSelectComponent } from '@shared/components/entity/entity-subtype-select.component';
-import { EntityAutocompleteComponent } from '@shared/components/entity/entity-autocomplete.component';
-import { EntityListComponent } from '@shared/components/entity/entity-list.component';
-import { EntityTypeSelectComponent } from '@shared/components/entity/entity-type-select.component';
-import { EntitySelectComponent } from '@shared/components/entity/entity-select.component';
 import { DatetimeComponent } from '@shared/components/time/datetime.component';
-import { EntityKeysListComponent } from '@shared/components/entity/entity-keys-list.component';
 import { SocialSharePanelComponent } from '@shared/components/socialshare-panel.component';
-import { RelationTypeAutocompleteComponent } from '@shared/components/relation/relation-type-autocomplete.component';
-import { EntityListSelectComponent } from '@shared/components/entity/entity-list-select.component';
 import { JsonObjectEditComponent } from '@shared/components/json-object-edit.component';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { CircularProgressDirective } from '@shared/components/circular-progress.directive';
@@ -101,20 +91,14 @@ import {
   FabToolbarComponent,
   FabTriggerDirective
 } from '@shared/components/fab-toolbar.component';
-import { DashboardSelectPanelComponent } from '@shared/components/dashboard-select-panel.component';
-import { DashboardSelectComponent } from '@shared/components/dashboard-select.component';
-import { WidgetsBundleSelectComponent } from '@shared/components/widgets-bundle-select.component';
 import { KeyboardShortcutPipe } from '@shared/pipe/keyboard-shortcut.pipe';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
-import { EntityTypeListComponent } from '@shared/components/entity/entity-type-list.component';
-import { EntitySubTypeListComponent } from '@shared/components/entity/entity-subtype-list.component';
 import { TruncatePipe } from '@shared/pipe/truncate.pipe';
 import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
 import { ColorPickerDialogComponent } from '@shared/components/dialog/color-picker-dialog.component';
 import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ColorInputComponent } from '@shared/components/color-input.component';
 import { JsFuncComponent } from '@shared/components/js-func.component';
-import { JsonFormComponent } from '@shared/components/json-form/json-form.component';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { TodoDialogComponent } from '@shared/components/dialog/todo-dialog.component';
@@ -122,27 +106,16 @@ import { MaterialIconsDialogComponent } from '@shared/components/dialog/material
 import { MaterialIconSelectComponent } from '@shared/components/material-icon-select.component';
 import { ImageInputComponent } from '@shared/components/image-input.component';
 import { FileInputComponent } from '@shared/components/file-input.component';
-import { NodeScriptTestDialogComponent } from '@shared/components/dialog/node-script-test-dialog.component';
-import { MessageTypeAutocompleteComponent } from '@shared/components/message-type-autocomplete.component';
 import { JsonContentComponent } from '@shared/components/json-content.component';
-import { KeyValMapComponent } from '@shared/components/kv-map.component';
 import { TbCheatSheetComponent } from '@shared/components/cheatsheet.component';
 import { TbHotkeysDirective } from '@shared/components/hotkeys.directive';
-import { NavTreeComponent } from '@shared/components/nav-tree.component';
-import { LedLightComponent } from '@shared/components/led-light.component';
 import { TbJsonToStringDirective } from '@shared/components/directives/tb-json-to-string.directive';
 import { JsonObjectEditDialogComponent } from '@shared/components/dialog/json-object-edit-dialog.component';
-import { HistorySelectorComponent } from './components/time/history-selector/history-selector.component';
-import { EntityGatewaySelectComponent } from '@shared/components/entity/entity-gateway-select.component';
 import { DndModule } from 'ngx-drag-drop';
-import { QueueTypeListComponent } from '@shared/components/queue/queue-type-list.component';
 import { ContactComponent } from '@shared/components/contact.component';
 import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
 import { FileSizePipe } from '@shared/pipe/file-size.pipe';
-import { WidgetsBundleSearchComponent } from '@shared/components/widgets-bundle-search.component';
-import { SelectableColumnsPipe } from '@shared/pipe/selectable-columns.pipe';
 import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
-import { OtaPackageAutocompleteComponent } from '@shared/components/ota-package/ota-package-autocomplete.component';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
@@ -191,25 +164,10 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TimewindowPanelComponent,
     TimeintervalComponent,
     QuickTimeIntervalComponent,
-    DashboardSelectComponent,
-    DashboardSelectPanelComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
     TimezoneSelectComponent,
     ValueInputComponent,
-    DashboardAutocompleteComponent,
-    EntitySubTypeAutocompleteComponent,
-    EntitySubTypeSelectComponent,
-    EntitySubTypeListComponent,
-    EntityAutocompleteComponent,
-    EntityListComponent,
-    EntityTypeSelectComponent,
-    EntitySelectComponent,
-    EntityKeysListComponent,
-    EntityListSelectComponent,
-    EntityTypeListComponent,
-    QueueTypeListComponent,
-    RelationTypeAutocompleteComponent,
     SocialSharePanelComponent,
     JsonObjectEditComponent,
     JsonContentComponent,
@@ -217,7 +175,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FabTriggerDirective,
     FabActionsDirective,
     FabToolbarComponent,
-    WidgetsBundleSelectComponent,
     ConfirmDialogComponent,
     AlertDialogComponent,
     TodoDialogComponent,
@@ -225,14 +182,8 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MaterialIconsDialogComponent,
     ColorInputComponent,
     MaterialIconSelectComponent,
-    NodeScriptTestDialogComponent,
-    JsonFormComponent,
     ImageInputComponent,
     FileInputComponent,
-    MessageTypeAutocompleteComponent,
-    KeyValMapComponent,
-    NavTreeComponent,
-    LedLightComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     EnumToArrayPipe,
@@ -240,15 +191,10 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TruncatePipe,
     TbJsonPipe,
     FileSizePipe,
-    SelectableColumnsPipe,
     KeyboardShortcutPipe,
     TbJsonToStringDirective,
     JsonObjectEditDialogComponent,
-    HistorySelectorComponent,
-    EntityGatewaySelectComponent,
     ContactComponent,
-    OtaPackageAutocompleteComponent,
-    WidgetsBundleSearchComponent,
     CopyButtonComponent,
     TogglePasswordComponent,
     MqttCredentialsComponent,
@@ -334,23 +280,9 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TimewindowPanelComponent,
     TimeintervalComponent,
     QuickTimeIntervalComponent,
-    DashboardSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
     TimezoneSelectComponent,
-    DashboardAutocompleteComponent,
-    EntitySubTypeAutocompleteComponent,
-    EntitySubTypeSelectComponent,
-    EntitySubTypeListComponent,
-    EntityAutocompleteComponent,
-    EntityListComponent,
-    EntityTypeSelectComponent,
-    EntitySelectComponent,
-    EntityKeysListComponent,
-    EntityListSelectComponent,
-    EntityTypeListComponent,
-    QueueTypeListComponent,
-    RelationTypeAutocompleteComponent,
     SocialSharePanelComponent,
     JsonObjectEditComponent,
     JsonContentComponent,
@@ -358,7 +290,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FabTriggerDirective,
     FabActionsDirective,
     FabToolbarComponent,
-    WidgetsBundleSelectComponent,
     ValueInputComponent,
     MatButtonModule,
     MatCheckboxModule,
@@ -412,14 +343,8 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MaterialIconsDialogComponent,
     ColorInputComponent,
     MaterialIconSelectComponent,
-    NodeScriptTestDialogComponent,
-    JsonFormComponent,
     ImageInputComponent,
     FileInputComponent,
-    MessageTypeAutocompleteComponent,
-    KeyValMapComponent,
-    NavTreeComponent,
-    LedLightComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     EnumToArrayPipe,
@@ -428,14 +353,9 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TbJsonPipe,
     KeyboardShortcutPipe,
     FileSizePipe,
-    SelectableColumnsPipe,
     TranslateModule,
     JsonObjectEditDialogComponent,
-    HistorySelectorComponent,
-    EntityGatewaySelectComponent,
     ContactComponent,
-    OtaPackageAutocompleteComponent,
-    WidgetsBundleSearchComponent,
     CopyButtonComponent,
     TogglePasswordComponent,
     MqttCredentialsComponent,

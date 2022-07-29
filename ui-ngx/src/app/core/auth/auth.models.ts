@@ -18,8 +18,6 @@ import { AuthUser, User } from '@shared/models/user.model';
 
 export interface SysParamsState {
   userTokenAccessEnabled: boolean;
-  allowedDashboardIds: string[];
-  edgesSupportEnabled: boolean;
 }
 
 export interface AuthPayload extends SysParamsState {

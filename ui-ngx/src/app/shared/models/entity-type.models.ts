@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-import { TenantId } from './id/tenant-id';
 import { BaseData, HasId } from '@shared/models/base-data';
 
 export enum EntityType {
@@ -440,9 +439,3 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
     ]
   ]
 );
-
-export interface EntitySubtype {
-  tenantId: TenantId;
-  entityType: EntityType;
-  type: string;
-}

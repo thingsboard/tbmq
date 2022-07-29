@@ -30,7 +30,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
 import { DialogService } from '@core/services/dialog.service';
-import { ImportExportService } from '@home/components/import-export/import-export.service';
 import { Direction } from '@shared/models/page/sort-order';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
@@ -51,7 +50,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
               private dialogService: DialogService,
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private translate: TranslateService,
-              private importExport: ImportExportService,
               private datePipe: DatePipe,
               private dialog: MatDialog) {
 

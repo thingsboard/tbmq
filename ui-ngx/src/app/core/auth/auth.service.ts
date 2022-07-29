@@ -36,11 +36,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { AuthUser } from '@shared/models/user.model';
 import { TimeService } from '@core/services/time.service';
 import { UtilsService } from '@core/services/utils.service';
-import { DashboardService } from '@core/http/dashboard.service';
-import { PageLink } from '@shared/models/page/page-link';
-import { DashboardInfo } from '@shared/models/dashboard.models';
-import { PageData } from '@app/shared/models/page/page-data';
-import { AdminService } from '@core/http/admin.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { OAuth2ClientInfo, PlatformType } from '@shared/models/oauth2.models';
@@ -60,8 +55,6 @@ export class AuthService {
     private route: ActivatedRoute,
     private zone: NgZone,
     private utils: UtilsService,
-    private dashboardService: DashboardService,
-    private adminService: AdminService,
     private translate: TranslateService,
     private dialog: MatDialog
   ) {
@@ -109,7 +102,6 @@ export class AuthService {
       }
     );
   }
-
 
   public login(loginRequest: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>('/api/auth/login', loginRequest, defaultHttpOptions()).pipe(
@@ -383,15 +375,11 @@ export class AuthService {
 
   private loadSystemParams(authPayload: AuthPayload): Observable<SysParamsState> {
     const sources = [this.loadIsUserTokenAccessEnabled(authPayload.authUser),
-                     this.fetchAllowedDashboardIds(authPayload),
-                     this.loadIsEdgesSupportEnabled(),
                      this.timeService.loadMaxDatapointsLimit()];
     return forkJoin(sources)
       .pipe(map((data) => {
         const userTokenAccessEnabled: boolean = data[0] as boolean;
-        const allowedDashboardIds: string[] = data[1] as string[];
-        const edgesSupportEnabled: boolean = data[2] as boolean;
-        return {userTokenAccessEnabled, allowedDashboardIds, edgesSupportEnabled};
+        return {userTokenAccessEnabled};
       }, catchError((err) => {
         return of({});
       })));
@@ -558,44 +546,4 @@ export class AuthService {
     this.setUserFromJwtToken(null, null, true);
   }
 
-  private userForceFullscreen(authPayload: AuthPayload): boolean {
-    return (authPayload.authUser && authPayload.authUser.isPublic) ||
-      (authPayload.userDetails && authPayload.userDetails.additionalInfo &&
-        authPayload.userDetails.additionalInfo.defaultDashboardFullscreen &&
-        authPayload.userDetails.additionalInfo.defaultDashboardFullscreen === true);
-  }
-
-  private userHasProfile(authUser: AuthUser): boolean {
-    return authUser && !authUser.isPublic;
-  }
-
-  private userHasDefaultDashboard(authState: AuthState): boolean {
-    if (authState && authState.userDetails && authState.userDetails.additionalInfo
-      && authState.userDetails.additionalInfo.defaultDashboardId) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private fetchAllowedDashboardIds(authPayload: AuthPayload): Observable<string[]> {
-    if (authPayload.forceFullscreen && (authPayload.authUser.authority === Authority.TENANT_ADMIN ||
-      authPayload.authUser.authority === Authority.CUSTOMER_USER)) {
-      const pageLink = new PageLink(100);
-      let fetchDashboardsObservable: Observable<PageData<DashboardInfo>>;
-      if (authPayload.authUser.authority === Authority.TENANT_ADMIN) {
-        fetchDashboardsObservable = this.dashboardService.getTenantDashboards(pageLink);
-      } else {
-        fetchDashboardsObservable = this.dashboardService.getCustomerDashboards(authPayload.authUser.customerId, pageLink);
-      }
-      return fetchDashboardsObservable.pipe(
-        map((result) => {
-          const dashboards = result.data;
-          return dashboards.map(dashboard => dashboard.id.id);
-        })
-      );
-    } else {
-      return of([]);
-    }
-  }
 }
