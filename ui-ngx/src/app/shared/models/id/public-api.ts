@@ -17,3 +17,5 @@
 export * from './entity-id';
 export * from './has-uuid';
 export * from './user-id';
+export * from './mqtt-session.id';
+export * from './mqtt-client.id';

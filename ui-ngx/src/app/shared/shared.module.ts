@@ -69,31 +69,20 @@ import { TranslateModule } from '@ngx-translate/core';
 import { HelpComponent } from '@shared/components/help.component';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { MillisecondsToTimeStringPipe } from '@shared/pipe/milliseconds-to-time-string.pipe';
-import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { OverlayModule } from '@angular/cdk/overlay';
-import { TimewindowPanelComponent } from '@shared/components/time/timewindow-panel.component';
-import { TimeintervalComponent } from '@shared/components/time/timeinterval.component';
-import { DatetimePeriodComponent } from '@shared/components/time/datetime-period.component';
 import { ClipboardModule } from 'ngx-clipboard';
 import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
-import { DatetimeComponent } from '@shared/components/time/datetime.component';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { CircularProgressDirective } from '@shared/components/circular-progress.directive';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
-import { ColorPickerDialogComponent } from '@shared/components/dialog/color-picker-dialog.component';
 import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { TodoDialogComponent } from '@shared/components/dialog/todo-dialog.component';
-import { MaterialIconsDialogComponent } from '@shared/components/dialog/material-icons-dialog.component';
-import { MaterialIconSelectComponent } from '@shared/components/material-icon-select.component';
 import { TbCheatSheetComponent } from '@shared/components/cheatsheet.component';
 import { TbHotkeysDirective } from '@shared/components/hotkeys.directive';
 import { DndModule } from 'ngx-drag-drop';
-import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
-import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
@@ -132,19 +121,8 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TbCheatSheetComponent,
     BreadcrumbComponent,
     UserMenuComponent,
-    TimewindowComponent,
-    TimewindowPanelComponent,
-    TimeintervalComponent,
-    QuickTimeIntervalComponent,
-    DatetimePeriodComponent,
-    DatetimeComponent,
-    TimezoneSelectComponent,
     ConfirmDialogComponent,
     AlertDialogComponent,
-    TodoDialogComponent,
-    ColorPickerDialogComponent,
-    MaterialIconsDialogComponent,
-    MaterialIconSelectComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     HighlightPipe,
@@ -228,13 +206,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     TbCheatSheetComponent,
     BreadcrumbComponent,
     UserMenuComponent,
-    TimewindowComponent,
-    TimewindowPanelComponent,
-    TimeintervalComponent,
-    QuickTimeIntervalComponent,
-    DatetimePeriodComponent,
-    DatetimeComponent,
-    TimezoneSelectComponent,
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
@@ -282,10 +253,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MarkdownModule,
     ConfirmDialogComponent,
     AlertDialogComponent,
-    TodoDialogComponent,
-    ColorPickerDialogComponent,
-    MaterialIconsDialogComponent,
-    MaterialIconSelectComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
     HighlightPipe,

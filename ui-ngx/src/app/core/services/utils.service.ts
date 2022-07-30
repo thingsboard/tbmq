@@ -19,23 +19,8 @@
 
 import { Inject, Injectable, NgZone } from '@angular/core';
 import { WINDOW } from '@core/services/window.service';
-import {
-  baseUrl,
-  deepClone,
-  guid,
-  isDefined,
-  isUndefined
-} from '@core/utils';
+import { baseUrl, guid } from '@core/utils';
 import { TranslateService } from '@ngx-translate/core';
-import materialIconsCodepoints from '!raw-loader!material-design-icons/iconfont/codepoints';
-import { Observable, of, ReplaySubject } from 'rxjs';
-
-const commonMaterialIcons: Array<string> = ['more_horiz', 'more_vert', 'open_in_new',
-  'visibility', 'play_arrow', 'arrow_back', 'arrow_downward',
-  'arrow_forward', 'arrow_upwards', 'close', 'refresh', 'menu', 'show_chart', 'multiline_chart', 'pie_chart', 'insert_chart', 'people',
-  'person', 'domain', 'devices_other', 'now_widgets', 'dashboards', 'map', 'pin_drop', 'my_location', 'extension', 'search',
-  'settings', 'notifications', 'notifications_active', 'info', 'info_outline', 'warning', 'list', 'file_download', 'import_export',
-  'share', 'add', 'edit', 'done'];
 
 // @dynamic
 @Injectable({
@@ -58,31 +43,6 @@ export class UtilsService {
 
   public guid(): string {
     return guid();
-  }
-
-  public getMaterialIcons(): Observable<Array<string>> {
-    if (this.materialIcons.length) {
-      return of(this.materialIcons);
-    } else {
-      const materialIconsSubject = new ReplaySubject<Array<string>>();
-      this.zone.runOutsideAngular(() => {
-        const codepointsArray = materialIconsCodepoints
-          .split('\n')
-          .filter((codepoint) => codepoint && codepoint.length);
-        codepointsArray.forEach((codepoint) => {
-          const values = codepoint.split(' ');
-          if (values && values.length === 2) {
-            this.materialIcons.push(values[0]);
-          }
-        });
-        materialIconsSubject.next(this.materialIcons);
-      });
-      return materialIconsSubject.asObservable();
-    }
-  }
-
-  public getCommonMaterialIcons(): Array<string> {
-    return commonMaterialIcons;
   }
 
   public getQueryParam(name: string): string {
@@ -140,15 +100,4 @@ export class UtilsService {
     return params;
   }
 
-  public deepClone<T>(target: T, ignoreFields?: string[]): T {
-    return deepClone(target, ignoreFields);
-  }
-
-  public isUndefined(value: any): boolean {
-    return isUndefined(value);
-  }
-
-  public isDefined(value: any): boolean {
-    return isDefined(value);
-  }
 }

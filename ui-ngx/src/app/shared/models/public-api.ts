@@ -16,7 +16,6 @@
 
 export * from './id/public-api';
 export * from './page/public-api';
-export * from './time/time.models';
 export * from './authority.enum';
 export * from './base-data';
 export * from './constants';

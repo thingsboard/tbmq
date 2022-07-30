@@ -14,15 +14,10 @@
 /// limitations under the License.
 ///
 
-export * from './broadcast.models';
-export * from './broadcast.service';
 export * from './dialog.service';
-export * from './dynamic-component-factory.service';
 export * from './menu.models';
 export * from './menu.service';
 export * from './notification.service';
-export * from './raf.service';
-export * from './resources.service';
 export * from './time.service';
 export * from './title.service';
 export * from './utils.service';
