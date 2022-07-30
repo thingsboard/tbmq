@@ -74,7 +74,6 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { TimewindowPanelComponent } from '@shared/components/time/timewindow-panel.component';
 import { TimeintervalComponent } from '@shared/components/time/timeinterval.component';
 import { DatetimePeriodComponent } from '@shared/components/time/datetime-period.component';
-import { EnumToArrayPipe } from '@shared/pipe/enum-to-array.pipe';
 import { ClipboardModule } from 'ngx-clipboard';
 import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
@@ -82,10 +81,7 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { DatetimeComponent } from '@shared/components/time/datetime.component';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { CircularProgressDirective } from '@shared/components/circular-progress.directive';
-import { KeyboardShortcutPipe } from '@shared/pipe/keyboard-shortcut.pipe';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
-import { TruncatePipe } from '@shared/pipe/truncate.pipe';
-import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
 import { ColorPickerDialogComponent } from '@shared/components/dialog/color-picker-dialog.component';
 import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
@@ -95,10 +91,8 @@ import { MaterialIconsDialogComponent } from '@shared/components/dialog/material
 import { MaterialIconSelectComponent } from '@shared/components/material-icon-select.component';
 import { TbCheatSheetComponent } from '@shared/components/cheatsheet.component';
 import { TbHotkeysDirective } from '@shared/components/hotkeys.directive';
-import { TbJsonToStringDirective } from '@shared/components/directives/tb-json-to-string.directive';
 import { DndModule } from 'ngx-drag-drop';
 import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
-import { FileSizePipe } from '@shared/pipe/file-size.pipe';
 import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
@@ -113,11 +107,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
   providers: [
     DatePipe,
     MillisecondsToTimeStringPipe,
-    EnumToArrayPipe,
-    HighlightPipe,
-    TruncatePipe,
-    TbJsonPipe,
-    FileSizePipe,
     {
       provide: FlowInjectionToken,
       useValue: Flow
@@ -158,13 +147,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MaterialIconSelectComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
-    EnumToArrayPipe,
     HighlightPipe,
-    TruncatePipe,
-    TbJsonPipe,
-    FileSizePipe,
-    KeyboardShortcutPipe,
-    TbJsonToStringDirective,
     CopyButtonComponent,
     TogglePasswordComponent,
     MqttCredentialsComponent,
@@ -305,12 +288,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MaterialIconSelectComponent,
     NospacePipe,
     MillisecondsToTimeStringPipe,
-    EnumToArrayPipe,
     HighlightPipe,
-    TruncatePipe,
-    TbJsonPipe,
-    KeyboardShortcutPipe,
-    FileSizePipe,
     TranslateModule,
     CopyButtonComponent,
     TogglePasswordComponent,

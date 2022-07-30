@@ -19,45 +19,16 @@
 
 import { Inject, Injectable, NgZone } from '@angular/core';
 import { WINDOW } from '@core/services/window.service';
-import { ExceptionData } from '@app/shared/models/error.models';
 import {
   baseUrl,
   deepClone,
-  deleteNullProperties,
   guid,
   isDefined,
-  isDefinedAndNotNull,
-  isString,
   isUndefined
 } from '@core/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { customTranslationsPrefix, i18nPrefix } from '@app/shared/models/constants';
-import { EntityType } from '@shared/models/entity-type.models';
-import { materialColors } from '@app/shared/models/material.models';
-import jsonSchemaDefaults from 'json-schema-defaults';
 import materialIconsCodepoints from '!raw-loader!material-design-icons/iconfont/codepoints';
 import { Observable, of, ReplaySubject } from 'rxjs';
-
-const i18nRegExp = new RegExp(`{${i18nPrefix}:[^{}]+}`, 'g');
-
-const predefinedFunctions: { [func: string]: string } = {
-  Sin: 'return Math.round(1000*Math.sin(time/5000));',
-  Cos: 'return Math.round(1000*Math.cos(time/5000));',
-  Random: 'var value = prevValue + Math.random() * 100 - 50;\n' +
-    'var multiplier = Math.pow(10, 2 || 0);\n' +
-    'var value = Math.round(value * multiplier) / multiplier;\n' +
-    'if (value < -1000) {\n' +
-    '	value = -1000;\n' +
-    '} else if (value > 1000) {\n' +
-    '	value = 1000;\n' +
-    '}\n' +
-    'return value;'
-};
-
-const predefinedFunctionsList: Array<string> = [];
-for (const func of Object.keys(predefinedFunctions)) {
-  predefinedFunctionsList.push(func);
-}
 
 const commonMaterialIcons: Array<string> = ['more_horiz', 'more_vert', 'open_in_new',
   'visibility', 'play_arrow', 'arrow_back', 'arrow_downward',
@@ -72,8 +43,6 @@ const commonMaterialIcons: Array<string> = ['more_horiz', 'more_vert', 'open_in_
 })
 export class UtilsService {
 
-  iframeMode = false;
-
   materialIcons: Array<string> = [];
 
   constructor(@Inject(WINDOW) private window: Window,
@@ -85,99 +54,6 @@ export class UtilsService {
     } catch (e) {
       // ie11 fix
     }
-  }
-
-  public getPredefinedFunctionsList(): Array<string> {
-    return predefinedFunctionsList;
-  }
-
-  public getPredefinedFunctionBody(func: string): string {
-    return predefinedFunctions[func];
-  }
-
-  public generateObjectFromJsonSchema(schema: any): any {
-    const obj = jsonSchemaDefaults(schema);
-    deleteNullProperties(obj);
-    return obj;
-  }
-
-  public processWidgetException(exception: any): ExceptionData {
-    const data = this.parseException(exception, -6);
-    return data;
-  }
-
-  public parseException(exception: any, lineOffset?: number): ExceptionData {
-    const data: ExceptionData = {};
-    if (exception) {
-      if (typeof exception === 'string') {
-        data.message = exception;
-      } else if (exception instanceof String) {
-        data.message = exception.toString();
-      } else {
-        if (exception.name) {
-          data.name = exception.name;
-        } else {
-          data.name = 'UnknownError';
-        }
-        if (exception.message) {
-          data.message = exception.message;
-        }
-        if (exception.lineNumber) {
-          data.lineNumber = exception.lineNumber;
-          if (exception.columnNumber) {
-            data.columnNumber = exception.columnNumber;
-          }
-        } else if (exception.stack) {
-          const lineInfoRegexp = /(.*<anonymous>):(\d*)(:)?(\d*)?/g;
-          const lineInfoGroups = lineInfoRegexp.exec(exception.stack);
-          if (lineInfoGroups != null && lineInfoGroups.length >= 3) {
-            if (isUndefined(lineOffset)) {
-              lineOffset = -2;
-            }
-            data.lineNumber = Number(lineInfoGroups[2]) + lineOffset;
-            if (lineInfoGroups.length >= 5) {
-              data.columnNumber = Number(lineInfoGroups[4]);
-            }
-          }
-        }
-      }
-    }
-    return data;
-  }
-
-  public customTranslation(translationValue: string, defaultValue: string): string {
-    if (translationValue && isString(translationValue)) {
-      if (translationValue.includes(`{${i18nPrefix}`)) {
-        const matches = translationValue.match(i18nRegExp);
-        let result = translationValue;
-        for (const match of matches) {
-          const translationId = match.substring(6, match.length - 1);
-          result = result.replace(match, this.doTranslate(translationId, match));
-        }
-        return result;
-      } else {
-        return this.doTranslate(translationValue, defaultValue, customTranslationsPrefix);
-      }
-    } else {
-      return translationValue;
-    }
-  }
-
-  private doTranslate(translationValue: string, defaultValue: string, prefix?: string): string {
-    let result: string;
-    let translationId;
-    if (prefix) {
-      translationId = prefix + translationValue;
-    } else {
-      translationId = translationValue;
-    }
-    const translation = this.translate.instant(translationId);
-    if (translation !== translationId) {
-      result = translation + '';
-    } else {
-      result = defaultValue;
-    }
-    return result;
   }
 
   public guid(): string {
@@ -207,36 +83,6 @@ export class UtilsService {
 
   public getCommonMaterialIcons(): Array<string> {
     return commonMaterialIcons;
-  }
-
-  public getMaterialColor(index: number) {
-    const colorIndex = index % materialColors.length;
-    return materialColors[colorIndex].value;
-  }
-
-  /* public createAdditionalDataKey(dataKey: DataKey, datasource: Datasource, timeUnit: string,
-    datasources: Datasource[], additionalKeysNumber: number): DataKey {
-    const additionalDataKey = deepClone(dataKey);
-    if (dataKey.settings.comparisonSettings.comparisonValuesLabel) {
-      additionalDataKey.label = createLabelFromDatasource(datasource, dataKey.settings.comparisonSettings.comparisonValuesLabel);
-    } else {
-      additionalDataKey.label = dataKey.label + ' ' + this.translate.instant('legend.comparison-time-ago.' + timeUnit);
-    }
-    additionalDataKey.pattern = additionalDataKey.label;
-    if (dataKey.settings.comparisonSettings.color) {
-      additionalDataKey.color = dataKey.settings.comparisonSettings.color;
-    } else {
-      const index = datasources.map((_datasource) => datasource.dataKeys.length)
-        .reduce((previousValue, currentValue) => previousValue + currentValue, 0);
-      additionalDataKey.color = this.getMaterialColor(index + additionalKeysNumber);
-    }
-    additionalDataKey._hash = Math.random();
-    return additionalDataKey;
-  }*/
-
-  public currentPerfTime(): number {
-    return this.window.performance && this.window.performance.now ?
-      this.window.performance.now() : Date.now();
   }
 
   public getQueryParam(name: string): string {
@@ -294,10 +140,6 @@ export class UtilsService {
     return params;
   }
 
-  public baseUrl(): string {
-    return baseUrl();
-  }
-
   public deepClone<T>(target: T, ignoreFields?: string[]): T {
     return deepClone(target, ignoreFields);
   }
@@ -308,13 +150,5 @@ export class UtilsService {
 
   public isDefined(value: any): boolean {
     return isDefined(value);
-  }
-
-  public defaultValue(value: any, defaultValue: any): any {
-    if (isDefinedAndNotNull(value)) {
-      return value;
-    } else {
-      return defaultValue;
-    }
   }
 }

@@ -71,6 +71,8 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
 })
 export class TimewindowComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
+  // TODO deaflynx does this component used?
+
   historyOnlyValue = false;
 
   @Input()
