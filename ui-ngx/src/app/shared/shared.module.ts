@@ -60,7 +60,6 @@ import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ShareModule as ShareButtonsModule } from 'ngx-sharebuttons';
-import { HotkeyModule } from 'angular2-hotkeys';
 import { ColorPickerModule } from 'ngx-color-picker';
 import { NgxHmCarouselModule } from 'ngx-hm-carousel';
 import { UserMenuComponent } from '@shared/components/user-menu.component';
@@ -75,13 +74,10 @@ import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
-import { CircularProgressDirective } from '@shared/components/circular-progress.directive';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { TbCheatSheetComponent } from '@shared/components/cheatsheet.component';
-import { TbHotkeysDirective } from '@shared/components/hotkeys.directive';
 import { DndModule } from 'ngx-drag-drop';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
@@ -111,14 +107,11 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    CircularProgressDirective,
     MatChipDraggableDirective,
-    TbHotkeysDirective,
     TbAnchorComponent,
     HelpComponent,
     TbSnackBarComponent,
     TbErrorComponent,
-    TbCheatSheetComponent,
     BreadcrumbComponent,
     UserMenuComponent,
     ConfirmDialogComponent,
@@ -176,7 +169,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     ReactiveFormsModule,
     OverlayModule,
     ShareButtonsModule,
-    HotkeyModule,
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,
@@ -197,13 +189,10 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    CircularProgressDirective,
     MatChipDraggableDirective,
-    TbHotkeysDirective,
     TbAnchorComponent,
     HelpComponent,
     TbErrorComponent,
-    TbCheatSheetComponent,
     BreadcrumbComponent,
     UserMenuComponent,
     MatButtonModule,
@@ -245,7 +234,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     ReactiveFormsModule,
     OverlayModule,
     ShareButtonsModule,
-    HotkeyModule,
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,

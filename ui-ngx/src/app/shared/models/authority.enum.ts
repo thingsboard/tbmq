@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+
+//TODO deaflynx what to remove
 export enum Authority {
   SYS_ADMIN = 'SYS_ADMIN',
   TENANT_ADMIN = 'TENANT_ADMIN',

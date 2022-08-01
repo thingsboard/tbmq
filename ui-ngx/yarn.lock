@@ -1846,11 +1846,6 @@
   resolved "https://registry.yarnpkg.com/@types/mousetrap/-/mousetrap-1.6.3.tgz#3159a01a2b21c9155a3d8f85588885d725dc987d"
   integrity sha512-13gmo3M2qVvjQrWNseqM3+cR6S2Ss3grbR2NZltgMq94wOwqJYQdgn8qzwDshzgXqMlSUtyPZjysImmktu22ew==
 
-"@types/mousetrap@^1.6.0":
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/@types/mousetrap/-/mousetrap-1.6.4.tgz#32503197fca4168b10bf251c1d677a9b5b1c2415"
-  integrity sha512-+Y900DGhe+f+4lRwHm9krsKfsiXcbdOhzTsLbytU4MiG8wE9xOw7CFKtgYKfqEAcUdWEGZRyuTxoyFl2Gx6Rdg==
-
 "@types/node@*":
   version "14.11.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.11.5.tgz#fecad41c041cae7f2404ad4b2d0742fdb628b305"
@@ -2226,14 +2221,6 @@ angular-gridster2@~11.2.0:
   integrity sha512-9+4Qt2/mPKAzGhhzp2Ag++WQbvr3Ry3dbfHG1XI596jpKh1ZtYvTLrh0Fn6jJEq248F1VN0xob9K9PzTH4P/2A==
   dependencies:
     tslib "^2.0.0"
-
-angular2-hotkeys@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/angular2-hotkeys/-/angular2-hotkeys-2.2.0.tgz#7b52ba99c42c56656360953ab79d776f583d1ab8"
-  integrity sha512-2O2wtPyscQU/PtyPc+TefSHAql0VI51rrKyIt87YAvBaGUZEj5PZG2QtC7kYI3sFhXYlvrNefUxXoehFjEVQAQ==
-  dependencies:
-    "@types/mousetrap" "^1.6.0"
-    mousetrap "^1.6.0"
 
 ansi-colors@4.1.1:
   version "4.1.1"
@@ -6759,11 +6746,6 @@ mousetrap@1.6.3:
   version "1.6.3"
   resolved "https://registry.yarnpkg.com/mousetrap/-/mousetrap-1.6.3.tgz#80fee49665fd478bccf072c9d46bdf1bfed3558a"
   integrity sha512-bd+nzwhhs9ifsUrC2tWaSgm24/oo2c83zaRyZQF06hYA6sANfsXHtnZ19AbbbDXCDzeH5nZBSQ4NvCjgD62tJA==
-
-mousetrap@^1.6.0:
-  version "1.6.5"
-  resolved "https://registry.yarnpkg.com/mousetrap/-/mousetrap-1.6.5.tgz#8a766d8c272b08393d5f56074e0b5ec183485bf9"
-  integrity sha512-QNo4kEepaIBwiT8CDhP98umTetp+JNfQYBWvC1pc6/OAibuXtRcxZ58Qz8skvEHYvURne/7R8T5VoOI7rDsEUA==
 
 move-concurrently@^1.0.1:
   version "1.0.1"
