@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class NettyMqttConverter {
+
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
         PublishMsg lastWillPublishMsg = nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null;
         return new MqttConnectMsg(sessionId, nettyConnectMsg.payload().clientIdentifier(), nettyConnectMsg.variableHeader().isCleanSession(),
@@ -48,10 +50,35 @@ public class NettyMqttConverter {
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
-        List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions().stream()
-                .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
+        List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions()
+                .stream()
+                .map(mqttTopicSubscription ->
+                        new TopicSubscription(
+                                getTopicName(mqttTopicSubscription.topicName()),
+                                mqttTopicSubscription.qualityOfService().value(),
+                                getGroupId(mqttTopicSubscription.topicName())))
                 .collect(Collectors.toList());
         return new MqttSubscribeMsg(sessionId, nettySubscribeMsg.variableHeader().messageId(), topicSubscriptions);
+    }
+
+    static String getTopicName(String topicName) {
+        int groupIdIndex = getGroupIdIndex();
+        return isSharedTopic(topicName) ?
+                topicName.substring(topicName.indexOf("/", groupIdIndex) + 1) : topicName;
+    }
+
+    static String getGroupId(String topicName) {
+        int groupIdIndex = getGroupIdIndex();
+        return isSharedTopic(topicName) ?
+                topicName.substring(groupIdIndex, topicName.indexOf("/", groupIdIndex)) : null;
+    }
+
+    private static int getGroupIdIndex() {
+        return BrokerConstants.SHARED_SUBSCRIPTION_PREFIX.length();
+    }
+
+    private static boolean isSharedTopic(String topicName) {
+        return topicName.startsWith(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX);
     }
 
     public static MqttUnsubscribeMsg createMqttUnsubscribeMsg(UUID sessionId, MqttUnsubscribeMessage nettyUnsubscribeMsg) {
