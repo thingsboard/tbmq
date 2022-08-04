@@ -226,10 +226,6 @@ $tb-dark-theme: get-tb-dark-theme(
   }
 
   @include mat-fab-toolbar-theme($tb-theme);
-
-  div.tb-dashboard-page.mobile-app {
-    @include mat-fab-toolbar-inverse-theme($tb-theme);
-  }
 }
 
 .tb-default {

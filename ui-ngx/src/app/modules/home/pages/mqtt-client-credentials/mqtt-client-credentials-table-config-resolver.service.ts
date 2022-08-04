@@ -107,9 +107,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
   resolve(): EntityTableConfig<MqttClientCredentials> {
     const authUser = getCurrentAuthUser(this.store);
-    // this.config.deleteEnabled = (mqttClient) => this.isMqttClientEditable(mqttClient, authUser.authority);
-    // this.config.entitySelectionEnabled = (mqttClient) => this.isMqttClientEditable(mqttClient, authUser.authority);
-    // this.config.detailsReadonly = (mqttClient) => !this.isMqttClientEditable(mqttClient, authUser.authority);
     this.config.entitiesFetchFunction = pageLink => this.mqttClientCredentialsService.getMqttClientsCredentials(pageLink);
     return this.config;
   }

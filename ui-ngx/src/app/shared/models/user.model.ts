@@ -17,7 +17,7 @@
 import { BaseData } from './base-data';
 import { UserId } from './id/user-id';
 import { Authority } from './authority.enum';
-// TODO deaflynx what is needed?
+
 export interface User extends BaseData<UserId> {
   email: string;
   authority: Authority;

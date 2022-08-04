@@ -18,7 +18,6 @@ export * from './dialog.service';
 export * from './menu.models';
 export * from './menu.service';
 export * from './notification.service';
-export * from './time.service';
 export * from './title.service';
 export * from './utils.service';
 export * from './window.service';

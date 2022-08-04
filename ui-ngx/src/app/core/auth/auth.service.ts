@@ -34,7 +34,6 @@ import { ActionSettingsChangeLanguage } from '@app/core/settings/settings.action
 import { AuthPayload, AuthState, SysParamsState } from '@core/auth/auth.models';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthUser } from '@shared/models/user.model';
-import { TimeService } from '@core/services/time.service';
 import { UtilsService } from '@core/services/utils.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
@@ -50,7 +49,6 @@ export class AuthService {
     private store: Store<AppState>,
     private http: HttpClient,
     private userService: UserService,
-    private timeService: TimeService,
     private router: Router,
     private route: ActivatedRoute,
     private zone: NgZone,
@@ -314,18 +312,7 @@ export class AuthService {
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
         }
-        if (authPayload.authUser.isPublic) {
-          this.loadSystemParams(authPayload).subscribe(
-            (sysParams) => {
-              authPayload = {...authPayload, ...sysParams};
-              loadUserSubject.next(authPayload);
-              loadUserSubject.complete();
-            },
-            (err) => {
-              loadUserSubject.error(err);
-            }
-          );
-        } else if (authPayload.authUser.userId) {
+        if (authPayload.authUser.userId) {
           this.userService.getMqttAdminUser().subscribe(
             (user) => {
               authPayload.userDetails = user;
@@ -365,18 +352,6 @@ export class AuthService {
 
   public loadIsEdgesSupportEnabled(): Observable<boolean> {
     return this.http.get<boolean>('/api/edges/enabled', defaultHttpOptions());
-  }
-
-  private loadSystemParams(authPayload: AuthPayload): Observable<SysParamsState> {
-    const sources = [this.loadIsUserTokenAccessEnabled(authPayload.authUser),
-                     this.timeService.loadMaxDatapointsLimit()];
-    return forkJoin(sources)
-      .pipe(map((data) => {
-        const userTokenAccessEnabled: boolean = data[0] as boolean;
-        return {userTokenAccessEnabled};
-      }, catchError((err) => {
-        return of({});
-      })));
   }
 
   public refreshJwtToken(loadUserElseStoreJwtToken = true): Observable<LoginResponse> {
