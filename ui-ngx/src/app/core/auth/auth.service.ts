@@ -313,8 +313,6 @@ export class AuthService {
         authPayload.authUser = this.jwtHelper.decodeToken(jwtToken);
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
-        } if (authPayload.authUser.isPublic) {
-          authPayload.forceFullscreen = true;
         }
         if (authPayload.authUser.isPublic) {
           this.loadSystemParams(authPayload).subscribe(

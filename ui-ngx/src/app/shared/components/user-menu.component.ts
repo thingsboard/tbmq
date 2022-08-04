@@ -36,7 +36,7 @@ export class UserMenuComponent implements OnInit, OnDestroy {
 
   authority$ = this.store.pipe(
     select(selectAuthUser),
-    map((authUser) => authUser.authority)
+    map((authUser) => authUser ? authUser.authority : Authority.ANONYMOUS)
   );
 
   authorityName$ = this.store.pipe(

@@ -23,11 +23,9 @@ export interface SysParamsState {
 export interface AuthPayload extends SysParamsState {
   authUser: AuthUser;
   userDetails: User;
-  forceFullscreen: boolean;
 }
 
 export interface AuthState extends AuthPayload {
   isAuthenticated: boolean;
   isUserLoaded: boolean;
-  lastPublicDashboardId: string;
 }

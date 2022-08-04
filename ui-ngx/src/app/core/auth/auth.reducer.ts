@@ -21,13 +21,11 @@ const emptyUserAuthState: AuthPayload = {
   authUser: null,
   userDetails: null,
   userTokenAccessEnabled: false,
-  forceFullscreen: false,
 };
 
 export const initialState: AuthState = {
   isAuthenticated: false,
   isUserLoaded: false,
-  lastPublicDashboardId: null,
   ...emptyUserAuthState
 };
 
