@@ -42,7 +42,6 @@ import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 
-  authorities = Authority;
   profile: FormGroup;
   user: User;
   languageList = env.supportedLangs;

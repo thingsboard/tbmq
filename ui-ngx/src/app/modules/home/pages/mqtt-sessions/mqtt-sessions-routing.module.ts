@@ -36,7 +36,7 @@ const routes: Routes = [
         path: '',
         component: EntitiesTableComponent,
         data: {
-          auth: [Authority.SYS_ADMIN, Authority.TENANT_ADMIN],
+          auth: [Authority.SYS_ADMIN],
           title: 'mqtt-client-session.sessions'
         },
         resolve: {

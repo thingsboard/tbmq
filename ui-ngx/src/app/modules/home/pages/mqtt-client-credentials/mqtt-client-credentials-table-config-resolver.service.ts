@@ -122,10 +122,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     return this.mqttClientCredentialsService.deleteMqttClientCredentials(id);
   }
 
-  // isMqttClientEditable(mqttClient: Client, authority: Authority): boolean {
-  //   return authority === Authority.SYS_ADMIN;
-  // }
-
   onMqttClientAction(action: EntityAction<MqttClientCredentials>): boolean {
     switch (action.action) {
       case 'manage':

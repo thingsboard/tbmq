@@ -313,10 +313,7 @@ export class AuthService {
         authPayload.authUser = this.jwtHelper.decodeToken(jwtToken);
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
-        } else if (authPayload.authUser) {
-          authPayload.authUser.authority = Authority.ANONYMOUS;
-        }
-        if (authPayload.authUser.isPublic) {
+        } if (authPayload.authUser.isPublic) {
           authPayload.forceFullscreen = true;
         }
         if (authPayload.authUser.isPublic) {
@@ -361,8 +358,7 @@ export class AuthService {
   }
 
   private loadIsUserTokenAccessEnabled(authUser: AuthUser): Observable<boolean> {
-    if (authUser.authority === Authority.SYS_ADMIN ||
-        authUser.authority === Authority.TENANT_ADMIN) {
+    if (authUser.authority === Authority.SYS_ADMIN) {
       return this.http.get<boolean>('/api/user/tokenAccessEnabled', defaultHttpOptions());
     } else {
       return of(false);
