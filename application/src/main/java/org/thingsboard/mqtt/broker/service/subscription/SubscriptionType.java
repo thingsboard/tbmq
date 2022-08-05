@@ -15,28 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public enum SubscriptionType {
 
-import java.util.Objects;
-
-@AllArgsConstructor
-@Getter
-public class ClientSubscription {
-    private final String clientId;
-    private final int qosValue;
-    private final String groupId;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ClientSubscription that = (ClientSubscription) o;
-        return clientId.equals(that.clientId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(clientId);
-    }
+    COMMON,
+    SHARED
 }

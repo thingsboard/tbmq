@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
@@ -36,12 +37,18 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -59,6 +66,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final DownLinkProxy downLinkProxy;
     private final ClientLogger clientLogger;
     private final PublishMsgQueuePublisher publishMsgQueuePublisher;
+    private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -86,7 +94,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
-        List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
+
+        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertClientSubscriptions(clientSubscriptionWithTopicFilters);
+
+        List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
+        List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
+
+        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(publishMsgProto.getTopicName(), sharedSubscriptions);
+
+        List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
+        msgSubscriptions.addAll(collectOneSubscriptionFromEverySharedSubscription(sharedSubscriptionList));
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
@@ -113,26 +130,64 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
     }
 
-    private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    private List<Subscription> getSubscriptionsFromMapByType(Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType,
+                                                             SubscriptionType type) {
+        return msgSubscriptionsByType.getOrDefault(type, Collections.emptyList());
+    }
+
+    private Map<SubscriptionType, List<Subscription>> convertClientSubscriptions(
+            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
         long startTime = System.nanoTime();
+        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertToSubscriptionsByType(clientSubscriptionWithTopicFilters);
+        publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        return msgSubscriptionsByType;
+    }
+
+    private List<Subscription> collectOneSubscriptionFromEverySharedSubscription(List<SharedSubscription> sharedSubscriptionList) {
+        List<Subscription> result = new ArrayList<>(sharedSubscriptionList.size());
+        for (SharedSubscription sharedSubscription : sharedSubscriptionList) {
+            SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
+            Subscription subscription = strategy.analyze(sharedSubscription);
+            result.add(subscription);
+        }
+        return result;
+    }
+
+    List<SharedSubscription> toSharedSubscriptionList(String topicName, List<Subscription> sharedSubscriptions) {
+        return sharedSubscriptions.stream()
+                .collect(Collectors.groupingBy(Subscription::getGroupId))
+                .entrySet().stream()
+                .map(entry -> new SharedSubscription(topicName, entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    Map<SubscriptionType, List<Subscription>> convertToSubscriptionsByType(
+            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
                 filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
 
-        List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
-                .map(clientSubscription -> {
-                    String clientId = clientSubscription.getValue().getClientId();
-                    ClientSession clientSession = clientSessionCache.getClientSession(clientId);
-                    if (clientSession == null) {
-                        log.debug("[{}] Client session not found for existent client subscription.", clientId);
-                        return null;
-                    }
-                    return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                            clientSession.getSessionInfo());
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-        return msgSubscriptions;
+        return filteredClientSubscriptions.stream()
+                .collect(Collectors.groupingBy(MsgDispatcherServiceImpl::getSubscriptionType))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .map(this::clientSubscriptionWithTopicToSubscription)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList())
+                ));
+    }
+
+    private Subscription clientSubscriptionWithTopicToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+        String clientId = clientSubscription.getValue().getClientId();
+        ClientSession clientSession = clientSessionCache.getClientSession(clientId);
+        if (clientSession == null) {
+            log.debug("[{}] Client session not found for existent client subscription.", clientId);
+            return null;
+        }
+        return new Subscription(clientSubscription.getValue().getQosValue(),
+                clientSession.getSessionInfo(), clientSubscription.getValue().getGroupId());
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
@@ -169,5 +224,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return publishMsgProto.toBuilder()
                 .setQos(minQoSValue)
                 .build();
+    }
+
+    private static SubscriptionType getSubscriptionType(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+        return StringUtils.isEmpty(clientSubscription.getValue().getGroupId()) ? SubscriptionType.COMMON : SubscriptionType.SHARED;
     }
 }

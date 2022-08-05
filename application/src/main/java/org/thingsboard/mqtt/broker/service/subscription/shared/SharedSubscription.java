@@ -13,30 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-import java.util.Objects;
+import java.util.List;
 
-@AllArgsConstructor
-@Getter
-public class ClientSubscription {
-    private final String clientId;
-    private final int qosValue;
+@Data
+@RequiredArgsConstructor
+@Slf4j
+@EqualsAndHashCode
+public class SharedSubscription {
+
+    private final String topicName;
     private final String groupId;
+    private final List<Subscription> subscriptions;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ClientSubscription that = (ClientSubscription) o;
-        return clientId.equals(that.clientId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(clientId);
-    }
 }

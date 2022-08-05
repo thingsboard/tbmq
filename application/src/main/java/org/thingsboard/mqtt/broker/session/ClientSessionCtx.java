@@ -81,10 +81,14 @@ public class ClientSessionCtx implements SessionContext {
 
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
-        ChannelFuture channelFuture = this.channel.close();
-        channelFuture.addListener(future -> {
-            pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-            pendingPublishes.clear();
-        });
+        try {
+            ChannelFuture channelFuture = this.channel.close();
+            channelFuture.addListener(future -> {
+                pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+                pendingPublishes.clear();
+            });
+        } catch (Exception e) {
+            log.debug("Failed to submit a listener notification task due to event look termination", e);
+        }
     }
 }

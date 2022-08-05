@@ -13,25 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+public enum SharedSubscriptionProcessingType {
 
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class Subscription {
+    ROUND_ROBIN
 
-    private final int mqttQoSValue;
-    private final SessionInfo sessionInfo;
-    private final String groupId;
-
-    public Subscription(int mqttQoSValue, SessionInfo sessionInfo) {
-        this.mqttQoSValue = mqttQoSValue;
-        this.sessionInfo = sessionInfo;
-        this.groupId = null;
-    }
 }

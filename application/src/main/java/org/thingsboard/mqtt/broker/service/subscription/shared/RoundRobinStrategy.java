@@ -13,30 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-import java.util.Objects;
+@RequiredArgsConstructor
+@Slf4j
+public class RoundRobinStrategy implements SharedSubscriptionProcessingStrategy {
 
-@AllArgsConstructor
-@Getter
-public class ClientSubscription {
-    private final String clientId;
-    private final int qosValue;
-    private final String groupId;
+    private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ClientSubscription that = (ClientSubscription) o;
-        return clientId.equals(that.clientId);
+    public Subscription analyze(SharedSubscription sharedSubscription) {
+        return sharedSubscriptionProcessor.processRoundRobin(sharedSubscription);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(clientId);
-    }
 }

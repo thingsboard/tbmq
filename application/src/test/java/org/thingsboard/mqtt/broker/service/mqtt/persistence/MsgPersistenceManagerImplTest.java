@@ -88,10 +88,10 @@ public class MsgPersistenceManagerImplTest {
     public void testProcessPublish() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         List<Subscription> subscriptions = List.of(
-                createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
-                createSubscription("topic2", 2, "devClientId2", ClientType.DEVICE),
-                createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
-                createSubscription("topic4", 0, "appClientId4", ClientType.APPLICATION)
+                createSubscription(1, "devClientId1", ClientType.DEVICE),
+                createSubscription(2, "devClientId2", ClientType.DEVICE),
+                createSubscription(1, "appClientId3", ClientType.APPLICATION),
+                createSubscription(0, "appClientId4", ClientType.APPLICATION)
         );
 
         msgPersistenceManager.processPublish(publishMsgProto, subscriptions, null);
@@ -111,8 +111,8 @@ public class MsgPersistenceManagerImplTest {
         assertEquals("appClientId4", lastApplicationClientId);
     }
 
-    private Subscription createSubscription(String topic, int qos, String clientId, ClientType type) {
-        return new Subscription(topic, qos, getSessionInfo(clientId, type));
+    private Subscription createSubscription(int qos, String clientId, ClientType type) {
+        return new Subscription(qos, getSessionInfo(clientId, type));
     }
 
     private SessionInfo getSessionInfo(String clientId, ClientType clientType) {

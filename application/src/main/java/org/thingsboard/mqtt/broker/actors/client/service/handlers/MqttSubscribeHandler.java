@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
@@ -89,6 +90,7 @@ public class MqttSubscribeHandler {
     Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
+                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getGroupId()))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
