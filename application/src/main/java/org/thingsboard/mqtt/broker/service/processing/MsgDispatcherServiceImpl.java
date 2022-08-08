@@ -92,21 +92,28 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
-                subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
-
-        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertClientSubscriptions(clientSubscriptionWithTopicFilters);
-
-        List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
-        List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
-
-        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(publishMsgProto.getTopicName(), sharedSubscriptions);
-
-        List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
-        msgSubscriptions.addAll(collectOneSubscriptionFromEverySharedSubscription(sharedSubscriptionList));
+        List<Subscription> msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
+        List<Subscription> persistentSubscriptions = processBasicAndCollectPersistentSubscription(publishMsgProto, msgSubscriptions);
+
+        if (!persistentSubscriptions.isEmpty()) {
+            processPersistentSubscriptions(publishMsgProto, persistentSubscriptions, callback);
+        } else {
+            callback.onSuccess();
+        }
+
+        clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
+    }
+
+    private void processPersistentSubscriptions(PublishMsgProto publishMsgProto, List<Subscription> persistentSubscriptions, PublishMsgCallback callback) {
+        long persistentMessagesProcessingStartTime = System.nanoTime();
+        msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
+        publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+    }
+
+    private List<Subscription> processBasicAndCollectPersistentSubscription(PublishMsgProto publishMsgProto, List<Subscription> msgSubscriptions) {
         List<Subscription> persistentSubscriptions = new ArrayList<>();
         long notPersistentMessagesProcessingStartTime = System.nanoTime();
         for (Subscription msgSubscription : msgSubscriptions) {
@@ -119,15 +126,23 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         if (msgSubscriptions.size() != persistentSubscriptions.size()) {
             publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
         }
+        return persistentSubscriptions;
+    }
 
-        if (!persistentSubscriptions.isEmpty()) {
-            long persistentMessagesProcessingStartTime = System.nanoTime();
-            msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
-            publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
-        } else {
-            callback.onSuccess();
-        }
-        clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
+    private List<Subscription> getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto) {
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
+                subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
+
+        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertClientSubscriptions(clientSubscriptionWithTopicFilters);
+
+        List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
+        List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
+
+        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(publishMsgProto.getTopicName(), sharedSubscriptions);
+
+        List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
+        msgSubscriptions.addAll(collectOneSubscriptionFromEverySharedSubscription(sharedSubscriptionList));
+        return msgSubscriptions;
     }
 
     private List<Subscription> getSubscriptionsFromMapByType(Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType,
