@@ -131,15 +131,15 @@ public class MsgDispatcherServiceImplTest {
         return newSubscription(mqttQoSValue, null);
     }
 
-    private Subscription newSubscription(int mqttQoSValue, String groupId) {
-        return new Subscription(mqttQoSValue, null, groupId);
+    private Subscription newSubscription(int mqttQoSValue, String shareName) {
+        return new Subscription(mqttQoSValue, null, shareName);
     }
 
-    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String groupId) {
-        return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, groupId), TOPIC);
+    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName) {
+        return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, shareName), TOPIC);
     }
 
-    private ClientSubscription newClientSubscription(String clientId, int qos, String groupId) {
-        return new ClientSubscription(clientId, qos, groupId);
+    private ClientSubscription newClientSubscription(String clientId, int qos, String shareName) {
+        return new ClientSubscription(clientId, qos, shareName);
     }
 }

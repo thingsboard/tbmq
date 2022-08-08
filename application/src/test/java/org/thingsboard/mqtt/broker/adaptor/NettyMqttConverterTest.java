@@ -27,15 +27,15 @@ class NettyMqttConverterTest {
     static final String SHARED_SUBSCRIBER_GROUP_TOPIC_NAME = BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX;
 
     @Test
-    void testGetGroupIdFromSharedSubscription() {
-        String groupId = NettyMqttConverter.getGroupId(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME);
-        assertEquals("shared-subscriber-group", groupId);
+    void testGetShareNameFromSharedSubscription() {
+        String shareName = NettyMqttConverter.getShareName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME);
+        assertEquals("shared-subscriber-group", shareName);
     }
 
     @Test
-    void testGetGroupId() {
-        String groupId = NettyMqttConverter.getGroupId(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX);
-        assertNull(groupId);
+    void testGetShareName() {
+        String shareName = NettyMqttConverter.getShareName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX);
+        assertNull(shareName);
     }
 
     @Test

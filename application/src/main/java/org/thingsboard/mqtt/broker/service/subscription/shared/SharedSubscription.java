@@ -30,7 +30,7 @@ import java.util.List;
 public class SharedSubscription {
 
     private final String topicName;
-    private final String groupId;
+    private final String shareName;
     private final List<Subscription> subscriptions;
 
 }

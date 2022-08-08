@@ -27,11 +27,11 @@ public class Subscription {
 
     private final int mqttQoSValue;
     private final SessionInfo sessionInfo;
-    private final String groupId;
+    private final String shareName;
 
     public Subscription(int mqttQoSValue, SessionInfo sessionInfo) {
         this.mqttQoSValue = mqttQoSValue;
         this.sessionInfo = sessionInfo;
-        this.groupId = null;
+        this.shareName = null;
     }
 }

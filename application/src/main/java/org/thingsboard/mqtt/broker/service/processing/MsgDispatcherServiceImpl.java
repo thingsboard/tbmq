@@ -155,7 +155,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<SharedSubscription> toSharedSubscriptionList(String topicName, List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions.stream()
-                .collect(Collectors.groupingBy(Subscription::getGroupId))
+                .collect(Collectors.groupingBy(Subscription::getShareName))
                 .entrySet().stream()
                 .map(entry -> new SharedSubscription(topicName, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
@@ -187,7 +187,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
         return new Subscription(clientSubscription.getValue().getQosValue(),
-                clientSession.getSessionInfo(), clientSubscription.getValue().getGroupId());
+                clientSession.getSessionInfo(), clientSubscription.getValue().getShareName());
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
@@ -227,6 +227,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private static SubscriptionType getSubscriptionType(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
-        return StringUtils.isEmpty(clientSubscription.getValue().getGroupId()) ? SubscriptionType.COMMON : SubscriptionType.SHARED;
+        return StringUtils.isEmpty(clientSubscription.getValue().getShareName()) ? SubscriptionType.COMMON : SubscriptionType.SHARED;
     }
 }

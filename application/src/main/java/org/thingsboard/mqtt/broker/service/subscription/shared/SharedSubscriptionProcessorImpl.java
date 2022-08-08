@@ -38,7 +38,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
 
     @Override
     public Subscription processRoundRobin(SharedSubscription sharedSubscription) {
-        SharedTopicAndGroup key = new SharedTopicAndGroup(sharedSubscription.getTopicName(), sharedSubscription.getGroupId());
+        SharedTopicAndGroup key = new SharedTopicAndGroup(sharedSubscription.getTopicName(), sharedSubscription.getShareName());
         Iterator<Subscription> iterator = getIterator(key, sharedSubscription);
         return getOneSubscription(iterator);
     }
@@ -75,7 +75,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
     @EqualsAndHashCode
     static class SharedTopicAndGroup {
         private final String topicName;
-        private final String groupId;
+        private final String shareName;
     }
 
     @Data

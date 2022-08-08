@@ -146,7 +146,7 @@ public class ProtoConverter {
                 .map(topicSubscription -> QueueProtos.TopicSubscriptionProto.newBuilder()
                         .setQos(topicSubscription.getQos())
                         .setTopic(topicSubscription.getTopic())
-                        .setGroupId(topicSubscription.getGroupId() == null ? "" : topicSubscription.getGroupId())
+                        .setShareName(topicSubscription.getShareName() == null ? "" : topicSubscription.getShareName())
                         .build())
                 .collect(Collectors.toList());
         return QueueProtos.ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
@@ -157,7 +157,7 @@ public class ProtoConverter {
                 .map(topicSubscriptionProto -> TopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
                         .topic(topicSubscriptionProto.getTopic())
-                        .groupId(topicSubscriptionProto.getGroupId().isEmpty() ? null : topicSubscriptionProto.getGroupId())
+                        .shareName(topicSubscriptionProto.getShareName().isEmpty() ? null : topicSubscriptionProto.getShareName())
                         .build())
                 .collect(Collectors.toSet());
     }

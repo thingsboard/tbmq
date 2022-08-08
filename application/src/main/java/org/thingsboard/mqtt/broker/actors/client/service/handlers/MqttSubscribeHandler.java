@@ -90,7 +90,7 @@ public class MqttSubscribeHandler {
     Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
-                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getGroupId()))
+                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getShareName()))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
@@ -120,10 +120,19 @@ public class MqttSubscribeHandler {
 
     void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
         try {
-            subscriptions.forEach(subscription -> topicValidationService.validateTopicFilter(subscription.getTopic()));
+            subscriptions.forEach(this::validateSubscription);
         } catch (DataValidationException e) {
             log.warn("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
+        }
+    }
+
+    private void validateSubscription(TopicSubscription subscription) {
+        topicValidationService.validateTopicFilter(subscription.getTopic());
+
+        String shareName = subscription.getShareName();
+        if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
+            throw new MqttException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
     }
 
