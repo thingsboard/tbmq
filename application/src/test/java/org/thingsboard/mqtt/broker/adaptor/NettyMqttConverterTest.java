@@ -19,7 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NettyMqttConverterTest {
 
@@ -36,6 +39,18 @@ class NettyMqttConverterTest {
     void testGetShareName() {
         String shareName = NettyMqttConverter.getShareName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX);
         assertNull(shareName);
+    }
+
+    @Test
+    void testGetShareName1() {
+        String shareName = NettyMqttConverter.getShareName(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + "/topic");
+        assertNotNull(shareName);
+        assertTrue(shareName.isEmpty());
+    }
+
+    @Test
+    void testGetShareName2() {
+        assertThrows(RuntimeException.class, () -> NettyMqttConverter.getShareName(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + "topic"));
     }
 
     @Test

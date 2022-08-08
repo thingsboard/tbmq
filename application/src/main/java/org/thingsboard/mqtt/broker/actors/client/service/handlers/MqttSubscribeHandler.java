@@ -131,6 +131,9 @@ public class MqttSubscribeHandler {
         topicValidationService.validateTopicFilter(subscription.getTopic());
 
         String shareName = subscription.getShareName();
+        if (shareName != null && shareName.isEmpty()) {
+            throw new MqttException("Shared subscription 'shareName' must be at least one character long");
+        }
         if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
             throw new MqttException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
