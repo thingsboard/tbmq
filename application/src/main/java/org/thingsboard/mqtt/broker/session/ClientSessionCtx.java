@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
@@ -81,14 +80,8 @@ public class ClientSessionCtx implements SessionContext {
 
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
-        try {
-            ChannelFuture channelFuture = this.channel.close();
-            channelFuture.addListener(future -> {
-                pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-                pendingPublishes.clear();
-            });
-        } catch (Exception e) {
-            log.debug("Failed to submit a listener notification task due to event look termination", e);
-        }
+        this.channel.close();
+        pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+        pendingPublishes.clear();
     }
 }
