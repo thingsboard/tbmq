@@ -25,11 +25,13 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 @EqualsAndHashCode
 public class Subscription {
 
+    private final String topicFilter;
     private final int mqttQoSValue;
     private final SessionInfo sessionInfo;
     private final String shareName;
 
-    public Subscription(int mqttQoSValue, SessionInfo sessionInfo) {
+    public Subscription(String topicFilter, int mqttQoSValue, SessionInfo sessionInfo) {
+        this.topicFilter = topicFilter;
         this.mqttQoSValue = mqttQoSValue;
         this.sessionInfo = sessionInfo;
         this.shareName = null;

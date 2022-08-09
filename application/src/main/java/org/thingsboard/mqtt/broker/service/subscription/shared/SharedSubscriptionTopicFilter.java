@@ -18,18 +18,13 @@ package org.thingsboard.mqtt.broker.service.subscription.shared;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-
-import java.util.List;
 
 @Data
 @RequiredArgsConstructor
-@Slf4j
 @EqualsAndHashCode
-public class SharedSubscription {
+public class SharedSubscriptionTopicFilter {
 
-    private final SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter;
-    private final List<Subscription> subscriptions;
+    private final String topicFilter;
+    private final String shareName;
 
 }

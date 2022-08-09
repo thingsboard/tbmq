@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -86,6 +87,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         publishMsgQueuePublisher.sendMsg(publishMsgProto, callback);
     }
 
+    // TODO: 09/08/2022 impl shared subs for APPLICATION client type
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
@@ -138,7 +140,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
         List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
 
-        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(publishMsgProto.getTopicName(), sharedSubscriptions);
+        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(sharedSubscriptions);
 
         List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
         msgSubscriptions.addAll(collectOneSubscriptionFromEverySharedSubscription(sharedSubscriptionList));
@@ -168,11 +170,12 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return result;
     }
 
-    List<SharedSubscription> toSharedSubscriptionList(String topicName, List<Subscription> sharedSubscriptions) {
+    List<SharedSubscription> toSharedSubscriptionList(List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions.stream()
-                .collect(Collectors.groupingBy(Subscription::getShareName))
+                .collect(Collectors.groupingBy(subscription ->
+                        new SharedSubscriptionTopicFilter(subscription.getTopicFilter(), subscription.getShareName())))
                 .entrySet().stream()
-                .map(entry -> new SharedSubscription(topicName, entry.getKey(), entry.getValue()))
+                .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -201,10 +204,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             log.debug("[{}] Client session not found for existent client subscription.", clientId);
             return null;
         }
-        return new Subscription(clientSubscription.getValue().getQosValue(),
+        return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
                 clientSession.getSessionInfo(), clientSubscription.getValue().getShareName());
     }
 
+    // TODO: 09/08/2022 fix for shared subs - do not filter out if client has several subs and one of them is shared
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
             Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
 

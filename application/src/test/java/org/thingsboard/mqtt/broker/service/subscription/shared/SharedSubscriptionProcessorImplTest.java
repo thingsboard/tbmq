@@ -83,8 +83,8 @@ class SharedSubscriptionProcessorImplTest {
 
     private List<Subscription> getSubscriptions(SessionInfo expectedSessionInfo1, SessionInfo expectedSessionInfo2) {
         return List.of(
-                new Subscription(1, expectedSessionInfo1),
-                new Subscription(2, expectedSessionInfo2)
+                new Subscription("topic1", 1, expectedSessionInfo1),
+                new Subscription("topic2", 2, expectedSessionInfo2)
         );
     }
 
@@ -97,11 +97,11 @@ class SharedSubscriptionProcessorImplTest {
                 getConnectionInfo(1000, 1000));
     }
 
-    private SharedSubscriptionProcessorImpl.SharedTopicAndGroup newTopicAndGroup() {
-        return new SharedSubscriptionProcessorImpl.SharedTopicAndGroup("topic", "group");
+    private SharedSubscriptionTopicFilter newTopicAndGroup() {
+        return new SharedSubscriptionTopicFilter("topic", "group");
     }
 
     private SharedSubscription getSharedSubscription(List<Subscription> subscriptions) {
-        return new SharedSubscription("topic", "group", subscriptions);
+        return new SharedSubscription(new SharedSubscriptionTopicFilter("topic", "group"), subscriptions);
     }
 }

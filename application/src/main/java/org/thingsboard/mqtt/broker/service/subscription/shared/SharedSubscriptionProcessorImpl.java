@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import com.google.common.collect.Iterables;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,17 +32,22 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProcessor {
 
-    // todo: how to clear the map?
-    private final ConcurrentMap<SharedTopicAndGroup, SharedSubscriptionIterator> iteratorsMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SharedSubscriptionTopicFilter, SharedSubscriptionIterator> iteratorsMap = new ConcurrentHashMap<>();
 
     @Override
     public Subscription processRoundRobin(SharedSubscription sharedSubscription) {
-        SharedTopicAndGroup key = new SharedTopicAndGroup(sharedSubscription.getTopicName(), sharedSubscription.getShareName());
+        SharedSubscriptionTopicFilter key = sharedSubscription.getSharedSubscriptionTopicFilter();
         Iterator<Subscription> iterator = getIterator(key, sharedSubscription);
         return getOneSubscription(iterator);
     }
 
-    private Iterator<Subscription> getIterator(SharedTopicAndGroup key, SharedSubscription sharedSubscription) {
+    // TODO: 09/08/2022 mb update map on subs/unsubs
+    @Override
+    public void unsubscribe(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
+        iteratorsMap.remove(sharedSubscriptionTopicFilter);
+    }
+
+    private Iterator<Subscription> getIterator(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
         if (iteratorsMap.containsKey(key)) {
             SharedSubscriptionIterator subscriptionIterator = iteratorsMap.get(key);
             if (subscriptionIterator.getSharedSubscription().equals(sharedSubscription)) {
@@ -56,7 +60,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
         }
     }
 
-    private Iterator<Subscription> createIteratorAndPutToMap(SharedTopicAndGroup key, SharedSubscription sharedSubscription) {
+    private Iterator<Subscription> createIteratorAndPutToMap(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
         Iterator<Subscription> iterator = createIterator(sharedSubscription.getSubscriptions());
         iteratorsMap.put(key, new SharedSubscriptionIterator(sharedSubscription, iterator));
         return iterator;
@@ -68,14 +72,6 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
 
     private Subscription getOneSubscription(Iterator<Subscription> iterator) {
         return iterator.next();
-    }
-
-    @Data
-    @RequiredArgsConstructor
-    @EqualsAndHashCode
-    static class SharedTopicAndGroup {
-        private final String topicName;
-        private final String shareName;
     }
 
     @Data

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 
 import java.util.Collections;
 import java.util.Map;
@@ -41,6 +42,7 @@ class ClientSubscriptionServiceImplTest {
 
     SubscriptionPersistenceService subscriptionPersistenceService;
     SubscriptionService subscriptionService;
+    SharedSubscriptionProcessor sharedSubscriptionProcessor;
     StatsManager statsManager;
     ClientSubscriptionServiceImpl clientSubscriptionService;
 
@@ -48,10 +50,12 @@ class ClientSubscriptionServiceImplTest {
     void setUp() {
         subscriptionPersistenceService = mock(SubscriptionPersistenceService.class);
         subscriptionService = mock(SubscriptionService.class);
+        sharedSubscriptionProcessor = mock(SharedSubscriptionProcessor.class);
         statsManager = mock(StatsManager.class);
         clientSubscriptionService = spy(new ClientSubscriptionServiceImpl(
                 subscriptionPersistenceService,
                 subscriptionService,
+                sharedSubscriptionProcessor,
                 statsManager));
 
         clientSubscriptionService.init(getClientTopicSubscriptions());

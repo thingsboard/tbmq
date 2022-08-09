@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class MsgDispatcherServiceImplTest {
     ClientLogger clientLogger;
     @MockBean
     PublishMsgQueuePublisher publishMsgQueuePublisher;
+    @MockBean
+    SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
@@ -122,7 +125,7 @@ public class MsgDispatcherServiceImplTest {
                 newSubscription(1, "group3"),
                 newSubscription(2, "group3")
         );
-        List<SharedSubscription> sharedSubscriptionList = msgDispatcherService.toSharedSubscriptionList("topic", subscriptions);
+        List<SharedSubscription> sharedSubscriptionList = msgDispatcherService.toSharedSubscriptionList(subscriptions);
         assertEquals(3, sharedSubscriptionList.size());
         sharedSubscriptionList.forEach(sharedSubscription -> assertEquals(2, sharedSubscription.getSubscriptions().size()));
     }
@@ -132,7 +135,7 @@ public class MsgDispatcherServiceImplTest {
     }
 
     private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(mqttQoSValue, null, shareName);
+        return new Subscription(TOPIC, mqttQoSValue, null, shareName);
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName) {
