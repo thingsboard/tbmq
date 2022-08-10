@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
@@ -141,11 +142,28 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
         List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
 
-        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(sharedSubscriptions);
+        Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType = getSharedSubscriptionsByClientType(sharedSubscriptions);
+        List<Subscription> appSharedSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.APPLICATION);
+        List<Subscription> deviceSharedSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.DEVICE);
+
+        List<SharedSubscription> deviceSharedSubscriptionList = toSharedSubscriptionList(deviceSharedSubscriptions);
+        List<Subscription> deviceSharedSubscription = collectOneSubscriptionFromEveryDeviceSharedSubscription(deviceSharedSubscriptionList);
 
         List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
-        msgSubscriptions.addAll(collectOneSubscriptionFromEverySharedSubscription(sharedSubscriptionList));
+        msgSubscriptions.addAll(appSharedSubscriptions);
+        msgSubscriptions.addAll(deviceSharedSubscription);
         return msgSubscriptions;
+    }
+
+    private List<Subscription> getSharedSubscriptionsByType(Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType,
+                                                            ClientType type) {
+        return sharedSubscriptionsByClientType.getOrDefault(type, Collections.emptyList());
+    }
+
+    private Map<ClientType, List<Subscription>> getSharedSubscriptionsByClientType(List<Subscription> sharedSubscriptions) {
+        return sharedSubscriptions
+                .stream()
+                .collect(Collectors.groupingBy(subscription -> subscription.getSessionInfo().getClientInfo().getType()));
     }
 
     private List<Subscription> getSubscriptionsFromMapByType(Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType,
@@ -161,7 +179,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptionsByType;
     }
 
-    private List<Subscription> collectOneSubscriptionFromEverySharedSubscription(List<SharedSubscription> sharedSubscriptionList) {
+    private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptionList) {
         List<Subscription> result = new ArrayList<>(sharedSubscriptionList.size());
         for (SharedSubscription sharedSubscription : sharedSubscriptionList) {
             SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
