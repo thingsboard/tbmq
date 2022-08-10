@@ -37,10 +37,12 @@ import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -130,6 +132,100 @@ public class MsgDispatcherServiceImplTest {
         sharedSubscriptionList.forEach(sharedSubscription -> assertEquals(2, sharedSubscription.getSubscriptions().size()));
     }
 
+    @Test
+    public void testFilterHighestQosClientSubscriptions5() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 0, "g1", "+/test/+"),
+                newValueWithTopicFilter("clientId2", 1, "g1", "#"),
+                newValueWithTopicFilter("clientId3", 2, null, "topic/+/+"),
+                newValueWithTopicFilter("clientId1", 2, null, "+/+/res")
+        );
+        assertEquals(4, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        assertEquals(4, result.size());
+    }
+
+    @Test
+    public void testFilterHighestQosClientSubscriptions4() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 0, "g1", "+/test/+"),
+                newValueWithTopicFilter("clientId2", 0, "g2", "#"),
+                newValueWithTopicFilter("clientId3", 2, "g2", "topic/+/+"),
+                newValueWithTopicFilter("clientId1", 2, "g1", "+/+/res"),
+                newValueWithTopicFilter("clientId2", 1, "g3", "topic/test/+"),
+                newValueWithTopicFilter("clientId3", 0, "g3", "topic/+/res")
+        );
+        assertEquals(6, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        assertEquals(3, result.size());
+
+        assertTrue(result.containsAll(
+                List.of(
+                        newValueWithTopicFilter("clientId3", 2, "g2", "topic/+/+"),
+                        newValueWithTopicFilter("clientId1", 2, "g1", "+/+/res"),
+                        newValueWithTopicFilter("clientId2", 1, "g3", "topic/test/+")
+                )
+        ));
+    }
+
+    @Test
+    public void testFilterHighestQosClientSubscriptions3() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 0, null, "+/test/+"),
+                newValueWithTopicFilter("clientId2", 0, null, "#"),
+                newValueWithTopicFilter("clientId3", 2, null, "topic/+/+"),
+                newValueWithTopicFilter("clientId1", 2, null, "+/+/res"),
+                newValueWithTopicFilter("clientId2", 1, null, "topic/test/+"),
+                newValueWithTopicFilter("clientId3", 0, null, "topic/+/res")
+        );
+        assertEquals(6, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        assertEquals(3, result.size());
+
+        assertTrue(result.containsAll(
+                List.of(
+                        newValueWithTopicFilter("clientId3", 2, null, "topic/+/+"),
+                        newValueWithTopicFilter("clientId1", 2, null, "+/+/res"),
+                        newValueWithTopicFilter("clientId2", 1, null, "topic/test/+")
+                )
+        ));
+    }
+
+    @Test
+    public void testFilterHighestQosClientSubscriptions2() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 1, "g1", "+/test/+"),
+                newValueWithTopicFilter("clientId2", 1, "g1", "#"),
+                newValueWithTopicFilter("clientId3", 1, "g2", "topic/+/+"),
+                newValueWithTopicFilter("clientId4", 1, "g2", "+/+/res"),
+                newValueWithTopicFilter("clientId5", 1, "g3", "topic/test/+"),
+                newValueWithTopicFilter("clientId6", 1, "g3", "topic/+/res")
+        );
+        assertEquals(6, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        assertEquals(6, result.size());
+    }
+
+    @Test
+    public void testFilterHighestQosClientSubscriptions1() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 1, null, "+/test/+"),
+                newValueWithTopicFilter("clientId2", 1, null, "#"),
+                newValueWithTopicFilter("clientId3", 1, null, "topic/+/+"),
+                newValueWithTopicFilter("clientId4", 1, null, "+/+/res"),
+                newValueWithTopicFilter("clientId5", 1, null, "topic/test/+"),
+                newValueWithTopicFilter("clientId6", 1, null, "topic/+/res")
+        );
+        assertEquals(6, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        assertEquals(6, result.size());
+    }
+
     private Subscription newSubscription(int mqttQoSValue) {
         return newSubscription(mqttQoSValue, null);
     }
@@ -139,7 +235,11 @@ public class MsgDispatcherServiceImplTest {
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName) {
-        return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, shareName), TOPIC);
+        return newValueWithTopicFilter(clientId, qos, shareName, TOPIC);
+    }
+
+    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName, String topic) {
+        return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, shareName), topic);
     }
 
     private ClientSubscription newClientSubscription(String clientId, int qos, String shareName) {

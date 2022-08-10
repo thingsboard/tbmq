@@ -54,6 +54,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -208,17 +209,32 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSession.getSessionInfo(), clientSubscription.getValue().getShareName());
     }
 
-    // TODO: 09/08/2022 fix for shared subs - do not filter out if client has several subs and one of them is shared
-    private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+    Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
             Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
 
-        return clientSubscriptionWithTopicFilters.stream()
+        Stream<ValueWithTopicFilter<ClientSubscription>> sharedSubscriptions = clientSubscriptionWithTopicFilters
+                .stream()
+                .filter(subs -> !StringUtils.isEmpty(subs.getValue().getShareName()));
+
+        Stream<ValueWithTopicFilter<ClientSubscription>> commonSubscriptions = clientSubscriptionWithTopicFilters
+                .stream()
+                .filter(subs -> StringUtils.isEmpty(subs.getValue().getShareName()));
+
+        return Stream.concat(
+                        filterHighestQosClientSubscriptions(sharedSubscriptions),
+                        filterHighestQosClientSubscriptions(commonSubscriptions))
+                .collect(Collectors.toList());
+    }
+
+    Stream<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+            Stream<ValueWithTopicFilter<ClientSubscription>> stream) {
+        return stream
                 .collect(Collectors.toMap(
                         clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
                         Function.identity(),
                         this::getSubscriptionWithHigherQos)
                 )
-                .values();
+                .values().stream();
     }
 
     private ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,

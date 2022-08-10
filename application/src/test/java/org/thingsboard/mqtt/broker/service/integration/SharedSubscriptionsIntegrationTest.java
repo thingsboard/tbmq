@@ -52,58 +52,87 @@ public class SharedSubscriptionsIntegrationTest extends AbstractPubSubIntegratio
     public void clear() {
     }
 
-    // TODO: 09/08/2022 test persisted subscriptions, fix test below
+    @Test
+    public void givenSharedSubsGroupWith2PersistedClients_whenPubMsgToSharedTopic_thenReceiveEqualMessages() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
-//    @Test
-//    public void test() throws Throwable {
-//        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT + TOTAL_MSG_COUNT / 2);
-//
-//        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
-//        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
-//
-//        //sub
-//        MqttClient shareSubClient1 = getMqttSubClient("test_share_client1", getHandler(shareSubClient1ReceivedMessages), "$share/g1/test/+");
-//
-//        MqttHandler handler = (s, byteBuf) -> {
-//            shareSubClient2ReceivedMessages.incrementAndGet();
-//            receivedResponses.countDown();
-//        };
-//        MqttClient shareSubClient2 = getMqttSubClient("test_share_client2", handler, "$share/g1/test/+");
-//        shareSubClient2.on("+/topic", handler, MqttQoS.AT_LEAST_ONCE);
-//
-//        //pub
-//        MqttClient pubClient = getMqttPubClient();
-//        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-//            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE);
-//        }
-//
-//        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
-//        log.error("The result of awaiting is: [{}]", await);
-//
-//        //asserts
-//        assertEquals( TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
-//        assertEquals(TOTAL_MSG_COUNT + TOTAL_MSG_COUNT / 2, shareSubClient2ReceivedMessages.get());
-//
-//        //disconnect clients
-//        disconnectClient(pubClient);
-//
-//        disconnectClient(shareSubClient1);
-//        disconnectClient(shareSubClient2);
-//    }
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        MqttClient shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        MqttClient shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+
+        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE);
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE);
+        }
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAnd1NonSharedSubClientFromSameGroup_whenPubMsgToTopic_thenReceiveCorrectNumberOfMessages() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT + TOTAL_MSG_COUNT / 2);
+
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        MqttClient shareSubClient1 = getMqttSubClient(getHandler(shareSubClient1ReceivedMessages), "$share/g1/test/+");
+
+        MqttHandler handler = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
+        MqttClient shareSubClient2 = getMqttSubClient(handler, "$share/g1/test/+");
+        shareSubClient2.on("+/topic", handler, MqttQoS.AT_LEAST_ONCE);
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE);
+        }
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT + TOTAL_MSG_COUNT / 2, shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
 
 
     @Test
-    public void given2SharedSubsGroupsWith2ClientsAndSameGroupButDifferentTopicFiltersAnd1NonSharedSub_whenPubMsgToSharedTopic_thenSuccess() throws Throwable {
+    public void given2SharedSubsGroupsWith2ClientsAndSameGroupButDifferentTopicFiltersAnd1NonSharedSub_whenPubMsgToSharedTopic_thenReceiveCorrectNumberOfMessages() throws Throwable {
         process("$share/g1/+/topic", "$share/g1/test/+");
     }
 
     @Test
-    public void given2SharedSubsGroupsWith2ClientsAndSameTopicFilterAnd1NonSharedSub_whenPubMsgToSharedTopic_thenSuccess() throws Throwable {
+    public void given2SharedSubsGroupsWith2ClientsAndSameTopicFilterAnd1NonSharedSub_whenPubMsgToSharedTopic_thenReceiveCorrectNumberOfMessages() throws Throwable {
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
     private void process(String group1TopicFilter, String group2TopicFilter) throws InterruptedException, ExecutionException {
-        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT * 3);
 
         AtomicInteger shareSubClient1Group1ReceivedMessages = new AtomicInteger();
         AtomicInteger shareSubClient2Group1ReceivedMessages = new AtomicInteger();
@@ -114,16 +143,13 @@ public class SharedSubscriptionsIntegrationTest extends AbstractPubSubIntegratio
         AtomicInteger subClientReceivedMessages = new AtomicInteger();
 
         //sub
-        MqttClient shareSubClient1Group1 = getMqttSubClient("test_share_client1_g1", getHandler(shareSubClient1Group1ReceivedMessages), group1TopicFilter);
-        MqttClient shareSubClient2Group1 = getMqttSubClient("test_share_client2_g1", getHandler(shareSubClient2Group1ReceivedMessages), group1TopicFilter);
+        MqttClient shareSubClient1Group1 = getMqttSubClient(getHandler(receivedResponses, shareSubClient1Group1ReceivedMessages), group1TopicFilter);
+        MqttClient shareSubClient2Group1 = getMqttSubClient(getHandler(receivedResponses, shareSubClient2Group1ReceivedMessages), group1TopicFilter);
 
-        MqttClient shareSubClient1Group2 = getMqttSubClient("test_share_client1_g2", getHandler(shareSubClient1Group2ReceivedMessages), group2TopicFilter);
-        MqttClient shareSubClient2Group2 = getMqttSubClient("test_share_client2_g2", getHandler(shareSubClient2Group2ReceivedMessages), group2TopicFilter);
+        MqttClient shareSubClient1Group2 = getMqttSubClient(getHandler(receivedResponses, shareSubClient1Group2ReceivedMessages), group2TopicFilter);
+        MqttClient shareSubClient2Group2 = getMqttSubClient(getHandler(receivedResponses, shareSubClient2Group2ReceivedMessages), group2TopicFilter);
 
-        MqttClient shareSubClient3 = getMqttSubClient("test_sub_client", (s, byteBuf) -> {
-            subClientReceivedMessages.incrementAndGet();
-            receivedResponses.countDown();
-        }, "test/+");
+        MqttClient shareSubClient3 = getMqttSubClient(getHandler(receivedResponses, subClientReceivedMessages), "test/+");
 
         //pub
         MqttClient pubClient = getMqttPubClient();
@@ -156,21 +182,32 @@ public class SharedSubscriptionsIntegrationTest extends AbstractPubSubIntegratio
     }
 
     private MqttClient getMqttPubClient() throws InterruptedException, ExecutionException {
-        return getClient("test_pub_client", null);
+        return getClient(null);
     }
 
-    private MqttClient getMqttSubClient(String clientId, MqttHandler handler, String topic) throws InterruptedException, ExecutionException {
-        MqttClient client = getClient(clientId, handler);
+    private MqttClient getMqttSubClient(MqttHandler handler, String topic) throws InterruptedException, ExecutionException {
+        MqttClient client = getClient(handler);
         client.on(topic, handler, MqttQoS.AT_LEAST_ONCE);
         return client;
     }
 
-    private MqttClient getClient(String clientId, MqttHandler handler) throws InterruptedException, ExecutionException {
+    private MqttClient getClient(MqttHandler handler) throws InterruptedException, ExecutionException {
+        return getClient(handler, true);
+    }
+
+    private MqttClient getClient(MqttHandler handler, boolean cleanSession) throws InterruptedException, ExecutionException {
         MqttClientConfig config = new MqttClientConfig();
-        config.setClientId(clientId);
+        config.setCleanSession(cleanSession);
         MqttClient client = MqttClient.create(config, handler);
         client.connect("localhost", mqttPort).get();
         return client;
+    }
+
+    private MqttHandler getHandler(CountDownLatch latch, AtomicInteger integer) {
+        return (s, byteBuf) -> {
+            integer.incrementAndGet();
+            latch.countDown();
+        };
     }
 
     private MqttHandler getHandler(AtomicInteger integer) {
