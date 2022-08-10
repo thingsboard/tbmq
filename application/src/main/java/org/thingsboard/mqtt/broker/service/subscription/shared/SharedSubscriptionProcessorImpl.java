@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProcessor {
 
-    private final ConcurrentMap<SharedSubscriptionTopicFilter, SharedSubscriptionIterator> iteratorsMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SharedSubscriptionTopicFilter, SharedSubscriptionIterator> sharedSubscriptionIteratorsMap = new ConcurrentHashMap<>();
 
     @Override
     public Subscription processRoundRobin(SharedSubscription sharedSubscription) {
@@ -41,15 +41,14 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
         return getOneSubscription(iterator);
     }
 
-    // TODO: 09/08/2022 mb update map on subs/unsubs
     @Override
     public void unsubscribe(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
-        iteratorsMap.remove(sharedSubscriptionTopicFilter);
+        sharedSubscriptionIteratorsMap.remove(sharedSubscriptionTopicFilter);
     }
 
     private Iterator<Subscription> getIterator(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
-        if (iteratorsMap.containsKey(key)) {
-            SharedSubscriptionIterator subscriptionIterator = iteratorsMap.get(key);
+        if (sharedSubscriptionIteratorsMap.containsKey(key)) {
+            SharedSubscriptionIterator subscriptionIterator = sharedSubscriptionIteratorsMap.get(key);
             if (subscriptionIterator.getSharedSubscription().equals(sharedSubscription)) {
                 return subscriptionIterator.getIterator();
             } else {
@@ -62,7 +61,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
 
     private Iterator<Subscription> createIteratorAndPutToMap(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
         Iterator<Subscription> iterator = createIterator(sharedSubscription.getSubscriptions());
-        iteratorsMap.put(key, new SharedSubscriptionIterator(sharedSubscription, iterator));
+        sharedSubscriptionIteratorsMap.put(key, new SharedSubscriptionIterator(sharedSubscription, iterator));
         return iterator;
     }
 
