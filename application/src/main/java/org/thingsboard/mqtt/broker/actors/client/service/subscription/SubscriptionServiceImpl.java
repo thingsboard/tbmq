@@ -65,7 +65,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
+    public List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
         long startTime = System.nanoTime();
         List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
         subscriptionTimerStats.logSubscriptionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);

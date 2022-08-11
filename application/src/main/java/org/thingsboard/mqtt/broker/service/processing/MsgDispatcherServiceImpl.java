@@ -134,25 +134,31 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private List<Subscription> getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto) {
-        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
+        List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
 
-        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertClientSubscriptions(clientSubscriptionWithTopicFilters);
+        Map<SubscriptionType, List<Subscription>> subscriptionsByType = collectToSubscriptionsMapByType(clientSubscriptions);
+        List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(subscriptionsByType, SubscriptionType.SHARED);
+        Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType = collectToSubscriptionsByClientType(sharedSubscriptions);
 
-        List<Subscription> commonSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.COMMON);
-        List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(msgSubscriptionsByType, SubscriptionType.SHARED);
+        return collectAllSubscriptions(
+                getSubscriptionsFromMapByType(subscriptionsByType, SubscriptionType.COMMON),
+                getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.APPLICATION),
+                getDeviceSharedSubscriptions(sharedSubscriptionsByClientType));
+    }
 
-        Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType = getSharedSubscriptionsByClientType(sharedSubscriptions);
-        List<Subscription> appSharedSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.APPLICATION);
-        List<Subscription> deviceSharedSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.DEVICE);
+    private List<Subscription> getDeviceSharedSubscriptions(Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType) {
+        List<Subscription> deviceSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.DEVICE);
+        List<SharedSubscription> deviceSharedSubscriptions = toSharedSubscriptionList(deviceSubscriptions);
+        return collectOneSubscriptionFromEveryDeviceSharedSubscription(deviceSharedSubscriptions);
+    }
 
-        List<SharedSubscription> deviceSharedSubscriptionList = toSharedSubscriptionList(deviceSharedSubscriptions);
-        List<Subscription> deviceSharedSubscription = collectOneSubscriptionFromEveryDeviceSharedSubscription(deviceSharedSubscriptionList);
-
-        List<Subscription> msgSubscriptions = new ArrayList<>(commonSubscriptions);
-        msgSubscriptions.addAll(appSharedSubscriptions);
-        msgSubscriptions.addAll(deviceSharedSubscription);
-        return msgSubscriptions;
+    private List<Subscription> collectAllSubscriptions(List<Subscription> commonSubscriptions,
+                                                       List<Subscription> appSharedSubscriptions,
+                                                       List<Subscription> deviceSharedSubscription) {
+        return Stream.of(commonSubscriptions, appSharedSubscriptions, deviceSharedSubscription)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private List<Subscription> getSharedSubscriptionsByType(Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType,
@@ -160,7 +166,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return sharedSubscriptionsByClientType.getOrDefault(type, Collections.emptyList());
     }
 
-    private Map<ClientType, List<Subscription>> getSharedSubscriptionsByClientType(List<Subscription> sharedSubscriptions) {
+    private Map<ClientType, List<Subscription>> collectToSubscriptionsByClientType(List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions
                 .stream()
                 .collect(Collectors.groupingBy(subscription -> subscription.getSessionInfo().getClientInfo().getType()));
@@ -171,10 +177,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptionsByType.getOrDefault(type, Collections.emptyList());
     }
 
-    private Map<SubscriptionType, List<Subscription>> convertClientSubscriptions(
-            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    private Map<SubscriptionType, List<Subscription>> collectToSubscriptionsMapByType(
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
         long startTime = System.nanoTime();
-        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = convertToSubscriptionsByType(clientSubscriptionWithTopicFilters);
+        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = collectToSubscriptionsByType(clientSubscriptionWithTopicFilters);
         publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
         return msgSubscriptionsByType;
     }
@@ -198,10 +204,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .collect(Collectors.toList());
     }
 
-    Map<SubscriptionType, List<Subscription>> convertToSubscriptionsByType(
-            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    Map<SubscriptionType, List<Subscription>> collectToSubscriptionsByType(
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
+        List<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
                 filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
 
         return filteredClientSubscriptions.stream()
@@ -210,13 +216,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().stream()
-                                .map(this::clientSubscriptionWithTopicToSubscription)
+                                .map(this::convertToSubscription)
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toList())
                 ));
     }
 
-    private Subscription clientSubscriptionWithTopicToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+    private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
         String clientId = clientSubscription.getValue().getClientId();
         ClientSession clientSession = clientSessionCache.getClientSession(clientId);
         if (clientSession == null) {
@@ -227,8 +233,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSession.getSessionInfo(), clientSubscription.getValue().getShareName());
     }
 
-    Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
-            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    List<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
 
         Stream<ValueWithTopicFilter<ClientSubscription>> sharedSubscriptions = clientSubscriptionWithTopicFilters
                 .stream()
