@@ -151,16 +151,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 processPersistedMessages(consumer, clientState);
             } catch (Exception e) {
                 log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
-                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                        clientState.getCurrentSessionCtx().getSessionId(),
-                        new DisconnectReason(
-                                DisconnectReasonType.ON_ERROR,
-                                "Failed to start processing persisted messages")));
+                disconnectClient(clientId, clientState);
             } finally {
                 consumer.unsubscribeAndClose();
             }
         });
         processingFutures.put(clientId, future);
+    }
+
+    private void disconnectClient(String clientId, ClientActorStateInfo clientState) {
+        clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                clientState.getCurrentSessionCtx().getSessionId(),
+                new DisconnectReason(
+                        DisconnectReasonType.ON_ERROR,
+                        "Failed to start processing persisted messages")));
     }
 
     @Override
