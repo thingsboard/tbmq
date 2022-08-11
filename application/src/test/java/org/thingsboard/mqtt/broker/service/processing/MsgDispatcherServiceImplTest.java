@@ -95,7 +95,7 @@ public class MsgDispatcherServiceImplTest {
                         newValueWithTopicFilter("client6", 2, null)
                 );
 
-        Map<SubscriptionType, List<Subscription>> subscriptionsByType = msgDispatcherService.convertToSubscriptionsByType(clientSubscriptionWithTopicFilters);
+        Map<SubscriptionType, List<Subscription>> subscriptionsByType = msgDispatcherService.collectToSubscriptionsByType(clientSubscriptionWithTopicFilters);
         assertEquals(2, subscriptionsByType.size());
 
         List<Subscription> commonSubscriptions = subscriptionsByType.get(SubscriptionType.COMMON);
