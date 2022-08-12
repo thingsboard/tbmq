@@ -211,7 +211,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
 
         return filteredClientSubscriptions.stream()
-                .collect(Collectors.groupingBy(MsgDispatcherServiceImpl::getSubscriptionType))
+                .collect(Collectors.groupingBy(this::getSubscriptionType))
                 .entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
@@ -285,7 +285,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .build();
     }
 
-    private static SubscriptionType getSubscriptionType(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+    private SubscriptionType getSubscriptionType(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
         return StringUtils.isEmpty(clientSubscription.getValue().getShareName()) ? SubscriptionType.COMMON : SubscriptionType.SHARED;
     }
 }
