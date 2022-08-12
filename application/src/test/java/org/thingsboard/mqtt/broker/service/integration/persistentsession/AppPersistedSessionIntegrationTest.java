@@ -21,6 +21,7 @@ import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessPersistence_afterDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
@@ -131,6 +133,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessConnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
@@ -145,6 +148,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessPersistence_afterReconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
@@ -179,6 +183,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessPersistence_afterReconnectAndChange() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
@@ -213,6 +218,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessPersistence_clearPersisted() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
@@ -244,6 +250,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     }
 
     @Test
+    @Ignore
     public void testSuccessPersistence_clearPersistedAndDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(TEST_CLIENT_ID);
