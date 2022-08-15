@@ -101,7 +101,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                         callback.onFailure(t);
                     }
                 },
-                sharedTopic);
+                MqttApplicationClientUtil.getKafkaTopic(sharedTopic));
     }
 
     @PreDestroy

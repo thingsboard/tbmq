@@ -48,7 +48,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
         String topic = subscription.getTopic();
         log.debug("[{}] Creating shared APPLICATION topic", topic);
 
-        final var topicToCreate = getKafkaTopic(topic);
+        final var topicToCreate = MqttApplicationClientUtil.getKafkaTopic(topic);
 
         Map<String, String> topicConfigs = applicationPersistenceMsgQueueFactory.getTopicConfigs();
         topicConfigs.put(QueueConstants.PARTITIONS, String.valueOf(subscription.getPartitions()));
@@ -69,18 +69,11 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
         String topic = subscription.getTopic();
         log.debug("[{}] Deleting shared APPLICATION topic", topic);
 
-        final var topicToDelete = getKafkaTopic(topic);
+        final var topicToDelete = MqttApplicationClientUtil.getKafkaTopic(topic);
 
         BasicCallback callback = CallbackUtil.createCallback(
                 () -> log.info("[{}] Deleted Kafka topic successfully", topicToDelete),
                 throwable -> log.error("[{}] Failed to delete Kafka topic", topicToDelete, throwable));
         queueAdmin.deleteTopic(topicToDelete, callback);
-    }
-
-    private String getKafkaTopic(String topic) {
-        return topic
-                .replaceAll("/", ".")
-                .replaceAll("\\+", "_")
-                .replaceAll("#", "___");
     }
 }
