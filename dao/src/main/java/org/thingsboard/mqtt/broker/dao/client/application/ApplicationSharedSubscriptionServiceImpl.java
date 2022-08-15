@@ -93,12 +93,15 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
 
                 @Override
                 protected void validateUpdate(ApplicationSharedSubscription subscription) {
-                    if (applicationSharedSubscriptionDao.findById(subscription.getId()) == null) {
+                    ApplicationSharedSubscription existingSubscription = applicationSharedSubscriptionDao.findById(subscription.getId());
+                    if (existingSubscription == null) {
                         throw new DataValidationException("Unable to update non-existent Application Shared Subscription!");
                     }
-                    ApplicationSharedSubscription existingSubscription = applicationSharedSubscriptionDao.findByTopic(subscription.getTopic());
-                    if (existingSubscription != null && !existingSubscription.getId().equals(subscription.getId())) {
-                        throw new DataValidationException("New Application Shared Subscription is already created!");
+                    if (!existingSubscription.getTopic().equals(subscription.getTopic())) {
+                        throw new DataValidationException("Updating topic name is not allowed for existed subscription!");
+                    }
+                    if (existingSubscription.getPartitions() != subscription.getPartitions()) {
+                        throw new DataValidationException("Updating partitions count is not allowed for existed subscription!");
                     }
                 }
 
