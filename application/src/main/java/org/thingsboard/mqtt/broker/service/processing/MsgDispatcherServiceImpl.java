@@ -89,7 +89,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         publishMsgQueuePublisher.sendMsg(publishMsgProto, callback);
     }
 
-    // TODO: 09/08/2022 impl shared subs for APPLICATION client type
     @Override
     public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
