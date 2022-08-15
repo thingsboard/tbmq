@@ -26,7 +26,7 @@ public interface ApplicationSharedSubscriptionService {
 
     ApplicationSharedSubscription saveSharedSubscription(ApplicationSharedSubscription subscription);
 
-    void deleteSharedSubscription(UUID id);
+    boolean deleteSharedSubscription(UUID id);
 
     ApplicationSharedSubscription findSharedSubscriptionByTopic(String topic);
 

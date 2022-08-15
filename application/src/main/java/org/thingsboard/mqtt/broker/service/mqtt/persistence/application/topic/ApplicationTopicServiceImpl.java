@@ -18,10 +18,16 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
+
+import java.util.Collections;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -38,10 +44,43 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
     }
 
     @Override
+    public void createSharedTopic(ApplicationSharedSubscription subscription) {
+        String topic = subscription.getTopic();
+        log.debug("[{}] Creating shared APPLICATION topic", topic);
+
+        final var topicToCreate = getKafkaTopic(topic);
+
+        Map<String, String> topicConfigs = applicationPersistenceMsgQueueFactory.getTopicConfigs();
+        topicConfigs.put(QueueConstants.PARTITIONS, String.valueOf(subscription.getPartitions()));
+        queueAdmin.createTopic(topicToCreate, topicConfigs);
+    }
+
+    @Override
     public void deleteTopic(String clientId, BasicCallback callback) {
         log.debug("[{}] Deleting APPLICATION topic", clientId);
-        // TODO: delete consumer group as well
         String clientTopic = MqttApplicationClientUtil.getTopic(clientId);
         queueAdmin.deleteTopic(clientTopic, callback);
+        String consumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
+        queueAdmin.deleteConsumerGroups(Collections.singleton(consumerGroup));
+    }
+
+    @Override
+    public void deleteSharedTopic(ApplicationSharedSubscription subscription) {
+        String topic = subscription.getTopic();
+        log.debug("[{}] Deleting shared APPLICATION topic", topic);
+
+        final var topicToDelete = getKafkaTopic(topic);
+
+        BasicCallback callback = CallbackUtil.createCallback(
+                () -> log.info("[{}] Deleted Kafka topic successfully", topicToDelete),
+                throwable -> log.error("[{}] Failed to delete Kafka topic", topicToDelete, throwable));
+        queueAdmin.deleteTopic(topicToDelete, callback);
+    }
+
+    private String getKafkaTopic(String topic) {
+        return topic
+                .replaceAll("/", ".")
+                .replaceAll("\\+", "_")
+                .replaceAll("#", "___");
     }
 }

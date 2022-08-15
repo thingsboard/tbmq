@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,17 +27,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/app/shared/subs")
+@Slf4j
 public class AppSharedSubscriptionController extends BaseController {
 
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    private final ApplicationTopicService applicationTopicService;
+
+    @Value("${queue.kafka.enable-topic-deletion:true}")
+    private boolean enableTopicDeletion;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -43,9 +52,24 @@ public class AppSharedSubscriptionController extends BaseController {
     public ApplicationSharedSubscription saveSharedSubscription(@RequestBody ApplicationSharedSubscription sharedSubscription) throws ThingsboardException {
         checkNotNull(sharedSubscription);
         try {
-            return checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
+            ApplicationSharedSubscription applicationSharedSubscription =
+                    checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
+            if (sharedSubscription.getId() == null) {
+                createKafkaTopic(applicationSharedSubscription);
+            }
+            return applicationSharedSubscription;
         } catch (Exception e) {
             throw handleException(e);
+        }
+    }
+
+    private void createKafkaTopic(ApplicationSharedSubscription subscription) throws ThingsboardException {
+        try {
+            applicationTopicService.createSharedTopic(subscription);
+        } catch (Exception e) {
+            log.error("Failed to create shared Kafka topic", e);
+            applicationSharedSubscriptionService.deleteSharedSubscription(subscription.getId());
+            throw new ThingsboardException(e, ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
     }
 
@@ -89,7 +113,14 @@ public class AppSharedSubscriptionController extends BaseController {
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public void deleteSharedSubscription(@PathVariable String id) throws ThingsboardException {
         try {
-            applicationSharedSubscriptionService.deleteSharedSubscription(toUUID(id));
+            ApplicationSharedSubscription sharedSubscription = getSharedSubscriptionById(id);
+            if (sharedSubscription == null) {
+                return;
+            }
+            boolean removed = applicationSharedSubscriptionService.deleteSharedSubscription(sharedSubscription.getId());
+            if (removed && enableTopicDeletion) {
+                applicationTopicService.deleteSharedTopic(sharedSubscription);
+            }
         } catch (Exception e) {
             throw handleException(e);
         }

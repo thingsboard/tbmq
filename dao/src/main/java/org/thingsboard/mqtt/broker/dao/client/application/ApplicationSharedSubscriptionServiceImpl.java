@@ -57,9 +57,9 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
     }
 
     @Override
-    public void deleteSharedSubscription(UUID id) {
+    public boolean deleteSharedSubscription(UUID id) {
         log.trace("Executing deleteSharedSubscription [{}]", id);
-        applicationSharedSubscriptionDao.removeById(id);
+        return applicationSharedSubscriptionDao.removeById(id);
     }
 
     @Override
