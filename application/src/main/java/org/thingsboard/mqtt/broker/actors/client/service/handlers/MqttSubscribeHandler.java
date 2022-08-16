@@ -23,16 +23,19 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
@@ -51,6 +54,7 @@ public class MqttSubscribeHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -67,6 +71,25 @@ public class MqttSubscribeHandler {
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
         subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
+
+
+        // TODO: 16/08/2022 implement
+        ClientType type = ctx.getSessionInfo().getClientInfo().getType();
+        if (ClientType.DEVICE == type) {
+            return;
+        }
+
+        Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
+        sharedSubscriptionTopicFilters.forEach(subs -> applicationPersistenceProcessor.startProcessingSharedTopic(ctx, subs));
+    }
+
+    Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
+        return topicSubscriptions
+                .stream()
+                .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
+                .collect(Collectors.groupingBy(subscription ->
+                        new SharedSubscriptionTopicFilter(subscription.getTopic(), subscription.getShareName())))
+                .keySet();
     }
 
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions, MqttSubAckMessage subAckMessage) {

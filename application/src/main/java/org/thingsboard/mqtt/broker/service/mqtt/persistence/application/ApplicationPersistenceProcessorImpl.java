@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -139,6 +140,52 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
+    // TODO: 16/08/2022 implement
+    @Override
+    public void startProcessingSharedTopic(ClientSessionCtx clientSessionCtx, SharedSubscriptionTopicFilter subscription) {
+        String clientId = clientSessionCtx.getClientId();
+        log.debug("[{}][{}] Starting persisted shared topic processing.", clientId, subscription);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
+                .createConsumerForSharedTopic(
+                        MqttApplicationClientUtil.getKafkaTopic(subscription.getTopicFilter()),
+                        MqttApplicationClientUtil.getConsumerGroup(subscription),
+                        serviceInfoProvider.getServiceId() + "-" + clientId);
+        consumer.subscribe();
+
+        Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
+            try {
+
+                while (!Thread.interrupted()) {
+                    try {
+                        List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages = consumer.poll(pollDuration);
+                        if (publishProtoMessages.isEmpty()) {
+                            continue;
+                        }
+
+                        log.info("Polled messages: {}", publishProtoMessages);
+
+                    } catch (Exception e) {
+                        if (!Thread.interrupted()) {
+                            log.warn("[{}] Failed to process messages from queue.", clientId, e);
+                            try {
+                                Thread.sleep(pollDuration);
+                            } catch (InterruptedException e2) {
+                                log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            }
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
+                log.warn("[{}][{}] Failed to start processing shared topic messages.", clientId, subscription, e);
+                disconnectClient(clientId, clientSessionCtx.getSessionId());
+            } finally {
+                consumer.unsubscribeAndClose();
+            }
+        });
+        processingFutures.put(clientId, future);
+    }
+
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
@@ -159,12 +206,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         processingFutures.put(clientId, future);
     }
 
+    private void disconnectClient(String clientId, UUID sessionId) {
+        disconnectClient(clientId, sessionId, "Failed to start processing shared topic messages");
+    }
+
     private void disconnectClient(String clientId, ClientActorStateInfo clientState) {
+        disconnectClient(clientId, clientState.getCurrentSessionCtx().getSessionId(), "Failed to start processing persisted messages");
+    }
+
+    private void disconnectClient(String clientId, UUID sessionId, String message) {
         clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                clientState.getCurrentSessionCtx().getSessionId(),
+                sessionId,
                 new DisconnectReason(
                         DisconnectReasonType.ON_ERROR,
-                        "Failed to start processing persisted messages")));
+                        message)));
     }
 
     @Override
@@ -287,7 +342,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 log.trace("[{}] Pack processing took {} ms, pack size - {}",
                         clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
             } catch (Exception e) {
-                // TODO: think if we need to drop session in this case
                 if (isClientConnected(sessionId, clientState)) {
                     log.warn("[{}] Failed to process messages from queue.", clientId, e);
                     try {

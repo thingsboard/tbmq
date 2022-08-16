@@ -50,7 +50,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
         final var topicToCreate = MqttApplicationClientUtil.getKafkaTopic(topic);
 
-        Map<String, String> topicConfigs = applicationPersistenceMsgQueueFactory.getTopicConfigs();
+        Map<String, String> topicConfigs = applicationPersistenceMsgQueueFactory.getSharedTopicConfigs();
         topicConfigs.put(QueueConstants.PARTITIONS, String.valueOf(subscription.getPartitions()));
         queueAdmin.createTopic(topicToCreate, topicConfigs);
     }

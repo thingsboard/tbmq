@@ -16,10 +16,14 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ApplicationPersistenceProcessor {
+
     void startProcessingPersistedMessages(ClientActorStateInfo clientState);
+
+    void startProcessingSharedTopic(ClientSessionCtx clientSessionCtx, SharedSubscriptionTopicFilter subscription);
 
     void stopProcessingPersistedMessages(String clientId);
 
