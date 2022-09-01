@@ -23,11 +23,15 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -40,6 +44,7 @@ class MqttUnsubscribeHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
+    ApplicationPersistenceProcessor applicationPersistenceProcessor;
     MqttUnsubscribeHandler mqttUnsubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -48,7 +53,8 @@ class MqttUnsubscribeHandlerTest {
     void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
-        mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService));
+        applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
+        mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService, applicationPersistenceProcessor));
 
         ctx = mock(ClientSessionCtx.class);
         ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
@@ -66,5 +72,25 @@ class MqttUnsubscribeHandlerTest {
 
         verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1));
         verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+    }
+
+    @Test
+    void testCollectUniqueSharedSubscriptions() {
+        List<String> topics = List.of(
+                "test/topic",
+                "my/home/+/bedroom",
+                "home/#",
+                "$share/g1/test/my/#",
+                "$share/g1/test/my/topic",
+                "$share/g2/test/my/topic");
+
+        Set<SharedSubscriptionTopicFilter> sharedSubscriptions = mqttUnsubscribeHandler.collectUniqueSharedSubscriptions(topics);
+
+        assertEquals(3, sharedSubscriptions.size());
+        assertEquals(Set.of(
+                new SharedSubscriptionTopicFilter("test/my/#", "g1"),
+                new SharedSubscriptionTopicFilter("test/my/topic", "g1"),
+                new SharedSubscriptionTopicFilter("test/my/topic", "g2")
+        ), sharedSubscriptions);
     }
 }

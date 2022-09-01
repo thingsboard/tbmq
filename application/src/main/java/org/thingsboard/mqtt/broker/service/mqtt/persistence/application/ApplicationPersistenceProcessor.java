@@ -19,13 +19,17 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.Set;
+
 public interface ApplicationPersistenceProcessor {
 
     void startProcessingPersistedMessages(ClientActorStateInfo clientState);
 
-    void startProcessingSharedTopic(ClientSessionCtx clientSessionCtx, SharedSubscriptionTopicFilter subscription);
+    void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions);
 
     void stopProcessingPersistedMessages(String clientId);
+
+    void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions);
 
     void clearPersistedMsgs(String clientId);
 

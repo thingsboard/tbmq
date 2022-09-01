@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,11 +40,15 @@ public interface StatsManager {
 
     ApplicationProcessorStats createApplicationProcessorStats(String clientId);
 
+    ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription);
+
     ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats();
 
     RetainedMsgConsumerStats getRetainedMsgConsumerStats();
 
     void clearApplicationProcessorStats(String clientId);
+
+    void clearSharedApplicationProcessorStats(String clientId);
 
     AtomicInteger createSubscriptionSizeCounter();
 
@@ -64,6 +69,8 @@ public interface StatsManager {
     void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap);
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
+
+    void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
     SubscriptionTimerStats getSubscriptionTimerStats();
 

@@ -61,13 +61,13 @@ public class NettyMqttConverter {
         return new MqttSubscribeMsg(sessionId, nettySubscribeMsg.variableHeader().messageId(), topicSubscriptions);
     }
 
-    static String getTopicName(String topicName) {
+    public static String getTopicName(String topicName) {
         int shareNameIndex = getShareNameIndex();
         return isSharedTopic(topicName) ?
                 topicName.substring(topicName.indexOf("/", shareNameIndex) + 1) : topicName;
     }
 
-    static String getShareName(String topicName) {
+    public static String getShareName(String topicName) {
         try {
             int shareNameIndex = getShareNameIndex();
             return isSharedTopic(topicName) ?
@@ -82,7 +82,7 @@ public class NettyMqttConverter {
         return BrokerConstants.SHARED_SUBSCRIPTION_PREFIX.length();
     }
 
-    private static boolean isSharedTopic(String topicName) {
+    public static boolean isSharedTopic(String topicName) {
         return topicName.startsWith(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX);
     }
 

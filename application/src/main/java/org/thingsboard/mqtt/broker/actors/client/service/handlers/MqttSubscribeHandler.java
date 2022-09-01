@@ -72,15 +72,14 @@ public class MqttSubscribeHandler {
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
         subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
 
+        startProcessingApplicationSharedSubscriptions(ctx, topicSubscriptions);
+    }
 
-        // TODO: 16/08/2022 implement
-        ClientType type = ctx.getSessionInfo().getClientInfo().getType();
-        if (ClientType.DEVICE == type) {
-            return;
+    private void startProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
+            Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
+            applicationPersistenceProcessor.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
         }
-
-        Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
-        sharedSubscriptionTopicFilters.forEach(subs -> applicationPersistenceProcessor.startProcessingSharedTopic(ctx, subs));
     }
 
     Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {

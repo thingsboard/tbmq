@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 
 import java.util.Map;
 import java.util.Queue;
@@ -73,6 +74,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+        return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
+    }
+
+    @Override
     public ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats() {
         return StubClientSubscriptionConsumerStats.STUB_CLIENT_SUBSCRIPTION_CONSUMER_STATS;
     }
@@ -84,6 +90,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
 
     @Override
     public void clearApplicationProcessorStats(String clientId) {
+    }
+
+    @Override
+    public void clearSharedApplicationProcessorStats(String clientId) {
+
     }
 
     @Override
@@ -119,6 +130,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
 
     @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+    }
+
+    @Override
+    public void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+
     }
 
     @Override
