@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -37,6 +38,13 @@ public class ApplicationPackProcessingCtx {
     private final CountDownLatch processingTimeoutLatch;
     @Getter
     private final ApplicationPubRelMsgCtx pubRelMsgCtx;
+
+    public ApplicationPackProcessingCtx() {
+        this.stats = null;
+        this.processingStartTimeNanos = System.nanoTime();
+        this.processingTimeoutLatch = null;
+        this.pubRelMsgCtx = new ApplicationPubRelMsgCtx(Collections.emptySet());
+    }
 
     public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, ApplicationPubRelMsgCtx pubRelMsgCtx, ApplicationProcessorStats stats) {
         this.processingStartTimeNanos = System.nanoTime();
@@ -63,21 +71,31 @@ public class ApplicationPackProcessingCtx {
 
     // TODO: save only messages with higher offset (InFlightMessagesCtx)
 
-    public void onPubAck(Integer packetId) {
-        stats.logPubAckLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
-        onPublishMsgSuccess(packetId);
+    public boolean onPubAck(Integer packetId) {
+        PersistedPublishMsg msg = publishPendingMsgMap.remove(packetId);
+        if (msg != null) {
+            stats.logPubAckLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
+            processingTimeoutLatch.countDown();
+            return true;
+        } else {
+            log.debug("Couldn't find PUBLISH packet {} to process publish msg success.", packetId);
+        }
+        return false;
     }
 
-    public void onPubRec(Integer packetId) {
+    public boolean onPubRec(Integer packetId) {
         // TODO: think what to do if PUBREC came after PackContext timeout
-        stats.logPubRecLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
         PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
         if (msg != null) {
+            stats.logPubRecLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
+
             pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
             onPublishMsgSuccess(packetId);
+            return true;
         } else {
             log.debug("Couldn't find PUBLISH packet {} to process PUBREC msg.", packetId);
         }
+        return false;
     }
 
     private void onPublishMsgSuccess(Integer packetId) {
@@ -89,14 +107,16 @@ public class ApplicationPackProcessingCtx {
         }
     }
 
-    public void onPubComp(Integer packetId) {
-        stats.logPubCompLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
+    public boolean onPubComp(Integer packetId) {
         PersistedPubRelMsg msg = pubRelPendingMsgMap.remove(packetId);
         if (msg != null) {
+            stats.logPubCompLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
             processingTimeoutLatch.countDown();
+            return true;
         } else {
             log.warn("Couldn't find packet {} to complete delivery.", packetId);
         }
+        return false;
     }
 
     public void clear() {

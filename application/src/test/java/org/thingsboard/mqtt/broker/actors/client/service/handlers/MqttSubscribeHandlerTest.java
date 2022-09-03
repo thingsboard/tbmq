@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -64,6 +65,7 @@ class MqttSubscribeHandlerTest {
     RetainedMsgService retainedMsgService;
     PublishMsgDeliveryService publishMsgDeliveryService;
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     MqttSubscribeHandler mqttSubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -77,8 +79,10 @@ class MqttSubscribeHandlerTest {
         retainedMsgService = mock(RetainedMsgService.class);
         publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
         applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
+        applicationSharedSubscriptionService = mock(ApplicationSharedSubscriptionService.class);
         mqttSubscribeHandler = spy(new MqttSubscribeHandler(mqttMessageGenerator, clientSubscriptionService, topicValidationService,
-                authorizationRuleService, retainedMsgService, publishMsgDeliveryService, applicationPersistenceProcessor));
+                authorizationRuleService, retainedMsgService, publishMsgDeliveryService,
+                applicationPersistenceProcessor, applicationSharedSubscriptionService));
 
         ctx = mock(ClientSessionCtx.class);
         when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));

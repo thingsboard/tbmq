@@ -50,6 +50,8 @@ public interface StatsManager {
 
     void clearSharedApplicationProcessorStats(String clientId);
 
+    void clearSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription);
+
     AtomicInteger createSubscriptionSizeCounter();
 
     AtomicInteger createRetainMsgSizeCounter();

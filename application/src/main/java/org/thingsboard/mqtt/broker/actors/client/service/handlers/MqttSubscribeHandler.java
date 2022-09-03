@@ -23,8 +23,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -55,6 +57,7 @@ public class MqttSubscribeHandler {
     private final RetainedMsgService retainedMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -78,8 +81,27 @@ public class MqttSubscribeHandler {
     private void startProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
         if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
             Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
+            if (CollectionUtils.isEmpty(sharedSubscriptionTopicFilters)) {
+                return;
+            }
+            validateSharedSubscriptions(sharedSubscriptionTopicFilters);
             applicationPersistenceProcessor.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
         }
+    }
+
+    private void validateSharedSubscriptions(Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
+        for (SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter : sharedSubscriptionTopicFilters) {
+            // TODO: 02/09/2022 cache or make async
+            ApplicationSharedSubscription sharedSubscription = findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter);
+            if (sharedSubscription == null) {
+                log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", sharedSubscriptionTopicFilter.getTopicFilter());
+                throw new MqttException("Failed to subscribe to a non-existent shared subscription topic!");
+            }
+        }
+    }
+
+    private ApplicationSharedSubscription findSharedSubscriptionByTopic(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter.getTopicFilter());
     }
 
     Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {

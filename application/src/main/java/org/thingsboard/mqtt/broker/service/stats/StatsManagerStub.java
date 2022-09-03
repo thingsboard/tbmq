@@ -98,6 +98,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public void clearSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+
+    }
+
+    @Override
     public AtomicInteger createSubscriptionSizeCounter() {
         return new AtomicInteger(0);
     }
