@@ -474,12 +474,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
         ConcurrentMap<SharedSubscriptionTopicFilter, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> sharedSubsToConsumerMap =
                 sharedSubscriptionConsumers.get(clientId);
-        sharedSubsToConsumerMap.forEach((subscription, consumer) -> {
-            if (subscriptions.contains(subscription)) {
-                consumer.unsubscribeAndClose();
-                sharedSubsToConsumerMap.remove(subscription);
-            }
-        });
+        if (!CollectionUtils.isEmpty(sharedSubsToConsumerMap)) {
+            sharedSubsToConsumerMap.forEach((subscription, consumer) -> {
+                if (subscriptions.contains(subscription)) {
+                    consumer.unsubscribeAndClose();
+                    sharedSubsToConsumerMap.remove(subscription);
+                }
+            });
+        }
 
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientId);
         if (!CollectionUtils.isEmpty(contexts)) {
