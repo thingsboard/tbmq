@@ -20,10 +20,26 @@ import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 
+import java.util.Objects;
+
 @Data
 @RequiredArgsConstructor
 public class ApplicationSharedSubscriptionCtx {
 
     private final SharedSubscriptionTopicFilter subscription;
     private final ApplicationPackProcessingCtx packProcessingCtx;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ApplicationSharedSubscriptionCtx that = (ApplicationSharedSubscriptionCtx) o;
+        return subscription.equals(that.subscription);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(subscription);
+    }
+
 }

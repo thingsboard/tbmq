@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
@@ -61,6 +62,9 @@ public class MqttUnsubscribeHandler {
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
         if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
             Set<SharedSubscriptionTopicFilter> subscriptionTopicFilters = collectUniqueSharedSubscriptions(topics);
+            if (CollectionUtils.isEmpty(subscriptionTopicFilters)) {
+                return;
+            }
             applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, subscriptionTopicFilters);
         }
     }

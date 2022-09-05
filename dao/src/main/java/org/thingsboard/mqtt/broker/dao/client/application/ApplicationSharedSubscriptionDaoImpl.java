@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,11 @@ public class ApplicationSharedSubscriptionDaoImpl
     @Override
     public ApplicationSharedSubscription findByTopic(String topic) {
         return DaoUtil.getData(applicationSharedSubscriptionRepository.findByTopic(topic));
+    }
+
+    @Override
+    public ListenableFuture<ApplicationSharedSubscription> findByTopicAsync(String topic) {
+        return service.submit(() -> findByTopic(topic));
     }
 
     @Override

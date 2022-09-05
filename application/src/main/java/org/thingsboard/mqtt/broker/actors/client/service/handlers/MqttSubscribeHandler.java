@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -40,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -84,24 +89,33 @@ public class MqttSubscribeHandler {
             if (CollectionUtils.isEmpty(sharedSubscriptionTopicFilters)) {
                 return;
             }
-            validateSharedSubscriptions(sharedSubscriptionTopicFilters);
-            applicationPersistenceProcessor.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+            ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(sharedSubscriptionTopicFilters);
+            DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
+                if (validationSuccess) {
+                    applicationPersistenceProcessor.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+                } else {
+                    log.warn("Validation of shared subscriptions failed: {}", sharedSubscriptionTopicFilters);
+                }
+            }, throwable -> log.error("Failed to validate shared subscriptions {}", sharedSubscriptionTopicFilters, throwable));
         }
     }
 
-    private void validateSharedSubscriptions(Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
+    private ListenableFuture<Boolean> validateSharedSubscriptions(Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
+        List<ListenableFuture<Boolean>> futures = new ArrayList<>(sharedSubscriptionTopicFilters.size());
         for (SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter : sharedSubscriptionTopicFilters) {
-            // TODO: 02/09/2022 cache or make async
-            ApplicationSharedSubscription sharedSubscription = findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter);
-            if (sharedSubscription == null) {
-                log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", sharedSubscriptionTopicFilter.getTopicFilter());
-                throw new MqttException("Failed to subscribe to a non-existent shared subscription topic!");
-            }
+            futures.add(Futures.transform(findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter), sharedSubscription -> {
+                if (sharedSubscription == null) {
+                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", sharedSubscriptionTopicFilter.getTopicFilter());
+                    return false;
+                }
+                return true;
+            }, MoreExecutors.directExecutor()));
         }
+        return Futures.transform(Futures.allAsList(futures), list -> list.stream().allMatch(bool -> bool), MoreExecutors.directExecutor());
     }
 
-    private ApplicationSharedSubscription findSharedSubscriptionByTopic(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
-        return applicationSharedSubscriptionService.findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter.getTopicFilter());
+    private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(sharedSubscriptionTopicFilter.getTopicFilter());
     }
 
     Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {

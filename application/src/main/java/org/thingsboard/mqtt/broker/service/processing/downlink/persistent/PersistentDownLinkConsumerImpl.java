@@ -19,9 +19,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
@@ -29,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisher
 
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,6 +50,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final PersistentDownLinkProcessor processor;
+    private final TbQueueAdmin queueAdmin;
 
     // TODO: don't push msg to kafka if it's the same serviceId
     @Value("${queue.persistent-downlink-publish-msg.consumers-count}")
@@ -54,11 +58,10 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     @Value("${queue.persistent-downlink-publish-msg.poll-interval}")
     private long pollDuration;
 
-
     @Override
     public void startConsuming() {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(serviceInfoProvider.getServiceId());
-        String uniqueGroupId = serviceInfoProvider.getServiceId() + System.currentTimeMillis();
+        String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
@@ -100,6 +103,16 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     public void destroy() {
         stopped = true;
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
+        deleteUniqueConsumerGroup();
         consumersExecutor.shutdownNow();
+    }
+
+    private void deleteUniqueConsumerGroup() {
+        if (!CollectionUtils.isEmpty(consumers)) {
+            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = consumers.get(0);
+            if (consumer.getConsumerGroupId() != null) {
+                queueAdmin.deleteConsumerGroups(Collections.singleton(consumer.getConsumerGroupId()));
+            }
+        }
     }
 }

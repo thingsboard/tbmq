@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -29,6 +30,8 @@ public interface ApplicationSharedSubscriptionService {
     boolean deleteSharedSubscription(UUID id);
 
     ApplicationSharedSubscription findSharedSubscriptionByTopic(String topic);
+
+    ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopicAsync(String topic);
 
     PageData<ApplicationSharedSubscription> getSharedSubscriptions(PageLink pageLink);
 

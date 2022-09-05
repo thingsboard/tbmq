@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
@@ -66,6 +67,12 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
     public ApplicationSharedSubscription findSharedSubscriptionByTopic(String topic) {
         log.trace("Executing findSharedSubscriptionByTopic [{}]", topic);
         return applicationSharedSubscriptionDao.findByTopic(topic);
+    }
+
+    @Override
+    public ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopicAsync(String topic) {
+        log.trace("Executing findSharedSubscriptionByTopicAsync [{}]", topic);
+        return applicationSharedSubscriptionDao.findByTopicAsync(topic);
     }
 
     @Override

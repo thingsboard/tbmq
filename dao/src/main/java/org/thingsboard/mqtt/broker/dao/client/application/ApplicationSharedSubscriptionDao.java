@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.application;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -23,6 +24,8 @@ import org.thingsboard.mqtt.broker.dao.Dao;
 public interface ApplicationSharedSubscriptionDao extends Dao<ApplicationSharedSubscription> {
 
     ApplicationSharedSubscription findByTopic(String topic);
+
+    ListenableFuture<ApplicationSharedSubscription> findByTopicAsync(String topic);
 
     PageData<ApplicationSharedSubscription> findAll(PageLink pageLink);
 
