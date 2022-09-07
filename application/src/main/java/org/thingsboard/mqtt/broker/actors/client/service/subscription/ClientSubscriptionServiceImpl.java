@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
@@ -123,17 +124,24 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private Set<TopicSubscription> unsubscribe(String clientId, Collection<String> topicFilters) {
-        subscriptionService.unsubscribe(clientId, topicFilters);
+        List<String> topics = extractTopicFilterFromSharedTopic(topicFilters);
+        subscriptionService.unsubscribe(clientId, topics);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscription -> {
-            boolean unsubscribe = topicFilters.contains(topicSubscription.getTopic());
+            boolean unsubscribe = topics.contains(topicSubscription.getTopic());
             if (unsubscribe) {
                 processSharedUnsubscribe(topicSubscription);
             }
             return unsubscribe;
         });
         return clientSubscriptions;
+    }
+
+    private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {
+        return topicFilters.stream()
+                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicName(tf) : tf)
+                .collect(Collectors.toList());
     }
 
     @Override

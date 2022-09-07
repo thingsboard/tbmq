@@ -57,8 +57,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             clearClientSession(actorState, reason.getType());
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-            log.trace("Detailed error: ", e);
+            log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
         }
 
         notifyClientDisconnected(actorState);

@@ -89,7 +89,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        log.trace("[{}] Successfully sent publish msg to the shared topic queue.", sharedTopic);
+                        log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
                         callback.onSuccess();
                     }
 
