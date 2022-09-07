@@ -7,14 +7,10 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.service.integration.TopicsIntegrationTest" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl"
-            level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisherImpl"
-            level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx"
-            level="INFO"/>
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisherImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx" level="DEBUG"/>
 
     <root level="WARN">
         <appender-ref ref="console"/>

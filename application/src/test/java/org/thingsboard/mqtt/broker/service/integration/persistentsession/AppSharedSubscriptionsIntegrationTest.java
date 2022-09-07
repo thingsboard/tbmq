@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
@@ -61,7 +64,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegrationTest {
 
-    static final int TOTAL_MSG_COUNT = 30;
+    static final int TOTAL_MSG_COUNT = 100;
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
@@ -162,11 +165,14 @@ public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegra
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        MqttClient shareSubClient1 = getClient("test_sub_client3", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        MqttClient shareSubClient2 = getClient("test_sub_client4", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        MqttHandlerImpl client1Handler = getHandler(receivedResponses, shareSubClient1ReceivedMessages);
+        MqttHandlerImpl client2Handler = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
+        MqttClient shareSubClient1 = getClient("test_sub_client3", client1Handler, false);
+        MqttClient shareSubClient2 = getClient("test_sub_client4", client2Handler, false);
+
+        shareSubClient1.on("$share/g1/test/+", client1Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", client2Handler, MqttQoS.EXACTLY_ONCE).get(5, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getPubClient();
@@ -187,6 +193,7 @@ public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegra
         assertTrue(client2Subscriptions.isEmpty());
 
         receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+        client1Handler.updateLatch(receivedResponses);
 
         //pub
         sendPublishPackets(pubClient);
@@ -209,8 +216,9 @@ public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegra
             pubClient.publish(
                             "test/topic",
                             Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)),
-                            MqttQoS.AT_LEAST_ONCE)
+                            MqttQoS.EXACTLY_ONCE)
                     .get(5, TimeUnit.SECONDS);
+            Thread.sleep(50);
         }
     }
 
@@ -227,15 +235,29 @@ public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegra
         return client;
     }
 
-    private MqttHandler getHandler(CountDownLatch latch, AtomicInteger integer) {
-        return (s, byteBuf) -> {
-            integer.incrementAndGet();
-            latch.countDown();
-        };
+    private MqttHandlerImpl getHandler(CountDownLatch latch, AtomicInteger integer) {
+        return new MqttHandlerImpl(latch, integer);
     }
 
     private void disconnectClient(MqttClient client) {
         client.disconnect();
     }
 
+    @Data
+    @AllArgsConstructor
+    private static class MqttHandlerImpl implements MqttHandler {
+
+        private CountDownLatch latch;
+        private AtomicInteger ai;
+
+        public void updateLatch(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public void onMessage(String s, ByteBuf byteBuf) {
+            ai.incrementAndGet();
+            latch.countDown();
+        }
+    }
 }
