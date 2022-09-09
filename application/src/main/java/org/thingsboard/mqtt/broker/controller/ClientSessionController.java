@@ -68,7 +68,7 @@ public class ClientSessionController extends BaseController {
     @ResponseBody
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@RequestParam String clientId) throws ThingsboardException {
         try {
-            return sessionSubscriptionService.getDetailedClientSessionInfo(clientId);
+            return checkNotNull(sessionSubscriptionService.getDetailedClientSessionInfo(clientId));
         } catch (Exception e) {
             throw handleException(e);
         }
