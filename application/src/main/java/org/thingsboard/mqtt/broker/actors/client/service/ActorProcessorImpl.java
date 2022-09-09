@@ -64,6 +64,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         AuthResponse authResponse = authenticateClient(authContext);
 
         if (!authResponse.isSuccess()) {
+            log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx);
             return;
         }
