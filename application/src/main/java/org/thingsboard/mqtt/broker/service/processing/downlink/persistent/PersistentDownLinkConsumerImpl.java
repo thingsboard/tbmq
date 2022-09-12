@@ -84,6 +84,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
                     for (TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto> msg : msgs) {
                         processor.process(msg.getKey(), msg.getValue());
                     }
+                    consumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);

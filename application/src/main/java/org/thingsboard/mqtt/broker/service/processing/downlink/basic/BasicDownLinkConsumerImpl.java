@@ -83,6 +83,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
                         QueueProtos.ClientPublishMsgProto clientPublishMsgProto = msg.getValue();
                         processor.process(clientPublishMsgProto.getClientId(), clientPublishMsgProto.getPublishMsg());
                     }
+                    consumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
