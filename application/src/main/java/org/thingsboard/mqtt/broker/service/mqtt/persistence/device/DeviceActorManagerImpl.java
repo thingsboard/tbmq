@@ -61,7 +61,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     public void notifyClientDisconnected(String clientId) {
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            log.warn("[{}] Cannot find device actor for disconnect event.", clientId);
+            log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
         } else {
             deviceActorRef.tellWithHighPriority(new DeviceDisconnectedEventMsg());
         }
