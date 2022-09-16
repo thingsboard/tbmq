@@ -263,7 +263,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                 ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
                                 cachePackProcessingCtx(clientId, subscription, ctx);
 
-                                process(submitStrategy, clientSessionCtx, clientId);
+                                process(submitStrategy, clientSessionCtx, clientId, subscription);
 
                                 if (isJobActive(job)) {
                                     ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -616,7 +616,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
                     packProcessingCtxMap.put(clientId, ctx);
 
-                    process(submitStrategy, clientSessionCtx, clientId);
+                    process(submitStrategy, clientSessionCtx, clientId, null);
 
                     if (isClientConnected(sessionId, clientState)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -640,13 +640,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         log.debug("[{}] Application persisted messages consumer stopped.", clientId);
     }
 
-    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx, String clientId) {
+    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx,
+                         String clientId, SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
         submitStrategy.process(msg -> {
             switch (msg.getPacketType()) {
                 case PUBLISH:
                     log.debug("[{}] Sending Pub msg from processing ctx: {}", clientId, msg.getPacketId());
                     PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                    publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
+                    int minQoSValue = getMinQoSValue(sharedSubscriptionTopicFilter, publishMsg);
+                    publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
                     break;
                 case PUBREL:
                     log.debug("[{}] Sending PubRel from processing ctx: {}", clientId, msg.getPacketId());
@@ -655,6 +657,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to application client");
         });
+    }
+
+    private int getMinQoSValue(SharedSubscriptionTopicFilter subscription, PublishMsg publishMsg) {
+        return subscription == null ? publishMsg.getQosLevel() :
+                Math.min(subscription.getQos(), publishMsg.getQosLevel());
     }
 
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,

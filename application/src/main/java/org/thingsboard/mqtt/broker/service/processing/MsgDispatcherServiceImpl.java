@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
-        List<Subscription> persistentSubscriptions = processBasicAndCollectPersistentSubscription(publishMsgProto, msgSubscriptions);
+        List<Subscription> persistentSubscriptions = processBasicAndCollectPersistentSubscription(msgSubscriptions, publishMsgProto);
 
         if (!persistentSubscriptions.isEmpty()) {
             processPersistentSubscriptions(publishMsgProto, persistentSubscriptions, callback);
@@ -116,7 +117,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
     }
 
-    private List<Subscription> processBasicAndCollectPersistentSubscription(PublishMsgProto publishMsgProto, List<Subscription> msgSubscriptions) {
+    private List<Subscription> processBasicAndCollectPersistentSubscription(List<Subscription> msgSubscriptions, PublishMsgProto publishMsgProto) {
         List<Subscription> persistentSubscriptions = new ArrayList<>();
         long notPersistentMessagesProcessingStartTime = System.nanoTime();
         for (Subscription msgSubscription : msgSubscriptions) {
@@ -143,13 +144,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return collectAllSubscriptions(
                 getSubscriptionsFromMapByType(subscriptionsByType, SubscriptionType.COMMON),
                 getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.APPLICATION),
-                getDeviceSharedSubscriptions(sharedSubscriptionsByClientType));
+                getDeviceSharedSubscriptions(sharedSubscriptionsByClientType, publishMsgProto.getQos()));
     }
 
-    private List<Subscription> getDeviceSharedSubscriptions(Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType) {
+    private List<Subscription> getDeviceSharedSubscriptions(Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType, int qos) {
         List<Subscription> deviceSubscriptions = getSharedSubscriptionsByType(sharedSubscriptionsByClientType, ClientType.DEVICE);
         List<SharedSubscription> deviceSharedSubscriptions = toSharedSubscriptionList(deviceSubscriptions);
-        return collectOneSubscriptionFromEveryDeviceSharedSubscription(deviceSharedSubscriptions);
+        return collectOneSubscriptionFromEveryDeviceSharedSubscription(deviceSharedSubscriptions, qos);
     }
 
     private List<Subscription> collectAllSubscriptions(List<Subscription> commonSubscriptions,
@@ -168,7 +169,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private Map<ClientType, List<Subscription>> collectToSubscriptionsByClientType(List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions
                 .stream()
-                .collect(Collectors.groupingBy(subscription -> subscription.getSessionInfo().getClientInfo().getType()));
+                .collect(Collectors.groupingBy(subscription -> getSessionInfo(subscription).getClientInfo().getType()));
     }
 
     private List<Subscription> getSubscriptionsFromMapByType(Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType,
@@ -184,20 +185,54 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptionsByType;
     }
 
-    private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptionList) {
+    private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptionList, int qos) {
         List<Subscription> result = new ArrayList<>(sharedSubscriptionList.size());
         for (SharedSubscription sharedSubscription : sharedSubscriptionList) {
-            SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
-            Subscription subscription = strategy.analyze(sharedSubscription);
-            result.add(subscription);
+            result.add(getSubscription(sharedSubscription, qos));
         }
         return result;
+    }
+
+    private Subscription getSubscription(SharedSubscription sharedSubscription, int qos) {
+        Subscription anyActive = findAnyConnectedSubscription(sharedSubscription.getSubscriptions());
+        if (anyActive == null) {
+            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getSharedSubscriptionTopicFilter());
+            return createDummySubscription(sharedSubscription, qos);
+        } else {
+            SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
+            return strategy.analyze(sharedSubscription);
+        }
+    }
+
+    private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
+        return new Subscription(
+                sharedSubscription.getSharedSubscriptionTopicFilter().getTopicFilter(),
+                qos,
+                createDummyClientSession(sharedSubscription),
+                sharedSubscription.getSharedSubscriptionTopicFilter().getShareName()
+        );
+    }
+
+    private ClientSession createDummyClientSession(SharedSubscription sharedSubscription) {
+        return new ClientSession(false,
+                SessionInfo.builder()
+                        .clientInfo(ClientSessionInfoFactory.getClientInfo(sharedSubscription.getSharedSubscriptionTopicFilter().getKey()))
+                        .persistent(true)
+                        .build());
+    }
+
+    Subscription findAnyConnectedSubscription(List<Subscription> subscriptions) {
+        return subscriptions
+                .stream()
+                .filter(subscription -> subscription.getClientSession().isConnected())
+                .findAny()
+                .orElse(null);
     }
 
     List<SharedSubscription> toSharedSubscriptionList(List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions.stream()
                 .collect(Collectors.groupingBy(subscription ->
-                        new SharedSubscriptionTopicFilter(subscription.getTopicFilter(), subscription.getShareName())))
+                        new SharedSubscriptionTopicFilter(subscription.getTopicFilter(), subscription.getShareName(), subscription.getMqttQoSValue())))
                 .entrySet().stream()
                 .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
@@ -229,7 +264,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
         return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                clientSession.getSessionInfo(), clientSubscription.getValue().getShareName());
+                clientSession, clientSubscription.getValue().getShareName());
     }
 
     List<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
@@ -266,14 +301,14 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
-        return subscription.getSessionInfo().isPersistent()
+        return getSessionInfo(subscription).isPersistent()
                 && subscription.getMqttQoSValue() != MqttQoS.AT_MOST_ONCE.value()
                 && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
     private void sendToNode(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
-        String targetServiceId = subscription.getSessionInfo().getServiceId();
-        String clientId = subscription.getSessionInfo().getClientInfo().getClientId();
+        String targetServiceId = getSessionInfo(subscription).getServiceId();
+        String clientId = getSessionInfo(subscription).getClientInfo().getClientId();
         downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
     }
 
@@ -282,6 +317,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return publishMsgProto.toBuilder()
                 .setQos(minQoSValue)
                 .build();
+    }
+
+    private SessionInfo getSessionInfo(Subscription subscription) {
+        return subscription.getClientSession().getSessionInfo();
     }
 
     private SubscriptionType getSubscriptionType(ValueWithTopicFilter<ClientSubscription> clientSubscription) {

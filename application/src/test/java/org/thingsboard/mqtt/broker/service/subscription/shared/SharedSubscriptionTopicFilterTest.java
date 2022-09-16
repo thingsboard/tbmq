@@ -15,26 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Test;
 
-@Data
-@RequiredArgsConstructor
-@EqualsAndHashCode(exclude = "qos")
-public class SharedSubscriptionTopicFilter {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    private final String topicFilter;
-    private final String shareName;
-    private final int qos;
+class SharedSubscriptionTopicFilterTest {
 
-    public SharedSubscriptionTopicFilter(String topicFilter, String shareName) {
-        this.topicFilter = topicFilter;
-        this.shareName = shareName;
-        this.qos = 0;
+    @Test
+    void testSharedSubscriptionTopicFilterEquals() {
+        SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter1 = getSubscriptionTopicFilter(0);
+        SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter2 = getSubscriptionTopicFilter(1);
+        assertEquals(sharedSubscriptionTopicFilter1, sharedSubscriptionTopicFilter2);
     }
 
-    public String getKey() {
-        return "ss_" + this.shareName + "_" + this.topicFilter;
+    private SharedSubscriptionTopicFilter getSubscriptionTopicFilter(int qos) {
+        return new SharedSubscriptionTopicFilter("topicFilter", "shareName", qos);
     }
 }

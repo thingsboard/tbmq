@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallback
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private String getClientIdFromSubscription(Subscription subscription) {
-        return subscription.getSessionInfo().getClientInfo().getClientId();
+        return subscription.getClientSession().getSessionInfo().getClientInfo().getClientId();
     }
 
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
@@ -111,7 +112,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                                    List<Subscription> deviceSubscriptions,
                                    List<Subscription> applicationSubscriptions) {
         for (Subscription msgSubscription : persistentSubscriptions) {
-            ClientInfo clientInfo = msgSubscription.getSessionInfo().getClientInfo();
+            ClientInfo clientInfo = msgSubscription.getClientSession().getSessionInfo().getClientInfo();
             ClientType clientType = clientInfo.getType();
             if (clientType == DEVICE) {
                 deviceSubscriptions.add(msgSubscription);
@@ -152,6 +153,16 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 devicePersistenceProcessor.clearPersistedMsgs(clientSessionCtx.getClientId());
             }
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
+        }
+    }
+
+    @Override
+    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
+        if (clientType == APPLICATION) {
+            applicationPersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
+        } else if (clientType == DEVICE) {
+            devicePersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
         }
     }
 

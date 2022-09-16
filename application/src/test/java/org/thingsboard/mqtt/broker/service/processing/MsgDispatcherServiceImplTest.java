@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -82,7 +83,6 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testConvertClientSubscriptionsToSubscriptionsByType() {
         when(clientSessionCache.getClientSession(any())).thenReturn(clientSession);
-        when(clientSession.getSessionInfo()).thenReturn(null);
 
         List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
                 List.of(
@@ -226,12 +226,35 @@ public class MsgDispatcherServiceImplTest {
         assertEquals(6, result.size());
     }
 
+    @Test
+    public void testFindAnyConnectedSubscription() {
+        List<Subscription> subscriptions = List.of(
+                new Subscription("topic1", 1, new ClientSession(false, null)),
+                new Subscription("topic2", 0, new ClientSession(false, null)),
+                new Subscription("topic3", 2, new ClientSession(false, null)),
+                new Subscription("topic4", 0, new ClientSession(false, null)),
+                new Subscription("topic5", 1, new ClientSession(false, null))
+        );
+        Subscription subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
+        assertNull(subscription);
+
+        subscriptions = List.of(
+                new Subscription("topic1", 1, new ClientSession(false, null)),
+                new Subscription("topic2", 0, new ClientSession(false, null)),
+                new Subscription("topic3", 2, new ClientSession(true, null)),
+                new Subscription("topic4", 0, new ClientSession(false, null)),
+                new Subscription("topic5", 1, new ClientSession(false, null))
+        );
+        subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
+        assertEquals("topic3", subscription.getTopicFilter());
+    }
+
     private Subscription newSubscription(int mqttQoSValue) {
         return newSubscription(mqttQoSValue, null);
     }
 
     private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(TOPIC, mqttQoSValue, null, shareName);
+        return new Subscription(TOPIC, mqttQoSValue, clientSession, shareName);
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName) {

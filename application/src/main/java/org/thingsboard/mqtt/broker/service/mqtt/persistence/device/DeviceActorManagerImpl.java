@@ -30,9 +30,13 @@ import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -55,6 +59,17 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         }
         // TODO: what if actor stops between 'getActor' and 'tell' methods?
         deviceActorRef.tellWithHighPriority(new DeviceConnectedEventMsg(clientSessionCtx));
+    }
+
+    @Override
+    public void notifySubscribeToSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+        String clientId = clientSessionCtx.getClientId();
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
+        if (deviceActorRef == null) {
+            log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
+        } else {
+            deviceActorRef.tellWithHighPriority(new SharedSubscriptionEventMsg(subscriptions));
+        }
     }
 
     @Override

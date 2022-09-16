@@ -69,8 +69,13 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
         return Iterables.cycle(subscriptions).iterator();
     }
 
-    private Subscription getOneSubscription(Iterator<Subscription> iterator) {
-        return iterator.next();
+    Subscription getOneSubscription(Iterator<Subscription> iterator) {
+        while (true) {
+            Subscription next = iterator.next();
+            if (next.getClientSession().isConnected()) {
+                return next;
+            }
+        }
     }
 
     @Data

@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
@@ -61,8 +61,8 @@ public class MqttSubscribeHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
-    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    private final MsgPersistenceManager msgPersistenceManager;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -80,24 +80,34 @@ public class MqttSubscribeHandler {
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
         subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
 
-        startProcessingApplicationSharedSubscriptions(ctx, topicSubscriptions);
+        startProcessingSharedSubscriptions(ctx, topicSubscriptions);
     }
 
-    private void startProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
-            Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
-            if (CollectionUtils.isEmpty(sharedSubscriptionTopicFilters)) {
-                return;
-            }
-            ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(sharedSubscriptionTopicFilters);
-            DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
-                if (validationSuccess) {
-                    applicationPersistenceProcessor.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
-                } else {
-                    log.warn("Validation of shared subscriptions failed: {}", sharedSubscriptionTopicFilters);
-                }
-            }, throwable -> log.error("Failed to validate shared subscriptions {}", sharedSubscriptionTopicFilters, throwable));
+    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+        if (!ctx.getSessionInfo().isPersistent()) {
+            log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+            return;
         }
+        Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
+        if (CollectionUtils.isEmpty(sharedSubscriptionTopicFilters)) {
+            log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            return;
+        }
+        ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+        DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
+            if (validationSuccess) {
+                msgPersistenceManager.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+            } else {
+                log.warn("Validation of shared subscriptions failed: {}", sharedSubscriptionTopicFilters);
+            }
+        }, throwable -> log.error("Failed to validate shared subscriptions {}", sharedSubscriptionTopicFilters, throwable));
+    }
+
+    private ListenableFuture<Boolean> validateSharedSubscriptions(ClientSessionCtx ctx, Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
+        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
+            return validateSharedSubscriptions(sharedSubscriptionTopicFilters);
+        }
+        return Futures.immediateFuture(true);
     }
 
     private ListenableFuture<Boolean> validateSharedSubscriptions(Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
@@ -123,7 +133,7 @@ public class MqttSubscribeHandler {
                 .stream()
                 .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
                 .collect(Collectors.groupingBy(subscription ->
-                        new SharedSubscriptionTopicFilter(subscription.getTopic(), subscription.getShareName())))
+                        new SharedSubscriptionTopicFilter(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
                 .keySet();
     }
 

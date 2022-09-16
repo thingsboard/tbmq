@@ -13,28 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription.shared;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 
-@Data
+import java.util.Set;
+
+@Slf4j
+@Getter
 @RequiredArgsConstructor
-@EqualsAndHashCode(exclude = "qos")
-public class SharedSubscriptionTopicFilter {
+public class SharedSubscriptionEventMsg implements TbActorMsg {
 
-    private final String topicFilter;
-    private final String shareName;
-    private final int qos;
+    private final Set<SharedSubscriptionTopicFilter> subscriptions;
 
-    public SharedSubscriptionTopicFilter(String topicFilter, String shareName) {
-        this.topicFilter = topicFilter;
-        this.shareName = shareName;
-        this.qos = 0;
-    }
-
-    public String getKey() {
-        return "ss_" + this.shareName + "_" + this.topicFilter;
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.SHARED_SUBSCRIPTION_EVENT_MSG;
     }
 }

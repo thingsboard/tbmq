@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 @Getter
 @AllArgsConstructor
@@ -27,13 +27,13 @@ public class Subscription {
 
     private final String topicFilter;
     private final int mqttQoSValue;
-    private final SessionInfo sessionInfo;
+    private final ClientSession clientSession;
     private final String shareName;
 
-    public Subscription(String topicFilter, int mqttQoSValue, SessionInfo sessionInfo) {
+    public Subscription(String topicFilter, int mqttQoSValue, ClientSession clientSession) {
         this.topicFilter = topicFilter;
         this.mqttQoSValue = mqttQoSValue;
-        this.sessionInfo = sessionInfo;
+        this.clientSession = clientSession;
         this.shareName = null;
     }
 }

@@ -15,10 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Set;
 
 public interface DevicePersistenceProcessor {
     void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
+
+    void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions);
 
     void stopProcessingPersistedMessages(String clientId);
 

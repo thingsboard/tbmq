@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
@@ -64,8 +64,8 @@ class MqttSubscribeHandlerTest {
     AuthorizationRuleService authorizationRuleService;
     RetainedMsgService retainedMsgService;
     PublishMsgDeliveryService publishMsgDeliveryService;
-    ApplicationPersistenceProcessor applicationPersistenceProcessor;
     ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    MsgPersistenceManager msgPersistenceManager;
     MqttSubscribeHandler mqttSubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -78,11 +78,11 @@ class MqttSubscribeHandlerTest {
         authorizationRuleService = mock(AuthorizationRuleService.class);
         retainedMsgService = mock(RetainedMsgService.class);
         publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
-        applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
         applicationSharedSubscriptionService = mock(ApplicationSharedSubscriptionService.class);
+        msgPersistenceManager = mock(MsgPersistenceManager.class);
         mqttSubscribeHandler = spy(new MqttSubscribeHandler(mqttMessageGenerator, clientSubscriptionService, topicValidationService,
                 authorizationRuleService, retainedMsgService, publishMsgDeliveryService,
-                applicationPersistenceProcessor, applicationSharedSubscriptionService));
+                applicationSharedSubscriptionService, msgPersistenceManager));
 
         ctx = mock(ClientSessionCtx.class);
         when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));

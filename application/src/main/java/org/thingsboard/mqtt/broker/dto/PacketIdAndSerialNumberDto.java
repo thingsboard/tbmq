@@ -13,28 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription.shared;
+package org.thingsboard.mqtt.broker.dto;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Data
+@Getter
 @RequiredArgsConstructor
-@EqualsAndHashCode(exclude = "qos")
-public class SharedSubscriptionTopicFilter {
+public class PacketIdAndSerialNumberDto {
 
-    private final String topicFilter;
-    private final String shareName;
-    private final int qos;
+    private final int packetId;
+    private final long serialNumber;
 
-    public SharedSubscriptionTopicFilter(String topicFilter, String shareName) {
-        this.topicFilter = topicFilter;
-        this.shareName = shareName;
-        this.qos = 0;
-    }
-
-    public String getKey() {
-        return "ss_" + this.shareName + "_" + this.topicFilter;
-    }
 }
