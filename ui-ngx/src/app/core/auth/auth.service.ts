@@ -37,7 +37,6 @@ import { AuthUser } from '@shared/models/user.model';
 import { UtilsService } from '@core/services/utils.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { OAuth2ClientInfo, PlatformType } from '@shared/models/oauth2.models';
 import { isMobileApp } from '@core/utils';
 
 @Injectable({
@@ -59,7 +58,6 @@ export class AuthService {
   }
 
   redirectUrl: string;
-  oauth2Clients: Array<OAuth2ClientInfo> = null;
 
   private refreshTokenSubject: ReplaySubject<LoginResponse> = null;
   private jwtHelper = new JwtHelperService();
@@ -192,17 +190,6 @@ export class AuthService {
         this.router.navigateByUrl(url);
       });
     }
-  }
-
-  public loadOAuth2Clients(): Observable<Array<OAuth2ClientInfo>> {
-    const url = '/api/noauth/oauth2Clients?platform=' + PlatformType.WEB;
-    return this.http.post<Array<OAuth2ClientInfo>>(url,
-      null, defaultHttpOptions()).pipe(
-      catchError(err => of([])),
-      tap((OAuth2Clients) => {
-        this.oauth2Clients = OAuth2Clients;
-      })
-    );
   }
 
   public defaultUrl(isAuthenticated: boolean, authState?: AuthState, path?: string, params?: any): UrlTree {

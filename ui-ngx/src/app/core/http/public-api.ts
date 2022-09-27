@@ -15,7 +15,6 @@
 ///
 
 export * from './http-utils';
-export * from './oauth2.service';
 export * from './mqtt-client-credentials.service';
 export * from './mqtt-client-session.service';
 export * from './mqtt-admin.service';

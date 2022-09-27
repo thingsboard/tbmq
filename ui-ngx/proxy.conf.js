@@ -30,14 +30,6 @@ const PROXY_CONFIG = {
     "target": forwardUrl,
     "secure": false,
   },
-  "/oauth2": {
-    "target": forwardUrl,
-    "secure": false,
-  },
-  "/login/oauth2": {
-    "target": forwardUrl,
-    "secure": false,
-  },
   "/api/ws": {
     "target": wsForwardUrl,
     "ws": true,

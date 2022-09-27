@@ -22,4 +22,3 @@ export * from './constants';
 export * from './entity-type.models';
 export * from './login.models';
 export * from './material.models';
-export * from './oauth2.models';
