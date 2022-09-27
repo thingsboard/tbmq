@@ -50,7 +50,7 @@
         <protobuf.version>3.17.2</protobuf.version>
         <grpc.version>1.42.1</grpc.version>
         <lombok.version>1.18.18</lombok.version>
-        <netty.version>4.1.72.Final</netty.version>
+        <netty.version>4.1.75.Final</netty.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
         <hsqldb.version>2.5.0</hsqldb.version>
         <dbunit.version>2.7.2</dbunit.version>
@@ -77,7 +77,7 @@
         <bouncycastle.version>1.67</bouncycastle.version>
         <springfox-swagger.version>2.6.1</springfox-swagger.version>
         <springfox-swagger-ui-rfc6570.version>1.0.0</springfox-swagger-ui-rfc6570.version>
-        <micrometer.version>1.5.2</micrometer.version>
+        <micrometer.version>1.8.3</micrometer.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
