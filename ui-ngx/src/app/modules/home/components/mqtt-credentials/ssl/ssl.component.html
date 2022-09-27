@@ -18,7 +18,7 @@
 <section [formGroup]="credentialsMqttFormGroup">
   <mat-form-field class="mat-block">
     <mat-label translate>mqtt-client-credentials.parent-certificate-common-name</mat-label>
-    <input matInput formControlName="parentCertCommonName">
+    <input required matInput formControlName="parentCertCommonName">
     <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
       {{ 'mqtt-client-credentials.parent-certificate-common-name-required' | translate }}
     </mat-error>
