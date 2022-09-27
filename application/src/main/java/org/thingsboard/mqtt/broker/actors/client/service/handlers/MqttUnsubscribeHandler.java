@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
@@ -61,7 +61,7 @@ public class MqttUnsubscribeHandler {
 
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
         if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
-            Set<SharedSubscriptionTopicFilter> subscriptionTopicFilters = collectUniqueSharedSubscriptions(topics);
+            Set<TopicSharedSubscription> subscriptionTopicFilters = collectUniqueSharedSubscriptions(topics);
             if (CollectionUtils.isEmpty(subscriptionTopicFilters)) {
                 return;
             }
@@ -69,11 +69,11 @@ public class MqttUnsubscribeHandler {
         }
     }
 
-    Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<String> topics) {
+    Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<String> topics) {
         return topics
                 .stream()
                 .filter(NettyMqttConverter::isSharedTopic)
-                .map(topic -> new SharedSubscriptionTopicFilter(
+                .map(topic -> new TopicSharedSubscription(
                         NettyMqttConverter.getTopicName(topic),
                         NettyMqttConverter.getShareName(topic)))
                 .collect(Collectors.toSet());

@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.StubTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Map;
 import java.util.Queue;
@@ -74,7 +74,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
         return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
     }
 
@@ -98,7 +98,7 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
-    public void clearSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+    public void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
 
     }
 

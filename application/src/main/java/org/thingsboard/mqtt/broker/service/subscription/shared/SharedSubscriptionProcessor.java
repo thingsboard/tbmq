@@ -21,6 +21,6 @@ public interface SharedSubscriptionProcessor {
 
     Subscription processRoundRobin(SharedSubscription sharedSubscription);
 
-    void unsubscribe(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter);
+    void unsubscribe(TopicSharedSubscription topicSharedSubscription);
 
 }

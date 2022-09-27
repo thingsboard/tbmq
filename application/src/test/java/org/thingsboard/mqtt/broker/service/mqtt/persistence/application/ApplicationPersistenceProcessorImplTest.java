@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.ArrayList;
@@ -88,7 +88,7 @@ public class ApplicationPersistenceProcessorImplTest {
 
     @Test
     public void testCollectCancelledJobs() {
-        Set<SharedSubscriptionTopicFilter> subscriptionTopicFilters = Set.of(
+        Set<TopicSharedSubscription> subscriptionTopicFilters = Set.of(
                 newSharedSubscriptionTopicFilter("test/1"),
                 newSharedSubscriptionTopicFilter("test/2"),
                 newSharedSubscriptionTopicFilter("test/3")
@@ -106,7 +106,7 @@ public class ApplicationPersistenceProcessorImplTest {
         Assert.assertEquals(3, cancelledJobs.size());
         cancelledJobs.forEach(job -> Assert.assertTrue(job.isInterrupted()));
 
-        List<SharedSubscriptionTopicFilter> cancelledSubscriptions = cancelledJobs.stream()
+        List<TopicSharedSubscription> cancelledSubscriptions = cancelledJobs.stream()
                 .map(ApplicationSharedSubscriptionJob::getSubscription)
                 .collect(Collectors.toList());
         Assert.assertTrue(cancelledSubscriptions.containsAll(
@@ -124,7 +124,7 @@ public class ApplicationPersistenceProcessorImplTest {
         return new ApplicationSharedSubscriptionJob(newSharedSubscriptionTopicFilter(topicFilter), Futures.immediateFuture(null), false);
     }
 
-    private SharedSubscriptionTopicFilter newSharedSubscriptionTopicFilter(String topicFilter) {
-        return new SharedSubscriptionTopicFilter(topicFilter, null);
+    private TopicSharedSubscription newSharedSubscriptionTopicFilter(String topicFilter) {
+        return new TopicSharedSubscription(topicFilter, null);
     }
 }

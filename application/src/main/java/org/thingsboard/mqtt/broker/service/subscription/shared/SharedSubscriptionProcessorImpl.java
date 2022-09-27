@@ -32,21 +32,21 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProcessor {
 
-    private final ConcurrentMap<SharedSubscriptionTopicFilter, SharedSubscriptionIterator> sharedSubscriptionIteratorsMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptionIterator> sharedSubscriptionIteratorsMap = new ConcurrentHashMap<>();
 
     @Override
     public Subscription processRoundRobin(SharedSubscription sharedSubscription) {
-        SharedSubscriptionTopicFilter key = sharedSubscription.getSharedSubscriptionTopicFilter();
+        TopicSharedSubscription key = sharedSubscription.getTopicSharedSubscription();
         Iterator<Subscription> iterator = getIterator(key, sharedSubscription);
         return getOneSubscription(iterator);
     }
 
     @Override
-    public void unsubscribe(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
-        sharedSubscriptionIteratorsMap.remove(sharedSubscriptionTopicFilter);
+    public void unsubscribe(TopicSharedSubscription topicSharedSubscription) {
+        sharedSubscriptionIteratorsMap.remove(topicSharedSubscription);
     }
 
-    private Iterator<Subscription> getIterator(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
+    private Iterator<Subscription> getIterator(TopicSharedSubscription key, SharedSubscription sharedSubscription) {
         if (sharedSubscriptionIteratorsMap.containsKey(key)) {
             SharedSubscriptionIterator subscriptionIterator = sharedSubscriptionIteratorsMap.get(key);
             if (subscriptionIterator.getSharedSubscription().equals(sharedSubscription)) {
@@ -59,7 +59,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
         }
     }
 
-    private Iterator<Subscription> createIteratorAndPutToMap(SharedSubscriptionTopicFilter key, SharedSubscription sharedSubscription) {
+    private Iterator<Subscription> createIteratorAndPutToMap(TopicSharedSubscription key, SharedSubscription sharedSubscription) {
         Iterator<Subscription> iterator = createIterator(sharedSubscription.getSubscriptions());
         sharedSubscriptionIteratorsMap.put(key, new SharedSubscriptionIterator(sharedSubscription, iterator));
         return iterator;

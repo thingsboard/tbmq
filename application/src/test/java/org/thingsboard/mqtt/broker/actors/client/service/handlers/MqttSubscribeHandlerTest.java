@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.nio.charset.StandardCharsets;
@@ -182,7 +182,7 @@ class MqttSubscribeHandlerTest {
                 getTopicSubscription("topic/+", 1, "g1"),
                 getTopicSubscription("topic/#", 1, "g2")
         );
-        Set<SharedSubscriptionTopicFilter> test = mqttSubscribeHandler.collectUniqueSharedSubscriptions(topicSubscriptions);
+        Set<TopicSharedSubscription> test = mqttSubscribeHandler.collectUniqueSharedSubscriptions(topicSubscriptions);
         assertEquals(5, test.size());
     }
 

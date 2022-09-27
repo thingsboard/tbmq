@@ -41,7 +41,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -140,7 +140,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
         log.trace("Creating SharedApplicationProcessorStats, clientId - {}.", clientId);
         if (applicationProcessorStatsEnabled) {
             var compoundClientId = getCompoundClientId(clientId, subscription);
@@ -157,8 +157,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
     }
 
-    private String getCompoundClientId(String clientId, SharedSubscriptionTopicFilter subscription) {
-        return clientId + "_" + subscription.getShareName() + "_" + subscription.getTopicFilter();
+    private String getCompoundClientId(String clientId, TopicSharedSubscription subscription) {
+        return clientId + "_" + subscription.getShareName() + "_" + subscription.getTopic();
     }
 
     @Override
@@ -196,7 +196,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void clearSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription) {
+    public void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
         log.trace("Clearing SharedApplicationProcessorStats, clientId - {}, subscription - {}.", clientId, subscription);
 
         var compoundClientId = getCompoundClientId(clientId, subscription);

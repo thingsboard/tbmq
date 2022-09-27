@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Set;
 
@@ -29,7 +29,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SharedSubscriptionEventMsg implements TbActorMsg {
 
-    private final Set<SharedSubscriptionTopicFilter> subscriptions;
+    private final Set<TopicSharedSubscription> subscriptions;
 
     @Override
     public MsgType getMsgType() {

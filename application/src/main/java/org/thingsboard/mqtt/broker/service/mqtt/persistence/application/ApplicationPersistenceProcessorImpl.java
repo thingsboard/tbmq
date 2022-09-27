@@ -56,7 +56,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -91,7 +91,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ConcurrentMap<String, Set<ApplicationSharedSubscriptionCtx>> sharedSubscriptionsPackProcessingCtxMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, List<ApplicationSharedSubscriptionJob>> sharedSubscriptionsProcessingJobs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ApplicationPersistedMsgCtx> persistedMsgCtxMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ConcurrentMap<SharedSubscriptionTopicFilter, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>>
+    private final ConcurrentMap<String, ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>>>
             sharedSubscriptionConsumers = new ConcurrentHashMap<>();
 
     private final ApplicationMsgAcknowledgeStrategyFactory acknowledgeStrategyFactory;
@@ -221,14 +221,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         String clientId = clientSessionCtx.getClientId();
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing shared subscriptions persisted messages");
         log.debug("[{}][{}] Starting persisted shared subscriptions processing.", clientId, subscriptions);
 
         ApplicationPersistedMsgCtx persistedMsgCtx = persistedMsgCtxMap.getOrDefault(clientId, new ApplicationPersistedMsgCtx());
 
-        for (SharedSubscriptionTopicFilter subscription : subscriptions) {
+        for (TopicSharedSubscription subscription : subscriptions) {
             TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initSharedConsumerIfNotPresent(clientId, subscription);
             if (consumer == null) {
                 continue;
@@ -334,7 +334,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void cachePackProcessingCtx(String clientId,
-                                        SharedSubscriptionTopicFilter subscription,
+                                        TopicSharedSubscription subscription,
                                         ApplicationPackProcessingCtx packProcessingCtx) {
         Set<ApplicationSharedSubscriptionCtx> contexts =
                 sharedSubscriptionsPackProcessingCtxMap.computeIfAbsent(clientId, s -> Sets.newConcurrentHashSet());
@@ -349,8 +349,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumerIfNotPresent(String clientId,
-                                                                                                             SharedSubscriptionTopicFilter subscription) {
-        ConcurrentMap<SharedSubscriptionTopicFilter, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> sharedSubsToConsumerMap =
+                                                                                                             TopicSharedSubscription subscription) {
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> sharedSubsToConsumerMap =
                 sharedSubscriptionConsumers.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
         if (sharedSubsToConsumerMap.containsKey(subscription)) {
             log.info("[{}][{}] Consumer is already initialized", clientId, subscription);
@@ -363,10 +363,10 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return consumer;
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, SharedSubscriptionTopicFilter subscription) {
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
                 .createConsumerForSharedTopic(
-                        MqttApplicationClientUtil.getKafkaTopic(subscription.getTopicFilter()),
+                        MqttApplicationClientUtil.getKafkaTopic(subscription.getTopic()),
                         MqttApplicationClientUtil.getConsumerGroup(subscription),
                         getSharedConsumerId(clientId));
         consumer.subscribe();
@@ -427,7 +427,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void stopSharedSubscriptionConsumers(String clientId) {
-        ConcurrentMap<SharedSubscriptionTopicFilter, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> map =
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> map =
                 sharedSubscriptionConsumers.remove(clientId);
         if (!CollectionUtils.isEmpty(map)) {
             map.values().forEach(TbQueueConsumer::unsubscribeAndClose);
@@ -479,7 +479,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
-    public void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+    public void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         var clientId = clientSessionCtx.getClientId();
         log.debug("[{}] Stopping processing shared subscriptions.", clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Stopping processing shared subscriptions");
@@ -488,8 +488,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         removeSharedSubscriptionContexts(subscriptions, clientId);
     }
 
-    private void stopAndRemoveSharedSubscriptionConsumers(Set<SharedSubscriptionTopicFilter> subscriptions, String clientId) {
-        ConcurrentMap<SharedSubscriptionTopicFilter, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> sharedSubsToConsumerMap =
+    private void stopAndRemoveSharedSubscriptionConsumers(Set<TopicSharedSubscription> subscriptions, String clientId) {
+        ConcurrentMap<TopicSharedSubscription, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>>> sharedSubsToConsumerMap =
                 sharedSubscriptionConsumers.get(clientId);
         if (!CollectionUtils.isEmpty(sharedSubsToConsumerMap)) {
             sharedSubsToConsumerMap.forEach((subscription, consumer) -> {
@@ -501,14 +501,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private void removeSharedSubscriptionContexts(Set<SharedSubscriptionTopicFilter> subscriptions, String clientId) {
+    private void removeSharedSubscriptionContexts(Set<TopicSharedSubscription> subscriptions, String clientId) {
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientId);
         if (!CollectionUtils.isEmpty(contexts)) {
             contexts.removeIf(ctx -> subscriptions.contains(ctx.getSubscription()));
         }
     }
 
-    private void stopAndRemoveSharedSubscriptionJobs(Set<SharedSubscriptionTopicFilter> subscriptions, String clientId) {
+    private void stopAndRemoveSharedSubscriptionJobs(Set<TopicSharedSubscription> subscriptions, String clientId) {
         List<ApplicationSharedSubscriptionJob> jobs = sharedSubscriptionsProcessingJobs.get(clientId);
         if (!CollectionUtils.isEmpty(jobs)) {
             try {
@@ -519,7 +519,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    List<ApplicationSharedSubscriptionJob> collectCancelledJobs(Set<SharedSubscriptionTopicFilter> subscriptions,
+    List<ApplicationSharedSubscriptionJob> collectCancelledJobs(Set<TopicSharedSubscription> subscriptions,
                                                                 String clientId,
                                                                 List<ApplicationSharedSubscriptionJob> jobs) {
         return jobs.stream()
@@ -641,13 +641,13 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx,
-                         String clientId, SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
+                         String clientId, TopicSharedSubscription topicSharedSubscription) {
         submitStrategy.process(msg -> {
             switch (msg.getPacketType()) {
                 case PUBLISH:
                     log.debug("[{}] Sending Pub msg from processing ctx: {}", clientId, msg.getPacketId());
                     PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                    int minQoSValue = getMinQoSValue(sharedSubscriptionTopicFilter, publishMsg);
+                    int minQoSValue = getMinQoSValue(topicSharedSubscription, publishMsg);
                     publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
                     break;
                 case PUBREL:
@@ -659,7 +659,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         });
     }
 
-    private int getMinQoSValue(SharedSubscriptionTopicFilter subscription, PublishMsg publishMsg) {
+    private int getMinQoSValue(TopicSharedSubscription subscription, PublishMsg publishMsg) {
         return subscription == null ? publishMsg.getQosLevel() :
                 Math.min(subscription.getQos(), publishMsg.getQosLevel());
     }

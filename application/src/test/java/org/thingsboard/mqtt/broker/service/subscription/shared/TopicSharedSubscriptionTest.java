@@ -19,16 +19,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class SharedSubscriptionTopicFilterTest {
+class TopicSharedSubscriptionTest {
 
     @Test
     void testSharedSubscriptionTopicFilterEquals() {
-        SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter1 = getSubscriptionTopicFilter(0);
-        SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter2 = getSubscriptionTopicFilter(1);
-        assertEquals(sharedSubscriptionTopicFilter1, sharedSubscriptionTopicFilter2);
+        TopicSharedSubscription topicSharedSubscription1 = getSubscriptionTopicFilter(0);
+        TopicSharedSubscription topicSharedSubscription2 = getSubscriptionTopicFilter(1);
+        assertEquals(topicSharedSubscription1, topicSharedSubscription2);
     }
 
-    private SharedSubscriptionTopicFilter getSubscriptionTopicFilter(int qos) {
-        return new SharedSubscriptionTopicFilter("topicFilter", "shareName", qos);
+    private TopicSharedSubscription getSubscriptionTopicFilter(int qos) {
+        return new TopicSharedSubscription("topicFilter", "shareName", qos);
     }
 }

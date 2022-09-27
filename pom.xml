@@ -48,6 +48,7 @@
         <guava.version>30.0-jre</guava.version>
         <curator.version>4.2.0</curator.version>
         <protobuf.version>3.17.2</protobuf.version>
+        <grpc.version>1.42.1</grpc.version>
         <lombok.version>1.18.18</lombok.version>
         <netty.version>4.1.72.Final</netty.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
@@ -421,8 +422,6 @@
                                     <task>build</task>
                                     <task>buildDeb</task>
                                     <task>buildRpm</task>
-                                    <task>renameDeb</task>
-                                    <task>renameRpm</task>
                                 </tasks>
                                 <args>
                                     <arg>-PpackagingDir=${main.dir}/packaging</arg>
@@ -593,7 +592,7 @@
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
-                    <version>0.5.0</version>
+                    <version>0.6.1</version>
                     <configuration>
                         <!--
                           The version of protoc must match protobuf-java. If you don't depend on
@@ -603,7 +602,7 @@
                         <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
                         </protocArtifact>
                         <pluginId>grpc-java</pluginId>
-                        <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.0:exe:${os.detected.classifier}
+                        <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
                         </pluginArtifact>
                     </configuration>
                     <executions>

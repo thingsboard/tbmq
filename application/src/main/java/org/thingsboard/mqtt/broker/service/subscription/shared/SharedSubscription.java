@@ -29,7 +29,7 @@ import java.util.List;
 @EqualsAndHashCode
 public class SharedSubscription {
 
-    private final SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter;
+    private final TopicSharedSubscription topicSharedSubscription;
     private final List<Subscription> subscriptions;
 
 }

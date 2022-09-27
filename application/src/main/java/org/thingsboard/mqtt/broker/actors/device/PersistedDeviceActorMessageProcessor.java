@@ -43,7 +43,7 @@ import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -106,14 +106,14 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
         PacketIdAndSerialNumber lastPacketIdAndSerialNumber = getLastPacketIdAndSerialNumber();
 
-        for (SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter : msg.getSubscriptions()) {
-            String key = sharedSubscriptionTopicFilter.getKey();
+        for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
+            String key = topicSharedSubscription.getKey();
             List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(key);
             if (CollectionUtils.isEmpty(persistedMessages)) {
                 continue;
             }
 
-            updateMessagesBeforePublish(lastPacketIdAndSerialNumber, sharedSubscriptionTopicFilter, persistedMessages);
+            updateMessagesBeforePublish(lastPacketIdAndSerialNumber, topicSharedSubscription, persistedMessages);
 
             try {
                 persistedMessages.forEach(this::deliverPersistedMsg);
@@ -127,22 +127,22 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         serialNumberService.saveLastSerialNumbers(Map.of(clientId, lastPacketIdAndSerialNumber));
     }
 
-    private void updateMessagesBeforePublish(PacketIdAndSerialNumber lastPacketIdAndSerialNumber, SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter,
+    private void updateMessagesBeforePublish(PacketIdAndSerialNumber lastPacketIdAndSerialNumber, TopicSharedSubscription topicSharedSubscription,
                                              List<DevicePublishMsg> persistedMessages) {
         for (DevicePublishMsg devicePublishMessage : persistedMessages) {
             PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getAndIncrementPacketIdAndSerialNumber(lastPacketIdAndSerialNumber);
 
             sentPacketIdsFromSharedSubscription.put(packetIdAndSerialNumberDto.getPacketId(),
-                    newSharedSubscriptionPublishPacket(sharedSubscriptionTopicFilter.getKey(), devicePublishMessage.getPacketId()));
+                    newSharedSubscriptionPublishPacket(topicSharedSubscription.getKey(), devicePublishMessage.getPacketId()));
 
             devicePublishMessage.setPacketId(packetIdAndSerialNumberDto.getPacketId());
             devicePublishMessage.setSerialNumber(packetIdAndSerialNumberDto.getSerialNumber());
-            devicePublishMessage.setQos(getMinQoSValue(sharedSubscriptionTopicFilter, devicePublishMessage));
+            devicePublishMessage.setQos(getMinQoSValue(topicSharedSubscription, devicePublishMessage));
         }
     }
 
-    private int getMinQoSValue(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter, DevicePublishMsg devicePublishMessage) {
-        return Math.min(sharedSubscriptionTopicFilter.getQos(), devicePublishMessage.getQos());
+    private int getMinQoSValue(TopicSharedSubscription topicSharedSubscription, DevicePublishMsg devicePublishMessage) {
+        return Math.min(topicSharedSubscription.getQos(), devicePublishMessage.getQos());
     }
 
     private PacketIdAndSerialNumber getLastPacketIdAndSerialNumber() {

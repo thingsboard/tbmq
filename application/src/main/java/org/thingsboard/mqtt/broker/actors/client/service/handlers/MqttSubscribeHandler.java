@@ -41,7 +41,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
@@ -88,34 +88,34 @@ public class MqttSubscribeHandler {
             log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
             return;
         }
-        Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters = collectUniqueSharedSubscriptions(topicSubscriptions);
-        if (CollectionUtils.isEmpty(sharedSubscriptionTopicFilters)) {
+        Set<TopicSharedSubscription> topicSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
+        if (CollectionUtils.isEmpty(topicSharedSubscriptions)) {
             log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
             return;
         }
-        ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+        ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, topicSharedSubscriptions);
         DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
             if (validationSuccess) {
-                msgPersistenceManager.startProcessingSharedSubscriptions(ctx, sharedSubscriptionTopicFilters);
+                msgPersistenceManager.startProcessingSharedSubscriptions(ctx, topicSharedSubscriptions);
             } else {
-                log.warn("Validation of shared subscriptions failed: {}", sharedSubscriptionTopicFilters);
+                log.warn("Validation of shared subscriptions failed: {}", topicSharedSubscriptions);
             }
-        }, throwable -> log.error("Failed to validate shared subscriptions {}", sharedSubscriptionTopicFilters, throwable));
+        }, throwable -> log.error("Failed to validate shared subscriptions {}", topicSharedSubscriptions, throwable));
     }
 
-    private ListenableFuture<Boolean> validateSharedSubscriptions(ClientSessionCtx ctx, Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
+    private ListenableFuture<Boolean> validateSharedSubscriptions(ClientSessionCtx ctx, Set<TopicSharedSubscription> topicSharedSubscriptions) {
         if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
-            return validateSharedSubscriptions(sharedSubscriptionTopicFilters);
+            return validateSharedSubscriptions(topicSharedSubscriptions);
         }
         return Futures.immediateFuture(true);
     }
 
-    private ListenableFuture<Boolean> validateSharedSubscriptions(Set<SharedSubscriptionTopicFilter> sharedSubscriptionTopicFilters) {
-        List<ListenableFuture<Boolean>> futures = new ArrayList<>(sharedSubscriptionTopicFilters.size());
-        for (SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter : sharedSubscriptionTopicFilters) {
-            futures.add(Futures.transform(findSharedSubscriptionByTopic(sharedSubscriptionTopicFilter), sharedSubscription -> {
+    private ListenableFuture<Boolean> validateSharedSubscriptions(Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        List<ListenableFuture<Boolean>> futures = new ArrayList<>(topicSharedSubscriptions.size());
+        for (TopicSharedSubscription topicSharedSubscription : topicSharedSubscriptions) {
+            futures.add(Futures.transform(findSharedSubscriptionByTopic(topicSharedSubscription), sharedSubscription -> {
                 if (sharedSubscription == null) {
-                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", sharedSubscriptionTopicFilter.getTopicFilter());
+                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", topicSharedSubscription.getTopic());
                     return false;
                 }
                 return true;
@@ -124,16 +124,16 @@ public class MqttSubscribeHandler {
         return Futures.transform(Futures.allAsList(futures), list -> list.stream().allMatch(bool -> bool), MoreExecutors.directExecutor());
     }
 
-    private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(SharedSubscriptionTopicFilter sharedSubscriptionTopicFilter) {
-        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(sharedSubscriptionTopicFilter.getTopicFilter());
+    private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(TopicSharedSubscription topicSharedSubscription) {
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(topicSharedSubscription.getTopic());
     }
 
-    Set<SharedSubscriptionTopicFilter> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
+    Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
                 .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
                 .collect(Collectors.groupingBy(subscription ->
-                        new SharedSubscriptionTopicFilter(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
+                        new TopicSharedSubscription(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
                 .keySet();
     }
 

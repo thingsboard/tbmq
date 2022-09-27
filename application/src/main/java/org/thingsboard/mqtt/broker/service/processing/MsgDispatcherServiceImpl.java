@@ -43,7 +43,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import javax.annotation.PostConstruct;
@@ -196,7 +196,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private Subscription getSubscription(SharedSubscription sharedSubscription, int qos) {
         Subscription anyActive = findAnyConnectedSubscription(sharedSubscription.getSubscriptions());
         if (anyActive == null) {
-            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getSharedSubscriptionTopicFilter());
+            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getTopicSharedSubscription());
             return createDummySubscription(sharedSubscription, qos);
         } else {
             SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
@@ -206,17 +206,17 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
         return new Subscription(
-                sharedSubscription.getSharedSubscriptionTopicFilter().getTopicFilter(),
+                sharedSubscription.getTopicSharedSubscription().getTopic(),
                 qos,
                 createDummyClientSession(sharedSubscription),
-                sharedSubscription.getSharedSubscriptionTopicFilter().getShareName()
+                sharedSubscription.getTopicSharedSubscription().getShareName()
         );
     }
 
     private ClientSession createDummyClientSession(SharedSubscription sharedSubscription) {
         return new ClientSession(false,
                 SessionInfo.builder()
-                        .clientInfo(ClientSessionInfoFactory.getClientInfo(sharedSubscription.getSharedSubscriptionTopicFilter().getKey()))
+                        .clientInfo(ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey()))
                         .persistent(true)
                         .build());
     }
@@ -232,7 +232,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     List<SharedSubscription> toSharedSubscriptionList(List<Subscription> sharedSubscriptions) {
         return sharedSubscriptions.stream()
                 .collect(Collectors.groupingBy(subscription ->
-                        new SharedSubscriptionTopicFilter(subscription.getTopicFilter(), subscription.getShareName(), subscription.getMqttQoSValue())))
+                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getMqttQoSValue())))
                 .entrySet().stream()
                 .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());

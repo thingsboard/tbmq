@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 public class MqttApplicationClientUtil {
 
@@ -41,7 +41,7 @@ public class MqttApplicationClientUtil {
                 .replaceAll("#", MULTI_LVL_WILDCARD_ABBREV);
     }
 
-    public static String getConsumerGroup(SharedSubscriptionTopicFilter subscription) {
-        return SHARED_CONSUMER_GROUP_PREFIX + subscription.getShareName() + "-" + getKafkaTopic(subscription.getTopicFilter());
+    public static String getConsumerGroup(TopicSharedSubscription subscription) {
+        return SHARED_CONSUMER_GROUP_PREFIX + subscription.getShareName() + "-" + getKafkaTopic(subscription.getTopic());
     }
 }

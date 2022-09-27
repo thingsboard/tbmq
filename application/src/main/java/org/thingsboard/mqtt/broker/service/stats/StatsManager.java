@@ -21,7 +21,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +40,7 @@ public interface StatsManager {
 
     ApplicationProcessorStats createApplicationProcessorStats(String clientId);
 
-    ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription);
+    ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription);
 
     ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats();
 
@@ -50,7 +50,7 @@ public interface StatsManager {
 
     void clearSharedApplicationProcessorStats(String clientId);
 
-    void clearSharedApplicationProcessorStats(String clientId, SharedSubscriptionTopicFilter subscription);
+    void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription);
 
     AtomicInteger createSubscriptionSizeCounter();
 

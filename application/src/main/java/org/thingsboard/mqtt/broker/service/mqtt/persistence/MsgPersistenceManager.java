@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
@@ -37,7 +37,7 @@ public interface MsgPersistenceManager {
 
     void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent);
 
-    void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions);
+    void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
 
     void saveAwaitingQoS2Packets(ClientSessionCtx clientSessionCtx);
 

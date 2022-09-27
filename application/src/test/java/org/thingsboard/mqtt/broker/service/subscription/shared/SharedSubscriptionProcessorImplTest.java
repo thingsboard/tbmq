@@ -129,11 +129,11 @@ class SharedSubscriptionProcessorImplTest {
                 getConnectionInfo(1000, 1000));
     }
 
-    private SharedSubscriptionTopicFilter newTopicAndGroup() {
-        return new SharedSubscriptionTopicFilter("topic", "group");
+    private TopicSharedSubscription newTopicAndGroup() {
+        return new TopicSharedSubscription("topic", "group");
     }
 
     private SharedSubscription getSharedSubscription(List<Subscription> subscriptions) {
-        return new SharedSubscription(new SharedSubscriptionTopicFilter("topic", "group"), subscriptions);
+        return new SharedSubscription(new TopicSharedSubscription("topic", "group"), subscriptions);
     }
 }

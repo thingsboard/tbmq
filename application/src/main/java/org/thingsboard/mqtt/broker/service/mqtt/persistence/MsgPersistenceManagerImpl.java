@@ -33,7 +33,7 @@ import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallback
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.ArrayList;
@@ -157,7 +157,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     @Override
-    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);

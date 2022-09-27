@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -189,7 +189,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         sharedSubscriptionProcessor.unsubscribe(getSharedSubscriptionTopicFilter(topicSubscription));
     }
 
-    private SharedSubscriptionTopicFilter getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
-        return new SharedSubscriptionTopicFilter(topicSubscription.getTopic(), topicSubscription.getShareName());
+    private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
+        return new TopicSharedSubscription(topicSubscription.getTopic(), topicSubscription.getShareName());
     }
 }

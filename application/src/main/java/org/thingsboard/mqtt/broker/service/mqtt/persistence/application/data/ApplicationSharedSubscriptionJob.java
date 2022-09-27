@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.concurrent.Future;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
 @AllArgsConstructor
 public class ApplicationSharedSubscriptionJob {
 
-    private final SharedSubscriptionTopicFilter subscription;
+    private final TopicSharedSubscription subscription;
     private volatile Future<?> future;
     private volatile boolean interrupted;
 

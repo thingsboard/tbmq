@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
@@ -84,13 +84,13 @@ class MqttUnsubscribeHandlerTest {
                 "$share/g1/test/my/topic",
                 "$share/g2/test/my/topic");
 
-        Set<SharedSubscriptionTopicFilter> sharedSubscriptions = mqttUnsubscribeHandler.collectUniqueSharedSubscriptions(topics);
+        Set<TopicSharedSubscription> sharedSubscriptions = mqttUnsubscribeHandler.collectUniqueSharedSubscriptions(topics);
 
         assertEquals(3, sharedSubscriptions.size());
         assertEquals(Set.of(
-                new SharedSubscriptionTopicFilter("test/my/#", "g1"),
-                new SharedSubscriptionTopicFilter("test/my/topic", "g1"),
-                new SharedSubscriptionTopicFilter("test/my/topic", "g2")
+                new TopicSharedSubscription("test/my/#", "g1"),
+                new TopicSharedSubscription("test/my/topic", "g1"),
+                new TopicSharedSubscription("test/my/topic", "g2")
         ), sharedSubscriptions);
     }
 }

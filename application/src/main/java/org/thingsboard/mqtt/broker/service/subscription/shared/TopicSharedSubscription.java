@@ -22,19 +22,19 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor
 @EqualsAndHashCode(exclude = "qos")
-public class SharedSubscriptionTopicFilter {
+public class TopicSharedSubscription {
 
-    private final String topicFilter;
+    private final String topic;
     private final String shareName;
     private final int qos;
 
-    public SharedSubscriptionTopicFilter(String topicFilter, String shareName) {
-        this.topicFilter = topicFilter;
+    public TopicSharedSubscription(String topic, String shareName) {
+        this.topic = topic;
         this.shareName = shareName;
         this.qos = 0;
     }
 
     public String getKey() {
-        return "ss_" + this.shareName + "_" + this.topicFilter;
+        return "ss_" + this.shareName + "_" + this.topic;
     }
 }

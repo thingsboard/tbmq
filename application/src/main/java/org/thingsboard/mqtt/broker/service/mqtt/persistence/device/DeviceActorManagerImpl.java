@@ -33,7 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Set;
@@ -62,7 +62,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     }
 
     @Override
-    public void notifySubscribeToSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+    public void notifySubscribeToSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         String clientId = clientSessionCtx.getClientId();
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {

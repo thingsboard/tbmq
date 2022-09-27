@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Set;
@@ -68,7 +68,7 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     @Override
-    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<SharedSubscriptionTopicFilter> subscriptions) {
+    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         deviceActorManager.notifySubscribeToSharedSubscriptions(clientSessionCtx, subscriptions);
     }
 
