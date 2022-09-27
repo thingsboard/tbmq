@@ -25,16 +25,9 @@ export interface User extends BaseData<UserId> {
   lastName: string;
   additionalInfo: any;
 }
-// TODO deaflynx what is needed?
+
 export interface AuthUser {
-  sub: string;
   scopes: string[];
   userId: string;
-  firstName: string;
-  lastName: string;
-  enabled: boolean;
-  tenantId: string;
-  customerId: string;
-  isPublic: boolean;
   authority: Authority;
 }
