@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../out-tsc/app",
-    "types": ["node", "jquery", "tooltipster", "tinycolor2", "react", "react-dom", "jstree", "raphael"]
+    "types": ["node", "jquery", "tinycolor2", "react", "react-dom", "jstree", "raphael"]
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true

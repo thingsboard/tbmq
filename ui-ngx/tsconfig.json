@@ -16,8 +16,7 @@
     "typeRoots": [
       "node_modules/@types",
       "src/typings/rawloader.typings.d.ts",
-      "src/typings/jquery.typings.d.ts",
-      "src/typings/split.js.typings.d.ts"
+      "src/typings/jquery.typings.d.ts"
     ],
     "paths": {
       "@app/*": ["src/app/*"],
@@ -39,9 +38,6 @@
       ],
       "jquery.terminal": [
         "node_modules/jquery.terminal/js/jquery.terminal.js"
-      ],
-      "tooltipster": [
-        "node_modules/tooltipster/dist/js/tooltipster.bundle.min.js"
       ],
       "jstree": [
         "node_modules/jstree/dist/jstree.min.js"

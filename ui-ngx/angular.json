@@ -35,8 +35,6 @@
             "styles": [
               "src/styles.scss",
               "node_modules/jquery.terminal/css/jquery.terminal.min.css",
-              "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
-              "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css",
               "node_modules/rc-select/assets/index.less"
             ],
             "stylePreprocessorOptions": {
@@ -46,7 +44,6 @@
             },
             "scripts": [
               "node_modules/tinycolor2/dist/tinycolor-min.js",
-              "node_modules/split.js/dist/split.min.js",
               "node_modules/systemjs/dist/system.js",
               "node_modules/marked/lib/marked.js",
               "node_modules/prismjs/prism.js",
@@ -61,7 +58,6 @@
               "react",
               "react-dom",
               "reactcss",
-              "schema-inspector",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
               "mousetrap",
@@ -75,7 +71,6 @@
               "lodash",
               "jquery",
               "jquery.terminal",
-              "tooltipster",
               "qrcode"
             ]
           },
