@@ -1639,11 +1639,6 @@
   resolved "https://registry.yarnpkg.com/@trysound/sax/-/sax-0.1.1.tgz#3348564048e7a2d7398c935d466c0414ebb6a669"
   integrity sha512-Z6DoceYb/1xSg5+e+ZlPZ9v0N16ZvZ+wYMraFue4HYrE4ttONKtsvruIRf6t9TBR0YvSOfi1hUU0fJfBLCDYow==
 
-"@types/canvas-gauges@^2.1.2":
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/@types/canvas-gauges/-/canvas-gauges-2.1.2.tgz#fb9ece324cb15ae137791ad21eb2db70e11a7210"
-  integrity sha512-oWCq0XjsTBXPtMKXoW23ORbMWguC2Fa8o5NiZVYiUoQMMrpNLKj1E+LDznlMpcib3iyWVIy+TEpc/ea6LMbW3Q==
-
 "@types/component-emitter@^1.2.10":
   version "1.2.10"
   resolved "https://registry.yarnpkg.com/@types/component-emitter/-/component-emitter-1.2.10.tgz#ef5b1589b9f16544642e473db5ea5639107ef3ea"
@@ -2103,13 +2098,6 @@ alphanum-sort@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/alphanum-sort/-/alphanum-sort-1.0.2.tgz#97a1119649b211ad33691d9f9f486a8ec9fbe0a3"
   integrity sha1-l6ERlkmyEa0zaR2fn0hqjsn74KM=
-
-angular-gridster2@~11.2.0:
-  version "11.2.0"
-  resolved "https://registry.yarnpkg.com/angular-gridster2/-/angular-gridster2-11.2.0.tgz#57239e639d16b7b1bcd6255aa8fee55151dd65d7"
-  integrity sha512-9+4Qt2/mPKAzGhhzp2Ag++WQbvr3Ry3dbfHG1XI596jpKh1ZtYvTLrh0Fn6jJEq248F1VN0xob9K9PzTH4P/2A==
-  dependencies:
-    tslib "^2.0.0"
 
 ansi-colors@4.1.1:
   version "4.1.1"
@@ -2840,11 +2828,6 @@ canonical-path@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/canonical-path/-/canonical-path-1.0.0.tgz#fcb470c23958def85081856be7a86e904f180d1d"
   integrity sha512-feylzsbDxi1gPZ1IjystzIQZagYYLvfKrSuygUCgf7z6x790VEzze5QEkdSV1U58RA7Hi0+v6fv4K54atOzATg==
-
-canvas-gauges@^2.1.7:
-  version "2.1.7"
-  resolved "https://registry.yarnpkg.com/canvas-gauges/-/canvas-gauges-2.1.7.tgz#9f8d96960a19c64879083e72e66b773ed1ec8079"
-  integrity sha512-z9cXBVTZdaUIOh32g21NU8gwxEeaxpEMvkZr9t8Y0QDbZiCDq05SJ17aIt+DM12oTJAlWGluN21D+bQ0NCv5GA==
 
 caseless@~0.12.0:
   version "0.12.0"
