@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @import '~@angular/material/theming';
-@import '~@mat-datetimepicker/core/datetimepicker/datetimepicker-theme.scss';
 @import './scss/constants';
 
 @include mat-core();
@@ -230,7 +229,6 @@ $tb-dark-theme: get-tb-dark-theme(
 
 .tb-default {
   @include angular-material-theme($tb-theme);
-  @include mat-datetimepicker-theme($tb-theme);
   @include tb-components-theme($tb-theme);
 }
 

@@ -50,7 +50,6 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
-import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { NgxDaterangepickerMd } from 'ngx-daterangepicker-material';
 import { GridsterModule } from 'angular-gridster2';
 import { FlexLayoutModule } from '@angular/flex-layout';
@@ -146,8 +145,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MatRadioModule,
     MatSlideToggleModule,
     MatDatepickerModule,
-    MatNativeDatetimeModule,
-    MatDatetimepickerModule,
     NgxDaterangepickerMd.forRoot(),
     MatSliderModule,
     MatExpansionModule,
@@ -209,8 +206,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MatRadioModule,
     MatSlideToggleModule,
     MatDatepickerModule,
-    MatNativeDatetimeModule,
-    MatDatetimepickerModule,
     NgxDaterangepickerMd,
     MatSliderModule,
     MatExpansionModule,

@@ -27,26 +27,6 @@
               "src/thingsboard.ico",
               "src/assets",
               {
-                "glob": "worker-html.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-css.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-json.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-javascript.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
                 "glob": "**/*",
                 "input": "node_modules/material-design-icons/iconfont/",
                 "output": "assets/fonts"
@@ -81,7 +61,6 @@
               "react",
               "react-dom",
               "reactcss",
-              "react-ace",
               "schema-inspector",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
