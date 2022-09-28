@@ -20,9 +20,6 @@ import { FooterComponent } from '@shared/components/footer.component';
 import { LogoComponent } from '@shared/components/logo.component';
 import { TbSnackBarComponent, ToastDirective } from '@shared/components/toast.directive';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
-import { FlowInjectionToken, NgxFlowModule } from '@flowjs/ngx-flow';
-import { NgxFlowchartModule } from 'ngx-flowchart/dist/ngx-flowchart';
-import Flow from '@flowjs/flow.js';
 
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -92,10 +89,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
   providers: [
     DatePipe,
     MillisecondsToTimeStringPipe,
-    {
-      provide: FlowInjectionToken,
-      useValue: Flow
-    },
     {
       provide: MAT_DATE_LOCALE,
       useValue: 'en-GB'
@@ -172,8 +165,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,
-    NgxFlowModule,
-    NgxFlowchartModule,
     // ngx-markdown
     MarkdownModule.forRoot({
       sanitize: SecurityContext.NONE,
@@ -237,7 +228,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,
-    NgxFlowchartModule,
     MarkdownModule,
     ConfirmDialogComponent,
     AlertDialogComponent,
