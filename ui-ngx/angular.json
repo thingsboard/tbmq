@@ -72,7 +72,6 @@
               "raf",
               "moment-timezone",
               "tinycolor2",
-              "json-schema-defaults",
               "lodash",
               "jquery",
               "jquery.terminal",
