@@ -42,7 +42,6 @@
               ]
             },
             "scripts": [
-              "node_modules/tinycolor2/dist/tinycolor-min.js",
               "node_modules/systemjs/dist/system.js",
               "node_modules/marked/lib/marked.js",
               "node_modules/prismjs/prism.js",
@@ -63,7 +62,6 @@
               "classnames",
               "raf",
               "moment-timezone",
-              "tinycolor2",
               "lodash",
               "jquery",
               "jquery.terminal"

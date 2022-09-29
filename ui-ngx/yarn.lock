@@ -1787,11 +1787,6 @@
   resolved "https://registry.yarnpkg.com/@types/source-list-map/-/source-list-map-0.1.2.tgz#0078836063ffaf17412349bba364087e0ac02ec9"
   integrity sha512-K5K+yml8LTo9bWJI/rECfIPrGgxdpeNbj+d53lwN4QjW1MCwlkhUms+gtdzigTeUyBr09+u8BwOIY3MXvHdcsA==
 
-"@types/tinycolor2@^1.4.2":
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/@types/tinycolor2/-/tinycolor2-1.4.2.tgz#721ca5c5d1a2988b4a886e35c2ffc5735b6afbdf"
-  integrity sha512-PeHg/AtdW6aaIO2a+98Xj7rWY4KC1E6yOy7AFknJQ7VXUGNrMlyxDFxJo7HqLtjQms/ZhhQX52mLVW/EX3JGOw==
-
 "@types/webpack-sources@^0.1.5":
   version "0.1.8"
   resolved "https://registry.yarnpkg.com/@types/webpack-sources/-/webpack-sources-0.1.8.tgz#078d75410435993ec8a0a2855e88706f3f751f81"
@@ -6468,20 +6463,6 @@ ngx-clipboard@^14.0.1:
     ngx-window-token ">=4.0.0"
     tslib "^2.0.0"
 
-ngx-color-picker@^11.0.0:
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/ngx-color-picker/-/ngx-color-picker-11.0.0.tgz#c1e5468505953bc579bf21014a135808820ea753"
-  integrity sha512-HyiFNPYLrCyYbFpLvZJaHC43RhjfDdFDij4pnvk9R46iH1scVtO6f2ibBgxRwBKKsT94KYvOH8wF8OrvztWdEw==
-  dependencies:
-    tslib "^2.0.0"
-
-ngx-daterangepicker-material@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/ngx-daterangepicker-material/-/ngx-daterangepicker-material-4.0.1.tgz#788c2e32eb4717629d4a0e60a60bf8d6430d8c13"
-  integrity sha512-0gY6DGU+dgYdmoAKrIJSB9xnDqBvj91Yis3II/ZJxxMfZVTG4qMMatck6w8FzdU+CYT64ArCq+Uwa6hJRHX6Nw==
-  dependencies:
-    tslib "^1.10.0"
-
 ngx-drag-drop@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ngx-drag-drop/-/ngx-drag-drop-2.0.0.tgz#65d970229964803726fb7b9af4aec24005c810c7"
@@ -9017,11 +8998,6 @@ tiny-warning@^1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/tiny-warning/-/tiny-warning-1.0.3.tgz#94a30db453df4c643d0fd566060d60a875d84754"
   integrity sha512-lBN9zLN/oAf68o3zNXYrdCt1kP8WsiGW8Oo2ka41b2IM5JL/S1CTyX1rW0mb/zSuJun0ZUrDxx4sqvYS2FWzPA==
-
-tinycolor2@^1.4.2:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/tinycolor2/-/tinycolor2-1.4.2.tgz#3f6a4d1071ad07676d7fa472e1fac40a719d8803"
-  integrity sha512-vJhccZPs965sV/L2sU4oRQVAos0pQXwsvTLkWYdqJ+a8Q5kPFzJTuOFwy7UniPli44NKQGAglksjvOcpo95aZA==
 
 tmp@0.0.30:
   version "0.0.30"
