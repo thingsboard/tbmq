@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.service.integration.TopicsIntegrationTest" level="INFO" />
+    <logger name="org.thingsboard.mqtt.broker.service.integration.TopicsIntegrationTestCase" level="INFO"/>
 
     <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl" level="TRACE" />
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE" />

@@ -37,10 +37,10 @@ import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = RetainedMsgIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = RetainedMsgIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class RetainedMsgIntegrationTest extends AbstractPubSubIntegrationTest {
+public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     public static final String TEST_RETAIN_TOPIC = "test/retain";
 

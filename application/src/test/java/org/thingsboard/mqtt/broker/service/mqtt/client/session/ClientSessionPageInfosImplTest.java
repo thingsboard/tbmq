@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -37,13 +37,13 @@ import static org.mockito.Mockito.spy;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
 @RunWith(MockitoJUnitRunner.class)
-class ClientSessionPageInfosImplTest {
+public class ClientSessionPageInfosImplTest {
 
     ClientSessionCache clientSessionCache;
     ClientSessionPageInfosImpl clientSessionPageInfos;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         clientSessionCache = mock(ClientSessionCache.class);
         clientSessionPageInfos = spy(new ClientSessionPageInfosImpl(clientSessionCache));
 
@@ -65,7 +65,7 @@ class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    void testGetClientSessionInfosWithPageSizeAndPage() {
+    public void testGetClientSessionInfosWithPageSizeAndPage() {
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(
                 new PageLink(5, 0));
         List<ShortClientSessionInfoDto> data = clientSessionInfos.getData();
@@ -76,7 +76,7 @@ class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    void testGetClientSessionInfosWithPageSizePageAndTextSearch() {
+    public void testGetClientSessionInfosWithPageSizePageAndTextSearch() {
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(
                 new PageLink(100, 0, "test"));
         List<ShortClientSessionInfoDto> data = clientSessionInfos.getData();
@@ -87,7 +87,7 @@ class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    void testGetClientSessionInfosWithPageLink() {
+    public void testGetClientSessionInfosWithPageLink() {
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(
                 new PageLink(100, 0, null, new SortOrder("clientId")));
         List<ShortClientSessionInfoDto> data = clientSessionInfos.getData();
@@ -106,7 +106,7 @@ class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    void testGetClientSessionInfosWithNotExistedProperty() {
+    public void testGetClientSessionInfosWithNotExistedProperty() {
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(
                 new PageLink(100, 0, null, new SortOrder("wrongProperty")));
         assertNotNull(clientSessionInfos);

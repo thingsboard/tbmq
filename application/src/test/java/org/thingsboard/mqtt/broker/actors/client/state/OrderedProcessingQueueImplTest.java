@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.util.CollectionUtils;
@@ -31,12 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 
 @RunWith(MockitoJUnitRunner.class)
-class OrderedProcessingQueueImplTest {
+public class OrderedProcessingQueueImplTest {
 
     OrderedProcessingQueue orderedProcessingQueue;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         orderedProcessingQueue = spy(new OrderedProcessingQueueImpl(10));
     }
 

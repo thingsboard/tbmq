@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -36,7 +37,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttUnsubscribeHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttUnsubscribeHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
@@ -44,19 +46,17 @@ class MqttUnsubscribeHandlerTest {
 
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
         mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService));
 
         ctx = mock(ClientSessionCtx.class);
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
     }
 
     @Test
-    void testProcess() {
+    public void testProcess() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);

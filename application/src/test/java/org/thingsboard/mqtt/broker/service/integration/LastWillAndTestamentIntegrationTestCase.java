@@ -37,10 +37,10 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = LastWillAndTestamentIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = LastWillAndTestamentIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class LastWillAndTestamentIntegrationTest extends AbstractPubSubIntegrationTest {
+public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubIntegrationTest {
     private static final String TEST_TOPIC = "test";
     private static final String TEST_MESSAGE = "test_message";
 

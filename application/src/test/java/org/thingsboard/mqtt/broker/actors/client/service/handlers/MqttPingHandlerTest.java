@@ -16,8 +16,10 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -27,19 +29,20 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class MqttPingHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttPingHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     MqttPingHandler mqttPingHandler;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         mqttPingHandler = spy(new MqttPingHandler(mqttMessageGenerator));
     }
 
     @Test
-    void testProcess() {
+    public void testProcess() {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
         doReturn(channelHandlerContext).when(ctx).getChannel();

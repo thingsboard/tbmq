@@ -57,11 +57,11 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = RestartIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = RestartIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 // Fails if separated on different classes
-public class RestartIntegrationTest extends AbstractPubSubIntegrationTest {
+public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
     private static final String TEST_CLIENT_ID = "test-application-client";
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test";

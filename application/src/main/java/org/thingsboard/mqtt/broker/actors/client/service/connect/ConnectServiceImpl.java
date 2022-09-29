@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import javax.annotation.PreDestroy;
 import java.util.UUID;
@@ -55,7 +56,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 
 @Service
 @RequiredArgsConstructor
@@ -146,7 +146,8 @@ public class ConnectServiceImpl implements ConnectService {
 
     private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx clientSessionCtx) {
         try {
-            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg();
+            MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedServerUnavailable(clientSessionCtx);
+            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
             clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send CONN_ACK response.",
@@ -166,8 +167,8 @@ public class ConnectServiceImpl implements ConnectService {
                 new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client"));
     }
 
-    private MqttConnAckMessage createMqttConnAckMsg() {
-        return createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED, false);
+    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
+        return createMqttConnAckMsg(code, false);
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent) {
@@ -195,7 +196,8 @@ public class ConnectServiceImpl implements ConnectService {
 
     void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {
         if (!msg.isCleanSession() && StringUtils.isEmpty(msg.getClientIdentifier())) {
-            ctx.getChannel().writeAndFlush(createMqttConnAckMsg());
+            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx));
+            ctx.getChannel().writeAndFlush(mqttConnAckMsg);
             throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
         }
     }

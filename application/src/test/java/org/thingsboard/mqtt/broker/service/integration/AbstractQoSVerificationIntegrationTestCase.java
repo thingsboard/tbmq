@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 
 @Slf4j
-public abstract class AbstractQoSVerificationIntegrationTest extends AbstractPubSubIntegrationTest {
+public abstract class AbstractQoSVerificationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     protected static final int QOS_1 = MqttQoS.AT_LEAST_ONCE.value();
     protected static final int QOS_2 = MqttQoS.EXACTLY_ONCE.value();

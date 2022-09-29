@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -40,8 +41,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -53,7 +54,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttSubscribeHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttSubscribeHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
@@ -65,8 +67,8 @@ class MqttSubscribeHandlerTest {
 
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
         topicValidationService = mock(TopicValidationService.class);
@@ -78,12 +80,10 @@ class MqttSubscribeHandlerTest {
 
         ctx = mock(ClientSessionCtx.class);
         when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
     }
 
     @Test
-    void testProcess() {
+    public void testProcess() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -99,7 +99,7 @@ class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testValidateSubscriptionsFailure() {
+    public void testValidateSubscriptionsFailure() {
         doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(any());
         assertThrows(MqttException.class,
                 () -> mqttSubscribeHandler.validateSubscriptions("id", UUID.randomUUID(), List.of(getTopicSubscription("topic"))));
@@ -107,7 +107,7 @@ class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testValidateSubscriptionsSuccess() {
+    public void testValidateSubscriptionsSuccess() {
         doNothing().when(topicValidationService).validateTopicFilter(any());
         assertAll(
                 () -> mqttSubscribeHandler.validateSubscriptions(
@@ -118,13 +118,13 @@ class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testValidateClientAccessFailure() {
+    public void testValidateClientAccessFailure() {
         assertThrows(MqttException.class, () -> mqttSubscribeHandler.validateClientAccess(ctx, List.of(getTopicSubscription("topic"))));
         verify(authorizationRuleService, times(1)).isAuthorized(any(), any());
     }
 
     @Test
-    void testValidateClientAccessSuccess() {
+    public void testValidateClientAccessSuccess() {
         when(authorizationRuleService.isAuthorized(any(), any())).thenReturn(true);
         assertAll(() -> mqttSubscribeHandler.validateClientAccess(
                 ctx,
@@ -134,7 +134,7 @@ class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testGetRetainedMsgsForTopics() {
+    public void testGetRetainedMsgsForTopics() {
         when(retainedMsgService.getRetainedMessages(eq("one"))).thenReturn(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 1)
         ));

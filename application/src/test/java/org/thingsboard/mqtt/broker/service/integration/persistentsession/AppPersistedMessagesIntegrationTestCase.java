@@ -41,13 +41,13 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = AppPersistedMessagesIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = AppPersistedMessagesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class AppPersistedMessagesIntegrationTest extends AbstractPubSubIntegrationTest {
+public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     private static final String TEST_APPLICATION_CLIENT = "test-application-client";
     private static final String PUBLISHING_CLIENT = "publishing_client";

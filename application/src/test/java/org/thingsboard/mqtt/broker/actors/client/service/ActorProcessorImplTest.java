@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
@@ -48,7 +50,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class ActorProcessorImplTest {
+@RunWith(MockitoJUnitRunner.class)
+public class ActorProcessorImplTest {
 
     ActorProcessorImpl actorProcessor;
     DisconnectService disconnectService;
@@ -57,8 +60,8 @@ class ActorProcessorImplTest {
 
     ClientActorState clientActorState;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         disconnectService = mock(DisconnectService.class);
         authenticationService = mock(AuthenticationService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);

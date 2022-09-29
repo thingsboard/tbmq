@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.keepalive;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -36,19 +36,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-class KeepAliveServiceImplTest {
+public class KeepAliveServiceImplTest {
 
     ClientMqttActorManager clientMqttActorManager;
     KeepAliveServiceImpl keepAliveService;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         keepAliveService = spy(new KeepAliveServiceImpl(clientMqttActorManager));
     }
 
     @Test
-    void testIsInactive() {
+    public void testIsInactive() {
         var ts = System.currentTimeMillis() - 20000;
         assertTrue(keepAliveService.isInactive(10, ts));
         ts = System.currentTimeMillis() - 10000;
@@ -56,12 +56,12 @@ class KeepAliveServiceImplTest {
     }
 
     @Test
-    void testAcknowledgeControlPacket() {
+    public void testAcknowledgeControlPacket() {
         assertThrows(MqttException.class, () -> keepAliveService.acknowledgeControlPacket(UUID.randomUUID()));
     }
 
     @Test
-    void testKeepAliveLifecycle() throws InterruptedException {
+    public void testKeepAliveLifecycle() throws InterruptedException {
         UUID sessionId1 = UUID.randomUUID();
         keepAliveService.registerSession("clientId1", sessionId1, 10);
         keepAliveService.registerSession("clientId2", UUID.randomUUID(), 20);

@@ -115,12 +115,13 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
         Assert.assertEquals(CLIENT_ID, applicationSessionCtx.getClientId());
         Assert.assertTrue(applicationSessionCtx.getLastUpdatedTime() > 0);
         Assert.assertEquals(List.of(new ApplicationMsgInfo(100, 1)), applicationSessionCtx.getPublishMsgInfos());
-        Assert.assertEquals(
-                List.of(
-                        new ApplicationMsgInfo(100, 1),
-                        new ApplicationMsgInfo(200, 2),
-                        new ApplicationMsgInfo(300, 3)),
-                applicationSessionCtx.getPubRelMsgInfos());
+        Assert.assertTrue(
+                applicationSessionCtx.getPubRelMsgInfos().containsAll(
+                        List.of(new ApplicationMsgInfo(100, 1),
+                                new ApplicationMsgInfo(200, 2),
+                                new ApplicationMsgInfo(300, 3)
+                        ))
+        );
     }
 
     private PublishMsg buildPubMsg() {

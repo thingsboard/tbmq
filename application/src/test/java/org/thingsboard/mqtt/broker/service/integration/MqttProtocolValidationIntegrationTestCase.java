@@ -16,43 +16,37 @@
 package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = QoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "mqtt.retransmission.initial-delay=1",
-        "mqtt.retransmission.period=1"
-})
+@ContextConfiguration(classes = MqttProtocolValidationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class QoSVerificationIntegrationTest extends AbstractQoSVerificationIntegrationTest {
+public class MqttProtocolValidationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    @Test
-    public void qoS1DeliveryValidationTest() throws Throwable {
-        process(QOS_1, true);
-    }
-
-    @Test
-    public void qoS2DeliveryValidationTest() throws Throwable {
-        process(QOS_2, true);
-    }
-
-    @Test
-    public void qoS1PersistentDeliveryValidationTest() throws Throwable {
-        process(QOS_1, false);
-    }
-
-    @Test
-    public void qoS2PersistentDeliveryValidationTest() throws Throwable {
-        process(QOS_2, false);
+    @Test(expected = MqttException.class)
+    public void testEmptyClientWithNoCleanSession() throws Throwable {
+        try (MqttClient testClient = new MqttClient("tcp://localhost:" + mqttPort, "")) {
+            MqttConnectOptions connectOptions = new MqttConnectOptions();
+            connectOptions.setCleanSession(false);
+            try {
+                testClient.connect(connectOptions);
+            } catch (MqttException e) {
+                Assert.assertFalse(testClient.isConnected());
+                throw e;
+            }
+        }
     }
 }
