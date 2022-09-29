@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "thingsboard": {
+    "thingsboard-mqtt-broker": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -24,7 +24,7 @@
             "tsConfig": "src/tsconfig.app.json",
             "aot": true,
             "assets": [
-              "src/thingsboard.ico",
+              "src/thingsboard-mqtt-broker.ico",
               "src/assets",
               {
                 "glob": "**/*",
@@ -95,19 +95,19 @@
         "serve": {
           "builder": "@angular-builders/custom-webpack:dev-server",
           "options": {
-            "browserTarget": "thingsboard:build",
+            "browserTarget": "thingsboard-mqtt-broker:build",
             "proxyConfig": "proxy.conf.js"
           },
           "configurations": {
             "production": {
-              "browserTarget": "thingsboard:build:production"
+              "browserTarget": "thingsboard-mqtt-broker:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "thingsboard:build"
+            "browserTarget": "thingsboard-mqtt-broker:build"
           }
         },
         "test": {
@@ -141,7 +141,7 @@
         }
       }
     },
-    "thingsboard-e2e": {
+    "thingsboard-mqtt-broker-e2e": {
       "root": "e2e/",
       "projectType": "application",
       "prefix": "",
@@ -150,11 +150,11 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "thingsboard:serve"
+            "devServerTarget": "thingsboard-mqtt-broker:serve"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "thingsboard:serve:production"
+              "devServerTarget": "thingsboard-mqtt-broker:serve:production"
             }
           }
         },
@@ -170,7 +170,7 @@
       }
     }
   },
-  "defaultProject": "thingsboard",
+  "defaultProject": "thingsboard-mqtt-broker",
   "cli": {
     "packageManager": "yarn",
     "analytics": false
