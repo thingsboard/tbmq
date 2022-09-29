@@ -34,8 +34,7 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/jquery.terminal/css/jquery.terminal.min.css",
-              "node_modules/rc-select/assets/index.less"
+              "node_modules/jquery.terminal/css/jquery.terminal.min.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
@@ -56,8 +55,6 @@
             "allowedCommonJsDependencies": [
               "hammerjs",
               "react",
-              "react-dom",
-              "reactcss",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
               "mousetrap",
@@ -70,8 +67,7 @@
               "tinycolor2",
               "lodash",
               "jquery",
-              "jquery.terminal",
-              "qrcode"
+              "jquery.terminal"
             ]
           },
           "configurations": {
