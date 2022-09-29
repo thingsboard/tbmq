@@ -143,11 +143,17 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientId = connectMessage.payload().clientIdentifier();
         boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
         clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
-        clientSessionCtx.setMqttVersion(MqttVersion.fromProtocolNameAndLevel("MQTT", (byte) connectMessage.variableHeader().version()));
+        clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
         clientMqttActorManager.initSession(clientId, isClientIdGenerated, new SessionInitMsg(
                 clientSessionCtx,
                 connectMessage.payload().userName(),
                 connectMessage.payload().passwordInBytes()));
+    }
+
+    private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {
+        var version = (byte) connectMessage.variableHeader().version();
+        var protocolName = version > 3 ? "MQTT" : "MQIsdp";
+        return MqttVersion.fromProtocolNameAndLevel(protocolName, version);
     }
 
     @Override
