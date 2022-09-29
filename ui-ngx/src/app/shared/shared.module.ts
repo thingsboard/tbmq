@@ -54,7 +54,6 @@ import { NgxDaterangepickerMd } from 'ngx-daterangepicker-material';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { ShareModule as ShareButtonsModule } from 'ngx-sharebuttons';
 import { ColorPickerModule } from 'ngx-color-picker';
 import { NgxHmCarouselModule } from 'ngx-hm-carousel';
 import { UserMenuComponent } from '@shared/components/user-menu.component';
@@ -156,7 +155,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FormsModule,
     ReactiveFormsModule,
     OverlayModule,
-    ShareButtonsModule,
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,
@@ -216,7 +214,6 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     FormsModule,
     ReactiveFormsModule,
     OverlayModule,
-    ShareButtonsModule,
     ColorPickerModule,
     NgxHmCarouselModule,
     DndModule,

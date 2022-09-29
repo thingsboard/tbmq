@@ -57,7 +57,6 @@
               "react",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
-              "mousetrap",
               "prop-types",
               "react-is",
               "hoist-non-react-statics",
