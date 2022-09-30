@@ -29,9 +29,9 @@ import java.util.List;
 public interface MqttMessageGenerator {
     MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent);
 
-    MqttMessage createUnSubAckMessage(int msgId);
+    MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
 
-    MqttSubAckMessage createSubAckMessage(int msgId, List<Integer> grantedQoSList);
+    MqttSubAckMessage createSubAckMessage(int msgId, List<MqttReasonCode> codes);
 
     MqttPubAckMessage createPubAckMsg(int msgId, MqttReasonCode code);
 

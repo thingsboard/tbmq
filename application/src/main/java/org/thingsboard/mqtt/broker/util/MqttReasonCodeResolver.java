@@ -25,6 +25,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.FAILURE;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUND;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUCCESS;
@@ -58,5 +59,13 @@ public final class MqttReasonCodeResolver {
 
     public static MqttReasonCode notAuthorized(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? NOT_AUTHORIZED : null;
+    }
+
+    public static MqttReasonCode notAuthorizedSubscribe(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? NOT_AUTHORIZED : failure();
+    }
+
+    public static MqttReasonCode failure() {
+        return FAILURE;
     }
 }

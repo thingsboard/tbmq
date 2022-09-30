@@ -15,13 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
+import java.util.List;
+
 public enum MqttReasonCode {
 
+    GRANTED_QOS_0((byte) 0),
+    GRANTED_QOS_1((byte) 1),
+    GRANTED_QOS_2((byte) 2),
     SUCCESS((byte) 0),
+    FAILURE((byte) 128),
     NOT_AUTHORIZED((byte) 135),
     TOPIC_NAME_INVALID((byte) 144),
     PACKET_ID_NOT_FOUND((byte) 146),
     ;
+
+    static final List<MqttReasonCode> GRANTED_QOS_LIST = List.of(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2);
 
     private final byte byteValue;
 
@@ -33,7 +41,11 @@ public enum MqttReasonCode {
         return byteValue;
     }
 
-    public static MqttReasonCode valueOf(byte value) {
+    public static List<MqttReasonCode> getGrantedQosList() {
+        return GRANTED_QOS_LIST;
+    }
+
+    public static MqttReasonCode valueOf(int value) {
         for (MqttReasonCode code : values()) {
             if (code.byteValue == value) {
                 return code;

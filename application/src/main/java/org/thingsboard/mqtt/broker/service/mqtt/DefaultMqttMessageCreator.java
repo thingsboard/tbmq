@@ -32,11 +32,15 @@ import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.mqtt.MqttMessageType.CONNACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PINGRESP;
@@ -48,9 +52,9 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 
-
 @Service
 public class DefaultMqttMessageCreator implements MqttMessageGenerator {
+
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent) {
         MqttFixedHeader mqttFixedHeader =
@@ -61,19 +65,25 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     }
 
     @Override
-    public MqttMessage createUnSubAckMessage(int msgId) {
+    public MqttUnsubAckMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(UNSUBACK, false, AT_MOST_ONCE, false, 0);
-        MqttMessageIdVariableHeader mqttMessageIdVariableHeader = MqttMessageIdVariableHeader.from(msgId);
-        return new MqttMessage(mqttFixedHeader, mqttMessageIdVariableHeader);
+        if (codes.stream().anyMatch(Objects::isNull)) {
+            return new MqttUnsubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
+        } else {
+            List<Short> reasonCodes = codes.stream().map(code -> (short) code.value()).collect(Collectors.toList());
+            MqttUnsubAckPayload mqttUnsubAckPayload = new MqttUnsubAckPayload(reasonCodes);
+            return new MqttUnsubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId), mqttUnsubAckPayload);
+        }
     }
 
     @Override
-    public MqttSubAckMessage createSubAckMessage(int msgId, List<Integer> grantedQoSList) {
+    public MqttSubAckMessage createSubAckMessage(int msgId, List<MqttReasonCode> codes) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(SUBACK, false, AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader mqttMessageIdVariableHeader = MqttMessageIdVariableHeader.from(msgId);
-        MqttSubAckPayload mqttSubAckPayload = new MqttSubAckPayload(grantedQoSList);
+        List<Integer> reasonCodes = codes.stream().map(code -> (int) code.value()).collect(Collectors.toList());
+        MqttSubAckPayload mqttSubAckPayload = new MqttSubAckPayload(reasonCodes);
         return new MqttSubAckMessage(mqttFixedHeader, mqttMessageIdVariableHeader, mqttSubAckPayload);
     }
 
@@ -83,17 +93,6 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
                 new MqttFixedHeader(PUBACK, false, AT_MOST_ONCE, false, 0);
         if (code == null) {
             return new MqttPubAckMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
-        } else {
-            MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(msgId, code.value(), null);
-            return new MqttPubAckMessage(mqttFixedHeader, variableHeader);
-        }
-    }
-
-    @Override
-    public MqttMessage createPubRecMsg(int msgId, MqttReasonCode code) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBREC, false, AT_MOST_ONCE, false, 0);
-        if (code == null) {
-            return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
         } else {
             MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(msgId, code.value(), null);
             return new MqttPubAckMessage(mqttFixedHeader, variableHeader);
@@ -130,19 +129,22 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     }
 
     @Override
-    public MqttMessage createPubCompMsg(int msgId, MqttReasonCode code) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBCOMP, false, AT_MOST_ONCE, false, 0);
-        if (code == null) {
-            return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
-        } else {
-            MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(msgId, code.value(), null);
-            return new MqttMessage(mqttFixedHeader, variableHeader);
-        }
+    public MqttMessage createPubRecMsg(int msgId, MqttReasonCode code) {
+        return createPubReplyMsg(PUBREC, msgId, code);
     }
 
     @Override
     public MqttMessage createPubRelMsg(int msgId, MqttReasonCode code) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(PUBREL, false, AT_MOST_ONCE, false, 0);
+        return createPubReplyMsg(PUBREL, msgId, code);
+    }
+
+    @Override
+    public MqttMessage createPubCompMsg(int msgId, MqttReasonCode code) {
+        return createPubReplyMsg(PUBCOMP, msgId, code);
+    }
+
+    private MqttMessage createPubReplyMsg(MqttMessageType type, int msgId, MqttReasonCode code) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(type, false, AT_MOST_ONCE, false, 0);
         if (code == null) {
             return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
         } else {
@@ -150,5 +152,4 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
             return new MqttMessage(mqttFixedHeader, variableHeader);
         }
     }
-
 }

@@ -24,8 +24,12 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -37,15 +41,16 @@ public class MqttUnsubscribeHandler {
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         UUID sessionId = ctx.getSessionId();
-        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
+        String clientId = ctx.getClientId();
         log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
 
-        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId());
+        List<MqttReasonCode> codes = msg.getTopics().stream().map(s -> MqttReasonCodeResolver.success(ctx)).collect(Collectors.toList());
+        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), codes);
         clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(),
                 CallbackUtil.createCallback(
                         () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
-                        t -> log.warn("[{}][{}] Fail to process client unsubscription. Exception - {}, reason - {}",
-                                clientId, sessionId, t.getClass().getSimpleName(), t.getMessage())));
+                        t -> log.warn("[{}][{}] Failed to process client unsubscription", clientId, sessionId, t)
+                ));
     }
 
 }

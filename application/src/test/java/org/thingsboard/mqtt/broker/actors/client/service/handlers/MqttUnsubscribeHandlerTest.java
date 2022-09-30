@@ -15,17 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,15 +57,26 @@ public class MqttUnsubscribeHandlerTest {
     }
 
     @Test
-    public void testProcess() {
-        SessionInfo sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        ClientInfo clientInfo = mock(ClientInfo.class);
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
+    public void testProcess1() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
-        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1));
+        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCode.SUCCESS)));
         verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+    }
+
+    @Test
+    public void testProcess2() {
+        mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
+
+        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(getList()));
+        verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+    }
+
+    private List<MqttReasonCode> getList() {
+        List<MqttReasonCode> value = new ArrayList<>();
+        value.add(null);
+        return value;
     }
 }
