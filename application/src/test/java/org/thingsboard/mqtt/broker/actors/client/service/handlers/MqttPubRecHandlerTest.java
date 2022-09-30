@@ -64,7 +64,7 @@ public class MqttPubRecHandlerTest {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(false));
 
         mqttPubRecHandler.process(ctx, 1);
-        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1));
+        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1), eq(null));
         verify(retransmissionService, times(1)).onPubRecReceived(eq(ctx), any());
     }
 

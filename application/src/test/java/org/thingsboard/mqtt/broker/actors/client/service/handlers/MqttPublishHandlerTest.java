@@ -106,7 +106,7 @@ public class MqttPublishHandlerTest {
 
         mqttPublishHandler.processPubAckResponse(ctx, 1);
 
-        verify(mqttMessageGenerator, times(1)).createPubAckMsg(1);
+        verify(mqttMessageGenerator, times(1)).createPubAckMsg(1, null);
     }
 
     @Test
@@ -115,7 +115,7 @@ public class MqttPublishHandlerTest {
 
         mqttPublishHandler.processPubRecResponse(ctx, 1);
 
-        verify(mqttMessageGenerator, times(1)).createPubRecMsg(1);
+        verify(mqttMessageGenerator, times(1)).createPubRecMsg(1, null);
     }
 
     @Test

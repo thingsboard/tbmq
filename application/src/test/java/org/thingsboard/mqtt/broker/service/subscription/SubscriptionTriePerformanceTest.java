@@ -102,7 +102,7 @@ public class SubscriptionTriePerformanceTest {
                 },
                 executor);
 
-        task.get(10, TimeUnit.SECONDS);
+        task.get(30, TimeUnit.SECONDS);
         long endTime = System.currentTimeMillis();
         System.out.println("All took " + (endTime - startTime) + " ms");
 
@@ -138,7 +138,7 @@ public class SubscriptionTriePerformanceTest {
                 }
             });
         }
-        processingPublishers.await(10, TimeUnit.SECONDS);
+        processingPublishers.await(30, TimeUnit.SECONDS);
         long endTime = System.currentTimeMillis();
         System.out.println("All took " + (endTime - startTime) + " ms");
 

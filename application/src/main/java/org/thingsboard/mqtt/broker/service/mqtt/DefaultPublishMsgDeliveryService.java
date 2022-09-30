@@ -24,6 +24,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionSer
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +75,8 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
         log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
-        MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId);
+        MqttReasonCode code = MqttReasonCodeResolver.success(sessionCtx);
+        MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId, code);
         try {
             retransmissionService.onPubRecReceived(sessionCtx, mqttPubRelMsg);
         } catch (Exception e) {

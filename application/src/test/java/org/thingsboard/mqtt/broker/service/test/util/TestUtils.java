@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
+import java.util.List;
 
 public class TestUtils {
     public static void clearPersistedClient(MqttClient persistedClient, MqttClient newClientToClear) throws Exception {
@@ -48,15 +49,19 @@ public class TestUtils {
     }
 
     public static MqttClientCredentials createApplicationClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, ClientType.APPLICATION);
+        return getMqttClientCredentials(clientId, username, ClientType.APPLICATION, null);
     }
 
     public static MqttClientCredentials createDeviceClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, ClientType.DEVICE);
+        return getMqttClientCredentials(clientId, username, ClientType.DEVICE, null);
     }
 
-    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, ClientType clientType) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, null, null);
+    public static MqttClientCredentials createDeviceClientCredentialsWithAuth(String clientId, List<String> authRulePatterns) {
+        return getMqttClientCredentials(clientId, null, ClientType.DEVICE, authRulePatterns);
+    }
+
+    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, ClientType clientType, List<String> patterns) {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, null, patterns);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);

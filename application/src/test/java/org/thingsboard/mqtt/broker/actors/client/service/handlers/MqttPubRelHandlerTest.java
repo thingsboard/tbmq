@@ -52,7 +52,7 @@ public class MqttPubRelHandlerTest {
     @Test
     public void testProcess() {
         mqttPubRelHandler.process(ctx, 1);
-        verify(mqttMessageGenerator, times(1)).createPubCompMsg(eq(1));
+        verify(mqttMessageGenerator, times(1)).createPubCompMsg(eq(1), eq(null));
         verify(mqttPubRelHandler, times(1)).completePubRel(eq(ctx), eq(1));
     }
 }

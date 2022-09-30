@@ -22,6 +22,7 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.util.List;
 
@@ -32,9 +33,9 @@ public interface MqttMessageGenerator {
 
     MqttSubAckMessage createSubAckMessage(int msgId, List<Integer> grantedQoSList);
 
-    MqttPubAckMessage createPubAckMsg(int requestId);
+    MqttPubAckMessage createPubAckMsg(int msgId, MqttReasonCode code);
 
-    MqttMessage createPubRecMsg(int requestId);
+    MqttMessage createPubRecMsg(int msgId, MqttReasonCode code);
 
     MqttPublishMessage createPubMsg(PublishMsg pubMsg);
 
@@ -42,7 +43,7 @@ public interface MqttMessageGenerator {
 
     MqttMessage createPingRespMsg();
 
-    MqttMessage createPubCompMsg(int msgId);
+    MqttMessage createPubCompMsg(int msgId, MqttReasonCode code);
 
-    MqttMessage createPubRelMsg(int msgId);
+    MqttMessage createPubRelMsg(int msgId, MqttReasonCode code);
 }

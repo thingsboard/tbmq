@@ -25,6 +25,10 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUND;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUCCESS;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.TOPIC_NAME_INVALID;
 
 public final class MqttReasonCodeResolver {
 
@@ -38,5 +42,21 @@ public final class MqttReasonCodeResolver {
 
     public static MqttConnectReturnCode connectionRefusedServerUnavailable(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_SERVER_UNAVAILABLE_5 : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
+
+    public static MqttReasonCode packetIdNotFound(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? PACKET_ID_NOT_FOUND : null;
+    }
+
+    public static MqttReasonCode success(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SUCCESS : null;
+    }
+
+    public static MqttReasonCode topicNameInvalid(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? TOPIC_NAME_INVALID : null;
+    }
+
+    public static MqttReasonCode notAuthorized(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? NOT_AUTHORIZED : null;
     }
 }
