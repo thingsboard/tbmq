@@ -22,7 +22,7 @@ export const environment = {
   appTitle: 'ThingsBoard MQTT Broker',
   production: false,
 // @ts-ignore
-  tbMqttBrokerVersion: TB_VERSION,
+  tbMqttBrokerVersion: TB_MQTT_BROKER_VERSION,
 // @ts-ignore
   supportedLangs: SUPPORTED_LANGS,
   defaultLang: 'en_US'
