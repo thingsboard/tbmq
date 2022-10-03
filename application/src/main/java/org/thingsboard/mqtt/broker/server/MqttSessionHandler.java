@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -53,16 +54,19 @@ import java.util.UUID;
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
 
     private final ClientMqttActorManager clientMqttActorManager;
-
+    private final ClientLogger clientLogger;
+    private final RateLimitService rateLimitService;
+    private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
-    private String clientId;
-    private final ClientSessionCtx clientSessionCtx;
-    private final ClientLogger clientLogger;
 
-    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger, SslHandler sslHandler, int maxInFlightMsgs) {
+    private String clientId;
+
+    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger,
+                              RateLimitService rateLimitService, SslHandler sslHandler, int maxInFlightMsgs) {
         this.clientMqttActorManager = clientMqttActorManager;
         this.clientLogger = clientLogger;
+        this.rateLimitService = rateLimitService;
         this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler, maxInFlightMsgs);
     }
 
@@ -107,7 +111,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
         switch (msgType) {
             case DISCONNECT:
-                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG)));
+                disconnect(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
                 break;
             case CONNECT:
                 clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
@@ -119,7 +123,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttUnsubscribeMsg(sessionId, (MqttUnsubscribeMessage) msg));
                 break;
             case PUBLISH:
-                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
+                processPublish(msg);
                 break;
             case PUBACK:
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPubAckMsg(sessionId, (MqttPubAckMessage) msg));
@@ -137,6 +141,19 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPingMsg(sessionId));
                 break;
         }
+    }
+
+    private void processPublish(MqttMessage msg) {
+        if (checkLimits(msg)) {
+            clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
+        } else {
+            log.debug("[{}][{}] Disconnecting client on rate limits detection!", clientId, sessionId);
+            disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, "Rate limits detected"));
+        }
+    }
+
+    private boolean checkLimits(MqttMessage msg) {
+        return rateLimitService.checkLimits(clientId, sessionId, msg);
     }
 
     private void initSession(MqttConnectMessage connectMessage) {
@@ -186,9 +203,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void operationComplete(Future<? super Void> future) {
         if (clientId != null) {
-            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
-                    sessionId,
-                    new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED)));
+            disconnect(new DisconnectReason(DisconnectReasonType.ON_CHANNEL_CLOSED));
         }
     }
 

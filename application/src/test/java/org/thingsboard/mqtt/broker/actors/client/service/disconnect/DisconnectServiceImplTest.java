@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -61,6 +62,8 @@ public class DisconnectServiceImplTest {
     MsgPersistenceManager msgPersistenceManager;
     @MockBean
     ClientSessionEventService clientSessionEventService;
+    @MockBean
+    RateLimitService rateLimitService;
 
     @SpyBean
     DisconnectServiceImpl disconnectService;

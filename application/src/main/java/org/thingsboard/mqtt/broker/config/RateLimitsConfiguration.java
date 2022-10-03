@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.config;
 
-public enum DisconnectReasonType {
-    ON_DISCONNECT_MSG,
-    ON_CONFLICTING_SESSIONS,
-    ON_ERROR,
-    ON_CHANNEL_CLOSED,
-    ON_RATE_LIMITS
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConfigurationProperties(prefix = "mqtt.rate-limits")
+@Data
+public class RateLimitsConfiguration {
+
+    private boolean enabled;
+    private String clientConfig;
+
 }
