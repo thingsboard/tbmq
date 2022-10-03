@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.session;
+package org.thingsboard.mqtt.broker.service.limits;
 
-public enum DisconnectReasonType {
-    ON_DISCONNECT_MSG,
-    ON_CONFLICTING_SESSIONS,
-    ON_ERROR,
-    ON_CHANNEL_CLOSED,
-    ON_RATE_LIMITS
+import io.netty.handler.codec.mqtt.MqttMessage;
+
+import java.util.UUID;
+
+public interface RateLimitService {
+
+    boolean checkLimits(String clientId, UUID sessionId, MqttMessage msg);
+
+    void remove(String clientId);
 }

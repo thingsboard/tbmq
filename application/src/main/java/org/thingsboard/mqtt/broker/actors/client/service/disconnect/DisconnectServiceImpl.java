@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -42,6 +43,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final ClientSessionCtxService clientSessionCtxService;
     private final MsgPersistenceManager msgPersistenceManager;
     private final ClientSessionEventService clientSessionEventService;
+    private final RateLimitService rateLimitService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, DisconnectReason reason) {
@@ -62,10 +64,10 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         notifyClientDisconnected(actorState);
-
+        rateLimitService.remove(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
-        log.debug("[{}][{}] Client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId());
+        log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
     }
 
     void closeChannel(ClientSessionCtx sessionCtx) {
