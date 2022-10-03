@@ -221,6 +221,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>net.jodah</groupId>
             <artifactId>concurrentunit</artifactId>
             <scope>test</scope>
