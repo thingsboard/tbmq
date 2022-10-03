@@ -31,14 +31,14 @@ import static org.junit.Assert.assertFalse;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = RateLimitsIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = RateLimitsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.rate-limits.enabled=true",
         "mqtt.rate-limits.client-config=10:1,300:60"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class RateLimitsIntegrationTest extends AbstractPubSubIntegrationTest {
+public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @Test
     public void testClientDisconnectedWhenRateLimitsDetected() throws Throwable {
