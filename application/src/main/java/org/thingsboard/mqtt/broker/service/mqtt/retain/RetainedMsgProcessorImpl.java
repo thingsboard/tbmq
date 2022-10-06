@@ -46,7 +46,7 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
     }
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel());
+        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), publishMsg.getProperties());
     }
 
     PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {

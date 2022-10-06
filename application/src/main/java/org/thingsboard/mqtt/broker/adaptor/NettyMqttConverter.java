@@ -67,15 +67,15 @@ public class NettyMqttConverter {
     }
 
     public static MqttPubRecMsg createMqttPubRecMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubRecMsg(sessionId, nettyMessageIdVariableHeader.messageId());
+        return new MqttPubRecMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
     }
 
     public static MqttPubRelMsg createMqttPubRelMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubRelMsg(sessionId, nettyMessageIdVariableHeader.messageId());
+        return new MqttPubRelMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
     }
 
     public static MqttPubCompMsg createMqttPubCompMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubCompMsg(sessionId, nettyMessageIdVariableHeader.messageId());
+        return new MqttPubCompMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
     }
 
     public static MqttPingMsg createMqttPingMsg(UUID sessionId) {
@@ -91,6 +91,7 @@ public class NettyMqttConverter {
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())
                 .isDup(mqttPublishMessage.fixedHeader().isDup())
                 .payload(payloadBytes)
+                .properties(mqttPublishMessage.variableHeader().properties())
                 .build();
     }
 
@@ -101,6 +102,7 @@ public class NettyMqttConverter {
                 .payload(msg.payload().willMessageInBytes())
                 .isRetained(msg.variableHeader().isWillRetain())
                 .qosLevel(msg.variableHeader().willQos())
+                .properties(msg.payload().willProperties())
                 .build();
     }
 

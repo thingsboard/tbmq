@@ -15,13 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @AllArgsConstructor
 @Getter
 @Builder(toBuilder = true)
+@ToString
 public class PublishMsg {
 
     private final int packetId;
@@ -30,5 +33,16 @@ public class PublishMsg {
     private final int qosLevel;
     private final boolean isRetained;
     private final boolean isDup;
+    private final MqttProperties properties;
+
+    public PublishMsg(int packetId, String topicName, byte[] payload, int qosLevel, boolean isRetained, boolean isDup) {
+        this.packetId = packetId;
+        this.topicName = topicName;
+        this.payload = payload;
+        this.qosLevel = qosLevel;
+        this.isRetained = isRetained;
+        this.isDup = isDup;
+        this.properties = MqttProperties.NO_PROPERTIES;
+    }
 
 }

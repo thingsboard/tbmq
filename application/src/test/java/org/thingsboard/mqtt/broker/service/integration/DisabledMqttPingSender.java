@@ -19,9 +19,11 @@ import org.eclipse.paho.client.mqttv3.MqttPingSender;
 import org.eclipse.paho.client.mqttv3.internal.ClientComms;
 
 public class DisabledMqttPingSender implements MqttPingSender {
+
     public static final DisabledMqttPingSender DISABLED_MQTT_PING_SENDER = new DisabledMqttPingSender();
 
-    private DisabledMqttPingSender(){}
+    private DisabledMqttPingSender() {
+    }
 
     @Override
     public void init(ClientComms comms) {

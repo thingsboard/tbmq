@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,5 +28,12 @@ public class RetainedMsg {
     private final String topic;
     private final byte[] payload;
     private final int qosLevel;
+    private final MqttProperties properties;
 
+    public RetainedMsg(String topic, byte[] payload, int qosLevel) {
+        this.topic = topic;
+        this.payload = payload;
+        this.qosLevel = qosLevel;
+        this.properties = MqttProperties.NO_PROPERTIES;
+    }
 }
