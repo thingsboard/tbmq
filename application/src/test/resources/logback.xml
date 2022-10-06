@@ -7,8 +7,10 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE" />
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
+
+    <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>
 
     <root level="WARN">
         <appender-ref ref="console"/>
