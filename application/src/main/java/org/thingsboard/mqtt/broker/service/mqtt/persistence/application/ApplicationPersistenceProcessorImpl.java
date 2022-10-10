@@ -259,6 +259,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
                 while (isClientConnected(sessionId, clientState)) {
                     ApplicationPackProcessingCtx ctx = new ApplicationPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
+                    int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
+                    int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     processingContextMap.put(clientId, ctx);
 
                     process(submitStrategy, clientSessionCtx, clientId);
@@ -270,7 +272,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
                     ApplicationProcessingDecision decision = ackStrategy.analyze(result);
 
-                    stats.log(ctx.getPublishPendingMsgMap().size(), ctx.getPubRelPendingMsgMap().size(), result, decision.isCommit());
+                    stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
 
                     if (decision.isCommit()) {
                         ctx.clear();
