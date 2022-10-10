@@ -36,6 +36,8 @@ import java.util.concurrent.ScheduledExecutorService;
 @Slf4j
 public class RetransmissionServiceImpl implements RetransmissionService {
 
+    @Value("${mqtt.retransmission.enabled:true}")
+    private boolean retransmissionEnabled;
     @Value("${mqtt.retransmission.scheduler-pool-size:0}")
     private int schedulerPoolSize;
     @Value("${mqtt.retransmission.initial-delay:10}")
@@ -47,7 +49,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
 
     @PostConstruct
     public void init() {
-        this.scheduler = Executors.newScheduledThreadPool(getCorePoolSize(), ThingsBoardThreadFactory.forName("retransmission-scheduler"));
+        if (retransmissionEnabled) {
+            this.scheduler = Executors.newScheduledThreadPool(getCorePoolSize(), ThingsBoardThreadFactory.forName("retransmission-scheduler"));
+        }
     }
 
     private int getCorePoolSize() {
@@ -65,6 +69,10 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     }
 
     public void sendPublishWithRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+        if (!retransmissionEnabled) {
+            sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
+            return;
+        }
         log.trace("[{}][{}] Executing startPublishRetransmission", sessionCtx.getClientId(), mqttPubMsg);
         ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = sessionCtx.getPendingPublishes();
 
@@ -119,6 +127,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubAckReceived(ClientSessionCtx ctx, int messageId) {
         log.trace("[{}][{}] Executing onPubAckReceived", ctx.getClientId(), messageId);
+        if (!retransmissionEnabled) {
+            return;
+        }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(messageId);
         if (pendingPublish == null) {
             return;
@@ -131,6 +142,10 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubRecReceived(ClientSessionCtx ctx, MqttMessage pubRelMsg) {
         log.trace("[{}][{}] Executing onPubRecReceived", ctx.getClientId(), pubRelMsg);
+        if (!retransmissionEnabled) {
+            ctx.getChannel().writeAndFlush(pubRelMsg);
+            return;
+        }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(((MqttMessageIdVariableHeader) pubRelMsg.variableHeader()).messageId());
         if (pendingPublish == null) {
             log.debug("[{}] Sending persisted PUBREL packet {}", ctx.getClientId(), pubRelMsg);
@@ -148,6 +163,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubCompReceived(ClientSessionCtx ctx, int messageId) {
         log.trace("[{}][{}] Executing onPubCompReceived", ctx.getClientId(), messageId);
+        if (!retransmissionEnabled) {
+            return;
+        }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(messageId);
         if (pendingPublish == null) {
             return;
