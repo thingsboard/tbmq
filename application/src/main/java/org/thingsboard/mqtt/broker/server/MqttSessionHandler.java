@@ -77,14 +77,14 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         try {
             if (!(msg instanceof MqttMessage)) {
                 log.warn("[{}][{}] Received unknown message", clientId, sessionId);
-                disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, "Received unknown message"));
+                disconnect(new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR, "Received unknown message"));
                 return;
             }
 
             MqttMessage message = (MqttMessage) msg;
             if (!message.decoderResult().isSuccess()) {
                 log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
-                disconnect(new DisconnectReason(DisconnectReasonType.ON_ERROR, "Message decoding failed"));
+                disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
                 return;
             }
 

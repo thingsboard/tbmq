@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -164,7 +165,7 @@ public class ConnectServiceImpl implements ConnectService {
 
     private DisconnectMsg newDisconnectMsg(UUID sessionId) {
         return new DisconnectMsg(sessionId,
-                new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to connect client"));
+                new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {

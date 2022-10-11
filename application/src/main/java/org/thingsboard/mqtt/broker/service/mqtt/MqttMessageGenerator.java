@@ -46,4 +46,6 @@ public interface MqttMessageGenerator {
     MqttMessage createPubCompMsg(int msgId, MqttReasonCode code);
 
     MqttMessage createPubRelMsg(int msgId, MqttReasonCode code);
+
+    MqttMessage createDisconnectMsg(MqttReasonCode code);
 }

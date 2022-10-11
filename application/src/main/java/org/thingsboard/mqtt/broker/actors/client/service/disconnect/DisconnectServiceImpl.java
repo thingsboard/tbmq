@@ -15,13 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -30,6 +33,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.UUID;
 
@@ -44,6 +49,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final ClientSessionEventService clientSessionEventService;
     private final RateLimitService rateLimitService;
+    private final MqttMessageGenerator mqttMessageGenerator;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, DisconnectReason reason) {
@@ -55,6 +61,11 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+
+        if (needSendDisconnectToClient(sessionCtx, reason)) {
+            MqttReasonCode code = MqttReasonCodeResolver.disconnect(reason.getType());
+            sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createDisconnectMsg(code));
+        }
 
         try {
             clearClientSession(actorState, reason.getType());
@@ -68,6 +79,12 @@ public class DisconnectServiceImpl implements DisconnectService {
         closeChannel(sessionCtx);
 
         log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+    }
+
+    // only for mqtt 5 clients disconnect packet can be sent from server, when client did not send DISCONNECT and connection was successful
+    private boolean needSendDisconnectToClient(ClientSessionCtx sessionCtx, DisconnectReason reason) {
+        return MqttVersion.MQTT_5 == sessionCtx.getMqttVersion() && DisconnectReasonType.ON_DISCONNECT_MSG != reason.getType()
+                && !BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG.equals(reason.getMessage());
     }
 
     void closeChannel(ClientSessionCtx sessionCtx) {
