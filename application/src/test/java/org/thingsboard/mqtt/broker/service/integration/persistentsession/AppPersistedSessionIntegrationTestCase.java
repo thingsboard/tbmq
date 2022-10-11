@@ -92,6 +92,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
     public void clear() throws Exception {
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
+            awaitUntilDisconnected();
         }
         MqttClientConfig config = new MqttClientConfig();
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
