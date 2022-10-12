@@ -129,7 +129,7 @@ public class ConnectServiceImplTest {
     public void testRefuseConnection() {
         connectService.refuseConnection(ctx, null);
 
-        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE), eq(false));
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE), eq(false), eq(null));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
     }

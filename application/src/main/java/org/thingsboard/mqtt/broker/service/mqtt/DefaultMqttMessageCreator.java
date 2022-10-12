@@ -58,13 +58,27 @@ import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 @Service
 public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
+    private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
+
     @Override
-    public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent) {
+    public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
+        MqttProperties properties = getMqttProperties(assignedClientId);
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
-                new MqttConnAckVariableHeader(returnCode, sessionPresent);
+                new MqttConnAckVariableHeader(returnCode, sessionPresent, properties);
         return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
+    }
+
+    private MqttProperties getMqttProperties(String assignedClientId) {
+        if (assignedClientId != null) {
+            MqttProperties properties = new MqttProperties();
+            properties.add(new MqttProperties.StringProperty(
+                    MqttProperties.MqttPropertyType.ASSIGNED_CLIENT_IDENTIFIER.value(),
+                    assignedClientId));
+            return properties;
+        }
+        return null;
     }
 
     @Override
@@ -101,8 +115,6 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
             return new MqttPubAckMessage(mqttFixedHeader, variableHeader);
         }
     }
-
-    private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
