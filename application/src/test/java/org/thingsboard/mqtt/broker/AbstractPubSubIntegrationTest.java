@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.junit.ClassRule;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +30,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testcontainers.containers.KafkaContainer;
@@ -44,6 +46,9 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 public abstract class AbstractPubSubIntegrationTest {
     protected final ObjectMapper mapper = new ObjectMapper();
+
+    @Autowired
+    protected BCryptPasswordEncoder passwordEncoder;
 
     @Value("${listener.tcp.bind_port}")
     protected int mqttPort;

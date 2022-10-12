@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.integration;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.junit.After;
 import org.junit.Assert;
@@ -82,6 +83,29 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     public void clear() {
         credentialsService.deleteCredentials(pubCredentials.getId());
         credentialsService.deleteCredentials(subCredentials.getId());
+    }
+
+    @Test
+    public void givenPubClient_whenConnectWithoutUserNameAndWithPassword_thenSuccess() throws Throwable {
+        String password = "password12345";
+        String encodedPassword = passwordEncoder.encode(password);
+
+        MqttClientCredentials credentials = TestUtils.createDeviceClientCredentialsWithPass("noUserNameWithPass", encodedPassword);
+        MqttClientCredentials mqttClientCredentials = credentialsService.saveCredentials(credentials);
+        Assert.assertNotNull(mqttClientCredentials);
+        Assert.assertNotNull(mqttClientCredentials.getCredentialsId());
+
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "noUserNameWithPass");
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setUserName(null);
+        options.setPassword(password.getBytes(StandardCharsets.UTF_8));
+        pubClient.connect(options);
+        pubClient.publish(MY_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
+
+        pubClient.disconnect();
+        pubClient.close();
+
+        credentialsService.deleteCredentials(mqttClientCredentials.getId());
     }
 
     @Test
