@@ -89,7 +89,7 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     void sendConnectionRefusedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
         MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedNotAuthorized(sessionCtx);
-        MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(code, false, null);
+        MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(code);
         sessionCtx.getChannel().writeAndFlush(msg);
         sessionCtx.closeChannel();
     }

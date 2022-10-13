@@ -304,6 +304,7 @@ mqtt:
   keep-alive:
     # Schedule monitoring for inactive MQTT clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+    max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}" # in seconds, defaults to 10 minutes, for mqtt 5 clients
   topic:
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
   subscription-trie:

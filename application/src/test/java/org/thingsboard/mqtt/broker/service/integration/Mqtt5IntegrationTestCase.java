@@ -100,4 +100,52 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.close();
     }
 
+    @Test
+    public void testSendMsgWithPropertiesForMqtt3AndMqtt5Clients() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(2);
+
+        MqttClient subClientMqtt5 = new MqttClient("tcp://localhost:" + mqttPort, "subClientMqtt5");
+        subClientMqtt5.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("test123", new String(message.getPayload()));
+            Assert.assertEquals(2, message.getQos());
+            Assert.assertNotNull(message.getProperties());
+
+            latch.countDown();
+        }};
+
+        MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
+        subClientMqtt5.subscribe(subscriptions, listeners);
+
+        org.eclipse.paho.client.mqttv3.MqttClient subClientMqtt3 =
+                new org.eclipse.paho.client.mqttv3.MqttClient("tcp://localhost:" + mqttPort, "subClientMqtt3");
+        subClientMqtt3.connect();
+        subClientMqtt3.subscribe(MY_TOPIC, 2, (topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message);
+            Assert.assertEquals("test123", new String(message.getPayload()));
+            Assert.assertEquals(2, message.getQos());
+
+            latch.countDown();
+        });
+
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        pubClient.connect();
+
+        MqttMessage message = new MqttMessage("test123".getBytes(StandardCharsets.UTF_8), 2, false, MQTT_PROPERTIES);
+        pubClient.publish(MY_TOPIC, message);
+
+        pubClient.disconnect();
+        pubClient.close();
+
+        boolean await = latch.await(10, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        subClientMqtt3.disconnect();
+        subClientMqtt3.close();
+
+        subClientMqtt5.disconnect();
+        subClientMqtt5.close();
+    }
 }
