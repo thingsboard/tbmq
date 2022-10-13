@@ -188,10 +188,11 @@ public class ProtoConverter {
                 .collect(Collectors.toSet());
     }
 
-    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId) {
+    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean isNewSessionPersistent) {
         return QueueProtos.DisconnectClientCommandProto.newBuilder()
                 .setSessionIdMSB(sessionId.getMostSignificantBits())
                 .setSessionIdLSB(sessionId.getLeastSignificantBits())
+                .setIsNewSessionPersistent(isNewSessionPersistent)
                 .build();
     }
 

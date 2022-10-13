@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
@@ -52,7 +53,8 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final MqttMessageGenerator mqttMessageGenerator;
 
     @Override
-    public void disconnect(ClientActorStateInfo actorState, DisconnectReason reason) {
+    public void disconnect(ClientActorStateInfo actorState, DisconnectMsg disconnectMsg) {
+        DisconnectReason reason = disconnectMsg.getReason();
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
         if (sessionCtx.getSessionInfo() == null) {
@@ -68,7 +70,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         try {
-            clearClientSession(actorState, reason.getType());
+            clearClientSession(actorState, disconnectMsg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to clean client session. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
             log.trace("Detailed error: ", e);
@@ -107,9 +109,10 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
     }
 
-    void clearClientSession(ClientActorStateInfo actorState, DisconnectReasonType disconnectReasonType) {
+    void clearClientSession(ClientActorStateInfo actorState, DisconnectMsg disconnectMsg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
+        var disconnectReasonType = disconnectMsg.getReason().getType();
 
         actorState.getQueuedMessages().clear();
 
@@ -117,7 +120,8 @@ public class DisconnectServiceImpl implements DisconnectService {
         keepAliveService.unregisterSession(sessionId);
 
         boolean sendLastWill = !DisconnectReasonType.ON_DISCONNECT_MSG.equals(disconnectReasonType);
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill);
+        var isNewSessionPersistent = disconnectMsg.isNewSessionPersistent();
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill, isNewSessionPersistent);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             processPersistenceDisconnect(sessionCtx, clientInfo, sessionId);

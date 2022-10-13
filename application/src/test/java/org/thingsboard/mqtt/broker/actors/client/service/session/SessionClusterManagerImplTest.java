@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -124,7 +125,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
-        verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any());
+        verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any(), eq(false));
         verify(clientSessionService, times(1)).clearClientSession(any(), any());
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
         verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
@@ -174,7 +175,7 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
-        verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any());
+        verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any(), eq(false));
         verify(clientSessionService, times(2)).saveClientSession(any(), any(), any());
         verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
     }

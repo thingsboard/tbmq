@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,8 +28,11 @@ import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -70,6 +74,10 @@ public class DefaultLastWillServiceTest {
 
     @Test
     public void testLastWillMsgSent() {
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
+        lastWillService.setScheduler(scheduledExecutorService);
+        doNothing().when(lastWillService).scheduleLastWill(any(), any(), anyInt());
+
         saveLastWillMsg();
 
         removeAndExecuteLastWillIfNeeded(savedSessionId);
@@ -78,7 +86,7 @@ public class DefaultLastWillServiceTest {
     }
 
     private void verifyPersistPublishMsg(VerificationMode mode) {
-        verify(lastWillService, mode).persistPublishMsg(any(), any(), any());
+        verify(lastWillService, mode).scheduleLastWill(any(), any(), anyInt());
     }
 
     private void saveLastWillMsg() {
@@ -86,10 +94,16 @@ public class DefaultLastWillServiceTest {
     }
 
     private PublishMsg getPublishMsg() {
-        return PublishMsg.builder().build();
+        MqttProperties properties = new MqttProperties();
+        int propertyId = MqttProperties.MqttPropertyType.WILL_DELAY_INTERVAL.value();
+        properties.add(new MqttProperties.IntegerProperty(propertyId, 100));
+        return PublishMsg
+                .builder()
+                .properties(properties)
+                .build();
     }
 
     private void removeAndExecuteLastWillIfNeeded(UUID sessionId) {
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true);
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, false);
     }
 }

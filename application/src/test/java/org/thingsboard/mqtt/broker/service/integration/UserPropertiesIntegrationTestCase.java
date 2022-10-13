@@ -73,6 +73,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     static {
         MQTT_PROPERTIES = new MqttProperties();
         MQTT_PROPERTIES.setUserProperties(USER_PROPERTIES);
+        MQTT_PROPERTIES.setWillDelayInterval(1L);
     }
 
     @Autowired
@@ -221,7 +222,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         options.setUserName(DEFAULT_USER_NAME);
         pubClient.connect(options);
 
-        boolean await = latch.await(2, TimeUnit.SECONDS);
+        boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertFalse(await);
 
         MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWillRetained");

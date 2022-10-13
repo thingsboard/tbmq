@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -81,7 +82,8 @@ public class ActorProcessorImpl implements ActorProcessor {
         log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), sessionCtx.getSessionId());
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             state.updateSessionState(SessionState.DISCONNECTING);
-            disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS, "Trying to init the same active session"));
+            DisconnectReason reason = new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS, "Trying to init the same active session");
+            disconnect(state, newDisconnectMsg(state.getCurrentSessionId(), reason));
         }
     }
 
@@ -96,7 +98,8 @@ public class ActorProcessorImpl implements ActorProcessor {
         log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
                 state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
         state.updateSessionState(SessionState.DISCONNECTING);
-        disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
+        DisconnectReason reason = new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS);
+        disconnect(state, newDisconnectMsg(state.getCurrentSessionId(), reason));
     }
 
     void updateClientActorState(ClientActorState state, ClientSessionCtx sessionCtx) {
@@ -140,17 +143,17 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         state.updateSessionState(SessionState.DISCONNECTING);
-        disconnect(state, disconnectMsg.getReason());
+        disconnect(state, disconnectMsg);
         state.updateSessionState(SessionState.DISCONNECTED);
     }
 
-    private void disconnect(ClientActorState state, DisconnectReason reason) {
-        disconnectService.disconnect(state, reason);
+    private void disconnect(ClientActorState state, DisconnectMsg disconnectMsg) {
+        disconnectService.disconnect(state, disconnectMsg);
     }
 
     private AuthResponse authenticateClient(AuthContext authContext) {
         try {
-            // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc)
+            // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc.)
             return authenticationService.authenticate(authContext);
         } catch (AuthenticationException e) {
             log.debug("[{}] Authentication failed. Reason - {}.", authContext.getClientId(), e.getMessage());
@@ -165,5 +168,9 @@ public class ActorProcessorImpl implements ActorProcessor {
                 .passwordBytes(sessionInitMsg.getPasswordBytes())
                 .sslHandler(sessionInitMsg.getClientSessionCtx().getSslHandler())
                 .build();
+    }
+
+    private DisconnectMsg newDisconnectMsg(UUID sessionId, DisconnectReason reason) {
+        return new DisconnectMsg(sessionId, reason);
     }
 }
