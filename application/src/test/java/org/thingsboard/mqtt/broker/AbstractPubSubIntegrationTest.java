@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.ClassRule;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,12 +42,28 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 
+import java.util.List;
+
 @ActiveProfiles("test")
 @Import(AbstractPubSubIntegrationTest.KafkaTestContainersConfiguration.class)
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 @WebAppConfiguration
 @SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
 public abstract class AbstractPubSubIntegrationTest {
+
+    public static final List<UserProperty> USER_PROPERTIES = List.of(
+            new UserProperty("myUserPropertyKey", "myUserPropertyValue"),
+            new UserProperty("region", "UA"),
+            new UserProperty("type", "JSON")
+    );
+    public static final MqttProperties MQTT_PROPERTIES;
+
+    static {
+        MQTT_PROPERTIES = new MqttProperties();
+        MQTT_PROPERTIES.setUserProperties(USER_PROPERTIES);
+        MQTT_PROPERTIES.setWillDelayInterval(1L);
+    }
+
     protected final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired

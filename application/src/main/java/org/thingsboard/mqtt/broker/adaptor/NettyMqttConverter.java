@@ -17,11 +17,14 @@ package org.thingsboard.mqtt.broker.adaptor;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPingMsg;
@@ -34,6 +37,10 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.util.List;
 import java.util.UUID;
@@ -76,6 +83,21 @@ public class NettyMqttConverter {
 
     public static MqttPubCompMsg createMqttPubCompMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
         return new MqttPubCompMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
+    }
+
+    public static DisconnectReason createDisconnectReason(ClientSessionCtx ctx, MqttMessage msg) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            var variableHeader = (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader();
+            var reasonCode = variableHeader.reasonCode();
+            if (MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value() == reasonCode) {
+                return getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_AND_WILL_MSG);
+            }
+        }
+        return getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG);
+    }
+
+    private static DisconnectReason getDisconnectReason(DisconnectReasonType reasonType) {
+        return new DisconnectReason(reasonType);
     }
 
     public static MqttPingMsg createMqttPingMsg(UUID sessionId) {

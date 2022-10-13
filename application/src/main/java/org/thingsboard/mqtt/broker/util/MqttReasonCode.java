@@ -22,6 +22,7 @@ public enum MqttReasonCode {
     GRANTED_QOS_0((byte) 0),
     GRANTED_QOS_1((byte) 1),
     GRANTED_QOS_2((byte) 2),
+    DISCONNECT_WITH_WILL_MSG((byte) 4),
     SUCCESS((byte) 0),
     FAILURE((byte) 128),
     MALFORMED_PACKET((byte) 129),

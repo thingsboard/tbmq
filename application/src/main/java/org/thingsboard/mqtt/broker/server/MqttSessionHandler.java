@@ -111,7 +111,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
         switch (msgType) {
             case DISCONNECT:
-                disconnect(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+                disconnect(NettyMqttConverter.createDisconnectReason(clientSessionCtx, msg));
                 break;
             case CONNECT:
                 clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));

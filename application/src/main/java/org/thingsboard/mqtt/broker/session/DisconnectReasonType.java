@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.session;
 
 public enum DisconnectReasonType {
     ON_DISCONNECT_MSG,
+    ON_DISCONNECT_AND_WILL_MSG,
     ON_CONFLICTING_SESSIONS,
     ON_ERROR,
     ON_CHANNEL_CLOSED,

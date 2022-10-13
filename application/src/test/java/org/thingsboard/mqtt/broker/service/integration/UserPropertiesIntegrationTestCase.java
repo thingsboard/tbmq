@@ -23,7 +23,6 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
-import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.After;
 import org.junit.Assert;
@@ -63,18 +62,6 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     static final String SUB_CLIENT_ID_DEV = "subClientIdDev";
     static final String DEFAULT_USER_NAME = "defaultUserName";
     static final String MY_TOPIC = "my/topic";
-    static final List<UserProperty> USER_PROPERTIES = List.of(
-            new UserProperty("myUserPropertyKey", "myUserPropertyValue"),
-            new UserProperty("region", "UA"),
-            new UserProperty("type", "JSON")
-    );
-    static final MqttProperties MQTT_PROPERTIES;
-
-    static {
-        MQTT_PROPERTIES = new MqttProperties();
-        MQTT_PROPERTIES.setUserProperties(USER_PROPERTIES);
-        MQTT_PROPERTIES.setWillDelayInterval(1L);
-    }
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
