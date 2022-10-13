@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +87,6 @@ public class RetainedMsgProcessorImplTest {
     }
 
     private PublishMsg getMsg(byte[] payload) {
-        return new PublishMsg(1, "test", payload, 2, true, false);
+        return new PublishMsg(1, "test", payload, 2, true, false, MqttProperties.NO_PROPERTIES);
     }
 }

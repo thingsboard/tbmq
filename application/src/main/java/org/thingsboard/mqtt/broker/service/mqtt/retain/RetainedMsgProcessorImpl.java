@@ -48,8 +48,15 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
         MqttProperties properties = new MqttProperties();
-        properties.add(publishMsg.getProperties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value()));
+        MqttProperties.MqttProperty property = getUserProperties(publishMsg);
+        if (property != null) {
+            properties.add(property);
+        }
         return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), properties);
+    }
+
+    private MqttProperties.MqttProperty getUserProperties(PublishMsg publishMsg) {
+        return publishMsg.getProperties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
     }
 
     PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {

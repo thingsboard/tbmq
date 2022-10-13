@@ -30,6 +30,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -48,6 +49,7 @@ public abstract class AbstractPubSubIntegrationTest {
     protected final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
+    @Lazy
     protected BCryptPasswordEncoder passwordEncoder;
 
     @Value("${listener.tcp.bind_port}")
