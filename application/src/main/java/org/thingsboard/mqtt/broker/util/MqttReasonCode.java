@@ -35,6 +35,8 @@ public enum MqttReasonCode {
     MESSAGE_RATE_TOO_HIGH((byte) 150),
     QUOTA_EXCEEDED((byte) 151),
     ADMINISTRATIVE_ACTION((byte) 152),
+    USE_ANOTHER_SERVER((byte) 156),
+    SERVER_MOVED((byte) 157),
     ;
 
     static final List<MqttReasonCode> GRANTED_QOS_LIST = List.of(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2);
