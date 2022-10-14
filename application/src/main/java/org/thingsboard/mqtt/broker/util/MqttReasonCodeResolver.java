@@ -36,6 +36,7 @@ import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUN
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PROTOCOL_ERROR;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.QUOTA_EXCEEDED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SESSION_TAKEN_OVER;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUCCESS;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.TOPIC_NAME_INVALID;
 
@@ -93,6 +94,8 @@ public final class MqttReasonCodeResolver {
                 return PROTOCOL_ERROR;
             case ON_QUOTA_EXCEEDED:
                 return QUOTA_EXCEEDED;
+            case ON_SUBSCRIPTION_ID_NOT_SUPPORTED:
+                return SUBSCRIPTION_ID_NOT_SUPPORTED;
             case ON_ERROR:
             default:
                 return FAILURE;

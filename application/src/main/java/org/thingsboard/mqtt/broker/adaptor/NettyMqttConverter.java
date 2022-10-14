@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.adaptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
@@ -58,7 +60,10 @@ public class NettyMqttConverter {
         List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions().stream()
                 .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
                 .collect(Collectors.toList());
-        return new MqttSubscribeMsg(sessionId, nettySubscribeMsg.variableHeader().messageId(), topicSubscriptions);
+        MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
+        int messageId = mqttMessageIdVariableHeader.messageId();
+        MqttProperties properties = mqttMessageIdVariableHeader.properties();
+        return new MqttSubscribeMsg(sessionId, messageId, topicSubscriptions, properties);
     }
 
     public static MqttUnsubscribeMsg createMqttUnsubscribeMsg(UUID sessionId, MqttUnsubscribeMessage nettyUnsubscribeMsg) {

@@ -37,6 +37,7 @@ public enum MqttReasonCode {
     ADMINISTRATIVE_ACTION((byte) 0x98),
     USE_ANOTHER_SERVER((byte) 0x9C),
     SERVER_MOVED((byte) 0x9D),
+    SUBSCRIPTION_ID_NOT_SUPPORTED((byte) 0xA1),
     ;
 
     static final List<MqttReasonCode> GRANTED_QOS_LIST = List.of(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2);
@@ -48,6 +49,10 @@ public enum MqttReasonCode {
     }
 
     public byte value() {
+        return byteValue;
+    }
+
+    public int intValue() {
         return byteValue;
     }
 

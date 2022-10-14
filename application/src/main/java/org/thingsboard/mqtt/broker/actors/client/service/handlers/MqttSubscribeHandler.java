@@ -15,16 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
-import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -32,7 +34,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
@@ -52,14 +57,15 @@ public class MqttSubscribeHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final ClientMqttActorManager clientMqttActorManager;
 
-    public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
+    public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
         log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
                 ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
 
-        List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, topicSubscriptions);
+        List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, msg);
         List<TopicSubscription> validTopicSubscriptions = collectValidSubscriptions(topicSubscriptions, codes);
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
@@ -76,8 +82,14 @@ public class MqttSubscribeHandler {
         return validTopicSubscriptions;
     }
 
-    List<MqttReasonCode> collectMqttReasonCodes(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        List<MqttReasonCode> codes = new ArrayList<>(topicSubscriptions.size());
+    List<MqttReasonCode> collectMqttReasonCodes(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+        List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
+
+        List<MqttReasonCode> codes = populateReasonCodesIfSubscriptionIdPresent(ctx, msg);
+        if (!codes.isEmpty()) {
+            return codes;
+        }
+
         for (TopicSubscription subscription : topicSubscriptions) {
             var topic = subscription.getTopic();
 
@@ -103,17 +115,60 @@ public class MqttSubscribeHandler {
         return codes;
     }
 
+    private List<MqttReasonCode> populateReasonCodesIfSubscriptionIdPresent(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+        var subscriptionsCount = msg.getTopicSubscriptions().size();
+        List<MqttReasonCode> codes = new ArrayList<>(subscriptionsCount);
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            MqttProperties.MqttProperty subscriptionIdProperty = getSubscriptionIdProperty(msg.getProperties());
+            if (subscriptionIdProperty != null) {
+                for (int i = 0; i < subscriptionsCount; i++) {
+                    codes.add(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED);
+                }
+            }
+        }
+        return codes;
+    }
+
+    private MqttProperties.MqttProperty getSubscriptionIdProperty(MqttProperties properties) {
+        return properties.getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value());
+    }
+
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions, MqttSubAckMessage subAckMessage) {
-        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
+        if (CollectionUtils.isEmpty(topicSubscriptions)) {
+            sendSubAck(ctx, subAckMessage);
+            if (isSubscriptionIdNotSupportedCodePresent(subAckMessage)) {
+                disconnectClient(ctx);
+            }
+            return;
+        }
+
+        String clientId = ctx.getClientId();
         clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions,
                 CallbackUtil.createCallback(
                         () -> {
-                            ctx.getChannel().writeAndFlush(subAckMessage);
+                            sendSubAck(ctx, subAckMessage);
                             processRetainedMessages(ctx, topicSubscriptions);
                         },
                         t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
                                 clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
         );
+    }
+
+    private void disconnectClient(ClientSessionCtx ctx) {
+        clientMqttActorManager.disconnect(
+                ctx.getClientId(),
+                new DisconnectMsg(
+                        ctx.getSessionId(),
+                        new DisconnectReason(DisconnectReasonType.ON_SUBSCRIPTION_ID_NOT_SUPPORTED))
+        );
+    }
+
+    private void sendSubAck(ClientSessionCtx ctx, MqttSubAckMessage subAckMessage) {
+        ctx.getChannel().writeAndFlush(subAckMessage);
+    }
+
+    private boolean isSubscriptionIdNotSupportedCodePresent(MqttSubAckMessage subAckMessage) {
+        return subAckMessage.payload().reasonCodes().contains(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED.intValue());
     }
 
     private void processRetainedMessages(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {

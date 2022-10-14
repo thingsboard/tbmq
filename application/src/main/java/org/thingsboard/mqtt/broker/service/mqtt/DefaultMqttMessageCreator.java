@@ -86,6 +86,10 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
                 MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value(),
                 keepAliveTimeSeconds)
         );
+        properties.add(new MqttProperties.IntegerProperty(
+                MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER_AVAILABLE.value(),
+                0) // TODO: 14/10/2022 after impl MQTT 5 SubscriptionId feature change this to 1 or remove completely
+        );
 
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
                 new MqttConnAckVariableHeader(returnCode, sessionPresent, properties);
