@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
@@ -84,7 +85,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             MqttMessage message = (MqttMessage) msg;
             if (!message.decoderResult().isSuccess()) {
                 log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
-                disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
+                if (message.decoderResult().cause() instanceof TooLongFrameException) {
+                    disconnect(new DisconnectReason(DisconnectReasonType.ON_PACKET_TOO_LARGE));
+                } else {
+                    disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
+                }
                 return;
             }
 

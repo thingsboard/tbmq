@@ -33,6 +33,7 @@ import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MALFORMED_PACKET;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MESSAGE_RATE_TOO_HIGH;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUND;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_TOO_LARGE;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PROTOCOL_ERROR;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.QUOTA_EXCEEDED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SESSION_TAKEN_OVER;
@@ -96,6 +97,8 @@ public final class MqttReasonCodeResolver {
                 return QUOTA_EXCEEDED;
             case ON_SUBSCRIPTION_ID_NOT_SUPPORTED:
                 return SUBSCRIPTION_ID_NOT_SUPPORTED;
+            case ON_PACKET_TOO_LARGE:
+                return PACKET_TOO_LARGE;
             case ON_ERROR:
             default:
                 return FAILURE;
