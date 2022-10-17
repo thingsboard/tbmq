@@ -43,9 +43,22 @@ message UserPropertyProto {
   string value = 2;
 }
 
+enum RetainHandling {
+  SEND = 0;
+  SEND_IF_NOT_EXISTS = 1;
+  DONT_SEND = 2;
+}
+
+message SubscriptionOptionsProto {
+  bool noLocal = 1;
+  bool retainAsPublish = 2;
+  RetainHandling retainHandling = 3;
+}
+
 message TopicSubscriptionProto {
   string topic = 1;
   int32 qos = 2;
+  SubscriptionOptionsProto options = 3;
 }
 
 message ClientInfoProto {

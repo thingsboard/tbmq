@@ -86,7 +86,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
-        List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters);
+        List<Subscription> msgSubscriptions = convertToSubscriptions(clientSubscriptionWithTopicFilters, senderClientId);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
@@ -113,10 +113,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
     }
 
-    private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    private List<Subscription> convertToSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters,
+                                                      String senderClientId) {
         long startTime = System.nanoTime();
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
-                filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
+                filterClientSubscriptions(clientSubscriptionWithTopicFilters, senderClientId);
 
         List<Subscription> msgSubscriptions = filteredClientSubscriptions.stream()
                 .map(clientSubscription -> {
@@ -135,10 +136,18 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptions;
     }
 
-    private Collection<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
-            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionValueWithTopicFilter,
+                                       String senderClientId) {
+        return clientSubscriptionValueWithTopicFilter.getValue().getClientId().equals(senderClientId)
+                && clientSubscriptionValueWithTopicFilter.getValue().getOptions().isNoLocal();
+    }
+
+    private Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
+            Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters,
+            String senderClientId) {
 
         return clientSubscriptionWithTopicFilters.stream()
+                .filter(clientSubsWithTopicFilter -> !isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId))
                 .collect(Collectors.toMap(
                         clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
                         Function.identity(),

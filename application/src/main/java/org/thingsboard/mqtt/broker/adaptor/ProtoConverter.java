@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
@@ -174,9 +175,22 @@ public class ProtoConverter {
                 .map(topicSubscription -> QueueProtos.TopicSubscriptionProto.newBuilder()
                         .setQos(topicSubscription.getQos())
                         .setTopic(topicSubscription.getTopic())
+                        .setOptions(prepareOptionsProto(topicSubscription))
                         .build())
                 .collect(Collectors.toList());
         return QueueProtos.ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
+    }
+
+    private static QueueProtos.SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {
+        return QueueProtos.SubscriptionOptionsProto.newBuilder()
+                .setNoLocal(topicSubscription.getOptions().isNoLocal())
+                .setRetainAsPublish(topicSubscription.getOptions().isRetainAsPublish())
+                .setRetainHandling(getRetainHandling(topicSubscription))
+                .build();
+    }
+
+    private static QueueProtos.RetainHandling getRetainHandling(TopicSubscription topicSubscription) {
+        return QueueProtos.RetainHandling.forNumber(topicSubscription.getOptions().getRetainHandling().value());
     }
 
     public static Set<TopicSubscription> convertToClientSubscriptions(QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
@@ -184,8 +198,20 @@ public class ProtoConverter {
                 .map(topicSubscriptionProto -> TopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
                         .topic(topicSubscriptionProto.getTopic())
+                        .options(createOptions(topicSubscriptionProto))
                         .build())
                 .collect(Collectors.toSet());
+    }
+
+    private static SubscriptionOptions createOptions(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+        return new SubscriptionOptions(
+                topicSubscriptionProto.getOptions().getNoLocal(),
+                topicSubscriptionProto.getOptions().getRetainAsPublish(),
+                getRetainHandling(topicSubscriptionProto));
+    }
+
+    private static SubscriptionOptions.RetainHandlingPolicy getRetainHandling(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+        return SubscriptionOptions.RetainHandlingPolicy.valueOf(topicSubscriptionProto.getOptions().getRetainHandling().getNumber());
     }
 
     public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean isNewSessionPersistent) {

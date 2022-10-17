@@ -46,7 +46,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
         for (TopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptionTrie.put(topicSubscription.getTopic(), new ClientSubscription(clientId, topicSubscription.getQos()));
+            subscriptionTrie.put(topicSubscription.getTopic(), new ClientSubscription(
+                    clientId, topicSubscription.getQos(), topicSubscription.getOptions()
+            ));
         }
     }
 

@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -58,7 +59,11 @@ public class NettyMqttConverter {
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
         List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions().stream()
-                .map(mqttTopicSubscription -> new TopicSubscription(mqttTopicSubscription.topicName(), mqttTopicSubscription.qualityOfService().value()))
+                .map(mqttTopicSubscription -> new TopicSubscription(
+                        mqttTopicSubscription.topicName(),
+                        mqttTopicSubscription.qualityOfService().value(),
+                        SubscriptionOptions.newInstance(mqttTopicSubscription.option())
+                ))
                 .collect(Collectors.toList());
         MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
         int messageId = mqttMessageIdVariableHeader.messageId();
