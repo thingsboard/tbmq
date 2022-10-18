@@ -23,9 +23,6 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -62,20 +59,6 @@ public class RetainedMsgProcessorImplTest {
         retainedMsgProcessor.process(publishMsg);
 
         verify(retainedMsgListenerService, times(1)).clearRetainedMsgAndPersist(eq("test"));
-    }
-
-    @Test
-    public void testUnsetRetainedFlag() {
-        PublishMsg publishMsg = getPublishMsg();
-        assertTrue(publishMsg.isRetained());
-
-        PublishMsg updatedPubMsg = retainedMsgProcessor.unsetRetainedFlag(publishMsg);
-
-        assertEquals(1, updatedPubMsg.getPacketId());
-        assertEquals("test", updatedPubMsg.getTopicName());
-        assertEquals(2, updatedPubMsg.getQosLevel());
-        assertFalse(updatedPubMsg.isRetained());
-        assertFalse(updatedPubMsg.isDup());
     }
 
     private PublishMsg emptyPublishMsg() {

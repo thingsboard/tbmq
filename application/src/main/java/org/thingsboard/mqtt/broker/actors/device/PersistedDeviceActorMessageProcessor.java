@@ -170,6 +170,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 .qosLevel(publishMsg.getQos())
                 .isDup(isDup)
                 .properties(publishMsg.getProperties())
+                .isRetained(publishMsg.isRetained())
                 .build();
     }
 

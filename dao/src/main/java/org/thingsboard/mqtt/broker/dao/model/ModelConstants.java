@@ -75,6 +75,7 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY = "packet_id";
     public static final String DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY = "packet_type";
     public static final String DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY = "user_properties";
+    public static final String DEVICE_PUBLISH_MSG_RETAIN_PROPERTY = "retain";
 
     /**
      * device_session_ctx constants.

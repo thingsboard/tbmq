@@ -128,7 +128,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                         return null;
                     }
                     return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                            clientSession.getSessionInfo());
+                            clientSession.getSessionInfo(), clientSubscription.getValue().getOptions());
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -174,9 +174,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {
-        int minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        var minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        var retain = clientSubscription.getOptions().isRetain(publishMsgProto);
         return publishMsgProto.toBuilder()
                 .setQos(minQoSValue)
+                .setRetain(retain)
                 .build();
     }
 }

@@ -25,4 +25,12 @@ public class Subscription {
     private final String topicFilter;
     private final int mqttQoSValue;
     private final SessionInfo sessionInfo;
+    private final SubscriptionOptions options;
+
+    public Subscription(String topicFilter, int mqttQoSValue, SessionInfo sessionInfo) {
+        this.topicFilter = topicFilter;
+        this.mqttQoSValue = mqttQoSValue;
+        this.sessionInfo = sessionInfo;
+        this.options = SubscriptionOptions.newInstance();
+    }
 }

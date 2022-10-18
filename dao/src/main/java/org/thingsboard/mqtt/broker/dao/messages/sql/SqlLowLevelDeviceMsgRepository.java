@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages.sql;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -34,17 +34,18 @@ import java.util.stream.IntStream;
 @Slf4j
 @Repository
 @Transactional
+@RequiredArgsConstructor
 public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgRepository {
 
     private static final String INSERT_OR_UPDATE = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties)" +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain)" +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
             "ON CONFLICT (client_id, serial_number) DO UPDATE SET " +
-            "topic = ?, packet_id = ?, packet_type = ?, time = ?, qos = ?, payload = ?, user_properties = ?;";
+            "topic = ?, packet_id = ?, packet_type = ?, time = ?, qos = ?, payload = ?, user_properties = ?, retain = ?;";
 
     private static final String INSERT = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     private static final String UPDATE_PACKET_TYPE = "UPDATE device_publish_msg SET packet_type = ? " +
             "WHERE client_id = ? AND packet_id = ?;";
@@ -55,8 +56,7 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
     private static final String DELETE_PACKETS_BY_CLIENT_ID = "DELETE FROM device_publish_msg " +
             "WHERE client_id = ?;";
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void insert(List<DevicePublishMsgEntity> entities) {
@@ -73,6 +73,7 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setInt(7, devicePublishMsgEntity.getQos());
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
                 ps.setString(9, devicePublishMsgEntity.getUserProperties());
+                ps.setBoolean(10, devicePublishMsgEntity.isRetain());
             }
 
             @Override
@@ -97,13 +98,15 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setInt(7, devicePublishMsgEntity.getQos());
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
                 ps.setString(9, devicePublishMsgEntity.getUserProperties());
-                ps.setString(10, devicePublishMsgEntity.getTopic());
-                ps.setInt(11, devicePublishMsgEntity.getPacketId());
-                ps.setString(12, devicePublishMsgEntity.getPacketType().toString());
-                ps.setLong(13, devicePublishMsgEntity.getTime());
-                ps.setInt(14, devicePublishMsgEntity.getQos());
-                ps.setBytes(15, devicePublishMsgEntity.getPayload());
-                ps.setString(16, devicePublishMsgEntity.getUserProperties());
+                ps.setBoolean(10, devicePublishMsgEntity.isRetain());
+                ps.setString(11, devicePublishMsgEntity.getTopic());
+                ps.setInt(12, devicePublishMsgEntity.getPacketId());
+                ps.setString(13, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(14, devicePublishMsgEntity.getTime());
+                ps.setInt(15, devicePublishMsgEntity.getQos());
+                ps.setBytes(16, devicePublishMsgEntity.getPayload());
+                ps.setString(17, devicePublishMsgEntity.getUserProperties());
+                ps.setBoolean(18, devicePublishMsgEntity.isRetain());
             }
 
             @Override

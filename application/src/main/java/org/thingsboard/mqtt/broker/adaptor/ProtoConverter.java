@@ -83,6 +83,7 @@ public class ProtoConverter {
                 .setQos(devicePublishMsg.getQos())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
                 .addAllUserProperties(userPropertyProtos)
+                .setRetain(devicePublishMsg.isRetained())
                 .build();
     }
 
@@ -229,6 +230,7 @@ public class ProtoConverter {
                 .qos(publishMsgProto.getQos())
                 .payload(publishMsgProto.getPayload().toByteArray())
                 .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
+                .isRetained(publishMsgProto.getRetain())
                 .build();
     }
 
@@ -245,6 +247,7 @@ public class ProtoConverter {
                 .setClientId(devicePublishMsg.getClientId())
                 .setPacketType(devicePublishMsg.getPacketType().toString())
                 .addAllUserProperties(userPropertyProtos)
+                .setRetain(devicePublishMsg.isRetained())
                 .build();
     }
 
@@ -259,6 +262,7 @@ public class ProtoConverter {
                 .clientId(devicePublishMsgProto.getClientId())
                 .packetType(PersistedPacketType.valueOf(devicePublishMsgProto.getPacketType()))
                 .properties(createMqttProperties(devicePublishMsgProto.getUserPropertiesList()))
+                .isRetained(devicePublishMsgProto.getRetain())
                 .build();
     }
 

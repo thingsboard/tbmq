@@ -124,6 +124,7 @@ message DevicePublishMsgProto {
   string clientId = 7;
   string packetType = 8;
   repeated UserPropertyProto userProperties = 9;
+  bool retain = 10;
 }
 
 message ClientPublishMsgProto {

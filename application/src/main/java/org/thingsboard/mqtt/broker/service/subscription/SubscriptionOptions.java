@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 @ToString
 @EqualsAndHashCode
@@ -70,5 +71,12 @@ public final class SubscriptionOptions {
 
     public static SubscriptionOptions newInstance() {
         return new SubscriptionOptions(false, false, RetainHandlingPolicy.SEND_AT_SUBSCRIBE);
+    }
+
+    public boolean isRetain(QueueProtos.PublishMsgProto publishMsgProto) {
+        if (!retainAsPublish) {
+            return false;
+        }
+        return publishMsgProto.getRetain();
     }
 }

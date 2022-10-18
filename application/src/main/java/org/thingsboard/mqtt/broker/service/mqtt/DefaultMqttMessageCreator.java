@@ -143,7 +143,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
-        return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), false,
+        return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), pubMsg.isRetained(),
                 pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload(), pubMsg.getProperties());
     }
 

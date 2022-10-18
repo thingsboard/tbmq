@@ -35,4 +35,5 @@ public class DevicePublishMsg {
     private PersistedPacketType packetType;
     private byte[] payload;
     private MqttProperties properties;
+    private boolean isRetained;
 }
