@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
+import java.util.function.Function;
+
 @ToString
 @EqualsAndHashCode
 @Getter
@@ -73,10 +75,27 @@ public final class SubscriptionOptions {
         return new SubscriptionOptions(false, false, RetainHandlingPolicy.SEND_AT_SUBSCRIBE);
     }
 
+    public boolean isNoLocalOptionMet(String receiverClientId, String senderClientId) {
+        return receiverClientId.equals(senderClientId) && noLocal;
+    }
+
     public boolean isRetain(QueueProtos.PublishMsgProto publishMsgProto) {
         if (!retainAsPublish) {
             return false;
         }
         return publishMsgProto.getRetain();
+    }
+
+    public boolean needSendRetainedForTopicSubscription(Function<TopicSubscription, Boolean> subscriptionPresentFunction,
+                                                        TopicSubscription topicSubscription) {
+        switch (retainHandling) {
+            case SEND_AT_SUBSCRIBE:
+                return true;
+            case SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS:
+                return subscriptionPresentFunction.apply(topicSubscription);
+            case DONT_SEND_AT_SUBSCRIBE:
+                return false;
+        }
+        return true;
     }
 }

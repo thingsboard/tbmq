@@ -57,6 +57,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
     static final String DEV_CLIENT_ID = "devClientId";
     static final String APP_CLIENT_ID = "appClientId";
     static final String MY_TOPIC = "my/topic";
+    static final String MSG_PAYLOAD = "myRetainMsg";
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
@@ -81,11 +82,11 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
     @After
     public void clear() throws Exception {
-        if (devClient.isConnected()) {
+        if (devClient != null && devClient.isConnected()) {
             devClient.disconnect();
             awaitUntilDisconnected(devClient);
         }
-        if (appClient.isConnected()) {
+        if (appClient != null && appClient.isConnected()) {
             appClient.disconnect();
             awaitUntilDisconnected(appClient);
         }
@@ -111,7 +112,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
             log.error("[{}] Received msg: {}", topic, message.getProperties());
-            Assert.assertEquals("myRetainMsg", new String(message.getPayload()));
+            Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertTrue(message.isRetained());
 
             latch.countDown();
@@ -126,7 +127,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
             log.error("[{}] Received msg: {}", topic, message.getProperties());
-            Assert.assertEquals("myRetainMsg", new String(message.getPayload()));
+            Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
             Assert.assertFalse(message.isRetained());
 
             latch.countDown();
@@ -141,8 +142,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         MqttSubscription[] subscriptions = {mqttSubscription};
 
         MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
-        MqttConnectionOptions options = new MqttConnectionOptions();
-        options.setUserName(GENERIC_USER_NAME);
+        MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
         subClient.connect(options);
         subClient.subscribe(subscriptions, listeners);
 
@@ -159,7 +159,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
         pubClient.connect(options);
-        pubClient.publish(MY_TOPIC, "myRetainMsg".getBytes(StandardCharsets.UTF_8), 2, true);
+        pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
 
         boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertTrue(await);
@@ -173,14 +173,134 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         clearRetainedMsg();
     }
 
+    @Test
+    public void givenSubClientWithRetainHandling2_whenPublishRetainMsg_thenNotReceiveRetainMsg() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
+
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        pubClient.connect(options);
+        pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        subClient.connect(options);
+
+        MqttSubscription mqttSubscription = new MqttSubscription(MY_TOPIC, 2);
+        mqttSubscription.setRetainHandling(2);
+        MqttSubscription[] subscriptions = {mqttSubscription};
+
+        IMqttMessageListener[] listeners = {(topic, message) -> latch.countDown()};
+        subClient.subscribe(subscriptions, listeners);
+
+        boolean await = latch.await(2, TimeUnit.SECONDS);
+        Assert.assertFalse(await);
+
+        disconnectClient(pubClient);
+
+        disconnectClient(subClient);
+
+        clearRetainedMsg();
+    }
+
+    @Test
+    public void givenSubClientWithRetainHandling1_whenPublishRetainMsgAndSubscriptionNotPresent_thenReceiveRetainMsg() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
+
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        pubClient.connect(options);
+        pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        subClient.connect(options);
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
+            Assert.assertTrue(message.isRetained());
+
+            latch.countDown();
+        }};
+
+        MqttSubscription mqttSubscription = new MqttSubscription(MY_TOPIC, 2);
+        mqttSubscription.setRetainHandling(1);
+        MqttSubscription[] subscriptions = {mqttSubscription};
+
+        subClient.subscribe(subscriptions, listeners);
+
+        boolean await = latch.await(2, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        disconnectClient(pubClient);
+
+        disconnectClient(subClient);
+
+        clearRetainedMsg();
+    }
+
+    @Test
+    public void givenSubClientWithRetainHandling1_whenPublishRetainMsgAndSubscriptionPresent_thenNotReceiveRetainMsg() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        subClient.connect(options);
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals(MSG_PAYLOAD, new String(message.getPayload()));
+            Assert.assertFalse(message.isRetained());
+
+            latch.countDown();
+        }};
+
+        MqttSubscription mqttSubscription = new MqttSubscription(MY_TOPIC, 2);
+        mqttSubscription.setRetainHandling(1);
+        MqttSubscription[] subscriptions = {mqttSubscription};
+
+        subClient.subscribe(subscriptions, listeners);
+
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        pubClient.connect(options);
+        pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
+
+        boolean await = latch.await(2, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        CountDownLatch newLatch = new CountDownLatch(1);
+        IMqttMessageListener[] newListeners = {(topic, message) -> newLatch.countDown()};
+
+        MqttSubscription newMqttSubscription = new MqttSubscription(MY_TOPIC, 1);
+        newMqttSubscription.setRetainHandling(1);
+        MqttSubscription[] newSubscriptions = {newMqttSubscription};
+        subClient.subscribe(newSubscriptions, newListeners);
+
+        await = newLatch.await(2, TimeUnit.SECONDS);
+        Assert.assertFalse(await);
+
+        disconnectClient(pubClient);
+
+        disconnectClient(subClient);
+
+        clearRetainedMsg();
+    }
+
     private void clearRetainedMsg() throws MqttException {
         MqttClient pubClientClearRetained = new MqttClient("tcp://localhost:" + mqttPort, "pubClearRetained");
-        MqttConnectionOptions clearRetainedOptions = new MqttConnectionOptions();
-        clearRetainedOptions.setUserName(GENERIC_USER_NAME);
+        MqttConnectionOptions clearRetainedOptions = getConnectionOptionsWithGenericUserName();
 
         pubClientClearRetained.connect(clearRetainedOptions);
         pubClientClearRetained.publish(MY_TOPIC, "".getBytes(StandardCharsets.UTF_8), 0, true);
         disconnectClient(pubClientClearRetained);
+    }
+
+    private MqttConnectionOptions getConnectionOptionsWithGenericUserName() {
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setUserName(GENERIC_USER_NAME);
+        return options;
     }
 
     private void disconnectClient(MqttClient client) throws MqttException {

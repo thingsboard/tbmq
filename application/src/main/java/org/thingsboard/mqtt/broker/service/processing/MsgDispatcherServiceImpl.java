@@ -138,8 +138,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionValueWithTopicFilter,
                                        String senderClientId) {
-        return clientSubscriptionValueWithTopicFilter.getValue().getClientId().equals(senderClientId)
-                && clientSubscriptionValueWithTopicFilter.getValue().getOptions().isNoLocal();
+        return clientSubscriptionValueWithTopicFilter
+                .getValue()
+                .getOptions()
+                .isNoLocalOptionMet(
+                        clientSubscriptionValueWithTopicFilter.getValue().getClientId(),
+                        senderClientId
+                );
     }
 
     private Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(

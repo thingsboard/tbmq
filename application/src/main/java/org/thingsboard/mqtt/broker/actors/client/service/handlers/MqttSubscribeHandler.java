@@ -133,8 +133,8 @@ public class MqttSubscribeHandler {
         return properties.getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value());
     }
 
-    private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions, MqttSubAckMessage subAckMessage) {
-        if (CollectionUtils.isEmpty(topicSubscriptions)) {
+    private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions, MqttSubAckMessage subAckMessage) {
+        if (CollectionUtils.isEmpty(newSubscriptions)) {
             sendSubAck(ctx, subAckMessage);
             if (isSubscriptionIdNotSupportedCodePresent(subAckMessage)) {
                 disconnectClient(ctx);
@@ -143,11 +143,12 @@ public class MqttSubscribeHandler {
         }
 
         String clientId = ctx.getClientId();
-        clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions,
+        Set<TopicSubscription> currentSubscriptions = clientSubscriptionService.getClientSubscriptions(clientId);
+        clientSubscriptionService.subscribeAndPersist(clientId, newSubscriptions,
                 CallbackUtil.createCallback(
                         () -> {
                             sendSubAck(ctx, subAckMessage);
-                            processRetainedMessages(ctx, topicSubscriptions);
+                            processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
                         t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
                                 clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
@@ -171,14 +172,20 @@ public class MqttSubscribeHandler {
         return subAckMessage.payload().reasonCodes().contains(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED.intValue());
     }
 
-    private void processRetainedMessages(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(topicSubscriptions);
+    private void processRetainedMessages(ClientSessionCtx ctx,
+                                         List<TopicSubscription> newSubscriptions,
+                                         Set<TopicSubscription> currentSubscriptions) {
+        Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
         retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishMsgToClient(ctx, retainedMsg));
     }
 
-    Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions
+    Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
+                                                              Set<TopicSubscription> currentSubscriptions) {
+        return newSubscriptions
                 .stream()
+                .filter(topicSubscription ->
+                        topicSubscription.getOptions().needSendRetainedForTopicSubscription(
+                                ts -> !currentSubscriptions.contains(ts), topicSubscription))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
