@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
@@ -33,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,13 +60,14 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private final RetainedMsgPersistenceService persistenceService;
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgConsumer;
-
+    private final TbQueueAdmin queueAdmin;
     private final RetainedMsgConsumerStats stats;
 
     public RetainedMsgConsumerImpl(RetainedMsgQueueFactory retainedMsgQueueFactory, ServiceInfoProvider serviceInfoProvider,
-                                   RetainedMsgPersistenceService persistenceService, StatsManager statsManager) {
+                                   RetainedMsgPersistenceService persistenceService, TbQueueAdmin queueAdmin, StatsManager statsManager) {
         String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
         this.retainedMsgConsumer = retainedMsgQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
+        this.queueAdmin = queueAdmin;
         this.persistenceService = persistenceService;
         this.stats = statsManager.getRetainedMsgConsumerStats();
     }
@@ -174,6 +177,9 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         stopped = true;
         if (retainedMsgConsumer != null) {
             retainedMsgConsumer.unsubscribeAndClose();
+            if (this.retainedMsgConsumer.getConsumerGroupId() != null) {
+                queueAdmin.deleteConsumerGroups(Collections.singleton(this.retainedMsgConsumer.getConsumerGroupId()));
+            }
         }
         consumerExecutor.shutdownNow();
     }

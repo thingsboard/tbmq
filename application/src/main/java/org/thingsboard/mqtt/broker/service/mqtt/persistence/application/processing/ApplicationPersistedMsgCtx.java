@@ -19,6 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -28,6 +29,11 @@ public class ApplicationPersistedMsgCtx {
     private final Map<Long, Integer> publishMsgIds;
     @Getter
     private final Map<Long, Integer> pubRelMsgIds;
+
+    public ApplicationPersistedMsgCtx() {
+        this.publishMsgIds = Collections.emptyMap();
+        this.pubRelMsgIds = Collections.emptyMap();
+    }
 
     public Integer getMsgPacketId(Long msgOffset) {
         Integer msgPacketId = null;
@@ -49,6 +55,6 @@ public class ApplicationPersistedMsgCtx {
         if (lastPubRelOffset != -1) {
             return pubRelMsgIds.get(lastPubRelOffset);
         }
-        return 1;
+        return 0;
     }
 }

@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorStatsManager;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
@@ -40,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -66,6 +68,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<ClientSessionEventConsumerStats> managedClientSessionEventConsumerStats = new CopyOnWriteArrayList<>();
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> sharedSubscriptionCompoundClientIds = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueConsumers = new ConcurrentHashMap<>();
     private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
@@ -137,6 +140,28 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
+        log.trace("Creating SharedApplicationProcessorStats, clientId - {}.", clientId);
+        if (applicationProcessorStatsEnabled) {
+            var compoundClientId = getCompoundClientId(clientId, subscription);
+
+            ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(compoundClientId, statsFactory);
+            managedApplicationProcessorStats.put(compoundClientId, stats);
+
+            List<String> clientIds = sharedSubscriptionCompoundClientIds.computeIfAbsent(clientId, s -> new ArrayList<>());
+            clientIds.add(compoundClientId);
+
+            return stats;
+        } else {
+            return StubApplicationProcessorStats.STUB_APPLICATION_PROCESSOR_STATS;
+        }
+    }
+
+    private String getCompoundClientId(String clientId, TopicSharedSubscription subscription) {
+        return clientId + "_" + subscription.getShareName() + "_" + subscription.getTopic();
+    }
+
+    @Override
     public ClientSubscriptionConsumerStats getClientSubscriptionConsumerStats() {
         return managedClientSubscriptionConsumerStats;
     }
@@ -150,8 +175,42 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
         ApplicationProcessorStats stats = managedApplicationProcessorStats.get(clientId);
-        assert stats != null && stats.isActive();
-        stats.disable();
+        if (stats != null && stats.isActive()) {
+            stats.disable();
+        }
+    }
+
+    @Override
+    public void clearSharedApplicationProcessorStats(String clientId) {
+        log.trace("Clearing SharedApplicationProcessorStats, clientId - {}.", clientId);
+        List<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
+        if (CollectionUtils.isEmpty(clientIds)) {
+            return;
+        }
+        for (String compoundClientId : clientIds) {
+            ApplicationProcessorStats stats = managedApplicationProcessorStats.get(compoundClientId);
+            if (stats != null && stats.isActive()) {
+                stats.disable();
+            }
+        }
+    }
+
+    @Override
+    public void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
+        log.trace("Clearing SharedApplicationProcessorStats, clientId - {}, subscription - {}.", clientId, subscription);
+
+        var compoundClientId = getCompoundClientId(clientId, subscription);
+
+        List<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
+        if (CollectionUtils.isEmpty(clientIds)) {
+            return;
+        }
+        clientIds.remove(compoundClientId);
+
+        ApplicationProcessorStats stats = managedApplicationProcessorStats.get(compoundClientId);
+        if (stats != null && stats.isActive()) {
+            stats.disable();
+        }
     }
 
     @Override
@@ -210,6 +269,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         log.trace("Registering ActiveApplicationProcessorsStats.");
         statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
         gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
+    }
+
+    @Override
+    public void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+        log.trace("Registering ActiveSharedApplicationProcessorsStats.");
+        statsFactory.createGauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
+        gauges.add(new Gauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationPersistenceMsgKafkaSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationSharedTopicMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
@@ -46,12 +47,14 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
+    private final ApplicationSharedTopicMsgKafkaSettings applicationSharedTopicMsgSettings;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
     @Autowired(required = false)
     private ProducerStatsManager producerStatsManager;
 
     private Map<String, String> topicConfigs;
+    private Map<String, String> sharedTopicConfigs;
 
     @PostConstruct
     public void init() {
@@ -61,6 +64,8 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
             log.warn("Application persistent message topic must have only 1 partition.");
         }
         topicConfigs.put(QueueConstants.PARTITIONS, "1");
+
+        this.sharedTopicConfigs = QueueUtil.getConfigs(applicationSharedTopicMsgSettings.getTopicProperties());
     }
 
     @Override
@@ -74,16 +79,34 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId) {
-        // TODO: maybe somehow force 'auto.offset.reset:earliest' property (to not rely on .yml config)
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(
+            String topic, String consumerGroup, String consumerId) {
+
+        String clientId = "application-persisted-msg-consumer-" + consumerId;
 
         Properties props = consumerSettings.toProps(applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
-        consumerBuilder.properties(props);
 
+        return createConsumer(topic, consumerGroup, clientId, props);
+    }
+
+    @Override
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumerForSharedTopic(
+            String topic, String consumerGroup, String consumerId) {
+
+        String clientId = "application-shared-msg-consumer-" + consumerId;
+        Properties props = consumerSettings.toProps(applicationSharedTopicMsgSettings.getAdditionalConsumerConfig());
+
+        return createConsumer(topic, consumerGroup, clientId, props);
+    }
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(
+            String topic, String consumerGroup, String clientId, Properties props) {
+
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+        consumerBuilder.properties(props);
         consumerBuilder.topic(topic);
-        consumerBuilder.clientId("application-persisted-msg-consumer-" + consumerId);
+        consumerBuilder.clientId(clientId);
         consumerBuilder.groupId(consumerGroup);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
@@ -96,5 +119,10 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     @Override
     public Map<String, String> getTopicConfigs() {
         return topicConfigs;
+    }
+
+    @Override
+    public Map<String, String> getSharedTopicConfigs() {
+        return sharedTopicConfigs;
     }
 }
