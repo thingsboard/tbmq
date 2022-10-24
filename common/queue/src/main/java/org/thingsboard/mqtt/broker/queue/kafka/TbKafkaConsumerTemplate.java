@@ -190,6 +190,11 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         ).map(OffsetAndMetadata::offset);
     }
 
+    @Override
+    public String getConsumerGroupId() {
+        return groupId;
+    }
+
     private TopicPartition newTopicPartition(String topic, int partition) {
         return new TopicPartition(topic, partition);
     }

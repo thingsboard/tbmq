@@ -28,6 +28,10 @@ public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> i
     private final int partition;
     private final long offset;
 
+    public TbProtoQueueMsg(T value) {
+        this(null, value, new DefaultTbQueueMsgHeaders());
+    }
+
     public TbProtoQueueMsg(String key, T value) {
         this(key, value, new DefaultTbQueueMsgHeaders());
     }

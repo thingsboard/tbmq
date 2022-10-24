@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -64,6 +66,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         AuthResponse authResponse = authenticateClient(authContext);
 
         if (!authResponse.isSuccess()) {
+            log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx);
             return;
         }
