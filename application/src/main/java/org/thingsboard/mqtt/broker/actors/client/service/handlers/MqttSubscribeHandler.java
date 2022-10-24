@@ -15,25 +15,36 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -50,6 +61,8 @@ public class MqttSubscribeHandler {
     private final AuthorizationRuleService authorizationRuleService;
     private final RetainedMsgService retainedMsgService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
+    private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    private final MsgPersistenceManager msgPersistenceManager;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
         UUID sessionId = ctx.getSessionId();
@@ -66,6 +79,62 @@ public class MqttSubscribeHandler {
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
         subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
+
+        startProcessingSharedSubscriptions(ctx, topicSubscriptions);
+    }
+
+    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+        if (!ctx.getSessionInfo().isPersistent()) {
+            log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+            return;
+        }
+        Set<TopicSharedSubscription> topicSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
+        if (CollectionUtils.isEmpty(topicSharedSubscriptions)) {
+            log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            return;
+        }
+        ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, topicSharedSubscriptions);
+        DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
+            if (validationSuccess) {
+                msgPersistenceManager.startProcessingSharedSubscriptions(ctx, topicSharedSubscriptions);
+            } else {
+                log.warn("Validation of shared subscriptions failed: {}", topicSharedSubscriptions);
+            }
+        }, throwable -> log.error("Failed to validate shared subscriptions {}", topicSharedSubscriptions, throwable));
+    }
+
+    private ListenableFuture<Boolean> validateSharedSubscriptions(ClientSessionCtx ctx, Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
+            return validateSharedSubscriptions(topicSharedSubscriptions);
+        }
+        return Futures.immediateFuture(true);
+    }
+
+    private ListenableFuture<Boolean> validateSharedSubscriptions(Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        List<ListenableFuture<Boolean>> futures = new ArrayList<>(topicSharedSubscriptions.size());
+        for (TopicSharedSubscription topicSharedSubscription : topicSharedSubscriptions) {
+            futures.add(Futures.transform(findSharedSubscriptionByTopic(topicSharedSubscription), sharedSubscription -> {
+                if (sharedSubscription == null) {
+                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", topicSharedSubscription.getTopic());
+                    return false;
+                }
+                return true;
+            }, MoreExecutors.directExecutor()));
+        }
+        return Futures.transform(Futures.allAsList(futures), list -> list.stream().allMatch(bool -> bool), MoreExecutors.directExecutor());
+    }
+
+    private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(TopicSharedSubscription topicSharedSubscription) {
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(topicSharedSubscription.getTopic());
+    }
+
+    Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
+        return topicSubscriptions
+                .stream()
+                .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
+                .collect(Collectors.groupingBy(subscription ->
+                        new TopicSharedSubscription(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
+                .keySet();
     }
 
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions, MqttSubAckMessage subAckMessage) {
@@ -89,6 +158,7 @@ public class MqttSubscribeHandler {
     Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
+                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getShareName()))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
@@ -118,10 +188,22 @@ public class MqttSubscribeHandler {
 
     void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
         try {
-            subscriptions.forEach(subscription -> topicValidationService.validateTopicFilter(subscription.getTopic()));
+            subscriptions.forEach(this::validateSubscription);
         } catch (DataValidationException e) {
             log.warn("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
             throw new MqttException(e);
+        }
+    }
+
+    private void validateSubscription(TopicSubscription subscription) {
+        topicValidationService.validateTopicFilter(subscription.getTopic());
+
+        String shareName = subscription.getShareName();
+        if (shareName != null && shareName.isEmpty()) {
+            throw new MqttException("Shared subscription 'shareName' must be at least one character long");
+        }
+        if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
+            throw new MqttException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
     }
 

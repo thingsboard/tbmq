@@ -39,7 +39,8 @@ message PublishMsgProto {
 
 message TopicSubscriptionProto {
   string topic = 1;
-  int32  qos = 2;
+  int32 qos = 2;
+  optional string shareName = 3;
 }
 
 message ClientInfoProto {

@@ -25,12 +25,14 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     private final ClientSessionQueueFactory clientSessionQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionPersistenceService persistenceService;
+    private final TbQueueAdmin queueAdmin;
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionConsumer;
 
@@ -172,6 +175,9 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
         stopped = true;
         if (clientSessionConsumer != null) {
             clientSessionConsumer.unsubscribeAndClose();
+            if (this.clientSessionConsumer.getConsumerGroupId() != null) {
+                queueAdmin.deleteConsumerGroups(Collections.singleton(this.clientSessionConsumer.getConsumerGroupId()));
+            }
         }
         consumerExecutor.shutdownNow();
     }

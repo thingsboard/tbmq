@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Assert;
@@ -63,7 +64,7 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegrationTest {
-    private static final String TEST_CLIENT_ID = "test-application-client";
+
     private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
             new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
 
@@ -78,9 +79,11 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
 
     private MqttClientCredentials applicationCredentials;
     private MqttClient persistedClient;
+    private String TEST_CLIENT_ID;
 
     @Before
     public void init() throws Exception {
+        TEST_CLIENT_ID = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID, null));
     }
 
@@ -116,7 +119,9 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
         }
         persistedClient.disconnect();
         awaitUntilDisconnected();
-
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID) == null);
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNull(clientSessionCtx);
         ClientSession persistedClientSession = clientSessionCache.getClientSession(TEST_CLIENT_ID);
