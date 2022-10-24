@@ -64,13 +64,8 @@ import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCa
 @Service
 @RequiredArgsConstructor
 public class SessionClusterManagerImpl implements SessionClusterManager {
-    private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
-    private ExecutorService eventResponseSenderExecutor;
 
-    @Value("${queue.client-session-event-response.max-request-timeout}")
-    private long requestTimeout;
-    @Value("${queue.client-session-event-response.response-sender-threads}")
-    private int eventResponseSenderThreads;
+    private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
@@ -82,6 +77,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ApplicationTopicService applicationTopicService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
+    private ExecutorService eventResponseSenderExecutor;
+
+    @Value("${queue.client-session-event-response.max-request-timeout}")
+    private long requestTimeout;
+    @Value("${queue.client-session-event-response.response-sender-threads}")
+    private int eventResponseSenderThreads;
 
     @PostConstruct
     public void init() {

@@ -52,9 +52,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class NettyMqttConverter {
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
-        PublishMsg lastWillPublishMsg = nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null;
-        return new MqttConnectMsg(sessionId, nettyConnectMsg.payload().clientIdentifier(), nettyConnectMsg.variableHeader().isCleanSession(),
-                nettyConnectMsg.variableHeader().keepAliveTimeSeconds(), lastWillPublishMsg);
+        return new MqttConnectMsg(
+                sessionId,
+                nettyConnectMsg.payload().clientIdentifier(),
+                nettyConnectMsg.variableHeader().isCleanSession(),
+                nettyConnectMsg.variableHeader().keepAliveTimeSeconds(),
+                nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null,
+                nettyConnectMsg.variableHeader().properties());
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
