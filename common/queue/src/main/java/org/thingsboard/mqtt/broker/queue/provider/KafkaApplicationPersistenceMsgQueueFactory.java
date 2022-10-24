@@ -47,7 +47,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
-    private final ApplicationSharedTopicMsgKafkaSettings applicationSharedTopicMsgKafkaSettings;
+    private final ApplicationSharedTopicMsgKafkaSettings applicationSharedTopicMsgSettings;
     private final TbKafkaConsumerStatsService consumerStatsService;
 
     @Autowired(required = false)
@@ -65,7 +65,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         }
         topicConfigs.put(QueueConstants.PARTITIONS, "1");
 
-        this.sharedTopicConfigs = QueueUtil.getConfigs(applicationSharedTopicMsgKafkaSettings.getTopicProperties());
+        this.sharedTopicConfigs = QueueUtil.getConfigs(applicationSharedTopicMsgSettings.getTopicProperties());
     }
 
     @Override
@@ -95,7 +95,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
             String topic, String consumerGroup, String consumerId) {
 
         String clientId = "application-shared-msg-consumer-" + consumerId;
-        Properties props = consumerSettings.toProps(applicationSharedTopicMsgKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(applicationSharedTopicMsgSettings.getAdditionalConsumerConfig());
 
         return createConsumer(topic, consumerGroup, clientId, props);
     }
