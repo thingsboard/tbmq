@@ -15,10 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.will;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
@@ -35,7 +36,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DefaultLastWillServiceTest {
+@RunWith(MockitoJUnitRunner.class)
+public class DefaultLastWillServiceTest {
 
     MsgDispatcherService msgDispatcherService;
     RetainedMsgProcessor retainedMsgProcessor;
@@ -45,24 +47,20 @@ class DefaultLastWillServiceTest {
     SessionInfo sessionInfo;
     UUID savedSessionId;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         msgDispatcherService = mock(MsgDispatcherService.class);
         retainedMsgProcessor = mock(RetainedMsgProcessor.class);
         statsManager = mock(StatsManager.class);
         lastWillService = spy(new DefaultLastWillService(msgDispatcherService, retainedMsgProcessor, statsManager));
 
         sessionInfo = mock(SessionInfo.class);
-        ClientInfo clientInfo = mock(ClientInfo.class);
-
         savedSessionId = UUID.randomUUID();
-
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
         when(sessionInfo.getSessionId()).thenReturn(savedSessionId);
     }
 
     @Test
-    void testLastWillMsgNotSent() {
+    public void testLastWillMsgNotSent() {
         saveLastWillMsg();
 
         removeAndExecuteLastWillIfNeeded(UUID.randomUUID());
@@ -71,7 +69,7 @@ class DefaultLastWillServiceTest {
     }
 
     @Test
-    void testLastWillMsgSent() {
+    public void testLastWillMsgSent() {
         saveLastWillMsg();
 
         removeAndExecuteLastWillIfNeeded(savedSessionId);

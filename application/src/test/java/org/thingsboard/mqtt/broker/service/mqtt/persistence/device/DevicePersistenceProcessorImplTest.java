@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
@@ -31,7 +33,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DevicePersistenceProcessorImplTest {
+@RunWith(MockitoJUnitRunner.class)
+public class DevicePersistenceProcessorImplTest {
 
     DeviceMsgService deviceMsgService;
     DeviceSessionCtxService deviceSessionCtxService;
@@ -41,8 +44,8 @@ class DevicePersistenceProcessorImplTest {
 
     String clientId;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         deviceMsgService = mock(DeviceMsgService.class);
         deviceSessionCtxService = mock(DeviceSessionCtxService.class);
         deviceActorManager = mock(DeviceActorManager.class);
@@ -54,7 +57,7 @@ class DevicePersistenceProcessorImplTest {
     }
 
     @Test
-    void clearPersistedMsgsTest() {
+    public void clearPersistedMsgsTest() {
         Cache cache = mock(Cache.class);
         when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
 
@@ -67,28 +70,28 @@ class DevicePersistenceProcessorImplTest {
     }
 
     @Test
-    void processPubAckTest() {
+    public void processPubAckTest() {
         devicePersistenceProcessor.processPubAck(clientId, 1);
 
         verify(deviceActorManager, times(1)).notifyPacketAcknowledged(eq(clientId), eq(1));
     }
 
     @Test
-    void processPubRecTest() {
+    public void processPubRecTest() {
         devicePersistenceProcessor.processPubRec(clientId, 1);
 
         verify(deviceActorManager, times(1)).notifyPacketReceived(eq(clientId), eq(1));
     }
 
     @Test
-    void processPubCompTest() {
+    public void processPubCompTest() {
         devicePersistenceProcessor.processPubComp(clientId, 1);
 
         verify(deviceActorManager, times(1)).notifyPacketCompleted(eq(clientId), eq(1));
     }
 
     @Test
-    void startProcessingPersistedMessagesTest() {
+    public void startProcessingPersistedMessagesTest() {
         ClientSessionCtx clientSessionCtx = mock(ClientSessionCtx.class);
 
         devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
@@ -97,7 +100,7 @@ class DevicePersistenceProcessorImplTest {
     }
 
     @Test
-    void stopProcessingPersistedMessagesTest() {
+    public void stopProcessingPersistedMessagesTest() {
         devicePersistenceProcessor.stopProcessingPersistedMessages(clientId);
 
         verify(deviceActorManager, times(1)).notifyClientDisconnected(eq(clientId));

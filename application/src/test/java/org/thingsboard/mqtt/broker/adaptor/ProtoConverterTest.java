@@ -15,7 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.adaptor;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -24,10 +26,11 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class ProtoConverterTest {
+@RunWith(MockitoJUnitRunner.class)
+public class ProtoConverterTest {
 
     @Test
-    void givenTopicSubscriptions_whenConvertToProtoAndBack_thenOk() {
+    public void givenTopicSubscriptions_whenConvertToProtoAndBack_thenOk() {
         Set<TopicSubscription> input = Set.of(
                 new TopicSubscription("topic1", 0, "name1"),
                 new TopicSubscription("topic2", 1)

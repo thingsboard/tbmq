@@ -15,16 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.netty.handler.codec.mqtt.MqttVersion;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
-import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -36,6 +37,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -43,12 +45,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -56,7 +55,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttSubscribeHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttSubscribeHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
@@ -70,8 +70,8 @@ class MqttSubscribeHandlerTest {
 
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
         topicValidationService = mock(TopicValidationService.class);
@@ -86,12 +86,10 @@ class MqttSubscribeHandlerTest {
 
         ctx = mock(ClientSessionCtx.class);
         when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
     }
 
     @Test
-    void testProcess() {
+    public void testProcess() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -102,47 +100,26 @@ class MqttSubscribeHandlerTest {
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
         mqttSubscribeHandler.process(ctx, msg);
 
-        verify(mqttMessageGenerator, times(1)).createSubAckMessage(eq(1), eq(List.of(1, 1)));
+        verify(mqttMessageGenerator, times(1)).createSubAckMessage(
+                eq(1), eq(List.of(MqttReasonCode.GRANTED_QOS_0, MqttReasonCode.GRANTED_QOS_1, MqttReasonCode.GRANTED_QOS_2))
+        );
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
     }
 
     @Test
-    void testValidateSubscriptionsFailure() {
-        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(any());
-        assertThrows(MqttException.class,
-                () -> mqttSubscribeHandler.validateSubscriptions("id", UUID.randomUUID(), List.of(getTopicSubscription("topic"))));
-        verify(topicValidationService, times(1)).validateTopicFilter(any());
+    public void testCollectMqttReasonCodes() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("topic1"));
+        when(authorizationRuleService.isAuthorized(eq("topic2"), any())).thenReturn(false);
+        when(authorizationRuleService.isAuthorized(eq("topic3"), any())).thenReturn(true);
+
+        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, getTopicSubscriptions());
+
+        assertEquals(List.of(MqttReasonCode.FAILURE, MqttReasonCode.NOT_AUTHORIZED, MqttReasonCode.GRANTED_QOS_2), reasonCodes);
     }
 
     @Test
-    void testValidateSubscriptionsSuccess() {
-        doNothing().when(topicValidationService).validateTopicFilter(any());
-        assertAll(
-                () -> mqttSubscribeHandler.validateSubscriptions(
-                        "id",
-                        UUID.randomUUID(),
-                        getTopicSubscriptions()));
-        verify(topicValidationService, times(2)).validateTopicFilter(any());
-    }
-
-    @Test
-    void testValidateClientAccessFailure() {
-        assertThrows(MqttException.class, () -> mqttSubscribeHandler.validateClientAccess(ctx, List.of(getTopicSubscription("topic"))));
-        verify(authorizationRuleService, times(1)).isAuthorized(any(), any());
-    }
-
-    @Test
-    void testValidateClientAccessSuccess() {
-        when(authorizationRuleService.isAuthorized(any(), any())).thenReturn(true);
-        assertAll(() -> mqttSubscribeHandler.validateClientAccess(
-                ctx,
-                getTopicSubscriptions()
-        ));
-        verify(authorizationRuleService, times(2)).isAuthorized(any(), any());
-    }
-
-    @Test
-    void testGetRetainedMsgsForTopics() {
+    public void testGetRetainedMsgsForTopics() {
         when(retainedMsgService.getRetainedMessages(eq("one"))).thenReturn(List.of(
                 newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 1)
         ));
@@ -172,7 +149,7 @@ class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testCollectUniqueSharedSubscriptions() {
+    public void testCollectUniqueSharedSubscriptions() {
         List<TopicSubscription> topicSubscriptions = List.of(
                 getTopicSubscription("topic/test1", 1),
                 getTopicSubscription("topic/test2", 1, "g1"),
@@ -188,13 +165,10 @@ class MqttSubscribeHandlerTest {
 
     private List<TopicSubscription> getTopicSubscriptions() {
         return List.of(
-                getTopicSubscription("topic1"),
-                getTopicSubscription("topic2")
+                getTopicSubscription("topic1", 0),
+                getTopicSubscription("topic2", 1),
+                getTopicSubscription("topic3", 2)
         );
-    }
-
-    private TopicSubscription getTopicSubscription(String topic) {
-        return getTopicSubscription(topic, 1);
     }
 
     private TopicSubscription getTopicSubscription(String topic, int qos) {

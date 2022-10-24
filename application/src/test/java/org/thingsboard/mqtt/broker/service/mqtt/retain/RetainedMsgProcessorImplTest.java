@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,13 +32,15 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class RetainedMsgProcessorImplTest {
+@Slf4j
+@RunWith(MockitoJUnitRunner.class)
+public class RetainedMsgProcessorImplTest {
 
     RetainedMsgListenerService retainedMsgListenerService;
     RetainedMsgProcessorImpl retainedMsgProcessor;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         retainedMsgListenerService = mock(RetainedMsgListenerService.class);
         retainedMsgProcessor = spy(new RetainedMsgProcessorImpl(retainedMsgListenerService));
     }

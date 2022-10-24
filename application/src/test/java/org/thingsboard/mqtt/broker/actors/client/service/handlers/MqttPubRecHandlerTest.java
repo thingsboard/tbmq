@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -31,7 +33,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttPubRecHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttPubRecHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
     RetransmissionService retransmissionService;
@@ -39,8 +42,8 @@ class MqttPubRecHandlerTest {
     MqttPubRecHandler mqttPubRecHandler;
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
         retransmissionService = mock(RetransmissionService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
@@ -50,18 +53,18 @@ class MqttPubRecHandlerTest {
     }
 
     @Test
-    void testProcessPersistent() {
+    public void testProcessPersistent() {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(true));
         mqttPubRecHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubRec(eq(ctx), eq(1));
     }
 
     @Test
-    void testProcessNonPersistent() {
+    public void testProcessNonPersistent() {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(false));
 
         mqttPubRecHandler.process(ctx, 1);
-        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1));
+        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1), eq(null));
         verify(retransmissionService, times(1)).onPubRecReceived(eq(ctx), any());
     }
 

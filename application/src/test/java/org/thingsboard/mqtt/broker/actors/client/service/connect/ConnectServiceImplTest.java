@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.channel.ChannelHandlerContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,7 +37,6 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -50,7 +47,7 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.UUID;
 
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -111,17 +108,6 @@ public class ConnectServiceImplTest {
     }
 
     @Test
-    public void testStartConnection() {
-        ListenableFuture<ConnectionResponse> result = Futures.immediateFuture(new ConnectionResponse(true, false));
-        when(clientSessionEventService.requestConnection(sessionInfo)).thenReturn(result);
-
-        connectService.startConnection(actorState, getMqttConnectMsg(UUID.randomUUID(), "clientId"));
-
-        verify(keepAliveService, times(1)).registerSession(any(), any(), eq(1000));
-        verify(clientMqttActorManager, times(1)).notifyConnectionAccepted(any(), any());
-    }
-
-    @Test
     public void testAcceptConnection() {
         TbActorRef actorRef = mock(TbActorRef.class);
 
@@ -143,7 +129,7 @@ public class ConnectServiceImplTest {
     public void testRefuseConnection() {
         connectService.refuseConnection(ctx, null);
 
-        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_IDENTIFIER_REJECTED), eq(false));
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE), eq(false));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
     }

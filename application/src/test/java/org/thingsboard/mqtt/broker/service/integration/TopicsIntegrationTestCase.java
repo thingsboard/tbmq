@@ -40,10 +40,10 @@ import java.util.function.Supplier;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = TopicsIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = TopicsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class TopicsIntegrationTest extends AbstractPubSubIntegrationTest {
+public class TopicsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     private static final String BASIC_TOPIC = "use-case/country/city/store/department/group/device";
 

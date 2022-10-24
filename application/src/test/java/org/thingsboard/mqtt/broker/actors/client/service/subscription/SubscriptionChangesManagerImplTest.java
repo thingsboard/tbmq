@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -33,13 +35,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class SubscriptionChangesManagerImplTest {
+@RunWith(MockitoJUnitRunner.class)
+public class SubscriptionChangesManagerImplTest {
 
     ClientSubscriptionService clientSubscriptionService;
     SubscriptionChangesManager subscriptionChangesManager;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         clientSubscriptionService = mock(ClientSubscriptionServiceImpl.class);
         subscriptionChangesManager = spy(new SubscriptionChangesManagerImpl(clientSubscriptionService));
     }

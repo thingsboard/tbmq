@@ -15,17 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-class TopicSharedSubscriptionTest {
+public class TopicSharedSubscriptionTest {
 
     @Test
-    void testSharedSubscriptionTopicFilterEquals() {
+    public void testSharedSubscriptionTopicFilterEquals() {
         TopicSharedSubscription topicSharedSubscription1 = getSubscriptionTopicFilter(0);
         TopicSharedSubscription topicSharedSubscription2 = getSubscriptionTopicFilter(1);
-        assertEquals(topicSharedSubscription1, topicSharedSubscription2);
+        Assert.assertEquals(topicSharedSubscription1, topicSharedSubscription2);
     }
 
     private TopicSharedSubscription getSubscriptionTopicFilter(int qos) {

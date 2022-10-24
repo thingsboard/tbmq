@@ -27,14 +27,14 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = QoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = QoSVerificationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.retransmission.initial-delay=1",
         "mqtt.retransmission.period=1"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class QoSVerificationIntegrationTest extends AbstractQoSVerificationIntegrationTest {
+public class QoSVerificationIntegrationTestCase extends AbstractQoSVerificationIntegrationTestCase {
 
     @Test
     public void qoS1DeliveryValidationTest() throws Throwable {

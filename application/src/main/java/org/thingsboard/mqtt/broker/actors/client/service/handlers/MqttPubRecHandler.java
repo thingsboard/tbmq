@@ -24,6 +24,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 @Service
 @AllArgsConstructor
@@ -39,7 +41,8 @@ public class MqttPubRecHandler {
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubRec(ctx, messageId);
         } else {
-            MqttMessage pubRelMsg = mqttMessageGenerator.createPubRelMsg(messageId);
+            MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
+            MqttMessage pubRelMsg = mqttMessageGenerator.createPubRelMsg(messageId, code);
             retransmissionService.onPubRecReceived(ctx, pubRelMsg);
         }
     }

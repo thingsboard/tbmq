@@ -56,13 +56,13 @@ import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = AppSharedSubscriptionsIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = AppSharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class AppSharedSubscriptionsIntegrationTest extends AbstractPubSubIntegrationTest {
+public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     static final int TOTAL_MSG_COUNT = 100;
 

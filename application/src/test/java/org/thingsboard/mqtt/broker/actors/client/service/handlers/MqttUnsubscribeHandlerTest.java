@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.netty.handler.codec.mqtt.MqttVersion;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -26,7 +28,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +44,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttUnsubscribeHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttUnsubscribeHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     ClientSubscriptionService clientSubscriptionService;
@@ -49,20 +54,33 @@ class MqttUnsubscribeHandlerTest {
 
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         clientSubscriptionService = mock(ClientSubscriptionService.class);
         applicationPersistenceProcessor = mock(ApplicationPersistenceProcessor.class);
         mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService, applicationPersistenceProcessor));
 
         ctx = mock(ClientSessionCtx.class);
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
     }
 
     @Test
-    void testProcess() {
+    public void testProcess_MQTT5() {
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        ClientInfo clientInfo = mock(ClientInfo.class);
+        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
+
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
+
+        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCode.SUCCESS)));
+        verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+    }
+
+    @Test
+    public void testProcess_MQTT3() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -70,12 +88,18 @@ class MqttUnsubscribeHandlerTest {
 
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
-        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1));
+        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(getList()));
         verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
     }
 
+    private List<MqttReasonCode> getList() {
+        List<MqttReasonCode> value = new ArrayList<>();
+        value.add(null);
+        return value;
+    }
+
     @Test
-    void testCollectUniqueSharedSubscriptions() {
+    public void testCollectUniqueSharedSubscriptions() {
         List<String> topics = List.of(
                 "test/topic",
                 "my/home/+/bedroom",

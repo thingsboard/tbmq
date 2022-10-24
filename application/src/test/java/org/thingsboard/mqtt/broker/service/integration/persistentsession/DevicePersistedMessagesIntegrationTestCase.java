@@ -40,10 +40,10 @@ import java.util.Set;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = DevicePersistedMessagesIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = DevicePersistedMessagesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class DevicePersistedMessagesIntegrationTest extends AbstractPubSubIntegrationTest {
+public class DevicePersistedMessagesIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     public static final String CLIENT_ID = "CLIENT_ID";
 

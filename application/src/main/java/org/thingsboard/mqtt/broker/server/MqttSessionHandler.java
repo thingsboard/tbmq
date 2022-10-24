@@ -25,6 +25,7 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -159,10 +160,17 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientId = connectMessage.payload().clientIdentifier();
         boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
         clientId = isClientIdGenerated ? UUID.randomUUID().toString() : clientId;
+        clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
         clientMqttActorManager.initSession(clientId, isClientIdGenerated, new SessionInitMsg(
                 clientSessionCtx,
                 connectMessage.payload().userName(),
                 connectMessage.payload().passwordInBytes()));
+    }
+
+    private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {
+        var version = (byte) connectMessage.variableHeader().version();
+        var protocolName = version > 3 ? "MQTT" : "MQIsdp";
+        return MqttVersion.fromProtocolNameAndLevel(protocolName, version);
     }
 
     @Override

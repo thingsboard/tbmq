@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -38,7 +40,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @Slf4j
-class ClientSubscriptionServiceImplTest {
+@RunWith(MockitoJUnitRunner.class)
+public class ClientSubscriptionServiceImplTest {
 
     SubscriptionPersistenceService subscriptionPersistenceService;
     SubscriptionService subscriptionService;
@@ -46,8 +49,8 @@ class ClientSubscriptionServiceImplTest {
     StatsManager statsManager;
     ClientSubscriptionServiceImpl clientSubscriptionService;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         subscriptionPersistenceService = mock(SubscriptionPersistenceService.class);
         subscriptionService = mock(SubscriptionService.class);
         sharedSubscriptionProcessor = mock(SharedSubscriptionProcessor.class);

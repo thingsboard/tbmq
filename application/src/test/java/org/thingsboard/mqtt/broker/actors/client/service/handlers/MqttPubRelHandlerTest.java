@@ -16,9 +16,12 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,26 +31,28 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MqttPubRelHandlerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class MqttPubRelHandlerTest {
 
     MqttMessageGenerator mqttMessageGenerator;
     MqttPubRelHandler mqttPubRelHandler;
     ClientSessionCtx ctx;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
         mqttPubRelHandler = spy(new MqttPubRelHandler(mqttMessageGenerator));
 
         ctx = mock(ClientSessionCtx.class);
         ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
         when(ctx.getChannel()).thenReturn(handlerContext);
+        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(new AwaitingPubRelPacketsCtx());
     }
 
     @Test
-    void testProcess() {
+    public void testProcess() {
         mqttPubRelHandler.process(ctx, 1);
-        verify(mqttMessageGenerator, times(1)).createPubCompMsg(eq(1));
+        verify(mqttMessageGenerator, times(1)).createPubCompMsg(eq(1), eq(null));
         verify(mqttPubRelHandler, times(1)).completePubRel(eq(ctx), eq(1));
     }
 }

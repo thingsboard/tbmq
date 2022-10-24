@@ -43,6 +43,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationServic
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,22 +67,56 @@ public class MqttSubscribeHandler {
     private final MsgPersistenceManager msgPersistenceManager;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) throws MqttException {
-        UUID sessionId = ctx.getSessionId();
-        String clientId = ctx.getSessionInfo().getClientInfo().getClientId();
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}", clientId, sessionId, msg.getMessageId(), topicSubscriptions);
+        log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
+                ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
 
-        validateSubscriptions(clientId, sessionId, topicSubscriptions);
+        List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, topicSubscriptions);
+        List<TopicSubscription> validTopicSubscriptions = collectValidSubscriptions(topicSubscriptions, codes);
 
-        validateClientAccess(ctx, topicSubscriptions);
+        MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
+        subscribeAndPersist(ctx, validTopicSubscriptions, subAckMessage);
 
-        List<Integer> grantedQoSList = getQoSListFromTopicSubscriptions(topicSubscriptions);
+        startProcessingSharedSubscriptions(ctx, validTopicSubscriptions);
+    }
 
-        MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), grantedQoSList);
-        subscribeAndPersist(ctx, topicSubscriptions, subAckMessage);
+    private List<TopicSubscription> collectValidSubscriptions(List<TopicSubscription> topicSubscriptions, List<MqttReasonCode> codes) {
+        List<TopicSubscription> validTopicSubscriptions = new ArrayList<>();
+        for (int i = 0; i < codes.size(); i++) {
+            if (MqttReasonCode.getGrantedQosList().contains(codes.get(i))) {
+                validTopicSubscriptions.add(topicSubscriptions.get(i));
+            }
+        }
+        return validTopicSubscriptions;
+    }
 
-        startProcessingSharedSubscriptions(ctx, topicSubscriptions);
+    List<MqttReasonCode> collectMqttReasonCodes(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+        List<MqttReasonCode> codes = new ArrayList<>(topicSubscriptions.size());
+        for (TopicSubscription subscription : topicSubscriptions) {
+            var topic = subscription.getTopic();
+
+            try {
+                topicValidationService.validateTopicFilter(topic);
+                validateSharedSubscription(subscription);
+            } catch (DataValidationException e) {
+                log.warn("[{}][{}] Not valid topic, reason - {}", ctx.getClientId(), ctx.getSessionId(), e);
+                codes.add(MqttReasonCodeResolver.failure());
+                continue;
+            }
+
+            if (!CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
+                boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
+                if (!isClientAuthorized) {
+                    log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
+                            ctx.getClientId(), ctx.getSessionId(), topic);
+                    codes.add(MqttReasonCodeResolver.notAuthorizedSubscribe(ctx));
+                    continue;
+                }
+            }
+            codes.add(MqttReasonCode.valueOf(subscription.getQos()));
+        }
+        return codes;
     }
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
@@ -186,47 +222,13 @@ public class MqttSubscribeHandler {
         return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
     }
 
-    void validateSubscriptions(String clientId, UUID sessionId, List<TopicSubscription> subscriptions) {
-        try {
-            subscriptions.forEach(this::validateSubscription);
-        } catch (DataValidationException e) {
-            log.warn("[{}][{}] Not valid topic, reason - {}", clientId, sessionId, e.getMessage());
-            throw new MqttException(e);
-        }
-    }
-
-    private void validateSubscription(TopicSubscription subscription) {
-        topicValidationService.validateTopicFilter(subscription.getTopic());
-
+    private void validateSharedSubscription(TopicSubscription subscription) {
         String shareName = subscription.getShareName();
         if (shareName != null && shareName.isEmpty()) {
-            throw new MqttException("Shared subscription 'shareName' must be at least one character long");
+            throw new DataValidationException("Shared subscription 'shareName' must be at least one character long");
         }
         if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
-            throw new MqttException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
+            throw new DataValidationException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
-    }
-
-    void validateClientAccess(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
-        if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
-            return;
-        }
-        List<String> topics = getTopicsListFromTopicSubscriptions(topicSubscriptions);
-        topics.forEach(topic -> {
-            boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
-            if (!isClientAuthorized) {
-                log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
-                        ctx.getClientId(), ctx.getSessionId(), topic);
-                throw new MqttException("Client is not authorized to subscribe to the topic");
-            }
-        });
-    }
-
-    private List<Integer> getQoSListFromTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions.stream().map(TopicSubscription::getQos).collect(Collectors.toList());
-    }
-
-    private List<String> getTopicsListFromTopicSubscriptions(List<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions.stream().map(TopicSubscription::getTopic).collect(Collectors.toList());
     }
 }

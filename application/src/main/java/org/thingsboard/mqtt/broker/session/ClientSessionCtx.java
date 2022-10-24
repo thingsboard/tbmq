@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,6 +57,9 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     @Setter
     private volatile ClientType clientType;
+    @Getter
+    @Setter
+    private volatile MqttVersion mqttVersion;
 
     @Getter
     private ChannelHandlerContext channel;

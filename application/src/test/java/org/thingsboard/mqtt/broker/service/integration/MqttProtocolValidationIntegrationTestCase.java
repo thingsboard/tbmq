@@ -17,44 +17,36 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
-import static org.junit.Assert.assertFalse;
-
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = RateLimitsIntegrationTest.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "mqtt.rate-limits.enabled=true",
-        "mqtt.rate-limits.client-config=10:1,300:60"
-})
+@ContextConfiguration(classes = MqttProtocolValidationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class RateLimitsIntegrationTest extends AbstractPubSubIntegrationTest {
+public class MqttProtocolValidationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    @Test
-    public void testClientDisconnectedWhenRateLimitsDetected() throws Throwable {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_rate_limits");
-        pubClient.connect();
-
-        for (int i = 0; i < 500; i++) {
+    @Test(expected = MqttException.class)
+    public void testEmptyClientWithNoCleanSession() throws Throwable {
+        try (MqttClient testClient = new MqttClient("tcp://localhost:" + mqttPort, "")) {
+            MqttConnectOptions connectOptions = new MqttConnectOptions();
+            connectOptions.setCleanSession(false);
             try {
-                pubClient.publish("test/rate/limits", ("data_" + i).getBytes(), 1, false);
-            } catch (Exception e) {
-                log.error("Failed to publish msg", e);
-                break;
+                testClient.connect(connectOptions);
+            } catch (MqttException e) {
+                Assert.assertFalse(testClient.isConnected());
+                throw e;
             }
         }
-
-        assertFalse(pubClient.isConnected());
-        pubClient.close();
     }
 }

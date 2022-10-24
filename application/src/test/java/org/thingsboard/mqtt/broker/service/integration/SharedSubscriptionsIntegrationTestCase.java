@@ -41,10 +41,10 @@ import static org.junit.Assert.assertEquals;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = SharedSubscriptionsIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = SharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class SharedSubscriptionsIntegrationTest extends AbstractPubSubIntegrationTest {
+public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     static final int TOTAL_MSG_COUNT = 30;
 

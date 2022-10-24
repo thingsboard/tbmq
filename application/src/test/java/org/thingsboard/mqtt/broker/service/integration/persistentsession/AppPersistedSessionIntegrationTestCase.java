@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
@@ -57,13 +58,13 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = AppPersistedSessionIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = AppPersistedSessionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegrationTest {
+public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
             new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
@@ -93,6 +94,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
             persistedClient.disconnect();
         }
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(true);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -105,6 +107,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_afterDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -138,6 +141,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessConnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -152,6 +156,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_afterReconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -186,6 +191,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_afterReconnectAndChange() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -220,6 +226,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_clearPersisted() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
@@ -251,6 +258,7 @@ public class AppPersistedSessionIntegrationTest extends AbstractPubSubIntegratio
     @Test
     public void testSuccessPersistence_clearPersistedAndDisconnect() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {

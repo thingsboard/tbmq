@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration.persistentsession;
+package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -23,28 +24,37 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.service.integration.AbstractQoSVerificationIntegrationTest;
+
+import static org.junit.Assert.assertFalse;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = AppQoSVerificationIntegrationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = RateLimitsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.retransmission.initial-delay=1",
-        "mqtt.retransmission.period=1",
-        "security.mqtt.basic.enabled=true"
+        "mqtt.rate-limits.enabled=true",
+        "mqtt.rate-limits.client-config=10:1,300:60"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class AppQoSVerificationIntegrationTest extends AbstractQoSVerificationIntegrationTest {
+public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @Test
-    public void qoS1PersistentDeliveryValidationTest() throws Throwable {
-        process(QOS_1, false);
-    }
+    public void testClientDisconnectedWhenRateLimitsDetected() throws Throwable {
+        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_rate_limits");
+        pubClient.connect();
 
-    @Test
-    public void qoS2PersistentDeliveryValidationTest() throws Throwable {
-        process(QOS_2, false);
+        for (int i = 0; i < 500; i++) {
+            try {
+                pubClient.publish("test/rate/limits", ("data_" + i).getBytes(), 1, false);
+            } catch (Exception e) {
+                log.error("Failed to publish msg", e);
+                break;
+            }
+        }
+
+        assertFalse(pubClient.isConnected());
+        pubClient.close();
     }
 }

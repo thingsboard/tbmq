@@ -16,8 +16,10 @@
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
@@ -32,14 +34,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @Slf4j
-class SubscriptionServiceImplTest {
+@RunWith(MockitoJUnitRunner.class)
+public class SubscriptionServiceImplTest {
 
     SubscriptionTrie<ClientSubscription> subscriptionTrie;
     StatsManager statsManager;
     SubscriptionService subscriptionService;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         subscriptionTrie = mock(SubscriptionTrie.class);
         statsManager = mock(StatsManager.class);
         subscriptionService = spy(new SubscriptionServiceImpl(

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service;
 
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationR
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.Set;
@@ -87,7 +89,8 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     void sendConnectionRefusedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
-        MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED, false);
+        MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedNotAuthorized(sessionCtx);
+        MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(code, false);
         sessionCtx.getChannel().writeAndFlush(msg);
         sessionCtx.closeChannel();
     }

@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 @Slf4j
 @Service
@@ -32,15 +34,17 @@ public class MqttPubRelHandler {
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
         log.trace("[{}][{}] Received PUBREL msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
 
-        completePubRel(ctx, messageId);
+        var code = completePubRel(ctx, messageId);
 
-        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId));
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId, code));
     }
 
-    void completePubRel(ClientSessionCtx ctx, int messageId) {
+    MqttReasonCode completePubRel(ClientSessionCtx ctx, int messageId) {
         boolean completed = ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), messageId);
         if (!completed) {
             log.debug("[{}][{}] Couldn't find packetId {} for incoming PUBREL message.", ctx.getClientId(), ctx.getSessionId(), messageId);
+            return MqttReasonCodeResolver.packetIdNotFound(ctx);
         }
+        return MqttReasonCodeResolver.success(ctx);
     }
 }

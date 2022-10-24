@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -42,6 +43,8 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.UUID;
@@ -63,7 +66,10 @@ public class MqttPublishHandler {
         int msgId = publishMsg.getPacketId();
 
         log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), msgId);
-        validatePubMsg(ctx, publishMsg);
+        boolean validateSuccess = validatePubMsg(ctx, publishMsg);
+        if (!validateSuccess) {
+            return;
+        }
 
         if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
             if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
@@ -79,9 +85,31 @@ public class MqttPublishHandler {
         persistPubMsg(ctx, publishMsg, actorRef);
     }
 
-    private void validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
-        topicValidationService.validateTopic(publishMsg.getTopicName());
-        validateClientAccess(ctx, publishMsg.getTopicName());
+    private boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
+        try {
+            topicValidationService.validateTopic(publishMsg.getTopicName());
+        } catch (DataValidationException e) {
+            log.warn("[{}] Failed to validate topic for Pub msg {}", ctx.getClientId(), publishMsg, e);
+            var code = MqttReasonCodeResolver.topicNameInvalid(ctx);
+            pushErrorResponseWithReasonCode(ctx, publishMsg, code);
+            return false;
+        }
+        try {
+            validateClientAccess(ctx, publishMsg.getTopicName());
+        } catch (MqttException e) {
+            var code = MqttReasonCodeResolver.notAuthorized(ctx);
+            pushErrorResponseWithReasonCode(ctx, publishMsg, code);
+            return false;
+        }
+        return true;
+    }
+
+    private void pushErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCode code) {
+        if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(publishMsg.getPacketId(), code));
+        } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(publishMsg.getPacketId(), code));
+        }
     }
 
     boolean processExactlyOnceAndCheckIfAlreadyPublished(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
@@ -117,13 +145,15 @@ public class MqttPublishHandler {
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
+        MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
         List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs().finish(msgId);
-        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId)));
+        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code)));
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
+        MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
         List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs().finishAll(msgId);
-        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId)));
+        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code)));
 
         AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
         if (isNotPersisted(awaitingPacketInfo)) {
