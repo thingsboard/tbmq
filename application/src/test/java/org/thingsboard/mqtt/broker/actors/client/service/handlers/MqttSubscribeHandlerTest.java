@@ -149,7 +149,7 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
-    void testCollectUniqueSharedSubscriptions() {
+    public void testCollectUniqueSharedSubscriptions() {
         List<TopicSubscription> topicSubscriptions = List.of(
                 getTopicSubscription("topic/test1", 1),
                 getTopicSubscription("topic/test2", 1, "g1"),

@@ -15,53 +15,51 @@
  */
 package org.thingsboard.mqtt.broker.adaptor;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-class NettyMqttConverterTest {
+@RunWith(MockitoJUnitRunner.class)
+public class NettyMqttConverterTest {
 
     static final String SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX = "shared-subscriber-group/main/+/temp";
     static final String SHARED_SUBSCRIBER_GROUP_TOPIC_NAME = BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX;
 
     @Test
-    void testGetShareNameFromSharedSubscription() {
+    public void testGetShareNameFromSharedSubscription() {
         String shareName = NettyMqttConverter.getShareName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME);
-        assertEquals("shared-subscriber-group", shareName);
+        Assert.assertEquals("shared-subscriber-group", shareName);
     }
 
     @Test
-    void testGetShareName() {
+    public void testGetShareName() {
         String shareName = NettyMqttConverter.getShareName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX);
-        assertNull(shareName);
+        Assert.assertNull(shareName);
     }
 
     @Test
-    void testGetShareName1() {
+    public void testGetShareName1() {
         String shareName = NettyMqttConverter.getShareName(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + "/topic");
-        assertNotNull(shareName);
-        assertTrue(shareName.isEmpty());
+        Assert.assertNotNull(shareName);
+        Assert.assertTrue(shareName.isEmpty());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testGetShareName2() {
+        NettyMqttConverter.getShareName(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + "topic");
     }
 
     @Test
-    void testGetShareName2() {
-        assertThrows(RuntimeException.class, () -> NettyMqttConverter.getShareName(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX + "topic"));
-    }
-
-    @Test
-    void testGetTopicNameFromSharedSubscription() {
+    public void testGetTopicNameFromSharedSubscription() {
         String topicName = NettyMqttConverter.getTopicName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME);
-        assertEquals("main/+/temp", topicName);
+        Assert.assertEquals("main/+/temp", topicName);
     }
 
     @Test
-    void testGetTopicName() {
+    public void testGetTopicName() {
         String topicName = NettyMqttConverter.getTopicName(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX);
-        assertEquals(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX, topicName);
+        Assert.assertEquals(SHARED_SUBSCRIBER_GROUP_TOPIC_NAME_SUFFIX, topicName);
     }
 }

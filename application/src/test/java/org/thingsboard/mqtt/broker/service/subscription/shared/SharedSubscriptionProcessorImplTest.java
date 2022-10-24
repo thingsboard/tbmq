@@ -16,8 +16,9 @@
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import com.google.common.collect.Iterables;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -29,21 +30,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientInfo;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getConnectionInfo;
 
-class SharedSubscriptionProcessorImplTest {
+public class SharedSubscriptionProcessorImplTest {
 
     SharedSubscriptionProcessorImpl subscriptionProcessor;
 
-    @BeforeEach
-    void setUp() {
+    @Before
+    public void setUp() {
         subscriptionProcessor = new SharedSubscriptionProcessorImpl();
     }
 
     @Test
-    void testProcessRoundRobin() {
+    public void testProcessRoundRobin() {
         UUID sessionId1 = UUID.randomUUID();
         UUID sessionId2 = UUID.randomUUID();
         SessionInfo expectedSessionInfo1 = getSessionInfo(sessionId1, "clientId1");
@@ -56,24 +56,24 @@ class SharedSubscriptionProcessorImplTest {
         Subscription subscription1 = subscriptionProcessor.processRoundRobin(sharedSubscription);
         Subscription subscription2 = subscriptionProcessor.processRoundRobin(sharedSubscription);
 
-        assertEquals(new HashSet<>(Set.of(subscription1, subscription2)), new HashSet<>(subscriptions));
+        Assert.assertEquals(new HashSet<>(Set.of(subscription1, subscription2)), new HashSet<>(subscriptions));
 
         Subscription subscription3 = subscriptionProcessor.processRoundRobin(sharedSubscription);
         Subscription subscription4 = subscriptionProcessor.processRoundRobin(sharedSubscription);
 
-        assertEquals(subscription1, subscription3);
-        assertEquals(subscription2, subscription4);
+        Assert.assertEquals(subscription1, subscription3);
+        Assert.assertEquals(subscription2, subscription4);
     }
 
     @Test
-    void testObjectsEquals() {
-        assertEquals(newTopicAndGroup(), newTopicAndGroup());
+    public void testObjectsEquals() {
+        Assert.assertEquals(newTopicAndGroup(), newTopicAndGroup());
 
         UUID sessionId = UUID.randomUUID();
         SessionInfo expectedSessionInfo1 = getSessionInfo(sessionId, "clientId");
         SessionInfo expectedSessionInfo2 = getSessionInfo(sessionId, "clientId");
 
-        assertEquals(expectedSessionInfo1, expectedSessionInfo2);
+        Assert.assertEquals(expectedSessionInfo1, expectedSessionInfo2);
 
         List<Subscription> subscriptions1 = getSubscriptions(expectedSessionInfo1, expectedSessionInfo2);
         List<Subscription> subscriptions2 = getSubscriptions(expectedSessionInfo1, expectedSessionInfo2);
@@ -81,11 +81,11 @@ class SharedSubscriptionProcessorImplTest {
         SharedSubscription sharedSubscription1 = getSharedSubscription(subscriptions1);
         SharedSubscription sharedSubscription2 = getSharedSubscription(subscriptions2);
 
-        assertEquals(sharedSubscription1, sharedSubscription2);
+        Assert.assertEquals(sharedSubscription1, sharedSubscription2);
     }
 
     @Test
-    void testGetOneSubscription() {
+    public void testGetOneSubscription() {
         UUID sessionId1 = UUID.randomUUID();
         UUID sessionId2 = UUID.randomUUID();
         UUID sessionId3 = UUID.randomUUID();
@@ -102,7 +102,7 @@ class SharedSubscriptionProcessorImplTest {
 
         Iterator<Subscription> iterator = Iterables.cycle(subscriptions).iterator();
         Subscription subscription = subscriptionProcessor.getOneSubscription(iterator);
-        assertEquals(sessionId3, subscription.getClientSession().getSessionInfo().getSessionId());
+        Assert.assertEquals(sessionId3, subscription.getClientSession().getSessionInfo().getSessionId());
     }
 
     private List<Subscription> getSubscriptions(ClientSession clientSession1, ClientSession clientSession2, ClientSession clientSession3) {
