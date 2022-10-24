@@ -25,7 +25,8 @@ import java.util.Arrays;
 @RunWith(ClasspathSuite.class)
 @ClassnameFilters({
         "org.thingsboard.mqtt.broker.dao.service.*ServiceTest",
-        "org.thingsboard.mqtt.broker.dao.client.device.*ServiceTest"
+        "org.thingsboard.mqtt.broker.dao.client.device.*ServiceTest",
+        "org.thingsboard.mqtt.broker.dao.data.*Test"
 })
 public class DaoServiceTestSuite {
 

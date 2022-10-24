@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,16 +23,16 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @Builder(toBuilder = true)
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude = "properties")
 @AllArgsConstructor
 public class DevicePublishMsg {
     private String clientId;
     private String topic;
     private Long serialNumber;
-    // TODO: use time to check if DEVICE queue is not overloaded (check latency)
-    private Long time;
+    private Long time; // TODO: use time to check if DEVICE queue is not overloaded (check latency)
     private Integer qos;
     private Integer packetId;
     private PersistedPacketType packetType;
     private byte[] payload;
+    private MqttProperties properties;
 }

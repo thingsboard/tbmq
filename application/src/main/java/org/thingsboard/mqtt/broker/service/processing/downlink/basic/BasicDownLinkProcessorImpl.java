@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -72,6 +73,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
                 .payload(msg.getPayload().toByteArray())
                 .qosLevel(msg.getQos())
                 .isDup(false)
+                .properties(ProtoConverter.createMqttProperties(msg.getUserPropertiesList()))
                 .build();
     }
 

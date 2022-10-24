@@ -19,6 +19,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.data.UserProperties;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
@@ -60,10 +62,14 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY)
     private Integer qos;
 
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY, columnDefinition="BINARY")
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY, columnDefinition = "BINARY")
     private byte[] payload;
 
-    public DevicePublishMsgEntity() {}
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY)
+    private String userProperties;
+
+    public DevicePublishMsgEntity() {
+    }
 
     public DevicePublishMsgEntity(DevicePublishMsg devicePublishMsg) {
         this.clientId = devicePublishMsg.getClientId();
@@ -74,6 +80,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.packetType = devicePublishMsg.getPacketType();
         this.qos = devicePublishMsg.getQos();
         this.payload = devicePublishMsg.getPayload();
+        this.userProperties = JacksonUtil.toString(UserProperties.newInstance(devicePublishMsg.getProperties()));
     }
 
     @Override
@@ -87,6 +94,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
                 .payload(payload)
                 .packetId(packetId)
                 .packetType(packetType)
+                .properties(UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class)))
                 .build();
     }
 }

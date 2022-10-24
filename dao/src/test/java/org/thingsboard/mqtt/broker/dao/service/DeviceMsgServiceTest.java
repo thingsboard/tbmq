@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,11 +38,11 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     private static final String TEST_CLIENT_ID = "testClientId";
     private static final byte[] TEST_PAYLOAD = "testPayload".getBytes();
     private static final List<DevicePublishMsg> TEST_MESSAGES = Arrays.asList(
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 0L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 1L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 2L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 3L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 4L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD)
+            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 0L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
+            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 1L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
+            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 2L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
+            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 3L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
+            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 4L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES)
     );
 
     @After

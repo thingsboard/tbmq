@@ -35,6 +35,12 @@ message PublishMsgProto {
   bool retain = 4;
   int32 qos = 5;
   string topicName = 6;
+  repeated UserPropertyProto userProperties = 7;
+}
+
+message UserPropertyProto {
+  string key = 1;
+  string value = 2;
 }
 
 message TopicSubscriptionProto {
@@ -58,6 +64,7 @@ message RetainedMsgProto {
   bytes payload = 1;
   int32 qos = 2;
   string topic = 3;
+  repeated UserPropertyProto userProperties = 4;
 }
 
 message ClientSessionInfoProto {
@@ -103,6 +110,7 @@ message DevicePublishMsgProto {
   string topicName = 6;
   string clientId = 7;
   string packetType = 8;
+  repeated UserPropertyProto userProperties = 9;
 }
 
 message ClientPublishMsgProto {

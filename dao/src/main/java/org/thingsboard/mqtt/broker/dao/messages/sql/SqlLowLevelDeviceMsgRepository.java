@@ -37,23 +37,23 @@ import java.util.stream.IntStream;
 public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgRepository {
 
     private static final String INSERT_OR_UPDATE = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload)" +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties)" +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
             "ON CONFLICT (client_id, serial_number) DO UPDATE SET " +
-            "topic=?, packet_id=?, packet_type=?, time=?, qos=?, payload=?;";
+            "topic = ?, packet_id = ?, packet_type = ?, time = ?, qos = ?, payload = ?, user_properties = ?;";
 
     private static final String INSERT = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload) "+
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-    private static final String UPDATE_PACKET_TYPE = "UPDATE device_publish_msg SET packet_type=? " +
-            "WHERE client_id=? AND packet_id=?;";
+    private static final String UPDATE_PACKET_TYPE = "UPDATE device_publish_msg SET packet_type = ? " +
+            "WHERE client_id = ? AND packet_id = ?;";
 
     private static final String DELETE_PACKET = "DELETE FROM device_publish_msg " +
-            "WHERE client_id=? AND packet_id=?;";
+            "WHERE client_id = ? AND packet_id = ?;";
 
     private static final String DELETE_PACKETS_BY_CLIENT_ID = "DELETE FROM device_publish_msg " +
-            "WHERE client_id=?;";
+            "WHERE client_id = ?;";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -72,6 +72,7 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setLong(6, devicePublishMsgEntity.getTime());
                 ps.setInt(7, devicePublishMsgEntity.getQos());
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
+                ps.setString(9, devicePublishMsgEntity.getUserProperties());
             }
 
             @Override
@@ -95,12 +96,14 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setLong(6, devicePublishMsgEntity.getTime());
                 ps.setInt(7, devicePublishMsgEntity.getQos());
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
-                ps.setString(9, devicePublishMsgEntity.getTopic());
-                ps.setInt(10, devicePublishMsgEntity.getPacketId());
-                ps.setString(11, devicePublishMsgEntity.getPacketType().toString());
-                ps.setLong(12, devicePublishMsgEntity.getTime());
-                ps.setInt(13, devicePublishMsgEntity.getQos());
-                ps.setBytes(14, devicePublishMsgEntity.getPayload());
+                ps.setString(9, devicePublishMsgEntity.getUserProperties());
+                ps.setString(10, devicePublishMsgEntity.getTopic());
+                ps.setInt(11, devicePublishMsgEntity.getPacketId());
+                ps.setString(12, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(13, devicePublishMsgEntity.getTime());
+                ps.setInt(14, devicePublishMsgEntity.getQos());
+                ps.setBytes(15, devicePublishMsgEntity.getPayload());
+                ps.setString(16, devicePublishMsgEntity.getUserProperties());
             }
 
             @Override

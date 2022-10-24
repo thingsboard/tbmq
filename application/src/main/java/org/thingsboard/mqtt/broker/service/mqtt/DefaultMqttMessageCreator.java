@@ -25,6 +25,7 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
@@ -50,6 +51,7 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.PUBREC;
 import static io.netty.handler.codec.mqtt.MqttMessageType.PUBREL;
 import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 
 @Service
@@ -104,20 +106,20 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     @Override
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
         return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), false,
-                pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload());
+                pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload(), pubMsg.getProperties());
     }
 
     @Override
     public MqttPublishMessage createPubRetainMsg(int msgId, RetainedMsg retainedMsg) {
         return getMqttPublishMessage(false, retainedMsg.getQosLevel(), true,
-                retainedMsg.getTopic(), msgId, retainedMsg.getPayload());
+                retainedMsg.getTopic(), msgId, retainedMsg.getPayload(), retainedMsg.getProperties());
     }
 
     private MqttPublishMessage getMqttPublishMessage(boolean isDup, int qos, boolean isRetain,
-                                                     String topic, int packetId, byte[] payloadBytes) {
+                                                     String topic, int packetId, byte[] payloadBytes, MqttProperties properties) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, MqttQoS.valueOf(qos), isRetain, 0);
-        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, packetId);
+        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, packetId, properties);
         ByteBuf payload = ALLOCATOR.buffer();
         payload.writeBytes(payloadBytes);
         return new MqttPublishMessage(mqttFixedHeader, header, payload);
@@ -130,21 +132,21 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttMessage createPubRecMsg(int msgId, MqttReasonCode code) {
-        return createPubReplyMsg(PUBREC, msgId, code);
+        return createPubReplyMsg(PUBREC, AT_MOST_ONCE, msgId, code);
     }
 
     @Override
     public MqttMessage createPubRelMsg(int msgId, MqttReasonCode code) {
-        return createPubReplyMsg(PUBREL, msgId, code);
+        return createPubReplyMsg(PUBREL, AT_LEAST_ONCE, msgId, code);
     }
 
     @Override
     public MqttMessage createPubCompMsg(int msgId, MqttReasonCode code) {
-        return createPubReplyMsg(PUBCOMP, msgId, code);
+        return createPubReplyMsg(PUBCOMP, AT_MOST_ONCE, msgId, code);
     }
 
-    private MqttMessage createPubReplyMsg(MqttMessageType type, int msgId, MqttReasonCode code) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(type, false, AT_MOST_ONCE, false, 0);
+    private MqttMessage createPubReplyMsg(MqttMessageType type, MqttQoS mqttQoS, int msgId, MqttReasonCode code) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(type, false, mqttQoS, false, 0);
         if (code == null) {
             return new MqttMessage(mqttFixedHeader, MqttMessageIdVariableHeader.from(msgId));
         } else {

@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.adaptor;
 
 import com.google.protobuf.ByteString;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -32,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,25 +42,49 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
+
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
         QueueProtos.SessionInfoProto sessionInfoProto = convertToSessionInfoProto(sessionInfo);
+        UserProperties userProperties = getUserProperties(publishMsg.getProperties());
+        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         return QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
                 .setPayload(ByteString.copyFrom(publishMsg.getPayload()))
+                .addAllUserProperties(userPropertyProtos)
                 .setSessionInfo(sessionInfoProto)
                 .build();
     }
+
+    private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {
+        if (userProperties != null) {
+            return userProperties.value().stream().map(ProtoConverter::buildUserPropertyProto).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    private static QueueProtos.UserPropertyProto buildUserPropertyProto(MqttProperties.StringPair stringPair) {
+        return QueueProtos.UserPropertyProto.newBuilder().setKey(stringPair.key).setValue(stringPair.value).build();
+    }
+
+    private static UserProperties getUserProperties(MqttProperties properties) {
+        return (UserProperties) properties.getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
+    }
+
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(DevicePublishMsg devicePublishMsg) {
+        UserProperties userProperties = getUserProperties(devicePublishMsg.getProperties());
+        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         return QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setTopicName(devicePublishMsg.getTopic())
                 .setQos(devicePublishMsg.getQos())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
+                .addAllUserProperties(userPropertyProtos)
                 .build();
     }
+
     public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
         return publishMsgProto != null && publishMsgProto.getSessionInfo() != null && publishMsgProto.getSessionInfo().getClientInfo() != null ?
                 publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;
@@ -70,6 +97,7 @@ public class ProtoConverter {
                 .qosLevel(publishMsgProto.getQos())
                 .isRetained(publishMsgProto.getRetain())
                 .payload(publishMsgProto.getPayload().toByteArray())
+                .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
                 .build();
     }
 
@@ -176,22 +204,25 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId) {
-       return QueueProtos.DisconnectClientCommandProto.newBuilder()
-               .setSessionIdMSB(sessionId.getMostSignificantBits())
-               .setSessionIdLSB(sessionId.getLeastSignificantBits())
-               .build();
+        return QueueProtos.DisconnectClientCommandProto.newBuilder()
+                .setSessionIdMSB(sessionId.getMostSignificantBits())
+                .setSessionIdLSB(sessionId.getLeastSignificantBits())
+                .build();
     }
 
-    public static DevicePublishMsg toDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto devicePublishMsgProto) {
+    public static DevicePublishMsg toDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto publishMsgProto) {
         return DevicePublishMsg.builder()
                 .clientId(clientId)
-                .topic(devicePublishMsgProto.getTopicName())
-                .qos(devicePublishMsgProto.getQos())
-                .payload(devicePublishMsgProto.getPayload().toByteArray())
+                .topic(publishMsgProto.getTopicName())
+                .qos(publishMsgProto.getQos())
+                .payload(publishMsgProto.getPayload().toByteArray())
+                .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
                 .build();
     }
 
     public static QueueProtos.DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
+        UserProperties userProperties = getUserProperties(devicePublishMsg.getProperties());
+        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         return QueueProtos.DevicePublishMsgProto.newBuilder()
                 .setSerialNumber(devicePublishMsg.getSerialNumber())
                 .setTime(devicePublishMsg.getTime())
@@ -201,6 +232,7 @@ public class ProtoConverter {
                 .setTopicName(devicePublishMsg.getTopic())
                 .setClientId(devicePublishMsg.getClientId())
                 .setPacketType(devicePublishMsg.getPacketType().toString())
+                .addAllUserProperties(userPropertyProtos)
                 .build();
     }
 
@@ -214,6 +246,7 @@ public class ProtoConverter {
                 .topic(devicePublishMsgProto.getTopicName())
                 .clientId(devicePublishMsgProto.getClientId())
                 .packetType(PersistedPacketType.valueOf(devicePublishMsgProto.getPacketType()))
+                .properties(createMqttProperties(devicePublishMsgProto.getUserPropertiesList()))
                 .build();
     }
 
@@ -225,14 +258,43 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
+        List<QueueProtos.UserPropertyProto> userPropertyProtos = getUserPropertyProtos(retainedMsg);
         return QueueProtos.RetainedMsgProto.newBuilder()
                 .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
                 .setQos(retainedMsg.getQosLevel())
                 .setTopic(retainedMsg.getTopic())
+                .addAllUserProperties(userPropertyProtos)
                 .build();
     }
 
+    private static List<QueueProtos.UserPropertyProto> getUserPropertyProtos(RetainedMsg retainedMsg) {
+        MqttProperties properties = retainedMsg.getProperties();
+        if (properties != null && !properties.isEmpty()) {
+            UserProperties userProperties = getUserProperties(properties);
+            return toUserPropertyProtos(userProperties);
+        }
+        return Collections.emptyList();
+    }
+
     public static RetainedMsg convertToRetainedMsg(QueueProtos.RetainedMsgProto retainedMsgProto) {
-        return new RetainedMsg(retainedMsgProto.getTopic(), retainedMsgProto.getPayload().toByteArray(), retainedMsgProto.getQos());
+        return new RetainedMsg(
+                retainedMsgProto.getTopic(),
+                retainedMsgProto.getPayload().toByteArray(),
+                retainedMsgProto.getQos(),
+                createMqttProperties(retainedMsgProto.getUserPropertiesList())
+        );
+    }
+
+    public static MqttProperties createMqttProperties(List<QueueProtos.UserPropertyProto> userPropertiesList) {
+        MqttProperties mqttProperties = new MqttProperties();
+        UserProperties userProperties = createUserProperties(userPropertiesList);
+        mqttProperties.add(userProperties);
+        return mqttProperties;
+    }
+
+    private static UserProperties createUserProperties(List<QueueProtos.UserPropertyProto> userPropertiesList) {
+        UserProperties userProperties = new UserProperties();
+        userPropertiesList.forEach(userPropertyProto -> userProperties.add(userPropertyProto.getKey(), userPropertyProto.getValue()));
+        return userProperties;
     }
 }

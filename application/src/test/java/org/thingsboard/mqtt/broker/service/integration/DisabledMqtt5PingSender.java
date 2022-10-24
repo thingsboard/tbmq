@@ -13,16 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.service.integration;
 
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public interface PublishMsgDeliveryService {
+import org.eclipse.paho.mqttv5.client.MqttPingSender;
+import org.eclipse.paho.mqttv5.client.internal.ClientComms;
 
-    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
+public class DisabledMqtt5PingSender implements MqttPingSender {
 
-    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg);
+    public static final DisabledMqtt5PingSender DISABLED_MQTT_PING_SENDER = new DisabledMqtt5PingSender();
 
-    void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId);
+    private DisabledMqtt5PingSender() {
+    }
+
+    @Override
+    public void init(ClientComms comms) {
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+    }
+
+    @Override
+    public void schedule(long delayInMilliseconds) {
+    }
 }

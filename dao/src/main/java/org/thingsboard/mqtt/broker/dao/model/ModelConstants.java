@@ -74,6 +74,7 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY = "serial_number";
     public static final String DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY = "packet_id";
     public static final String DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY = "packet_type";
+    public static final String DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY = "user_properties";
 
 
     /**

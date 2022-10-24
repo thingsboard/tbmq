@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
@@ -24,11 +25,14 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class MqttPubRelMsg extends QueueableMqttMsg {
-    private final int messageId;
 
-    public MqttPubRelMsg(UUID sessionId, int messageId) {
+    private final int messageId;
+    private final MqttProperties properties;
+
+    public MqttPubRelMsg(UUID sessionId, int messageId, MqttProperties properties) {
         super(sessionId);
         this.messageId = messageId;
+        this.properties = properties;
     }
 
     @Override
