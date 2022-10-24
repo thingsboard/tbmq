@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     }
 
     public void sendPublishWithRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
-        if (!retransmissionEnabled) {
+        if (!retransmissionEnabled || isMqtt5(sessionCtx)) {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
             return;
         }
@@ -127,7 +128,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubAckReceived(ClientSessionCtx ctx, int messageId) {
         log.trace("[{}][{}] Executing onPubAckReceived", ctx.getClientId(), messageId);
-        if (!retransmissionEnabled) {
+        if (!retransmissionEnabled || isMqtt5(ctx)) {
             return;
         }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(messageId);
@@ -142,7 +143,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubRecReceived(ClientSessionCtx ctx, MqttMessage pubRelMsg) {
         log.trace("[{}][{}] Executing onPubRecReceived", ctx.getClientId(), pubRelMsg);
-        if (!retransmissionEnabled) {
+        if (!retransmissionEnabled || isMqtt5(ctx)) {
             ctx.getChannel().writeAndFlush(pubRelMsg);
             return;
         }
@@ -163,7 +164,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @Override
     public void onPubCompReceived(ClientSessionCtx ctx, int messageId) {
         log.trace("[{}][{}] Executing onPubCompReceived", ctx.getClientId(), messageId);
-        if (!retransmissionEnabled) {
+        if (!retransmissionEnabled || isMqtt5(ctx)) {
             return;
         }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(messageId);
@@ -175,5 +176,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
         }
         ctx.getPendingPublishes().remove(messageId);
         pendingPublish.onPubCompReceived();
+    }
+
+    private boolean isMqtt5(ClientSessionCtx ctx) {
+        return MqttVersion.MQTT_5 == ctx.getMqttVersion();
     }
 }
