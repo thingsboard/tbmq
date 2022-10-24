@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
@@ -44,13 +45,10 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
-
-    public MqttClientCredentialsServiceImpl(MqttClientCredentialsDao mqttClientCredentialsDao) {
-        this.mqttClientCredentialsDao = mqttClientCredentialsDao;
-    }
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {

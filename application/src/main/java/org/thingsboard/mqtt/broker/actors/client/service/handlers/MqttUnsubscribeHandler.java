@@ -19,15 +19,21 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,6 +44,7 @@ public class MqttUnsubscribeHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientSubscriptionService clientSubscriptionService;
+    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         UUID sessionId = ctx.getSessionId();
@@ -51,6 +58,28 @@ public class MqttUnsubscribeHandler {
                         () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
                         t -> log.warn("[{}][{}] Failed to process client unsubscription", clientId, sessionId, t)
                 ));
+
+        stopProcessingApplicationSharedSubscriptions(ctx, msg.getTopics());
+    }
+
+    private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
+        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
+            Set<TopicSharedSubscription> subscriptionTopicFilters = collectUniqueSharedSubscriptions(topics);
+            if (CollectionUtils.isEmpty(subscriptionTopicFilters)) {
+                return;
+            }
+            applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, subscriptionTopicFilters);
+        }
+    }
+
+    Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<String> topics) {
+        return topics
+                .stream()
+                .filter(NettyMqttConverter::isSharedTopic)
+                .map(topic -> new TopicSharedSubscription(
+                        NettyMqttConverter.getTopicName(topic),
+                        NettyMqttConverter.getShareName(topic)))
+                .collect(Collectors.toSet());
     }
 
 }
