@@ -78,7 +78,7 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("persistent-downlink-publish-consumer-" + consumerId);
-        consumerBuilder.groupId("persistent-downlink-publish-group" + groupId);
+        consumerBuilder.groupId("persistent-downlink-publish-group-" + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

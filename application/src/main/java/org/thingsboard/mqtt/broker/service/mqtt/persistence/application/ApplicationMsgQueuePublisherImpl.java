@@ -83,6 +83,27 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 clientQueueTopic);
     }
 
+    @Override
+    public void sendMsgToSharedTopic(String sharedTopic, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
+        publisherQueue.add(new TbProtoQueueMsg<>(msgProto),
+                new TbQueueCallback() {
+                    @Override
+                    public void onSuccess(TbQueueMsgMetadata metadata) {
+                        log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
+                        callback.onSuccess();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        log.error("[{}] Failed to send publish msg to the shared topic queue. Reason - {}.",
+                                sharedTopic, t.getMessage());
+                        log.debug("Detailed error: ", t);
+                        callback.onFailure(t);
+                    }
+                },
+                MqttApplicationClientUtil.getKafkaTopic(sharedTopic));
+    }
+
     @PreDestroy
     public void destroy() {
         publisherQueue.destroy();

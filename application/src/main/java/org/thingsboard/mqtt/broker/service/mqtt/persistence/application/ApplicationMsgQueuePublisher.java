@@ -15,9 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 public interface ApplicationMsgQueuePublisher {
-    void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback);
+
+    void sendMsg(String clientId, PublishMsgProto msgProto, PublishMsgCallback callback);
+
+    void sendMsgToSharedTopic(String sharedTopic, PublishMsgProto msgProto, PublishMsgCallback callback);
+
 }

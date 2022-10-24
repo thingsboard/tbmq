@@ -31,7 +31,7 @@ public class HsqlInsertGenericClientSessionCtxRepository implements InsertGeneri
     private static final String INSERT_OR_UPDATE =
             "MERGE INTO generic_client_session_ctx USING(VALUES ?, ?, ?) " +
                     "G (client_id, last_updated_time, qos2_publish_packet_ids) " +
-                    "ON generic_client_session_ctx.client_id=G.client_id) " +
+                    "ON generic_client_session_ctx.client_id=G.client_id " +
                     "WHEN MATCHED THEN UPDATE SET generic_client_session_ctx.qos2_publish_packet_ids = G.qos2_publish_packet_ids, " +
                     "generic_client_session_ctx.last_updated_time = G.last_updated_time " +
                     "WHEN NOT MATCHED THEN INSERT (client_id, last_updated_time, qos2_publish_packet_ids) " +
