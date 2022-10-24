@@ -65,7 +65,7 @@ public class MqttUnsubscribeHandlerTest {
     }
 
     @Test
-    public void testProcess1() {
+    public void testProcess_MQTT5() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -80,7 +80,7 @@ public class MqttUnsubscribeHandlerTest {
     }
 
     @Test
-    public void testProcess2() {
+    public void testProcess_MQTT3() {
         SessionInfo sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
         ClientInfo clientInfo = mock(ClientInfo.class);
