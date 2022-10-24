@@ -261,6 +261,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                             applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
                             while (isJobActive(job)) {
                                 ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
+                                int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
+                                int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                                 cachePackProcessingCtx(clientId, subscription, ctx);
 
                                 process(submitStrategy, clientSessionCtx, clientId, subscription);
@@ -269,7 +271,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                     ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                                 }
 
-                                if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx)) break;
+                                if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) break;
                             }
                             log.trace("[{}] Pack processing took {} ms, pack size - {}",
                                     clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
@@ -315,13 +317,15 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                             TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
                                             ApplicationProcessorStats stats,
                                             ApplicationSubmitStrategy submitStrategy,
-                                            ApplicationPackProcessingCtx ctx) {
+                                            ApplicationPackProcessingCtx ctx,
+                                            int totalPublishMsgs,
+                                            int totalPubRelMsgs) {
         ApplicationAckStrategy ackStrategy = acknowledgeStrategyFactory.newInstance(clientId);
 
         ApplicationPackProcessingResult result = new ApplicationPackProcessingResult(ctx);
         ApplicationProcessingDecision decision = ackStrategy.analyze(result);
 
-        stats.log(ctx.getPublishPendingMsgMap().size(), ctx.getPubRelPendingMsgMap().size(), result, decision.isCommit());
+        stats.log(totalPublishMsgs, totalPubRelMsgs, result, decision.isCommit());
 
         if (decision.isCommit()) {
             ctx.clear();
@@ -614,6 +618,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
                 while (isClientConnected(sessionId, clientState)) {
                     ApplicationPackProcessingCtx ctx = newPackProcessingCtx(submitStrategy, applicationPubRelMsgCtx, stats);
+                    int totalPublishMsgs = ctx.getPublishPendingMsgMap().size();
+                    int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     packProcessingCtxMap.put(clientId, ctx);
 
                     process(submitStrategy, clientSessionCtx, clientId, null);
@@ -622,7 +628,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
-                    if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx)) break;
+                    if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) break;
                 }
                 log.trace("[{}] Pack processing took {} ms, pack size - {}",
                         clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());

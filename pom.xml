@@ -75,6 +75,7 @@
         <jaxb.version>2.3.1</jaxb.version>
         <jjwt.version>0.7.0</jjwt.version>
         <bouncycastle.version>1.67</bouncycastle.version>
+        <bucket4j.version>4.1.1</bucket4j.version>
         <springfox-swagger.version>2.6.1</springfox-swagger.version>
         <springfox-swagger-ui-rfc6570.version>1.0.0</springfox-swagger-ui-rfc6570.version>
         <micrometer.version>1.8.3</micrometer.version>
@@ -1005,7 +1006,11 @@
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.github.vladimir-bukhtoyarov</groupId>
+                <artifactId>bucket4j-core</artifactId>
+                <version>${bucket4j.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
