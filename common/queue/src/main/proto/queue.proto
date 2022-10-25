@@ -26,6 +26,7 @@ message SessionInfoProto {
   ClientInfoProto clientInfo = 4;
   bool persistent = 5;
   ConnectionInfoProto connectionInfo = 6;
+  int32 sessionExpiryInterval = 7;
 }
 
 message PublishMsgProto {
@@ -93,25 +94,17 @@ message ClientSessionEventProto {
 
 message ClientSessionEventResponseProto {
   bool success = 1;
-  bool wasPrevSessionPersistent = 2;
+  bool sessionPresent = 2;
 }
 
 message ClientSubscriptionsProto {
   repeated TopicSubscriptionProto subscriptions = 1;
 }
 
-message LastPublishCtxProto {
-  int32 packetId = 1;
-}
-
 message DisconnectClientCommandProto {
   int64 sessionIdMSB = 1;
   int64 sessionIdLSB = 2;
   bool isNewSessionPersistent = 3;
-}
-
-message TimeProto {
-  int64 timestamp = 1;
 }
 
 message DevicePublishMsgProto {

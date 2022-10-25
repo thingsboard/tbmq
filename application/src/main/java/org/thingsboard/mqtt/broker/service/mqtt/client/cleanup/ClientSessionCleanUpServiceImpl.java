@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -39,12 +38,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpService {
+
     private final ClientSessionCache clientSessionCache;
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
-
-    @Value("${mqtt.client-session-cleanup.inactive-session-ttl}")
-    private int ttl;
 
     @Override
     public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
@@ -74,31 +71,39 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, false);
     }
 
-    @Scheduled(cron = "${mqtt.client-session-cleanup.cron}", zone = "${mqtt.client-session-cleanup.zone}")
-    public void cleanUp() {
-        log.info("Starting cleaning up stale ClientSessions.");
-
-        long oldestAllowedTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
-        Map<String, ClientSessionInfo> persistedClientSessionInfos = clientSessionCache.getPersistentClientSessionInfos();
-
-        List<SessionInfo> clientSessionToRemove = persistedClientSessionInfos.values().stream()
-                .filter(clientSessionInfo -> needsToBeRemoved(oldestAllowedTime, clientSessionInfo))
-                .map(ClientSessionInfo::getClientSession)
-                .map(ClientSession::getSessionInfo)
-                .collect(Collectors.toList());
-
-        log.info("Cleaning up stale {} client sessions.", clientSessionToRemove.size());
-        for (SessionInfo sessionInfo : clientSessionToRemove) {
-            clientSessionEventService.requestSessionCleanup(sessionInfo);
-        }
-    }
-
     private boolean sameSession(UUID sessionId, ClientSessionInfo clientSessionInfo) {
         UUID currentSessionId = clientSessionInfo.getClientSession().getSessionInfo().getSessionId();
         return sessionId.equals(currentSessionId);
     }
 
-    private boolean needsToBeRemoved(long oldestAllowedTime, ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getLastUpdateTime() < oldestAllowedTime && !clientSessionInfo.getClientSession().isConnected();
+    @Scheduled(cron = "${mqtt.client-session-expiry.cron}", zone = "${mqtt.client-session-expiry.zone}")
+    public void cleanUp() {
+        log.info("Starting cleaning up expired ClientSessions.");
+
+        long currentTs = System.currentTimeMillis();
+        Map<String, ClientSessionInfo> clientSessionInfos = clientSessionCache.getAllClientSessions();
+
+        List<SessionInfo> clientSessionsToRemove = clientSessionInfos.values().stream()
+                .filter(this::isNotPersistent)
+                .filter(clientSessionInfo -> needsToBeRemoved(currentTs, clientSessionInfo))
+                .map(ClientSessionInfo::getClientSession)
+                .map(ClientSession::getSessionInfo)
+                .collect(Collectors.toList());
+
+        log.info("Cleaning up expired {} client sessions.", clientSessionsToRemove.size());
+        for (SessionInfo sessionInfo : clientSessionsToRemove) {
+            clientSessionEventService.requestSessionCleanup(sessionInfo);
+        }
+    }
+
+    boolean isNotPersistent(ClientSessionInfo clientSessionInfo) {
+        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent() ||
+                clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval() != 0;
+    }
+
+    private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo) {
+        long sessionExpiryIntervalMs = TimeUnit.SECONDS.toMillis(clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval());
+        return clientSessionInfo.getLastUpdateTime() + sessionExpiryIntervalMs < currentTs
+                && !clientSessionInfo.getClientSession().isConnected();
     }
 }

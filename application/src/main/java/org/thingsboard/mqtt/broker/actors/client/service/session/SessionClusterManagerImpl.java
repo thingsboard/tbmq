@@ -108,25 +108,25 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionInfo.getSessionId());
 
-        ClientSession currentlyConnectedSession = getClientSession(clientId);
-        UUID currentlyConnectedSessionId = getCurrentlyConnectedSessionId(currentlyConnectedSession);
+        ClientSession currentClientSession = getClientSession(clientId);
+        UUID currentClientSessionId = getCurrentClientSessionId(currentClientSession);
 
-        if (sessionInfo.getSessionId().equals(currentlyConnectedSessionId)) {
-            log.warn("[{}][{}] Got CONNECT request from already connected session.", clientId, currentlyConnectedSessionId);
+        if (sessionInfo.getSessionId().equals(currentClientSessionId)) {
+            log.warn("[{}][{}] Got CONNECT request from already present session.", clientId, currentClientSessionId);
             sendEventResponse(clientId, requestInfo, false, false);
             return;
         }
 
-        if (currentlyConnectedSession != null && currentlyConnectedSession.isConnected()) {
-            String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
+        if (currentClientSession != null && currentClientSession.isConnected()) {
+            String currentSessionServiceId = currentClientSession.getSessionInfo().getServiceId();
             var isNewSessionPersistent = sessionInfo.isPersistent();
             log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.",
-                    clientId, currentSessionServiceId, currentlyConnectedSessionId);
-            disconnectCurrentSession(currentSessionServiceId, clientId, currentlyConnectedSessionId, isNewSessionPersistent);
-            finishDisconnect(currentlyConnectedSession);
+                    clientId, currentSessionServiceId, currentClientSessionId);
+            disconnectCurrentSession(currentSessionServiceId, clientId, currentClientSessionId, isNewSessionPersistent);
+            finishDisconnect(currentClientSession);
         }
 
-        PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentlyConnectedSession);
+        PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentClientSession);
         updateClientSession(sessionInfo, requestInfo, previousSessionInfo);
     }
 
@@ -134,7 +134,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, isNewSessionPersistent);
     }
 
-    private UUID getCurrentlyConnectedSessionId(ClientSession currentlyConnectedSession) {
+    private UUID getCurrentClientSessionId(ClientSession currentlyConnectedSession) {
         return currentlyConnectedSession != null ? getSessionIdFromClientSession(currentlyConnectedSession) : null;
     }
 
@@ -294,14 +294,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo, PreviousSessionInfo previousSessionInfo) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
-        boolean wasPrevSessionPersistent = previousSessionInfo != null && previousSessionInfo.isPersistent();
+        boolean sessionPresent = previousSessionInfo != null;
         log.trace("[{}] Updating client session.", clientInfo.getClientId());
 
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
         AtomicInteger finishedOperations = new AtomicInteger(0);
 
-        boolean needPrevSessionClear = wasPrevSessionPersistent && !sessionInfo.isPersistent();
-        if (needPrevSessionClear) {
+        boolean needClearPresentSession = sessionPresent && !sessionInfo.isPersistent();
+        if (needClearPresentSession) {
             log.trace("[{}][{}] Clearing prev persisted session.", clientInfo.getType(), clientInfo.getClientId());
             clearSubscriptions(connectionRequestInfo, clientInfo, wasErrorProcessed, finishedOperations);
             clearPersistedMessages(clientInfo);
@@ -314,15 +314,17 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
 
         ClientSession clientSession = prepareClientSession(sessionInfo);
-        clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession, createCallback(() -> eventResponseSenderExecutor.execute(() -> {
-            if (!needPrevSessionClear || finishedOperations.incrementAndGet() >= 2) {
-                sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, wasPrevSessionPersistent);
-            }
-        }), t -> eventResponseSenderExecutor.execute(() -> {
-            if (!needPrevSessionClear || !wasErrorProcessed.getAndSet(true)) {
-                sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, wasPrevSessionPersistent);
-            }
-        })));
+        clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession, createCallback(
+                () -> eventResponseSenderExecutor.execute(() -> {
+                    if (!needClearPresentSession || finishedOperations.incrementAndGet() >= 2) {
+                        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, sessionPresent);
+                    }
+                }),
+                t -> eventResponseSenderExecutor.execute(() -> {
+                    if (!needClearPresentSession || !wasErrorProcessed.getAndSet(true)) {
+                        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, sessionPresent);
+                    }
+                })));
     }
 
     private ClientSession prepareClientSession(SessionInfo sessionInfo) {
@@ -334,21 +336,23 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private void clearSubscriptions(ConnectionRequestInfo connectionRequestInfo, ClientInfo clientInfo,
                                     AtomicBoolean wasErrorProcessed, AtomicInteger finishedOperations) {
-        clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId(), createCallback(() -> {
-            if (finishedOperations.incrementAndGet() >= 2) {
-                sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, true);
-            }
-        }, t -> {
-            if (!wasErrorProcessed.getAndSet(true)) {
-                sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, true);
-            }
-        }));
+        clientSubscriptionService.clearSubscriptionsAndPersist(clientInfo.getClientId(), createCallback(
+                () -> {
+                    if (finishedOperations.incrementAndGet() >= 2) {
+                        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, true);
+                    }
+                },
+                t -> {
+                    if (!wasErrorProcessed.getAndSet(true)) {
+                        sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, true);
+                    }
+                }));
     }
 
-    private void sendEventResponse(String clientId, ConnectionRequestInfo connectionRequestInfo, boolean successfulConnect, boolean wasPrevSessionPersistent) {
+    private void sendEventResponse(String clientId, ConnectionRequestInfo connectionRequestInfo, boolean success, boolean sessionPresent) {
         QueueProtos.ClientSessionEventResponseProto response = QueueProtos.ClientSessionEventResponseProto.newBuilder()
-                .setSuccess(successfulConnect)
-                .setWasPrevSessionPersistent(wasPrevSessionPersistent)
+                .setSuccess(success)
+                .setSessionPresent(sessionPresent)
                 .build();
         TbQueueMsgHeaders headers = createResponseHeaders(connectionRequestInfo.getRequestId());
         eventResponseProducer.send(connectionRequestInfo.getResponseTopic(), new TbProtoQueueMsg<>(clientId, response, headers), new TbQueueCallback() {
@@ -359,8 +363,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
             @Override
             public void onFailure(Throwable t) {
-                log.debug("[{}][{}] Failed to send response. Exception - {}, reason - {}.", clientId, connectionRequestInfo.getRequestId(), t.getClass().getSimpleName(), t.getMessage());
-                log.trace("Detailed error: ", t);
+                log.warn("[{}][{}] Failed to send response.", clientId, connectionRequestInfo.getRequestId(), t);
             }
         });
     }

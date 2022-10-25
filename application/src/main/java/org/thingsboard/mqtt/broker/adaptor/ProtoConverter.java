@@ -128,6 +128,7 @@ public class ProtoConverter {
                 .setPersistent(sessionInfo.isPersistent())
                 .setClientInfo(convertToClientInfoProto(sessionInfo.getClientInfo()))
                 .setConnectionInfo(convertToConnectionInfoProto(sessionInfo.getConnectionInfo()))
+                .setSessionExpiryInterval(sessionInfo.getSessionExpiryInterval())
                 .build();
     }
 
@@ -138,6 +139,7 @@ public class ProtoConverter {
                 .persistent(sessionInfoProto.getPersistent())
                 .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
                 .connectionInfo(convertToConnectionInfo(sessionInfoProto.getConnectionInfo()))
+                .sessionExpiryInterval(sessionInfoProto.getSessionExpiryInterval())
                 .build();
     }
 
@@ -269,7 +271,7 @@ public class ProtoConverter {
     public static ConnectionResponse toConnectionResponse(QueueProtos.ClientSessionEventResponseProto clientSessionEventResponseProto) {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
-                .isPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
+                .sessionPresent(clientSessionEventResponseProto.getSessionPresent())
                 .build();
     }
 

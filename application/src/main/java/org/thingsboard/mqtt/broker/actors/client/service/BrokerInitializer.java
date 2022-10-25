@@ -204,15 +204,16 @@ public class BrokerInitializer {
         return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
     }
 
-    public void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
+    void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
         currentNodeSessions.values().stream()
-                .filter(clientSessionInfo -> !isPersistent(clientSessionInfo))
+                .filter(this::isNotPersistent)
                 .map(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo())
                 .forEach(clientSessionEventService::requestSessionCleanup);
     }
 
-    private boolean isPersistent(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getClientSession().getSessionInfo().isPersistent();
+    boolean isNotPersistent(ClientSessionInfo clientSessionInfo) {
+        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent() &&
+                clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval() == 0;
     }
 
     private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {

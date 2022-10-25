@@ -154,7 +154,7 @@ public class SubscriptionTriePerformanceTest {
                             sessionInfo -> sessionInfoSubscriptions.sessionInfo.getSessionId().equals(sessionInfo.getSessionId()));
                 }
             } else {
-                SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
+                SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(), 100,
                         new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE), new ConnectionInfo(0, 0, 0));
                 String randomTopicFilter = topicFilters.get(r.nextInt(topicFilters.size()));
                 subscriptionTrie.put(randomTopicFilter, sessionInfo);
@@ -170,7 +170,7 @@ public class SubscriptionTriePerformanceTest {
     private void fillSubscriptionTrie(List<String> topicFilters) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         for (int i = 0; i < NUMBER_OF_SUBSCRIBERS; i++) {
-            SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(),
+            SessionInfo sessionInfo = new SessionInfo(SERVICE_ID, UUID.randomUUID(), r.nextBoolean(), 100,
                     new ClientInfo(UUID.randomUUID().toString(), ClientType.DEVICE), new ConnectionInfo(0, 0, 0));
             int subscriptionsCount = r.nextInt(MAX_SUBSCRIPTIONS_PER_SESSION) + 1;
             SessionInfoSubscriptions sessionInfoSubscriptions = new SessionInfoSubscriptions(sessionInfo, new HashSet<>());

@@ -127,7 +127,7 @@ public class SessionClusterManagerImplTest {
 
         verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any(), eq(false));
         verify(clientSessionService, times(1)).clearClientSession(any(), any());
-        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
+        verify(clientSubscriptionService, times(2)).clearSubscriptionsAndPersist(any(), any());
         verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
     }
 
@@ -151,7 +151,7 @@ public class SessionClusterManagerImplTest {
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
                 new SessionClusterManagerImpl.PreviousSessionInfo(false, ClientType.APPLICATION));
 
-        verify(msgPersistenceManager, times(1)).clearPersistedMessages(any());
+        verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
         verify(applicationRemovedEventService, times(1)).sendApplicationRemovedEvent(any());
         verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
     }

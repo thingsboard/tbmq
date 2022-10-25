@@ -62,17 +62,18 @@ public class ClientSessionInfoFactory {
 
     public static SessionInfo getSessionInfo(boolean persistent, String serviceId,
                                              ClientInfo clientInfo, ConnectionInfo connectionInfo) {
-        return getSessionInfo(UUID.randomUUID(), persistent, serviceId, clientInfo, connectionInfo);
+        return getSessionInfo(UUID.randomUUID(), persistent, serviceId, clientInfo, connectionInfo, 0);
     }
 
     public static SessionInfo getSessionInfo(UUID sessionId, boolean persistent, String serviceId,
-                                             ClientInfo clientInfo, ConnectionInfo connectionInfo) {
+                                             ClientInfo clientInfo, ConnectionInfo connectionInfo, int sessionExpiryInterval) {
         return SessionInfo.builder()
                 .sessionId(sessionId)
                 .persistent(persistent)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
                 .connectionInfo(connectionInfo)
+                .sessionExpiryInterval(sessionExpiryInterval)
                 .build();
     }
 
