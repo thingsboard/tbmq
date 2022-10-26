@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.util;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
@@ -25,9 +26,16 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.ADMINISTRATIVE_ACTION;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.FAILURE;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.KEEP_ALIVE_TIMEOUT;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MALFORMED_PACKET;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MESSAGE_RATE_TOO_HIGH;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUND;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PROTOCOL_ERROR;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.QUOTA_EXCEEDED;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SESSION_TAKEN_OVER;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUCCESS;
 import static org.thingsboard.mqtt.broker.util.MqttReasonCode.TOPIC_NAME_INVALID;
 
@@ -67,5 +75,27 @@ public final class MqttReasonCodeResolver {
 
     public static MqttReasonCode failure() {
         return FAILURE;
+    }
+
+    public static MqttReasonCode disconnect(DisconnectReasonType type) {
+        switch (type) {
+            case ON_CONFLICTING_SESSIONS:
+                return SESSION_TAKEN_OVER;
+            case ON_CHANNEL_CLOSED:
+                return ADMINISTRATIVE_ACTION;
+            case ON_RATE_LIMITS:
+                return MESSAGE_RATE_TOO_HIGH;
+            case ON_KEEP_ALIVE:
+                return KEEP_ALIVE_TIMEOUT;
+            case ON_MALFORMED_PACKET:
+                return MALFORMED_PACKET;
+            case ON_PROTOCOL_ERROR:
+                return PROTOCOL_ERROR;
+            case ON_QUOTA_EXCEEDED:
+                return QUOTA_EXCEEDED;
+            case ON_ERROR:
+            default:
+                return FAILURE;
+        }
     }
 }

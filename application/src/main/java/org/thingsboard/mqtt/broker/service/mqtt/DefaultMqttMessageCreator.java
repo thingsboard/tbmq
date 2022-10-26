@@ -31,6 +31,7 @@ import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
@@ -143,6 +144,15 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     @Override
     public MqttMessage createPubCompMsg(int msgId, MqttReasonCode code) {
         return createPubReplyMsg(PUBCOMP, AT_MOST_ONCE, msgId, code);
+    }
+
+    @Override
+    public MqttMessage createDisconnectMsg(MqttReasonCode code) {
+        MqttFixedHeader mqttFixedHeader =
+                new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttReasonCodeAndPropertiesVariableHeader variableHeader =
+                new MqttReasonCodeAndPropertiesVariableHeader(code.value(), null);
+        return new MqttMessage(mqttFixedHeader, variableHeader);
     }
 
     private MqttMessage createPubReplyMsg(MqttMessageType type, MqttQoS mqttQoS, int msgId, MqttReasonCode code) {

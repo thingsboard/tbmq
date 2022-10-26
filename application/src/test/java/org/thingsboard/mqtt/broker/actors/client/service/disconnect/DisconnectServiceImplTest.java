@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
@@ -46,6 +49,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MESSAGE_RATE_TOO_HIGH;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -64,6 +68,8 @@ public class DisconnectServiceImplTest {
     ClientSessionEventService clientSessionEventService;
     @MockBean
     RateLimitService rateLimitService;
+    @MockBean
+    MqttMessageGenerator mqttMessageGenerator;
 
     @SpyBean
     DisconnectServiceImpl disconnectService;
@@ -126,5 +132,16 @@ public class DisconnectServiceImplTest {
 
         verify(msgPersistenceManager, times(1)).stopProcessingPersistedMessages(any());
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());
+    }
+
+    @Test
+    public void testSendDisconnectForMqtt5OnError() {
+        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
+        when(ctx.getChannel()).thenReturn(handlerContext);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        disconnectService.disconnect(clientActorState, new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS));
+
+        verify(mqttMessageGenerator, times(1)).createDisconnectMsg(MESSAGE_RATE_TOO_HIGH);
+        verify(disconnectService, times(1)).closeChannel(ctx);
     }
 }

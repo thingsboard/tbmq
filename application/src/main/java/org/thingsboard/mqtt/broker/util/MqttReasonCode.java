@@ -24,9 +24,16 @@ public enum MqttReasonCode {
     GRANTED_QOS_2((byte) 2),
     SUCCESS((byte) 0),
     FAILURE((byte) 128),
+    MALFORMED_PACKET((byte) 129),
+    PROTOCOL_ERROR((byte) 130),
     NOT_AUTHORIZED((byte) 135),
+    KEEP_ALIVE_TIMEOUT((byte) 141),
+    SESSION_TAKEN_OVER((byte) 142),
     TOPIC_NAME_INVALID((byte) 144),
     PACKET_ID_NOT_FOUND((byte) 146),
+    MESSAGE_RATE_TOO_HIGH((byte) 150),
+    QUOTA_EXCEEDED((byte) 151),
+    ADMINISTRATIVE_ACTION((byte) 152),
     ;
 
     static final List<MqttReasonCode> GRANTED_QOS_LIST = List.of(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2);

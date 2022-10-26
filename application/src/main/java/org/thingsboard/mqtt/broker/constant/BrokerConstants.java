@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.constant;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 public class BrokerConstants {
+
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
@@ -33,5 +34,7 @@ public class BrokerConstants {
     public static final String REQUEST_ID_HEADER = "requestId";
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
     public static final String REQUEST_TIME = "requestTime";
+
+    public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
 
 }

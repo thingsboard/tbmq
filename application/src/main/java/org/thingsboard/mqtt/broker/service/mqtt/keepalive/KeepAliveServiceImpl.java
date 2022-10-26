@@ -55,7 +55,7 @@ public class KeepAliveServiceImpl implements KeepAliveService {
                 log.debug("[{}][{}] Closing session for inactivity, last active time - {}, keep alive seconds - {}",
                         keepAliveInfo.getClientId(), sessionId, lastPacketTime, keepAliveInfo.getKeepAliveSeconds());
                 clientMqttActorManager.disconnect(keepAliveInfo.getClientId(), new DisconnectMsg(sessionId,
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Client was inactive too long")));
+                        new DisconnectReason(DisconnectReasonType.ON_KEEP_ALIVE, "Client was inactive too long")));
             }
         }
     }

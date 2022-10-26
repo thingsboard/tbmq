@@ -84,7 +84,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         log.warn("[{}][{}] Trying to initialize the same session.", state.getClientId(), sessionCtx.getSessionId());
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             state.updateSessionState(SessionState.DISCONNECTING);
-            disconnectService.disconnect(state, new DisconnectReason(DisconnectReasonType.ON_ERROR, "Trying to init the same active session"));
+            disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS, "Trying to init the same active session"));
         }
     }
 
@@ -99,7 +99,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
                 state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
         state.updateSessionState(SessionState.DISCONNECTING);
-        disconnectService.disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
+        disconnect(state, new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS));
     }
 
     void updateClientActorState(ClientActorState state, ClientSessionCtx sessionCtx) {
@@ -143,8 +143,12 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         state.updateSessionState(SessionState.DISCONNECTING);
-        disconnectService.disconnect(state, disconnectMsg.getReason());
+        disconnect(state, disconnectMsg.getReason());
         state.updateSessionState(SessionState.DISCONNECTED);
+    }
+
+    private void disconnect(ClientActorState state, DisconnectReason reason) {
+        disconnectService.disconnect(state, reason);
     }
 
     private AuthResponse authenticateClient(AuthContext authContext) {

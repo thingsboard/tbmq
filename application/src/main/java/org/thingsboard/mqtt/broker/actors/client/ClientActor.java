@@ -254,7 +254,7 @@ public class ClientActor extends ContextAwareActor {
                 state.getQueuedMessages().add(msg);
             } catch (FullMsgQueueException e) {
                 log.warn("[{}][{}] Too many messages in the pre-connect queue", state.getClientId(), state.getCurrentSessionId());
-                ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+                ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_QUOTA_EXCEEDED,
                         "Too many messages in the pre-connect queue")));
             }
             return true;
