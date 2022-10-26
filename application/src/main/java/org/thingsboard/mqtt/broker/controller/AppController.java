@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,7 @@ public class AppController extends BaseController {
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @ApiOperation(value = "Get all running actors", hidden = true)
     @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
     @ResponseBody
     public Collection<TbActorId> getAllActorIds() throws ThingsboardException {

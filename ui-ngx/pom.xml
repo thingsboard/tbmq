@@ -26,7 +26,7 @@
     <artifactId>ui-ngx</artifactId>
     <packaging>jar</packaging>
 
-    <name>ThingsBoard Server UI</name>
+    <name>Thingsboard MQTT Broker Server UI</name>
     <url>https://thingsboard.io</url>
 
     <properties>

@@ -27,6 +27,7 @@ import static org.thingsboard.mqtt.broker.constant.BrokerConstants.TOPIC_DELIMIT
 
 @Service
 public class DefaultTopicValidationService implements TopicValidationService {
+
     static final int MAX_SIZE_BYTES = 65535;
 
     @Setter
@@ -75,7 +76,6 @@ public class DefaultTopicValidationService implements TopicValidationService {
         if (wildcardIndex != 0 && topicFilter.charAt(wildcardIndex - 1) != TOPIC_DELIMITER) {
             throw new DataValidationException("Multi-level wildcard must be at the beginning or after / char.");
         }
-
     }
 
     private void validateTopicNameAndFilter(String topic) {
@@ -84,7 +84,6 @@ public class DefaultTopicValidationService implements TopicValidationService {
         }
         if (topic.contains("\u0000")) {
             throw new DataValidationException("Topic Names and Topic Filters must not include the null character (Unicod U+0000).");
-
         }
         if (topic.length() > MAX_SIZE_BYTES) {
             throw new DataValidationException("Topic Names and Topic Filters must not encode to more than " + MAX_SIZE_BYTES + " bytes.");

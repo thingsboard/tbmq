@@ -176,6 +176,9 @@ queue:
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
       additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+      shared-topic:
+        topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
+        additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
     device-persisted-msg:
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
@@ -306,6 +309,8 @@ mqtt:
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
   topic:
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
+  shared-subscriptions:
+    processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}" # supported types: ROUND_ROBIN
   subscription-trie:
     # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
     # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.

@@ -28,4 +28,7 @@ public interface TbQueueConsumer<T extends TbQueueMsg> {
     List<T> poll(long durationInMillis);
 
     void commitSync();
+
+    String getConsumerGroupId();
+
 }

@@ -15,10 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 
 public interface ApplicationTopicService {
+
     void createTopic(String clientId);
 
+    void createSharedTopic(ApplicationSharedSubscription subscription);
+
     void deleteTopic(String clientId, BasicCallback callback);
+
+    void deleteSharedTopic(ApplicationSharedSubscription subscription);
 }
