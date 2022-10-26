@@ -20,7 +20,6 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
@@ -34,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequ
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
@@ -120,7 +120,7 @@ public class ClientActor extends ContextAwareActor {
                         processActorStop((StopActorCommandMsg) msg);
                         break;
                     case DISCONNECT_MSG:
-                        actorProcessor.onDisconnect(state, (DisconnectMsg) msg);
+                        actorProcessor.onDisconnect(state, (MqttDisconnectMsg) msg);
                         break;
 
                     case CONNECTION_REQUEST_MSG:
@@ -189,7 +189,7 @@ public class ClientActor extends ContextAwareActor {
                     state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
                     e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to PUBREC response. Exception message - " + e.getMessage())));
         }
     }
@@ -202,7 +202,7 @@ public class ClientActor extends ContextAwareActor {
                     state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
                     e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to PUBACK response. Exception message - " + e.getMessage())));
         }
     }
@@ -218,7 +218,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
-            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg.getSessionId());
+            sessionClusterManager.processSessionDisconnected(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
             msg.getCallback().onFailure(e);
@@ -244,7 +244,7 @@ public class ClientActor extends ContextAwareActor {
                 && state.getCurrentSessionState() != SessionState.CONNECTED) {
             log.warn("[{}][{}] Msg {} cannot be processed in state - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), state.getCurrentSessionState());
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
             return true;
         }
@@ -254,7 +254,7 @@ public class ClientActor extends ContextAwareActor {
                 state.getQueuedMessages().add(msg);
             } catch (FullMsgQueueException e) {
                 log.warn("[{}][{}] Too many messages in the pre-connect queue", state.getClientId(), state.getCurrentSessionId());
-                ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_QUOTA_EXCEEDED,
+                ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_QUOTA_EXCEEDED,
                         "Too many messages in the pre-connect queue")));
             }
             return true;
@@ -266,7 +266,7 @@ public class ClientActor extends ContextAwareActor {
             log.warn("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process MQTT message. Exception message - " + e.getMessage())));
             return true;
         }
@@ -282,7 +282,7 @@ public class ClientActor extends ContextAwareActor {
         if (state.getCurrentSessionState() != SessionState.INITIALIZED) {
             log.warn("[{}][{}] Msg {} can only be processed in {} state, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), SessionState.INITIALIZED, state.getCurrentSessionState());
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
             return;
         }
@@ -294,7 +294,7 @@ public class ClientActor extends ContextAwareActor {
             log.info("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
         }
     }
@@ -309,7 +309,7 @@ public class ClientActor extends ContextAwareActor {
         if (state.getCurrentSessionState() != SessionState.CONNECTING) {
             log.warn("[{}][{}] Msg {} can only be processed in {} state, current state - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), SessionState.CONNECTING, state.getCurrentSessionState());
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
             return;
         }
@@ -321,7 +321,7 @@ public class ClientActor extends ContextAwareActor {
             log.warn("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
             log.trace("Detailed error:", e);
-            ctx.tellWithHighPriority(new DisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
+            ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
         }
     }

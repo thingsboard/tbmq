@@ -21,7 +21,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
@@ -156,7 +156,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     private void disconnect(String message) {
-        clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+        clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                 sessionCtx.getSessionId(),
                 new DisconnectReason(
                         DisconnectReasonType.ON_ERROR, message)));

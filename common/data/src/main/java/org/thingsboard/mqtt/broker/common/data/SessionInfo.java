@@ -32,7 +32,7 @@ public class SessionInfo {
     private final String serviceId;
     private final UUID sessionId;
     private final boolean persistent;
-    private final int sessionExpiryInterval;
+    private final Integer sessionExpiryInterval;
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;
 }

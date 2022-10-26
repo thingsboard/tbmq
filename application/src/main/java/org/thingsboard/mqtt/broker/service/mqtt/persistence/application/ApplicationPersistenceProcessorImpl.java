@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
@@ -151,7 +151,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 processPersistedMessages(consumer, clientState);
             } catch (Exception e) {
                 log.warn("[{}] Failed to start processing persisted messages.", clientId, e);
-                clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+                clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                         clientState.getCurrentSessionCtx().getSessionId(),
                         new DisconnectReason(
                                 DisconnectReasonType.ON_ERROR,

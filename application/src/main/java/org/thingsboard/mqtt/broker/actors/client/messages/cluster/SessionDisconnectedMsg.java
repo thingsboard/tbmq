@@ -27,11 +27,14 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
-    private final UUID sessionId;
 
-    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId) {
+    private final UUID sessionId;
+    private final Integer sessionExpiryInterval;
+
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, Integer sessionExpiryInterval) {
         super(callback);
         this.sessionId = sessionId;
+        this.sessionExpiryInterval = sessionExpiryInterval;
     }
 
     @Override

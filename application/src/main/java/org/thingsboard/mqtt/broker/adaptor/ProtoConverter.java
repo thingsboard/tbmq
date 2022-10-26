@@ -121,6 +121,22 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
+        return sessionInfo.getSessionExpiryInterval() == null ?
+                getSessionInfoProto(sessionInfo) : getSessionInfoProtoWithSessionExpiryInterval(sessionInfo);
+    }
+
+    private static QueueProtos.SessionInfoProto getSessionInfoProto(SessionInfo sessionInfo) {
+        return QueueProtos.SessionInfoProto.newBuilder()
+                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
+                .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
+                .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
+                .setPersistent(sessionInfo.isPersistent())
+                .setClientInfo(convertToClientInfoProto(sessionInfo.getClientInfo()))
+                .setConnectionInfo(convertToConnectionInfoProto(sessionInfo.getConnectionInfo()))
+                .build();
+    }
+
+    private static QueueProtos.SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(SessionInfo sessionInfo) {
         return QueueProtos.SessionInfoProto.newBuilder()
                 .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
@@ -139,7 +155,7 @@ public class ProtoConverter {
                 .persistent(sessionInfoProto.getPersistent())
                 .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
                 .connectionInfo(convertToConnectionInfo(sessionInfoProto.getConnectionInfo()))
-                .sessionExpiryInterval(sessionInfoProto.getSessionExpiryInterval())
+                .sessionExpiryInterval(sessionInfoProto.hasSessionExpiryInterval() ? sessionInfoProto.getSessionExpiryInterval() : null)
                 .build();
     }
 

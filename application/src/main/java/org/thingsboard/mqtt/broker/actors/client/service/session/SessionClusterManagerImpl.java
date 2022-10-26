@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -123,7 +124,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.",
                     clientId, currentSessionServiceId, currentClientSessionId);
             disconnectCurrentSession(currentSessionServiceId, clientId, currentClientSessionId, isNewSessionPersistent);
-            finishDisconnect(currentClientSession);
+            finishDisconnect(currentClientSession, null);
         }
 
         PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentClientSession);
@@ -149,7 +150,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     @Override
-    public void processSessionDisconnected(String clientId, UUID sessionId) {
+    public void processSessionDisconnected(String clientId, SessionDisconnectedMsg msg) {
+        UUID sessionId = msg.getSessionId();
         ClientSession clientSession = getClientSession(clientId);
         if (clientSession == null) {
             log.debug("[{}][{}] Cannot find client session.", clientId, sessionId);
@@ -161,7 +163,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             } else if (!clientSession.isConnected()) {
                 log.debug("[{}] Client session is already disconnected.", clientId);
             } else {
-                finishDisconnect(clientSession);
+                finishDisconnect(clientSession, msg.getSessionExpiryInterval());
             }
         }
     }
@@ -250,7 +252,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         applicationTopicService.deleteTopic(clientId, CallbackUtil.createCallback(callback::onSuccess, callback::onFailure));
     }
 
-    private void finishDisconnect(ClientSession clientSession) {
+    private void finishDisconnect(ClientSession clientSession, Integer sessionExpiryInterval) {
         SessionInfo sessionInfo = clientSession.getSessionInfo();
         String clientId = sessionInfo.getClientInfo().getClientId();
         log.trace("[{}] Finishing client session disconnection.", clientId);

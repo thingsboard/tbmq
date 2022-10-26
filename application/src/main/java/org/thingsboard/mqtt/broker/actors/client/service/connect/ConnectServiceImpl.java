@@ -30,8 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -207,8 +207,8 @@ public class ConnectServiceImpl implements ConnectService {
                 clientSessionCtx.getClientId(), newDisconnectMsg(clientSessionCtx.getSessionId()));
     }
 
-    private DisconnectMsg newDisconnectMsg(UUID sessionId) {
-        return new DisconnectMsg(sessionId,
+    private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
+        return new MqttDisconnectMsg(sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
     }
 

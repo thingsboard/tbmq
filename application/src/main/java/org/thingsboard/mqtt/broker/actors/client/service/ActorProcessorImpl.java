@@ -21,8 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
@@ -132,7 +132,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     @Override
-    public void onDisconnect(ClientActorState state, DisconnectMsg disconnectMsg) {
+    public void onDisconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
             log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
             return;
@@ -147,7 +147,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         state.updateSessionState(SessionState.DISCONNECTED);
     }
 
-    private void disconnect(ClientActorState state, DisconnectMsg disconnectMsg) {
+    private void disconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg) {
         disconnectService.disconnect(state, disconnectMsg);
     }
 
@@ -170,7 +170,7 @@ public class ActorProcessorImpl implements ActorProcessor {
                 .build();
     }
 
-    private DisconnectMsg newDisconnectMsg(UUID sessionId, DisconnectReason reason) {
-        return new DisconnectMsg(sessionId, reason);
+    private MqttDisconnectMsg newDisconnectMsg(UUID sessionId, DisconnectReason reason) {
+        return new MqttDisconnectMsg(sessionId, reason);
     }
 }
