@@ -29,10 +29,27 @@ import java.util.UUID;
 @EqualsAndHashCode
 @ToString
 public class SessionInfo {
+
     private final String serviceId;
     private final UUID sessionId;
-    private final boolean persistent;
+    private final boolean cleanStart;
     private final Integer sessionExpiryInterval;
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;
+
+    public boolean isPersistent() {
+        return safeGetSessionExpiryInterval() > 0;
+    }
+
+    public boolean isCleanSession() { // The equivalent for cleanSession=true in the CONNECT packet of MQTTv3
+        return cleanStart && safeGetSessionExpiryInterval() == 0;
+    }
+
+    public boolean isNotCleanSession() { // The equivalent for cleanSession=false in the CONNECT packet of MQTTv3
+        return !cleanStart && safeGetSessionExpiryInterval() == 0;
+    }
+
+    public int safeGetSessionExpiryInterval() {
+        return sessionExpiryInterval == null ? 0 : sessionExpiryInterval;
+    }
 }

@@ -206,14 +206,13 @@ public class BrokerInitializer {
 
     void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
         currentNodeSessions.values().stream()
-                .filter(this::isNotPersistent)
+                .filter(this::isCleanSession)
                 .map(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo())
                 .forEach(clientSessionEventService::requestSessionCleanup);
     }
 
-    boolean isNotPersistent(ClientSessionInfo clientSessionInfo) {
-        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent() &&
-                clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval() == 0;
+    boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.getClientSession().getSessionInfo().isCleanSession();
     }
 
     private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {

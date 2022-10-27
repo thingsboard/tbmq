@@ -169,7 +169,7 @@ public class ConnectServiceImplTest {
 
         SessionInfo expectedSessionInfo = ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                true,
+                false,
                 SERVICE_ID,
                 getClientInfo(clientId),
                 getConnectionInfo(1000, actualSessionInfo.getConnectionInfo().getConnectedAt()), 0);

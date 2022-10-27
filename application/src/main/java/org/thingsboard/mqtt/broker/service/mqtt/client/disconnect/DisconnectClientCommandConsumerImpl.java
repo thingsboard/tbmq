@@ -89,11 +89,11 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
-        boolean isNewSessionPersistent = disconnectClientCommandProto.getIsNewSessionPersistent();
+        boolean newSessionCleanStart = disconnectClientCommandProto.getNewSessionCleanStart();
         clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                 sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS),
-                isNewSessionPersistent));
+                newSessionCleanStart));
     }
 
     private void initConsumer() {

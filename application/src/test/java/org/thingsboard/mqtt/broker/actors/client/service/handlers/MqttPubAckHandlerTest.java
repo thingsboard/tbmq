@@ -48,7 +48,7 @@ public class MqttPubAckHandlerTest {
     @Test
     public void testProcessPersistent() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
+        ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(1).build());
         mqttPubAckHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubAck(ctx, 1);
         verify(retransmissionService, times(1)).onPubAckReceived(ctx, 1);
@@ -57,7 +57,7 @@ public class MqttPubAckHandlerTest {
     @Test
     public void testProcess() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().persistent(false).build());
+        ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(0).build());
         mqttPubAckHandler.process(ctx, 1);
         verify(retransmissionService, times(1)).onPubAckReceived(ctx, 1);
     }

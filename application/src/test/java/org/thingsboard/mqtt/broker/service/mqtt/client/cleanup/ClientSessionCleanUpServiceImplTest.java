@@ -66,8 +66,8 @@ public class ClientSessionCleanUpServiceImplTest {
         long currentTsMinus10Secs = currentTs - TimeUnit.SECONDS.toMillis(10);
 
         int sessionExpiryInterval = 3;
-        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(currentTs, true, sessionExpiryInterval);
-        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(currentTsMinus10Secs, false, sessionExpiryInterval);
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(currentTs, false, sessionExpiryInterval);
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(currentTsMinus10Secs, true, sessionExpiryInterval);
 
         when(clientSessionCache.getAllClientSessions()).thenReturn(Map.of(
                 "client1", clientSessionInfo1,
@@ -84,26 +84,26 @@ public class ClientSessionCleanUpServiceImplTest {
     @Test
     public void givenSessions_whenCheckIfNotPersistent_thenReceiveExpectedResult() {
         Assert.assertFalse(clientSessionCleanUpService.isNotPersistent(
-                getClientSessionInfo(System.currentTimeMillis(), true, 0)
-        ));
-        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
-                getClientSessionInfo(System.currentTimeMillis(), true, 100)
-        ));
-        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
                 getClientSessionInfo(System.currentTimeMillis(), false, 0)
         ));
         Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
                 getClientSessionInfo(System.currentTimeMillis(), false, 100)
         ));
+        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
+                getClientSessionInfo(System.currentTimeMillis(), true, 0)
+        ));
+        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
+                getClientSessionInfo(System.currentTimeMillis(), true, 100)
+        ));
     }
 
-    private ClientSessionInfo getClientSessionInfo(long lastUpdateTime, boolean persistent, int sessionExpiryInterval) {
+    private ClientSessionInfo getClientSessionInfo(long lastUpdateTime, boolean cleanStart, int sessionExpiryInterval) {
         return ClientSessionInfo.builder()
                 .lastUpdateTime(lastUpdateTime)
                 .clientSession(ClientSession.builder()
                         .connected(false)
                         .sessionInfo(SessionInfo.builder()
-                                .persistent(persistent)
+                                .cleanStart(cleanStart)
                                 .sessionExpiryInterval(sessionExpiryInterval)
                                 .build())
                         .build())

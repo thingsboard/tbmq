@@ -57,19 +57,19 @@ public class ClientSessionInfoFactory {
     }
 
     public static SessionInfo getSessionInfo(String serviceId, ClientInfo clientInfo, ConnectionInfo connectionInfo) {
-        return getSessionInfo(false, serviceId, clientInfo, connectionInfo);
+        return getSessionInfo(true, serviceId, clientInfo, connectionInfo);
     }
 
-    public static SessionInfo getSessionInfo(boolean persistent, String serviceId,
+    public static SessionInfo getSessionInfo(boolean cleanStart, String serviceId,
                                              ClientInfo clientInfo, ConnectionInfo connectionInfo) {
-        return getSessionInfo(UUID.randomUUID(), persistent, serviceId, clientInfo, connectionInfo, 0);
+        return getSessionInfo(UUID.randomUUID(), cleanStart, serviceId, clientInfo, connectionInfo, 0);
     }
 
-    public static SessionInfo getSessionInfo(UUID sessionId, boolean persistent, String serviceId,
+    public static SessionInfo getSessionInfo(UUID sessionId, boolean cleanStart, String serviceId,
                                              ClientInfo clientInfo, ConnectionInfo connectionInfo, int sessionExpiryInterval) {
         return SessionInfo.builder()
                 .sessionId(sessionId)
-                .persistent(persistent)
+                .cleanStart(cleanStart)
                 .serviceId(serviceId)
                 .clientInfo(clientInfo)
                 .connectionInfo(connectionInfo)

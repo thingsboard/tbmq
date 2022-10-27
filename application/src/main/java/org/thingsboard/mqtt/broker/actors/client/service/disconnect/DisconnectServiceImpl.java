@@ -133,8 +133,8 @@ public class DisconnectServiceImpl implements DisconnectService {
         keepAliveService.unregisterSession(sessionId);
 
         boolean sendLastWill = !DisconnectReasonType.ON_DISCONNECT_MSG.equals(disconnectReasonType);
-        var isNewSessionPersistent = disconnectMsg.isNewSessionPersistent();
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill, isNewSessionPersistent);
+        var newSessionCleanStart = disconnectMsg.isNewSessionCleanStart();
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, sendLastWill, newSessionCleanStart);
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             processPersistenceDisconnect(sessionCtx, clientInfo, sessionId);

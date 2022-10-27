@@ -49,7 +49,7 @@ public class ClientSessionServiceImplTest {
             .connected(true)
             .sessionInfo(SessionInfo.builder()
                     .sessionId(UUID.randomUUID())
-                    .persistent(true)
+                    .cleanStart(false)
                     .clientInfo(new ClientInfo(DEFAULT_CLIENT_ID, DEFAULT_CLIENT_TYPE))
                     .serviceId(TEST_SERVICE_ID)
                     .build())
@@ -68,9 +68,9 @@ public class ClientSessionServiceImplTest {
 
     @Test
     public void givenSessions_whenSaveAndGetPersistentSessions_thenReturnResult() {
-        ClientSession persistentSession1 = prepareSession("persistent_1", true);
-        ClientSession persistentSession2 = prepareSession("persistent_2", true);
-        ClientSession notPersistentSession = prepareSession("not_persistent", false);
+        ClientSession persistentSession1 = prepareSession("persistent_1", 1);
+        ClientSession persistentSession2 = prepareSession("persistent_2", 2);
+        ClientSession notPersistentSession = prepareSession("not_persistent", 0);
 
         saveClientSession("persistent_1", persistentSession1);
         saveClientSession("persistent_2", persistentSession2);
@@ -83,7 +83,7 @@ public class ClientSessionServiceImplTest {
 
     @Test
     public void givenSession_whenSaveAndClearSession_thenReturnResult() {
-        ClientSession persistentSession = prepareSession("persistent", true);
+        ClientSession persistentSession = prepareSession("persistent", 1);
 
         saveClientSession("persistent", persistentSession);
 
@@ -98,15 +98,15 @@ public class ClientSessionServiceImplTest {
 
     @Test(expected = MqttException.class)
     public void givenSession_whenSaveWithDifferentClientIds_thenThrowException() {
-        ClientSession notValidClientSession = prepareSession(DEFAULT_CLIENT_ID + "_not_valid", false);
+        ClientSession notValidClientSession = prepareSession(DEFAULT_CLIENT_ID + "_not_valid", 1);
         saveClientSession(DEFAULT_CLIENT_ID, notValidClientSession);
     }
 
-    private ClientSession prepareSession(String clientId, boolean persistent) {
+    private ClientSession prepareSession(String clientId, int sessionExpiryInterval) {
         return DEFAULT_CLIENT_SESSION.toBuilder()
                 .sessionInfo(DEFAULT_CLIENT_SESSION.getSessionInfo().toBuilder()
                         .clientInfo(new ClientInfo(clientId, ClientType.DEVICE))
-                        .persistent(persistent)
+                        .sessionExpiryInterval(sessionExpiryInterval)
                         .build())
                 .build();
     }

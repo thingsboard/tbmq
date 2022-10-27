@@ -132,7 +132,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         Assert.assertNotNull(persistedClientSession);
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertFalse(persistedClientSession.isConnected());
-        Assert.assertTrue(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
         Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
@@ -182,7 +182,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         Assert.assertNotNull(persistedClientSession);
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
         Assert.assertTrue(persistedClientSession.isConnected());
-        Assert.assertTrue(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
         Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.APPLICATION), sessionInfo.getClientInfo());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
@@ -251,7 +251,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
         Assert.assertNotNull(clientSessionCtx);
         Assert.assertTrue(persistedClientSession.isConnected());
-        Assert.assertFalse(persistedClientSession.getSessionInfo().isPersistent());
+        Assert.assertTrue(persistedClientSession.getSessionInfo().isCleanSession());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
     }

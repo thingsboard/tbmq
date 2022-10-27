@@ -29,25 +29,25 @@ import java.util.UUID;
 public class MqttDisconnectMsg extends SessionDependentMsg {
 
     private final DisconnectReason reason;
-    private final boolean isNewSessionPersistent;
+    private final boolean newSessionCleanStart;
     private final MqttProperties properties;
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason) {
         this(sessionId, reason, false);
     }
 
-    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean isNewSessionPersistent) {
-        this(sessionId, reason, isNewSessionPersistent, MqttProperties.NO_PROPERTIES);
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart) {
+        this(sessionId, reason, newSessionCleanStart, MqttProperties.NO_PROPERTIES);
     }
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, MqttProperties properties) {
         this(sessionId, reason, false, properties);
     }
 
-    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean isNewSessionPersistent, MqttProperties properties) {
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart, MqttProperties properties) {
         super(sessionId);
         this.reason = reason;
-        this.isNewSessionPersistent = isNewSessionPersistent;
+        this.newSessionCleanStart = newSessionCleanStart;
         this.properties = properties;
     }
 

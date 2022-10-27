@@ -31,22 +31,58 @@ import java.util.UUID;
 public class ProtoConverterTest {
 
     @Test
+    public void givenSessionInfo_whenCheckForPersistence_thenOk() {
+        SessionInfo sessionInfo = newSessionInfo(true, 5);
+        Assert.assertTrue(sessionInfo.isPersistent());
+        sessionInfo = newSessionInfo(false, 5);
+        Assert.assertTrue(sessionInfo.isPersistent());
+        sessionInfo = newSessionInfo(true, 0);
+        Assert.assertFalse(sessionInfo.isPersistent());
+        sessionInfo = newSessionInfo(false, 0);
+        Assert.assertFalse(sessionInfo.isPersistent());
+        sessionInfo = newSessionInfo(true, null);
+        Assert.assertFalse(sessionInfo.isPersistent());
+        sessionInfo = newSessionInfo(false, null);
+        Assert.assertFalse(sessionInfo.isPersistent());
+
+        sessionInfo = newSessionInfo(true, 0);
+        Assert.assertTrue(sessionInfo.isCleanSession());
+        sessionInfo = newSessionInfo(true, null);
+        Assert.assertTrue(sessionInfo.isCleanSession());
+
+        sessionInfo = newSessionInfo(false, 0);
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
+        sessionInfo = newSessionInfo(false, null);
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
+    }
+
+    @Test
     public void givenSessionInfo_whenConvertToProtoAndBackWithSessionExpiryIntervalNull_thenOk() {
-        SessionInfo sessionInfoConverted = getSessionInfo(null);
+        SessionInfo sessionInfoConverted = convertSessionInfo(null);
         Assert.assertNull(sessionInfoConverted.getSessionExpiryInterval());
     }
 
     @Test
     public void givenSessionInfo_whenConvertToProtoAndBackWithSessionExpiryIntervalNotNull_thenOk() {
-        SessionInfo sessionInfoConverted = getSessionInfo(5);
+        SessionInfo sessionInfoConverted = convertSessionInfo(5);
         Assert.assertNotNull(sessionInfoConverted.getSessionExpiryInterval());
     }
 
-    private static SessionInfo getSessionInfo(Integer sessionExpiryInterval) {
-        SessionInfo sessionInfo = SessionInfo.builder()
+    private static SessionInfo convertSessionInfo(Integer sessionExpiryInterval) {
+        SessionInfo sessionInfo = newSessionInfo(true, sessionExpiryInterval);
+
+        QueueProtos.SessionInfoProto sessionInfoProto = ProtoConverter.convertToSessionInfoProto(sessionInfo);
+        SessionInfo sessionInfoConverted = ProtoConverter.convertToSessionInfo(sessionInfoProto);
+
+        Assert.assertEquals(sessionInfo, sessionInfoConverted);
+        return sessionInfoConverted;
+    }
+
+    private static SessionInfo newSessionInfo(boolean cleanStart, Integer sessionExpiryInterval) {
+        return SessionInfo.builder()
                 .serviceId("serviceId")
                 .sessionId(UUID.randomUUID())
-                .persistent(false)
+                .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
                 .clientInfo(ClientInfo.builder()
                         .clientId("clientId")
@@ -58,11 +94,5 @@ public class ProtoConverterTest {
                         .keepAlive(100)
                         .build())
                 .build();
-
-        QueueProtos.SessionInfoProto sessionInfoProto = ProtoConverter.convertToSessionInfoProto(sessionInfo);
-        SessionInfo sessionInfoConverted = ProtoConverter.convertToSessionInfo(sessionInfoProto);
-
-        Assert.assertEquals(sessionInfo, sessionInfoConverted);
-        return sessionInfoConverted;
     }
 }

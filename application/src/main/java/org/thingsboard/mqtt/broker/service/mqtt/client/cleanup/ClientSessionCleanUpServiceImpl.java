@@ -68,7 +68,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             return;
         }
         String serviceId = clientSessionInfo.getClientSession().getSessionInfo().getServiceId();
-        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, false);
+        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, true);
     }
 
     private boolean sameSession(UUID sessionId, ClientSessionInfo clientSessionInfo) {
@@ -97,8 +97,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     }
 
     boolean isNotPersistent(ClientSessionInfo clientSessionInfo) {
-        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent() ||
-                clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval() != 0;
+        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent();
     }
 
     private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo) {

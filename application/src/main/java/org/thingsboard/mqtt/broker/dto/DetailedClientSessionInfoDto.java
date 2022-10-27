@@ -36,7 +36,8 @@ public class DetailedClientSessionInfoDto {
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;
-    private boolean persistent;
+    private boolean cleanStart;
+    private int sessionExpiryInterval;
     private List<SubscriptionInfoDto> subscriptions;
     private int keepAliveSeconds;
     private long connectedAt;

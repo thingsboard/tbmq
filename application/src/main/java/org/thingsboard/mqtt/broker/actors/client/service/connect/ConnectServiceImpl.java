@@ -239,7 +239,7 @@ public class ConnectServiceImpl implements ConnectService {
     SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId, ClientType clientType, int sessionExpiryInterval) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                !msg.isCleanSession(),
+                msg.isCleanStart(),
                 serviceInfoProvider.getServiceId(),
                 new ClientInfo(clientId, clientType),
                 ClientSessionInfoFactory.getConnectionInfo(msg.getKeepAliveTimeSeconds()),
@@ -247,7 +247,7 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {
-        if (!msg.isCleanSession() && StringUtils.isEmpty(msg.getClientIdentifier())) {
+        if (!msg.isCleanStart() && StringUtils.isEmpty(msg.getClientIdentifier())) {
             MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx);
             MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
             ctx.getChannel().writeAndFlush(mqttConnAckMsg);

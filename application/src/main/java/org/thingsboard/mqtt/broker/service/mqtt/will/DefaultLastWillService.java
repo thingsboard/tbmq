@@ -84,7 +84,7 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean isNewSessionPersistent) {
+    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean newSessionCleanStart) {
         MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
         if (lastWillMsgWithSessionInfo == null) {
             log.trace("[{}] No last will msg.", sessionId);
@@ -95,7 +95,7 @@ public class DefaultLastWillService implements LastWillService {
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
             int willDelay = getWillDelay(lastWillMsgWithSessionInfo);
-            if (isNewSessionPersistent && willDelay > 0) {
+            if (!newSessionCleanStart && willDelay > 0) {
                 return;
             }
             scheduleLastWill(lastWillMsgWithSessionInfo, sessionId, willDelay);
