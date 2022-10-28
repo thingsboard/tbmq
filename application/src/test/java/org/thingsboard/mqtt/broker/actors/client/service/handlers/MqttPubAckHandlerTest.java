@@ -57,7 +57,7 @@ public class MqttPubAckHandlerTest {
     @Test
     public void testProcess() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(0).build());
+        ctx.setSessionInfo(SessionInfo.builder().cleanStart(true).sessionExpiryInterval(0).build());
         mqttPubAckHandler.process(ctx, 1);
         verify(retransmissionService, times(1)).onPubAckReceived(ctx, 1);
     }

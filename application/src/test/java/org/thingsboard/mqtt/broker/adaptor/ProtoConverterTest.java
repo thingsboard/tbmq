@@ -39,11 +39,11 @@ public class ProtoConverterTest {
         sessionInfo = newSessionInfo(true, 0);
         Assert.assertFalse(sessionInfo.isPersistent());
         sessionInfo = newSessionInfo(false, 0);
-        Assert.assertFalse(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isPersistent());
         sessionInfo = newSessionInfo(true, null);
         Assert.assertFalse(sessionInfo.isPersistent());
         sessionInfo = newSessionInfo(false, null);
-        Assert.assertFalse(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isPersistent());
 
         sessionInfo = newSessionInfo(true, 0);
         Assert.assertTrue(sessionInfo.isCleanSession());

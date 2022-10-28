@@ -54,21 +54,21 @@ public class MqttPubRecHandlerTest {
 
     @Test
     public void testProcessPersistent() {
-        when(ctx.getSessionInfo()).thenReturn(getSessionInfo(1));
+        when(ctx.getSessionInfo()).thenReturn(getSessionInfo(false, 1));
         mqttPubRecHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubRec(eq(ctx), eq(1));
     }
 
     @Test
     public void testProcessNonPersistent() {
-        when(ctx.getSessionInfo()).thenReturn(getSessionInfo(0));
+        when(ctx.getSessionInfo()).thenReturn(getSessionInfo(true, 0));
 
         mqttPubRecHandler.process(ctx, 1);
         verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1), eq(null));
         verify(retransmissionService, times(1)).onPubRecReceived(eq(ctx), any());
     }
 
-    private SessionInfo getSessionInfo(int sessionExpiryInterval) {
-        return SessionInfo.builder().sessionExpiryInterval(sessionExpiryInterval).build();
+    private SessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
+        return SessionInfo.builder().cleanStart(cleanStart).sessionExpiryInterval(sessionExpiryInterval).build();
     }
 }
