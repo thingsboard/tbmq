@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SessionSubscriptionServiceImpl implements SessionSubscriptionService {
+
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache subscriptionCache;
 
@@ -59,11 +60,16 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .nodeId(sessionInfo.getServiceId())
                 .cleanStart(sessionInfo.isCleanStart())
                 .sessionExpiryInterval(sessionInfo.safeGetSessionExpiryInterval())
+                .sessionEndTs(clientSession.isConnected() || sessionInfo.isNotCleanSession() ? -1 : getSessionEndTs(clientSessionInfo, sessionInfo))
                 .subscriptions(collectSubscriptions(subscriptions))
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
                 .disconnectedAt(connectionInfo.getDisconnectedAt())
                 .build();
+    }
+
+    private long getSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
+        return clientSessionInfo.getLastUpdateTime() + sessionInfo.safeGetSessionExpiryInterval();
     }
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {

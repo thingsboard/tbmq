@@ -77,7 +77,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         MqttProperties properties = disconnectMsg.getProperties();
-        int sessionExpiryInterval = getSessionExpiryInterval(properties);
+        int sessionExpiryInterval = getSessionExpiryInterval(properties, reason.getType());
 
         notifyClientDisconnected(actorState, sessionExpiryInterval);
         rateLimitService.remove(sessionCtx.getClientId());
@@ -86,10 +86,10 @@ public class DisconnectServiceImpl implements DisconnectService {
         log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
     }
 
-    private int getSessionExpiryInterval(MqttProperties properties) {
+    private int getSessionExpiryInterval(MqttProperties properties, DisconnectReasonType reasonType) {
         MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
                 .getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value());
-        if (property != null) {
+        if (property != null && DisconnectReasonType.ON_PROTOCOL_ERROR != reasonType) {
             return property.value();
         }
         return 0;

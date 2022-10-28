@@ -175,7 +175,7 @@ public class ConnectServiceImpl implements ConnectService {
 
     private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        var sessionPresent = msg.isSessionPresent() && sessionCtx.getSessionInfo().isPersistent();
+        var sessionPresent = msg.isSessionPresent();
         var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
         var keepAliveSecs = Math.min(msg.getKeepAliveTimeSeconds(), maxServerKeepAlive);
         var sessionExpiryInterval = actorState.getCurrentSessionCtx().getSessionInfo().getSessionExpiryInterval();

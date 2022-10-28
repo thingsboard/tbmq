@@ -38,6 +38,7 @@ public class DetailedClientSessionInfoDto {
     private String nodeId;
     private boolean cleanStart;
     private int sessionExpiryInterval;
+    private long sessionEndTs;
     private List<SubscriptionInfoDto> subscriptions;
     private int keepAliveSeconds;
     private long connectedAt;

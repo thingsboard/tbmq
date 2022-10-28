@@ -136,7 +136,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(true, ClientType.APPLICATION));
+                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.APPLICATION));
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
@@ -149,7 +149,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(false, ClientType.APPLICATION));
+                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.APPLICATION));
 
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
         verify(applicationRemovedEventService, times(1)).sendApplicationRemovedEvent(any());
@@ -161,7 +161,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(false, ClientType.DEVICE));
+                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.DEVICE));
 
         verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
     }

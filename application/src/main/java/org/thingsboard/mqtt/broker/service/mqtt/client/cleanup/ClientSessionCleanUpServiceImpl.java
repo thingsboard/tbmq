@@ -84,7 +84,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         Map<String, ClientSessionInfo> clientSessionInfos = clientSessionCache.getAllClientSessions();
 
         List<SessionInfo> clientSessionsToRemove = clientSessionInfos.values().stream()
-                .filter(this::isNotPersistent)
+                .filter(clientSessionInfo -> !isNotCleanSession(clientSessionInfo))
                 .filter(clientSessionInfo -> needsToBeRemoved(currentTs, clientSessionInfo))
                 .map(ClientSessionInfo::getClientSession)
                 .map(ClientSession::getSessionInfo)
@@ -96,13 +96,21 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         }
     }
 
-    boolean isNotPersistent(ClientSessionInfo clientSessionInfo) {
-        return !clientSessionInfo.getClientSession().getSessionInfo().isPersistent();
+    boolean isNotCleanSession(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.getClientSession().getSessionInfo().isNotCleanSession();
     }
 
     private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo) {
-        long sessionExpiryIntervalMs = TimeUnit.SECONDS.toMillis(clientSessionInfo.getClientSession().getSessionInfo().getSessionExpiryInterval());
-        return clientSessionInfo.getLastUpdateTime() + sessionExpiryIntervalMs < currentTs
+        long sessionExpiryIntervalMs = getSessionExpiryIntervalMs(clientSessionInfo);
+        return isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs)
                 && !clientSessionInfo.getClientSession().isConnected();
+    }
+
+    private boolean isExpired(ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs, long currentTs) {
+        return clientSessionInfo.getLastUpdateTime() + sessionExpiryIntervalMs < currentTs;
+    }
+
+    private long getSessionExpiryIntervalMs(ClientSessionInfo clientSessionInfo) {
+        return TimeUnit.SECONDS.toMillis(clientSessionInfo.getClientSession().getSessionInfo().safeGetSessionExpiryInterval());
     }
 }

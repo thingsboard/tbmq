@@ -83,16 +83,16 @@ public class ClientSessionCleanUpServiceImplTest {
 
     @Test
     public void givenSessions_whenCheckIfNotPersistent_thenReceiveExpectedResult() {
-        Assert.assertFalse(clientSessionCleanUpService.isNotPersistent(
+        Assert.assertTrue(clientSessionCleanUpService.isNotCleanSession(
                 getClientSessionInfo(System.currentTimeMillis(), false, 0)
         ));
-        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
+        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
                 getClientSessionInfo(System.currentTimeMillis(), false, 100)
         ));
-        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
+        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
                 getClientSessionInfo(System.currentTimeMillis(), true, 0)
         ));
-        Assert.assertTrue(clientSessionCleanUpService.isNotPersistent(
+        Assert.assertFalse(clientSessionCleanUpService.isNotCleanSession(
                 getClientSessionInfo(System.currentTimeMillis(), true, 100)
         ));
     }
