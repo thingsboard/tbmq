@@ -29,6 +29,13 @@ import java.util.Objects;
 public class TopicSubscription {
     private final String topic;
     private final int qos;
+    private final String shareName;
+
+    public TopicSubscription(String topic, int qos) {
+        this.topic = topic;
+        this.qos = qos;
+        this.shareName = null;
+    }
 
     @Override
     public boolean equals(Object o) {

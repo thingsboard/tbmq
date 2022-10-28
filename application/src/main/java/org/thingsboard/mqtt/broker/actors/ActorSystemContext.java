@@ -23,6 +23,8 @@ import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ActorProcessingMetricService;
+import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
+import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -37,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 public class ActorSystemContext {
     private final TbActorSystem actorSystem;
     private final DeviceMsgService deviceMsgService;
+    private final DeviceSessionCtxService deviceSessionCtxService;
+    private final DevicePacketIdAndSerialNumberService serialNumberService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ActorProcessingMetricService actorProcessingMetricService;
