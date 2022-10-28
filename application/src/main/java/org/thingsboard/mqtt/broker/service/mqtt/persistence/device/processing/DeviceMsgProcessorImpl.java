@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -29,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.dto.PacketIdAndSerialNumberDto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -88,7 +87,6 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
             if (clientSession == null) {
                 log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
             } else if (!clientSession.isConnected()) {
-                // TODO: think if it's OK to ignore msg if session is 'disconnected'
                 log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
             } else {
                 String targetServiceId = clientSession.getSessionInfo().getServiceId();
@@ -166,18 +164,11 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
                                                                               String clientId) {
         PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
-                new PacketIdAndSerialNumber(new AtomicInteger(1), new AtomicLong(0)));
+                new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1)));
         AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
         packetIdAtomic.incrementAndGet();
         packetIdAtomic.compareAndSet(0xffff, 1);
         return new PacketIdAndSerialNumberDto(packetIdAtomic.get(), packetIdAndSerialNumber.getSerialNumber().incrementAndGet());
-    }
-
-    @Getter
-    @AllArgsConstructor
-    private static class PacketIdAndSerialNumberDto {
-        private final int packetId;
-        private final long serialNumber;
     }
 
     private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {

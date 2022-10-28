@@ -16,12 +16,20 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.Set;
+
 public interface ApplicationPersistenceProcessor {
+
     void startProcessingPersistedMessages(ClientActorStateInfo clientState);
 
+    void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
+
     void stopProcessingPersistedMessages(String clientId);
+
+    void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
 
     void clearPersistedMsgs(String clientId);
 

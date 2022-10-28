@@ -96,3 +96,13 @@ CREATE TABLE IF NOT EXISTS generic_client_session_ctx (
     last_updated_time bigint NOT NULL,
     qos2_publish_packet_ids varchar
 );
+
+CREATE TABLE IF NOT EXISTS application_shared_subscription (
+    id uuid NOT NULL CONSTRAINT application_shared_subscription_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    topic varchar NOT NULL,
+    partitions int NOT NULL,
+    name varchar(255),
+    search_text varchar(255),
+    CONSTRAINT application_shared_subscription_topic_unq_key UNIQUE (topic)
+);

@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -27,9 +27,9 @@ import java.util.UUID;
 public class MqttUnsubscribeMsg extends QueueableMqttMsg {
 
     private final int messageId;
-    private final Collection<String> topics;
+    private final List<String> topics;
 
-    public MqttUnsubscribeMsg(UUID sessionId, int messageId, Collection<String> topics) {
+    public MqttUnsubscribeMsg(UUID sessionId, int messageId, List<String> topics) {
         super(sessionId);
         this.messageId = messageId;
         this.topics = topics;

@@ -30,9 +30,13 @@ import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -58,10 +62,21 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     }
 
     @Override
+    public void notifySubscribeToSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        String clientId = clientSessionCtx.getClientId();
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
+        if (deviceActorRef == null) {
+            log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
+        } else {
+            deviceActorRef.tellWithHighPriority(new SharedSubscriptionEventMsg(subscriptions));
+        }
+    }
+
+    @Override
     public void notifyClientDisconnected(String clientId) {
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            log.warn("[{}] Cannot find device actor for disconnect event.", clientId);
+            log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
         } else {
             deviceActorRef.tellWithHighPriority(new DeviceDisconnectedEventMsg());
         }
