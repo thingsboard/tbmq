@@ -242,7 +242,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             clearSessionAndSubscriptions(clientId);
             return;
         }
-        if (sessionInfo.isPersistent() || !sessionInfo.isCleanStart()) {
+        if (sessionInfo.isPersistent()) {
             ClientSession disconnectedClientSession = markSessionDisconnected(clientSession, sessionExpiryInterval);
             saveClientSession(clientId, disconnectedClientSession);
             return;

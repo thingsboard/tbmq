@@ -33,7 +33,7 @@ public class MqttDisconnectMsg extends SessionDependentMsg {
     private final MqttProperties properties;
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason) {
-        this(sessionId, reason, false);
+        this(sessionId, reason, true);
     }
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart) {
@@ -41,7 +41,7 @@ public class MqttDisconnectMsg extends SessionDependentMsg {
     }
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, MqttProperties properties) {
-        this(sessionId, reason, false, properties);
+        this(sessionId, reason, true, properties);
     }
 
     public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart, MqttProperties properties) {

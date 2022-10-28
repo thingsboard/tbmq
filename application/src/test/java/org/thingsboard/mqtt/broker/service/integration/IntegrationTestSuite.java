@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 @RunWith(ClasspathSuite.class)
 @ClasspathSuite.ClassnameFilters({
-        "org.thingsboard.mqtt.broker.service.integration.*TestCases",
+        "org.thingsboard.mqtt.broker.service.integration.*TestCase",
 })
 public class IntegrationTestSuite {
 

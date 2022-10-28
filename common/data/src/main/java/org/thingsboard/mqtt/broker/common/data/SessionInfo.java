@@ -38,7 +38,7 @@ public class SessionInfo {
     private final ConnectionInfo connectionInfo;
 
     public boolean isPersistent() {
-        return safeGetSessionExpiryInterval() > 0;
+        return safeGetSessionExpiryInterval() > 0 || isNotCleanSession();
     }
 
     public boolean isCleanSession() { // The equivalent for cleanSession=true in the CONNECT packet of MQTTv3
