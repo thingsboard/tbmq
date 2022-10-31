@@ -32,10 +32,6 @@ public class Subscription {
     private final SubscriptionOptions options;
 
     public Subscription(String topicFilter, int mqttQoSValue, ClientSession clientSession) {
-        this.topicFilter = topicFilter;
-        this.mqttQoSValue = mqttQoSValue;
-        this.clientSession = clientSession;
-        this.shareName = null;
-        this.options = SubscriptionOptions.newInstance();
+        this(topicFilter, mqttQoSValue, clientSession, null, SubscriptionOptions.newInstance());
     }
 }
