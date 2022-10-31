@@ -49,11 +49,15 @@ public class ProtoConverterTest {
         Assert.assertTrue(sessionInfo.isCleanSession());
         sessionInfo = newSessionInfo(true, null);
         Assert.assertTrue(sessionInfo.isCleanSession());
+        sessionInfo = newSessionInfo(true, 5);
+        Assert.assertFalse(sessionInfo.isCleanSession());
 
         sessionInfo = newSessionInfo(false, 0);
         Assert.assertTrue(sessionInfo.isNotCleanSession());
         sessionInfo = newSessionInfo(false, null);
         Assert.assertTrue(sessionInfo.isNotCleanSession());
+        sessionInfo = newSessionInfo(false, 5);
+        Assert.assertFalse(sessionInfo.isNotCleanSession());
     }
 
     @Test

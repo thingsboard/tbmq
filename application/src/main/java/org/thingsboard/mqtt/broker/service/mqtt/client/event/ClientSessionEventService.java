@@ -25,7 +25,7 @@ import java.util.UUID;
 public interface ClientSessionEventService {
     ListenableFuture<ConnectionResponse> requestConnection(SessionInfo sessionInfo);
 
-    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, int sessionExpiryInterval);
+    void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, Integer sessionExpiryInterval);
 
     void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback);
 

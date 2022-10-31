@@ -112,7 +112,8 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public Map<String, ClientSessionInfo> getAllClientSessions() {
-        return new HashMap<>(clientSessionMap);
+        Map<String, ClientSessionInfo> allClientSessionsMap = clientSessionMap == null ? Map.of() : clientSessionMap;
+        return new HashMap<>(allClientSessionsMap);
     }
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
