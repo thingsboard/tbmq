@@ -27,11 +27,13 @@ import java.util.UUID;
 public class ConnectionAcceptedMsg extends SessionDependentMsg {
     private final boolean isPrevSessionPersistent;
     private final PublishMsg lastWillMsg;
+    private final int keepAliveTimeSeconds;
 
-    public ConnectionAcceptedMsg(UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg) {
+    public ConnectionAcceptedMsg(UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg, int keepAliveTimeSeconds) {
         super(sessionId);
         this.isPrevSessionPersistent = isPrevSessionPersistent;
         this.lastWillMsg = lastWillMsg;
+        this.keepAliveTimeSeconds = keepAliveTimeSeconds;
     }
 
     @Override

@@ -20,8 +20,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -62,6 +65,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEP
 @RequiredArgsConstructor
 @Slf4j
 public class ConnectServiceImpl implements ConnectService {
+
     private final ExecutorService connectHandlerExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
             ThingsBoardThreadFactory.forName("connect-handler-executor"));
 
@@ -75,6 +79,10 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandlerImpl messageHandler;
 
+    @Setter
+    @Value("${mqtt.keep-alive.max-keep-alive:600}")
+    private int maxServerKeepAlive;
+
     @Override
     public void startConnection(ClientActorStateInfo actorState, MqttConnectMsg msg) throws MqttException {
         UUID sessionId = actorState.getCurrentSessionId();
@@ -87,7 +95,7 @@ public class ConnectServiceImpl implements ConnectService {
 
         sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType()));
 
-        keepAliveService.registerSession(clientId, sessionId, msg.getKeepAliveTimeSeconds());
+        keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));
 
         ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
@@ -101,8 +109,14 @@ public class ConnectServiceImpl implements ConnectService {
             }
 
             private void notifyConnectionAccepted(ConnectionResponse connectionResponse) {
-                clientMqttActorManager.notifyConnectionAccepted(clientId, new ConnectionAcceptedMsg(
-                        sessionId, connectionResponse.isPrevSessionPersistent(), msg.getLastWillMsg()));
+                clientMqttActorManager.notifyConnectionAccepted(
+                        clientId,
+                        new ConnectionAcceptedMsg(
+                                sessionId,
+                                connectionResponse.isPrevSessionPersistent(),
+                                msg.getLastWillMsg(),
+                                msg.getKeepAliveTimeSeconds())
+                );
             }
 
             @Override
@@ -110,6 +124,18 @@ public class ConnectServiceImpl implements ConnectService {
                 refuseConnection(sessionCtx, t);
             }
         }, connectHandlerExecutor);
+    }
+
+    int getKeepAliveSeconds(ClientActorStateInfo actorState, MqttConnectMsg msg) {
+        var clientId = actorState.getClientId();
+        var mqttVersion = actorState.getCurrentSessionCtx().getMqttVersion();
+
+        var keepAliveSeconds = msg.getKeepAliveTimeSeconds();
+        if (MqttVersion.MQTT_5 == mqttVersion && keepAliveSeconds > maxServerKeepAlive) {
+            log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
+            keepAliveSeconds = maxServerKeepAlive;
+        }
+        return keepAliveSeconds;
     }
 
     @Override
@@ -134,11 +160,12 @@ public class ConnectServiceImpl implements ConnectService {
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
     }
 
-    private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
+    private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        var sessionPresent = connectionAcceptedMsg.isPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
+        var sessionPresent = msg.isPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
         var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
-        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(CONNECTION_ACCEPTED, sessionPresent, assignedClientId);
+        var keepAliveSecs = Math.min(msg.getKeepAliveTimeSeconds(), maxServerKeepAlive);
+        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(sessionPresent, assignedClientId, keepAliveSecs);
         sessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
     }
 
@@ -172,11 +199,11 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
-        return createMqttConnAckMsg(code, false, null);
+        return mqttMessageGenerator.createMqttConnAckMsg(code);
     }
 
-    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId) {
-        return mqttMessageGenerator.createMqttConnAckMsg(returnCode, sessionPresent, assignedClientId);
+    private MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent, String assignedClientId, int keepAliveTimeSeconds) {
+        return mqttMessageGenerator.createMqttConnAckMsg(CONNECTION_ACCEPTED, sessionPresent, assignedClientId, keepAliveTimeSeconds);
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {

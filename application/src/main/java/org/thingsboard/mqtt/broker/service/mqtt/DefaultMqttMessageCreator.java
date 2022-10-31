@@ -61,24 +61,35 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
-    public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId) {
+    public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
-        MqttProperties properties = getMqttProperties(assignedClientId);
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
-                new MqttConnAckVariableHeader(returnCode, sessionPresent, properties);
+                new MqttConnAckVariableHeader(returnCode, false);
         return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
     }
 
-    private MqttProperties getMqttProperties(String assignedClientId) {
+    @Override
+    public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent,
+                                                   String assignedClientId, int keepAliveTimeSeconds) {
+        MqttFixedHeader mqttFixedHeader =
+                new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
+
+        MqttProperties properties = new MqttProperties();
         if (assignedClientId != null) {
-            MqttProperties properties = new MqttProperties();
             properties.add(new MqttProperties.StringProperty(
                     MqttProperties.MqttPropertyType.ASSIGNED_CLIENT_IDENTIFIER.value(),
-                    assignedClientId));
-            return properties;
+                    assignedClientId)
+            );
         }
-        return null;
+        properties.add(new MqttProperties.IntegerProperty(
+                MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value(),
+                keepAliveTimeSeconds)
+        );
+
+        MqttConnAckVariableHeader mqttConnAckVariableHeader =
+                new MqttConnAckVariableHeader(returnCode, sessionPresent, properties);
+        return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
     }
 
     @Override

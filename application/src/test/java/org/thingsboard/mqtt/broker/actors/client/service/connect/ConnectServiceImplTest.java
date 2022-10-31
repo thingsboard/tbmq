@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -129,9 +130,26 @@ public class ConnectServiceImplTest {
     public void testRefuseConnection() {
         connectService.refuseConnection(ctx, null);
 
-        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE), eq(false), eq(null));
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE));
         verify(channelHandlerContext, times(1)).writeAndFlush(any());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void testGetKeepAliveSeconds() {
+        connectService.setMaxServerKeepAlive(50);
+
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        int keepAliveSeconds = connectService.getKeepAliveSeconds(actorState, new MqttConnectMsg(
+                UUID.randomUUID(), "id", false, 100, null
+        ));
+        Assert.assertEquals(50, keepAliveSeconds);
+
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
+        keepAliveSeconds = connectService.getKeepAliveSeconds(actorState, new MqttConnectMsg(
+                UUID.randomUUID(), "id", false, 100, null
+        ));
+        Assert.assertEquals(100, keepAliveSeconds);
     }
 
     @Test(expected = MqttException.class)
@@ -160,7 +178,7 @@ public class ConnectServiceImplTest {
     }
 
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
-        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg);
+        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000);
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId) {

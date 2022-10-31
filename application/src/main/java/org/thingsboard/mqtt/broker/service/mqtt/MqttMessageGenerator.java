@@ -28,7 +28,9 @@ import java.util.List;
 
 public interface MqttMessageGenerator {
 
-    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId);
+    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode);
+
+    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId, int keepAliveTimeSeconds);
 
     MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
 
