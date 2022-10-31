@@ -95,6 +95,7 @@ message LastPublishCtxProto {
 message DisconnectClientCommandProto {
   int64 sessionIdMSB = 1;
   int64 sessionIdLSB = 2;
+  bool isNewSessionPersistent = 3;
 }
 
 message TimeProto {

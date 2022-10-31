@@ -49,8 +49,9 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
     }
 
     @Override
-    public void disconnectSession(String serviceId, String clientId, UUID sessionId) {
-        QueueProtos.DisconnectClientCommandProto disconnectCommand = ProtoConverter.createDisconnectClientCommandProto(sessionId);
+    public void disconnectSession(String serviceId, String clientId, UUID sessionId, boolean isNewSessionPersistent) {
+        QueueProtos.DisconnectClientCommandProto disconnectCommand =
+                ProtoConverter.createDisconnectClientCommandProto(sessionId, isNewSessionPersistent);
         String topic = helper.getServiceTopic(serviceId);
         clientDisconnectCommandProducer.send(topic, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override

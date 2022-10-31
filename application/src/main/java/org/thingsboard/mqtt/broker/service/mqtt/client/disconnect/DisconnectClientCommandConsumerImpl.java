@@ -40,13 +40,14 @@ import java.util.concurrent.Executors;
 @Component
 @RequiredArgsConstructor
 public class DisconnectClientCommandConsumerImpl implements DisconnectClientCommandConsumer {
-    private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
-    private volatile boolean stopped = false;
 
+    private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("disconnect-client-command-consumer"));
     private final DisconnectClientCommandQueueFactory disconnectClientCommandQueueFactory;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ServiceInfoProvider serviceInfoProvider;
     private final DisconnectClientCommandHelper helper;
+
+    private volatile boolean stopped = false;
 
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
@@ -84,15 +85,15 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
         log.info("Disconnect Client Command Consumer stopped.");
     }
 
-    // TODO: add force-disconnect logic
-
     private void processClientDisconnect(TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg) {
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
+        boolean isNewSessionPersistent = disconnectClientCommandProto.getIsNewSessionPersistent();
         clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
                 sessionId,
-                new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS)));
+                new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS),
+                isNewSessionPersistent));
     }
 
     private void initConsumer() {

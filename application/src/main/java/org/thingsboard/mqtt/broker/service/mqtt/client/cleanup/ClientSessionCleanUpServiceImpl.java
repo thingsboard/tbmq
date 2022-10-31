@@ -71,7 +71,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             return;
         }
         String serviceId = clientSessionInfo.getClientSession().getSessionInfo().getServiceId();
-        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId);
+        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, false);
     }
 
     @Scheduled(cron = "${mqtt.client-session-cleanup.cron}", zone = "${mqtt.client-session-cleanup.zone}")

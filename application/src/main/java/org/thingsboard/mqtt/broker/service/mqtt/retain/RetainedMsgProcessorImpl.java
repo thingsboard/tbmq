@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,16 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
     }
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), publishMsg.getProperties());
+        MqttProperties properties = new MqttProperties();
+        MqttProperties.MqttProperty property = getUserProperties(publishMsg);
+        if (property != null) {
+            properties.add(property);
+        }
+        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), properties);
+    }
+
+    private MqttProperties.MqttProperty getUserProperties(PublishMsg publishMsg) {
+        return publishMsg.getProperties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
     }
 
     PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {

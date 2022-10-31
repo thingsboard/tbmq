@@ -26,10 +26,16 @@ import java.util.UUID;
 @Getter
 public class DisconnectMsg extends SessionDependentMsg {
     private final DisconnectReason reason;
+    private final boolean isNewSessionPersistent;
 
     public DisconnectMsg(UUID sessionId, DisconnectReason reason) {
+        this(sessionId, reason, false);
+    }
+
+    public DisconnectMsg(UUID sessionId, DisconnectReason reason, boolean isNewSessionPersistent) {
         super(sessionId);
         this.reason = reason;
+        this.isNewSessionPersistent = isNewSessionPersistent;
     }
 
     @Override

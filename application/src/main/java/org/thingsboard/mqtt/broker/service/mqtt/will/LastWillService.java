@@ -24,5 +24,5 @@ public interface LastWillService {
 
     void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg);
 
-    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg);
+    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean isNewSessionPersistent);
 }

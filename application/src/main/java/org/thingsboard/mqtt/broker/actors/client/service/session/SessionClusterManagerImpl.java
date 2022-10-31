@@ -118,14 +118,19 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         if (currentlyConnectedSession != null && currentlyConnectedSession.isConnected()) {
             String currentSessionServiceId = currentlyConnectedSession.getSessionInfo().getServiceId();
+            var isNewSessionPersistent = sessionInfo.isPersistent();
             log.trace("[{}] Requesting disconnect of the client session, serviceId - {}, sessionId - {}.",
                     clientId, currentSessionServiceId, currentlyConnectedSessionId);
-            disconnectClientCommandService.disconnectSession(currentSessionServiceId, clientId, currentlyConnectedSessionId);
+            disconnectCurrentSession(currentSessionServiceId, clientId, currentlyConnectedSessionId, isNewSessionPersistent);
             finishDisconnect(currentlyConnectedSession);
         }
 
         PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentlyConnectedSession);
         updateClientSession(sessionInfo, requestInfo, previousSessionInfo);
+    }
+
+    private void disconnectCurrentSession(String serviceId, String clientId, UUID sessionId, boolean isNewSessionPersistent) {
+        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, isNewSessionPersistent);
     }
 
     private UUID getCurrentlyConnectedSessionId(ClientSession currentlyConnectedSession) {
