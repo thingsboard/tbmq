@@ -27,7 +27,8 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import java.util.List;
 
 public interface MqttMessageGenerator {
-    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent);
+
+    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId);
 
     MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
 

@@ -121,7 +121,7 @@ public class ConnectServiceImpl implements ConnectService {
             lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg());
         }
 
-        pushConnAckMsg(sessionCtx, connectionAcceptedMsg);
+        pushConnAckMsg(actorState, connectionAcceptedMsg);
 
         log.info("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
 
@@ -134,9 +134,12 @@ public class ConnectServiceImpl implements ConnectService {
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
     }
 
-    private void pushConnAckMsg(ClientSessionCtx sessionCtx, ConnectionAcceptedMsg connectionAcceptedMsg) {
-        boolean sessionPresent = connectionAcceptedMsg.isPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
-        sessionCtx.getChannel().writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED, sessionPresent));
+    private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg connectionAcceptedMsg) {
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        var sessionPresent = connectionAcceptedMsg.isPrevSessionPersistent() && sessionCtx.getSessionInfo().isPersistent();
+        var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
+        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(CONNECTION_ACCEPTED, sessionPresent, assignedClientId);
+        sessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, Throwable t) {
@@ -169,11 +172,11 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
-        return createMqttConnAckMsg(code, false);
+        return createMqttConnAckMsg(code, false, null);
     }
 
-    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent) {
-        return mqttMessageGenerator.createMqttConnAckMsg(returnCode, sessionPresent);
+    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent, String assignedClientId) {
+        return mqttMessageGenerator.createMqttConnAckMsg(returnCode, sessionPresent, assignedClientId);
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {
@@ -197,7 +200,8 @@ public class ConnectServiceImpl implements ConnectService {
 
     void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {
         if (!msg.isCleanSession() && StringUtils.isEmpty(msg.getClientIdentifier())) {
-            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx));
+            MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx);
+            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
             ctx.getChannel().writeAndFlush(mqttConnAckMsg);
             throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
         }

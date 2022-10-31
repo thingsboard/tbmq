@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class TestUtils {
+
     public static void clearPersistedClient(MqttClient persistedClient, MqttClient newClientToClear) throws Exception {
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
@@ -49,23 +50,28 @@ public class TestUtils {
     }
 
     public static MqttClientCredentials createApplicationClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, ClientType.APPLICATION, null);
+        return getMqttClientCredentials(clientId, username, null, ClientType.APPLICATION, null);
     }
 
     public static MqttClientCredentials createDeviceClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, ClientType.DEVICE, null);
+        return getMqttClientCredentials(clientId, username, null, ClientType.DEVICE, null);
     }
 
     public static MqttClientCredentials createDeviceClientCredentialsWithAuth(String clientId, List<String> authRulePatterns) {
-        return getMqttClientCredentials(clientId, null, ClientType.DEVICE, authRulePatterns);
+        return getMqttClientCredentials(clientId, null, null, ClientType.DEVICE, authRulePatterns);
     }
 
-    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, ClientType clientType, List<String> patterns) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, null, patterns);
+    public static MqttClientCredentials createDeviceClientCredentialsWithPass(String clientId, String password) {
+        return getMqttClientCredentials(clientId, null, password, ClientType.DEVICE, null);
+    }
+
+    private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, String password,
+                                                                  ClientType clientType, List<String> patterns) {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, patterns);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        mqttClientCredentials.setName("ApplicationCredentials");
+        mqttClientCredentials.setName("credentials");
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return mqttClientCredentials;
     }
