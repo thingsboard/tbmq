@@ -165,7 +165,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
-    // TODO: think in general about what data can get stuck in the DB forever
     @Override
     public void processClearSession(String clientId, UUID sessionId) {
         if (StringUtils.isEmpty(clientId) || sessionId == null) {

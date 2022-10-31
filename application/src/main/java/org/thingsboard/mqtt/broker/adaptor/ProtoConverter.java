@@ -173,11 +173,9 @@ public class ProtoConverter {
 
     public static QueueProtos.ClientSubscriptionsProto convertToClientSubscriptionsProto(Collection<TopicSubscription> topicSubscriptions) {
         List<QueueProtos.TopicSubscriptionProto> topicSubscriptionsProto = topicSubscriptions.stream()
-                .map(topicSubscription -> QueueProtos.TopicSubscriptionProto.newBuilder()
-                        .setQos(topicSubscription.getQos())
-                        .setTopic(topicSubscription.getTopic())
-                        .setOptions(prepareOptionsProto(topicSubscription))
-                        .build())
+                .map(topicSubscription -> topicSubscription.getShareName() == null ?
+                        getTopicSubscriptionProto(topicSubscription) :
+                        getTopicSubscriptionProtoWithShareName(topicSubscription))
                 .collect(Collectors.toList());
         return QueueProtos.ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
     }
@@ -194,11 +192,29 @@ public class ProtoConverter {
         return QueueProtos.RetainHandling.forNumber(topicSubscription.getOptions().getRetainHandling().value());
     }
 
+    private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
+        return QueueProtos.TopicSubscriptionProto.newBuilder()
+                .setQos(topicSubscription.getQos())
+                .setTopic(topicSubscription.getTopic())
+                .setOptions(prepareOptionsProto(topicSubscription))
+                .build();
+    }
+
+    private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProtoWithShareName(TopicSubscription topicSubscription) {
+        return QueueProtos.TopicSubscriptionProto.newBuilder()
+                .setQos(topicSubscription.getQos())
+                .setTopic(topicSubscription.getTopic())
+                .setShareName(topicSubscription.getShareName())
+                .setOptions(prepareOptionsProto(topicSubscription))
+                .build();
+    }
+
     public static Set<TopicSubscription> convertToClientSubscriptions(QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
         return clientSubscriptionsProto.getSubscriptionsList().stream()
                 .map(topicSubscriptionProto -> TopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
                         .topic(topicSubscriptionProto.getTopic())
+                        .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
                         .options(createOptions(topicSubscriptionProto))
                         .build())
                 .collect(Collectors.toSet());

@@ -18,11 +18,13 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
 @EqualsAndHashCode
 @AllArgsConstructor
 @Builder(toBuilder = true)
+@ToString
 public class PersistedPubRelMsg implements PersistedMsg {
     private final int packetId;
     private final long offset;

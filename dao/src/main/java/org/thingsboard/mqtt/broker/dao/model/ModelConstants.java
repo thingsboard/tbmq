@@ -77,6 +77,15 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY = "user_properties";
     public static final String DEVICE_PUBLISH_MSG_RETAIN_PROPERTY = "retain";
 
+
+    /**
+     * application_shared_subscription constants.
+     */
+    public static final String APPLICATION_SHARED_SUBSCRIPTION_COLUMN_FAMILY_NAME = "application_shared_subscription";
+    public static final String APPLICATION_SHARED_SUBSCRIPTION_TOPIC_PROPERTY = DEVICE_PUBLISH_MSG_TOPIC_PROPERTY;
+    public static final String APPLICATION_SHARED_SUBSCRIPTION_PARTITIONS_PROPERTY = "partitions";
+    public static final String APPLICATION_SHARED_SUBSCRIPTION_NAME_PROPERTY = MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY;
+
     /**
      * device_session_ctx constants.
      */

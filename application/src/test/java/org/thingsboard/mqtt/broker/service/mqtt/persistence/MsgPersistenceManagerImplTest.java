@@ -111,8 +111,8 @@ public class MsgPersistenceManagerImplTest {
         assertEquals("appClientId4", lastApplicationClientId);
     }
 
-    private Subscription createSubscription(String topic, int qos, String clientId, ClientType type) {
-        return new Subscription(topic, qos, getSessionInfo(clientId, type));
+    private Subscription createSubscription(String topicFilter, int qos, String clientId, ClientType type) {
+        return new Subscription(topicFilter, qos, ClientSessionInfoFactory.getClientSession(true, getSessionInfo(clientId, type)));
     }
 
     private SessionInfo getSessionInfo(String clientId, ClientType clientType) {

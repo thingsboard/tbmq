@@ -18,10 +18,14 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,10 +44,12 @@ import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCa
 @RequiredArgsConstructor
 // not thread-safe for operations with the same 'clientId'
 public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
+
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
+    private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
     private final StatsManager statsManager;
 
     // TODO: sync subscriptions (and probably ClientSession)
@@ -119,11 +125,24 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private Set<TopicSubscription> unsubscribe(String clientId, Collection<String> topicFilters) {
-        subscriptionService.unsubscribe(clientId, topicFilters);
+        List<String> topics = extractTopicFilterFromSharedTopic(topicFilters);
+        subscriptionService.unsubscribe(clientId, topics);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        clientSubscriptions.removeIf(topicSubscription -> topicFilters.contains(topicSubscription.getTopic()));
+        clientSubscriptions.removeIf(topicSubscription -> {
+            boolean unsubscribe = topics.contains(topicSubscription.getTopic());
+            if (unsubscribe) {
+                processSharedUnsubscribe(topicSubscription);
+            }
+            return unsubscribe;
+        });
         return clientSubscriptions;
+    }
+
+    private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {
+        return topicFilters.stream()
+                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicName(tf) : tf)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -146,6 +165,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()
+                .peek(this::processSharedUnsubscribe)
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
@@ -154,5 +174,23 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
+    }
+
+    private void processSharedUnsubscribe(TopicSubscription topicSubscription) {
+        if (isSharedSubscription(topicSubscription)) {
+            unsubscribeSharedSubscription(topicSubscription);
+        }
+    }
+
+    private boolean isSharedSubscription(TopicSubscription topicSubscription) {
+        return !StringUtils.isEmpty(topicSubscription.getShareName());
+    }
+
+    private void unsubscribeSharedSubscription(TopicSubscription topicSubscription) {
+        sharedSubscriptionProcessor.unsubscribe(getSharedSubscriptionTopicFilter(topicSubscription));
+    }
+
+    private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
+        return new TopicSharedSubscription(topicSubscription.getTopic(), topicSubscription.getShareName());
     }
 }

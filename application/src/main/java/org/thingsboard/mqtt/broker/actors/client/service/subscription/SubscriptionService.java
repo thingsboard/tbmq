@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
+import java.util.List;
 
 /*
     not thread-safe for operations with the same 'clientId'
@@ -30,7 +31,7 @@ public interface SubscriptionService {
 
     void unsubscribe(String clientId, Collection<String> topicFilters);
 
-    Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
+    List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
 
     void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
 }

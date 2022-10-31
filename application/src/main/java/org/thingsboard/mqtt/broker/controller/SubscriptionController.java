@@ -24,12 +24,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -47,12 +51,24 @@ public class SubscriptionController extends BaseController {
     public DetailedClientSessionInfoDto updateSubscriptions(@RequestBody DetailedClientSessionInfoDto detailedClientSessionInfoDto) throws ThingsboardException {
         checkNotNull(detailedClientSessionInfoDto);
         checkNotNull(detailedClientSessionInfoDto.getSubscriptions());
+
+        boolean sharedSubsPresent = isAnySharedSubscriptionPresent(detailedClientSessionInfoDto.getSubscriptions());
+        if (sharedSubsPresent) {
+            throw new ThingsboardException("Shared subscriptions updates are not allowed!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        }
+
         try {
             subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
             return detailedClientSessionInfoDto;
         } catch (Exception e) {
             throw handleException(e);
         }
+    }
+
+    private boolean isAnySharedSubscriptionPresent(List<SubscriptionInfoDto> subscriptions) {
+        return subscriptions
+                .stream()
+                .anyMatch(subscription -> subscription.getTopic().startsWith(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX));
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")

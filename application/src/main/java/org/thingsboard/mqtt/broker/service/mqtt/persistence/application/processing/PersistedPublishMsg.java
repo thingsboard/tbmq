@@ -18,11 +18,13 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 @AllArgsConstructor
 @Builder(toBuilder = true)
+@ToString
 public class PersistedPublishMsg implements PersistedMsg {
     @Getter
     private final PublishMsg publishMsg;
