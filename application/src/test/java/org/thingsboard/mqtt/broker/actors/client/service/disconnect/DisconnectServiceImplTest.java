@@ -114,7 +114,7 @@ public class DisconnectServiceImplTest {
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
         verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg);
-        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, 0);
+        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, null);
         verify(disconnectService, times(1)).closeChannel(ctx);
     }
 
