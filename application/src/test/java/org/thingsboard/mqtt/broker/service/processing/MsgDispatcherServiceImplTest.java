@@ -143,7 +143,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(4, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before, null);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(4, result.size());
     }
 
@@ -159,7 +159,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before, null);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(3, result.size());
 
         assertTrue(result.containsAll(
@@ -183,7 +183,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before, null);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(3, result.size());
 
         assertTrue(result.containsAll(
@@ -207,7 +207,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before, null);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(6, result.size());
     }
 
@@ -223,7 +223,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before, null);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(6, result.size());
     }
 

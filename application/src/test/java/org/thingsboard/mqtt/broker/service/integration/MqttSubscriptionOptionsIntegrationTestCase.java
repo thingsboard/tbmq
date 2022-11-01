@@ -57,6 +57,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
     static final String DEV_CLIENT_ID = "devClientId";
     static final String APP_CLIENT_ID = "appClientId";
     static final String MY_TOPIC = "my/topic";
+    static final String SHARED_SUBS_PREFIX = "$share/group/";
     static final String MSG_PAYLOAD = "myRetainMsg";
 
     @Autowired
@@ -286,6 +287,20 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         disconnectClient(subClient);
 
         clearRetainedMsg();
+    }
+
+    @Test(expected = MqttException.class)
+    public void givenSubClientWithNoLocalOptionSet_whenSubscribeToSharedSubs_thenSubscriptionFailedClientDisconnected() throws Throwable {
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "sharedSubsNoLocal");
+        subClient.connect(getConnectionOptionsWithGenericUserName());
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+        }};
+        MqttSubscription mqttSubscription = new MqttSubscription(SHARED_SUBS_PREFIX + MY_TOPIC, 2);
+        mqttSubscription.setNoLocal(true);
+        MqttSubscription[] subscriptions = {mqttSubscription};
+
+        subClient.subscribe(subscriptions, listeners);
     }
 
     private void clearRetainedMsg() throws MqttException {

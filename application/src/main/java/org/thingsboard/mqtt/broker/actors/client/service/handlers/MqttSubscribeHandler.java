@@ -52,6 +52,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,6 +79,9 @@ public class MqttSubscribeHandler {
                 ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
 
         List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, msg);
+        if (CollectionUtils.isEmpty(codes)) {
+            return;
+        }
         List<TopicSubscription> validTopicSubscriptions = collectValidSubscriptions(topicSubscriptions, codes);
 
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
@@ -106,6 +110,12 @@ public class MqttSubscribeHandler {
 
         for (TopicSubscription subscription : topicSubscriptions) {
             var topic = subscription.getTopic();
+
+            if (isSharedSubscriptionWithNoLocal(subscription)) {
+                log.warn("[{}] It is a Protocol Error to set the NoLocal option to true on a Shared Subscription.", ctx.getClientId());
+                disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR);
+                return Collections.emptyList();
+            }
 
             try {
                 topicValidationService.validateTopicFilter(topic);
@@ -136,6 +146,7 @@ public class MqttSubscribeHandler {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             MqttProperties.MqttProperty subscriptionIdProperty = getSubscriptionIdProperty(msg.getProperties());
             if (subscriptionIdProperty != null) {
+                log.warn("[{}] Subscription id MQTT property present, server not support this!", ctx.getClientId());
                 for (int i = 0; i < subscriptionsCount; i++) {
                     codes.add(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED);
                 }
@@ -152,7 +163,7 @@ public class MqttSubscribeHandler {
         if (CollectionUtils.isEmpty(newSubscriptions)) {
             sendSubAck(ctx, subAckMessage);
             if (isSubscriptionIdNotSupportedCodePresent(subAckMessage)) {
-                disconnectClient(ctx);
+                disconnectClient(ctx, DisconnectReasonType.ON_SUBSCRIPTION_ID_NOT_SUPPORTED);
             }
             return;
         }
@@ -170,12 +181,12 @@ public class MqttSubscribeHandler {
         );
     }
 
-    private void disconnectClient(ClientSessionCtx ctx) {
+    private void disconnectClient(ClientSessionCtx ctx, DisconnectReasonType disconnectReasonType) {
         clientMqttActorManager.disconnect(
                 ctx.getClientId(),
                 new DisconnectMsg(
                         ctx.getSessionId(),
-                        new DisconnectReason(DisconnectReasonType.ON_SUBSCRIPTION_ID_NOT_SUPPORTED))
+                        new DisconnectReason(disconnectReasonType))
         );
     }
 
@@ -291,5 +302,9 @@ public class MqttSubscribeHandler {
         if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
             throw new DataValidationException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
+    }
+
+    private boolean isSharedSubscriptionWithNoLocal(TopicSubscription subscription) {
+        return subscription.getShareName() != null && subscription.getOptions().isNoLocal();
     }
 }

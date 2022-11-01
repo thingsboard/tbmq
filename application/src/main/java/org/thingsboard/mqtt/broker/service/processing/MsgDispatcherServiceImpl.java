@@ -255,7 +255,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters, String senderClientId) {
 
         List<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
-                filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters, senderClientId);
+                filterClientSubscriptions(clientSubscriptionWithTopicFilters, senderClientId);
 
         return filteredClientSubscriptions.stream()
                 .collect(Collectors.groupingBy(this::getSubscriptionType))
@@ -276,11 +276,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             log.debug("[{}] Client session not found for existent client subscription.", clientId);
             return null;
         }
-        return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                clientSession, clientSubscription.getValue().getShareName(), clientSubscription.getValue().getOptions());
+        return new Subscription(
+                clientSubscription.getTopicFilter(),
+                clientSubscription.getValue().getQosValue(),
+                clientSession,
+                clientSubscription.getValue().getShareName(),
+                clientSubscription.getValue().getOptions());
     }
 
-    List<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+    List<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters, String senderClientId) {
 
         Stream<ValueWithTopicFilter<ClientSubscription>> sharedSubscriptions = clientSubscriptionWithTopicFilters
@@ -292,12 +296,12 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .filter(subs -> StringUtils.isEmpty(subs.getValue().getShareName()));
 
         return Stream.concat(
-                        filterHighestQosClientSubscriptions(sharedSubscriptions, senderClientId),
-                        filterHighestQosClientSubscriptions(commonSubscriptions, senderClientId))
+                        filterClientSubscriptions(sharedSubscriptions, senderClientId),
+                        filterClientSubscriptions(commonSubscriptions, senderClientId))
                 .collect(Collectors.toList());
     }
 
-    Stream<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
+    Stream<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             Stream<ValueWithTopicFilter<ClientSubscription>> stream, String senderClientId) {
         return stream
                 .filter(clientSubsWithTopicFilter -> !isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId))
