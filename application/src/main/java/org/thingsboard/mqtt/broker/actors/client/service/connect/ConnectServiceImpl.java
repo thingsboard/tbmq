@@ -156,6 +156,7 @@ public class ConnectServiceImpl implements ConnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         SessionInfo sessionInfo = sessionCtx.getSessionInfo();
 
+        lastWillService.cancelLastWillDelayIfScheduled(sessionCtx.getClientId());
         if (connectionAcceptedMsg.getLastWillMsg() != null) {
             lastWillService.saveLastWillMsg(sessionInfo, connectionAcceptedMsg.getLastWillMsg());
         }

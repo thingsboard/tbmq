@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -98,6 +99,55 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
 
         subClient.disconnect();
         subClient.close();
+    }
+
+    @Test
+    public void testNoLastWillSentWhenReconnectSessionBeforeWillDelayElapsed() throws Throwable {
+        AtomicBoolean lastWillReceived = new AtomicBoolean(false);
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        subClient.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("will", new String(message.getPayload()));
+            lastWillReceived.set(true);
+        }};
+
+        MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
+        subClient.subscribe(subscriptions, listeners);
+
+        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        MqttProperties mqttProperties = getMqttPropertiesWithWillDelay();
+        options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 1, false, mqttProperties));
+        options.setWillMessageProperties(mqttProperties);
+        options.setKeepAliveInterval(1);
+        pubClient.connect(options).waitForCompletion();
+
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> !pubClient.isConnected());
+
+        Thread.sleep(1000); // needed to wait a bit for will delay
+
+        MqttAsyncClient pubClientReconnect = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill");
+        pubClientReconnect.connect().waitForCompletion();
+
+        Thread.sleep(3000); // needed to wait a bit for will delay
+
+        Assert.assertFalse(lastWillReceived.get());
+
+        subClient.disconnect();
+        subClient.close();
+    }
+
+    private MqttProperties getMqttPropertiesWithWillDelay() {
+        MqttProperties mqttProperties = new MqttProperties();
+        mqttProperties.setWillDelayInterval(3L);
+        return mqttProperties;
     }
 
     @Test

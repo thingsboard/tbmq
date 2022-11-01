@@ -102,6 +102,14 @@ public class DefaultLastWillService implements LastWillService {
         }
     }
 
+    @Override
+    public void cancelLastWillDelayIfScheduled(String clientId) {
+        ScheduledFuture<?> task = delayedLastWillFuturesMap.get(clientId);
+        if (task != null && !task.isCancelled()) {
+            task.cancel(true);
+        }
+    }
+
     void scheduleLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo, UUID sessionId, int willDelay) {
         ScheduledFuture<?> futureTask = scheduler.schedule(() -> processLastWill(lastWillMsgWithSessionInfo, sessionId), willDelay, TimeUnit.SECONDS);
         delayedLastWillFuturesMap.put(getClientId(lastWillMsgWithSessionInfo), futureTask);

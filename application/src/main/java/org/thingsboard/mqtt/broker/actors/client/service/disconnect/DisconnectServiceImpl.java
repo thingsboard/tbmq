@@ -118,7 +118,7 @@ public class DisconnectServiceImpl implements DisconnectService {
                     actorState.getCurrentSessionId(),
                     sessionExpiryInterval);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to notify client disconnected. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
+            log.warn("[{}][{}] Failed to notify client disconnected.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
         }
     }
 
