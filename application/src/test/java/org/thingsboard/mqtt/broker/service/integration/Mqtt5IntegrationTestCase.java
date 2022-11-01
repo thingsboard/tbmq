@@ -121,6 +121,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setSessionExpiryInterval(100L);
         MqttProperties mqttProperties = getMqttPropertiesWithWillDelay(3L);
         options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 1, false, mqttProperties));
         options.setWillMessageProperties(mqttProperties);
