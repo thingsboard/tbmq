@@ -83,7 +83,7 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);
         connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
-        lastWillClient.connect(connectOptions);
+        lastWillClient.connect(connectOptions).waitForCompletion();
         waiter.await();
         subClient.disconnect();
         subClient.close();

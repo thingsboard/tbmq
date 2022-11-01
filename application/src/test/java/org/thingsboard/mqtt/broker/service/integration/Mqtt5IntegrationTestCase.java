@@ -85,13 +85,13 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 2, false, MQTT_PROPERTIES));
         options.setWillMessageProperties(MQTT_PROPERTIES);
-        pubClient.connect(options);
+        pubClient.connect(options).waitForCompletion();
 
         Awaitility.await()
                 .atMost(30, TimeUnit.SECONDS)
                 .until(pubClient::isConnected);
 
-        pubClient.disconnect(0, null, null, MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value(), new MqttProperties());
+        pubClient.disconnect(0, null, null, MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value(), new MqttProperties()).waitForCompletion();
         pubClient.close();
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
@@ -121,7 +121,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
-        MqttProperties mqttProperties = getMqttPropertiesWithWillDelay();
+        MqttProperties mqttProperties = getMqttPropertiesWithWillDelay(3L);
         options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 1, false, mqttProperties));
         options.setWillMessageProperties(mqttProperties);
         options.setKeepAliveInterval(1);
@@ -144,9 +144,85 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClient.close();
     }
 
-    private MqttProperties getMqttPropertiesWithWillDelay() {
+    @Test
+    public void testLastWillSentWhenSessionExpires() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        subClient.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("will", new String(message.getPayload()));
+            latch.countDown();
+        }};
+
+        MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
+        subClient.subscribe(subscriptions, listeners);
+
+        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setSessionExpiryInterval(5L);
+        MqttProperties mqttProperties = getMqttPropertiesWithWillDelay(30L);
+        options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 1, false, mqttProperties));
+        options.setWillMessageProperties(mqttProperties);
+        options.setKeepAliveInterval(1);
+        pubClient.connect(options).waitForCompletion();
+
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> !pubClient.isConnected());
+
+        boolean await = latch.await(10, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        subClient.disconnect();
+        subClient.close();
+    }
+
+    @Test
+    public void testLastWillSentWhenSessionExpiresWithValueFromDisconnect() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        subClient.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("will", new String(message.getPayload()));
+            latch.countDown();
+        }};
+
+        MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
+        subClient.subscribe(subscriptions, listeners);
+
+        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+                null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setSessionExpiryInterval(15L);
+        MqttProperties mqttProperties = getMqttPropertiesWithWillDelay(30L);
+        options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 1, false, mqttProperties));
+        options.setWillMessageProperties(mqttProperties);
+        options.setKeepAliveInterval(10);
+        pubClient.connect(options).waitForCompletion();
+
+        MqttProperties disconnectProperties = new MqttProperties();
+        disconnectProperties.setSessionExpiryInterval(5L);
+        pubClient.disconnect(0, null, null, MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value(), disconnectProperties).waitForCompletion();
+
+        boolean await = latch.await(10, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        subClient.disconnect();
+        subClient.close();
+    }
+
+    private MqttProperties getMqttPropertiesWithWillDelay(long willDelayInterval) {
         MqttProperties mqttProperties = new MqttProperties();
-        mqttProperties.setWillDelayInterval(3L);
+        mqttProperties.setWillDelayInterval(willDelayInterval);
         return mqttProperties;
     }
 
