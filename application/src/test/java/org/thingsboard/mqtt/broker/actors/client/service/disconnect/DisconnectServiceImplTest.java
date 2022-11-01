@@ -103,7 +103,7 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg);
+        verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg, null);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0);
         verify(disconnectService, never()).closeChannel(ctx);
     }
@@ -113,7 +113,7 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg);
+        verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg, null);
         verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, null);
         verify(disconnectService, times(1)).closeChannel(ctx);
     }
@@ -121,11 +121,11 @@ public class DisconnectServiceImplTest {
     @Test
     public void testClearClientSession() {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
-        disconnectService.clearClientSession(clientActorState, disconnectMsg);
+        disconnectService.clearClientSession(clientActorState, disconnectMsg, null);
 
         verify(queuedMqttMessages, times(1)).clear();
         verify(keepAliveService, times(1)).unregisterSession(any());
-        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean());
+        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), any());
         verify(clientSessionCtxService, times(1)).unregisterSession(any());
     }
 

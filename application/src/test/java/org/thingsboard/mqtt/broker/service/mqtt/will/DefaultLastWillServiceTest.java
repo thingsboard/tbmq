@@ -113,6 +113,6 @@ public class DefaultLastWillServiceTest {
     }
 
     private void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean newSessionCleanStart) {
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, newSessionCleanStart);
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, newSessionCleanStart, null);
     }
 }

@@ -84,7 +84,8 @@ public class DefaultLastWillService implements LastWillService {
     }
 
     @Override
-    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean newSessionCleanStart) {
+    public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg,
+                                                 boolean newSessionCleanStart, Integer sessionExpiryInterval) {
         MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
         if (lastWillMsgWithSessionInfo == null) {
             log.trace("[{}] No last will msg.", sessionId);
@@ -94,7 +95,7 @@ public class DefaultLastWillService implements LastWillService {
         log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
-            int willDelay = getWillDelay(lastWillMsgWithSessionInfo);
+            int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
             if (!newSessionCleanStart && willDelay > 0) {
                 return;
             }
@@ -115,14 +116,24 @@ public class DefaultLastWillService implements LastWillService {
         delayedLastWillFuturesMap.put(getClientId(lastWillMsgWithSessionInfo), futureTask);
     }
 
-    private int getWillDelay(MsgWithSessionInfo lastWillMsgWithSessionInfo) {
+    private int getWillDelay(MsgWithSessionInfo lastWillMsgWithSessionInfo, Integer sessionExpiryIntervalFromDisconnect) {
+        SessionInfo sessionInfo = lastWillMsgWithSessionInfo.getSessionInfo();
+        int sessionExpiryInterval = getSessionExpiryInterval(sessionExpiryIntervalFromDisconnect, sessionInfo);
+
         MqttProperties properties = lastWillMsgWithSessionInfo.getPublishMsg().getProperties();
         MqttProperties.IntegerProperty willDelayProperty =
                 (MqttProperties.IntegerProperty) properties.getProperty(MqttProperties.MqttPropertyType.WILL_DELAY_INTERVAL.value());
         if (willDelayProperty != null) {
-            return willDelayProperty.value();
+            if (!sessionInfo.isCleanStart() && sessionExpiryInterval == 0) {
+                return willDelayProperty.value();
+            }
+            return Math.min(willDelayProperty.value(), sessionExpiryInterval);
         }
         return 0;
+    }
+
+    private int getSessionExpiryInterval(Integer sessionExpiryIntervalFromDisconnect, SessionInfo sessionInfo) {
+        return sessionExpiryIntervalFromDisconnect == null ? sessionInfo.safeGetSessionExpiryInterval() : sessionExpiryIntervalFromDisconnect;
     }
 
     private void processLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo, UUID sessionId) {
