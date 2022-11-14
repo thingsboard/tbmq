@@ -31,7 +31,7 @@ spec:
         path: logback.xml
   containers:
   - name: tb-db-setup
-    imagePullPolicy: Never
+    imagePullPolicy: Always
     image: thingsboard/tb-mqtt-broker:1.0.0-SNAPSHOT
     envFrom:
       - configMapRef:
