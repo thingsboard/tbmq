@@ -24,7 +24,8 @@ import java.util.UUID;
 public interface ClientSessionEventFactory {
     QueueProtos.ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo);
 
-    QueueProtos.ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId);
+    QueueProtos.ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
+                                                                     Integer sessionExpiryInterval);
 
     QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo);
 

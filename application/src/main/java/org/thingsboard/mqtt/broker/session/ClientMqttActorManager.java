@@ -16,17 +16,17 @@
 package org.thingsboard.mqtt.broker.session;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 
 public interface ClientMqttActorManager {
     void initSession(String clientId, boolean isClientIdGenerated, SessionInitMsg sessionInitMsg);
 
-    void disconnect(String clientId, DisconnectMsg disconnectMsg);
+    void disconnect(String clientId, MqttDisconnectMsg disconnectMsg);
 
     void connect(String clientId, MqttConnectMsg connectMsg);
 

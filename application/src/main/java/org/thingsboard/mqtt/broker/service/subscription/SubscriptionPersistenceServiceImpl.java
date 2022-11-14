@@ -65,6 +65,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
 
             @Override
             public void onFailure(Throwable t) {
+                log.error("[{}] Failed to deliver subscription updates {}", clientId, clientSubscriptionsProto, t);
                 if (callback != null) {
                     callback.onFailure(t);
                 }

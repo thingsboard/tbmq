@@ -48,7 +48,7 @@ public class MqttPubCompHandlerTest {
     @Test
     public void testProcessPersistent() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().persistent(true).build());
+        ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(1).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubComp(ctx, 1);
         verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);
@@ -57,7 +57,7 @@ public class MqttPubCompHandlerTest {
     @Test
     public void testProcess() {
         ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
-        ctx.setSessionInfo(SessionInfo.builder().persistent(false).build());
+        ctx.setSessionInfo(SessionInfo.builder().cleanStart(true).sessionExpiryInterval(0).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);
     }

@@ -186,7 +186,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         options.setWillMessageProperties(MQTT_PROPERTIES);
         options.setKeepAliveInterval(1);
         options.setUserName(DEFAULT_USER_NAME);
-        pubClient.connect(options);
+        pubClient.connect(options).waitForCompletion();
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(await);
@@ -207,7 +207,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         options.setWillMessageProperties(MQTT_PROPERTIES);
         options.setKeepAliveInterval(1);
         options.setUserName(DEFAULT_USER_NAME);
-        pubClient.connect(options);
+        pubClient.connect(options).waitForCompletion();
 
         boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertFalse(await);

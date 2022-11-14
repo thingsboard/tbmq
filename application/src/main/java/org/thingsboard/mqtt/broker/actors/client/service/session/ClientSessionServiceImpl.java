@@ -43,13 +43,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionServiceImpl implements ClientSessionService {
-    private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
 
-    private ConcurrentMap<String, ClientSessionInfo> clientSessionMap;
+    private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+
+    private ConcurrentMap<String, ClientSessionInfo> clientSessionMap;
 
     @Override
     public void init(Map<String, ClientSessionInfo> clientSessionInfos) {
@@ -111,7 +112,8 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public Map<String, ClientSessionInfo> getAllClientSessions() {
-        return new HashMap<>(clientSessionMap);
+        Map<String, ClientSessionInfo> allClientSessionsMap = clientSessionMap == null ? Map.of() : clientSessionMap;
+        return new HashMap<>(allClientSessionsMap);
     }
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {

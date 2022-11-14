@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -89,11 +89,11 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
         String clientId = msg.getKey();
         QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
-        boolean isNewSessionPersistent = disconnectClientCommandProto.getIsNewSessionPersistent();
-        clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+        boolean newSessionCleanStart = disconnectClientCommandProto.getNewSessionCleanStart();
+        clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                 sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS),
-                isNewSessionPersistent));
+                newSessionCleanStart));
     }
 
     private void initConsumer() {

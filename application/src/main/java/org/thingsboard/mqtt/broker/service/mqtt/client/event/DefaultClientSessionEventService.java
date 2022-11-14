@@ -109,10 +109,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     }
 
     @Override
-    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId) {
+    public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, Integer sessionExpiryInterval) {
         sendEvent(
                 clientInfo.getClientId(),
-                eventFactory.createDisconnectedEventProto(clientInfo, sessionId),
+                eventFactory.createDisconnectedEventProto(clientInfo, sessionId, sessionExpiryInterval),
                 false,
                 null);
     }
@@ -121,7 +121,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     public void notifyClientDisconnected(ClientInfo clientInfo, UUID sessionId, TbQueueCallback callback) {
         sendEvent(
                 clientInfo.getClientId(),
-                eventFactory.createDisconnectedEventProto(clientInfo, sessionId),
+                eventFactory.createDisconnectedEventProto(clientInfo, sessionId, null),
                 false,
                 callback);
     }

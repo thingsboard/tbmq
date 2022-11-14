@@ -29,6 +29,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPingMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubAckMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubCompMsg;
@@ -54,9 +55,13 @@ import java.util.stream.Collectors;
 public class NettyMqttConverter {
 
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
-        PublishMsg lastWillPublishMsg = nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null;
-        return new MqttConnectMsg(sessionId, nettyConnectMsg.payload().clientIdentifier(), nettyConnectMsg.variableHeader().isCleanSession(),
-                nettyConnectMsg.variableHeader().keepAliveTimeSeconds(), lastWillPublishMsg);
+        return new MqttConnectMsg(
+                sessionId,
+                nettyConnectMsg.payload().clientIdentifier(),
+                nettyConnectMsg.variableHeader().isCleanSession(),
+                nettyConnectMsg.variableHeader().keepAliveTimeSeconds(),
+                nettyConnectMsg.variableHeader().isWillFlag() ? extractLastWillPublishMsg(nettyConnectMsg) : null,
+                nettyConnectMsg.variableHeader().properties());
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
@@ -118,15 +123,34 @@ public class NettyMqttConverter {
         return new MqttPubCompMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
     }
 
-    public static DisconnectReason createDisconnectReason(ClientSessionCtx ctx, MqttMessage msg) {
+    public static MqttDisconnectMsg createMqttDisconnectMsg(ClientSessionCtx ctx, MqttMessage msg) {
+        MqttProperties properties = MqttProperties.NO_PROPERTIES;
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             var variableHeader = (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader();
+
+            properties = variableHeader.properties();
+            int sessionExpiryInterval = getSessionExpiryInterval(properties);
+            if (ctx.getSessionInfo().getSessionExpiryInterval() == 0 && sessionExpiryInterval != 0) {
+                // It is a Protocol Error to set a non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client
+                // if the Session Expiry Interval in the CONNECT packet was zero
+                return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR));
+            }
+
             var reasonCode = variableHeader.reasonCode();
             if (MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value() == reasonCode) {
-                return getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_AND_WILL_MSG);
+                return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_AND_WILL_MSG), properties);
             }
         }
-        return getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG);
+        return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG), properties);
+    }
+
+    private static int getSessionExpiryInterval(MqttProperties properties) {
+        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
+                .getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value());
+        if (property != null) {
+            return property.value();
+        }
+        return 0;
     }
 
     private static DisconnectReason getDisconnectReason(DisconnectReasonType reasonType) {

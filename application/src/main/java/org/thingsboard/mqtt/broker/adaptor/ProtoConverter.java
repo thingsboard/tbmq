@@ -121,13 +121,30 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
+        return sessionInfo.getSessionExpiryInterval() == null ?
+                getSessionInfoProto(sessionInfo) : getSessionInfoProtoWithSessionExpiryInterval(sessionInfo);
+    }
+
+    private static QueueProtos.SessionInfoProto getSessionInfoProto(SessionInfo sessionInfo) {
         return QueueProtos.SessionInfoProto.newBuilder()
                 .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
-                .setPersistent(sessionInfo.isPersistent())
+                .setCleanStart(sessionInfo.isCleanStart())
                 .setClientInfo(convertToClientInfoProto(sessionInfo.getClientInfo()))
                 .setConnectionInfo(convertToConnectionInfoProto(sessionInfo.getConnectionInfo()))
+                .build();
+    }
+
+    private static QueueProtos.SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(SessionInfo sessionInfo) {
+        return QueueProtos.SessionInfoProto.newBuilder()
+                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
+                .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
+                .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
+                .setCleanStart(sessionInfo.isCleanStart())
+                .setClientInfo(convertToClientInfoProto(sessionInfo.getClientInfo()))
+                .setConnectionInfo(convertToConnectionInfoProto(sessionInfo.getConnectionInfo()))
+                .setSessionExpiryInterval(sessionInfo.getSessionExpiryInterval())
                 .build();
     }
 
@@ -135,9 +152,10 @@ public class ProtoConverter {
         return SessionInfo.builder()
                 .serviceId(sessionInfoProto.getServiceInfo() != null ? sessionInfoProto.getServiceInfo().getServiceId() : null)
                 .sessionId(new UUID(sessionInfoProto.getSessionIdMSB(), sessionInfoProto.getSessionIdLSB()))
-                .persistent(sessionInfoProto.getPersistent())
+                .cleanStart(sessionInfoProto.getCleanStart())
                 .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
                 .connectionInfo(convertToConnectionInfo(sessionInfoProto.getConnectionInfo()))
+                .sessionExpiryInterval(sessionInfoProto.hasSessionExpiryInterval() ? sessionInfoProto.getSessionExpiryInterval() : null)
                 .build();
     }
 
@@ -231,11 +249,11 @@ public class ProtoConverter {
         return SubscriptionOptions.RetainHandlingPolicy.valueOf(topicSubscriptionProto.getOptions().getRetainHandling().getNumber());
     }
 
-    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean isNewSessionPersistent) {
+    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean newSessionCleanStart) {
         return QueueProtos.DisconnectClientCommandProto.newBuilder()
                 .setSessionIdMSB(sessionId.getMostSignificantBits())
                 .setSessionIdLSB(sessionId.getLeastSignificantBits())
-                .setIsNewSessionPersistent(isNewSessionPersistent)
+                .setNewSessionCleanStart(newSessionCleanStart)
                 .build();
     }
 
@@ -285,7 +303,7 @@ public class ProtoConverter {
     public static ConnectionResponse toConnectionResponse(QueueProtos.ClientSessionEventResponseProto clientSessionEventResponseProto) {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
-                .isPrevSessionPersistent(clientSessionEventResponseProto.getWasPrevSessionPersistent())
+                .sessionPresent(clientSessionEventResponseProto.getSessionPresent())
                 .build();
     }
 

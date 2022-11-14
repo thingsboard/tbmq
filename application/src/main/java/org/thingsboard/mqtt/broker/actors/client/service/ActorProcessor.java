@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 
 public interface ActorProcessor {
     void onInit(ClientActorState state, SessionInitMsg sessionInitMsg);
 
-    void onDisconnect(ClientActorState state, DisconnectMsg disconnectMsg);
+    void onDisconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg);
 }

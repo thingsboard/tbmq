@@ -219,7 +219,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return new ClientSession(false,
                 SessionInfo.builder()
                         .clientInfo(ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey()))
-                        .persistent(true)
+                        .cleanStart(false)
+                        .sessionExpiryInterval(1000)
                         .build());
     }
 

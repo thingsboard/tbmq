@@ -19,8 +19,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
@@ -149,8 +149,8 @@ public class ActorProcessorImplTest {
         return List.of(new AuthorizationRule(List.of(Pattern.compile("test"))));
     }
 
-    private DisconnectMsg getDisconnectMsg() {
-        return new DisconnectMsg(UUID.randomUUID(), new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+    private MqttDisconnectMsg getDisconnectMsg() {
+        return new MqttDisconnectMsg(UUID.randomUUID(), new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
     }
 
     private SessionInitMsg getSessionInitMsg(ClientSessionCtx clientSessionCtx) {

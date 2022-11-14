@@ -126,10 +126,11 @@ public class SharedSubscriptionProcessorImplTest {
     private SessionInfo getSessionInfo(UUID sessionId, String clientId) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                false,
+                true,
                 "SERVICE_ID",
                 getClientInfo(clientId),
-                getConnectionInfo(1000, 1000));
+                getConnectionInfo(1000, 1000),
+                0);
     }
 
     private TopicSharedSubscription newTopicAndGroup() {

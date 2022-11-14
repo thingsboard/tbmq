@@ -77,7 +77,8 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent,
-                                                   String assignedClientId, int keepAliveTimeSeconds) {
+                                                   String assignedClientId, int keepAliveTimeSeconds,
+                                                   int sessionExpiryInterval) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
 
@@ -99,6 +100,10 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         properties.add(new MqttProperties.IntegerProperty(
                 MqttProperties.MqttPropertyType.MAXIMUM_PACKET_SIZE.value(),
                 Math.min(tcpMaxPayloadSize, sslMaxPayloadSize))
+        );
+        properties.add(new MqttProperties.IntegerProperty(
+                MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(),
+                sessionExpiryInterval)
         );
 
         MqttConnAckVariableHeader mqttConnAckVariableHeader =

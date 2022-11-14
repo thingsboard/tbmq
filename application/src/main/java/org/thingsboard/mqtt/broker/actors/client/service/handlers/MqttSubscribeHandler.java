@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
@@ -184,7 +184,7 @@ public class MqttSubscribeHandler {
     private void disconnectClient(ClientSessionCtx ctx, DisconnectReasonType disconnectReasonType) {
         clientMqttActorManager.disconnect(
                 ctx.getClientId(),
-                new DisconnectMsg(
+                new MqttDisconnectMsg(
                         ctx.getSessionId(),
                         new DisconnectReason(disconnectReasonType))
         );
