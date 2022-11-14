@@ -31,7 +31,7 @@ export class UserService {
 
   public saveUser(user: User, sendActivationMail: boolean = false,
                   config?: RequestConfig): Observable<User> {
-    let url = '/api/user';
+    let url = '/api/admin/user';
     url += '?sendActivationMail=' + sendActivationMail;
     return this.http.post<User>(url, user, defaultHttpOptionsFromConfig(config));
   }
