@@ -34,8 +34,6 @@ export class UserMenuComponent implements OnInit, OnDestroy {
 
   @Input() displayUserInfo: boolean;
 
-  authorities = Authority;
-
   authority$ = this.store.pipe(
     select(selectAuthUser),
     map((authUser) => authUser ? authUser.authority : Authority.ANONYMOUS)
@@ -69,12 +67,6 @@ export class UserMenuComponent implements OnInit, OnDestroy {
       switch (authority) {
         case Authority.SYS_ADMIN:
           name = 'user.sys-admin';
-          break;
-        case Authority.TENANT_ADMIN:
-          name = 'user.tenant-admin';
-          break;
-        case Authority.CUSTOMER_USER:
-          name = 'user.customer';
           break;
       }
     }

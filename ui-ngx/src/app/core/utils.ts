@@ -17,7 +17,6 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
-import { Datasource } from '@app/shared/models/widget.models';
 import { EntityId } from '@shared/models/id/entity-id';
 import { NULL_UUID } from '@shared/models/id/has-uuid';
 
@@ -348,33 +347,6 @@ export function insertVariable(pattern: string, name: string, value: any): strin
     match = varsRegex.exec(pattern);
   }
   return result;
-}
-
-export function createLabelFromDatasource(datasource: Datasource, pattern: string): string {
-  let label = pattern;
-  if (!datasource) {
-    return label;
-  }
-  let match = varsRegex.exec(pattern);
-  while (match !== null) {
-    const variable = match[0];
-    const variableName = match[1];
-    if (variableName === 'dsName') {
-      label = label.replace(variable, datasource.name);
-    } else if (variableName === 'entityName') {
-      label = label.replace(variable, datasource.entityName);
-    } else if (variableName === 'deviceName') {
-      label = label.replace(variable, datasource.entityName);
-    } else if (variableName === 'entityLabel') {
-      label = label.replace(variable, datasource.entityLabel || datasource.entityName);
-    } else if (variableName === 'aliasName') {
-      label = label.replace(variable, datasource.aliasName);
-    } else if (variableName === 'entityDescription') {
-      label = label.replace(variable, datasource.entityDescription);
-    }
-    match = varsRegex.exec(pattern);
-  }
-  return label;
 }
 
 export function padValue(val: any, dec: number): string {

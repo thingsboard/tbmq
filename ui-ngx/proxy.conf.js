@@ -15,26 +15,9 @@
  */
 const forwardUrl = "http://localhost:8083";
 const wsForwardUrl = "ws://localhost:8083";
-const ruleNodeUiforwardUrl = forwardUrl;
 
 const PROXY_CONFIG = {
   "/api": {
-    "target": forwardUrl,
-    "secure": false,
-  },
-  "/static/rulenode": {
-    "target": ruleNodeUiforwardUrl,
-    "secure": false,
-  },
-  "/static/widgets": {
-    "target": forwardUrl,
-    "secure": false,
-  },
-  "/oauth2": {
-    "target": forwardUrl,
-    "secure": false,
-  },
-  "/login/oauth2": {
     "target": forwardUrl,
     "secure": false,
   },
@@ -42,7 +25,7 @@ const PROXY_CONFIG = {
     "target": wsForwardUrl,
     "ws": true,
     "secure": false
-  },
+  }
 };
 
 module.exports = PROXY_CONFIG;

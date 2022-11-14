@@ -14,27 +14,7 @@
 /// limitations under the License.
 ///
 
-export * from './admin.service';
-export * from './alarm.service';
-export * from './asset.service';
-export * from './attribute.service';
-export * from './audit-log.service';
-export * from './component-descriptor.service';
-export * from './customer.service';
-export * from './dashboard.service';
-export * from './device.service';
-export * from './entity.service';
-export * from './edge.service';
-export * from './entity-relation.service';
-export * from './entity-view.service';
-export * from './event.service';
 export * from './http-utils';
-export * from './oauth2.service';
-export * from './queue.service';
-export * from './rule-chain.service';
-export * from './tenant.service';
-export * from './user.service';
-export * from './widget.service';
 export * from './mqtt-client-credentials.service';
 export * from './mqtt-client-session.service';
 export * from './mqtt-admin.service';

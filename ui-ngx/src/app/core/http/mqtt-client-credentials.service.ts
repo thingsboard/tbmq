@@ -32,10 +32,7 @@ export class MqttClientCredentialsService {
   ) { }
 
   public saveMqttClientCredentials(mqttClientCredentials: MqttClientCredentials, config?: RequestConfig): Observable<MqttClientCredentials> {
-    const credentialsValue = typeof mqttClientCredentials.credentialsValue === 'string'
-      ? mqttClientCredentials.credentialsValue
-      : JSON.stringify(mqttClientCredentials.credentialsValue);
-    return this.http.post<MqttClientCredentials>('/api/mqtt/client/credentials', {...mqttClientCredentials, ...{credentialsValue}}, defaultHttpOptionsFromConfig(config));
+    return this.http.post<MqttClientCredentials>('/api/mqtt/client/credentials', mqttClientCredentials, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteMqttClientCredentials(credentialsId: string, config?: RequestConfig) {

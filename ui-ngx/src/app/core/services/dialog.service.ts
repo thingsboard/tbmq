@@ -19,17 +19,8 @@ import { Observable } from 'rxjs';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '@core/auth/auth.service';
-import {
-  ColorPickerDialogComponent,
-  ColorPickerDialogData
-} from '@shared/components/dialog/color-picker-dialog.component';
-import {
-  MaterialIconsDialogComponent,
-  MaterialIconsDialogData
-} from '@shared/components/dialog/material-icons-dialog.component';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { TodoDialogComponent } from '@shared/components/dialog/todo-dialog.component';
 
 @Injectable(
   {
@@ -78,36 +69,6 @@ export class DialogService {
     return dialogRef.afterClosed();
   }
 
-  colorPicker(color: string): Observable<string> {
-    return this.dialog.open<ColorPickerDialogComponent, ColorPickerDialogData, string>(ColorPickerDialogComponent,
-      {
-        disableClose: true,
-        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-        data: {
-          color
-        }
-    }).afterClosed();
-  }
-
-  materialIconPicker(icon: string): Observable<string> {
-    return this.dialog.open<MaterialIconsDialogComponent, MaterialIconsDialogData, string>(MaterialIconsDialogComponent,
-      {
-        disableClose: true,
-        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-        data: {
-          icon
-        }
-      }).afterClosed();
-  }
-
-  private permissionDenied() {
-    this.alert(
-      this.translate.instant('access.permission-denied'),
-      this.translate.instant('access.permission-denied-text'),
-      this.translate.instant('action.close')
-    );
-  }
-
   forbidden(): Observable<boolean> {
     const observable = this.confirm(
       this.translate.instant('access.access-forbidden'),
@@ -122,15 +83,6 @@ export class DialogService {
       }
     });
     return observable;
-  }
-
-  todo(): Observable<any> {
-    const dialogConfig: MatDialogConfig = {
-      disableClose: true,
-      panelClass: ['tb-fullscreen-dialog']
-    };
-    const dialogRef = this.dialog.open(TodoDialogComponent, dialogConfig);
-    return dialogRef.afterClosed();
   }
 
 }

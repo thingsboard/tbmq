@@ -17,7 +17,6 @@
 import { Component, OnInit } from '@angular/core';
 import { UserService } from '@core/http/user.service';
 import { AuthUser, User } from '@shared/models/user.model';
-import { Authority } from '@shared/models/authority.enum';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -32,7 +31,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { AuthService } from '@core/auth/auth.service';
 import { ActivatedRoute } from '@angular/router';
-import { isDefinedAndNotNull } from '@core/utils';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Component({
@@ -42,7 +40,6 @@ import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 
-  authorities = Authority;
   profile: FormGroup;
   user: User;
   languageList = env.supportedLangs;
@@ -70,9 +67,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
       email: ['', [Validators.required, Validators.email]],
       firstName: [''],
       lastName: [''],
-      language: [''],
-      homeDashboardId: [null],
-      homeDashboardHideToolbar: [true]
+      language: ['']
     });
   }
 
@@ -82,8 +77,6 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
       this.user.additionalInfo = {};
     }
     this.user.additionalInfo.lang = this.profile.get('language').value;
-    this.user.additionalInfo.homeDashboardId = this.profile.get('homeDashboardId').value;
-    this.user.additionalInfo.homeDashboardHideToolbar = this.profile.get('homeDashboardHideToolbar').value;
     this.userService.saveUser(this.user).subscribe(
       (user) => {
         this.userLoaded(user);
@@ -91,8 +84,6 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
             additionalInfo: {...user.additionalInfo},
             authority: user.authority,
             createdTime: user.createdTime,
-            tenantId: user.tenantId,
-            customerId: user.customerId,
             email: user.email,
             firstName: user.firstName,
             id: user.id,
@@ -114,31 +105,18 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
     this.user = user;
     this.profile.reset(user);
     let lang;
-    let homeDashboardId;
-    let homeDashboardHideToolbar = true;
     if (user.additionalInfo) {
       if (user.additionalInfo.lang) {
         lang = user.additionalInfo.lang;
-      }
-      homeDashboardId = user.additionalInfo.homeDashboardId;
-      if (isDefinedAndNotNull(user.additionalInfo.homeDashboardHideToolbar)) {
-        homeDashboardHideToolbar = user.additionalInfo.homeDashboardHideToolbar;
       }
     }
     if (!lang) {
       lang = this.translate.currentLang;
     }
     this.profile.get('language').setValue(lang);
-    this.profile.get('homeDashboardId').setValue(homeDashboardId);
-    this.profile.get('homeDashboardHideToolbar').setValue(homeDashboardHideToolbar);
   }
 
   confirmForm(): FormGroup {
     return this.profile;
   }
-
-  isSysAdmin(): boolean {
-    return this.authUser.authority === Authority.SYS_ADMIN;
-  }
-
 }

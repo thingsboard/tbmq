@@ -22,13 +22,9 @@ import { AppState } from '@core/core.state';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { MatTab } from '@angular/material/tabs';
 import { BehaviorSubject } from 'rxjs';
-import { Authority } from '@app/shared/models/authority.enum';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { AuthUser } from '@shared/models/user.model';
 import { EntityType } from '@shared/models/entity-type.models';
-import { AuditLogMode } from '@shared/models/audit-log.models';
-import { DebugEventType, EventType } from '@shared/models/event.models';
-import { AttributeScope, LatestTelemetry } from '@shared/models/telemetry/telemetry.models';
 import { NULL_UUID } from '@shared/models/id/has-uuid';
 import { FormGroup } from '@angular/forms';
 import { PageLink } from '@shared/models/page/page-link';
@@ -41,18 +37,7 @@ export abstract class EntityTabsComponent<T extends BaseData<HasId>,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit, AfterViewInit {
 
-  attributeScopes = AttributeScope;
-  latestTelemetryTypes = LatestTelemetry;
-
-  authorities = Authority;
-
   entityTypes = EntityType;
-
-  auditLogModes = AuditLogMode;
-
-  eventTypes = EventType;
-
-  debugEventTypes = DebugEventType;
 
   authUser: AuthUser;
 

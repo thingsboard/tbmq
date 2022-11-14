@@ -20,7 +20,7 @@
                [disableClose]="sidenavOpened"
                (click)="sidenavClicked()"
                [mode]="sidenavMode"
-               [opened]="sidenavOpened && !forceFullscreen">
+               [opened]="sidenavOpened">
     <header class="tb-nav-header">
       <mat-toolbar color="primary" class="tb-nav-header-toolbar">
         <div fxFlex="auto" fxLayout="row">
@@ -36,12 +36,12 @@
   <mat-sidenav-content>
     <div fxLayout="column" role="main" style="height: 100%;">
       <mat-toolbar fxLayout="row" color="primary" class="mat-elevation-z1 tb-primary-toolbar">
-        <button [fxShow]="!forceFullscreen" mat-icon-button id="main"
+        <button mat-icon-button id="main"
                 [ngClass]="{'tb-invisible': displaySearchMode()}"
                 fxHide.gt-sm (click)="sidenav.toggle()">
           <mat-icon class="material-icons">menu</mat-icon>
         </button>
-        <button [fxShow]="forceFullscreen" mat-icon-button
+        <button mat-icon-button
                 [ngClass]="{'tb-invisible': displaySearchMode()}"
                 (click)="goBack()">
           <mat-icon class="material-icons">arrow_back</mat-icon>

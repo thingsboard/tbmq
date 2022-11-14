@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import { AliasEntityType, EntityType } from '@shared/models/entity-type.models';
+import { EntityType } from '@shared/models/entity-type.models';
 import { HasUUID } from '@shared/models/id/has-uuid';
 import { isDefinedAndNotNull } from '@core/utils';
 
 export interface EntityId extends HasUUID {
-  entityType: EntityType | AliasEntityType; //TODO deaflynx remove entityType
+  entityType: EntityType;
 }
 
 export function entityIdEquals(entityId1: EntityId, entityId2: EntityId): boolean {

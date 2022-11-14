@@ -16,7 +16,12 @@
 :host {
   .container{
     overflow-x: auto;
+
+    button {
+      margin-top: 8px;
+    }
   }
+
   .tb-integration-panel-group {
     margin-top: 16px;
     margin-bottom: 32px;

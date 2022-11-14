@@ -42,8 +42,6 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
 
   authState: AuthState = getCurrentAuthState(this.store);
 
-  forceFullscreen = this.authState.forceFullscreen;
-
   activeComponent: any;
   searchableComponent: ISearchableComponent;
 

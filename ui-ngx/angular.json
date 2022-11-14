@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "thingsboard": {
+    "thingsboard-mqtt-broker": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -24,43 +24,8 @@
             "tsConfig": "src/tsconfig.app.json",
             "aot": true,
             "assets": [
-              "src/thingsboard.ico",
+              "src/thingsboard-mqtt-broker.ico",
               "src/assets",
-              {
-                "glob": "worker-html.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-css.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-json.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "worker-javascript.js",
-                "input": "./node_modules/ace-builds/src-noconflict/",
-                "output": "/"
-              },
-              {
-                "glob": "marker-icon-2x.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              },
-              {
-                "glob": "marker-icon.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              },
-              {
-                "glob": "marker-shadow.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              },
               {
                 "glob": "**/*",
                 "input": "node_modules/material-design-icons/iconfont/",
@@ -69,17 +34,7 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/jquery.terminal/css/jquery.terminal.min.css",
-              "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
-              "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css",
-              "src/app/shared/components/json-form/react/json-form.scss",
-              "node_modules/rc-select/assets/index.less",
-              "node_modules/jstree-bootstrap-theme/dist/themes/proton/style.min.css",
-              "node_modules/leaflet/dist/leaflet.css",
-              "src/app/modules/home/components/widget/lib/maps/markers.scss",
-              "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
-              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
-              "node_modules/prismjs/themes/prism.css"
+              "node_modules/jquery.terminal/css/jquery.terminal.min.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
@@ -87,8 +42,6 @@
               ]
             },
             "scripts": [
-              "node_modules/tinycolor2/dist/tinycolor-min.js",
-              "node_modules/split.js/dist/split.min.js",
               "node_modules/systemjs/dist/system.js",
               "node_modules/marked/lib/marked.js",
               "node_modules/prismjs/prism.js",
@@ -101,30 +54,17 @@
             "allowedCommonJsDependencies": [
               "hammerjs",
               "react",
-              "react-dom",
-              "reactcss",
-              "react-ace",
-              "schema-inspector",
-              "@flowjs/flow.js",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
-              "js-beautify",
-              "mousetrap",
               "prop-types",
               "react-is",
               "hoist-non-react-statics",
               "classnames",
               "raf",
               "moment-timezone",
-              "tinycolor2",
-              "json-schema-defaults",
-              "leaflet-providers",
               "lodash",
               "jquery",
-              "jquery.terminal",
-              "tooltipster",
-              "jstree",
-              "qrcode"
+              "jquery.terminal"
             ]
           },
           "configurations": {
@@ -155,19 +95,19 @@
         "serve": {
           "builder": "@angular-builders/custom-webpack:dev-server",
           "options": {
-            "browserTarget": "thingsboard:build",
+            "browserTarget": "thingsboard-mqtt-broker:build",
             "proxyConfig": "proxy.conf.js"
           },
           "configurations": {
             "production": {
-              "browserTarget": "thingsboard:build:production"
+              "browserTarget": "thingsboard-mqtt-broker:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "thingsboard:build"
+            "browserTarget": "thingsboard-mqtt-broker:build"
           }
         },
         "test": {
@@ -201,7 +141,7 @@
         }
       }
     },
-    "thingsboard-e2e": {
+    "thingsboard-mqtt-broker-e2e": {
       "root": "e2e/",
       "projectType": "application",
       "prefix": "",
@@ -210,11 +150,11 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "thingsboard:serve"
+            "devServerTarget": "thingsboard-mqtt-broker:serve"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "thingsboard:serve:production"
+              "devServerTarget": "thingsboard-mqtt-broker:serve:production"
             }
           }
         },
@@ -230,7 +170,7 @@
       }
     }
   },
-  "defaultProject": "thingsboard",
+  "defaultProject": "thingsboard-mqtt-broker",
   "cli": {
     "packageManager": "yarn",
     "analytics": false
