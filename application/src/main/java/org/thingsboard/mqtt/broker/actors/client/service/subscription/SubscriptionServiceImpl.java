@@ -46,9 +46,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
         for (TopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptionTrie.put(topicSubscription.getTopic(), new ClientSubscription(
-                    clientId, topicSubscription.getQos(), topicSubscription.getOptions()
-            ));
+            subscriptionTrie.put(
+                    topicSubscription.getTopic(),
+                    new ClientSubscription(
+                            clientId,
+                            topicSubscription.getQos(),
+                            topicSubscription.getShareName(),
+                            topicSubscription.getOptions())
+            );
         }
     }
 
@@ -64,7 +69,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public Collection<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
+    public List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
         long startTime = System.nanoTime();
         List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
         subscriptionTimerStats.logSubscriptionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);

@@ -30,8 +30,6 @@ import { TitleService } from '@app/core/services/title.service';
 import { updateUserLang } from '@app/core/settings/settings.utils';
 import { AuthService } from '@core/auth/auth.service';
 import { UtilsService } from '@core/services/utils.service';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
-import { ActionAuthUpdateLastPublicDashboardId } from '../auth/auth.actions';
 
 export const SETTINGS_KEY = 'SETTINGS';
 
@@ -78,22 +76,6 @@ export class SettingsEffects {
         this.router.routerState.snapshot.root,
         this.translate
       );
-    })
-  );
-
-  @Effect({dispatch: false})
-  setPublicId = merge(
-    this.router.events.pipe(filter(event => event instanceof ActivationEnd))
-  ).pipe(
-    tap((event) => {
-      const authUser = getCurrentAuthUser(this.store);
-      const snapshot = (event as ActivationEnd).snapshot;
-      if (authUser && authUser.isPublic && snapshot.url && snapshot.url.length
-          && snapshot.url[0].path === 'dashboard') {
-        this.utils.updateQueryParam('publicId', authUser.sub);
-        this.store.dispatch(new ActionAuthUpdateLastPublicDashboardId(
-          { lastPublicDashboardId: snapshot.params.dashboardId}));
-      }
     })
   );
 }

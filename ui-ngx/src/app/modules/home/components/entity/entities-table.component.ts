@@ -55,11 +55,6 @@ import { EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
 import { AddEntityDialogComponent } from './add-entity-dialog.component';
 import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
-import {
-  calculateIntervalStartEndTime,
-  HistoryWindowType,
-  Timewindow
-} from '@shared/models/time/time.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isUndefined } from '@core/utils';
@@ -101,7 +96,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   pageSizeOptions;
   pageLink: PageLink;
   textSearchMode = false;
-  timewindow: Timewindow;
   dataSource: EntitiesDataSource<BaseData<HasId>>;
 
   cellActionType = CellActionDescriptorType;
@@ -206,15 +200,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.displayPagination = this.entitiesTableConfig.displayPagination;
     this.defaultPageSize = this.entitiesTableConfig.defaultPageSize;
     this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
-
-    if (this.entitiesTableConfig.useTimePageLink) {
-      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
-      const currentTime = Date.now();
-      this.pageLink = new TimePageLink(10, 0, null, sortOrder,
-        currentTime - this.timewindow.history.timewindowMs, currentTime);
-    } else {
-      this.pageLink = new PageLink(10, 0, null, sortOrder);
-    }
+    this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
     if (this.entitiesTableConfig.onLoadAction) {
@@ -273,11 +259,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     return this.entitiesTableConfig.addEnabled;
   }
 
-  clearSelection() {
-    this.dataSource.selection.clear();
-    this.cd.detectChanges();
-  }
-
   updateData(closeDetails: boolean = true) {
     if (closeDetails) {
       this.isDetailsOpen = false;
@@ -295,21 +276,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       };
     } else {
       this.pageLink.sortOrder = null;
-    }
-    if (this.entitiesTableConfig.useTimePageLink) {
-      const timePageLink = this.pageLink as TimePageLink;
-      if (this.timewindow.history.historyType === HistoryWindowType.LAST_INTERVAL) {
-        const currentTime = Date.now();
-        timePageLink.startTime = currentTime - this.timewindow.history.timewindowMs;
-        timePageLink.endTime = currentTime;
-      } else if (this.timewindow.history.historyType === HistoryWindowType.INTERVAL) {
-        const startEndTime = calculateIntervalStartEndTime(this.timewindow.history.quickInterval);
-        timePageLink.startTime = startEndTime[0];
-        timePageLink.endTime = startEndTime[1];
-      } else {
-        timePageLink.startTime = this.timewindow.history.fixedTimewindow.startTimeMs;
-        timePageLink.endTime = this.timewindow.history.fixedTimewindow.endTimeMs;
-      }
     }
     this.dataSource.loadEntities(this.pageLink);
   }
@@ -349,7 +315,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       entity$ = this.entitiesTableConfig.addEntity();
     } else {
       entity$ = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<BaseData<HasId>>,
-                                 BaseData<HasId>>(AddEntityDialogComponent, {
+        BaseData<HasId>>(AddEntityDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
@@ -418,7 +384,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
             tasks.push(this.entitiesTableConfig.deleteEntity(entity.id).pipe(
               map(() => entity.id),
               catchError(() => of(null)
-            )));
+              )));
           }
         });
         forkJoin(tasks).subscribe(
@@ -429,10 +395,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
         );
       }
     });
-  }
-
-  onTimewindowChange() {
-    this.updateData();
   }
 
   enterFilterMode() {
@@ -451,22 +413,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.paginator.pageIndex = 0;
     }
     this.updateData();
-  }
-
-  resetSortAndFilter(update: boolean = true, preserveTimewindow: boolean = false) {
-    this.pageLink.textSearch = null;
-    if (this.entitiesTableConfig.useTimePageLink && !preserveTimewindow) {
-      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
-    }
-    if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
-    }
-    const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
-    this.sort.active = sortable.id;
-    this.sort.direction = this.entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
-    if (update) {
-      this.updateData();
-    }
   }
 
   columnsUpdated(resetData: boolean = false) {

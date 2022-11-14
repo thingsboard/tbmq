@@ -21,7 +21,6 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
@@ -44,7 +43,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) throws ThingsboardException {
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
-            throw new ThingsboardException(ThingsboardErrorCode.ITEM_NOT_FOUND);
+            return null;
         }
         ClientSession clientSession = clientSessionInfo.getClientSession();
         SessionInfo sessionInfo = clientSession.getSessionInfo();

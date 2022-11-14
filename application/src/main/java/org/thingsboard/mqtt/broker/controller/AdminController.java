@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.UUID;
 
 @RestController
@@ -74,5 +75,15 @@ public class AdminController extends BaseController {
         } catch (Exception e) {
             throw handleException(e);
         }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/user", method = RequestMethod.POST)
+    @ResponseBody
+    public User saveAdminUser(
+            @RequestBody User user,
+            @RequestParam(required = false, defaultValue = "true") boolean sendActivationMail, HttpServletRequest request) throws ThingsboardException {
+        checkNotNull(user);
+        return checkNotNull(userService.saveUser(user));
     }
 }

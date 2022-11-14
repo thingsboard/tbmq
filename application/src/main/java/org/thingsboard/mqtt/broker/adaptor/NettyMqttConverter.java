@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class NettyMqttConverter {
+
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
         return new MqttConnectMsg(
                 sessionId,
@@ -63,17 +65,38 @@ public class NettyMqttConverter {
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
-        List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions().stream()
-                .map(mqttTopicSubscription -> new TopicSubscription(
-                        mqttTopicSubscription.topicName(),
-                        mqttTopicSubscription.qualityOfService().value(),
-                        SubscriptionOptions.newInstance(mqttTopicSubscription.option())
-                ))
+        List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions()
+                .stream()
+                .map(mqttTopicSubscription ->
+                        new TopicSubscription(
+                                getTopicName(mqttTopicSubscription.topicName()),
+                                mqttTopicSubscription.qualityOfService().value(),
+                                getShareName(mqttTopicSubscription.topicName()),
+                                SubscriptionOptions.newInstance(mqttTopicSubscription.option())))
                 .collect(Collectors.toList());
         MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
         int messageId = mqttMessageIdVariableHeader.messageId();
         MqttProperties properties = mqttMessageIdVariableHeader.properties();
         return new MqttSubscribeMsg(sessionId, messageId, topicSubscriptions, properties);
+    }
+
+    public static String getTopicName(String topicName) {
+        return isSharedTopic(topicName) ?
+                topicName.substring(topicName.indexOf("/", BrokerConstants.SHARE_NAME_IDX) + 1) : topicName;
+    }
+
+    public static String getShareName(String topicName) {
+        try {
+            return isSharedTopic(topicName) ?
+                    topicName.substring(BrokerConstants.SHARE_NAME_IDX, topicName.indexOf("/", BrokerConstants.SHARE_NAME_IDX)) : null;
+        } catch (IndexOutOfBoundsException e) {
+            log.error("[{}] Could not extract 'shareName' from shared subscription", topicName, e);
+            throw new RuntimeException("Could not extract 'shareName' from shared subscription", e);
+        }
+    }
+
+    public static boolean isSharedTopic(String topicName) {
+        return topicName.startsWith(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX);
     }
 
     public static MqttUnsubscribeMsg createMqttUnsubscribeMsg(UUID sessionId, MqttUnsubscribeMessage nettyUnsubscribeMsg) {

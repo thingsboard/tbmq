@@ -39,7 +39,6 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { TranslateDefaultCompiler } from '@core/translate/translate-default-compiler';
 import { WINDOW_PROVIDERS } from '@core/services/window.service';
-import { HotkeyModule } from 'angular2-hotkeys';
 import { TranslateDefaultParser } from '@core/translate/translate-default-parser';
 
 export function HttpLoaderFactory(http: HttpClient) {
@@ -75,7 +74,6 @@ export function HttpLoaderFactory(http: HttpClient) {
         useClass: TranslateDefaultParser
       }
     }),
-    HotkeyModule.forRoot(),
 
     // ngrx
     StoreModule.forRoot(reducers,

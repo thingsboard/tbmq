@@ -25,6 +25,7 @@ import java.util.Objects;
 public class ClientSubscription {
     private final String clientId;
     private final int qosValue;
+    private final String shareName;
     private final SubscriptionOptions options;
 
     @Override

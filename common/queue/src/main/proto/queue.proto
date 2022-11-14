@@ -59,7 +59,8 @@ message SubscriptionOptionsProto {
 message TopicSubscriptionProto {
   string topic = 1;
   int32 qos = 2;
-  SubscriptionOptionsProto options = 3;
+  optional string shareName = 3;
+  SubscriptionOptionsProto options = 4;
 }
 
 message ClientInfoProto {

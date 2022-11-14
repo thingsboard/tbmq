@@ -34,16 +34,9 @@ import { ActionSettingsChangeLanguage } from '@app/core/settings/settings.action
 import { AuthPayload, AuthState, SysParamsState } from '@core/auth/auth.models';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthUser } from '@shared/models/user.model';
-import { TimeService } from '@core/services/time.service';
 import { UtilsService } from '@core/services/utils.service';
-import { DashboardService } from '@core/http/dashboard.service';
-import { PageLink } from '@shared/models/page/page-link';
-import { DashboardInfo } from '@shared/models/dashboard.models';
-import { PageData } from '@app/shared/models/page/page-data';
-import { AdminService } from '@core/http/admin.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { OAuth2ClientInfo, PlatformType } from '@shared/models/oauth2.models';
 import { isMobileApp } from '@core/utils';
 
 @Injectable({
@@ -55,20 +48,16 @@ export class AuthService {
     private store: Store<AppState>,
     private http: HttpClient,
     private userService: UserService,
-    private timeService: TimeService,
     private router: Router,
     private route: ActivatedRoute,
     private zone: NgZone,
     private utils: UtilsService,
-    private dashboardService: DashboardService,
-    private adminService: AdminService,
     private translate: TranslateService,
     private dialog: MatDialog
   ) {
   }
 
   redirectUrl: string;
-  oauth2Clients: Array<OAuth2ClientInfo> = null;
 
   private refreshTokenSubject: ReplaySubject<LoginResponse> = null;
   private jwtHelper = new JwtHelperService();
@@ -109,7 +98,6 @@ export class AuthService {
       }
     );
   }
-
 
   public login(loginRequest: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>('/api/auth/login', loginRequest, defaultHttpOptions()).pipe(
@@ -202,17 +190,6 @@ export class AuthService {
         this.router.navigateByUrl(url);
       });
     }
-  }
-
-  public loadOAuth2Clients(): Observable<Array<OAuth2ClientInfo>> {
-    const url = '/api/noauth/oauth2Clients?platform=' + PlatformType.WEB;
-    return this.http.post<Array<OAuth2ClientInfo>>(url,
-      null, defaultHttpOptions()).pipe(
-      catchError(err => of([])),
-      tap((OAuth2Clients) => {
-        this.oauth2Clients = OAuth2Clients;
-      })
-    );
   }
 
   public defaultUrl(isAuthenticated: boolean, authState?: AuthState, path?: string, params?: any): UrlTree {
@@ -321,24 +298,8 @@ export class AuthService {
         authPayload.authUser = this.jwtHelper.decodeToken(jwtToken);
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
-        } else if (authPayload.authUser) {
-          authPayload.authUser.authority = Authority.ANONYMOUS;
         }
-        if (authPayload.authUser.isPublic) {
-          authPayload.forceFullscreen = true;
-        }
-        if (authPayload.authUser.isPublic) {
-          this.loadSystemParams(authPayload).subscribe(
-            (sysParams) => {
-              authPayload = {...authPayload, ...sysParams};
-              loadUserSubject.next(authPayload);
-              loadUserSubject.complete();
-            },
-            (err) => {
-              loadUserSubject.error(err);
-            }
-          );
-        } else if (authPayload.authUser.userId) {
+        if (authPayload.authUser.userId) {
           this.userService.getMqttAdminUser().subscribe(
             (user) => {
               authPayload.userDetails = user;
@@ -369,8 +330,7 @@ export class AuthService {
   }
 
   private loadIsUserTokenAccessEnabled(authUser: AuthUser): Observable<boolean> {
-    if (authUser.authority === Authority.SYS_ADMIN ||
-        authUser.authority === Authority.TENANT_ADMIN) {
+    if (authUser.authority === Authority.SYS_ADMIN) {
       return this.http.get<boolean>('/api/user/tokenAccessEnabled', defaultHttpOptions());
     } else {
       return of(false);
@@ -379,22 +339,6 @@ export class AuthService {
 
   public loadIsEdgesSupportEnabled(): Observable<boolean> {
     return this.http.get<boolean>('/api/edges/enabled', defaultHttpOptions());
-  }
-
-  private loadSystemParams(authPayload: AuthPayload): Observable<SysParamsState> {
-    const sources = [this.loadIsUserTokenAccessEnabled(authPayload.authUser),
-                     this.fetchAllowedDashboardIds(authPayload),
-                     this.loadIsEdgesSupportEnabled(),
-                     this.timeService.loadMaxDatapointsLimit()];
-    return forkJoin(sources)
-      .pipe(map((data) => {
-        const userTokenAccessEnabled: boolean = data[0] as boolean;
-        const allowedDashboardIds: string[] = data[1] as string[];
-        const edgesSupportEnabled: boolean = data[2] as boolean;
-        return {userTokenAccessEnabled, allowedDashboardIds, edgesSupportEnabled};
-      }, catchError((err) => {
-        return of({});
-      })));
   }
 
   public refreshJwtToken(loadUserElseStoreJwtToken = true): Observable<LoginResponse> {
@@ -558,44 +502,4 @@ export class AuthService {
     this.setUserFromJwtToken(null, null, true);
   }
 
-  private userForceFullscreen(authPayload: AuthPayload): boolean {
-    return (authPayload.authUser && authPayload.authUser.isPublic) ||
-      (authPayload.userDetails && authPayload.userDetails.additionalInfo &&
-        authPayload.userDetails.additionalInfo.defaultDashboardFullscreen &&
-        authPayload.userDetails.additionalInfo.defaultDashboardFullscreen === true);
-  }
-
-  private userHasProfile(authUser: AuthUser): boolean {
-    return authUser && !authUser.isPublic;
-  }
-
-  private userHasDefaultDashboard(authState: AuthState): boolean {
-    if (authState && authState.userDetails && authState.userDetails.additionalInfo
-      && authState.userDetails.additionalInfo.defaultDashboardId) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private fetchAllowedDashboardIds(authPayload: AuthPayload): Observable<string[]> {
-    if (authPayload.forceFullscreen && (authPayload.authUser.authority === Authority.TENANT_ADMIN ||
-      authPayload.authUser.authority === Authority.CUSTOMER_USER)) {
-      const pageLink = new PageLink(100);
-      let fetchDashboardsObservable: Observable<PageData<DashboardInfo>>;
-      if (authPayload.authUser.authority === Authority.TENANT_ADMIN) {
-        fetchDashboardsObservable = this.dashboardService.getTenantDashboards(pageLink);
-      } else {
-        fetchDashboardsObservable = this.dashboardService.getCustomerDashboards(authPayload.authUser.customerId, pageLink);
-      }
-      return fetchDashboardsObservable.pipe(
-        map((result) => {
-          const dashboards = result.data;
-          return dashboards.map(dashboard => dashboard.id.id);
-        })
-      );
-    } else {
-      return of([]);
-    }
-  }
 }

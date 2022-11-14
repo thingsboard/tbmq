@@ -30,7 +30,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
-import { DAY, historyInterval } from '@shared/models/time/time.models';
 
 export type EntityBooleanFunction<T extends BaseData<HasId>> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData<HasId>> = (entity: T) => string;
@@ -141,8 +140,6 @@ export class EntityTableConfig<T extends BaseData<HasId>, P extends PageLink = P
   loadDataOnInit = true;
   onLoadAction: (route: ActivatedRoute) => void = null;
   table: EntitiesTableComponent = null;
-  useTimePageLink = false;
-  defaultTimewindowInterval = historyInterval(DAY);
   entityType: EntityType = null;
   tableTitle = '';
   selectionEnabled = true;

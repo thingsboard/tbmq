@@ -58,7 +58,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     this.rulesMappingFormGroup = this.fb.group({});
     this.rulesMappingFormGroup.addControl('authorizationRulesMapping',
       this.fb.array([]));
-    this.rulesMappingFormGroup.get('authorizationRulesMapping').valueChanges.subscribe((value) => {
+    this.rulesFormArray().valueChanges.subscribe((value) => {
       this.updateView(value);
     });
   }
@@ -68,7 +68,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   addRule(): void {
-    this.rulesMappings = this.rulesMappingFormGroup.get('authorizationRulesMapping') as FormArray;
+    this.rulesMappings = this.rulesFormArray() as FormArray;
     this.rulesMappings.push(this.fb.group({
       certificateMatcherRegex: ['', [Validators.required]],
       topicRule: ['', [Validators.required]]
@@ -77,7 +77,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   removeRule(index: number) {
     this.rulesMappingFormGroup.markAsDirty();
-    (this.rulesMappingFormGroup.get('authorizationRulesMapping') as FormArray).removeAt(index);
+    (this.rulesFormArray() as FormArray).removeAt(index);
   }
 
   ngOnDestroy(): void {
@@ -101,7 +101,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   validate(): ValidationErrors | null {
-    if (!this.rulesMappingFormGroup.get('authorizationRulesMapping').value?.length) {
+    if (!this.rulesFormArray().value?.length) {
       return { rulesMappingLength: true };
     }
     return this.rulesMappingFormGroup.valid ? null : { rulesMapping: true };

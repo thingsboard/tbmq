@@ -36,7 +36,6 @@ import * as AngularMaterialCard from '@angular/material/card';
 import * as AngularMaterialCheckbox from '@angular/material/checkbox';
 import * as AngularMaterialChips from '@angular/material/chips';
 import * as AngularMaterialCore from '@angular/material/core';
-import * as AngularMaterialDatepicker from '@angular/material/datepicker';
 import * as AngularMaterialDialog from '@angular/material/dialog';
 import * as AngularMaterialDivider from '@angular/material/divider';
 import * as AngularMaterialExpansion from '@angular/material/expansion';
@@ -100,7 +99,6 @@ export const modulesMap: {[key: string]: any} = {
   '@angular/material/checkbox': SystemJS.newModule(AngularMaterialCheckbox),
   '@angular/material/chips': SystemJS.newModule(AngularMaterialChips),
   '@angular/material/core': SystemJS.newModule(AngularMaterialCore),
-  '@angular/material/datepicker': SystemJS.newModule(AngularMaterialDatepicker),
   '@angular/material/dialog': SystemJS.newModule(AngularMaterialDialog),
   '@angular/material/divider': SystemJS.newModule(AngularMaterialDivider),
   '@angular/material/expansion': SystemJS.newModule(AngularMaterialExpansion),

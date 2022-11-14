@@ -19,10 +19,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  appTitle: 'ThingsBoard',
+  appTitle: 'ThingsBoard MQTT Broker',
   production: false,
 // @ts-ignore
-  tbVersion: TB_VERSION,
+  tbMqttBrokerVersion: TB_MQTT_BROKER_VERSION,
 // @ts-ignore
   supportedLangs: SUPPORTED_LANGS,
   defaultLang: 'en_US'

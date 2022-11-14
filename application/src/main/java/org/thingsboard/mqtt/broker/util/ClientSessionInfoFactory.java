@@ -49,7 +49,7 @@ public class ClientSessionInfoFactory {
                 .build();
     }
 
-    private static ClientSession getClientSession(boolean connected, SessionInfo sessionInfo) {
+    public static ClientSession getClientSession(boolean connected, SessionInfo sessionInfo) {
         return ClientSession.builder()
                 .connected(connected)
                 .sessionInfo(sessionInfo)

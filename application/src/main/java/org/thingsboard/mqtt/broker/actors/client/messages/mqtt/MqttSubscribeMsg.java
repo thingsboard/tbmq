@@ -32,10 +32,7 @@ public class MqttSubscribeMsg extends QueueableMqttMsg {
     private final MqttProperties properties;
 
     public MqttSubscribeMsg(UUID sessionId, int messageId, List<TopicSubscription> topicSubscriptions) {
-        super(sessionId);
-        this.messageId = messageId;
-        this.topicSubscriptions = topicSubscriptions;
-        this.properties = MqttProperties.NO_PROPERTIES;
+        this(sessionId, messageId, topicSubscriptions, MqttProperties.NO_PROPERTIES);
     }
 
     public MqttSubscribeMsg(UUID sessionId, int messageId, List<TopicSubscription> topicSubscriptions, MqttProperties properties) {

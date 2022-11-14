@@ -89,6 +89,12 @@
         </dependency>
         <dependency>
             <groupId>org.thingsboard.mqtt-broker</groupId>
+            <artifactId>ui-ngx</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
@@ -136,6 +142,10 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>io.springfox</groupId>
@@ -239,7 +249,6 @@
         <dependency>
             <groupId>org.thingsboard</groupId>
             <artifactId>netty-mqtt</artifactId>
-            <version>3.2.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

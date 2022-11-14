@@ -29,7 +29,6 @@ import { DialogService } from '@core/services/dialog.service';
 import { TranslateService } from '@ngx-translate/core';
 import { UtilsService } from '@core/services/utils.service';
 import { isObject } from '@core/utils';
-import { MobileService } from '@core/services/mobile.service';
 
 @Injectable({
   providedIn: 'root'
@@ -42,7 +41,6 @@ export class AuthGuard implements CanActivate, CanActivateChild {
               private dialogService: DialogService,
               private utils: UtilsService,
               private translate: TranslateService,
-              private mobileService: MobileService,
               private zone: NgZone) {}
 
   getAuthState(): Observable<AuthState> {

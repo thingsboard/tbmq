@@ -28,16 +28,19 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
@@ -75,6 +78,10 @@ public class MqttSubscribeHandlerTest {
     PublishMsgDeliveryService publishMsgDeliveryService;
     @MockBean
     ClientMqttActorManager clientMqttActorManager;
+    @MockBean
+    ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
+    @MockBean
+    MsgPersistenceManager msgPersistenceManager;
     @SpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 
@@ -205,6 +212,21 @@ public class MqttSubscribeHandlerTest {
         return new SubscriptionOptions(false, false, retainHandlingPolicy);
     }
 
+    @Test
+    public void testCollectUniqueSharedSubscriptions() {
+        List<TopicSubscription> topicSubscriptions = List.of(
+                getTopicSubscription("topic/test1", 1),
+                getTopicSubscription("topic/test2", 1, "g1"),
+                getTopicSubscription("topic/test2", 1, "g2"),
+                getTopicSubscription("topic/test3", 1, "g1"),
+                getTopicSubscription("topic/test3", 2, "g1"),
+                getTopicSubscription("topic/+", 1, "g1"),
+                getTopicSubscription("topic/#", 1, "g2")
+        );
+        Set<TopicSharedSubscription> test = mqttSubscribeHandler.collectUniqueSharedSubscriptions(topicSubscriptions);
+        assertEquals(5, test.size());
+    }
+
 
     private List<TopicSubscription> getTopicSubscriptions() {
         return List.of(
@@ -215,7 +237,12 @@ public class MqttSubscribeHandlerTest {
     }
 
     private TopicSubscription getTopicSubscription(String topic, int qos) {
-        return new TopicSubscription(topic, qos);
+        String shareName = null;
+        return getTopicSubscription(topic, qos, shareName);
+    }
+
+    private TopicSubscription getTopicSubscription(String topic, int qos, String shareName) {
+        return new TopicSubscription(topic, qos, shareName);
     }
 
     private TopicSubscription getTopicSubscription(String topic, int qos, SubscriptionOptions options) {

@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.session;
 
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
@@ -41,6 +40,15 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     private final SslHandler sslHandler;
     @Getter
+    private final PubResponseProcessingCtx pubResponseProcessingCtx;
+    @Getter
+    private final MsgIdSequence msgIdSeq = new MsgIdSequence();
+    @Getter
+    private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
+    @Getter
+    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
+
+    @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
     @Getter
@@ -55,18 +63,6 @@ public class ClientSessionCtx implements SessionContext {
 
     @Getter
     private ChannelHandlerContext channel;
-
-    @Getter
-    private final MsgIdSequence msgIdSeq = new MsgIdSequence();
-
-    @Getter
-    private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
-
-    @Getter
-    private final PubResponseProcessingCtx pubResponseProcessingCtx;
-
-    @Getter
-    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
 
     public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMsgs) {
         this.sessionId = sessionId;
@@ -85,10 +81,8 @@ public class ClientSessionCtx implements SessionContext {
 
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
-        ChannelFuture channelFuture = this.channel.close();
-        channelFuture.addListener(future -> {
-            pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-            pendingPublishes.clear();
-        });
+        this.channel.close();
+        pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+        pendingPublishes.clear();
     }
 }

@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
@@ -57,13 +58,15 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private final SubscriptionPersistenceService persistenceService;
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private final TbQueueAdmin queueAdmin;
     private final ClientSubscriptionConsumerStats stats;
 
     public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider,
-                                          SubscriptionPersistenceService persistenceService, StatsManager statsManager) {
+                                          SubscriptionPersistenceService persistenceService, TbQueueAdmin queueAdmin, StatsManager statsManager) {
         String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
         this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
         this.persistenceService = persistenceService;
+        this.queueAdmin = queueAdmin;
         this.stats = statsManager.getClientSubscriptionConsumerStats();
     }
 
@@ -167,6 +170,9 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         stopped = true;
         if (clientSubscriptionsConsumer != null) {
             clientSubscriptionsConsumer.unsubscribeAndClose();
+            if (this.clientSubscriptionsConsumer.getConsumerGroupId() != null) {
+                queueAdmin.deleteConsumerGroups(Collections.singleton(this.clientSubscriptionsConsumer.getConsumerGroupId()));
+            }
         }
         consumerExecutor.shutdownNow();
     }
