@@ -68,6 +68,9 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY)
     private String userProperties;
 
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_RETAIN_PROPERTY)
+    private boolean retain;
+
     public DevicePublishMsgEntity() {
     }
 
@@ -81,6 +84,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.qos = devicePublishMsg.getQos();
         this.payload = devicePublishMsg.getPayload();
         this.userProperties = JacksonUtil.toString(UserProperties.newInstance(devicePublishMsg.getProperties()));
+        this.retain = devicePublishMsg.isRetained();
     }
 
     @Override
@@ -95,6 +99,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
                 .packetId(packetId)
                 .packetType(packetType)
                 .properties(UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class)))
+                .isRetained(retain)
                 .build();
     }
 }

@@ -72,6 +72,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
                 .topicName(msg.getTopicName())
                 .payload(msg.getPayload().toByteArray())
                 .qosLevel(msg.getQos())
+                .isRetained(msg.getRetain())
                 .isDup(false)
                 .properties(ProtoConverter.createMqttProperties(msg.getUserPropertiesList()))
                 .build();

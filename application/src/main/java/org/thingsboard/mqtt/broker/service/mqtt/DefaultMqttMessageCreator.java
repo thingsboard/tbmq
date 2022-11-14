@@ -36,6 +36,7 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
@@ -59,6 +60,11 @@ import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
+
+    @Value("${listener.tcp.netty.max_payload_size}")
+    private int tcpMaxPayloadSize;
+    @Value("${listener.ssl.netty.max_payload_size}")
+    private int sslMaxPayloadSize;
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
@@ -85,6 +91,14 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         properties.add(new MqttProperties.IntegerProperty(
                 MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value(),
                 keepAliveTimeSeconds)
+        );
+        properties.add(new MqttProperties.IntegerProperty(
+                MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER_AVAILABLE.value(),
+                0) // TODO: 14/10/2022 after impl MQTT 5 SubscriptionId feature change this to 1 or remove completely
+        );
+        properties.add(new MqttProperties.IntegerProperty(
+                MqttProperties.MqttPropertyType.MAXIMUM_PACKET_SIZE.value(),
+                Math.min(tcpMaxPayloadSize, sslMaxPayloadSize))
         );
 
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
@@ -129,7 +143,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
-        return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), false,
+        return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), pubMsg.isRetained(),
                 pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload(), pubMsg.getProperties());
     }
 

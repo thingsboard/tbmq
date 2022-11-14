@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.adaptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
@@ -37,6 +39,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -63,9 +66,13 @@ public class NettyMqttConverter {
                         new TopicSubscription(
                                 getTopicName(mqttTopicSubscription.topicName()),
                                 mqttTopicSubscription.qualityOfService().value(),
-                                getShareName(mqttTopicSubscription.topicName())))
+                                getShareName(mqttTopicSubscription.topicName()),
+                                SubscriptionOptions.newInstance(mqttTopicSubscription.option())))
                 .collect(Collectors.toList());
-        return new MqttSubscribeMsg(sessionId, nettySubscribeMsg.variableHeader().messageId(), topicSubscriptions);
+        MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
+        int messageId = mqttMessageIdVariableHeader.messageId();
+        MqttProperties properties = mqttMessageIdVariableHeader.properties();
+        return new MqttSubscribeMsg(sessionId, messageId, topicSubscriptions, properties);
     }
 
     public static String getTopicName(String topicName) {

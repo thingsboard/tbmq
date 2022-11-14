@@ -148,4 +148,58 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClientMqtt5.disconnect();
         subClientMqtt5.close();
     }
+
+    @Test
+    public void testSendMsgAndReceiveForSameClient() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, "sameClient");
+        client.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("myMsg", new String(message.getPayload()));
+
+            latch.countDown();
+        }};
+
+        MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
+        client.subscribe(subscriptions, listeners);
+
+        client.publish(MY_TOPIC, "myMsg".getBytes(StandardCharsets.UTF_8), 2, false);
+
+        boolean await = latch.await(3, TimeUnit.SECONDS);
+        Assert.assertTrue(await);
+
+        client.disconnect();
+        client.close();
+    }
+
+    @Test
+    public void testSendMsgAndNotReceiveForSameClientWhenNoLocal() throws Throwable {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, "sameClientNoLocal");
+        client.connect();
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            log.error("[{}] Received msg: {}", topic, message.getProperties());
+            Assert.assertEquals("myMsg", new String(message.getPayload()));
+
+            latch.countDown();
+        }};
+
+        MqttSubscription mqttSubscription = new MqttSubscription(MY_TOPIC, 2);
+        mqttSubscription.setNoLocal(true);
+        MqttSubscription[] subscriptions = {mqttSubscription};
+        client.subscribe(subscriptions, listeners);
+
+        client.publish(MY_TOPIC, "myMsg".getBytes(StandardCharsets.UTF_8), 2, false);
+
+        boolean await = latch.await(2, TimeUnit.SECONDS);
+        Assert.assertFalse(await);
+
+        client.disconnect();
+        client.close();
+    }
 }

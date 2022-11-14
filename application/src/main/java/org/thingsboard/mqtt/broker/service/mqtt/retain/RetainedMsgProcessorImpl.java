@@ -39,7 +39,7 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
         } else {
             retainedMsgListenerService.cacheRetainedMsgAndPersist(publishMsg.getTopicName(), newRetainedMsg(publishMsg));
         }
-        return unsetRetainedFlag(publishMsg);
+        return publishMsg;
     }
 
     private boolean payloadIsEmpty(PublishMsg publishMsg) {
@@ -57,9 +57,5 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
 
     private MqttProperties.MqttProperty getUserProperties(PublishMsg publishMsg) {
         return publishMsg.getProperties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
-    }
-
-    PublishMsg unsetRetainedFlag(PublishMsg publishMsg) {
-        return publishMsg.toBuilder().isRetained(false).build();
     }
 }
