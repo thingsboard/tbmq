@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
@@ -96,7 +97,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
 
-        List<Subscription> msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto);
+        List<Subscription> msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
@@ -133,11 +134,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return persistentSubscriptions;
     }
 
-    private List<Subscription> getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto) {
+    private List<Subscription> getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
         List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
 
-        Map<SubscriptionType, List<Subscription>> subscriptionsByType = collectToSubscriptionsMapByType(clientSubscriptions);
+        Map<SubscriptionType, List<Subscription>> subscriptionsByType = collectToSubscriptionsMapByType(clientSubscriptions, senderClientId);
         List<Subscription> sharedSubscriptions = getSubscriptionsFromMapByType(subscriptionsByType, SubscriptionType.SHARED);
         Map<ClientType, List<Subscription>> sharedSubscriptionsByClientType = collectToSubscriptionsByClientType(sharedSubscriptions);
 
@@ -178,9 +179,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private Map<SubscriptionType, List<Subscription>> collectToSubscriptionsMapByType(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters, String senderClientId) {
         long startTime = System.nanoTime();
-        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = collectToSubscriptionsByType(clientSubscriptionWithTopicFilters);
+        Map<SubscriptionType, List<Subscription>> msgSubscriptionsByType = collectToSubscriptionsByType(clientSubscriptionWithTopicFilters, senderClientId);
         publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
         return msgSubscriptionsByType;
     }
@@ -209,7 +210,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 sharedSubscription.getTopicSharedSubscription().getTopic(),
                 qos,
                 createDummyClientSession(sharedSubscription),
-                sharedSubscription.getTopicSharedSubscription().getShareName()
+                sharedSubscription.getTopicSharedSubscription().getShareName(),
+                SubscriptionOptions.newInstance()
         );
     }
 
@@ -238,11 +240,22 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .collect(Collectors.toList());
     }
 
+    private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionValueWithTopicFilter,
+                                       String senderClientId) {
+        return clientSubscriptionValueWithTopicFilter
+                .getValue()
+                .getOptions()
+                .isNoLocalOptionMet(
+                        clientSubscriptionValueWithTopicFilter.getValue().getClientId(),
+                        senderClientId
+                );
+    }
+
     Map<SubscriptionType, List<Subscription>> collectToSubscriptionsByType(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters, String senderClientId) {
 
         List<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
-                filterHighestQosClientSubscriptions(clientSubscriptionWithTopicFilters);
+                filterClientSubscriptions(clientSubscriptionWithTopicFilters, senderClientId);
 
         return filteredClientSubscriptions.stream()
                 .collect(Collectors.groupingBy(this::getSubscriptionType))
@@ -263,12 +276,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             log.debug("[{}] Client session not found for existent client subscription.", clientId);
             return null;
         }
-        return new Subscription(clientSubscription.getTopicFilter(), clientSubscription.getValue().getQosValue(),
-                clientSession, clientSubscription.getValue().getShareName());
+        return new Subscription(
+                clientSubscription.getTopicFilter(),
+                clientSubscription.getValue().getQosValue(),
+                clientSession,
+                clientSubscription.getValue().getShareName(),
+                clientSubscription.getValue().getOptions());
     }
 
-    List<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters) {
+    List<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
+            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters, String senderClientId) {
 
         Stream<ValueWithTopicFilter<ClientSubscription>> sharedSubscriptions = clientSubscriptionWithTopicFilters
                 .stream()
@@ -279,14 +296,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .filter(subs -> StringUtils.isEmpty(subs.getValue().getShareName()));
 
         return Stream.concat(
-                        filterHighestQosClientSubscriptions(sharedSubscriptions),
-                        filterHighestQosClientSubscriptions(commonSubscriptions))
+                        filterClientSubscriptions(sharedSubscriptions, senderClientId),
+                        filterClientSubscriptions(commonSubscriptions, senderClientId))
                 .collect(Collectors.toList());
     }
 
-    Stream<ValueWithTopicFilter<ClientSubscription>> filterHighestQosClientSubscriptions(
-            Stream<ValueWithTopicFilter<ClientSubscription>> stream) {
+    Stream<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
+            Stream<ValueWithTopicFilter<ClientSubscription>> stream, String senderClientId) {
         return stream
+                .filter(clientSubsWithTopicFilter -> !isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId))
                 .collect(Collectors.toMap(
                         clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
                         Function.identity(),
@@ -313,9 +331,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription clientSubscription, QueueProtos.PublishMsgProto publishMsgProto) {
-        int minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        var minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        var retain = clientSubscription.getOptions().isRetain(publishMsgProto);
         return publishMsgProto.toBuilder()
                 .setQos(minQoSValue)
+                .setRetain(retain)
                 .build();
     }
 

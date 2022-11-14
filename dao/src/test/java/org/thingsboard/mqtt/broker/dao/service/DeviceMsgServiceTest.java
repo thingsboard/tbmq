@@ -38,12 +38,17 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     private static final String TEST_CLIENT_ID = "testClientId";
     private static final byte[] TEST_PAYLOAD = "testPayload".getBytes();
     private static final List<DevicePublishMsg> TEST_MESSAGES = Arrays.asList(
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 0L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 1L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 2L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 3L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES),
-            new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), 4L, 0L, 0, 0, PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES)
+            newDevicePublishMsg(0L),
+            newDevicePublishMsg(1L),
+            newDevicePublishMsg(2L),
+            newDevicePublishMsg(3L),
+            newDevicePublishMsg(4L)
     );
+
+    private static DevicePublishMsg newDevicePublishMsg(long serialNumber) {
+        return new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), serialNumber, 0L, 0, 0,
+                PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES, false);
+    }
 
     @After
     public void clearState() {

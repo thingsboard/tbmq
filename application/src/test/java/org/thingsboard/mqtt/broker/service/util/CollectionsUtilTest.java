@@ -23,72 +23,139 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.CollectionsUtil;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class CollectionsUtilTest {
+
+    private static Comparator<TopicSubscription> getComparator() {
+        return Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos);
+    }
+
     @Test
-    public void testGetAddedValues() {
+    public void testGetAddedValues_0() {
         Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
         Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("3", 0));
-        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(newSubscriptions, addedSubscriptions);
+        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(2, addedSubscriptions.size());
+        List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
+        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(1, addedSubscriptionsList.get(0).getQos());
+        Assert.assertEquals("3", addedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals(0, addedSubscriptionsList.get(1).getQos());
     }
 
     @Test
     public void testGetAddedValues_1() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("2", 0));
-        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(Set.of(new TopicSubscription("1", 1)), addedSubscriptions);
+        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("2", 0));
+        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
+        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(1, addedSubscriptions.size());
+        List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
+        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(0, addedSubscriptionsList.get(0).getQos());
     }
 
     @Test
     public void testGetAddedValues_2() {
         Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
         Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
-        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(Set.of(), addedSubscriptions);
+        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
+        Assert.assertEquals(0, addedSubscriptions.size());
+    }
+
+    @Test
+    public void testGetAddedValues_3() {
+        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0));
+        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 2));
+        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(1, addedSubscriptions.size());
+        List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
+        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(2, addedSubscriptionsList.get(0).getQos());
     }
 
     @Test
     public void testGetRemovedValues_0() {
         Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
         Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("3", 0));
-        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(prevSubscriptions, removedSubscriptions);
+        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(2, removedSubscriptions.size());
+        List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
+        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(0, removedSubscriptionsList.get(0).getQos());
+        Assert.assertEquals("2", removedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals(0, removedSubscriptionsList.get(1).getQos());
     }
 
     @Test
     public void testGetRemovedValues_1() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("2", 0));
-        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(Set.of(new TopicSubscription("1", 0)), removedSubscriptions);
+        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 2));
+        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("2", 2));
+        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(1, removedSubscriptions.size());
+        List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
+        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(0, removedSubscriptionsList.get(0).getQos());
     }
 
     @Test
     public void testGetRemovedValues_2() {
         Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
         Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
-        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(Set.of(), removedSubscriptions);
+        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, getComparator());
+        Assert.assertEquals(0, removedSubscriptions.size());
     }
 
     @Test
     public void testGetRemovedValues_3() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
+        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 1));
         Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 0));
-        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, Comparator.comparing(TopicSubscription::getTopic)
-                .thenComparing(TopicSubscription::getQos));
-        Assert.assertEquals(Set.of(new TopicSubscription("2", 0)), removedSubscriptions);
+        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(1, removedSubscriptions.size());
+        List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
+        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(1, removedSubscriptionsList.get(0).getQos());
+    }
+
+    @Test
+    public void testGetAddedAndRemoved() {
+        Set<TopicSubscription> prevSubscriptions = Set.of(
+                new TopicSubscription("1", 0),
+                new TopicSubscription("2", 1),
+                new TopicSubscription("3", 2));
+
+        Set<TopicSubscription> newSubscriptions = Set.of(
+                new TopicSubscription("1", 0),
+                new TopicSubscription("2", 2),
+                new TopicSubscription("4", 1));
+
+        Set<TopicSubscription> removedSubscriptions = CollectionsUtil.getRemovedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(2, removedSubscriptions.size());
+        List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
+        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(1, removedSubscriptionsList.get(0).getQos());
+        Assert.assertEquals("3", removedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals(2, removedSubscriptionsList.get(1).getQos());
+
+        Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
+
+        Assert.assertEquals(2, addedSubscriptions.size());
+        List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
+        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals(2, addedSubscriptionsList.get(0).getQos());
+        Assert.assertEquals("4", addedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals(1, addedSubscriptionsList.get(1).getQos());
     }
 }

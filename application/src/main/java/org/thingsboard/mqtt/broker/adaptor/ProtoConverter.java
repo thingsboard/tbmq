@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
@@ -82,6 +83,7 @@ public class ProtoConverter {
                 .setQos(devicePublishMsg.getQos())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
                 .addAllUserProperties(userPropertyProtos)
+                .setRetain(devicePublishMsg.isRetained())
                 .build();
     }
 
@@ -178,10 +180,23 @@ public class ProtoConverter {
         return QueueProtos.ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
     }
 
+    private static QueueProtos.SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {
+        return QueueProtos.SubscriptionOptionsProto.newBuilder()
+                .setNoLocal(topicSubscription.getOptions().isNoLocal())
+                .setRetainAsPublish(topicSubscription.getOptions().isRetainAsPublish())
+                .setRetainHandling(getRetainHandling(topicSubscription))
+                .build();
+    }
+
+    private static QueueProtos.RetainHandling getRetainHandling(TopicSubscription topicSubscription) {
+        return QueueProtos.RetainHandling.forNumber(topicSubscription.getOptions().getRetainHandling().value());
+    }
+
     private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
         return QueueProtos.TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopic())
+                .setOptions(prepareOptionsProto(topicSubscription))
                 .build();
     }
 
@@ -190,6 +205,7 @@ public class ProtoConverter {
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopic())
                 .setShareName(topicSubscription.getShareName())
+                .setOptions(prepareOptionsProto(topicSubscription))
                 .build();
     }
 
@@ -199,8 +215,20 @@ public class ProtoConverter {
                         .qos(topicSubscriptionProto.getQos())
                         .topic(topicSubscriptionProto.getTopic())
                         .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
+                        .options(createOptions(topicSubscriptionProto))
                         .build())
                 .collect(Collectors.toSet());
+    }
+
+    private static SubscriptionOptions createOptions(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+        return new SubscriptionOptions(
+                topicSubscriptionProto.getOptions().getNoLocal(),
+                topicSubscriptionProto.getOptions().getRetainAsPublish(),
+                getRetainHandling(topicSubscriptionProto));
+    }
+
+    private static SubscriptionOptions.RetainHandlingPolicy getRetainHandling(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+        return SubscriptionOptions.RetainHandlingPolicy.valueOf(topicSubscriptionProto.getOptions().getRetainHandling().getNumber());
     }
 
     public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean isNewSessionPersistent) {
@@ -218,6 +246,7 @@ public class ProtoConverter {
                 .qos(publishMsgProto.getQos())
                 .payload(publishMsgProto.getPayload().toByteArray())
                 .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
+                .isRetained(publishMsgProto.getRetain())
                 .build();
     }
 
@@ -234,6 +263,7 @@ public class ProtoConverter {
                 .setClientId(devicePublishMsg.getClientId())
                 .setPacketType(devicePublishMsg.getPacketType().toString())
                 .addAllUserProperties(userPropertyProtos)
+                .setRetain(devicePublishMsg.isRetained())
                 .build();
     }
 
@@ -248,6 +278,7 @@ public class ProtoConverter {
                 .clientId(devicePublishMsgProto.getClientId())
                 .packetType(PersistedPacketType.valueOf(devicePublishMsgProto.getPacketType()))
                 .properties(createMqttProperties(devicePublishMsgProto.getUserPropertiesList()))
+                .isRetained(devicePublishMsgProto.getRetain())
                 .build();
     }
 

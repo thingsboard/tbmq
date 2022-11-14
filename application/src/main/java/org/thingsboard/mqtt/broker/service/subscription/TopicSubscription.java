@@ -30,11 +30,18 @@ public class TopicSubscription {
     private final String topic;
     private final int qos;
     private final String shareName;
+    private final SubscriptionOptions options;
 
     public TopicSubscription(String topic, int qos) {
-        this.topic = topic;
-        this.qos = qos;
-        this.shareName = null;
+        this(topic, qos, null, SubscriptionOptions.newInstance());
+    }
+
+    public TopicSubscription(String topic, int qos, String shareName) {
+        this(topic, qos, shareName, SubscriptionOptions.newInstance());
+    }
+
+    public TopicSubscription(String topic, int qos, SubscriptionOptions options) {
+        this(topic, qos, null, options);
     }
 
     @Override

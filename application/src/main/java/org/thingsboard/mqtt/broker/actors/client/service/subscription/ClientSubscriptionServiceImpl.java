@@ -96,6 +96,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
+        clientSubscriptions.removeIf(topicSubscriptions::contains);
         clientSubscriptions.addAll(topicSubscriptions);
         return clientSubscriptions;
     }
