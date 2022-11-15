@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { Component, ElementRef, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -28,13 +28,14 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
+import { BasicMqttCredentials, MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
 import { Observable } from 'rxjs/internal/Observable';
+import { MatChipInputEvent } from "@angular/material/chips";
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -60,7 +61,11 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @Input()
   entity: MqttClientCredentials;
 
+  @ViewChild('authorizationRulesInput') authorizationRulesInput: ElementRef<HTMLInputElement>;
+
   credentialsMqttFormGroup: FormGroup;
+
+  authorizationRules: Set<string> = new Set();
 
   private destroy$ = new Subject();
   private propagateChange = (v: any) => {};
@@ -70,7 +75,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     this.credentialsMqttFormGroup = this.fb.group({
       clientId: [null],
       userName: [null],
-      password: [null]
+      password: [null],
+      authorizationRulePatterns: [null]
     }, {validators: this.atLeastOne(Validators.required, ['clientId', 'userName'])});
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)
@@ -108,11 +114,12 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   writeValue(mqttBasic: string) {
     if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
       const value = JSON.parse(mqttBasic);
+      value.authorizationRulePatterns[0].split(',').map(el => this.authorizationRules.add(el));
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
 
-  updateView(value: any) {
+  updateView(value: BasicMqttCredentials) {
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
   }
@@ -137,6 +144,32 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
           credentialsId: this.entity?.id
         }
       }).afterClosed();
+  }
+
+  addRule(event: MatChipInputEvent) {
+    if (event.value) {
+      this.authorizationRules.add(event.value);
+      this.writeAuthorizationRules(this.authorizationRules);
+      this.clear();
+    }
+  }
+
+  removeRule(rule: string) {
+    this.authorizationRules.delete(rule);
+    this.writeAuthorizationRules(this.authorizationRules);
+  }
+
+  private writeAuthorizationRules(set: Set<string>) {
+    const rulesArray = [Array.from(set).join(',')];
+    this.credentialsMqttFormGroup.get('authorizationRulePatterns').setValue(rulesArray);
+  }
+
+  private clear(value: string = '') {
+    this.authorizationRulesInput.nativeElement.value = value;
+    setTimeout(() => {
+      this.authorizationRulesInput.nativeElement.blur();
+      this.authorizationRulesInput.nativeElement.focus();
+    }, 0);
   }
 
   private atLeastOne(validator: ValidatorFn, controls: string[] = null) {

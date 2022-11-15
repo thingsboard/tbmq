@@ -3190,6 +3190,7 @@
       "add-authorization-rules": "Add authorization rule",
       "add-authorization-rule-prompt": "Please add authorization rule",
       "authorization-rules": "Authorization rules",
+      "authorization-rule-patterns": "Authorization rule patterns",
       "certificate-matcher-regex": "Certificate matcher regex",
       "certificate-matcher-regex-required": "Certificate matcher regex is required",
       "client-credentials": "Client Credentials",
