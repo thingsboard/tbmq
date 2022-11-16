@@ -61,11 +61,11 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @Input()
   entity: MqttClientCredentials;
 
-  @ViewChild('authorizationRulesInput') authorizationRulesInput: ElementRef<HTMLInputElement>;
+  @ViewChild('ruleInput') ruleInput: ElementRef<HTMLInputElement>;
 
   credentialsMqttFormGroup: FormGroup;
 
-  authorizationRules: Set<string> = new Set();
+  rulesArray: Set<string> = new Set();
 
   private destroy$ = new Subject();
   private propagateChange = (v: any) => {};
@@ -114,7 +114,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   writeValue(mqttBasic: string) {
     if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
       const value = JSON.parse(mqttBasic);
-      value.authorizationRulePatterns[0].split(',').map(el => this.authorizationRules.add(el));
+      value.authorizationRulePatterns[0].split(',').map(el => this.rulesArray.add(el));
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
@@ -146,29 +146,29 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
       }).afterClosed();
   }
 
-  addRule(event: MatChipInputEvent) {
+  addTopicRule(event: MatChipInputEvent) {
     if (event.value) {
-      this.authorizationRules.add(event.value);
-      this.writeAuthorizationRules(this.authorizationRules);
+      this.rulesArray.add(event.value);
+      this.setAuthorizationRulePatternsControl(this.rulesArray);
       this.clear();
     }
   }
 
-  removeRule(rule: string) {
-    this.authorizationRules.delete(rule);
-    this.writeAuthorizationRules(this.authorizationRules);
+  removeTopicRule(rule: string) {
+    this.rulesArray.delete(rule);
+    this.setAuthorizationRulePatternsControl(this.rulesArray);
   }
 
-  private writeAuthorizationRules(set: Set<string>) {
+  private setAuthorizationRulePatternsControl(set: Set<string>) {
     const rulesArray = [Array.from(set).join(',')];
     this.credentialsMqttFormGroup.get('authorizationRulePatterns').setValue(rulesArray);
   }
 
   private clear(value: string = '') {
-    this.authorizationRulesInput.nativeElement.value = value;
+    this.ruleInput.nativeElement.value = value;
     setTimeout(() => {
-      this.authorizationRulesInput.nativeElement.blur();
-      this.authorizationRulesInput.nativeElement.focus();
+      this.ruleInput.nativeElement.blur();
+      this.ruleInput.nativeElement.focus();
     }, 0);
   }
 

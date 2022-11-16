@@ -51,12 +51,14 @@
   </button>
   <mat-form-field class="mat-block" appearance="standard">
     <mat-label translate>mqtt-client-credentials.authorization-rule-patterns</mat-label>
-    <mat-chip-list #chipList aria-label="Topic rules" formControlName="authorizationRulePatterns">
-      <mat-chip *ngFor="let rule of authorizationRules" [value]="rule" (removed)="removeRule(rule)">
+    <mat-chip-list #chipList formControlName="authorizationRulePatterns">
+      <mat-chip *ngFor="let rule of rulesArray" [value]="rule" (removed)="removeTopicRule(rule)">
         <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
         {{ rule }}
       </mat-chip>
-      <input placeholder="add rule..." #authorizationRulesInput [matChipInputFor]="chipList" (matChipInputTokenEnd)="addRule($event)">
+      <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+             [matChipInputFor]="chipList"
+             (matChipInputTokenEnd)="addTopicRule($event)">
     </mat-chip-list>
   </mat-form-field>
   <div fxLayout="row" style="padding-bottom: 16px;">

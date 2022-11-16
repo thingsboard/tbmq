@@ -25,6 +25,7 @@ import {
   Validator, Validators
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
+import { MatChipInputEvent } from "@angular/material/chips";
 
 @Component({
   selector: 'tb-auth-rules',
@@ -49,6 +50,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   rulesMappingFormGroup: FormGroup;
   rulesMappings: FormArray;
+  rulesArray: string[][] = [];
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject();
@@ -73,10 +75,12 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       certificateMatcherRegex: ['', [Validators.required]],
       topicRule: ['', [Validators.required]]
     }));
+    this.rulesArray.push([]);
   }
 
   removeRule(index: number) {
     this.rulesMappingFormGroup.markAsDirty();
+    this.rulesArray[index].splice(0);
     (this.rulesFormArray() as FormArray).removeAt(index);
   }
 
@@ -113,15 +117,18 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     }
     const rulesControls: Array<AbstractControl> = [];
     if (authorizationRulesMapping) {
+      let index = 0;
       for (const rule of Object.keys(authorizationRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required]],
           topicRule: [authorizationRulesMapping[rule], [Validators.required]]
         });
+        this.rulesArray[index] = authorizationRulesMapping[rule][0].split(',');
         if (this.disabled) {
           rulesControl.disable();
         }
         rulesControls.push(rulesControl);
+        index++;
       }
     }
     this.rulesMappingFormGroup.setControl('authorizationRulesMapping', this.fb.array(rulesControls));
@@ -158,5 +165,29 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     return newObj;
   }
 
+  removeTopicRule(rule: string, index: number) {
+    const optIndex = this.rulesArray[index].indexOf(rule);
+    if (optIndex >= 0) {
+      this.rulesArray[index].splice(optIndex, 1);
+    }
+    this.setTopicRuleControl(index);
+  }
+
+  addTopicRule(event: MatChipInputEvent, index: number) {
+    const input = event.input;
+    const value = event.value;
+    if ((value || '').trim()) {
+      this.rulesArray[index].push(value);
+    }
+    if (input) {
+      input.value = '';
+    }
+    this.setTopicRuleControl(index);
+  }
+
+  private setTopicRuleControl(index: number) {
+    const value = this.rulesArray[index].join(',');
+    this.rulesFormArray().at(index).get('topicRule').setValue(value);
+  }
 }
 
