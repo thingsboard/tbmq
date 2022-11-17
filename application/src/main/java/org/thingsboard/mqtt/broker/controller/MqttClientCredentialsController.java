@@ -19,13 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -55,11 +49,8 @@ public class MqttClientCredentialsController extends BaseController {
         try {
             if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType()) {
                 BasicMqttCredentials mqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
-
-                if (!StringUtils.isEmpty(mqttCredentials.getPassword())) {
-                    mqttCredentials.setPassword(passwordEncoder.encode(mqttCredentials.getPassword()));
-                    mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
-                }
+                mqttCredentials.setPassword(encodePasswordIfNotEmpty(mqttCredentials.getPassword()));
+                mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
             }
 
             return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
@@ -118,12 +109,16 @@ public class MqttClientCredentialsController extends BaseController {
 
             validatePassword(passwordEncoder, changePasswordRequest, basicMqttCredentials.getPassword());
 
-            basicMqttCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+            basicMqttCredentials.setPassword(encodePasswordIfNotEmpty(changePasswordRequest.getNewPassword()));
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
 
             mqttClientCredentialsService.saveCredentials(mqttClientCredentials);
         } catch (Exception e) {
             throw handleException(e);
         }
+    }
+
+    private String encodePasswordIfNotEmpty(String password) {
+        return StringUtils.isEmpty(password) ? null : passwordEncoder.encode(password);
     }
 }
