@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -89,14 +89,14 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void testValidateClientAccess() {
-        when(authorizationRuleService.isAuthorized(any(), any())).thenReturn(true);
+        when(authorizationRuleService.isPubAuthorized(any(), any())).thenReturn(true);
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }
 
     @Test(expected = MqttException.class)
     public void testValidateClientAccessFail() {
-        when(authorizationRuleService.isAuthorized(any(), any())).thenReturn(false);
-        when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));
+        when(authorizationRuleService.isPubAuthorized(any(), any())).thenReturn(false);
+        when(ctx.getAuthRulePatterns()).thenReturn(List.of(AuthRulePatterns.newInstance(Collections.emptyList())));
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }
 

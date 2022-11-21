@@ -50,7 +50,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
                 }
             }
         } catch (Exception e) {
-            log.warn("[{}] Failed to authenticate client. Exception - {}, reason - {}.", authContext.getClientId(), e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}] Failed to authenticate client.", authContext.getClientId(), e);
             throw new AuthenticationException("Exception on client authentication");
         }
         throw new AuthenticationException("Failed to authenticate client");

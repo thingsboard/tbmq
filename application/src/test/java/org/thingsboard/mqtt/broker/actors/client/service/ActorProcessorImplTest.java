@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -103,9 +103,11 @@ public class ActorProcessorImplTest {
 
         assertEquals(SessionState.INITIALIZED, clientActorState.getCurrentSessionState());
         assertEquals(sessionInitMsg.getClientSessionCtx(), clientActorState.getCurrentSessionCtx());
-        assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthorizationRules().size());
-        assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthorizationRules().get(0).getPatterns().size());
-        assertEquals("test", clientActorState.getCurrentSessionCtx().getAuthorizationRules().get(0).getPatterns().get(0).pattern());
+        assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthRulePatterns().size());
+        assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthRulePatterns().get(0).getPubPatterns().size());
+        assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthRulePatterns().get(0).getSubPatterns().size());
+        assertEquals("test", clientActorState.getCurrentSessionCtx().getAuthRulePatterns().get(0).getPubPatterns().get(0).pattern());
+        assertEquals("test", clientActorState.getCurrentSessionCtx().getAuthRulePatterns().get(0).getSubPatterns().get(0).pattern());
         assertEquals(ClientType.APPLICATION, clientActorState.getCurrentSessionCtx().getClientType());
     }
 
@@ -145,8 +147,8 @@ public class ActorProcessorImplTest {
         return new AuthResponse(success, ClientType.APPLICATION, getAuthorizationRules());
     }
 
-    private List<AuthorizationRule> getAuthorizationRules() {
-        return List.of(new AuthorizationRule(List.of(Pattern.compile("test"))));
+    private List<AuthRulePatterns> getAuthorizationRules() {
+        return List.of(AuthRulePatterns.newInstance(List.of(Pattern.compile("test"))));
     }
 
     private MqttDisconnectMsg getDisconnectMsg() {

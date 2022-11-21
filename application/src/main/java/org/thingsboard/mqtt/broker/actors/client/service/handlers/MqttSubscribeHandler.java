@@ -126,8 +126,8 @@ public class MqttSubscribeHandler {
                 continue;
             }
 
-            if (!CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
-                boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
+            if (!CollectionUtils.isEmpty(ctx.getAuthRulePatterns())) {
+                boolean isClientAuthorized = authorizationRuleService.isSubAuthorized(topic, ctx.getAuthRulePatterns());
                 if (!isClientAuthorized) {
                     log.warn("[{}][{}] Client is not authorized to subscribe to the topic {}",
                             ctx.getClientId(), ctx.getSessionId(), topic);

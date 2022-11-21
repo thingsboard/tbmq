@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -90,7 +90,7 @@ public class MqttSubscribeHandlerTest {
     @Before
     public void setUp() {
         ctx = mock(ClientSessionCtx.class);
-        when(ctx.getAuthorizationRules()).thenReturn(List.of(new AuthorizationRule(Collections.emptyList())));
+        when(ctx.getAuthRulePatterns()).thenReturn(List.of(AuthRulePatterns.newInstance(Collections.emptyList())));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class MqttSubscribeHandlerTest {
         ClientInfo clientInfo = mock(ClientInfo.class);
         when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
 
-        when(authorizationRuleService.isAuthorized(any(), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
 
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, getTopicSubscriptions());
         mqttSubscribeHandler.process(ctx, msg);
@@ -115,8 +115,8 @@ public class MqttSubscribeHandlerTest {
     public void testCollectMqttReasonCodes1() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         doThrow(DataValidationException.class).when(topicValidationService).validateTopicFilter(eq("topic1"));
-        when(authorizationRuleService.isAuthorized(eq("topic2"), any())).thenReturn(false);
-        when(authorizationRuleService.isAuthorized(eq("topic3"), any())).thenReturn(true);
+        when(authorizationRuleService.isSubAuthorized(eq("topic2"), any())).thenReturn(false);
+        when(authorizationRuleService.isSubAuthorized(eq("topic3"), any())).thenReturn(true);
 
         List<TopicSubscription> topicSubscriptions = getTopicSubscriptions();
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);

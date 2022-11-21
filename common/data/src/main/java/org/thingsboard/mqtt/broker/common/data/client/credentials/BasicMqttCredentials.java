@@ -25,8 +25,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BasicMqttCredentials {
+
     private String clientId;
     private String userName;
     private String password;
-    private List<String> authorizationRulePatterns;
+    private PubSubAuthorizationRules authRules;
+
+    public static BasicMqttCredentials newInstance(String clientId, String userName, String password, List<String> authRules) {
+        return new BasicMqttCredentials(clientId, userName, password, PubSubAuthorizationRules.newInstance(authRules));
+    }
 }

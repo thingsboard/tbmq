@@ -15,28 +15,34 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
+@Slf4j
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
+
     @Override
-    public List<AuthorizationRule> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException {
+    public List<AuthRulePatterns> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException {
         if (credentials == null) {
             throw new AuthenticationException("Cannot parse SslMqttCredentials.");
         }
 
-        List<AuthorizationRule> authorizationRules = credentials.getAuthorizationRulesMapping().entrySet().stream()
+        List<AuthRulePatterns> authRulePatterns = credentials.getAuthRulesMapping().entrySet().stream()
                 .filter(entry -> {
                     String certificateMatcherRegex = entry.getKey();
                     Pattern pattern = Pattern.compile(certificateMatcherRegex);
@@ -44,39 +50,53 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(topicRules -> new AuthorizationRule(compilePatterns(topicRules)))
+                .map(this::newAuthRulePatterns)
                 .collect(Collectors.toList());
 
-        if (authorizationRules.isEmpty()) {
+        if (authRulePatterns.isEmpty()) {
+            log.warn("[{}] Cannot find authorization rules for common name {}", clientCommonName, credentials);
             throw new AuthenticationException("Cannot find authorization rules for common name");
         }
 
-        return authorizationRules;
+        return authRulePatterns;
     }
 
     @Override
-    public AuthorizationRule parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException {
+    public AuthRulePatterns parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException {
         if (credentials == null) {
             throw new AuthenticationException("Cannot parse BasicMqttCredentials.");
         }
-        if (CollectionUtils.isEmpty(credentials.getAuthorizationRulePatterns())) {
-            return null;
-        } else {
-            List<Pattern> patterns = compilePatterns(credentials.getAuthorizationRulePatterns());
-            return new AuthorizationRule(patterns);
-        }
+        return newAuthRulePatterns(credentials.getAuthRules());
     }
 
-    private List<Pattern> compilePatterns(List<String> authorizationRulePatterns) {
-        return authorizationRulePatterns.stream().map(Pattern::compile).collect(Collectors.toList());
+    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules) {
+        return new AuthRulePatterns(
+                compilePatterns(pubSubAuthRules.getPubAuthRulePatterns()),
+                compilePatterns(pubSubAuthRules.getSubAuthRulePatterns()));
+    }
+
+    private List<Pattern> compilePatterns(List<String> authRulePatterns) {
+        return CollectionUtils.isEmpty(authRulePatterns) ? Collections.emptyList() :
+                authRulePatterns.stream().map(Pattern::compile).collect(Collectors.toList());
     }
 
     @Override
-    public boolean isAuthorized(String topic, List<AuthorizationRule> authorizationRules) {
-        return authorizationRules.stream()
-                .map(AuthorizationRule::getPatterns)
-                .anyMatch(patterns -> patterns.stream()
-                        .map(pattern -> pattern.matcher(topic))
-                        .anyMatch(Matcher::matches));
+    public boolean isPubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns) {
+        Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
+        return isAuthorized(topic, pubPatterns);
+    }
+
+    @Override
+    public boolean isSubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns) {
+        Stream<List<Pattern>> subPatterns = authRulePatterns.stream().map(AuthRulePatterns::getSubPatterns);
+        return isAuthorized(topic, subPatterns);
+    }
+
+    private boolean isAuthorized(String topic, Stream<List<Pattern>> stream) {
+        List<Pattern> patterns = stream.flatMap(List::stream).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(patterns)) {
+            return true;
+        }
+        return patterns.stream().anyMatch(pattern -> pattern.matcher(topic).matches());
     }
 }

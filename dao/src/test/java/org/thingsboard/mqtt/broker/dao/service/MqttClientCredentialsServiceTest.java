@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -82,7 +83,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName("TestClient");
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials wrongPatternBasicCred = new BasicMqttCredentials("test", "test", "test", List.of("(not_closed"));
+        BasicMqttCredentials wrongPatternBasicCred = BasicMqttCredentials.newInstance("test", "test", "test", List.of("(not_closed"));
         clientCredentials.setCredentialsValue(JacksonUtil.toString(wrongPatternBasicCred));
         mqttClientCredentialsService.saveCredentials(clientCredentials);
     }
@@ -197,12 +198,8 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName(credentialsName);
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, null);
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, PubSubAuthorizationRules.newInstance(null));
         clientCredentials.setCredentialsValue(mapper.writeValueAsString(basicMqttCredentials));
         return clientCredentials;
-    }
-
-    private String getUserName(MqttClientCredentials mqttClientCredentials) throws JsonProcessingException {
-        return mapper.readValue(mqttClientCredentials.getCredentialsValue(), BasicMqttCredentials.class).getUserName();
     }
 }

@@ -67,7 +67,7 @@ public class TestUtils {
 
     private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, String password,
                                                                   ClientType clientType, List<String> patterns) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, patterns);
+        BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance(clientId, username, password, patterns);
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);

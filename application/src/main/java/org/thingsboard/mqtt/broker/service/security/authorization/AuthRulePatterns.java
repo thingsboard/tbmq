@@ -23,8 +23,12 @@ import java.util.regex.Pattern;
 
 @AllArgsConstructor
 @Getter
-public class AuthorizationRule {
+public class AuthRulePatterns {
 
-    private final List<Pattern> patterns;
+    private final List<Pattern> pubPatterns;
+    private final List<Pattern> subPatterns;
 
+    public static AuthRulePatterns newInstance(List<Pattern> patterns) {
+        return new AuthRulePatterns(patterns, patterns);
+    }
 }

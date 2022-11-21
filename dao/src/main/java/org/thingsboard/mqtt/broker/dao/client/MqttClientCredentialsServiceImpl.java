@@ -23,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -125,13 +126,11 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
 
-        if (!CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulePatterns())) {
-            try {
-                mqttCredentials.getAuthorizationRulePatterns().forEach(Pattern::compile);
-            } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Authorization rule pattern should be a valid regex!");
-            }
+        PubSubAuthorizationRules authRules = mqttCredentials.getAuthRules();
+        if (authRules == null) {
+            throw new DataValidationException("AuthRules are null!");
         }
+        compileAuthRules(authRules);
     }
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -139,24 +138,35 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
             throw new DataValidationException("Parent certificate's common name should be specified!");
         }
-        if (CollectionUtils.isEmpty(mqttCredentials.getAuthorizationRulesMapping())) {
+        if (CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
         }
-        mqttCredentials.getAuthorizationRulesMapping().forEach((certificateMatcherRegex, topicRules) -> {
+        mqttCredentials.getAuthRulesMapping().forEach((certificateMatcherRegex, authRules) -> {
             try {
                 Pattern.compile(certificateMatcherRegex);
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
-            try {
-                topicRules.forEach(Pattern::compile);
-            } catch (PatternSyntaxException e) {
-                throw new DataValidationException("Topic authorization rule [" + topicRules + "] must be a valid regex");
-            }
+            compileAuthRules(authRules);
         });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
         mqttClientCredentials.setCredentialsId(credentialsId);
+    }
+
+    private void compileAuthRules(PubSubAuthorizationRules authRules) {
+        compileAuthRules(authRules.getPubAuthRulePatterns(), "Publish auth rule patterns should be a valid regexes!");
+        compileAuthRules(authRules.getSubAuthRulePatterns(), "Subscribe auth rule patterns should be a valid regexes!");
+    }
+
+    private void compileAuthRules(List<String> authRules, String message) {
+        if (!CollectionUtils.isEmpty(authRules)) {
+            try {
+                authRules.forEach(Pattern::compile);
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException(message);
+            }
+        }
     }
 
     private <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {
@@ -200,5 +210,4 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     }
                 }
             };
-
 }

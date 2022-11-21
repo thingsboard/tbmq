@@ -20,17 +20,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SslMqttCredentials {
+public class PubSubAuthorizationRules {
 
-    private String parentCertCommonName;
-    private Map<String, PubSubAuthorizationRules> authRulesMapping;
+    private List<String> pubAuthRulePatterns;
+    private List<String> subAuthRulePatterns;
 
-    public static SslMqttCredentials newInstance(String parentCertCommonName, String key, List<String> authRules) {
-        return new SslMqttCredentials(parentCertCommonName, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+    public static PubSubAuthorizationRules newInstance(List<String> authRules) {
+        return new PubSubAuthorizationRules(authRules, authRules);
     }
 }
