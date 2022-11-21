@@ -116,7 +116,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
-        Assert.assertTrue(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
         Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.DEVICE), sessionInfo.getClientInfo());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()
@@ -137,7 +137,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
         Assert.assertNotNull(persistedClientSession);
         Assert.assertFalse(persistedClientSession.isConnected());
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
-        Assert.assertTrue(sessionInfo.isPersistent());
+        Assert.assertTrue(sessionInfo.isNotCleanSession());
         Assert.assertEquals(new ClientInfo(TEST_CLIENT_ID, ClientType.DEVICE), sessionInfo.getClientInfo());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.size() == TEST_TOPIC_SUBSCRIPTIONS.size()

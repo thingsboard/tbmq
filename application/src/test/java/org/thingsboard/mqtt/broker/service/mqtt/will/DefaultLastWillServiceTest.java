@@ -61,28 +61,37 @@ public class DefaultLastWillServiceTest {
         sessionInfo = mock(SessionInfo.class);
         savedSessionId = UUID.randomUUID();
         when(sessionInfo.getSessionId()).thenReturn(savedSessionId);
+
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
+        lastWillService.setScheduler(scheduledExecutorService);
+        doNothing().when(lastWillService).scheduleLastWill(any(), any(), anyInt());
     }
 
     @Test
-    public void testLastWillMsgNotSent() {
+    public void testNoLastWillMsgNotSent() {
         saveLastWillMsg();
 
-        removeAndExecuteLastWillIfNeeded(UUID.randomUUID());
+        removeAndExecuteLastWillIfNeeded(UUID.randomUUID(), true);
 
         verifyPersistPublishMsg(never());
     }
 
     @Test
     public void testLastWillMsgSent() {
-        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
-        lastWillService.setScheduler(scheduledExecutorService);
-        doNothing().when(lastWillService).scheduleLastWill(any(), any(), anyInt());
-
         saveLastWillMsg();
 
-        removeAndExecuteLastWillIfNeeded(savedSessionId);
+        removeAndExecuteLastWillIfNeeded(savedSessionId, true);
 
         verifyPersistPublishMsg(times(1));
+    }
+
+    @Test
+    public void testLastWillMsgNotSent() {
+        saveLastWillMsg();
+
+        removeAndExecuteLastWillIfNeeded(savedSessionId, false);
+
+        verifyPersistPublishMsg(never());
     }
 
     private void verifyPersistPublishMsg(VerificationMode mode) {
@@ -103,7 +112,7 @@ public class DefaultLastWillServiceTest {
                 .build();
     }
 
-    private void removeAndExecuteLastWillIfNeeded(UUID sessionId) {
-        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, false);
+    private void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean newSessionCleanStart) {
+        lastWillService.removeAndExecuteLastWillIfNeeded(sessionId, true, newSessionCleanStart, null);
     }
 }

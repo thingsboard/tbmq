@@ -19,12 +19,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 @Builder(toBuilder = true)
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
+@ToString
 public class ClientSessionInfo {
     private final ClientSession clientSession;
     private final long lastUpdateTime;

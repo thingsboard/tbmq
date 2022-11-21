@@ -25,13 +25,13 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class ConnectionAcceptedMsg extends SessionDependentMsg {
-    private final boolean isPrevSessionPersistent;
+    private final boolean sessionPresent;
     private final PublishMsg lastWillMsg;
     private final int keepAliveTimeSeconds;
 
-    public ConnectionAcceptedMsg(UUID sessionId, boolean isPrevSessionPersistent, PublishMsg lastWillMsg, int keepAliveTimeSeconds) {
+    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent, PublishMsg lastWillMsg, int keepAliveTimeSeconds) {
         super(sessionId);
-        this.isPrevSessionPersistent = isPrevSessionPersistent;
+        this.sessionPresent = sessionPresent;
         this.lastWillMsg = lastWillMsg;
         this.keepAliveTimeSeconds = keepAliveTimeSeconds;
     }

@@ -20,7 +20,9 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 
 @Service
@@ -45,5 +47,16 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         }
 
         userService.onUserLoginSuccessful(userCredentials.getUserId());
+    }
+
+    @Override
+    public void validatePassword(String password) throws DataValidationException {
+        // TODO: 17.11.22 improve password validation
+        if (StringUtils.isEmpty(password)) {
+            throw new DataValidationException("Password can not be empty!");
+        }
+        if (password.length() <= 5) {
+            throw new DataValidationException("Password should be longer than 5 characters!");
+        }
     }
 }

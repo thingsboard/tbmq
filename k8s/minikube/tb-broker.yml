@@ -41,7 +41,7 @@ spec:
                 path:  logback.xml
       containers:
         - name: server
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           image: thingsboard/tb-mqtt-broker:1.0.0-SNAPSHOT
           ports:
             - containerPort: 8083

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
@@ -34,8 +35,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -84,7 +85,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             MqttMessage message = (MqttMessage) msg;
             if (!message.decoderResult().isSuccess()) {
                 log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
-                disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
+                if (message.decoderResult().cause() instanceof TooLongFrameException) {
+                    disconnect(new DisconnectReason(DisconnectReasonType.ON_PACKET_TOO_LARGE));
+                } else {
+                    disconnect(new DisconnectReason(DisconnectReasonType.ON_MALFORMED_PACKET, "Message decoding failed"));
+                }
                 return;
             }
 
@@ -111,7 +116,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);
         switch (msgType) {
             case DISCONNECT:
-                disconnect(NettyMqttConverter.createDisconnectReason(clientSessionCtx, msg));
+                disconnect(NettyMqttConverter.createMqttDisconnectMsg(clientSessionCtx, msg));
                 break;
             case CONNECT:
                 clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
@@ -220,7 +225,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 log.debug("[{}] Failed to close channel. Reason - {}.", sessionId, e.getMessage());
             }
         } else {
-            clientMqttActorManager.disconnect(clientId, new DisconnectMsg(sessionId, reason));
+            disconnect(new MqttDisconnectMsg(sessionId, reason));
         }
+    }
+
+    void disconnect(MqttDisconnectMsg disconnectMsg) {
+        clientMqttActorManager.disconnect(clientId, disconnectMsg);
     }
 }

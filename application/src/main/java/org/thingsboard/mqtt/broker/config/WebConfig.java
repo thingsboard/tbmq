@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service;
+package org.thingsboard.mqtt.broker.config;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-public interface ActorProcessor {
-    void onInit(ClientActorState state, SessionInitMsg sessionInitMsg);
+@Controller
+public class WebConfig {
 
-    void onDisconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg);
+    @RequestMapping(value = {"/{path:^(?!api$)(?!assets$)(?!static$)(?!webjars$)[^\\.]*}/**"})
+    public String redirect() {
+        return "forward:/index.html";
+    }
+
 }

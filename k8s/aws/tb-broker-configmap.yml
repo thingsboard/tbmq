@@ -73,8 +73,8 @@ data:
               </encoder>
           </appender>
 
-            <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="WARN"/>
-            <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="WARN"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
+            <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="INFO"/>
 
             <logger name="org.apache.kafka" level="WARN"/>
 

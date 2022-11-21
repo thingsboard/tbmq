@@ -28,7 +28,9 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -123,5 +125,29 @@ public class BrokerInitializerTest {
         allClientSessions.put("clientId1", ClientSessionInfoFactory.getClientSessionInfo("clientId1", "serviceId1"));
         allClientSessions.put("clientId2", ClientSessionInfoFactory.getClientSessionInfo("clientId2", "serviceId2"));
         return allClientSessions;
+    }
+
+    @Test
+    public void testIsNotPersistent() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(false, 0);
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, 10);
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(true, 0);
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, 10);
+
+        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo1));
+        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo2));
+        Assert.assertTrue(brokerInitializer.isCleanSession(clientSessionInfo3));
+        Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo4));
+    }
+
+    private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
+        return ClientSessionInfo.builder()
+                .clientSession(ClientSession.builder()
+                        .sessionInfo(SessionInfo.builder()
+                                .cleanStart(cleanStart)
+                                .sessionExpiryInterval(sessionExpiryInterval)
+                                .build())
+                        .build())
+                .build();
     }
 }

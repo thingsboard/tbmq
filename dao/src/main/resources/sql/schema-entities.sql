@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     qos int NOT NULL,
     payload bytea NOT NULL,
     user_properties varchar,
+    retain boolean,
     CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, serial_number)
 );
 

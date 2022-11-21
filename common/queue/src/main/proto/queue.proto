@@ -24,8 +24,9 @@ message SessionInfoProto {
   int64 sessionIdMSB = 2;
   int64 sessionIdLSB = 3;
   ClientInfoProto clientInfo = 4;
-  bool persistent = 5;
+  bool cleanStart = 5;
   ConnectionInfoProto connectionInfo = 6;
+  optional int32 sessionExpiryInterval = 7;
 }
 
 message PublishMsgProto {
@@ -43,10 +44,23 @@ message UserPropertyProto {
   string value = 2;
 }
 
+enum RetainHandling {
+  SEND = 0;
+  SEND_IF_NOT_EXISTS = 1;
+  DONT_SEND = 2;
+}
+
+message SubscriptionOptionsProto {
+  bool noLocal = 1;
+  bool retainAsPublish = 2;
+  RetainHandling retainHandling = 3;
+}
+
 message TopicSubscriptionProto {
   string topic = 1;
   int32 qos = 2;
   optional string shareName = 3;
+  SubscriptionOptionsProto options = 4;
 }
 
 message ClientInfoProto {
@@ -81,25 +95,17 @@ message ClientSessionEventProto {
 
 message ClientSessionEventResponseProto {
   bool success = 1;
-  bool wasPrevSessionPersistent = 2;
+  bool sessionPresent = 2;
 }
 
 message ClientSubscriptionsProto {
   repeated TopicSubscriptionProto subscriptions = 1;
 }
 
-message LastPublishCtxProto {
-  int32 packetId = 1;
-}
-
 message DisconnectClientCommandProto {
   int64 sessionIdMSB = 1;
   int64 sessionIdLSB = 2;
-  bool isNewSessionPersistent = 3;
-}
-
-message TimeProto {
-  int64 timestamp = 1;
+  bool newSessionCleanStart = 3;
 }
 
 message DevicePublishMsgProto {
@@ -112,6 +118,7 @@ message DevicePublishMsgProto {
   string clientId = 7;
   string packetType = 8;
   repeated UserPropertyProto userProperties = 9;
+  bool retain = 10;
 }
 
 message ClientPublishMsgProto {

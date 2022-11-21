@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 public class AuthController extends BaseController {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenFactory tokenFactory;
+    private final SystemSecurityService systemSecurityService;
 
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/user", method = RequestMethod.GET)
@@ -62,6 +64,7 @@ public class AuthController extends BaseController {
             UserCredentials userCredentials = userService.findUserCredentialsByUserId(securityUser.getId());
 
             validatePassword(passwordEncoder, changePasswordRequest, userCredentials.getPassword());
+            systemSecurityService.validatePassword(changePasswordRequest.getNewPassword());
 
             userCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
             userService.replaceUserCredentials(userCredentials);

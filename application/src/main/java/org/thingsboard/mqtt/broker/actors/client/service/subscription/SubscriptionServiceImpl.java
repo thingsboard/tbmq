@@ -48,7 +48,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         for (TopicSubscription topicSubscription : topicSubscriptions) {
             subscriptionTrie.put(
                     topicSubscription.getTopic(),
-                    new ClientSubscription(clientId, topicSubscription.getQos(), topicSubscription.getShareName())
+                    new ClientSubscription(
+                            clientId,
+                            topicSubscription.getQos(),
+                            topicSubscription.getShareName(),
+                            topicSubscription.getOptions())
             );
         }
     }

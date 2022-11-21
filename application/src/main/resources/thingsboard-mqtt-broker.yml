@@ -290,6 +290,8 @@ security:
     refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}" # Number of seconds (1 week)
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
     tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
+  basic:
+    enabled: "${SECURITY_BASIC_ENABLED:false}"
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
@@ -326,12 +328,12 @@ mqtt:
     # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
     clear-nodes-zone: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_ZONE:UTC}"
-  client-session-cleanup:
-    # Cron specification when to run clearing old and not active client sessions. Defaults to 'every day at 1 o'clock'
-    cron: "${MQTT_CLIENT_SESSION_CLEANUP_CRON:0 0 1 * * *}"
-    zone: "${MQTT_CLIENT_SESSION_CLEANUP_ZONE:UTC}"
-    # Specify TTL of persisted inactive sessions in seconds. The current value corresponds to one week
-    inactive-session-ttl: "${MQTT_CLIENT_SESSION_CLEANUP_INACTIVE_SESSION_TTL:604800}"
+  client-session-expiry:
+    # Cron specification when to run clearing old and not active client sessions. Defaults to 'every hour'
+    cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"
+    zone: "${MQTT_CLIENT_SESSION_EXPIRY_ZONE:UTC}"
+    # Specify max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
+    max-expiry-interval: "${MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL:604800}"
   version-3-1:
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
   persistent-session:

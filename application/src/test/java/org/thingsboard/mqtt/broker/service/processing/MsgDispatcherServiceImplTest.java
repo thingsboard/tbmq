@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
@@ -95,7 +96,7 @@ public class MsgDispatcherServiceImplTest {
                         newValueWithTopicFilter("client6", 2, null)
                 );
 
-        Map<SubscriptionType, List<Subscription>> subscriptionsByType = msgDispatcherService.collectToSubscriptionsByType(clientSubscriptionWithTopicFilters);
+        Map<SubscriptionType, List<Subscription>> subscriptionsByType = msgDispatcherService.collectToSubscriptionsByType(clientSubscriptionWithTopicFilters, null);
         assertEquals(2, subscriptionsByType.size());
 
         List<Subscription> commonSubscriptions = subscriptionsByType.get(SubscriptionType.COMMON);
@@ -142,7 +143,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(4, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(4, result.size());
     }
 
@@ -158,7 +159,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(3, result.size());
 
         assertTrue(result.containsAll(
@@ -182,7 +183,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(3, result.size());
 
         assertTrue(result.containsAll(
@@ -206,7 +207,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(6, result.size());
     }
 
@@ -222,7 +223,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterHighestQosClientSubscriptions(before);
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
         assertEquals(6, result.size());
     }
 
@@ -254,7 +255,7 @@ public class MsgDispatcherServiceImplTest {
     }
 
     private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(TOPIC, mqttQoSValue, clientSession, shareName);
+        return new Subscription(TOPIC, mqttQoSValue, clientSession, shareName, SubscriptionOptions.newInstance());
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName) {
@@ -266,6 +267,6 @@ public class MsgDispatcherServiceImplTest {
     }
 
     private ClientSubscription newClientSubscription(String clientId, int qos, String shareName) {
-        return new ClientSubscription(clientId, qos, shareName);
+        return new ClientSubscription(clientId, qos, shareName, SubscriptionOptions.newInstance());
     }
 }

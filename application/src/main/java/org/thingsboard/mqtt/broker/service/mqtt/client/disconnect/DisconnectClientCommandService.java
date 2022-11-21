@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 import java.util.UUID;
 
 public interface DisconnectClientCommandService {
-    void disconnectSession(String serviceId, String clientId, UUID sessionId, boolean isNewSessionPersistent);
+    void disconnectSession(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart);
 }

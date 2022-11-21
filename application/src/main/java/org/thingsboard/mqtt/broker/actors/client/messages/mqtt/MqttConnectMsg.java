@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
@@ -27,16 +28,24 @@ import java.util.UUID;
 @Getter
 public class MqttConnectMsg extends SessionDependentMsg {
     private final String clientIdentifier;
-    private final boolean cleanSession;
+    private final boolean cleanStart;
     private final int keepAliveTimeSeconds;
     private final PublishMsg lastWillMsg;
+    private final MqttProperties properties;
 
-    public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanSession, int keepAliveTimeSeconds, PublishMsg lastWillMsg) {
+    public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanStart, int keepAliveTimeSeconds,
+                          PublishMsg lastWillMsg, MqttProperties properties) {
         super(sessionId);
         this.clientIdentifier = clientIdentifier;
-        this.cleanSession = cleanSession;
+        this.cleanStart = cleanStart;
         this.keepAliveTimeSeconds = keepAliveTimeSeconds;
         this.lastWillMsg = lastWillMsg;
+        this.properties = properties;
+    }
+
+    public MqttConnectMsg(UUID sessionId, String clientIdentifier, boolean cleanStart, int keepAliveTimeSeconds,
+                          PublishMsg lastWillMsg) {
+        this(sessionId, clientIdentifier, cleanStart, keepAliveTimeSeconds, lastWillMsg, MqttProperties.NO_PROPERTIES);
     }
 
     @Override

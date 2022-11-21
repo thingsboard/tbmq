@@ -165,14 +165,14 @@ public class ConnectServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         String clientId = "clientId";
         MqttConnectMsg msg = getMqttConnectMsg(sessionId, clientId);
-        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE);
+        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0);
 
         SessionInfo expectedSessionInfo = ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                true,
+                false,
                 SERVICE_ID,
                 getClientInfo(clientId),
-                getConnectionInfo(1000, actualSessionInfo.getConnectionInfo().getConnectedAt()));
+                getConnectionInfo(1000, actualSessionInfo.getConnectionInfo().getConnectedAt()), 0);
 
         Assert.assertEquals(expectedSessionInfo, actualSessionInfo);
     }

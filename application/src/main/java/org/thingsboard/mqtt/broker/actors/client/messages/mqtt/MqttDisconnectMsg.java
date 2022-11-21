@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 
@@ -24,18 +26,29 @@ import java.util.UUID;
 
 @Slf4j
 @Getter
-public class DisconnectMsg extends SessionDependentMsg {
-    private final DisconnectReason reason;
-    private final boolean isNewSessionPersistent;
+public class MqttDisconnectMsg extends SessionDependentMsg {
 
-    public DisconnectMsg(UUID sessionId, DisconnectReason reason) {
-        this(sessionId, reason, false);
+    private final DisconnectReason reason;
+    private final boolean newSessionCleanStart;
+    private final MqttProperties properties;
+
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason) {
+        this(sessionId, reason, true);
     }
 
-    public DisconnectMsg(UUID sessionId, DisconnectReason reason, boolean isNewSessionPersistent) {
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart) {
+        this(sessionId, reason, newSessionCleanStart, MqttProperties.NO_PROPERTIES);
+    }
+
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, MqttProperties properties) {
+        this(sessionId, reason, true, properties);
+    }
+
+    public MqttDisconnectMsg(UUID sessionId, DisconnectReason reason, boolean newSessionCleanStart, MqttProperties properties) {
         super(sessionId);
         this.reason = reason;
-        this.isNewSessionPersistent = isNewSessionPersistent;
+        this.newSessionCleanStart = newSessionCleanStart;
+        this.properties = properties;
     }
 
     @Override

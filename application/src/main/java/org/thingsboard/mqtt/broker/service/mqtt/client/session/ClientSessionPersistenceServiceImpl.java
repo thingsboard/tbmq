@@ -62,6 +62,7 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
 
             @Override
             public void onFailure(Throwable t) {
+                log.error("[{}] Failed to deliver client session updates {}", clientId, clientSessionInfoProto, t);
                 if (callback != null) {
                     callback.onFailure(t);
                 }

@@ -32,14 +32,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -65,6 +69,8 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     private MqttClientCredentialsService credentialsService;
     @Autowired
     private ClientSubscriptionCache clientSubscriptionCache;
+    @Autowired
+    private SubscriptionService subscriptionService;
 
     private MqttClientCredentials pubCredentials;
     private MqttClientCredentials subCredentials;
@@ -196,5 +202,46 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         subClient.disconnect();
         subClient.close();
+    }
+
+    @Test
+    public void givenSubClient_whenSubscribeTopicAndSubscribeSameTopicAgainWithDifferentQos_thenSuccess() throws Throwable {
+        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, SUB_CLIENT_ID);
+        subClient.connect();
+        MqttSubscription[] subscriptions = {
+                new MqttSubscription(MY_TOPIC, 1)
+        };
+        IMqttMessageListener[] listeners = {
+                (topic, message) -> {
+                }
+        };
+        subClient.subscribe(subscriptions, listeners);
+
+        processAsserts(1);
+
+        MqttSubscription[] subscriptionsUpdate = {
+                new MqttSubscription(MY_TOPIC, 2)
+        };
+        subClient.subscribe(subscriptionsUpdate, listeners);
+
+        processAsserts(2);
+
+        subClient.disconnect();
+        subClient.close();
+    }
+
+    private void processAsserts(int qos) {
+        Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(SUB_CLIENT_ID);
+        Collection<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionsFromTrie = subscriptionService.getSubscriptions(MY_TOPIC);
+
+        Assert.assertEquals(1, clientSubscriptions.size());
+        Assert.assertTrue(clientSubscriptions.contains(new TopicSubscription(MY_TOPIC, qos)));
+        TopicSubscription topicSubscription = clientSubscriptions.stream().findFirst().get();
+        Assert.assertEquals(qos, topicSubscription.getQos());
+        Assert.assertEquals(1, clientSubscriptionsFromTrie.size());
+        clientSubscriptionsFromTrie.forEach(clientSubscriptionValueWithTopicFilter -> {
+            Assert.assertEquals(SUB_CLIENT_ID, clientSubscriptionValueWithTopicFilter.getValue().getClientId());
+            Assert.assertEquals(qos, clientSubscriptionValueWithTopicFilter.getValue().getQosValue());
+        });
     }
 }

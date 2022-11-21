@@ -19,6 +19,8 @@ import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -33,6 +35,7 @@ import java.util.UUID;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientInfo;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getConnectionInfo;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SharedSubscriptionProcessorImplTest {
 
     SharedSubscriptionProcessorImpl subscriptionProcessor;
@@ -123,10 +126,11 @@ public class SharedSubscriptionProcessorImplTest {
     private SessionInfo getSessionInfo(UUID sessionId, String clientId) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
-                false,
+                true,
                 "SERVICE_ID",
                 getClientInfo(clientId),
-                getConnectionInfo(1000, 1000));
+                getConnectionInfo(1000, 1000),
+                0);
     }
 
     private TopicSharedSubscription newTopicAndGroup() {

@@ -22,7 +22,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
@@ -271,7 +271,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                     ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                                 }
 
-                                if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) break;
+                                if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs))
+                                    break;
                             }
                             log.trace("[{}] Pack processing took {} ms, pack size - {}",
                                     clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());
@@ -410,7 +411,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void disconnectClient(String clientId, UUID sessionId, String message) {
-        clientMqttActorManager.disconnect(clientId, new DisconnectMsg(
+        clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(
                 sessionId,
                 new DisconnectReason(
                         DisconnectReasonType.ON_ERROR,
@@ -628,7 +629,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                     }
 
-                    if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs)) break;
+                    if (analyzeIfProcessingDone(clientId, consumer, stats, submitStrategy, ctx, totalPublishMsgs, totalPubRelMsgs))
+                        break;
                 }
                 log.trace("[{}] Pack processing took {} ms, pack size - {}",
                         clientId, (double) (System.nanoTime() - packProcessingStart) / 1_000_000, messagesToDeliver.size());

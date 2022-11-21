@@ -141,14 +141,26 @@ public abstract class BaseController {
                           ChangePasswordRequest changePasswordRequest,
                           String currentRealPassword) throws ThingsboardException {
 
-        String currentPassword = changePasswordRequest.getCurrentPassword();
-        String newPassword = changePasswordRequest.getNewPassword();
+        var currentPassword = StringUtils.isEmpty(changePasswordRequest.getCurrentPassword()) ? null : changePasswordRequest.getCurrentPassword();
+        var newPassword = StringUtils.isEmpty(changePasswordRequest.getNewPassword()) ? null : changePasswordRequest.getNewPassword();
 
-        if (!passwordEncoder.matches(currentPassword, currentRealPassword)) {
+        if (currentPassword == null && currentRealPassword == null) {
+            log.debug("Current password matches!");
+        } else if (currentPassword == null || currentRealPassword == null) {
             throw new ThingsboardException("Current password doesn't match!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        } else {
+            if (!passwordEncoder.matches(currentPassword, currentRealPassword)) {
+                throw new ThingsboardException("Current password doesn't match!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+            }
         }
-        if (passwordEncoder.matches(newPassword, currentRealPassword)) {
+        if (newPassword == null && currentRealPassword == null) {
             throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        } else if (newPassword == null || currentRealPassword == null) {
+            log.debug("New password is different!");
+        } else {
+            if (passwordEncoder.matches(newPassword, currentRealPassword)) {
+                throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+            }
         }
     }
 }

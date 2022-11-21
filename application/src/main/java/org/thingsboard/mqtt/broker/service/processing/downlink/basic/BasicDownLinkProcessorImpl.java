@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.messages.DisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -61,7 +61,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     private void disconnect(String clientId, ClientSessionCtx clientSessionCtx) {
         clientMqttActorManager.disconnect(
                 clientId,
-                new DisconnectMsg(
+                new MqttDisconnectMsg(
                         clientSessionCtx.getSessionId(),
                         new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to deliver PUBLISH msg")));
     }
@@ -72,6 +72,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
                 .topicName(msg.getTopicName())
                 .payload(msg.getPayload().toByteArray())
                 .qosLevel(msg.getQos())
+                .isRetained(msg.getRetain())
                 .isDup(false)
                 .properties(ProtoConverter.createMqttProperties(msg.getUserPropertiesList()))
                 .build();

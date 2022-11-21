@@ -24,5 +24,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ConnectionResponse {
     private final boolean success;
-    private final boolean isPrevSessionPersistent;
+    private final boolean sessionPresent;
 }

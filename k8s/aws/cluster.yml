@@ -22,7 +22,7 @@ availabilityZones: [us-east-1a,us-east-1b,us-east-1c]
 metadata:
   name: thingsboard-mqtt-broker-cluster
   region: us-east-1
-  version: "1.20"
+  version: "1.21"
 
 managedNodeGroups:
   - name: main-node-group
