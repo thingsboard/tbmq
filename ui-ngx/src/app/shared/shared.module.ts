@@ -78,6 +78,7 @@ import { MqttCredentialsComponent } from '@home/components/mqtt-credentials/mqtt
 import { MqttCredentialsBasicComponent } from '@home/components/mqtt-credentials/basic/basic.component';
 import { MqttCredentialsSslComponent } from '@home/components/mqtt-credentials/ssl/ssl.component';
 import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-rules.component';
+import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
 
 @NgModule({
   providers: [
@@ -97,6 +98,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MatChipDraggableDirective,
     TbAnchorComponent,
     HelpComponent,
+    TbCheckboxComponent,
     TbSnackBarComponent,
     TbErrorComponent,
     BreadcrumbComponent,
@@ -170,6 +172,7 @@ import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-r
     MatChipDraggableDirective,
     TbAnchorComponent,
     HelpComponent,
+    TbCheckboxComponent,
     TbErrorComponent,
     BreadcrumbComponent,
     UserMenuComponent,

@@ -15,26 +15,23 @@
 ///
 
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
-import { MODULES_MAP } from '@shared/public-api';
-import { modulesMap } from '../../common/modules-map';
-import { MqttSessionsModule } from './mqtt-sessions/mqtt-sessions.module';
-import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
-import { ProfileModule } from './profile/profile.module';
-import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
+import { MailServerRoutingModule } from './mail-server-routing.module';
+import { SharedModule } from '@app/shared/shared.module';
+import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
+import { HomeComponentsModule } from '@modules/home/components/home-components.module';
 
 @NgModule({
-  exports: [
-    MailServerModule,
-    ProfileModule,
-    MqttSessionsModule,
-    MqttClientCredentialsModule
-  ],
-  providers: [
-    {
-      provide: MODULES_MAP,
-      useValue: modulesMap
-    }
+  declarations:
+    [
+      MailServerComponent
+    ],
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    MailServerRoutingModule
   ]
 })
-export class HomePagesModule { }
+export class MailServerModule { }

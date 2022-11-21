@@ -77,6 +77,13 @@ export class MenuService {
         path: '/sessions',
         icon: 'mdi:account-supervisor',
         isMdiIcon: true
+      },
+      {
+        id: guid(),
+        name: 'admin.outgoing-mail',
+        type: 'link',
+        path: '/outgoing-mail',
+        icon: 'mail'
       }
     );
     return sections;
