@@ -378,6 +378,9 @@ caffeine:
     packetIdAndSerialNumber:
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
       maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+    mqttClientCredentials:
+      timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
 
 stats:
   enabled: "${STATS_ENABLED:true}"

@@ -15,12 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
+import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
@@ -50,6 +54,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
+    private final CacheManager cacheManager;
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -72,7 +77,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
         credentialsValidator.validate(mqttClientCredentials);
         try {
-            return mqttClientCredentialsDao.save(mqttClientCredentials);
+            MqttClientCredentials savedMqttClientCredentials = mqttClientCredentialsDao.save(mqttClientCredentials);
+            evictCache(savedMqttClientCredentials);
+            return savedMqttClientCredentials;
         } catch (Exception t) {
             ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
             if (e != null && e.getConstraintName() != null
@@ -87,13 +94,35 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     @Override
     public void deleteCredentials(UUID id) {
         log.trace("Executing deleteCredentials [{}]", id);
+        MqttClientCredentials clientCredentials = mqttClientCredentialsDao.findById(id);
+        if (clientCredentials == null) {
+            return;
+        }
         mqttClientCredentialsDao.removeById(id);
+        evictCache(clientCredentials);
     }
 
     @Override
     public List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds) {
         log.trace("Executing findMatchingCredentials [{}]", credentialIds);
-        return mqttClientCredentialsDao.findAllByCredentialsIds(credentialIds);
+        List<MqttClientCredentials> result = Lists.newArrayList();
+        List<String> credentialIdsFromDb = Lists.newArrayList();
+
+        Cache cache = getCache();
+        for (var credentialsId : credentialIds) {
+            var clientCredentials = cache.get(credentialsId, MqttClientCredentials.class);
+            if (clientCredentials != null) {
+                result.add(clientCredentials);
+            } else {
+                credentialIdsFromDb.add(credentialsId);
+            }
+        }
+
+        var clientCredentialsFromDb = mqttClientCredentialsDao.findAllByCredentialsIds(credentialIdsFromDb);
+        clientCredentialsFromDb.forEach(credentials -> cache.put(credentials.getCredentialsId(), credentials));
+
+        result.addAll(clientCredentialsFromDb);
+        return result;
     }
 
     @Override
@@ -175,6 +204,15 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         } catch (IllegalArgumentException e) {
             throw new DataValidationException("Could not parse client credentials!", e);
         }
+    }
+
+    private void evictCache(MqttClientCredentials clientCredentials) {
+        Cache cache = getCache();
+        cache.evictIfPresent(clientCredentials.getCredentialsId());
+    }
+
+    private Cache getCache() {
+        return cacheManager.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =
