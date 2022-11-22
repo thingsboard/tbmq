@@ -45,4 +45,14 @@ public class DefaultUserCredentialsDao extends AbstractDao<UserCredentialsEntity
     public UserCredentials findByUserId(UUID userId) {
         return DaoUtil.getData(userCredentialsRepository.findByUserId(userId));
     }
+
+    @Override
+    public UserCredentials findByActivateToken(String activateToken) {
+        return DaoUtil.getData(userCredentialsRepository.findByActivateToken(activateToken));
+    }
+
+    @Override
+    public UserCredentials findByResetToken(String resetToken) {
+        return DaoUtil.getData(userCredentialsRepository.findByResetToken(resetToken));
+    }
 }

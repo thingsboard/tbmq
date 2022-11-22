@@ -52,6 +52,7 @@ public class ThingsboardMqttBrokerInstallService {
                 log.info("Loading system data...");
 
                 systemDataLoaderService.createAdmin();
+                systemDataLoaderService.createAdminSettings();
 
                 log.info("Installation finished successfully!");
             }

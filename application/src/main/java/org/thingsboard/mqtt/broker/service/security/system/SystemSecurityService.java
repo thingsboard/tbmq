@@ -19,9 +19,13 @@ import org.springframework.security.core.AuthenticationException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
+import javax.servlet.http.HttpServletRequest;
+
 public interface SystemSecurityService {
 
     void validateUserCredentials(UserCredentials userCredentials, String username, String password) throws AuthenticationException;
 
     void validatePassword(String password) throws DataValidationException;
+
+    String getBaseUrl(HttpServletRequest httpServletRequest);
 }

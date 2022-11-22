@@ -249,6 +249,8 @@ actors:
     dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
     wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
     wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
+  rule:
+    mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:40}"
 
 # SQL DAO Configuration
 spring:

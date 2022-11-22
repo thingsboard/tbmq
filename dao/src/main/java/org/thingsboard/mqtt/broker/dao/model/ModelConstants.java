@@ -39,6 +39,16 @@ public class ModelConstants {
     public static final String USER_LAST_NAME_PROPERTY = "last_name";
     public static final String USER_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
 
+    /**
+     * admin_settings constants.
+     */
+    public static final String ADMIN_SETTINGS_COLUMN_FAMILY_NAME = "admin_settings";
+    ;
+    public static final String ADMIN_SETTINGS_KEY_PROPERTY = "key";
+    public static final String ADMIN_SETTINGS_JSON_VALUE_PROPERTY = "json_value";
+
+    public static final String ADMIN_SETTINGS_BY_KEY_COLUMN_FAMILY_NAME = "admin_settings_by_key";
+
 
     /**
      * user_credentials constants.

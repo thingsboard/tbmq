@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,11 +26,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,7 +43,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController extends BaseController {
+
     private final AdminService adminService;
+    private final AdminSettingsService adminSettingsService;
+    private final MailService mailService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -46,6 +54,61 @@ public class AdminController extends BaseController {
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
         try {
             return adminService.createAdmin(adminDto);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/settings/{key}", method = RequestMethod.GET)
+    @ResponseBody
+    public AdminSettings getAdminSettings(
+            @ApiParam(value = "A string value of the key (e.g. 'general' or 'mail').")
+            @PathVariable("key") String key) throws ThingsboardException {
+        try {
+            AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
+            if (adminSettings.getKey().equals("mail")) {
+                ((ObjectNode) adminSettings.getJsonValue()).remove("password");
+            }
+            return adminSettings;
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/settings", method = RequestMethod.POST)
+    @ResponseBody
+    public AdminSettings saveAdminSettings(
+            @ApiParam(value = "A JSON value representing the Administration Settings.")
+            @RequestBody AdminSettings adminSettings) throws ThingsboardException {
+        try {
+            adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
+            if (adminSettings.getKey().equals("mail")) {
+                mailService.updateMailConfiguration();
+                ((ObjectNode) adminSettings.getJsonValue()).remove("password");
+            }
+            return adminSettings;
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/settings/testMail", method = RequestMethod.POST)
+    public void sendTestMail(
+            @ApiParam(value = "A JSON value representing the Mail Settings.")
+            @RequestBody AdminSettings adminSettings) throws ThingsboardException {
+        try {
+            adminSettings = checkNotNull(adminSettings);
+            if (adminSettings.getKey().equals("mail")) {
+                if (!adminSettings.getJsonValue().has("password")) {
+                    AdminSettings mailSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey("mail"));
+                    ((ObjectNode) adminSettings.getJsonValue()).put("password", mailSettings.getJsonValue().get("password").asText());
+                }
+                String email = getCurrentUser().getEmail();
+                mailService.sendTestMail(adminSettings.getJsonValue(), email);
+            }
         } catch (Exception e) {
             throw handleException(e);
         }

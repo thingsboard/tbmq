@@ -73,7 +73,7 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         if (user.getAuthority() == null)
             throw new InsufficientAuthenticationException("User has no authority assigned");
 
-        SecurityUser securityUser = new SecurityUser(user, userCredentials.isEnabled());
+        SecurityUser securityUser = new SecurityUser(user, userCredentials.isEnabled(), new UserPrincipal(user.getEmail()));
         return new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
     }
 

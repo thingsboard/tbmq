@@ -22,4 +22,8 @@ import java.util.UUID;
 
 public interface UserCredentialsDao extends Dao<UserCredentials> {
     UserCredentials findByUserId(UUID userId);
+
+    UserCredentials findByActivateToken(String activateToken);
+
+    UserCredentials findByResetToken(String resetToken);
 }
