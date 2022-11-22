@@ -15,26 +15,33 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 
-import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 public class DefaultAuthenticationService implements AuthenticationService {
 
-    private final List<MqttClientAuthProvider> authProviders;
+    private final Map<AuthProviderType, MqttClientAuthProvider> authProviders;
 
     public DefaultAuthenticationService(MqttClientAuthProviderManager authProviderManager) {
         this.authProviders = authProviderManager.getActiveAuthProviders();
     }
+
+    @Setter
+    @Value("${security.mqtt.auth_strategy:BOTH}")
+    private AuthStrategy authStrategy;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -43,9 +50,18 @@ public class DefaultAuthenticationService implements AuthenticationService {
             return new AuthResponse(true, ClientType.DEVICE, null);
         }
         try {
-            for (MqttClientAuthProvider authProvider : authProviders) {
-                AuthResponse authResponse = authProvider.authorize(authContext);
-                if (authResponse.isSuccess()) {
+            if (AuthStrategy.BOTH == authStrategy) {
+                for (var authProviderType : AuthProviderType.values()) {
+                    var authResponse = authorize(authProviderType, authContext);
+                    if (authResponse != null) {
+                        return authResponse;
+                    }
+                }
+            } else {
+                var authResponse = authContext.getSslHandler() != null ?
+                        authorize(AuthProviderType.SSL, authContext) :
+                        authorize(AuthProviderType.BASIC, authContext);
+                if (authResponse != null) {
                     return authResponse;
                 }
             }
@@ -54,5 +70,16 @@ public class DefaultAuthenticationService implements AuthenticationService {
             throw new AuthenticationException("Exception on client authentication");
         }
         throw new AuthenticationException("Failed to authenticate client");
+    }
+
+    private AuthResponse authorize(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
+        var authProvider = authProviders.get(type);
+        if (authProvider != null) {
+            var authResponse = authProvider.authorize(authContext);
+            if (authResponse.isSuccess()) {
+                return authResponse;
+            }
+        }
+        return null;
     }
 }

@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import java.util.Map;
-
-public interface MqttClientAuthProviderManager {
-    Map<AuthProviderType, MqttClientAuthProvider> getActiveAuthProviders();
+public enum AuthStrategy {
+    BOTH,
+    SINGLE,
 }
