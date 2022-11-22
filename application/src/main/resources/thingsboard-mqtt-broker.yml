@@ -284,7 +284,7 @@ security:
       enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
     ssl:
       # If enabled the server will try to authenticate client with client certificate chain
-      enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
+      enabled: "${SECURITY_MQTT_SSL_ENABLED:true}"
   # JWT Token parameters
   jwt:
     tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)
