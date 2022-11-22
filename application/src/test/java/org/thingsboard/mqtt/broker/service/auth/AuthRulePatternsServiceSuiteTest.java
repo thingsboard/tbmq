@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class AuthRulePatternsServiceSuiteTest {
+
     private AuthorizationRuleService authorizationRuleService;
 
     @Before
@@ -48,12 +49,23 @@ public class AuthRulePatternsServiceSuiteTest {
         parseSslAuthorizationRule tests
      */
     @Test
-    public void testSuccessfulCredentialsParse_Ssl() throws AuthenticationException {
+    public void testSuccessfulCredentialsParse_Ssl1() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parent.com", ".*abc-123.*", List.of("test/.*"));
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
+    }
+
+    @Test
+    public void testSuccessfulCredentialsParse_Ssl2() throws AuthenticationException {
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of(
+                ".*abc-123.*", new PubSubAuthorizationRules(List.of("test1/.*"), List.of("test2/.*"))
+        ));
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        Assert.assertEquals(1, authRulePatterns.size());
+        Assert.assertEquals("test1/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
+        Assert.assertEquals("test2/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
     }
 
     @Test
@@ -93,28 +105,67 @@ public class AuthRulePatternsServiceSuiteTest {
         parseBasicAuthorizationRule tests
      */
     @Test
-    public void testSuccessfulCredentialsParse_Basic() throws AuthenticationException {
+    public void testSuccessfulCredentialsParse_Basic1() throws AuthenticationException {
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance("test", "test", null, List.of("test/.*"));
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
         Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test/.*"));
         Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test/.*"));
     }
 
+    @Test
+    public void testSuccessfulCredentialsParse_Basic2() throws AuthenticationException {
+        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", "test", null, new PubSubAuthorizationRules(
+                List.of("test1/.*"), List.of("test2/.*")
+        ));
+        AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
+        Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test1/.*"));
+        Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test2/.*"));
+    }
+
+
     /*
             validateAuthorizationRule tests
     */
     @Test
-    public void testSuccessfulRuleValidation() {
+    public void testSuccessfulRuleValidation1() {
         List<AuthRulePatterns> authRulePatterns = List.of(
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("1/.*"))),
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("2/.*")))
         );
         Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/123", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/123", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
 
         Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+    }
+
+    @Test
+    public void testSuccessfulRuleValidation2() {
+        List<AuthRulePatterns> authRulePatterns = List.of(
+                AuthRulePatterns.newInstance(List.of(Pattern.compile("1/.*"))),
+                AuthRulePatterns.newInstance(Collections.emptyList())
+        );
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+    }
+
+    @Test
+    public void testSuccessfulRuleValidation3() {
+        List<AuthRulePatterns> authRulePatterns = List.of(
+                AuthRulePatterns.newInstance(Collections.emptyList()),
+                AuthRulePatterns.newInstance(Collections.emptyList())
+        );
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
     }
 
     @Test

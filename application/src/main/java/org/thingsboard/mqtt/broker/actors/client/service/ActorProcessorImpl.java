@@ -139,8 +139,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private Set<String> toSet(Stream<List<Pattern>> stream) {
-        return stream.collect(Collectors.toList())
-                .stream().flatMap(List::stream)
+        return stream.flatMap(List::stream)
                 .map(Pattern::toString)
                 .collect(Collectors.toSet());
     }
