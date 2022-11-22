@@ -95,11 +95,10 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     public void deleteCredentials(UUID id) {
         log.trace("Executing deleteCredentials [{}]", id);
         MqttClientCredentials clientCredentials = mqttClientCredentialsDao.findById(id);
-        if (clientCredentials == null) {
-            return;
-        }
         mqttClientCredentialsDao.removeById(id);
-        evictCache(clientCredentials);
+        if (clientCredentials != null) {
+            evictCache(clientCredentials);
+        }
     }
 
     @Override
