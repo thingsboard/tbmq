@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.util.SslUtil;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -46,18 +46,20 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     @Override
     public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
+            log.error("Could not authenticate client with SSL credentials since SSL listener is not enabled!");
             return new AuthResponse(false, null, null);
         }
         log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
         MqttClientCredentials sslCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (sslCredentials == null) {
+            log.error("Failed to authenticate client with SSL credentials! No SSL credentials were found!");
             return new AuthResponse(false, null, null);
         }
         log.trace("[{}] Successfully authenticated with SSL credentials", authContext.getClientId());
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         SslMqttCredentials credentials = JacksonUtil.fromString(sslCredentials.getCredentialsValue(), SslMqttCredentials.class);
-        List<AuthorizationRule> authorizationRules = authorizationRuleService.parseSslAuthorizationRule(credentials, clientCommonName);
-        return new AuthResponse(true, sslCredentials.getClientType(), authorizationRules);
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, clientCommonName);
+        return new AuthResponse(true, sslCredentials.getClientType(), authRulePatterns);
     }
 
     private MqttClientCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {
@@ -73,7 +75,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             return null;
         }
         for (X509Certificate certificate : certificates) {
-            String commonName = null;
+            String commonName;
             try {
                 commonName = SslUtil.parseCommonName(certificate);
             } catch (CertificateEncodingException e) {

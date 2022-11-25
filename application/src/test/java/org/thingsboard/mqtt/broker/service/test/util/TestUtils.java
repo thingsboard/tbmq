@@ -19,6 +19,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -67,7 +68,15 @@ public class TestUtils {
 
     private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, String password,
                                                                   ClientType clientType, List<String> patterns) {
-        BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials(clientId, username, password, patterns);
+        return newClientCredentials(BasicMqttCredentials.newInstance(clientId, username, password, patterns), clientType);
+    }
+
+    public static MqttClientCredentials createDeviceClientCredentialsWithPubSubAuth(String clientId, String username, String password,
+                                                                                    PubSubAuthorizationRules authorizationRules) {
+        return newClientCredentials(new BasicMqttCredentials(clientId, username, password, authorizationRules), ClientType.DEVICE);
+    }
+
+    private static MqttClientCredentials newClientCredentials(BasicMqttCredentials basicMqttCredentials, ClientType clientType) {
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);

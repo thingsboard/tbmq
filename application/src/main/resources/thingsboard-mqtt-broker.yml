@@ -278,6 +278,10 @@ spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
 # Security parameters
 security:
   mqtt:
+    # BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
+    # and then by 'ssl' provider if 'basic' is not successful;
+    # the latter means only one attempt is done according to the listener communication chosen (see listener.tcp/listener.ssl)
+    auth_strategy: "${SECURITY_MQTT_AUTH_STRATEGY:BOTH}"
     basic:
       # If enabled the server will try to authenticate client with clientId and/or username and/or password
       enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
@@ -374,6 +378,9 @@ caffeine:
     packetIdAndSerialNumber:
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
       maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+    mqttClientCredentials:
+      timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
 
 stats:
   enabled: "${STATS_ENABLED:true}"

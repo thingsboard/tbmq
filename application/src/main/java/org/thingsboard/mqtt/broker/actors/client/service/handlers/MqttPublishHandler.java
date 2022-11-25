@@ -91,6 +91,9 @@ public class MqttPublishHandler {
         } catch (DataValidationException e) {
             log.warn("[{}] Failed to validate topic for Pub msg {}", ctx.getClientId(), publishMsg, e);
             var code = MqttReasonCodeResolver.topicNameInvalid(ctx);
+            if (code == null) {
+                throw e;
+            }
             pushErrorResponseWithReasonCode(ctx, publishMsg, code);
             return false;
         }
@@ -98,6 +101,9 @@ public class MqttPublishHandler {
             validateClientAccess(ctx, publishMsg.getTopicName());
         } catch (MqttException e) {
             var code = MqttReasonCodeResolver.notAuthorized(ctx);
+            if (code == null) {
+                throw e;
+            }
             pushErrorResponseWithReasonCode(ctx, publishMsg, code);
             return false;
         }
@@ -202,10 +208,10 @@ public class MqttPublishHandler {
     }
 
     void validateClientAccess(ClientSessionCtx ctx, String topic) {
-        if (CollectionUtils.isEmpty(ctx.getAuthorizationRules())) {
+        if (CollectionUtils.isEmpty(ctx.getAuthRulePatterns())) {
             return;
         }
-        boolean isClientAuthorized = authorizationRuleService.isAuthorized(topic, ctx.getAuthorizationRules());
+        boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(topic, ctx.getAuthRulePatterns());
         if (!isClientAuthorized) {
             log.warn("[{}][{}] Client is not authorized to publish to the topic {}",
                     ctx.getClientId(), ctx.getSessionId(), topic);

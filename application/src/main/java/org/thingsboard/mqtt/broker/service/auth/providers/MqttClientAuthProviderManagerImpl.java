@@ -21,9 +21,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -38,24 +38,24 @@ public class MqttClientAuthProviderManagerImpl implements MqttClientAuthProvider
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
 
-    private List<MqttClientAuthProvider> authProviders;
+    private Map<AuthProviderType, MqttClientAuthProvider> authProviders;
 
     @PostConstruct
     public void init() {
-        List<MqttClientAuthProvider> tmpProvidersList = new ArrayList<>();
+        Map<AuthProviderType, MqttClientAuthProvider> tmpProvidersMap = new HashMap<>();
 
         if (basicAuthEnabled) {
-            tmpProvidersList.add(basicMqttClientAuthProvider);
+            tmpProvidersMap.put(AuthProviderType.BASIC, basicMqttClientAuthProvider);
         }
         if (sslAuthEnabled) {
-            tmpProvidersList.add(sslMqttClientAuthProvider);
+            tmpProvidersMap.put(AuthProviderType.SSL, sslMqttClientAuthProvider);
         }
 
-        this.authProviders = Collections.unmodifiableList(tmpProvidersList);
+        this.authProviders = Collections.unmodifiableMap(tmpProvidersMap);
     }
 
     @Override
-    public List<MqttClientAuthProvider> getActiveAuthProviders() {
+    public Map<AuthProviderType, MqttClientAuthProvider> getActiveAuthProviders() {
         return authProviders;
     }
 }

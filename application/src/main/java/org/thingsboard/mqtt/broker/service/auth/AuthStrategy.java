@@ -13,21 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
-
-import java.util.List;
-
-@Getter
-@Builder
-@AllArgsConstructor
-public class AuthResponse {
-    private final boolean success;
-    private final ClientType clientType;
-    private final List<AuthRulePatterns> authRulePatterns;
+public enum AuthStrategy {
+    BOTH,
+    SINGLE,
 }
