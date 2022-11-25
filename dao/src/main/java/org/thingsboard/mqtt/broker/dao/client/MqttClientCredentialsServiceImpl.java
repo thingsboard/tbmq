@@ -175,6 +175,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
+            if (authRules == null) {
+                throw new DataValidationException("AuthRules are null!");
+            }
             compileAuthRules(authRules);
         });
 
