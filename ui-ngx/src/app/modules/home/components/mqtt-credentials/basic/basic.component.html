@@ -30,8 +30,7 @@
       {{ 'mqtt-client-credentials.user-name-required' | translate }}
     </mat-error>
   </mat-form-field>
-  <tb-error style="display: block;"
-            *ngIf="credentialsMqttFormGroup.dirty"
+  <tb-error *ngIf="credentialsMqttFormGroup.dirty"
             [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
             ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
   </tb-error>
@@ -48,30 +47,32 @@
           [disabled]="disabled" (click)="changePassword()">
     {{'profile.change-password' | translate}}
   </button>
-  <mat-form-field class="mat-block" appearance="standard">
-    <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-    <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
-      <mat-chip *ngFor="let rule of pubRulesArray" [value]="rule" (removed)="removePubTopicRule(rule)">
-        <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-        {{ rule }}
-      </mat-chip>
-      <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-             [matChipInputFor]="chipListPub"
-             (matChipInputTokenEnd)="addPubTopicRule($event)">
-    </mat-chip-list>
-  </mat-form-field>
-  <mat-form-field class="mat-block" appearance="standard">
-    <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-    <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
-      <mat-chip *ngFor="let rule of subRulesArray" [value]="rule" (removed)="removeSubTopicRule(rule)">
-        <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-        {{ rule }}
-      </mat-chip>
-      <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-             [matChipInputFor]="chipListSub"
-             (matChipInputTokenEnd)="addSubTopicRule($event)">
-    </mat-chip-list>
-  </mat-form-field>
+  <div fxFlex fxLayout="column" formGroupName="authRules">
+    <mat-form-field class="mat-block" appearance="standard">
+      <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+      <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
+        <mat-chip *ngFor="let rule of pubRulesArray" [value]="rule" (removed)="removePubTopicRule(rule)">
+          <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+          {{ rule }}
+        </mat-chip>
+        <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+               [matChipInputFor]="chipListPub"
+               (matChipInputTokenEnd)="addPubTopicRule($event)">
+      </mat-chip-list>
+    </mat-form-field>
+    <mat-form-field class="mat-block" appearance="standard">
+      <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+      <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
+        <mat-chip *ngFor="let rule of subRulesArray" [value]="rule" (removed)="removeSubTopicRule(rule)">
+          <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+          {{ rule }}
+        </mat-chip>
+        <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+               [matChipInputFor]="chipListSub"
+               (matChipInputTokenEnd)="addSubTopicRule($event)">
+      </mat-chip-list>
+    </mat-form-field>
+  </div>
   <div fxLayout="row" style="padding-bottom: 16px;">
   </div>
 </section>
