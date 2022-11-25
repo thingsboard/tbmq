@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mail;
 import com.fasterxml.jackson.databind.JsonNode;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.MessageSource;
@@ -45,11 +46,13 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultMailService implements MailService {
 
-    public static final String MAIL_PROP = "mail.";
-    public static final String TARGET_EMAIL = "targetEmail";
-    public static final String UTF_8 = "UTF-8";
+    private static final String MAIL_PROP = "mail.";
+    private static final String TARGET_EMAIL = "targetEmail";
+    private static final String UTF_8 = "UTF-8";
+    private static final long DEFAULT_TIMEOUT = 10_000;
 
     private final MessageSource messages;
     private final Configuration freemarkerConfig;
@@ -59,19 +62,8 @@ public class DefaultMailService implements MailService {
 
     private JavaMailSenderImpl mailSender;
 
-    private static final long DEFAULT_TIMEOUT = 10_000;
-
     private String mailFrom;
     private long timeout;
-
-
-    public DefaultMailService(MessageSource messages, Configuration freemarkerConfig, AdminSettingsService adminSettingsService, MailExecutorService mailExecutorService, PasswordResetExecutorService passwordResetExecutorService) {
-        this.messages = messages;
-        this.freemarkerConfig = freemarkerConfig;
-        this.adminSettingsService = adminSettingsService;
-        this.mailExecutorService = mailExecutorService;
-        this.passwordResetExecutorService = passwordResetExecutorService;
-    }
 
     @PostConstruct
     private void init() {

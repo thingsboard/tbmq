@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,9 +61,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/settings/{key}", method = RequestMethod.GET)
     @ResponseBody
-    public AdminSettings getAdminSettings(
-            @ApiParam(value = "A string value of the key (e.g. 'general' or 'mail').")
-            @PathVariable("key") String key) throws ThingsboardException {
+    public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         try {
             AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
             if (adminSettings.getKey().equals("mail")) {
@@ -79,9 +76,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/settings", method = RequestMethod.POST)
     @ResponseBody
-    public AdminSettings saveAdminSettings(
-            @ApiParam(value = "A JSON value representing the Administration Settings.")
-            @RequestBody AdminSettings adminSettings) throws ThingsboardException {
+    public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         try {
             adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
             if (adminSettings.getKey().equals("mail")) {
@@ -96,9 +91,7 @@ public class AdminController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/settings/testMail", method = RequestMethod.POST)
-    public void sendTestMail(
-            @ApiParam(value = "A JSON value representing the Mail Settings.")
-            @RequestBody AdminSettings adminSettings) throws ThingsboardException {
+    public void sendTestMail(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         try {
             adminSettings = checkNotNull(adminSettings);
             if (adminSettings.getKey().equals("mail")) {

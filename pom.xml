@@ -75,7 +75,6 @@
         <jackson.version>2.12.1</jackson.version>
         <awaitility.version>4.1.0</awaitility.version>
         <caffeine.version>2.6.1</caffeine.version>
-        <swagger-annotations.version>1.6.3</swagger-annotations.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jjwt.version>0.7.0</jjwt.version>
         <bouncycastle.version>1.67</bouncycastle.version>
@@ -1114,11 +1113,6 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>${swagger-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.winsw</groupId>

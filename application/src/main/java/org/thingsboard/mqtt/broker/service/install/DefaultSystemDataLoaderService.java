@@ -72,8 +72,8 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         node.put("timeout", "10000");
         node.put("enableTls", false);
         node.put("username", "");
-        node.put("password", "");
-        node.put("tlsVersion", "TLSv1.2");//NOSONAR, key used to identify password field (not password value itself)
+        node.put("password", ""); //NOSONAR, key used to identify password field (not password value itself)
+        node.put("tlsVersion", "TLSv1.2");
         node.put("enableProxy", false);
         node.put("showChangePassword", false);
         mailSettings.setJsonValue(node);

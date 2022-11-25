@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -37,7 +36,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
-import org.thingsboard.mqtt.broker.service.security.auth.RefreshTokenRepository;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
 import org.thingsboard.mqtt.broker.service.security.model.ResetPasswordEmailRequest;
@@ -59,7 +57,6 @@ import java.net.URISyntaxException;
 public class AuthController extends BaseController {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenFactory tokenFactory;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final SystemSecurityService systemSecurityService;
     private final MailService mailService;
 
@@ -102,9 +99,8 @@ public class AuthController extends BaseController {
     @RequestMapping(value = "/noauth/resetPasswordByEmail", method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.OK)
     public void requestResetPasswordByEmail(
-            @ApiParam(value = "The JSON object representing the reset password email request.")
             @RequestBody ResetPasswordEmailRequest resetPasswordByEmailRequest,
-            HttpServletRequest request) throws ThingsboardException {
+            HttpServletRequest request) {
         try {
             String email = resetPasswordByEmailRequest.getEmail();
             UserCredentials userCredentials = userService.requestPasswordReset(email);
@@ -113,7 +109,7 @@ public class AuthController extends BaseController {
                     userCredentials.getResetToken());
             mailService.sendResetPasswordEmailAsync(resetUrl, email);
         } catch (Exception e) {
-            log.warn("Error occurred: {}", e.getMessage());
+            log.warn("Error occurred", e);
         }
     }
 
@@ -121,7 +117,6 @@ public class AuthController extends BaseController {
     @ResponseStatus(value = HttpStatus.OK)
     @ResponseBody
     public JwtTokenPair resetPassword(
-            @ApiParam(value = "Reset password request.")
             @RequestBody ResetPasswordRequest resetPasswordRequest,
             HttpServletRequest request) throws ThingsboardException {
         try {
@@ -145,7 +140,7 @@ public class AuthController extends BaseController {
                 String email = user.getEmail();
                 mailService.sendPasswordWasResetEmail(loginUrl, email);
                 JwtToken accessToken = tokenFactory.createAccessJwtToken(securityUser);
-                JwtToken refreshToken = refreshTokenRepository.requestRefreshToken(securityUser);
+                JwtToken refreshToken = tokenFactory.createRefreshToken(securityUser);
 
                 return new JwtTokenPair(accessToken.getToken(), refreshToken.getToken());
             } else {
@@ -158,7 +153,6 @@ public class AuthController extends BaseController {
 
     @RequestMapping(value = "/noauth/resetPassword", params = {"resetToken"}, method = RequestMethod.GET)
     public ResponseEntity<String> checkResetToken(
-            @ApiParam(value = "The reset token string.")
             @RequestParam(value = "resetToken") String resetToken) {
         HttpHeaders headers = new HttpHeaders();
         HttpStatus responseStatus;

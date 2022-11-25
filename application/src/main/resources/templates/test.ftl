@@ -22,7 +22,7 @@
 <head>
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Thingsboard-MQTT-broker - Test Message</title>
+    <title>Thingsboard MQTT Broker - Test Message</title>
 
 
     <style type="text/css">
@@ -130,7 +130,7 @@
                                     <td class="content-block"
                                         style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; color: #348eda; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;"
                                         valign="top">
-                                        <h2>Test message from Thingsboard</h2>
+                                        <h2>Test message from Thingsboard MQTT Broker</h2>
                                     </td>
                                 </tr>
                                 <tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">

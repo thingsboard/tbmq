@@ -18,22 +18,20 @@ package org.thingsboard.mqtt.broker.dao.sql.settings;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.sql.AdminSettingsEntity;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
-import org.thingsboard.mqtt.broker.dao.sql.JpaAbstractDao;
-import org.thingsboard.mqtt.broker.dao.util.SqlDao;
 
 import java.util.UUID;
 
 @Component
-@SqlDao
 @Slf4j
-public class JpaAdminSettingsDao extends JpaAbstractDao<AdminSettingsEntity, AdminSettings> implements AdminSettingsDao {
+public class DefaultAdminSettingsDao extends AbstractDao<AdminSettingsEntity, AdminSettings> implements AdminSettingsDao {
 
     @Autowired
     private AdminSettingsRepository adminSettingsRepository;
@@ -44,7 +42,7 @@ public class JpaAdminSettingsDao extends JpaAbstractDao<AdminSettingsEntity, Adm
     }
 
     @Override
-    protected JpaRepository<AdminSettingsEntity, UUID> getRepository() {
+    protected CrudRepository<AdminSettingsEntity, UUID> getCrudRepository() {
         return adminSettingsRepository;
     }
 

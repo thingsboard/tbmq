@@ -22,7 +22,7 @@
 <head>
 	<meta name="viewport" content="width=device-width"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-	<title>Thingsboard-MQTT-broker - Account Password Has Been Reset</title>
+	<title>Thingsboard MQTT Broker - Account Password Has Been Reset</title>
 
 
 	<style type="text/css">
@@ -130,21 +130,23 @@
 									<td class="content-block"
 										style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; color: #348eda; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;"
 										valign="top">
-										<h2>Your Thingsboard account password has been reset</h2>
+										<h2>Your Thingsboard MQTT Broker account password has been reset</h2>
 									</td>
 								</tr>
 								<tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
 									<td class="content-block"
 										style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;"
 										valign="top">
-										You have successfully created new password for your Thingsboard account.
+										You have successfully created new password for your Thingsboard MQTT Broker
+										account.
 									</td>
 								</tr>
 								<tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
 									<td class="content-block"
 										style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;"
 										valign="top">
-										Now you can login to your Thingsboard space using your newly created password.
+										Now you can log in to your Thingsboard MQTT Broker space using your newly
+										created password.
 									</td>
 								</tr>
 								<tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">

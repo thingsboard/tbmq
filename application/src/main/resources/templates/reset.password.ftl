@@ -22,7 +22,7 @@
 <head>
     <meta name="viewport" content="width=device-width"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Thingsboard-MQTT-broker - Reset Password Request</title>
+    <title>Thingsboard MQTT Broker - Reset Password Request</title>
 
 
     <style type="text/css">
@@ -137,7 +137,7 @@
                                     <td class="content-block"
                                         style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;"
                                         valign="top">
-                                        You have requested password reset for your Thingsboard account.
+                                        You have requested password reset for your Thingsboard MQTT Broker account.
                                     </td>
                                 </tr>
                                 <tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">

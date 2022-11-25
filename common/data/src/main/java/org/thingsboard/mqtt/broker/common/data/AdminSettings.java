@@ -16,14 +16,11 @@
 package org.thingsboard.mqtt.broker.common.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.UUID;
 
-@ApiModel
 public class AdminSettings extends BaseData {
 
     private static final long serialVersionUID = -7670322981725511892L;
@@ -47,18 +44,15 @@ public class AdminSettings extends BaseData {
         this.jsonValue = adminSettings.getJsonValue();
     }
 
-    @ApiModelProperty(position = 1, value = "The Id of the Administration Settings, auto-generated, UUID")
     @Override
     public UUID getId() {
         return super.getId();
     }
 
-    @ApiModelProperty(position = 2, value = "Timestamp of the settings creation, in milliseconds", example = "1609459200000", required = true)
     public long getCreatedTime() {
         return createdTime;
     }
 
-    @ApiModelProperty(position = 3, value = "The Administration Settings key, (e.g. 'general' or 'mail')", example = "mail")
     public String getKey() {
         return key;
     }
@@ -67,7 +61,6 @@ public class AdminSettings extends BaseData {
         this.key = key;
     }
 
-    @ApiModelProperty(position = 4, value = "JSON representation of the Administration Settings value")
     public JsonNode getJsonValue() {
         return jsonValue;
     }

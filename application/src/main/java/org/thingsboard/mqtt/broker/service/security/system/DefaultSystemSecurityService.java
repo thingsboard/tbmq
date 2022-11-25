@@ -82,7 +82,6 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         if (StringUtils.isEmpty(baseUrl)) {
             baseUrl = MiscUtils.constructBaseUrl(httpServletRequest);
         }
-        baseUrl = MiscUtils.constructBaseUrl(httpServletRequest);
 
         return baseUrl;
     }
