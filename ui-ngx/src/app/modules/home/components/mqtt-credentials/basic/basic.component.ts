@@ -116,8 +116,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   writeValue(mqttBasic: string) {
     if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
       const value = JSON.parse(mqttBasic);
-      value.authRules.pubAuthRulePatterns[0].split(',').map(el => { if (el.length) this.pubRulesArray.add(el); });
-      value.authRules.subAuthRulePatterns[0].split(',').map(el => { if (el.length) this.subRulesArray.add(el); });
+      if (value.authRules.pubAuthRulePatterns) value.authRules.pubAuthRulePatterns[0].split(',').map(el => { if (el.length) this.pubRulesArray.add(el); });
+      if (value.authRules.subAuthRulePatterns) value.authRules.subAuthRulePatterns[0].split(',').map(el => { if (el.length) this.subRulesArray.add(el); });
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }

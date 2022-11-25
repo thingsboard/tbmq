@@ -48,13 +48,13 @@
                   <mat-chip-list #chipListPub>
                     <mat-chip *ngFor="let rule of pubRulesArray[$index]"
                               [value]="rule"
-                              (removed)="removePubTopicRule(rule, $index)">
+                              (removed)="removeTopicRule(rule, $index, authRulePatternsType.PUBLISH)">
                       <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                       {{ rule }}
                     </mat-chip>
                     <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            [matChipInputFor]="chipListPub"
-                           (matChipInputTokenEnd)="addPubTopicRule($event, $index)">
+                           (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-list>
                 </mat-form-field>
                 <mat-form-field class="cell">
@@ -62,13 +62,13 @@
                   <mat-chip-list #chipListSub>
                     <mat-chip *ngFor="let rule of subRulesArray[$index]"
                               [value]="rule"
-                              (removed)="removeSubTopicRule(rule, $index)">
+                              (removed)="removeTopicRule(rule, $index, authRulePatternsType.SUBSCRIBE)">
                       <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                       {{ rule }}
                     </mat-chip>
                     <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            [matChipInputFor]="chipListSub"
-                           (matChipInputTokenEnd)="addSubTopicRule($event, $index)">
+                           (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)">
                   </mat-chip-list>
                 </mat-form-field>
               </div>

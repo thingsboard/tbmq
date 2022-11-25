@@ -54,3 +54,8 @@ export interface BasicMqttCredentials {
   password: string;
   authorizationRulePattern: string;
 }
+
+export enum AuthRulePatternsType {
+  SUBSCRIBE = 'SUBSCRIBE',
+  PUBLISH = 'PUBLISH'
+}

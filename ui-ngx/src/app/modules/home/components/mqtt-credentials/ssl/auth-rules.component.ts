@@ -17,15 +17,19 @@
 import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
-  ControlValueAccessor, FormArray,
+  ControlValueAccessor,
+  FormArray,
   FormBuilder,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR, ValidationErrors,
-  Validator, Validators
+  NG_VALUE_ACCESSOR,
+  ValidationErrors,
+  Validator,
+  Validators
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { MatChipInputEvent } from "@angular/material/chips";
+import { AuthRulePatternsType } from "@shared/models/mqtt-client-crenetials.model";
 
 @Component({
   selector: 'tb-auth-rules',
@@ -48,6 +52,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   @Input()
   disabled: boolean;
 
+  authRulePatternsType = AuthRulePatternsType;
   rulesMappingFormGroup: FormGroup;
   rulesMappings: FormArray;
   pubRulesArray: string[][] = [];
@@ -125,11 +130,11 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required]],
-          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns, []],
-          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns, []]
+          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [], []],
+          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [], []]
         });
-        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns[0].split(',');
-        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns[0].split(',');
+        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns[0] ? authRulesMapping[rule].subAuthRulePatterns[0].split(',') : [];
+        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns[0] ? authRulesMapping[rule].pubAuthRulePatterns[0].split(',') : [];
         if (this.disabled) {
           rulesControl.disable();
         }
@@ -169,58 +174,55 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       const key = obj?.certificateMatcherRegex;
       if (key) {
         newObj[key] = {};
-        if (obj?.pubAuthRulePatterns) newObj[key].pubAuthRulePatterns = [obj?.pubAuthRulePatterns];
-        if (obj?.subAuthRulePatterns) newObj[key].subAuthRulePatterns = [obj?.subAuthRulePatterns];
+        obj?.pubAuthRulePatterns ? newObj[key].pubAuthRulePatterns = [obj?.pubAuthRulePatterns] : newObj[key].pubAuthRulePatterns = [];
+        obj?.subAuthRulePatterns ? newObj[key].subAuthRulePatterns = [obj?.subAuthRulePatterns] : newObj[key].subAuthRulePatterns = [];
       }
     });
     return newObj;
   }
 
-  removePubTopicRule(rule: string, index: number) {
-    const optIndex = this.pubRulesArray[index].indexOf(rule);
-    if (optIndex >= 0) {
-      this.pubRulesArray[index].splice(optIndex, 1);
-    }
-    this.setTopicRuleControl(index);
-  }
-
-  addPubTopicRule(event: MatChipInputEvent, index: number) {
+  addTopicRule(event: MatChipInputEvent, index: number, type: AuthRulePatternsType) {
     const input = event.input;
     const value = event.value;
     if ((value || '').trim()) {
-      this.pubRulesArray[index].push(value);
+      switch (type) {
+        case AuthRulePatternsType.SUBSCRIBE:
+          this.subRulesArray[index].push(value);
+          break;
+        case AuthRulePatternsType.PUBLISH:
+          this.pubRulesArray[index].push(value);
+      }
     }
     if (input) {
       input.value = '';
     }
-    this.setTopicRuleControl(index);
+    this.updateTopicRuleControl(index, type);
   }
 
-  removeSubTopicRule(rule: string, index: number) {
-    const optIndex = this.subRulesArray[index].indexOf(rule);
-    if (optIndex >= 0) {
-      this.subRulesArray[index].splice(optIndex, 1);
-    }
-    this.setTopicRuleControl(index);
+  removeTopicRule(rule: string, index: number, type: AuthRulePatternsType) {
+    let optIndex;
+      switch (type) {
+        case AuthRulePatternsType.SUBSCRIBE:
+          optIndex = this.subRulesArray[index].indexOf(rule);
+          if (optIndex >= 0) this.subRulesArray[index].splice(optIndex, 1);
+          break;
+        case AuthRulePatternsType.PUBLISH:
+          optIndex = this.pubRulesArray[index].indexOf(rule);
+          if (optIndex >= 0) this.pubRulesArray[index].splice(optIndex, 1);
+          break;
+      }
+    this.updateTopicRuleControl(index, type);
   }
 
-  addSubTopicRule(event: MatChipInputEvent, index: number) {
-    const input = event.input;
-    const value = event.value;
-    if ((value || '').trim()) {
-      this.subRulesArray[index].push(value);
+  private updateTopicRuleControl(index: number, type: AuthRulePatternsType) {
+    switch (type) {
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.rulesFormArray().at(index).get('subAuthRulePatterns').setValue(this.subRulesArray[index].join(','));
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        this.rulesFormArray().at(index).get('pubAuthRulePatterns').setValue(this.pubRulesArray[index].join(','));
+        break;
     }
-    if (input) {
-      input.value = '';
-    }
-    this.setTopicRuleControl(index);
-  }
-
-  private setTopicRuleControl(index: number) {
-    const pubValue = this.pubRulesArray[index].join(',');
-    const subValue = this.subRulesArray[index].join(',');
-    this.rulesFormArray().at(index).get('pubAuthRulePatterns').setValue(pubValue);
-    this.rulesFormArray().at(index).get('subAuthRulePatterns').setValue(subValue);
   }
 }
 
