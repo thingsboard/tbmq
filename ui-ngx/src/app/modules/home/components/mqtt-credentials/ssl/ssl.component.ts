@@ -27,6 +27,7 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
+import { SslMqttCredentials } from "@shared/models/mqtt-client-crenetials.model";
 
 @Component({
   selector: 'tb-mqtt-credentials-ssl',
@@ -101,7 +102,7 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
     }
   }
 
-  updateView(value: any) {
+  updateView(value: SslMqttCredentials) {
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
   }

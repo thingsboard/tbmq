@@ -43,16 +43,32 @@ export interface MqttClientCredentials extends BaseData<ClientId> {
   credentialsValue: string;
 }
 
-export interface SslMqttCredentials {
+export interface SslMqttCredentials extends SslAuthRulesMapping {
   parentCertCommonName: string;
-  authRulesMapping: string[];
+}
+
+export interface SslAuthRulesMapping {
+  authRulesMapping: Array<SslMqttCredentialsAuthRules>;
+}
+
+export interface SslMqttCredentialsAuthRules {
+  [key: string]: AuthRules;
 }
 
 export interface BasicMqttCredentials {
   clientId: string;
   userName: string;
   password: string;
-  authorizationRulePattern: string;
+  authRules: AuthRules;
+}
+
+export interface AuthRules {
+  subAuthRulePatterns: Array<string>;
+  pubAuthRulePatterns: Array<string>;
+}
+
+export interface AuthRulesMapping extends AuthRules {
+  certificateMatcherRegex?: string;
 }
 
 export enum AuthRulePatternsType {

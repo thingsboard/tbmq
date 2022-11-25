@@ -28,7 +28,11 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { BasicMqttCredentials, MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
+import {
+  AuthRulePatternsType,
+  BasicMqttCredentials,
+  MqttClientCredentials
+} from '@shared/models/mqtt-client-crenetials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
@@ -60,6 +64,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   @Input()
   entity: MqttClientCredentials;
+
+  authRulePatternsType = AuthRulePatternsType
 
   credentialsMqttFormGroup: FormGroup;
 
@@ -116,13 +122,26 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   writeValue(mqttBasic: string) {
     if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
       const value = JSON.parse(mqttBasic);
-      if (value.authRules.pubAuthRulePatterns) value.authRules.pubAuthRulePatterns[0].split(',').map(el => { if (el.length) this.pubRulesArray.add(el); });
-      if (value.authRules.subAuthRulePatterns) value.authRules.subAuthRulePatterns[0].split(',').map(el => { if (el.length) this.subRulesArray.add(el); });
+      if (value.authRules.pubAuthRulePatterns) {
+        value.authRules.pubAuthRulePatterns[0].split(',').map(el => {
+          if (el.length) this.pubRulesArray.add(el);
+        });
+      }
+      if (value.authRules.subAuthRulePatterns) {
+        value.authRules.subAuthRulePatterns[0].split(',').map(el => {
+          if (el.length) this.subRulesArray.add(el);
+        });
+      }
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
 
   updateView(value: BasicMqttCredentials) {
+    for (const rule of Object.keys(value.authRules)) {
+      if (value.authRules[rule] && !value.authRules[rule][0].length) {
+        value.authRules[rule] = null;
+      }
+    }
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
   }
@@ -139,48 +158,49 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
       }).afterClosed();
   }
 
-  addPubTopicRule(event: MatChipInputEvent) {
+  addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
     const input = event.input;
     const value = event.value;
     if ((value || '').trim()) {
-      this.pubRulesArray.add(value);
-      this.setPubAuthRulePatternsControl(this.pubRulesArray);
+      switch (type) {
+        case AuthRulePatternsType.PUBLISH:
+          this.pubRulesArray.add(value);
+          this.setAuthRulePatternsControl(this.pubRulesArray, type);
+          break;
+        case AuthRulePatternsType.SUBSCRIBE:
+          this.subRulesArray.add(value);
+          this.setAuthRulePatternsControl(this.subRulesArray, type);
+          break;
+      }
     }
     if (input) {
       input.value = '';
     }
   }
 
-  addSubTopicRule(event: MatChipInputEvent) {
-    const input = event.input;
-    const value = event.value;
-    if ((value || '').trim()) {
-      this.subRulesArray.add(value);
-      this.setSubAuthRulePatternsControl(this.subRulesArray);
+  removeTopicRule(rule: string, type: AuthRulePatternsType) {
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.pubRulesArray.delete(rule);
+        this.setAuthRulePatternsControl(this.pubRulesArray, type);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.subRulesArray.delete(rule);
+        this.setAuthRulePatternsControl(this.subRulesArray, type);
+        break;
     }
-    if (input) {
-      input.value = '';
+  }
+
+  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
+    const rulesArray = [Array.from(set).join(',')];
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
     }
-  }
-
-  removePubTopicRule(rule: string) {
-    this.pubRulesArray.delete(rule);
-    this.setPubAuthRulePatternsControl(this.pubRulesArray);
-  }
-
-  removeSubTopicRule(rule: string) {
-    this.subRulesArray.delete(rule);
-    this.setSubAuthRulePatternsControl(this.subRulesArray);
-  }
-
-  private setPubAuthRulePatternsControl(set: Set<string>) {
-    const rulesArray = [Array.from(set).join(',')];
-    this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
-  }
-
-  private setSubAuthRulePatternsControl(set: Set<string>) {
-    const rulesArray = [Array.from(set).join(',')];
-    this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
   }
 
   private atLeastOne(validator: ValidatorFn, controls: string[] = null) {

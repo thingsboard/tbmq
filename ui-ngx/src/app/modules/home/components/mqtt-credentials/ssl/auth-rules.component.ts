@@ -29,7 +29,11 @@ import {
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { MatChipInputEvent } from "@angular/material/chips";
-import { AuthRulePatternsType } from "@shared/models/mqtt-client-crenetials.model";
+import {
+  AuthRulePatternsType,
+  AuthRulesMapping,
+  SslMqttCredentialsAuthRules
+} from "@shared/models/mqtt-client-crenetials.model";
 
 @Component({
   selector: 'tb-auth-rules',
@@ -120,7 +124,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     return this.rulesMappingFormGroup.valid ? null : { rulesMapping: true };
   }
 
-  writeValue(authRulesMapping: any): void {
+  writeValue(authRulesMapping: SslMqttCredentialsAuthRules): void {
     if (this.valueChangeSubscription) {
       this.valueChangeSubscription.unsubscribe();
     }
@@ -130,11 +134,11 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required]],
-          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : null, []],
-          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : null, []]
+          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [], []],
+          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [], []]
         });
-        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns[0].split(',') : null;
-        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns[0].split(',') : null;
+        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns[0].split(',') : [];
+        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns[0].split(',') : [];
         if (this.disabled) {
           rulesControl.disable();
         }
@@ -168,7 +172,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     return newValue;
   }
 
-  private prepareValues(authRulesMapping: any) {
+  private prepareValues(authRulesMapping: Array<AuthRulesMapping>) {
     const newObj = {};
     authRulesMapping.map( obj => {
       const key = obj?.certificateMatcherRegex;
@@ -191,6 +195,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
           break;
         case AuthRulePatternsType.PUBLISH:
           this.pubRulesArray[index].push(value);
+          break;
       }
     }
     if (input) {
