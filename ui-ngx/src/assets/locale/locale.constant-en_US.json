@@ -3212,7 +3212,6 @@
       "type-clients-credentials": "Clients Credentials",
       "topic-rules": "Topic rules",
       "add-topic-rule": "Add topic rule",
-      "topic-rule-required": "Topic rule is required",
       "remove-rule": "Remove rule",
       "rules-mapping-required": "Authorization rule is required.",
       "search": "Search Client Credentials",

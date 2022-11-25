@@ -50,7 +50,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   rulesMappingFormGroup: FormGroup;
   rulesMappings: FormArray;
-  rulesArray: string[][] = [];
+  pubRulesArray: string[][] = [];
+  subRulesArray: string[][] = [];
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject();
@@ -73,14 +74,17 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     this.rulesMappings = this.rulesFormArray() as FormArray;
     this.rulesMappings.push(this.fb.group({
       certificateMatcherRegex: ['', [Validators.required]],
-      topicRule: ['', [Validators.required]]
+      pubAuthRulePatterns: ['', []],
+      subAuthRulePatterns: ['', []]
     }));
-    this.rulesArray.push([]);
+    this.subRulesArray.push([]);
+    this.pubRulesArray.push([]);
   }
 
   removeRule(index: number) {
     this.rulesMappingFormGroup.markAsDirty();
-    this.rulesArray[index].splice(0);
+    this.subRulesArray[index].splice(0);
+    this.pubRulesArray[index].splice(0);
     (this.rulesFormArray() as FormArray).removeAt(index);
   }
 
@@ -121,9 +125,11 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       for (const rule of Object.keys(authorizationRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required]],
-          topicRule: [authorizationRulesMapping[rule], [Validators.required]]
+          subAuthRulePatterns: [authorizationRulesMapping[rule].subAuthRulePatterns, []],
+          pubAuthRulePatterns: [authorizationRulesMapping[rule].pubAuthRulePatterns, []]
         });
-        this.rulesArray[index] = authorizationRulesMapping[rule][0].split(',');
+        this.subRulesArray[index] = authorizationRulesMapping[rule].subAuthRulePatterns[0].split(',');
+        this.pubRulesArray[index] = authorizationRulesMapping[rule].pubAuthRulePatterns[0].split(',');
         if (this.disabled) {
           rulesControl.disable();
         }
@@ -149,7 +155,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       rule => {
         newValue.push({
           certificateMatcherRegex: rule.certificateMatcherRegex,
-          topicRule: Array.isArray(rule.topicRule) ? rule.topicRule[0] : rule.topicRule
+          pubAuthRulePatterns: Array.isArray(rule.pubAuthRulePatterns) ? rule.pubAuthRulePatterns[0] : rule.pubAuthRulePatterns,
+          subAuthRulePatterns: Array.isArray(rule.subAuthRulePatterns) ? rule.subAuthRulePatterns[0] : rule.subAuthRulePatterns
         })
       }
     );
@@ -160,24 +167,45 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     const newObj = {};
     authorizationRulesMapping.forEach( (obj: any) => {
       const key = obj.certificateMatcherRegex;
-      newObj[key] = [obj.topicRule];
+      newObj[key].pubAuthRulePatterns = [obj.pubAuthRulePatterns];
+      newObj[key].subAuthRulePatterns = [obj.subAuthRulePatterns];
     });
     return newObj;
   }
 
-  removeTopicRule(rule: string, index: number) {
-    const optIndex = this.rulesArray[index].indexOf(rule);
+  removePubTopicRule(rule: string, index: number) {
+    const optIndex = this.pubRulesArray[index].indexOf(rule);
     if (optIndex >= 0) {
-      this.rulesArray[index].splice(optIndex, 1);
+      this.pubRulesArray[index].splice(optIndex, 1);
     }
     this.setTopicRuleControl(index);
   }
 
-  addTopicRule(event: MatChipInputEvent, index: number) {
+  addPubTopicRule(event: MatChipInputEvent, index: number) {
     const input = event.input;
     const value = event.value;
     if ((value || '').trim()) {
-      this.rulesArray[index].push(value);
+      this.pubRulesArray[index].push(value);
+    }
+    if (input) {
+      input.value = '';
+    }
+    this.setTopicRuleControl(index);
+  }
+
+  removeSubTopicRule(rule: string, index: number) {
+    const optIndex = this.subRulesArray[index].indexOf(rule);
+    if (optIndex >= 0) {
+      this.subRulesArray[index].splice(optIndex, 1);
+    }
+    this.setTopicRuleControl(index);
+  }
+
+  addSubTopicRule(event: MatChipInputEvent, index: number) {
+    const input = event.input;
+    const value = event.value;
+    if ((value || '').trim()) {
+      this.subRulesArray[index].push(value);
     }
     if (input) {
       input.value = '';
@@ -186,8 +214,10 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   private setTopicRuleControl(index: number) {
-    const value = this.rulesArray[index].join(',');
-    this.rulesFormArray().at(index).get('topicRule').setValue(value);
+    const pubValue = this.pubRulesArray[index].join(',');
+    const subValue = this.subRulesArray[index].join(',');
+    this.rulesFormArray().at(index).get('topicRule').get('pubAuthRulePatterns').setValue(pubValue);
+    this.rulesFormArray().at(index).get('topicRule').get('subAuthRulePatterns').setValue(subValue);
   }
 }
 
