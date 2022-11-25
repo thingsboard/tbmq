@@ -130,11 +130,11 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
           certificateMatcherRegex: [rule, [Validators.required]],
-          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [], []],
-          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [], []]
+          subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : null, []],
+          pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : null, []]
         });
-        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns[0] ? authRulesMapping[rule].subAuthRulePatterns[0].split(',') : [];
-        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns[0] ? authRulesMapping[rule].pubAuthRulePatterns[0].split(',') : [];
+        this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns[0].split(',') : null;
+        this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns[0].split(',') : null;
         if (this.disabled) {
           rulesControl.disable();
         }
@@ -174,8 +174,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       const key = obj?.certificateMatcherRegex;
       if (key) {
         newObj[key] = {};
-        obj?.pubAuthRulePatterns ? newObj[key].pubAuthRulePatterns = [obj?.pubAuthRulePatterns] : newObj[key].pubAuthRulePatterns = [];
-        obj?.subAuthRulePatterns ? newObj[key].subAuthRulePatterns = [obj?.subAuthRulePatterns] : newObj[key].subAuthRulePatterns = [];
+        obj?.pubAuthRulePatterns ? newObj[key].pubAuthRulePatterns = [obj?.pubAuthRulePatterns] : newObj[key].pubAuthRulePatterns = null;
+        obj?.subAuthRulePatterns ? newObj[key].subAuthRulePatterns = [obj?.subAuthRulePatterns] : newObj[key].subAuthRulePatterns = null;
       }
     });
     return newObj;
