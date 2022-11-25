@@ -44,6 +44,9 @@ export function authReducer(
       return { ...state, ...action.payload, isAuthenticated: action.payload.isUserLoaded ? state.isAuthenticated : false,
         ...action.payload.isUserLoaded ? {} : emptyUserAuthState };
 
+    case AuthActionTypes.UPDATE_USER_DETAILS:
+      return { ...state, ...action.payload};
+
     default:
       return state;
   }
