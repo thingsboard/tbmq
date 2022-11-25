@@ -45,6 +45,11 @@ public abstract class AbstractListeningExecutor implements ListeningExecutor {
     }
 
     @Override
+    public ListenableFuture<?> executeAsync(Runnable task) {
+        return service.submit(task);
+    }
+
+    @Override
     public void execute(Runnable command) {
         service.execute(command);
     }

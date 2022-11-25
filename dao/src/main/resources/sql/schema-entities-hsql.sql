@@ -14,6 +14,13 @@
 -- limitations under the License.
 --
 
+CREATE TABLE IF NOT EXISTS admin_settings (
+    id uuid NOT NULL CONSTRAINT admin_settings_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    json_value varchar,
+    key varchar(255)
+);
+
 CREATE TABLE IF NOT EXISTS broker_user (
     id uuid NOT NULL CONSTRAINT broker_user_pkey PRIMARY KEY,
     created_time bigint NOT NULL,

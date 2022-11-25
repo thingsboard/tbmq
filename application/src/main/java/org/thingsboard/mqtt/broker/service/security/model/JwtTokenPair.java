@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.service.security.model;
 
-public interface SystemDataLoaderService {
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.security.Authority;
 
-    void createAdmin() throws Exception;
+@Data
+@NoArgsConstructor
+public class JwtTokenPair {
 
-    void createAdminSettings() throws Exception;
+    private String token;
+    private String refreshToken;
+
+    private Authority scope;
+
+    public JwtTokenPair(String token, String refreshToken) {
+        this.token = token;
+        this.refreshToken = refreshToken;
+    }
 
 }

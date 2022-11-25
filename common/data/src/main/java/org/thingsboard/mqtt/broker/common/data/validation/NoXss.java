@@ -13,12 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.common.data.validation;
 
-public interface SystemDataLoaderService {
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    void createAdmin() throws Exception;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@Constraint(validatedBy = {})
+public @interface NoXss {
+    String message() default "field value is malformed";
 
-    void createAdminSettings() throws Exception;
+    Class<?>[] groups() default {};
 
+    Class<? extends Payload>[] payload() default {};
 }

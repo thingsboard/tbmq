@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.service.security.model;
 
-public interface SystemDataLoaderService {
+import lombok.Data;
 
-    void createAdmin() throws Exception;
+@Data
+public class ResetPasswordRequest {
 
-    void createAdminSettings() throws Exception;
-
+    private String resetToken;
+    private String password;
 }

@@ -21,11 +21,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -92,7 +93,7 @@ public class UserServiceImpl implements UserService {
         if (user.getId() == null) {
             UserCredentials userCredentials = new UserCredentials();
             userCredentials.setEnabled(false);
-            userCredentials.setActivateToken(RandomStringUtils.randomAlphanumeric(DEFAULT_TOKEN_LENGTH));
+            userCredentials.setActivateToken(StringUtils.randomAlphanumeric(DEFAULT_TOKEN_LENGTH));
             userCredentials.setUserId(savedUser.getId());
             saveUserCredentialsAndPasswordHistory(userCredentials);
         }
@@ -114,12 +115,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void replaceUserCredentials(UserCredentials userCredentials) {
+    public UserCredentials replaceUserCredentials(UserCredentials userCredentials) {
         log.trace("Executing replaceUserCredentials [{}]", userCredentials);
         userCredentialsValidator.validate(userCredentials);
         userCredentialsDao.removeById(userCredentials.getId());
         userCredentials.setId(null);
-        saveUserCredentialsAndPasswordHistory(userCredentials);
+        return saveUserCredentialsAndPasswordHistory(userCredentials);
     }
 
     @Override
@@ -148,6 +149,29 @@ public class UserServiceImpl implements UserService {
         User user = findUserById(userId);
         setLastLoginTs(user);
         saveUser(user);
+    }
+
+    @Override
+    public UserCredentials requestPasswordReset(String email) {
+        log.trace("Executing requestPasswordReset email [{}]", email);
+        DataValidator.validateEmail(email);
+        User user = findUserByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException(String.format("Unable to find user by email [%s]", email));
+        }
+        UserCredentials userCredentials = userCredentialsDao.findByUserId(user.getId());
+        if (!userCredentials.isEnabled()) {
+            throw new DisabledException(String.format("User credentials not enabled [%s]", email));
+        }
+        userCredentials.setResetToken(StringUtils.randomAlphanumeric(DEFAULT_TOKEN_LENGTH));
+        return saveUserCredentials(userCredentials);
+    }
+
+    @Override
+    public UserCredentials findUserCredentialsByResetToken(String resetToken) {
+        log.trace("Executing findUserCredentialsByResetToken [{}]", resetToken);
+        validateString(resetToken, "Incorrect resetToken " + resetToken);
+        return userCredentialsDao.findByResetToken(resetToken);
     }
 
     private void setLastLoginTs(User user) {

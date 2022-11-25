@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.service.mail;
 
-public interface SystemDataLoaderService {
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.AbstractListeningExecutor;
 
-    void createAdmin() throws Exception;
+@Component
+public class MailExecutorService extends AbstractListeningExecutor {
 
-    void createAdminSettings() throws Exception;
+    @Value("${actors.rule.mail_thread_pool_size}")
+    private int mailExecutorThreadPoolSize;
+
+    @Override
+    protected int getThreadPollSize() {
+        return mailExecutorThreadPoolSize;
+    }
 
 }

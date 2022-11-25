@@ -91,6 +91,13 @@ public abstract class BaseController {
         return reference;
     }
 
+    <T> T checkNotNull(T reference, String notFoundMessage) throws ThingsboardException {
+        if (reference == null) {
+            throw new ThingsboardException(notFoundMessage, ThingsboardErrorCode.ITEM_NOT_FOUND);
+        }
+        return reference;
+    }
+
     void checkParameter(String name, String param) throws ThingsboardException {
         if (StringUtils.isEmpty(param)) {
             throw new ThingsboardException("Parameter '" + name + "' can't be empty!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);

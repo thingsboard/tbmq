@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.dao.settings;
 
-public interface SystemDataLoaderService {
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 
-    void createAdmin() throws Exception;
+import java.util.UUID;
 
-    void createAdminSettings() throws Exception;
+public interface AdminSettingsService {
+    AdminSettings findAdminSettingsById(UUID adminSettingsId);
+
+    AdminSettings findAdminSettingsByKey(String key);
+
+    AdminSettings saveAdminSettings(AdminSettings adminSettings);
+
+    void deleteAdminSettingsByKey(String key);
 
 }

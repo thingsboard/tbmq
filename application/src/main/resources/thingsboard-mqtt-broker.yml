@@ -249,6 +249,11 @@ actors:
     dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
     wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
     wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
+  rule:
+    # Specify thread pool size for mail sender executor service
+    mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:40}"
+    # Specify thread pool size for password reset emails
+    mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:10}"
 
 # SQL DAO Configuration
 spring:

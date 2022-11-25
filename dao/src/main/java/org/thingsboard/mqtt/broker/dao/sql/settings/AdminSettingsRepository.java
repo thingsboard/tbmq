@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.dao.sql.settings;
 
-public interface SystemDataLoaderService {
+import org.springframework.data.repository.CrudRepository;
+import org.thingsboard.mqtt.broker.dao.model.sql.AdminSettingsEntity;
 
-    void createAdmin() throws Exception;
+import java.util.UUID;
 
-    void createAdminSettings() throws Exception;
+public interface AdminSettingsRepository extends CrudRepository<AdminSettingsEntity, UUID> {
 
+    AdminSettingsEntity findByKey(String key);
+
+    void deleteByKey(String key);
+
+    boolean existsByKey(String key);
 }

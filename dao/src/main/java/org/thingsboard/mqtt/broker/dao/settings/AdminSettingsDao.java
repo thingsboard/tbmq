@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.dao.settings;
 
-public interface SystemDataLoaderService {
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.dao.Dao;
 
-    void createAdmin() throws Exception;
+public interface AdminSettingsDao extends Dao<AdminSettings> {
 
-    void createAdminSettings() throws Exception;
+    AdminSettings save(AdminSettings adminSettings);
+
+    AdminSettings findByKey(String key);
+
+    void removeByKey(String key);
 
 }

@@ -22,4 +22,8 @@ import java.util.UUID;
 
 public interface UserCredentialsRepository extends CrudRepository<UserCredentialsEntity, UUID> {
     UserCredentialsEntity findByUserId(UUID userId);
+
+    UserCredentialsEntity findByActivateToken(String activateToken);
+
+    UserCredentialsEntity findByResetToken(String resetToken);
 }

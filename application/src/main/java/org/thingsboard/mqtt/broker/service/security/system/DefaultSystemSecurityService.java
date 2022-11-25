@@ -15,25 +15,33 @@
  */
 package org.thingsboard.mqtt.broker.service.security.system;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.util.MiscUtils;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
     private final UserService userService;
     private final BCryptPasswordEncoder encoder;
+    private final AdminSettingsService adminSettingsService;
 
-    public DefaultSystemSecurityService(UserService userService, BCryptPasswordEncoder encoder) {
+    public DefaultSystemSecurityService(UserService userService, BCryptPasswordEncoder encoder, AdminSettingsService adminSettingsService) {
         this.userService = userService;
         this.encoder = encoder;
+        this.adminSettingsService = adminSettingsService;
     }
 
     @Override
@@ -58,5 +66,23 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         if (password.length() <= 5) {
             throw new DataValidationException("Password should be longer than 5 characters!");
         }
+    }
+
+    @Override
+    public String getBaseUrl(HttpServletRequest httpServletRequest) {
+        String baseUrl = null;
+        AdminSettings generalSettings = adminSettingsService.findAdminSettingsByKey("general");
+
+        JsonNode prohibitDifferentUrl = generalSettings.getJsonValue().get("prohibitDifferentUrl");
+
+        if (prohibitDifferentUrl != null && prohibitDifferentUrl.asBoolean()) {
+            baseUrl = generalSettings.getJsonValue().get("baseUrl").asText();
+        }
+
+        if (StringUtils.isEmpty(baseUrl)) {
+            baseUrl = MiscUtils.constructBaseUrl(httpServletRequest);
+        }
+
+        return baseUrl;
     }
 }
