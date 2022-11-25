@@ -31,7 +31,7 @@ import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 
@@ -112,24 +113,33 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void finishSessionAuth(ClientSessionCtx sessionCtx, AuthResponse authResponse) {
-        List<AuthorizationRule> authorizationRules = authResponse.getAuthorizationRules();
-        if (!CollectionUtils.isEmpty(authorizationRules)) {
-            logAuthRules(sessionCtx, authorizationRules);
-            sessionCtx.setAuthorizationRules(authorizationRules);
+        List<AuthRulePatterns> authRulePatterns = authResponse.getAuthRulePatterns();
+        if (!CollectionUtils.isEmpty(authRulePatterns)) {
+            logAuthRules(sessionCtx, authRulePatterns);
+            sessionCtx.setAuthRulePatterns(authRulePatterns);
         }
         sessionCtx.setClientType(authResponse.getClientType());
     }
 
-    private void logAuthRules(ClientSessionCtx sessionCtx, List<AuthorizationRule> authorizationRules) {
+    private void logAuthRules(ClientSessionCtx sessionCtx, List<AuthRulePatterns> authRulePatterns) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}] Authorization rules for client - {}.", sessionCtx.getClientId(), toSet(authorizationRules));
+            log.debug("[{}] Authorization rules for client - pub: {}, sub: {}.",
+                    sessionCtx.getClientId(), toPubSet(authRulePatterns), toSubSet(authRulePatterns));
         }
     }
 
-    private Set<String> toSet(List<AuthorizationRule> authorizationRules) {
-        return authorizationRules.stream()
-                .map(AuthorizationRule::getPatterns).collect(Collectors.toList())
-                .stream().flatMap(List::stream)
+    private Set<String> toPubSet(List<AuthRulePatterns> authRulePatterns) {
+        Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
+        return toSet(pubPatterns);
+    }
+
+    private Set<String> toSubSet(List<AuthRulePatterns> authRulePatterns) {
+        Stream<List<Pattern>> subPatterns = authRulePatterns.stream().map(AuthRulePatterns::getSubPatterns);
+        return toSet(subPatterns);
+    }
+
+    private Set<String> toSet(Stream<List<Pattern>> stream) {
+        return stream.flatMap(List::stream)
                 .map(Pattern::toString)
                 .collect(Collectors.toSet());
     }

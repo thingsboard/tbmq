@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import java.util.List;
+import java.util.Map;
 
 public interface MqttClientAuthProviderManager {
-    List<MqttClientAuthProvider> getActiveAuthProviders();
+    Map<AuthProviderType, MqttClientAuthProvider> getActiveAuthProviders();
 }

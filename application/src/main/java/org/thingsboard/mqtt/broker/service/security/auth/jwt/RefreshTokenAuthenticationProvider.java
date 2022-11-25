@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.service.security.auth.RefreshAuthenticationToken;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
 
@@ -67,7 +68,7 @@ public class RefreshTokenAuthenticationProvider implements AuthenticationProvide
 
         if (user.getAuthority() == null) throw new InsufficientAuthenticationException("User has no authority assigned");
 
-        return new SecurityUser(user, userCredentials.isEnabled());
+        return new SecurityUser(user, userCredentials.isEnabled(), new UserPrincipal(user.getEmail()));
     }
 
     @Override

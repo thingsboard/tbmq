@@ -20,22 +20,23 @@ public class ProtocolUtil {
     private static final String CLIENT_ID_CREDENTIALS_ID_PREFIX = "client_id";
     private static final String MIXED_CREDENTIALS_ID_PREFIX = "mixed";
     private static final String SSL_CREDENTIALS_ID_PREFIX = "ssl";
+    private static final String SEPARATOR = "|";
 
     public static String usernameCredentialsId(String username) {
-        return USERNAME_CREDENTIALS_ID_PREFIX + username;
+        return USERNAME_CREDENTIALS_ID_PREFIX + SEPARATOR + username;
     }
 
     public static String clientIdCredentialsId(String clientId) {
-        return CLIENT_ID_CREDENTIALS_ID_PREFIX + clientId;
+        return CLIENT_ID_CREDENTIALS_ID_PREFIX + SEPARATOR + clientId;
     }
 
     public static String mixedCredentialsId(String username, String clientId) {
-        return MIXED_CREDENTIALS_ID_PREFIX + username + "|" + clientId;
+        return MIXED_CREDENTIALS_ID_PREFIX + SEPARATOR + username + SEPARATOR + clientId;
     }
 
 
     public static String sslCredentialsId(String commonName) {
-        return SSL_CREDENTIALS_ID_PREFIX + commonName;
+        return SSL_CREDENTIALS_ID_PREFIX + SEPARATOR + commonName;
     }
 
 

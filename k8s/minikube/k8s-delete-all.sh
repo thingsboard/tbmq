@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 
-source .env
-
 kubectl -n thingsboard-mqtt-broker delete svc,sts,deploy,cm,po,ing --all
 
 kubectl -n thingsboard-mqtt-broker get pvc --no-headers=true | awk '//{print $1}' | xargs kubectl -n thingsboard-mqtt-broker delete --ignore-not-found=true pvc

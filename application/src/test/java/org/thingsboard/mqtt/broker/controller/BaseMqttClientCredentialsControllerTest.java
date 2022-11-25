@@ -36,7 +36,6 @@ import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest.IdComparator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -134,7 +133,7 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
 
     @Test
     public void saveSslMqttClientCredentialsWithEmptyAuthorizationRulesMappingTest() throws Exception {
-        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Collections.emptyMap());
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parentCertCn", Collections.emptyMap());
         MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
 
         doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
@@ -142,7 +141,7 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
 
     @Test
     public void saveSslMqttClientCredentialsWithInvalidAuthorizationRulesMappingTest() throws Exception {
-        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Map.of("sigfox", List.of("[")));
+        SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parentCertCn", "sigfox", List.of("["));
         MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
 
         doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
@@ -150,7 +149,7 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
 
     @Test
     public void saveSslMqttClientCredentialsWithInvalidCertificateMatcherRegexTest() throws Exception {
-        SslMqttCredentials sslMqttCredentials = newSslMqttCredentials("parentCertCn", Map.of("[", List.of("storegateway/.*")));
+        SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parentCertCn", "[", List.of("storegateway/.*"));
         MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials);
 
         doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
@@ -228,14 +227,10 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
     }
 
     private BasicMqttCredentials newBasicMqttCredentials(String clientId, String username, String password, List<String> authorizationRulePatterns) {
-        return new BasicMqttCredentials(clientId, username, password, authorizationRulePatterns);
+        return BasicMqttCredentials.newInstance(clientId, username, password, authorizationRulePatterns);
     }
 
     private SslMqttCredentials newSslMqttCredentials(String parentCertCn) {
-        return newSslMqttCredentials(parentCertCn, Map.of("sigfox", List.of("storegateway/.*")));
-    }
-
-    private SslMqttCredentials newSslMqttCredentials(String parentCertCn, Map<String, List<String>> authorizationRulesMapping) {
-        return new SslMqttCredentials(parentCertCn, authorizationRulesMapping);
+        return SslMqttCredentials.newInstance(parentCertCn, "sigfox", List.of("storegateway/.*"));
     }
 }

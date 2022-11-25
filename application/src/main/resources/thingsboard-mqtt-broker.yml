@@ -249,6 +249,11 @@ actors:
     dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
     wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
     wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
+  rule:
+    # Specify thread pool size for mail sender executor service
+    mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:40}"
+    # Specify thread pool size for password reset emails
+    mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:10}"
 
 # SQL DAO Configuration
 spring:
@@ -278,6 +283,10 @@ spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
 # Security parameters
 security:
   mqtt:
+    # BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
+    # and then by 'ssl' provider if 'basic' is not successful;
+    # the latter means only one attempt is done according to the listener communication chosen (see listener.tcp/listener.ssl)
+    auth_strategy: "${SECURITY_MQTT_AUTH_STRATEGY:BOTH}"
     basic:
       # If enabled the server will try to authenticate client with clientId and/or username and/or password
       enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
@@ -374,6 +383,9 @@ caffeine:
     packetIdAndSerialNumber:
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
       maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+    mqttClientCredentials:
+      timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
 
 stats:
   enabled: "${STATS_ENABLED:true}"

@@ -19,7 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
 
@@ -29,5 +29,5 @@ import java.util.List;
 public class AuthResponse {
     private final boolean success;
     private final ClientType clientType;
-    private final List<AuthorizationRule> authorizationRules;
+    private final List<AuthRulePatterns> authRulePatterns;
 }

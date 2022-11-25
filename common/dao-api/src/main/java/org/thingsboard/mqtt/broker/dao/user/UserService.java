@@ -32,9 +32,13 @@ public interface UserService {
 
     UserCredentials findUserCredentialsByUserId(UUID userId);
 
+    UserCredentials findUserCredentialsByResetToken(String resetToken);
+
     UserCredentials saveUserCredentials(UserCredentials userCredentials);
 
-    void replaceUserCredentials(UserCredentials userCredentials);
+    UserCredentials requestPasswordReset(String email);
+
+    UserCredentials replaceUserCredentials(UserCredentials userCredentials);
 
     void deleteUser(UUID userId);
 

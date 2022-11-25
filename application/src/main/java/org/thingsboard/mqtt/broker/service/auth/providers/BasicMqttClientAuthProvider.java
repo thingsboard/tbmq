@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -63,9 +63,8 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         log.trace("[{}] Authenticated with username {}", authContext.getClientId(), authContext.getUsername());
         BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
-        AuthorizationRule authorizationRule = authorizationRuleService.parseBasicAuthorizationRule(credentials);
-        return new AuthResponse(true, basicCredentials.getClientType(),
-                authorizationRule == null ? Collections.emptyList() : Collections.singletonList(authorizationRule));
+        AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(credentials);
+        return new AuthResponse(true, basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
     }
 
     private MqttClientCredentials authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {

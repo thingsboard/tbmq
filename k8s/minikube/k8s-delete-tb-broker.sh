@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 
-source .env
-
 set -e
 
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker

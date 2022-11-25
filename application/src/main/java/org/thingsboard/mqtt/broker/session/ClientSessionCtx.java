@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthorizationRule;
+import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +53,7 @@ public class ClientSessionCtx implements SessionContext {
     private volatile SessionInfo sessionInfo;
     @Getter
     @Setter
-    private volatile List<AuthorizationRule> authorizationRules;
+    private volatile List<AuthRulePatterns> authRulePatterns;
     @Getter
     @Setter
     private volatile ClientType clientType;

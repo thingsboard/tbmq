@@ -26,6 +26,11 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SslMqttCredentials {
+
     private String parentCertCommonName;
-    private Map<String, List<String>> authorizationRulesMapping;
+    private Map<String, PubSubAuthorizationRules> authRulesMapping;
+
+    public static SslMqttCredentials newInstance(String parentCertCommonName, String key, List<String> authRules) {
+        return new SslMqttCredentials(parentCertCommonName, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+    }
 }

@@ -19,4 +19,6 @@ public interface SystemDataLoaderService {
 
     void createAdmin() throws Exception;
 
+    void createAdminSettings() throws Exception;
+
 }

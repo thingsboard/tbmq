@@ -33,6 +33,9 @@ public class SecurityUser extends User {
     @Getter
     @Setter
     private boolean enabled;
+    @Getter
+    @Setter
+    private UserPrincipal userPrincipal;
 
     public SecurityUser() {
         super();
@@ -42,9 +45,10 @@ public class SecurityUser extends User {
         super(id);
     }
 
-    public SecurityUser(User user, boolean enabled) {
+    public SecurityUser(User user, boolean enabled, UserPrincipal userPrincipal) {
         super(user);
         this.enabled = enabled;
+        this.userPrincipal = userPrincipal;
     }
 
     public Collection<GrantedAuthority> getAuthorities() {
