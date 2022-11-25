@@ -57,7 +57,7 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
   constructor(public fb: FormBuilder) {
     this.credentialsMqttFormGroup = this.fb.group({
       parentCertCommonName: [null, [Validators.required]],
-      authorizationRulesMapping: [null]
+      authRulesMapping: [null]
     });
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)

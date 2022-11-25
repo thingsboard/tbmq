@@ -21,7 +21,7 @@
       <mat-panel-title>
         <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules-mapping</div>
       </mat-panel-title>
-      <mat-panel-description *ngIf="rulesMappingFormGroup.dirty && !rulesMappingFormGroup.get('authorizationRulesMapping').value?.length">
+      <mat-panel-description *ngIf="rulesMappingFormGroup.dirty && !rulesMappingFormGroup.get('authRulesMapping').value?.length">
         <mat-error translate>mqtt-client-credentials.add-authorization-rule-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>
@@ -33,7 +33,7 @@
           <span fxFlex [fxShow]="!disabled" style="width: 40px; min-width: 40px;">&nbsp;</span>
         </div>
         <div class="body">
-          <div formArrayName="authorizationRulesMapping" class="row"
+          <div formArrayName="authRulesMapping" class="row"
                *ngFor="let rulesControl of rulesFormArray().controls; let $index = index">
             <div [formGroupName]="$index" fxFlex fxLayout="space-around">
               <mat-form-field class="cell" style="padding-top: 16px; min-width: 180px">
@@ -42,48 +42,36 @@
                   {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
                 </mat-error>
               </mat-form-field>
-              <mat-form-field class="cell" style="width:100%; max-width: 600px;">
-                <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-                <mat-chip-list #chipListPub>
-                  <mat-chip *ngFor="let rule of pubRulesArray[$index]"
-                            [value]="rule"
-                            (removed)="removePubTopicRule(rule, $index)">
-                    <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-                    {{ rule }}
-                  </mat-chip>
-                  <input style="min-height: 31px"
-                         placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                         [matChipInputFor]="chipListPub"
-                         (matChipInputTokenEnd)="addPubTopicRule($event, $index)">
-                </mat-chip-list>
-<!--                <mat-chip-list #chipList>-->
-<!--                  <mat-chip *ngFor="let rule of rulesArray[$index]"-->
-<!--                            [value]="rule"-->
-<!--                            [removable]="true"-->
-<!--                            (removed)="removeTopicRule(rule, $index)">-->
-<!--                    <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>-->
-<!--                    {{ rule }}-->
-<!--                  </mat-chip>-->
-<!--                  <input style="min-height: 31px" placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"-->
-<!--                         [matChipInputFor]="chipList"-->
-<!--                         (matChipInputTokenEnd)="addTopicRule($event, $index)">-->
-<!--                </mat-chip-list>-->
-              </mat-form-field>
-              <mat-form-field class="cell" style="width:100%; max-width: 600px;">
-                <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-                <mat-chip-list #chipListSub>
-                  <mat-chip *ngFor="let rule of subRulesArray[$index]"
-                            [value]="rule"
-                            (removed)="removeSubTopicRule(rule, $index)">
-                    <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-                    {{ rule }}
-                  </mat-chip>
-                  <input style="min-height: 31px"
-                         placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                         [matChipInputFor]="chipListSub"
-                         (matChipInputTokenEnd)="addSubTopicRule($event, $index)">
-                </mat-chip-list>
-              </mat-form-field>
+              <div fxFlex fxLayout="column">
+                <mat-form-field class="cell">
+                  <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+                  <mat-chip-list #chipListPub>
+                    <mat-chip *ngFor="let rule of pubRulesArray[$index]"
+                              [value]="rule"
+                              (removed)="removePubTopicRule(rule, $index)">
+                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+                      {{ rule }}
+                    </mat-chip>
+                    <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                           [matChipInputFor]="chipListPub"
+                           (matChipInputTokenEnd)="addPubTopicRule($event, $index)">
+                  </mat-chip-list>
+                </mat-form-field>
+                <mat-form-field class="cell">
+                  <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+                  <mat-chip-list #chipListSub>
+                    <mat-chip *ngFor="let rule of subRulesArray[$index]"
+                              [value]="rule"
+                              (removed)="removeSubTopicRule(rule, $index)">
+                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+                      {{ rule }}
+                    </mat-chip>
+                    <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                           [matChipInputFor]="chipListSub"
+                           (matChipInputTokenEnd)="addSubTopicRule($event, $index)">
+                  </mat-chip-list>
+                </mat-form-field>
+              </div>
               <button mat-button mat-icon-button color="primary"
                       [fxShow]="!disabled"
                       type="button"
@@ -94,6 +82,7 @@
                 <mat-icon>close</mat-icon>
               </button>
             </div>
+            <mat-divider></mat-divider>
           </div>
           <button mat-button mat-raised-button color="primary"
                   [fxShow]="!disabled"

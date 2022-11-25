@@ -45,7 +45,7 @@ export interface MqttClientCredentials extends BaseData<ClientId> {
 
 export interface SslMqttCredentials {
   parentCertCommonName: string;
-  authorizationRulesMapping: string[];
+  authRulesMapping: string[];
 }
 
 export interface BasicMqttCredentials {
