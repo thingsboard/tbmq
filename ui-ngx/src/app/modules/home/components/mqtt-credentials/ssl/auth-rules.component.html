@@ -47,12 +47,16 @@
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
                   <mat-chip-list #chipListPub>
                     <mat-chip *ngFor="let rule of pubRulesArray[$index]"
+                              [selectable]="!disabled"
+                              [removable]="!disabled"
                               [value]="rule"
                               (removed)="removeTopicRule(rule, $index, authRulePatternsType.PUBLISH)">
-                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                       {{ rule }}
+                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                     </mat-chip>
-                    <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                    <input matInput type="text"
+                           placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                           matChipInputAddOnBlur
                            [matChipInputFor]="chipListPub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-list>
@@ -61,12 +65,16 @@
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
                   <mat-chip-list #chipListSub>
                     <mat-chip *ngFor="let rule of subRulesArray[$index]"
+                              [selectable]="!disabled"
+                              [removable]="!disabled"
                               [value]="rule"
                               (removed)="removeTopicRule(rule, $index, authRulePatternsType.SUBSCRIBE)">
-                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                       {{ rule }}
+                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                     </mat-chip>
-                    <input placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                    <input matInput type="text"
+                           placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                           matChipInputAddOnBlur
                            [matChipInputFor]="chipListSub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)">
                   </mat-chip-list>
