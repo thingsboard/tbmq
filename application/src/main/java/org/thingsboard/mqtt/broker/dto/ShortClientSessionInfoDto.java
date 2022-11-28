@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Data
@@ -39,6 +40,7 @@ public class ShortClientSessionInfoDto {
     private ConnectionState connectionState;
     private ClientType clientType;
     private String nodeId;
+    private UUID sessionId;
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
         switch (sortOrder.getProperty()) {

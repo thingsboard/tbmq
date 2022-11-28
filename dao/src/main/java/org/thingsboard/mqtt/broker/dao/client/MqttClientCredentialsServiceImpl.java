@@ -77,8 +77,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
         credentialsValidator.validate(mqttClientCredentials);
         try {
+            MqttClientCredentials currentCredentials = getCurrentCredentialsById(mqttClientCredentials.getId());
             MqttClientCredentials savedMqttClientCredentials = mqttClientCredentialsDao.save(mqttClientCredentials);
-            evictCache(savedMqttClientCredentials);
+            evictCache(currentCredentials);
             return savedMqttClientCredentials;
         } catch (Exception t) {
             ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
@@ -208,9 +209,15 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
     }
 
+    private MqttClientCredentials getCurrentCredentialsById(UUID id) {
+        return id != null ? getCredentialsById(id).orElse(null) : null;
+    }
+
     private void evictCache(MqttClientCredentials clientCredentials) {
         Cache cache = getCache();
-        cache.evictIfPresent(clientCredentials.getCredentialsId());
+        if (clientCredentials != null) {
+            cache.evictIfPresent(clientCredentials.getCredentialsId());
+        }
     }
 
     private Cache getCache() {
