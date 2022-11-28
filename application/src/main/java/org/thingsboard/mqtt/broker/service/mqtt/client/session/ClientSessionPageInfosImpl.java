@@ -52,6 +52,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                         .clientType(clientSession.getSessionInfo().getClientInfo().getType())
                         .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
                         .nodeId(clientSession.getSessionInfo().getServiceId())
+                        .sessionId(clientSession.getSessionInfo().getSessionId())
                         .build())
                 .sorted(sorted(pageLink))
                 .collect(Collectors.toList());
