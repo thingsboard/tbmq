@@ -104,4 +104,8 @@ export class ManageCredentialsDialogComponent extends DialogComponent<ManageCred
     );
   }
 
+  onChangePasswordCloseDialog(event) {
+    this.dialogRef.close(null);
+  }
+
 }

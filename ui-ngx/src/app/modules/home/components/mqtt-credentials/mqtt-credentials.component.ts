@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder, FormControl,
@@ -32,6 +32,7 @@ import {
   MqttCredentialsType,
   MqttCredentialsTypes
 } from '@shared/models/mqtt-client-crenetials.model';
+import { EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'tb-mqtt-credentials',
@@ -56,6 +57,9 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
 
   @Input()
   entity: MqttClientCredentials;
+
+  @Output()
+  changePasswordCloseDialog = new EventEmitter<boolean>();
 
   get credentialsType(): MqttCredentialsType {
     return this.entity.credentialsType;
@@ -160,4 +164,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     }
   }
 
+  onChangePasswordCloseDialog($event) {
+    this.changePasswordCloseDialog.emit($event);
+  }
 }

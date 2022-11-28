@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { Component, forwardRef, Input, OnDestroy, Output } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -40,6 +40,7 @@ import {
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
 import { Observable } from 'rxjs/internal/Observable';
 import { MatChipInputEvent } from "@angular/material/chips";
+import { EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -64,6 +65,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   @Input()
   entity: MqttClientCredentials;
+
+  @Output()
+  changePasswordCloseDialog = new EventEmitter<boolean>();
 
   authRulePatternsType = AuthRulePatternsType
 
@@ -155,7 +159,11 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         data: {
           credentialsId: this.entity?.id
         }
-      }).afterClosed();
+      }).afterClosed().subscribe(res => {
+        if (res) {
+          this.changePasswordCloseDialog.emit(res);
+        }
+    });
   }
 
   addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
