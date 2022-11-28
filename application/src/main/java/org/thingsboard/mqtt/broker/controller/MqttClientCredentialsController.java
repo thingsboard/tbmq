@@ -53,7 +53,7 @@ public class MqttClientCredentialsController extends BaseController {
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
         checkNotNull(mqttClientCredentials);
         try {
-            if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType()) {
+            if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType() && mqttClientCredentials.getId() == null) {
                 BasicMqttCredentials mqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
                 mqttCredentials.setPassword(encodePasswordIfNotEmpty(mqttCredentials.getPassword()));
                 mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
