@@ -67,7 +67,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   entity: MqttClientCredentials;
 
   @Output()
-  changePasswordCloseDialog = new EventEmitter<boolean>();
+  changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType
 
@@ -150,16 +150,16 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     this.propagateChange(formValue);
   }
 
-  changePassword(): Observable<boolean> {
+  changePassword(): Observable<MqttClientCredentials> {
     // @ts-ignore
     return this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
-      boolean>(ChangeMqttBasicPasswordDialogComponent, {
+      MqttClientCredentials>(ChangeMqttBasicPasswordDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
           credentialsId: this.entity?.id
         }
-      }).afterClosed().subscribe(res => {
+      }).afterClosed().subscribe((res: MqttClientCredentials) => {
         if (res) {
           this.changePasswordCloseDialog.emit(res);
         }

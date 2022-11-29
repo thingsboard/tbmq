@@ -34,7 +34,7 @@ import {
 export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCredentials> {
 
   @Output()
-  changePasswordCloseDialog = new EventEmitter<boolean>();
+  changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
   credentialsType = MqttCredentialsType;
   credentialsTypes = Object.values(MqttCredentialsType);
@@ -76,7 +76,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );
   }
 
-  onChangePasswordCloseDialog($event) {
-
+  onChangePasswordCloseDialog($event: MqttClientCredentials) {
+    this.updateForm($event);
   }
 }

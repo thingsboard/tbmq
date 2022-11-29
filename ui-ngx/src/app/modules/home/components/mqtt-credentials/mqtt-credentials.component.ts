@@ -59,7 +59,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
   entity: MqttClientCredentials;
 
   @Output()
-  changePasswordCloseDialog = new EventEmitter<boolean>();
+  changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
   get credentialsType(): MqttCredentialsType {
     return this.entity.credentialsType;
@@ -164,7 +164,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     }
   }
 
-  onChangePasswordCloseDialog($event) {
+  onChangePasswordCloseDialog($event: MqttClientCredentials) {
     this.changePasswordCloseDialog.emit($event);
   }
 }

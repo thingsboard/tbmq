@@ -104,8 +104,8 @@ export class ManageCredentialsDialogComponent extends DialogComponent<ManageCred
     );
   }
 
-  onChangePasswordCloseDialog(event) {
-    this.dialogRef.close(null);
+  onChangePasswordCloseDialog($event: MqttClientCredentials) {
+    this.dialogRef.close($event);
   }
 
 }
