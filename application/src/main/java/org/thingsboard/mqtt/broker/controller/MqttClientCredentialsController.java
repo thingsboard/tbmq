@@ -103,8 +103,8 @@ public class MqttClientCredentialsController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.POST)
-    public void changeMqttBasicCredentialsPassword(@PathVariable("credentialsId") String strCredentialsId,
-                                                   @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
+    public MqttClientCredentials changeMqttBasicCredentialsPassword(@PathVariable("credentialsId") String strCredentialsId,
+                                                                    @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
         try {
             MqttClientCredentials mqttClientCredentials = getCredentialsById(strCredentialsId);
             if (mqttClientCredentials.getCredentialsType() != ClientCredentialsType.MQTT_BASIC) {
@@ -118,7 +118,7 @@ public class MqttClientCredentialsController extends BaseController {
             basicMqttCredentials.setPassword(encodePasswordIfNotEmpty(changePasswordRequest.getNewPassword()));
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
 
-            mqttClientCredentialsService.saveCredentials(mqttClientCredentials);
+            return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
         } catch (Exception e) {
             throw handleException(e);
         }
