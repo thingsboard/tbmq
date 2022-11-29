@@ -19,6 +19,9 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 public class BrokerConstants {
 
+    public static final String MQTT_PROTOCOL_NAME = "MQTT";
+    public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";
+
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
