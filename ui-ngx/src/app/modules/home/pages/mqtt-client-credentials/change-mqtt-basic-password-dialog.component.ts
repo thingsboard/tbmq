@@ -56,9 +56,9 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
 
   buildChangePasswordForm() {
     this.changePassword = this.fb.group({
-      currentPassword: [''],
-      newPassword: [''],
-      newPassword2: ['']
+      currentPassword: [null],
+      newPassword: [null],
+      newPassword2: [null]
     });
   }
 
@@ -70,10 +70,13 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
       this.mqttClientCredentialsService.changePassword(
         this.changePassword.get('currentPassword').value,
         this.changePassword.get('newPassword').value,
-        this.credentialsId).subscribe(() => {
-        this.store.dispatch(new ActionNotificationShow({ message: this.translate.instant('mqtt-client-credentials.password-changed'),
-          type: 'success' }));
-          this.dialogRef.close(true);
+        this.credentialsId).subscribe(
+          (credentials) => {
+            this.store.dispatch(new ActionNotificationShow({
+              message: this.translate.instant('mqtt-client-credentials.password-changed'),
+              type: 'success'
+            }));
+          this.dialogRef.close(credentials);
       });
     }
   }

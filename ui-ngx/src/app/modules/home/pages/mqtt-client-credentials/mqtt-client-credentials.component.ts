@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -32,6 +32,9 @@ import {
   styleUrls: ['./mqtt-client-credentials.component.scss']
 })
 export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCredentials> {
+
+  @Output()
+  changePasswordCloseDialog = new EventEmitter<boolean>();
 
   credentialsType = MqttCredentialsType;
   credentialsTypes = Object.values(MqttCredentialsType);
@@ -73,4 +76,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );
   }
 
+  onChangePasswordCloseDialog($event) {
+
+  }
 }
