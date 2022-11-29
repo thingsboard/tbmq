@@ -35,7 +35,6 @@ import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.UUID;
 
 @RestController
@@ -136,9 +135,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/user", method = RequestMethod.POST)
     @ResponseBody
-    public User saveAdminUser(
-            @RequestBody User user,
-            @RequestParam(required = false, defaultValue = "true") boolean sendActivationMail, HttpServletRequest request) throws ThingsboardException {
+    public User saveAdminUser(@RequestBody User user) throws ThingsboardException {
         checkNotNull(user);
         return checkNotNull(userService.saveUser(user));
     }
