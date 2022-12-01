@@ -43,17 +43,17 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("device-persisted-msg-consumer"));
     private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
 
-    private volatile boolean stopped = false;
+    private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
+    private final DeviceMsgProcessor deviceMsgProcessor;
+    private final StatsManager statsManager;
+    private final ServiceInfoProvider serviceInfoProvider;
 
     @Value("${queue.device-persisted-msg.consumers-count}")
     private int consumersCount;
     @Value("${queue.device-persisted-msg.poll-interval}")
     private long pollDuration;
 
-    private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
-    private final DeviceMsgProcessor deviceMsgProcessor;
-    private final StatsManager statsManager;
-    private final ServiceInfoProvider serviceInfoProvider;
+    private volatile boolean stopped = false;
 
     @Override
     public void startConsuming() {
