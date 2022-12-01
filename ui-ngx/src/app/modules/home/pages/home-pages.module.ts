@@ -22,13 +22,18 @@ import { MqttSessionsModule } from './mqtt-sessions/mqtt-sessions.module';
 import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
 import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
+import { SessionsTableComponent } from './sessions/sessions-table.component';
+import { SessionsDetailsDialogComponent } from './sessions/sessions-details-dialog.component';
+import { CommonModule } from "@angular/common";
+import { SessionsModule } from "@home/pages/sessions/sessions.module";
 
 @NgModule({
   exports: [
     MailServerModule,
     ProfileModule,
     MqttSessionsModule,
-    MqttClientCredentialsModule
+    MqttClientCredentialsModule,
+    SessionsModule
   ],
   providers: [
     {

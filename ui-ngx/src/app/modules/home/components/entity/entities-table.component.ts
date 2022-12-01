@@ -41,7 +41,7 @@ import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { BaseData, HasId } from '@shared/models/base-data';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
   CellActionDescriptor, CellActionDescriptorType,
   EntityActionTableColumn,
@@ -57,7 +57,7 @@ import { AddEntityDialogComponent } from './add-entity-dialog.component';
 import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { isDefined, isUndefined } from '@core/utils';
+import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { HasUUID } from '@shared/models/id/has-uuid';
 
 @Component({
@@ -95,6 +95,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   displayPagination = true;
   pageSizeOptions;
   pageLink: PageLink;
+  pageMode = true;
   textSearchMode = false;
   dataSource: EntitiesDataSource<BaseData<HasId>>;
 
@@ -121,6 +122,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
               private dialogService: DialogService,
               private domSanitizer: DomSanitizer,
               private cd: ChangeDetectorRef,
+              private router: Router,
               private componentFactoryResolver: ComponentFactoryResolver) {
     super(store);
   }
@@ -413,6 +415,35 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.paginator.pageIndex = 0;
     }
     this.updateData();
+  }
+
+  resetSortAndFilter(update: boolean = true, preserveTimewindow: boolean = false) {
+    this.textSearchMode = false;
+    this.pageLink.textSearch = null;
+    if (this.displayPagination) {
+      this.paginator.pageIndex = 0;
+    }
+    const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
+    this.sort.active = sortable.id;
+    this.sort.direction = this.entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
+    if (update) {
+      this.updatedRouterParamsAndData({}, '');
+    }
+  }
+
+  protected updatedRouterParamsAndData(queryParams: object, queryParamsHandling: QueryParamsHandling = 'merge') {
+    if (this.pageMode) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams,
+        queryParamsHandling
+      });
+      if (queryParamsHandling === '' && isEqual(this.route.snapshot.queryParams, queryParams)) {
+        this.updateData();
+      }
+    } else {
+      this.updateData();
+    }
   }
 
   columnsUpdated(resetData: boolean = false) {

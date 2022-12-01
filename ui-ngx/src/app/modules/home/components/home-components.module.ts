@@ -23,6 +23,7 @@ import { DetailsPanelComponent } from '@home/components/details-panel.component'
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
 import { ManageCredentialsDialogComponent } from '@home/dialogs/manage-credentials-dialog.component';
+import { SubscriptionsComponent } from "@home/components/subscriptions/subscriptions.component";
 
 @NgModule({
   declarations:
@@ -31,19 +32,21 @@ import { ManageCredentialsDialogComponent } from '@home/dialogs/manage-credentia
       AddEntityDialogComponent,
       DetailsPanelComponent,
       EntityDetailsPanelComponent,
-      ManageCredentialsDialogComponent
+      ManageCredentialsDialogComponent,
+      SubscriptionsComponent
     ],
   imports: [
     CommonModule,
     SharedModule,
-    SharedHomeComponentsModule,
+    SharedHomeComponentsModule
   ],
   exports: [
     EntitiesTableComponent,
     AddEntityDialogComponent,
     DetailsPanelComponent,
     EntityDetailsPanelComponent,
-    ManageCredentialsDialogComponent
+    ManageCredentialsDialogComponent,
+    SubscriptionsComponent
   ]
 })
 export class HomeComponentsModule {

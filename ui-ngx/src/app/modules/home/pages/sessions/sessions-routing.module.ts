@@ -15,22 +15,27 @@
 ///
 
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SharedModule } from '@shared/shared.module';
-import { HomeComponentsModule } from '@home/components/home-components.module';
-import { MqttSessionsComponent } from '@home/pages/mqtt-sessions/mqtt-sessions.component';
-import { MqttSessionsRoutingModule } from '@home/pages/mqtt-sessions/mqtt-sessions-routing.module';
+import { RouterModule, Routes } from '@angular/router';
+import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
+
+const routes: Routes = [
+  {
+    path: 'sessionsNew',
+    component: SessionsTableComponent,
+    data: {
+      title: 'mqtt-client-session.sessions',
+      breadcrumb: {
+        label: 'mqtt-client-session.sessions',
+        icon: 'mdi:account-supervisor',
+      },
+      isPage: true
+    }
+  }
+];
 
 @NgModule({
-  declarations: [
-    MqttSessionsComponent,
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    MqttSessionsRoutingModule
-  ]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
 })
 
-export class MqttSessionsModule { }
+export class SessionsRoutingModule { }

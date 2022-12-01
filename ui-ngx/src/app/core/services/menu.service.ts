@@ -80,6 +80,14 @@ export class MenuService {
       },
       {
         id: guid(),
+        name: 'mqtt-client-session.sessions',
+        type: 'link',
+        path: '/sessionsNew',
+        icon: 'mdi:account-tie-voice-off',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
         name: 'admin.outgoing-mail',
         type: 'link',
         path: '/outgoing-mail',

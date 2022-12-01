@@ -51,6 +51,7 @@ export class MqttSessionsTableConfigResolver implements Resolve<EntityTableConfi
     this.config.addEnabled = false;
     this.config.entitiesDeleteEnabled = false;
     this.config.deleteEnabled = () => false;
+    this.config.handleRowClick = (event, entity) => false;
 
     this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.clientId : '';
 
