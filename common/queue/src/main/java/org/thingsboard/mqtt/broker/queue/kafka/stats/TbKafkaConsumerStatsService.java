@@ -86,7 +86,6 @@ public class TbKafkaConsumerStatsService {
             }
             for (String groupId : monitoredGroups) {
                 try {
-
                     Map<TopicPartition, OffsetAndMetadata> groupOffsets = adminClient.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
                             .get(statsConfig.getKafkaResponseTimeoutMs(), TimeUnit.MILLISECONDS);
                     Map<TopicPartition, Long> endOffsets = consumer.endOffsets(groupOffsets.keySet(), timeoutDuration);
@@ -100,11 +99,10 @@ public class TbKafkaConsumerStatsService {
                                 builder.append(", ");
                             }
                         }
-                        log.info("[{}] Topic partitions with lag: [{}].", groupId, builder.toString());
+                        log.info("[{}] Topic partitions with lag: [{}].", groupId, builder);
                     }
                 } catch (Exception e) {
-                    log.warn("[{}] Failed to get consumer group stats. Reason - {}.", groupId, e.getMessage());
-                    log.trace("Detailed error: ", e);
+                    log.warn("[{}] Failed to get consumer group stats.", groupId, e);
                 }
             }
 

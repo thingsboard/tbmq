@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -178,7 +179,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {
         var version = (byte) connectMessage.variableHeader().version();
-        var protocolName = version > 3 ? "MQTT" : "MQIsdp";
+        var protocolName = version > 3 ? BrokerConstants.MQTT_PROTOCOL_NAME : BrokerConstants.MQTT_V_3_1_PROTOCOL_NAME;
         return MqttVersion.fromProtocolNameAndLevel(protocolName, version);
     }
 
