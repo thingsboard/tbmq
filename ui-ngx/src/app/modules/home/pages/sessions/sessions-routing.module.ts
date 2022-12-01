@@ -20,7 +20,7 @@ import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.comp
 
 const routes: Routes = [
   {
-    path: 'sessionsNew',
+    path: 'sessions',
     component: SessionsTableComponent,
     data: {
       title: 'mqtt-client-session.sessions',
