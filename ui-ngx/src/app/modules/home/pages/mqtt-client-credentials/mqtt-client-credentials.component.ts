@@ -26,6 +26,8 @@ import {
   MqttCredentialsType
 } from '@shared/models/mqtt-client-crenetials.model';
 import { ClientType, clientTypeTranslationMap } from "@shared/models/mqtt-client.model";
+import { ActionNotificationShow } from "@core/notification/notification.actions";
+import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -47,7 +49,8 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
               @Inject('entity') protected entityValue: MqttClientCredentials,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttClientCredentials>,
               public fb: FormBuilder,
-              protected cd: ChangeDetectorRef) {
+              protected cd: ChangeDetectorRef,
+              private translate: TranslateService) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
@@ -78,9 +81,32 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     this.entityForm.patchValue({name: entity.name} );
     this.entityForm.patchValue({credentialsType: entity.credentialsType} );
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );
+    this.entityForm.patchValue({clientType: entity.clientType} );
   }
 
   onChangePasswordCloseDialog($event: MqttClientCredentials) {
     this.updateForm($event);
+  }
+
+  onIdCopied() {
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('mqtt-client-credentials.id-copied-message'),
+        type: 'success',
+        duration: 750,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'right'
+      }));
+  }
+
+  onClientCredentialsCopied() {
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('mqtt-client-credentials.client-credentials-id-copied-message'),
+        type: 'success',
+        duration: 750,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'right'
+      }));
   }
 }
