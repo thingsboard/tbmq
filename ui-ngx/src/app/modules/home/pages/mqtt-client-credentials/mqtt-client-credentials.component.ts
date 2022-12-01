@@ -78,6 +78,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     this.entityForm.patchValue({name: entity.name} );
     this.entityForm.patchValue({credentialsType: entity.credentialsType} );
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );
+    this.entityForm.patchValue({clientType: entity.clientType} );
   }
 
   onChangePasswordCloseDialog($event: MqttClientCredentials) {

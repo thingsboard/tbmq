@@ -22,7 +22,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
-import { ManageCredentialsDialogComponent } from '@home/dialogs/manage-credentials-dialog.component';
 import { SubscriptionsComponent } from "@home/components/subscriptions/subscriptions.component";
 
 @NgModule({
@@ -32,7 +31,6 @@ import { SubscriptionsComponent } from "@home/components/subscriptions/subscript
       AddEntityDialogComponent,
       DetailsPanelComponent,
       EntityDetailsPanelComponent,
-      ManageCredentialsDialogComponent,
       SubscriptionsComponent
     ],
   imports: [
@@ -45,7 +43,6 @@ import { SubscriptionsComponent } from "@home/components/subscriptions/subscript
     AddEntityDialogComponent,
     DetailsPanelComponent,
     EntityDetailsPanelComponent,
-    ManageCredentialsDialogComponent,
     SubscriptionsComponent
   ]
 })
