@@ -3182,6 +3182,7 @@
     "mqtt-client": {
       "client-id": "Client ID",
       "client-type": "Client type",
+      "client-type-required": "Client type is required",
       "type-application": "Application",
       "type-device": "Device"
     },

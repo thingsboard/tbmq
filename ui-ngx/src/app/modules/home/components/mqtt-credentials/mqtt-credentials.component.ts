@@ -33,6 +33,7 @@ import {
   MqttCredentialsTypes
 } from '@shared/models/mqtt-client-crenetials.model';
 import { EventEmitter } from '@angular/core';
+import { ClientType, clientTypeTranslationMap } from "@shared/models/mqtt-client.model";
 
 @Component({
   selector: 'tb-mqtt-credentials',
@@ -74,11 +75,15 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
 
   credentialTypeNames = credentialsTypeNames;
 
+  clientTypes = Object.values(ClientType);
+  clientTypeTranslationMap = clientTypeTranslationMap;
+
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder) {
     this.credentialsFormGroup = this.fb.group({
       name: [null],
+      clientType: [null],
       credentialsType: [null],
       credentialsValue: [null]
     });
@@ -109,6 +114,7 @@ export class MqttCredentialsComponent implements ControlValueAccessor, OnInit, V
     if (isDefinedAndNotNull(value)) {
       this.credentialsFormGroup.patchValue({
         name: value.name,
+        clientType: value.clientType,
         credentialsType: value.credentialsType,
         credentialsValue: value.credentialsValue
       }, {emitEvent: false});

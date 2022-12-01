@@ -25,6 +25,7 @@ import {
   MqttClientCredentials,
   MqttCredentialsType
 } from '@shared/models/mqtt-client-crenetials.model';
+import { ClientType, clientTypeTranslationMap } from "@shared/models/mqtt-client.model";
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -39,6 +40,8 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
   credentialsType = MqttCredentialsType;
   credentialsTypes = Object.values(MqttCredentialsType);
   credentialsTypeTranslationMap = credentialsTypeNames;
+  clientTypes = Object.values(ClientType);
+  clientTypeTranslationMap = clientTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: MqttClientCredentials,
@@ -60,6 +63,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     const form = this.fb.group(
       {
         name: [entity ? entity.name : '', [Validators.required]],
+        clientType: [entity ? entity.clientType : '', [Validators.required]],
         credentialsType: [entity ? entity.credentialsType : '', [Validators.required]],
         credentialsValue: [ entity ? entity.credentialsValue : '']
       }
