@@ -42,6 +42,8 @@ import java.util.UUID;
 @RequestMapping("/api/admin")
 public class AdminController extends BaseController {
 
+    public static final String USER_ID = "userId";
+
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
@@ -127,6 +129,19 @@ public class AdminController extends BaseController {
         try {
             PageLink pageLink = new PageLink(pageSize, page);
             return checkNotNull(userService.findUsers(pageLink));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/user/{userId}", method = RequestMethod.GET)
+    @ResponseBody
+    public User getAdminById(@PathVariable(USER_ID) String strUserId) throws ThingsboardException {
+        checkParameter(USER_ID, strUserId);
+        try {
+            UUID userId = toUUID(strUserId);
+            return checkUserId(userId);
         } catch (Exception e) {
             throw handleException(e);
         }
