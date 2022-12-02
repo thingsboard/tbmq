@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,7 +69,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     }
 
     private long getSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
-        return clientSessionInfo.getLastUpdateTime() + sessionInfo.safeGetSessionExpiryInterval();
+        return clientSessionInfo.getLastUpdateTime() + TimeUnit.SECONDS.toMillis(sessionInfo.safeGetSessionExpiryInterval());
     }
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {

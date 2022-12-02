@@ -104,11 +104,11 @@ public abstract class BaseController {
         }
     }
 
-    void checkUserId(UUID userId) throws ThingsboardException {
+    User checkUserId(UUID userId) throws ThingsboardException {
         try {
             validateId(userId, "Incorrect userId " + userId);
             User user = userService.findUserById(userId);
-            checkNotNull(user);
+            return checkNotNull(user);
         } catch (Exception e) {
             throw handleException(e, false);
         }
