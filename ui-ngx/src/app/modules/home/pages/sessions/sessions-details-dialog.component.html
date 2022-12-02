@@ -48,8 +48,11 @@
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.connected-at</mat-label>
-          <input matInput formControlName="connectedAt" readonly
+          <input matInput fxHide formControlName="connectedAt" readonly
                  [ngModel]="entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
+          <span>
+            {{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
+          </span>
         </mat-form-field>
         <mat-form-field class="mat-block">
           <mat-label translate>mqtt-client-session.connected-status</mat-label>
@@ -60,8 +63,11 @@
         </mat-form-field>
         <mat-form-field *ngIf="!isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
-          <input matInput formControlName="disconnectedAt" readonly
+          <input matInput fxHide formControlName="disconnectedAt" readonly
                  [ngModel]="entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
+          <span>
+            {{ entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
+          </span>
         </mat-form-field>
       </div>
       <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
