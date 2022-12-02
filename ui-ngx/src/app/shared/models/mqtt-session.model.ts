@@ -79,7 +79,7 @@ export enum ConnectionState {
 export const connectionStateColor = new Map<ConnectionState, string>(
   [
     [ConnectionState.CONNECTED, '#008A00'],
-    [ConnectionState.DISCONNECTED, '#757575']
+    [ConnectionState.DISCONNECTED, '#e33737']
   ]
 );
 

@@ -3239,6 +3239,7 @@
       "connected-at": "Connected at",
       "connected-status": "Connected Status",
       "clean-session": "Clean Session",
+      "details": "Session details",
       "disconnected": "Disconnected",
       "disconnected-at": "Disconnected at",
       "disconnect-client": "Disconnect client",

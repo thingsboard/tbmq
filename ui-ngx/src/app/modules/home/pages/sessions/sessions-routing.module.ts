@@ -16,43 +16,26 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
-import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { MqttSessionsTableConfigResolver } from '@home/pages/mqtt-sessions/mqtt-sessions-table-config.resolver';
+import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
 
 const routes: Routes = [
   {
     path: 'sessions',
+    component: SessionsTableComponent,
     data: {
       title: 'mqtt-client-session.sessions',
       breadcrumb: {
         label: 'mqtt-client-session.sessions',
         icon: 'mdi:account-supervisor',
-      }
-    },
-    children: [
-      {
-        path: '',
-        component: EntitiesTableComponent,
-        data: {
-          auth: [Authority.SYS_ADMIN],
-          title: 'mqtt-client-session.sessions'
-        },
-        resolve: {
-          entitiesTableConfig: MqttSessionsTableConfigResolver
-        }
-      }
-    ]
+      },
+      isPage: true
+    }
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule],
-  providers: [
-    MqttSessionsTableConfigResolver
-  ]
+  exports: [RouterModule]
 })
 
-export class MqttSessionsRoutingModule { }
+export class SessionsRoutingModule { }

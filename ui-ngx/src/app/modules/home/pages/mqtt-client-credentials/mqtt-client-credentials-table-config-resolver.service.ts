@@ -25,7 +25,6 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
@@ -33,10 +32,6 @@ import { DialogService } from '@core/services/dialog.service';
 import { Direction } from '@shared/models/page/sort-order';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
-import {
-  ManageCredentialsDialogData,
-  ManageCredentialsDialogComponent
-} from '@home/dialogs/manage-credentials-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
 import { credentialsTypeNames, MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
@@ -83,15 +78,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       }
     );
 
-    this.config.cellActionDescriptors.push(
-      {
-        name: this.translate.instant('mqtt-client-credentials.manage-client-credentials'),
-        mdiIcon: 'mdi:badge-account-horizontal-outline',
-        isEnabled: () => true,
-        onAction: ($event, entity) => this.manageCredentials($event, entity)
-      }
-    );
-
     this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credential-title',
       { clientCredentialsName: mqttClient.name });
     this.config.deleteEntityContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credential-text');
@@ -102,7 +88,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.loadEntity = id => this.loadEntity(id);
     this.config.saveEntity = mqttClient => this.mqttClientCredentialsService.saveMqttClientCredentials(mqttClient);
     this.config.deleteEntity = id => this.deleteEntity(id);
-    this.config.onEntityAction = action => this.onMqttClientAction(action);
   }
 
   resolve(): EntityTableConfig<MqttClientCredentials> {
@@ -117,35 +102,5 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
   deleteEntity(id) {
     return this.mqttClientCredentialsService.deleteMqttClientCredentials(id);
-  }
-
-  onMqttClientAction(action: EntityAction<MqttClientCredentials>): boolean {
-    switch (action.action) {
-      case 'manage':
-        this.manageCredentials(action.event, action.entity);
-        return true;
-    }
-    return false;
-  }
-
-  manageCredentials($event: Event, mqttClientCredentials: MqttClientCredentials) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.dialog.open<ManageCredentialsDialogComponent, ManageCredentialsDialogData,
-      MqttClientCredentials>(ManageCredentialsDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        mqttClientCredentials,
-        isEdit: true
-      }
-    })
-      .afterClosed()
-      .subscribe((res) => {
-        if (res) {
-          this.config.table.updateData();
-        }
-      });
   }
 }

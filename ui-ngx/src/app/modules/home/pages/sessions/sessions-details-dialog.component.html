@@ -1,0 +1,103 @@
+<form [formGroup]="entityForm">
+  <mat-toolbar fxLayout="row" color="primary">
+  <h2 translate>mqtt-client-session.details</h2>
+  <span fxFlex></span>
+  <button mat-icon-button
+          [mat-dialog-close]="false"
+          type="button">
+    <mat-icon class="material-icons">close</mat-icon>
+  </button>
+  </mat-toolbar>
+  <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
+  </mat-progress-bar>
+  <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
+  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="start center">
+    <button mat-raised-button
+            ngxClipboard
+            [disabled]="(isLoading$ | async)"
+            (click)="onEntityAction($event, 'remove')">
+      <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
+      <span translate>mqtt-client-session.remove-session</span>
+    </button>
+    <button mat-raised-button
+            [disabled]="(isLoading$ | async)"
+            (click)="onEntityAction($event, 'disconnect')"
+            [fxShow]="isConnected()">
+      <mat-icon svgIcon="mdi:link-off"></mat-icon>
+      <span translate>mqtt-client-session.disconnect-client</span>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <div fxFlex fxLayout="row">
+      <div fxFlex style="margin-right: 10px">
+        <mat-form-field *ngIf="isConnected()" class="mat-block">
+          <mat-label translate>mqtt-client-session.node</mat-label>
+          <input matInput formControlName="nodeId" readonly>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client.client-id</mat-label>
+          <input matInput formControlName="clientId" readonly>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client.client-type</mat-label>
+          <input matInput formControlName="clientType" readonly>
+        </mat-form-field>
+        <mat-form-field *ngIf="isConnected()" class="mat-block">
+          <mat-label translate>mqtt-client-session.keep-alive</mat-label>
+          <input matInput formControlName="keepAliveSeconds" readonly>
+        </mat-form-field>
+        <mat-form-field *ngIf="isConnected()" class="mat-block">
+          <mat-label translate>mqtt-client-session.connected-at</mat-label>
+          <input matInput fxHide formControlName="connectedAt" readonly
+                 [ngModel]="entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
+          <span>
+            {{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
+          </span>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.connected-status</mat-label>
+          <input matInput fxHide formControlName="connectionState" readonly>
+          <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
+            {{ entityForm.get('connectionState')?.value | titlecase }}
+          </span>
+        </mat-form-field>
+        <mat-form-field *ngIf="!isConnected()" class="mat-block">
+          <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
+          <input matInput fxHide formControlName="disconnectedAt" readonly
+                 [ngModel]="entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
+          <span>
+            {{ entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
+          </span>
+        </mat-form-field>
+      </div>
+      <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.clean-session</mat-label>
+          <input matInput formControlName="cleanSession" readonly>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
+          <input matInput formControlName="subscriptionsCount" readonly>
+        </mat-form-field>
+      </div>
+    </div>
+    <tb-subscriptions formControlName="subscriptions">
+    </tb-subscriptions>
+  </div>
+  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
+    <button mat-button color="primary"
+            type="button"
+            [disabled]="(isLoading$ | async)"
+            [mat-dialog-close]="false" cdkFocusInitial>
+      {{ 'action.cancel' | translate }}
+    </button>
+    <button mat-raised-button color="primary"
+            (click)="onEntityAction($event, 'save')"
+            [disabled]="(isLoading$ | async) || entityForm.invalid || !entityForm.dirty">
+      {{ 'action.update' | translate }}
+    </button>
+  </div>
+</form>
+
+
+
