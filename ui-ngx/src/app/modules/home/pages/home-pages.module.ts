@@ -22,13 +22,15 @@ import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-clie
 import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
 import { SessionsModule } from "@home/pages/sessions/sessions.module";
+import { AdminsModule } from "@home/pages/admins/admins.module";
 
 @NgModule({
   exports: [
     MailServerModule,
     ProfileModule,
     MqttClientCredentialsModule,
-    SessionsModule
+    SessionsModule,
+    AdminsModule
   ],
   providers: [
     {

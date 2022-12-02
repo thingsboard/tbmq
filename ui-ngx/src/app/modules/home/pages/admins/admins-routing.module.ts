@@ -16,21 +16,42 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { Authority } from '@shared/models/authority.enum';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { AdminsTableConfigResolver } from "@home/pages/admins/admins-table-config-resolver.service";
 
 const routes: Routes = [
-  { path: '',
-    redirectTo: 'sessions',
-    pathMatch: 'full',
+  {
+    path: 'admins',
     data: {
+      title: 'admin.admins',
       breadcrumb: {
-        skip: true
+        label: 'admin.admins',
+        icon: 'mdi:shield-lock'
       }
-    }
+    },
+    children: [
+      {
+        path: '',
+        component: EntitiesTableComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'admin.admins'
+        },
+        resolve: {
+          entitiesTableConfig: AdminsTableConfigResolver
+        }
+      }
+    ]
   }
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule],
+  providers: [
+    AdminsTableConfigResolver
+  ]
 })
-export class AppRoutingModule { }
+
+export class AdminsRoutingModule { }

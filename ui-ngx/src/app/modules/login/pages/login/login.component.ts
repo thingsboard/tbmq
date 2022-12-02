@@ -15,7 +15,6 @@
 ///
 
 import { Component, OnInit } from '@angular/core';
-import { AuthService } from '@core/auth/auth.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
@@ -23,6 +22,7 @@ import { FormBuilder } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Constants } from '@shared/models/constants';
 import { Router } from '@angular/router';
+import { AuthService } from "@core/http/auth.service";
 
 @Component({
   selector: 'tb-login',

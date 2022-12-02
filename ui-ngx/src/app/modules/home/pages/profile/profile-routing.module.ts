@@ -16,25 +16,21 @@
 
 import { Injectable, NgModule } from '@angular/core';
 import { Resolve, RouterModule, Routes } from '@angular/router';
-
 import { ProfileComponent } from './profile.component';
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
 import { User } from '@shared/models/user.model';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { UserService } from '@core/http/user.service';
 import { Observable } from 'rxjs';
+import { AuthService } from "@core/http/auth.service";
 
 @Injectable()
 export class UserProfileResolver implements Resolve<User> {
 
-  constructor(private store: Store<AppState>,
-              private userService: UserService) {
+  constructor(private authService: AuthService) {
   }
 
   resolve(): Observable<User> {
-    return this.userService.getMqttAdminUser();
+    return this.authService.getUser();
   }
 }
 

@@ -18,9 +18,9 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthService } from '@core/auth/auth.service';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
+import { AuthService } from "@core/http/auth.service";
 
 @Injectable(
   {

@@ -16,7 +16,6 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, Router, RouterStateSnapshot } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { selectAuth } from '../auth/auth.selectors';
@@ -29,6 +28,7 @@ import { DialogService } from '@core/services/dialog.service';
 import { TranslateService } from '@ngx-translate/core';
 import { UtilsService } from '@core/services/utils.service';
 import { isObject } from '@core/utils';
+import { AuthService } from "@core/http/auth.service";
 
 @Injectable({
   providedIn: 'root'

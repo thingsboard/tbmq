@@ -15,7 +15,6 @@
 ///
 
 import { Injectable } from '@angular/core';
-import { AuthService } from '../auth/auth.service';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { selectAuth, selectIsAuthenticated } from '../auth/auth.selectors';
@@ -62,6 +61,13 @@ export class MenuService {
   private buildSysAdminMenu(authState: AuthState): Array<MenuSection> {
     const sections: Array<MenuSection> = [];
     sections.push(
+      {
+        id: guid(),
+        name: 'user.admins',
+        type: 'link',
+        path: '/admins',
+        icon: 'supervisor_account'
+      },
       {
         id: guid(),
         name: 'mqtt-client-credentials.client-credentials',

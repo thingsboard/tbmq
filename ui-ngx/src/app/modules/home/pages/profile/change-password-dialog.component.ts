@@ -21,9 +21,9 @@ import { AppState } from '@core/core.state';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthService } from '@core/auth/auth.service';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
+import { AuthService } from "@core/http/auth.service";
 
 @Component({
   selector: 'tb-change-password-dialog',

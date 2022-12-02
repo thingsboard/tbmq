@@ -18,43 +18,41 @@ import { Injectable, NgZone } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { HttpClient } from '@angular/common/http';
 
-import { forkJoin, Observable, of, ReplaySubject, throwError } from 'rxjs';
-import { catchError, map, mergeMap, tap } from 'rxjs/operators';
+import { Observable, of, ReplaySubject, throwError } from 'rxjs';
+import { catchError, mergeMap, tap } from 'rxjs/operators';
 
 import { LoginRequest, LoginResponse, PublicLoginRequest } from '@shared/models/login.models';
 import { ActivatedRoute, Router, UrlTree } from '@angular/router';
-import { defaultHttpOptions } from '../http/http-utils';
-import { UserService } from '../http/user.service';
+import { defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
+import { AdminService } from './admin.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../core.state';
-import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from './auth.actions';
-import { getCurrentAuthState, getCurrentAuthUser } from './auth.selectors';
 import { Authority } from '@shared/models/authority.enum';
 import { ActionSettingsChangeLanguage } from '@app/core/settings/settings.actions';
 import { AuthPayload, AuthState, SysParamsState } from '@core/auth/auth.models';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthUser } from '@shared/models/user.model';
+import { AuthUser, User } from '@shared/models/user.model';
 import { UtilsService } from '@core/services/utils.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { isMobileApp } from '@core/utils';
+import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from "@core/auth/auth.actions";
+import { getCurrentAuthState, getCurrentAuthUser } from "@core/auth/auth.selectors";
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
 
-  constructor(
-    private store: Store<AppState>,
+  constructor(private store: Store<AppState>,
     private http: HttpClient,
-    private userService: UserService,
+    private adminService: AdminService,
     private router: Router,
     private route: ActivatedRoute,
     private zone: NgZone,
     private utils: UtilsService,
     private translate: TranslateService,
-    private dialog: MatDialog
-  ) {
+    private dialog: MatDialog) {
   }
 
   redirectUrl: string;
@@ -84,6 +82,10 @@ export class AuthService {
 
   public static getJwtToken() {
     return AuthService._storeGet('jwt_token');
+  }
+
+  public getUser(config?: RequestConfig): Observable<User> {
+    return this.http.get<User>(`/api/auth/user`, defaultHttpOptionsFromConfig(config));
   }
 
   public reloadUser() {
@@ -201,7 +203,7 @@ export class AuthService {
           this.redirectUrl = null;
           result = this.router.parseUrl(redirectUrl);
         } else {
-          result = this.router.parseUrl('clientCredentials');
+          result = this.router.parseUrl('sessions');
         }
       }
     } else {
@@ -300,7 +302,7 @@ export class AuthService {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
         }
         if (authPayload.authUser.userId) {
-          this.userService.getMqttAdminUser().subscribe(
+          this.getUser().subscribe(
             (user) => {
               authPayload.userDetails = user;
               let userLang;

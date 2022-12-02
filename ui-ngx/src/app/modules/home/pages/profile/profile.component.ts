@@ -15,7 +15,7 @@
 ///
 
 import { Component, OnInit } from '@angular/core';
-import { UserService } from '@core/http/user.service';
+import { AdminService } from '@core/http/admin.service';
 import { AuthUser, User } from '@shared/models/user.model';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -29,9 +29,9 @@ import { ActionSettingsChangeLanguage } from '@core/settings/settings.actions';
 import { ChangePasswordDialogComponent } from '@modules/home/pages/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
-import { AuthService } from '@core/auth/auth.service';
 import { ActivatedRoute } from '@angular/router';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { AuthService } from "@core/http/auth.service";
 
 @Component({
   selector: 'tb-profile',
@@ -47,7 +47,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
 
   constructor(protected store: Store<AppState>,
               private route: ActivatedRoute,
-              private userService: UserService,
+              private adminService: AdminService,
               private authService: AuthService,
               private translate: TranslateService,
               public dialog: MatDialog,
@@ -77,7 +77,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
       this.user.additionalInfo = {};
     }
     this.user.additionalInfo.lang = this.profile.get('language').value;
-    this.userService.saveUser(this.user).subscribe(
+    this.adminService.saveAdminUser(this.user).subscribe(
       (user) => {
         this.userLoaded(user);
         this.store.dispatch(new ActionAuthUpdateUserDetails({ userDetails: {

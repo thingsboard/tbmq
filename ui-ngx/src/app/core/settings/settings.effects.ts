@@ -28,8 +28,8 @@ import { AppState } from '@app/core/core.state';
 import { LocalStorageService } from '@app/core/local-storage/local-storage.service';
 import { TitleService } from '@app/core/services/title.service';
 import { updateUserLang } from '@app/core/settings/settings.utils';
-import { AuthService } from '@core/auth/auth.service';
 import { UtilsService } from '@core/services/utils.service';
+import { AuthService } from "@core/http/auth.service";
 
 export const SETTINGS_KEY = 'SETTINGS';
 

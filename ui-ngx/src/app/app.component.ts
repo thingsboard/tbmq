@@ -29,7 +29,7 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { combineLatest } from 'rxjs';
 import { selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
 import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
-import { AuthService } from '@core/auth/auth.service';
+import { AuthService } from "@core/http/auth.service";
 
 @Component({
   selector: 'tb-root',

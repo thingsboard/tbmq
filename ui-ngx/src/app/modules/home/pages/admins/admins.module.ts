@@ -14,23 +14,23 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { User } from '@shared/models/user.model';
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SharedModule } from '@shared/shared.module';
+import { HomeComponentsModule } from '@home/components/home-components.module';
+import { AdminComponent } from "@home/pages/admins/admin.component";
+import { AdminsRoutingModule } from "@home/pages/admins/admins-routing.module";
 
-@Injectable({
-  providedIn: 'root'
+@NgModule({
+  declarations: [
+    AdminComponent
+  ],
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    AdminsRoutingModule
+  ]
 })
-export class MqttAdminService {
 
-  constructor(
-    private http: HttpClient
-  ) { }
-
-  public saveAdmin(user: User, config?: RequestConfig): Observable<User> {
-    return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
-  }
-
-}
+export class AdminsModule { }
