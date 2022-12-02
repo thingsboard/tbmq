@@ -48,21 +48,20 @@
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.connected-at</mat-label>
-          <input matInput
-                 formControlName="connectedAt"
-                 [value]="entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss'"
-                 readonly>
+          <input matInput formControlName="connectedAt" readonly
+                 [ngModel]="entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
         </mat-form-field>
         <mat-form-field class="mat-block">
           <mat-label translate>mqtt-client-session.connected-status</mat-label>
-          <input matInput [ngStyle]="getColor()" formControlName="connectionState" readonly>
+          <input matInput fxHide formControlName="connectionState" readonly>
+          <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
+            {{ entityForm.get('connectionState')?.value | titlecase }}
+          </span>
         </mat-form-field>
         <mat-form-field *ngIf="!isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
-          <input matInput
-                 formControlName="disconnectedAt"
-                 [value]="entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss'"
-                 readonly>
+          <input matInput formControlName="disconnectedAt" readonly
+                 [ngModel]="entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
         </mat-form-field>
       </div>
       <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
@@ -88,8 +87,8 @@
     </button>
     <button mat-raised-button color="primary"
             (click)="onEntityAction($event, 'save')"
-            [disabled]="isLoading$ | async">
-      {{ 'action.save' | translate }}
+            [disabled]="(isLoading$ | async) || entityForm.invalid || !entityForm.dirty">
+      {{ 'action.update' | translate }}
     </button>
   </div>
 </form>

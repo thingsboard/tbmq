@@ -2,10 +2,8 @@ import {
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
-import { EntityTypeResource } from '@shared/models/entity-type.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { Direction } from '@shared/models/page/sort-order';
 import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
@@ -17,7 +15,7 @@ import {
   SessionsDetailsDialogData
 } from "@home/pages/sessions/sessions-details-dialog.component";
 import {
-  ConnectionState, connectionStateColor,
+  connectionStateColor,
   connectionStateTranslationMap,
   DetailedClientSessionInfo
 } from "@shared/models/mqtt-session.model";
@@ -32,51 +30,50 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               public entityId: EntityId = null) {
     super();
     this.loadDataOnInit = true;
-    this.tableTitle = '';
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.actionsColumnTitle = 'audit-log.details';
+    this.tableTitle = this.translate.instant('mqtt-client-session.type-sessions');
     this.entityTranslations = {
-      noEntities: 'audit-log.no-audit-logs-prompt',
-      search: 'audit-log.search'
+      noEntities: 'mqtt-client-session.no-session-text',
+      search: 'mqtt-client-session.search'
     };
-    this.entityResources = {
-    } as EntityTypeResource<DetailedClientSessionInfo>;
+    // this.actionsColumnTitle = 'mqtt-client-session.session-details';
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
-
-    this.defaultSortOrder = {property: 'createdTime', direction: Direction.DESC};
+    this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
 
     this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
-        (entity) => (this.setCellStyle(entity.connectionState))
+        (entity) => ({ color: connectionStateColor.get(entity.connectionState) })
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '25%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       )
     );
-
-    this.cellActionDescriptors.push(
+    /*this.cellActionDescriptors.push(
       {
-        name: this.translate.instant('audit-log.details'),
+        name: this.translate.instant('mqtt-client-session.session-details'),
         icon: 'more_horiz',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.showSessionDetails(entity)
+        onAction: ($event, entity) => this.showSessionDetails($event, entity)
       }
-    );
+    );*/
   }
 
-  fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {
+  private fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {
     return this.mqttClientSessionService.getShortClientSessionInfos(pageLink);
   }
 
-  showSessionDetails(entity: DetailedClientSessionInfo) {
+  private showSessionDetails($event: Event, entity: DetailedClientSessionInfo) {
+    if ($event) {
+      $event.stopPropagation();
+    }
     this.mqttClientSessionService.getDetailedClientSessionInfo(entity.clientId).subscribe(
       session => {
         this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
@@ -85,19 +82,11 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           data: {
             session: session
           }
+        }).afterClosed().subscribe(() =>{
+          this.table.updateData();
         });
       }
-    )
+    );
+    return false;
   }
-
-  private setCellStyle(connectionState: ConnectionState): any {
-    const style: any = {
-      color: connectionStateColor.get(connectionState)
-    };
-    if (connectionState === ConnectionState.CONNECTED) {
-      style.fontWeight = 'bold';
-    }
-    return style;
-  }
-
 }
