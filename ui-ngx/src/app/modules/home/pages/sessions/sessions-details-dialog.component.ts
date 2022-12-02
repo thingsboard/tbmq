@@ -130,7 +130,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe((value) => {
       this.mqttClientSessionService.getDetailedClientSessionInfo(this.entity.clientId).subscribe(
         (entity: DetailedClientSessionInfo) => {
-          this.updateFormsValues(entity);
+          // this.updateFormsValues(entity);
+          this.closeDialog();
         }
       )
     });
