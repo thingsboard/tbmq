@@ -22,17 +22,7 @@
             (click)="onEntityAction($event, 'delete')"
             [fxShow]="!hideDelete() && !isEdit">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
-      <span translate>user.delete-admin</span>
-    </button>
-  </div>
-  <div fxLayout="row" fxLayout.xs="column">
-    <button mat-raised-button
-            ngxClipboard
-            (cbOnSuccess)="onIdCopied()"
-            [cbContent]="entity?.id"
-            [fxShow]="!isEdit">
-      <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
-      <span translate>user.copy-id</span>
+      <span translate>user.delete</span>
     </button>
   </div>
 </div>
@@ -40,26 +30,29 @@
   <form [formGroup]="entityForm">
     <fieldset [disabled]="(isLoading$ | async) || !isEdit">
       <mat-form-field class="mat-block">
-        <mat-label translate>user.name</mat-label>
+        <mat-label translate>user.email</mat-label>
         <input matInput formControlName="email" required>
+        <mat-error *ngIf="entityForm.get('email').hasError('email')">
+          {{ 'user.invalid-email-format' | translate }}
+        </mat-error>
         <mat-error *ngIf="entityForm.get('email').hasError('required')">
           {{ 'user.email-required' | translate }}
         </mat-error>
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>user.first-name</mat-label>
-        <input matInput formControlName="firstName" required>
-        <mat-error *ngIf="entityForm.get('firstName').hasError('required')">
-          {{ 'user.first-name-required' | translate }}
-        </mat-error>
+        <input matInput formControlName="firstName">
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>user.last-name</mat-label>
-        <input matInput formControlName="firstName" required>
-        <mat-error *ngIf="entityForm.get('lastName').hasError('required')">
-          {{ 'user.last-name-required' | translate }}
-        </mat-error>
+        <input matInput formControlName="lastName">
       </mat-form-field>
+      <div formGroupName="additionalInfo" fxLayout="column">
+        <mat-form-field class="mat-block">
+          <mat-label translate>user.description</mat-label>
+          <textarea matInput formControlName="description" rows="2"></textarea>
+        </mat-form-field>
+      </div>
     </fieldset>
   </form>
 </div>

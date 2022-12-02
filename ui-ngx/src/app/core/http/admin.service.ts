@@ -30,10 +30,13 @@ export class AdminService {
   constructor(private http: HttpClient) { }
 
   public getAdmin(userId: string, config?: RequestConfig): Observable<User> {
-    return this.http.get<User>(`/api/admin/${userId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<User>(`/api/admin/user/${userId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public saveAdmin(user: User, config?: RequestConfig): Observable<User> {
+    if (!user.password) {
+      user.password = 'sysadmin';
+    }
     return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
   }
 

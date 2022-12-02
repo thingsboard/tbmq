@@ -14,15 +14,14 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { TranslateService } from "@ngx-translate/core";
 import { User } from "@shared/models/user.model";
+import { getCurrentAuthUser } from "@core/auth/auth.selectors";
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -31,18 +30,20 @@ import { User } from "@shared/models/user.model";
 })
 export class AdminComponent extends EntityComponent<User> {
 
+  private currentUserId = getCurrentAuthUser(this.store).userId;
+
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: User,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<User>,
               public fb: FormBuilder,
-              protected cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+              protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
   hideDelete() {
     if (this.entitiesTableConfig) {
-      return !this.entitiesTableConfig.deleteEnabled(this.entity);
+      // @ts-ignore
+      return !this.entitiesTableConfig.deleteEnabled(this.entity) || this.currentUserId === this.entityValue?.id;
     } else {
       return false;
     }
@@ -51,9 +52,14 @@ export class AdminComponent extends EntityComponent<User> {
   buildForm(entity: User): FormGroup {
     const form = this.fb.group(
       {
-        email: [entity ? entity.email : '', [Validators.required]],
-        firstName: [entity ? entity.firstName : '', [Validators.required]],
-        lastName: [entity ? entity.lastName : '', [Validators.required]]
+        email: [entity ? entity.email : '', [Validators.required, Validators.email]],
+        firstName: [entity ? entity.firstName : ''],
+        lastName: [entity ? entity.lastName : ''],
+        additionalInfo: this.fb.group(
+          {
+            description: [entity && entity.additionalInfo ? entity.additionalInfo.description : '']
+          }
+        )
       }
     );
     return form;
@@ -63,16 +69,6 @@ export class AdminComponent extends EntityComponent<User> {
     this.entityForm.patchValue({email: entity.email} );
     this.entityForm.patchValue({firstName: entity.firstName} );
     this.entityForm.patchValue({lastName: entity.lastName} );
-  }
-
-  onIdCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('user.id-copied-message'),
-        type: 'success',
-        duration: 750,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
-      }));
+    this.entityForm.patchValue({additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}});
   }
 }

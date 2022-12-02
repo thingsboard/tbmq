@@ -2698,6 +2698,7 @@
         "add-user-text": "Add new user",
         "no-users-text": "No users found",
         "user-details": "User details",
+        "copy-id": "Copy Id",
         "delete-user-title": "Are you sure you want to delete the user '{{userEmail}}'?",
         "delete-user-text": "Be careful, after the confirmation the user and all related data will become unrecoverable.",
         "delete-users-title": "Are you sure you want to delete { count, plural, 1 {1 user} other {# users} }?",

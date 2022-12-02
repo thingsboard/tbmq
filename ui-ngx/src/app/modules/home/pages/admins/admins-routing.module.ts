@@ -24,10 +24,10 @@ const routes: Routes = [
   {
     path: 'admins',
     data: {
-      title: 'admin.admins',
+      title: 'user.admins',
       breadcrumb: {
-        label: 'admin.admins',
-        icon: 'mdi:shield-lock'
+        label: 'user.admins',
+        icon: 'account_circle'
       }
     },
     children: [
@@ -36,7 +36,7 @@ const routes: Routes = [
         component: EntitiesTableComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'admin.admins'
+          title: 'user.admins'
         },
         resolve: {
           entitiesTableConfig: AdminsTableConfigResolver

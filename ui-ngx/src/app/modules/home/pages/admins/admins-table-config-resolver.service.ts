@@ -54,32 +54,30 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
 
     this.config.addEnabled = true;
     this.config.entitiesDeleteEnabled = false;
-    this.config.deleteEnabled = () => false;
-    this.config.entityTitle = (user) => user ? user.firstName : '';
+    this.config.deleteEnabled = () => true;
+    this.config.entityTitle = (user) => user ? user.email : '';
 
     this.config.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<User>('email', 'user.email', '33%'),
       new EntityTableColumn<User>('firstName', 'user.first-name', '33%'),
-      new EntityTableColumn<User>('lastName', 'user.last-name', '33%')
+      new EntityTableColumn<User>('lastName', 'user.last-name', '33%'),
+      new EntityTableColumn<User>('email', 'user.email', '33%')
     );
 
     this.config.addActionDescriptors.push(
       {
-        name: this.translate.instant('admin.add'),
+        name: this.translate.instant('user.add'),
         icon: 'add',
         isEnabled: () => true,
         onAction: ($event) => this.config.table.addEntity($event)
       }
     );
 
-    this.config.deleteEntityTitle = user => this.translate.instant('admin.delete-admin-title',
-      { clientCredentialsName: user.firstName });
-    this.config.deleteEntityContent = () => this.translate.instant('admin.delete-admin-text');
-    this.config.deleteEntitiesTitle = count => this.translate.instant('admin.delete-admin-title', {count});
-    this.config.deleteEntitiesContent = () => this.translate.instant('admin.delete-admin-text');
-
-
+    this.config.deleteEntityTitle = user => this.translate.instant('user.delete-user-title',
+      { userEmail: user.email });
+    this.config.deleteEntityContent = () => this.translate.instant('user.delete-user-text');
+    this.config.deleteEntitiesTitle = count => this.translate.instant('user.delete-users-title', {count});
+    this.config.deleteEntitiesContent = () => this.translate.instant('user.delete-users-text');
     this.config.loadEntity = id => this.loadEntity(id);
     this.config.saveEntity = user => this.adminService.saveAdmin(user);
     this.config.deleteEntity = id => this.deleteEntity(id);

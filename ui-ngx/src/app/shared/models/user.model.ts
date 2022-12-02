@@ -24,6 +24,7 @@ export interface User extends BaseData<UserId> {
   firstName: string;
   lastName: string;
   additionalInfo: any;
+  password?: string;
 }
 
 export interface AuthUser {

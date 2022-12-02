@@ -66,7 +66,7 @@ export class MenuService {
         name: 'user.admins',
         type: 'link',
         path: '/admins',
-        icon: 'supervisor_account'
+        icon: 'account_circle'
       },
       {
         id: guid(),
