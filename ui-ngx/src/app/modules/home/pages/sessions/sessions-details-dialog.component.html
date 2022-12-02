@@ -30,18 +30,26 @@
   <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
   <div mat-dialog-actions fxLayout="row" fxLayoutAlign="start center">
     <button mat-raised-button
+            [disabled]="(isLoading$ | async) || !isConnected()"
+            (click)="onEntityAction($event, 'disconnect')">
+      <mat-icon svgIcon="mdi:link-off"></mat-icon>
+      <span translate>mqtt-client-session.disconnect-client</span>
+    </button>
+    <button mat-raised-button
             ngxClipboard
-            [disabled]="(isLoading$ | async)"
+            [disabled]="(isLoading$ | async) || isConnected()"
             (click)="onEntityAction($event, 'remove')">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>mqtt-client-session.remove-session</span>
     </button>
+  </div>
+  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="start center">
     <button mat-raised-button
-            [disabled]="(isLoading$ | async)"
-            (click)="onEntityAction($event, 'disconnect')"
-            [fxShow]="isConnected()">
-      <mat-icon svgIcon="mdi:link-off"></mat-icon>
-      <span translate>mqtt-client-session.disconnect-client</span>
+            ngxClipboard
+            (cbOnSuccess)="onSessionIdCopied()"
+            [cbContent]="entity?.sessionId">
+      <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
+      <span translate>mqtt-client-session.copy-session-id</span>
     </button>
   </div>
   <div mat-dialog-content>
@@ -57,11 +65,31 @@
         </mat-form-field>
         <mat-form-field class="mat-block">
           <mat-label translate>mqtt-client.client-type</mat-label>
-          <input matInput formControlName="clientType" readonly>
+          <input fxHide matInput formControlName="clientType" readonly>
+          <span>{{ entityForm.get('clientType')?.value | titlecase }}</span>
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.keep-alive</mat-label>
           <input matInput formControlName="keepAliveSeconds" readonly>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
+          <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
+          {{ entity?.sessionExpiryInterval }}
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.session-end</mat-label>
+          <input matInput fxHide formControlName="sessionEndTs" readonly>
+          {{ entity?.sessionEndTs === -1 ? ('mqtt-client-session.never' | translate) : (entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss') }}
+        </mat-form-field>
+      </div>
+      <div fxFlex>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.connected-status</mat-label>
+          <input matInput fxHide formControlName="connectionState" readonly>
+          <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
+            {{ entityForm.get('connectionState')?.value | titlecase }}
+          </span>
         </mat-form-field>
         <mat-form-field *ngIf="isConnected()" class="mat-block">
           <mat-label translate>mqtt-client-session.connected-at</mat-label>
@@ -69,13 +97,6 @@
                  [ngModel]="entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss'">
           <span>
             {{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
-          </span>
-        </mat-form-field>
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-session.connected-status</mat-label>
-          <input matInput fxHide formControlName="connectionState" readonly>
-          <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
-            {{ entityForm.get('connectionState')?.value | titlecase }}
           </span>
         </mat-form-field>
         <mat-form-field *ngIf="!isConnected()" class="mat-block">
@@ -86,16 +107,18 @@
             {{ entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
           </span>
         </mat-form-field>
-      </div>
-      <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-session.clean-session</mat-label>
-          <input matInput formControlName="cleanSession" readonly>
-        </mat-form-field>
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
-          <input matInput formControlName="subscriptionsCount" readonly>
-        </mat-form-field>
+        <div [formGroup]="sessionDetailsForm" fxFlex style="margin-right: 10px">
+          <mat-form-field class="mat-block">
+            <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
+            <input matInput formControlName="subscriptionsCount" readonly>
+          </mat-form-field>
+          <section class="tb-checkbox">
+            <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate"
+                          labelPosition="after" disabled>
+              {{ 'mqtt-client-session.clean-start' | translate }}
+            </mat-checkbox>
+          </section>
+        </div>
       </div>
     </div>
     <tb-subscriptions formControlName="subscriptions">

@@ -24,11 +24,13 @@ export interface DetailedClientSessionInfo extends BaseData<SessionId> {
   connectionState: ConnectionState;
   clientType: ClientType;
   nodeId: string;
-  persistent: boolean;
+  cleanStart: boolean;
   subscriptions: TopicSubscription[];
   keepAliveSeconds: number;
   connectedAt: number;
   disconnectedAt: number;
+  sessionExpiryInterval: number;
+  sessionEndTs: number;
 }
 
 export interface SessionInfo {

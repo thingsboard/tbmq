@@ -23,6 +23,8 @@ import { Router } from "@angular/router";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
 import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
+import { ActionNotificationShow } from "@core/notification/notification.actions";
+import { TranslateService } from "@ngx-translate/core";
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -51,7 +53,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
               public dialogRef: MatDialogRef<SessionsDetailsDialogComponent>,
               private fb: FormBuilder,
               private mqttClientSessionService: MqttClientSessionService,
-              private cd: ChangeDetectorRef) {
+              private cd: ChangeDetectorRef,
+              private translate: TranslateService) {
     super(store, router, dialogRef);
   }
 
@@ -65,20 +68,21 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private buildForms(entity: DetailedClientSessionInfo): void {
-    this.buildForm(entity);
-    this.buildSubscriptionForm(entity);
+    this.buildSessionForm(entity);
+    this.buildSessionInfoForm(entity);
     this.updateFormsValues(entity);
   }
 
-  private buildForm(entity: DetailedClientSessionInfo): void {
+  private buildSessionForm(entity: DetailedClientSessionInfo): void {
     this.entityForm = this.fb.group({
       clientId: [entity ? entity.clientId : null],
       clientType: [entity ? entity.clientType : null],
       nodeId: [entity ? entity.nodeId : null],
       keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
+      sessionExpiryInterval: [entity ? entity.sessionExpiryInterval : null],
+      sessionEndTs: [entity ? entity.sessionEndTs : null],
       connectedAt: [entity ? entity.connectedAt : null],
       connectionState: [entity ? entity.connectionState : null],
-      persistent: [entity ? entity.persistent : null],
       disconnectedAt: [entity ? entity.disconnectedAt : null],
       subscriptions: [entity ? entity.subscriptions : null]
     });
@@ -87,9 +91,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     });
   }
 
-  private buildSubscriptionForm(entity: DetailedClientSessionInfo): void {
+  private buildSessionInfoForm(entity: DetailedClientSessionInfo): void {
     this.sessionDetailsForm = this.fb.group({
-      cleanSession: [entity ? !entity.persistent : null],
+      cleanStart: [entity ? entity.cleanStart : null],
       subscriptionsCount: [entity ? entity.subscriptions.length : null]
     });
   }
@@ -112,6 +116,17 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
   }
 
+  onSessionIdCopied() {
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('mqtt-client-session.session-id-copied-message'),
+        type: 'success',
+        duration: 750,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'right'
+      }));
+  }
+
   private onSave(): void {
     const value = {...this.entity, ...this.subscriptions.value};
     this.mqttClientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
@@ -130,7 +145,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe((value) => {
       this.mqttClientSessionService.getDetailedClientSessionInfo(this.entity.clientId).subscribe(
         (entity: DetailedClientSessionInfo) => {
-          // this.updateFormsValues(entity);
           this.closeDialog();
         }
       )
@@ -142,13 +156,13 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm.patchValue({clientType: entity.clientType} );
     this.entityForm.patchValue({nodeId: entity.nodeId} );
     this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds} );
+    this.entityForm.patchValue({sessionExpiryInterval: entity.sessionExpiryInterval} );
+    this.entityForm.patchValue({sessionEndTs: entity.sessionEndTs} );
     this.entityForm.patchValue({connectedAt: entity.connectedAt} );
     this.entityForm.patchValue({connectionState: entity.connectionState});
-    this.entityForm.patchValue({persistent: entity.persistent} );
-    this.entityForm.patchValue({persistent: entity.persistent} );
     this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt} );
     this.entityForm.patchValue({subscriptions: entity.subscriptions} );
-    this.sessionDetailsForm.patchValue({cleanSession: !entity.persistent});
+    this.sessionDetailsForm.patchValue({cleanStart: entity.cleanStart});
     this.sessionDetailsForm.patchValue({subscriptionsCount: entity.subscriptions.length});
   }
 
