@@ -21,16 +21,15 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     key varchar(255)
 );
 
-CREATE TABLE IF NOT EXISTS broker_user(
-                                          id              uuid   NOT NULL
-                                              CONSTRAINT broker_user_pkey PRIMARY KEY,
-                                          created_time    bigint NOT NULL,
-                                          additional_info varchar,
-                                          authority       varchar(255),
-                                          email           varchar(255) UNIQUE,
-                                          first_name      varchar(255),
-                                          last_name       varchar(255),
-                                          search_text     varchar(255)
+CREATE TABLE IF NOT EXISTS broker_user (
+    id uuid NOT NULL CONSTRAINT broker_user_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    additional_info varchar,
+    authority varchar(255),
+    email varchar(255) UNIQUE,
+    first_name varchar(255),
+    last_name varchar(255),
+    search_text varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS user_credentials (
