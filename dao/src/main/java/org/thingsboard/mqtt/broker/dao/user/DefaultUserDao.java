@@ -21,15 +21,16 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dao.AbstractDao;
+import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.UserEntity;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class DefaultUserDao extends AbstractDao<UserEntity, User> implements UserDao {
+public class DefaultUserDao extends AbstractSearchTextDao<UserEntity, User> implements UserDao {
 
     private final UserRepository userRepository;
 
@@ -50,6 +51,8 @@ public class DefaultUserDao extends AbstractDao<UserEntity, User> implements Use
 
     @Override
     public PageData<User> findAll(PageLink pageLink) {
-        return DaoUtil.toPageData(userRepository.findAll(DaoUtil.toPageable(pageLink)));
+        return DaoUtil.toPageData(userRepository.findAll(
+                Objects.toString(pageLink.getTextSearch(), ""),
+                DaoUtil.toPageable(pageLink)));
     }
 }
