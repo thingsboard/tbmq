@@ -86,7 +86,7 @@ export class MenuService {
       },
       {
         id: guid(),
-        name: 'shared-subscription.shared-subscription',
+        name: 'shared-subscription.shared-subscriptions',
         type: 'link',
         path: '/shared-subscriptions',
         icon: 'mdi:monitor-share',
