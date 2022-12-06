@@ -21,11 +21,13 @@ import { HomeComponentsModule } from '@home/components/home-components.module';
 import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
 import { SessionsDetailsDialogComponent } from "@home/pages/sessions/sessions-details-dialog.component";
 import { SessionsRoutingModule } from "@home/pages/sessions/sessions-routing.module";
+import { SubscriptionsComponent } from "@home/components/session-subscriptions/subscriptions.component";
 
 @NgModule({
   declarations: [
     SessionsTableComponent,
-    SessionsDetailsDialogComponent
+    SessionsDetailsDialogComponent,
+    SubscriptionsComponent
   ],
   imports: [
     CommonModule,

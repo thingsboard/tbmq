@@ -74,10 +74,6 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
-import { MqttCredentialsComponent } from '@home/components/mqtt-credentials/mqtt-credentials.component';
-import { MqttCredentialsBasicComponent } from '@home/components/mqtt-credentials/basic/basic.component';
-import { MqttCredentialsSslComponent } from '@home/components/mqtt-credentials/ssl/ssl.component';
-import { AuthRulesComponent } from '@home/components/mqtt-credentials/ssl/auth-rules.component';
 import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
 
 @NgModule({
@@ -109,11 +105,7 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     MillisecondsToTimeStringPipe,
     HighlightPipe,
     CopyButtonComponent,
-    TogglePasswordComponent,
-    MqttCredentialsComponent,
-    MqttCredentialsBasicComponent,
-    MqttCredentialsSslComponent,
-    AuthRulesComponent
+    TogglePasswordComponent
   ],
   imports: [
     CommonModule,
@@ -219,11 +211,7 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     HighlightPipe,
     TranslateModule,
     CopyButtonComponent,
-    TogglePasswordComponent,
-    MqttCredentialsComponent,
-    MqttCredentialsBasicComponent,
-    MqttCredentialsSslComponent,
-    AuthRulesComponent
+    TogglePasswordComponent
   ]
 })
 export class SharedModule { }

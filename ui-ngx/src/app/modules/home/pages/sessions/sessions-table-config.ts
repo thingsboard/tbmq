@@ -56,7 +56,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
-    // this.actionsColumnTitle = 'mqtt-client-session.session-details';
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
@@ -72,14 +71,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       )
     );
-    /*this.cellActionDescriptors.push(
-      {
-        name: this.translate.instant('mqtt-client-session.session-details'),
-        icon: 'more_horiz',
-        isEnabled: () => true,
-        onAction: ($event, entity) => this.showSessionDetails($event, entity)
-      }
-    );*/
   }
 
   private fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {

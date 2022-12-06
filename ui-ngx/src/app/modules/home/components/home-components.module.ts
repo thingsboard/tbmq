@@ -22,7 +22,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
-import { SubscriptionsComponent } from "@home/components/subscriptions/subscriptions.component";
 
 @NgModule({
   declarations:
@@ -30,8 +29,7 @@ import { SubscriptionsComponent } from "@home/components/subscriptions/subscript
       EntitiesTableComponent,
       AddEntityDialogComponent,
       DetailsPanelComponent,
-      EntityDetailsPanelComponent,
-      SubscriptionsComponent
+      EntityDetailsPanelComponent
     ],
   imports: [
     CommonModule,
@@ -42,8 +40,7 @@ import { SubscriptionsComponent } from "@home/components/subscriptions/subscript
     EntitiesTableComponent,
     AddEntityDialogComponent,
     DetailsPanelComponent,
-    EntityDetailsPanelComponent,
-    SubscriptionsComponent
+    EntityDetailsPanelComponent
   ]
 })
 export class HomeComponentsModule {

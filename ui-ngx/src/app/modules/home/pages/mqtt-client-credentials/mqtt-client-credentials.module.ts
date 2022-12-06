@@ -21,10 +21,14 @@ import { HomeComponentsModule } from '@home/components/home-components.module';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
 import { MqttClientCredentialsRoutingModule } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials-routing.module';
 import { ChangeMqttBasicPasswordDialogComponent } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
+import { MqttCredentialsSslComponent } from "@home/components/mqtt-credentials-templates/ssl/ssl.component";
+import { MqttCredentialsBasicComponent } from "@home/components/mqtt-credentials-templates/basic/basic.component";
 
 @NgModule({
   declarations: [
     MqttClientCredentialsComponent,
+    MqttCredentialsSslComponent,
+    MqttCredentialsBasicComponent,
     ChangeMqttBasicPasswordDialogComponent
   ],
   imports: [
