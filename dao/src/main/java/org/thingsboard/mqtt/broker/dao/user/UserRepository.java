@@ -15,11 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.dao.user;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.dao.model.UserEntity;
 
 import java.util.UUID;
 
 public interface UserRepository extends PagingAndSortingRepository<UserEntity, UUID> {
     UserEntity findByEmail(String email);
+
+    @Query("SELECT u FROM UserEntity u WHERE " +
+            "LOWER(u.searchText) LIKE LOWER(CONCAT(:textSearch, '%'))")
+    Page<UserEntity> findAll(@Param("textSearch") String textSearch,
+                             Pageable pageable);
 }

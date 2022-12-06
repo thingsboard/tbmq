@@ -125,9 +125,13 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<User> getAdmins(@RequestParam int pageSize, @RequestParam int page) throws ThingsboardException {
+    public PageData<User> getAdmins(@RequestParam int pageSize,
+                                    @RequestParam int page,
+                                    @RequestParam(required = false) String textSearch,
+                                    @RequestParam(required = false) String sortProperty,
+                                    @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
-            PageLink pageLink = new PageLink(pageSize, page);
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(userService.findUsers(pageLink));
         } catch (Exception e) {
             throw handleException(e);
