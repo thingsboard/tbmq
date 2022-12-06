@@ -17,16 +17,19 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
+import { Authority } from "@shared/models/authority.enum";
 
 const routes: Routes = [
   {
     path: 'sessions',
     component: SessionsTableComponent,
     data: {
+      auth: [Authority.SYS_ADMIN],
       title: 'mqtt-client-session.sessions',
       breadcrumb: {
         label: 'mqtt-client-session.sessions',
-        icon: 'mdi:account-supervisor',
+        icon: 'mdi:book-multiple',
+        isMdiIcon: true
       },
       isPage: true
     }

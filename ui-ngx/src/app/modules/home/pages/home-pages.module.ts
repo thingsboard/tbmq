@@ -23,6 +23,7 @@ import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
 import { SessionsModule } from "@home/pages/sessions/sessions.module";
 import { AdminsModule } from "@home/pages/admins/admins.module";
+import { SharedSubscriptionsModule } from "@home/pages/shared-subscriptions/shared-subscriptions.module";
 
 @NgModule({
   exports: [
@@ -30,7 +31,8 @@ import { AdminsModule } from "@home/pages/admins/admins.module";
     ProfileModule,
     MqttClientCredentialsModule,
     SessionsModule,
-    AdminsModule
+    AdminsModule,
+    SharedSubscriptionsModule
   ],
   providers: [
     {

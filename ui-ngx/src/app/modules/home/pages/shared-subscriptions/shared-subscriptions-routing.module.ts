@@ -18,23 +18,23 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { AdminsTableConfigResolver } from "@home/pages/admins/admins-table-config-resolver.service";
+import { SharedSubscriptionsTableConfigResolver } from "@home/pages/shared-subscriptions/shared-subscriptions-table-config-resolver.service";
 
 const routes: Routes = [
   {
-    path: 'admins',
+    path: 'shared-subscriptions',
     component: EntitiesTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'user.admins',
+      title: 'shared-subscription.shared-subscriptions',
       breadcrumb: {
-        label: 'user.admins',
-        icon: 'mdi:email',
+        label: 'shared-subscription.shared-subscriptions',
+        icon: 'mdi:monitor-share',
         isMdiIcon: true
       }
     },
     resolve: {
-      entitiesTableConfig: AdminsTableConfigResolver
+      entitiesTableConfig: SharedSubscriptionsTableConfigResolver
     }
   }
 ];
@@ -43,8 +43,8 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
   providers: [
-    AdminsTableConfigResolver
+    SharedSubscriptionsTableConfigResolver
   ]
 })
 
-export class AdminsRoutingModule { }
+export class SharedSubscriptionsRoutingModule { }

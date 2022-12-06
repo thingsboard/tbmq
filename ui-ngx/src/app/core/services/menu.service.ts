@@ -72,7 +72,7 @@ export class MenuService {
         id: guid(),
         name: 'mqtt-client-credentials.client-credentials',
         type: 'link',
-        path: '/clientCredentials',
+        path: '/client-credentials',
         icon: 'mdi:shield-lock',
         isMdiIcon: true
       },
@@ -81,7 +81,15 @@ export class MenuService {
         name: 'mqtt-client-session.sessions',
         type: 'link',
         path: '/sessions',
-        icon: 'mdi:account-supervisor',
+        icon: 'mdi:book-multiple',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
+        name: 'shared-subscription.shared-subscription',
+        type: 'link',
+        path: '/shared-subscriptions',
+        icon: 'mdi:monitor-share',
         isMdiIcon: true
       },
       {
@@ -89,7 +97,8 @@ export class MenuService {
         name: 'admin.outgoing-mail',
         type: 'link',
         path: '/outgoing-mail',
-        icon: 'mail'
+        icon: 'mdi:email',
+        isMdiIcon: true
       }
     );
     return sections;

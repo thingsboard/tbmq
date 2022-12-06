@@ -1,0 +1,58 @@
+<!--
+
+    Copyright © 2016-2022 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-details-buttons" fxLayout.xs="column">
+  <div fxLayout="row" fxLayout.xs="column">
+    <button mat-raised-button
+            [disabled]="(isLoading$ | async)"
+            (click)="onEntityAction($event, 'delete')"
+            [fxShow]="!isEdit">
+      <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
+      <span translate>shared-subscription.delete</span>
+    </button>
+  </div>
+</div>
+<div class="mat-padding" fxLayout="column">
+  <form [formGroup]="entityForm">
+    <fieldset [disabled]="(isLoading$ | async) || !isEdit">
+      <mat-form-field class="mat-block">
+        <mat-label translate>shared-subscription.name</mat-label>
+        <input matInput formControlName="name" required>
+        <mat-error *ngIf="entityForm.get('name').hasError('required')">
+          {{ 'shared-subscription.name-required' | translate }}
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="mat-block">
+        <mat-label translate>shared-subscription.partitions</mat-label>
+        <input matInput formControlName="partitions" required type="number" min="1" step="1">
+        <mat-error *ngIf="entityForm.get('partitions').hasError('required')">
+          {{ 'shared-subscription.partitions-required' | translate }}
+        </mat-error>
+        <mat-error *ngIf="entityForm.get('partitions').hasError('min')">
+          {{ 'shared-subscription.partitions-min' | translate }}
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="mat-block">
+        <mat-label translate>shared-subscription.topic</mat-label>
+        <input matInput formControlName="topic" required>
+        <mat-error *ngIf="entityForm.get('topic').hasError('required')">
+          {{ 'shared-subscription.topic-required' | translate }}
+        </mat-error>
+      </mat-form-field>
+    </fieldset>
+  </form>
+</div>

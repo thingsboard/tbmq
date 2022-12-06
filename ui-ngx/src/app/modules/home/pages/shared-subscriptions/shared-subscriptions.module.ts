@@ -18,25 +18,19 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
-import { MqttClientCredentialsRoutingModule } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials-routing.module';
-import { ChangeMqttBasicPasswordDialogComponent } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
-import { MqttCredentialsSslComponent } from "@home/components/client-credentials-templates/ssl/ssl.component";
-import { MqttCredentialsBasicComponent } from "@home/components/client-credentials-templates/basic/basic.component";
+import { SharedSubscriptionsRoutingModule } from "@home/pages/shared-subscriptions/shared-subscriptions-routing.module";
+import { SharedSubscriptionComponent } from "@home/pages/shared-subscriptions/shared-subscription.component";
 
 @NgModule({
   declarations: [
-    MqttClientCredentialsComponent,
-    MqttCredentialsSslComponent,
-    MqttCredentialsBasicComponent,
-    ChangeMqttBasicPasswordDialogComponent
+    SharedSubscriptionComponent
   ],
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
-    MqttClientCredentialsRoutingModule
+    SharedSubscriptionsRoutingModule
   ]
 })
 
-export class MqttClientCredentialsModule { }
+export class SharedSubscriptionsModule { }

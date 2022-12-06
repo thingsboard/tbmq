@@ -29,7 +29,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
 import { DialogService } from '@core/services/dialog.service';
-import { MatDialog } from '@angular/material/dialog';
 import { User } from "@shared/models/user.model";
 import { AdminComponent } from "@home/pages/admins/admin.component";
 import { AdminService } from "@core/http/admin.service";
@@ -43,18 +42,14 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
               private dialogService: DialogService,
               private adminService: AdminService,
               private translate: TranslateService,
-              private datePipe: DatePipe,
-              private dialog: MatDialog) {
+              private datePipe: DatePipe) {
 
     this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     this.config.entityComponent = AdminComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
     this.config.tableTitle = this.translate.instant('user.admins');
-
-    this.config.addEnabled = true;
     this.config.entitiesDeleteEnabled = false;
-    this.config.deleteEnabled = () => true;
     this.config.entityTitle = (user) => user ? user.email : '';
 
     this.config.columns.push(

@@ -3194,5 +3194,29 @@
       "qos-at-most-once": "At most once",
       "qos-at-least-once": "At least once",
       "qos-exactly-once": "Exactly once"
+    },
+    "shared-subscription": {
+      "add": "Add Shared Subscription",
+      "delete": "Delete Shared Subscription",
+      "delete-shared-subscriptions": "Delete Shared Subscriptions",
+      "delete-shared-subscription-title": "Are you sure you want to delete the Shared Subscription '{{name}}'?",
+      "delete-shared-subscriptions-title": "Are you sure you want to delete { count, plural, 1 {1 Shared Subscription} other {# Shared Subscriptions} }?",
+      "delete-shared-subscription-text": "Be careful, after the confirmation the Shared Subscription will be removed and all related data will become unrecoverable.",
+      "delete-shared-subscriptions-text": "Be careful, after the confirmation all selected Shared Subscriptions will be removed and all related data will become unrecoverable.",
+      "list-of-shared-subscriptions": "{ count, plural, 1 {One Shared Subscription} other {List of # Shared Subscriptions} }",
+      "shared-subscription-name-starts-with": "Shared Subscriptions whose names start with '{{prefix}}'",
+      "shared-subscription-details": "Shared Subscription details",
+      "no-shared-subscription-text": "No Shared Subscriptions found",
+      "search": "Search Shared Subscriptions",
+      "selected-shared-subscriptions": "{ count, plural, 1 {1 Shared Subscription} other {# Shared Subscriptions} } selected",
+      "name": "Name",
+      "name-required": "Name is required",
+      "partitions": "Partitions",
+      "partitions-required": "Partitions are required",
+      "partitions-min": "Minimum value is 1",
+      "topic": "Topic",
+      "topic-required": "Topic is required",
+      "shared-subscription": "Shared Subscription",
+      "shared-subscriptions": "Shared Subscriptions"
     }
 }
