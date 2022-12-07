@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,6 +43,7 @@ public class AppSharedSubscriptionController extends BaseController {
 
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     private final ApplicationTopicService applicationTopicService;
+    private final TopicValidationService topicValidationService;
 
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
@@ -52,6 +54,8 @@ public class AppSharedSubscriptionController extends BaseController {
     public ApplicationSharedSubscription saveSharedSubscription(@RequestBody ApplicationSharedSubscription sharedSubscription) throws ThingsboardException {
         checkNotNull(sharedSubscription);
         try {
+            topicValidationService.validateTopicFilter(sharedSubscription.getTopic());
+
             ApplicationSharedSubscription applicationSharedSubscription =
                     checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
             if (sharedSubscription.getId() == null) {

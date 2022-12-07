@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -44,6 +45,7 @@ public class SubscriptionController extends BaseController {
     private final SubscriptionService subscriptionService;
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientSubscriptionAdminService subscriptionAdminService;
+    private final TopicValidationService topicValidationService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
@@ -58,6 +60,9 @@ public class SubscriptionController extends BaseController {
         }
 
         try {
+            detailedClientSessionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
+                    topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopic()));
+
             subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
             return detailedClientSessionInfoDto;
         } catch (Exception e) {
