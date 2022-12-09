@@ -44,6 +44,9 @@ public class TbKafkaProducerSettings {
     @Value("${queue.kafka.default.producer.buffer-memory}")
     private long bufferMemory;
 
+    @Value("${queue.kafka.default.producer.compression-type:none}")
+    private String compressionType;
+
     public Properties toProps(String customProperties) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
@@ -52,6 +55,7 @@ public class TbKafkaProducerSettings {
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, batchSize);
         props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMs);
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, compressionType);
         if (customProperties != null) {
             QueueUtil.getConfigs(customProperties).forEach(props::put);
         }
