@@ -45,10 +45,10 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
     [
       EntityType.USER,
       {
-        type: 'entity.type-user',
-        typePlural: 'entity.type-users',
-        list: 'entity.list-of-users',
-        nameStartsWith: 'entity.user-name-starts-with',
+        type: 'user.type-user',
+        typePlural: 'user.type-users',
+        list: 'user.list-of-users',
+        nameStartsWith: 'user.user-name-starts-with',
         details: 'user.user-details',
         add: 'user.add',
         noEntities: 'user.no-users-text',
