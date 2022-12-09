@@ -35,6 +35,7 @@ import {
   DetailedClientSessionInfo
 } from "@shared/models/session.model";
 import { clientTypeTranslationMap } from "@shared/models/client.model";
+import { HelpLinks } from "@shared/models/constants";
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -48,7 +49,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.searchEnabled = true;
-    this.addEnabled = false;
+    this.addEnabled = true;
     this.entitiesDeleteEnabled = false;
     this.tableTitle = this.translate.instant('mqtt-client-session.type-sessions');
     this.entityTranslations = {
@@ -58,6 +59,15 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
+
+    this.addActionDescriptors.push(
+      {
+        name: this.translate.instant('help.goto-help-page'),
+        icon: 'help',
+        isEnabled: () => true,
+        onAction: () => this.gotoHelpPage()
+      }
+    );
 
     this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
@@ -94,5 +104,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       }
     );
     return false;
+  }
+
+  private gotoHelpPage(): void {
+    let helpUrl = HelpLinks.linksMap['sessions'];
+    if (helpUrl) {
+      window.open(helpUrl, '_blank');
+    }
   }
 }
