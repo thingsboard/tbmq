@@ -31,8 +31,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormControl, FormGroup, FormGroupDirective, NgForm } from '@angular/forms';
 import { EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { BaseData, HasId } from '@shared/models/base-data';
-import { EntityId } from '@shared/models/id/entity-id';
+import { BaseData } from '@shared/models/base-data';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { EntityComponent } from './entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
@@ -46,15 +45,15 @@ import { Router } from '@angular/router';
   providers: [{provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent}],
   styleUrls: ['./add-entity-dialog.component.scss']
 })
-export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData<HasId>> implements OnInit, ErrorStateMatcher, AfterContentChecked {
+export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData> implements OnInit, ErrorStateMatcher, AfterContentChecked {
 
-  entityComponent: EntityComponent<BaseData<HasId>>;
+  entityComponent: EntityComponent<BaseData>;
   detailsForm: FormGroup;
 
-  entitiesTableConfig: EntityTableConfig<BaseData<HasId>>;
+  entitiesTableConfig: EntityTableConfig<BaseData>;
   translations: EntityTypeTranslation;
-  resources: EntityTypeResource<BaseData<HasId>>;
-  entity: BaseData<EntityId>;
+  resources: EntityTypeResource<BaseData>;
+  entity: BaseData;
 
   submitted = false;
 
@@ -62,8 +61,8 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
-              @Inject(MAT_DIALOG_DATA) public data: AddEntityDialogData<BaseData<HasId>>,
-              public dialogRef: MatDialogRef<AddEntityDialogComponent, BaseData<HasId>>,
+              @Inject(MAT_DIALOG_DATA) public data: AddEntityDialogData<BaseData>,
+              public dialogRef: MatDialogRef<AddEntityDialogComponent, BaseData>,
               private componentFactoryResolver: ComponentFactoryResolver,
               private injector: Injector,
               private changeDetectorRef: ChangeDetectorRef,

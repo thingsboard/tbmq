@@ -15,18 +15,12 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { ClientType } from '@shared/models/mqtt-client.model';
-import { ClientId } from '@shared/models/id/mqtt-client.id';
+import { ClientType } from '@shared/models/client.model';
 
 export enum MqttCredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
   SSL = 'SSL'
 }
-
-export const MqttCredentialsTypes = [
-  MqttCredentialsType.MQTT_BASIC,
-  MqttCredentialsType.SSL
-];
 
 export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   [
@@ -35,7 +29,7 @@ export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   ]
 );
 
-export interface MqttClientCredentials extends BaseData<ClientId> {
+export interface MqttClientCredentials extends BaseData {
   credentialsId: string;
   name: string;
   clientType: ClientType;

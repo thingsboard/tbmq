@@ -14,11 +14,10 @@
 /// limitations under the License.
 ///
 
-import { HasUUID } from '@shared/models/id/has-uuid';
-
 export declare type MenuSectionType = 'link' | 'toggle';
 
-export interface MenuSection extends HasUUID{
+export interface MenuSection {
+  id: string;
   name: string;
   type: MenuSectionType;
   path: string;

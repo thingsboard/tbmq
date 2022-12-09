@@ -32,7 +32,7 @@ import {
   AuthRulePatternsType,
   BasicMqttCredentials,
   MqttClientCredentials
-} from '@shared/models/mqtt-client-crenetials.model';
+} from '@shared/models/client-crenetials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
@@ -150,9 +150,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     this.propagateChange(formValue);
   }
 
-  changePassword(): Observable<MqttClientCredentials> {
-    // @ts-ignore
-    return this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
+  changePassword(): void {
+    this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
       MqttClientCredentials>(ChangeMqttBasicPasswordDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],

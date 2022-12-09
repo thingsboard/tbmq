@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { PageComponent } from '@shared/components/page.component';
 import { AfterViewInit, Directive, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { Store } from '@ngrx/store';
@@ -25,15 +25,15 @@ import { BehaviorSubject } from 'rxjs';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { AuthUser } from '@shared/models/user.model';
 import { EntityType } from '@shared/models/entity-type.models';
-import { NULL_UUID } from '@shared/models/id/has-uuid';
 import { FormGroup } from '@angular/forms';
 import { PageLink } from '@shared/models/page/page-link';
+import { NULL_UUID } from "@shared/models/constants";
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
-export abstract class EntityTabsComponent<T extends BaseData<HasId>,
+export abstract class EntityTabsComponent<T extends BaseData,
   P extends PageLink = PageLink,
-  L extends BaseData<HasId> = T,
+  L extends BaseData = T,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit, AfterViewInit {
 

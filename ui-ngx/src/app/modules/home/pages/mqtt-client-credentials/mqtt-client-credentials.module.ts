@@ -23,12 +23,14 @@ import { MqttClientCredentialsRoutingModule } from '@home/pages/mqtt-client-cred
 import { ChangeMqttBasicPasswordDialogComponent } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
 import { MqttCredentialsSslComponent } from "@home/components/client-credentials-templates/ssl/ssl.component";
 import { MqttCredentialsBasicComponent } from "@home/components/client-credentials-templates/basic/basic.component";
+import { AuthRulesComponent } from "@home/components/client-credentials-templates/ssl/auth-rules.component";
 
 @NgModule({
   declarations: [
     MqttClientCredentialsComponent,
     MqttCredentialsSslComponent,
     MqttCredentialsBasicComponent,
+    AuthRulesComponent,
     ChangeMqttBasicPasswordDialogComponent
   ],
   imports: [

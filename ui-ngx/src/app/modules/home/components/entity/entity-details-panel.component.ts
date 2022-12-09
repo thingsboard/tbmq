@@ -34,7 +34,7 @@ import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { FormGroup } from '@angular/forms';
 import { EntityComponent } from './entity.component';
@@ -57,19 +57,19 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   closeEntityDetails = new EventEmitter<void>();
 
   @Output()
-  entityUpdated = new EventEmitter<BaseData<HasId>>();
+  entityUpdated = new EventEmitter<BaseData>();
 
   @Output()
-  entityAction = new EventEmitter<EntityAction<BaseData<HasId>>>();
+  entityAction = new EventEmitter<EntityAction<BaseData>>();
 
-  entityComponentRef: ComponentRef<EntityComponent<BaseData<HasId>>>;
-  entityComponent: EntityComponent<BaseData<HasId>>;
+  entityComponentRef: ComponentRef<EntityComponent<BaseData>>;
+  entityComponent: EntityComponent<BaseData>;
 
-  entityTabsComponentRef: ComponentRef<EntityTabsComponent<BaseData<HasId>>>;
-  entityTabsComponent: EntityTabsComponent<BaseData<HasId>>;
+  entityTabsComponentRef: ComponentRef<EntityTabsComponent<BaseData>>;
+  entityTabsComponent: EntityTabsComponent<BaseData>;
   detailsForm: FormGroup;
 
-  entitiesTableConfigValue: EntityTableConfig<BaseData<HasId>>;
+  entitiesTableConfigValue: EntityTableConfig<BaseData>;
   isEditValue = false;
   selectedTab = 0;
 
@@ -84,11 +84,11 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   @ViewChildren(MatTab) inclusiveTabs: QueryList<MatTab>;
 
   translations: EntityTypeTranslation;
-  resources: EntityTypeResource<BaseData<HasId>>;
-  entity: BaseData<HasId>;
-  editingEntity: BaseData<HasId>;
+  resources: EntityTypeResource<BaseData>;
+  entity: BaseData;
+  editingEntity: BaseData;
 
-  private currentEntityId: HasId;
+  private currentEntityId: string;
   private subscriptions: Subscription[] = [];
   private viewInited = false;
   private pendingTabs: MatTab[];
@@ -101,7 +101,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   }
 
   @Input()
-  set entityId(entityId: HasId) {
+  set entityId(entityId: string) {
     if (entityId && entityId !== this.currentEntityId) {
       this.currentEntityId = entityId;
       this.reload();
@@ -109,7 +109,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   }
 
   @Input()
-  set entitiesTableConfig(entitiesTableConfig: EntityTableConfig<BaseData<HasId>>) {
+  set entitiesTableConfig(entitiesTableConfig: EntityTableConfig<BaseData>) {
     if (this.entitiesTableConfigValue !== entitiesTableConfig) {
       this.entitiesTableConfigValue = entitiesTableConfig;
       if (this.entitiesTableConfigValue) {
@@ -121,7 +121,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
     }
   }
 
-  get entitiesTableConfig(): EntityTableConfig<BaseData<HasId>> {
+  get entitiesTableConfig(): EntityTableConfig<BaseData> {
     return this.entitiesTableConfigValue;
   }
 

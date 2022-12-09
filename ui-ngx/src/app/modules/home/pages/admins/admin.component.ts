@@ -42,7 +42,6 @@ export class AdminComponent extends EntityComponent<User> {
 
   hideDelete() {
     if (this.entitiesTableConfig) {
-      // @ts-ignore
       return !this.entitiesTableConfig.deleteEnabled(this.entity) || this.currentUserId === this.entityValue?.id;
     } else {
       return false;

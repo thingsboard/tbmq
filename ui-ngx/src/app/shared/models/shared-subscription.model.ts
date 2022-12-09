@@ -15,9 +15,8 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { SharedSubscriptionId } from "@shared/models/id/shared-subscription.id";
 
-export interface SharedSubscription extends BaseData<SharedSubscriptionId> {
+export interface SharedSubscription extends BaseData {
   name: string;
   partitions: number;
   topic: string;

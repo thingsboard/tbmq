@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-
 export enum Authority {
   SYS_ADMIN = 'SYS_ADMIN',
   REFRESH_TOKEN = 'REFRESH_TOKEN',

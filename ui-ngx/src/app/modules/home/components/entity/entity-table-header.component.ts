@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { PageComponent } from '@shared/components/page.component';
 import { Directive, Input, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
@@ -24,9 +24,9 @@ import { PageLink } from '@shared/models/page/page-link';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
-export abstract class EntityTableHeaderComponent<T extends BaseData<HasId>,
+export abstract class EntityTableHeaderComponent<T extends BaseData,
   P extends PageLink = PageLink,
-  L extends BaseData<HasId> = T,
+  L extends BaseData = T,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit {
 

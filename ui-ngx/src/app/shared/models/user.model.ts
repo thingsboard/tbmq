@@ -15,10 +15,9 @@
 ///
 
 import { BaseData } from './base-data';
-import { UserId } from './id/user-id';
 import { Authority } from './authority.enum';
 
-export interface User extends BaseData<UserId> {
+export interface User extends BaseData {
   email: string;
   authority: Authority;
   firstName: string;

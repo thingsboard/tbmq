@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 
 export enum EntityType {
   USER = 'USER',
@@ -101,30 +101,30 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
   ]
 );
 
-export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseData<HasId>>>(
+export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseData>>(
   [
     [
       EntityType.USER,
       {
-        helpLinkId: 'users'
+        helpLinkId: 'admins'
       }
     ],
     [
       EntityType.MQTT_CLIENT_CREDENTIALS,
       {
-        helpLinkId: 'mqttClientCredentials'
+        helpLinkId: 'clientCredentials'
       }
     ],
     [
       EntityType.MQTT_SESSION,
       {
-        helpLinkId: 'mqttSession'
+        helpLinkId: 'sessions'
       }
     ],
     [
       EntityType.SHARED_SUBSCRIPTION,
       {
-        helpLinkId: 'shared_subscription'
+        helpLinkId: 'sharedSubscriptions'
       }
     ]
   ]

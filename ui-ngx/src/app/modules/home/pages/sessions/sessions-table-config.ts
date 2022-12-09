@@ -24,7 +24,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
-import { EntityId } from '@shared/models/id/entity-id';
 import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
 import {
   SessionsDetailsDialogComponent,
@@ -34,8 +33,8 @@ import {
   connectionStateColor,
   connectionStateTranslationMap,
   DetailedClientSessionInfo
-} from "@shared/models/mqtt-session.model";
-import { clientTypeTranslationMap } from "@shared/models/mqtt-client.model";
+} from "@shared/models/session.model";
+import { clientTypeTranslationMap } from "@shared/models/client.model";
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -43,7 +42,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
-              public entityId: EntityId = null) {
+              public entityId: string = null) {
     super();
     this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;

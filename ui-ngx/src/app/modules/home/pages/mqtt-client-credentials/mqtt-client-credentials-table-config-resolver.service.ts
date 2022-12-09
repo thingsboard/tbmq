@@ -33,8 +33,8 @@ import { Direction } from '@shared/models/page/sort-order';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
 import { MatDialog } from '@angular/material/dialog';
-import { clientTypeTranslationMap } from '@shared/models/mqtt-client.model';
-import { credentialsTypeNames, MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
+import { clientTypeTranslationMap } from '@shared/models/client.model';
+import { credentialsTypeNames, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 
 @Injectable()
 export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<MqttClientCredentials>> {

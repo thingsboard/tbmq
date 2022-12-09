@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { EntityTableConfig } from './entities-table-config.models';
 
-export interface AddEntityDialogData<T extends BaseData<HasId>> {
+export interface AddEntityDialogData<T extends BaseData> {
   entitiesTableConfig: EntityTableConfig<T>;
 }
 
-export interface EntityAction<T extends BaseData<HasId>> {
+export interface EntityAction<T extends BaseData> {
   event: Event;
   action: string;
   entity: T;

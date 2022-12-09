@@ -40,7 +40,7 @@ import { catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/o
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
   CellActionDescriptor, CellActionDescriptorType,
@@ -58,7 +58,6 @@ import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-co
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
-import { HasUUID } from '@shared/models/id/has-uuid';
 
 @Component({
   selector: 'tb-entities-table',
@@ -69,16 +68,16 @@ import { HasUUID } from '@shared/models/id/has-uuid';
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
   @Input()
-  entitiesTableConfig: EntityTableConfig<BaseData<HasId>>;
+  entitiesTableConfig: EntityTableConfig<BaseData>;
 
   translations: EntityTypeTranslation;
 
   headerActionDescriptors: Array<HeaderActionDescriptor>;
-  groupActionDescriptors: Array<GroupActionDescriptor<BaseData<HasId>>>;
-  cellActionDescriptors: Array<CellActionDescriptor<BaseData<HasId>>>;
+  groupActionDescriptors: Array<GroupActionDescriptor<BaseData>>;
+  cellActionDescriptors: Array<CellActionDescriptor<BaseData>>;
 
-  actionColumns: Array<EntityActionTableColumn<BaseData<HasId>>>;
-  entityColumns: Array<EntityTableColumn<BaseData<HasId>>>;
+  actionColumns: Array<EntityActionTableColumn<BaseData>>;
+  entityColumns: Array<EntityTableColumn<BaseData>>;
 
   displayedColumns: string[];
 
@@ -97,7 +96,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   pageLink: PageLink;
   pageMode = true;
   textSearchMode = false;
-  dataSource: EntitiesDataSource<BaseData<HasId>>;
+  dataSource: EntitiesDataSource<BaseData>;
 
   cellActionType = CellActionDescriptorType;
 
@@ -146,7 +145,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     }
   }
 
-  private init(entitiesTableConfig: EntityTableConfig<BaseData<HasId>>) {
+  private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
     this.isDetailsOpen = false;
     this.entitiesTableConfig = entitiesTableConfig;
     if (this.entitiesTableConfig.headerComponent) {
@@ -312,12 +311,12 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   addEntity($event: Event) {
-    let entity$: Observable<BaseData<HasId>>;
+    let entity$: Observable<BaseData>;
     if (this.entitiesTableConfig.addEntity) {
       entity$ = this.entitiesTableConfig.addEntity();
     } else {
-      entity$ = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<BaseData<HasId>>,
-        BaseData<HasId>>(AddEntityDialogComponent, {
+      entity$ = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<BaseData>,
+        BaseData>(AddEntityDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
@@ -335,18 +334,18 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     );
   }
 
-  onEntityUpdated(entity: BaseData<HasId>) {
+  onEntityUpdated(entity: BaseData) {
     this.updateData(false);
     this.entitiesTableConfig.entityUpdated(entity);
   }
 
-  onEntityAction(action: EntityAction<BaseData<HasId>>) {
+  onEntityAction(action: EntityAction<BaseData>) {
     if (action.action === 'delete') {
       this.deleteEntity(action.event, action.entity);
     }
   }
 
-  deleteEntity($event: Event, entity: BaseData<HasId>) {
+  deleteEntity($event: Event, entity: BaseData) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -368,7 +367,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     });
   }
 
-  deleteEntities($event: Event, entities: BaseData<HasId>[]) {
+  deleteEntities($event: Event, entities: BaseData[]) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -380,7 +379,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       true
     ).subscribe((result) => {
       if (result) {
-        const tasks: Observable<HasUUID>[] = [];
+        const tasks: Observable<string>[] = [];
         entities.forEach((entity) => {
           if (this.entitiesTableConfig.deleteEnabled(entity)) {
             tasks.push(this.entitiesTableConfig.deleteEntity(entity.id).pipe(
@@ -449,10 +448,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   columnsUpdated(resetData: boolean = false) {
     this.entityColumns = this.entitiesTableConfig.columns.filter(
       (column) => column instanceof EntityTableColumn)
-      .map(column => column as EntityTableColumn<BaseData<HasId>>);
+      .map(column => column as EntityTableColumn<BaseData>);
     this.actionColumns = this.entitiesTableConfig.columns.filter(
       (column) => column instanceof EntityActionTableColumn)
-      .map(column => column as EntityActionTableColumn<BaseData<HasId>>);
+      .map(column => column as EntityActionTableColumn<BaseData>);
 
     this.displayedColumns = [];
 
@@ -474,7 +473,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     }
   }
 
-  headerCellStyle(column: EntityColumn<BaseData<HasId>>) {
+  headerCellStyle(column: EntityColumn<BaseData>) {
     const index = this.entitiesTableConfig.columns.indexOf(column);
     let res = this.headerCellStyleCache[index];
     if (!res) {
@@ -500,7 +499,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.cellStyleCache[index] = undefined;
   }
 
-  cellContent(entity: BaseData<HasId>, column: EntityColumn<BaseData<HasId>>, row: number) {
+  cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
       const col = this.entitiesTableConfig.columns.indexOf(column);
       const index = row * this.entitiesTableConfig.columns.length + col;
@@ -515,7 +514,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     }
   }
 
-  cellTooltip(entity: BaseData<HasId>, column: EntityColumn<BaseData<HasId>>, row: number) {
+  cellTooltip(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
       const col = this.entitiesTableConfig.columns.indexOf(column);
       const index = row * this.entitiesTableConfig.columns.length + col;
@@ -532,7 +531,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     }
   }
 
-  cellStyle(entity: BaseData<HasId>, column: EntityColumn<BaseData<HasId>>, row: number) {
+  cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     const col = this.entitiesTableConfig.columns.indexOf(column);
     const index = row * this.entitiesTableConfig.columns.length + col;
     let res = this.cellStyleCache[index];
@@ -552,7 +551,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     return res;
   }
 
-  trackByColumnKey(index, column: EntityTableColumn<BaseData<HasId>>) {
+  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
     return column.key;
   }
 

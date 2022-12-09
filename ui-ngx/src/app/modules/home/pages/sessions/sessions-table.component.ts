@@ -15,7 +15,6 @@
 ///
 
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { EntityId } from "@shared/models/id/entity-id";
 import { SessionsTableConfig } from "@home/pages/sessions/sessions-table-config";
 import { EntitiesTableComponent } from "@home/components/entity/entities-table.component";
 import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
@@ -35,7 +34,7 @@ export class SessionsTableComponent implements OnInit {
 
   activeValue = false;
   dirtyValue = false;
-  entityIdValue: EntityId;
+  entityIdValue: string;
 
   @Input()
   set active(active: boolean) {
@@ -49,7 +48,7 @@ export class SessionsTableComponent implements OnInit {
   }
 
   @Input()
-  set entityId(entityId: EntityId) {
+  set entityId(entityId: string) {
     this.entityIdValue = entityId;
     if (this.sessionsTableConfig && this.sessionsTableConfig.entityId !== entityId) {
       this.sessionsTableConfig.entityId = entityId;

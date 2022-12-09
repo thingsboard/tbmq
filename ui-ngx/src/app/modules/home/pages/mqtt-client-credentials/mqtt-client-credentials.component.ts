@@ -24,8 +24,8 @@ import {
   credentialsTypeNames,
   MqttClientCredentials,
   MqttCredentialsType
-} from '@shared/models/mqtt-client-crenetials.model';
-import { ClientType, clientTypeTranslationMap } from "@shared/models/mqtt-client.model";
+} from '@shared/models/client-crenetials.model';
+import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
 import { ActionNotificationShow } from "@core/notification/notification.actions";
 import { TranslateService } from "@ngx-translate/core";
 

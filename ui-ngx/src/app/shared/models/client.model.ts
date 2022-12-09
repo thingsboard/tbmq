@@ -14,13 +14,19 @@
 /// limitations under the License.
 ///
 
-import { EntityId } from '@shared/models/id/entity-id';
-import { EntityType } from '@shared/models/entity-type.models';
-
-export class SessionId implements EntityId {
-  entityType = EntityType.MQTT_SESSION;
-  id: string;
-  constructor(id: string) {
-    this.id = id;
-  }
+export interface ClientInfo {
+  clientId: string;
+  type: ClientType;
 }
+
+export enum ClientType {
+  DEVICE = 'DEVICE',
+  APPLICATION = 'APPLICATION'
+}
+
+export const clientTypeTranslationMap = new Map<ClientType, string>(
+  [
+    [ClientType.DEVICE, 'mqtt-client.type-device'],
+    [ClientType.APPLICATION, 'mqtt-client.type-application']
+  ]
+);

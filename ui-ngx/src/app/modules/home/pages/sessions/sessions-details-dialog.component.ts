@@ -15,7 +15,7 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from "@shared/models/mqtt-session.model";
+import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from "@shared/models/session.model";
 import { DialogComponent } from "@shared/components/dialog.component";
 import { AppState } from "@core/core.state";
 import { Store } from "@ngrx/store";

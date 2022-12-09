@@ -17,8 +17,7 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
-import { EntityId } from '@shared/models/id/entity-id';
-import { NULL_UUID } from '@shared/models/id/has-uuid';
+import { NULL_UUID } from "@shared/models/constants";
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -410,8 +409,8 @@ export function generateSecret(length?: number): string {
   return str.concat(generateSecret(length - str.length));
 }
 
-export function validateEntityId(entityId: EntityId | null): boolean {
-    return isDefinedAndNotNull(entityId?.id) && entityId.id !== NULL_UUID && isDefinedAndNotNull(entityId?.entityType);
+export function validateEntityId(entityId: string): boolean {
+    return isDefinedAndNotNull(entityId) && entityId !== NULL_UUID;
 }
 
 export function isMobileApp(): boolean {

@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttClientCredentials } from '@shared/models/mqtt-client-crenetials.model';
+import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
 
 @Injectable({
   providedIn: 'root'

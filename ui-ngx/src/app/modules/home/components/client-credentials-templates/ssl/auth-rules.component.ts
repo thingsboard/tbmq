@@ -33,7 +33,7 @@ import {
   AuthRulePatternsType,
   AuthRulesMapping,
   SslMqttCredentialsAuthRules
-} from "@shared/models/mqtt-client-crenetials.model";
+} from "@shared/models/client-crenetials.model";
 
 @Component({
   selector: 'tb-auth-rules',

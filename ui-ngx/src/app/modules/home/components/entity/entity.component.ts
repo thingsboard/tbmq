@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData, HasId } from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { PageComponent } from '@shared/components/page.component';
 import { ChangeDetectorRef, Directive, EventEmitter, Input, OnInit, Output } from '@angular/core';
@@ -28,9 +28,9 @@ import { deepTrim } from '@core/utils';
 // @dynamic
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
-export abstract class EntityComponent<T extends BaseData<HasId>,
+export abstract class EntityComponent<T extends BaseData,
   P extends PageLink = PageLink,
-  L extends BaseData<HasId> = T,
+  L extends BaseData = T,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit {
 
@@ -59,7 +59,7 @@ export abstract class EntityComponent<T extends BaseData<HasId>,
   }
 
   get isAdd(): boolean {
-    return this.entityValue && (!this.entityValue.id || !this.entityValue.id.id);
+    return this.entityValue && (!this.entityValue.id);
   }
 
   @Input()

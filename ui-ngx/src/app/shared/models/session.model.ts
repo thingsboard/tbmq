@@ -14,11 +14,10 @@
 /// limitations under the License.
 ///
 
-import { ClientInfo, ClientType } from '@shared/models/mqtt-client.model';
+import { ClientInfo, ClientType } from '@shared/models/client.model';
 import { BaseData } from '@shared/models/base-data';
-import { SessionId } from '@shared/models/id/mqtt-session.id';
 
-export interface DetailedClientSessionInfo extends BaseData<SessionId> {
+export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
   sessionId: string;
   connectionState: ConnectionState;

@@ -54,14 +54,20 @@ export const MediaBreakpoints = {
   'gt-xl': 'screen and (min-width: 5001px)'
 };
 
-// TODO deaflynx add helplinks
+export const helpBaseUrl = 'https://thingsboard.io';
+
 export const HelpLinks = {
   linksMap: {
-    // ruleNodePushToEdge: helpBaseUrl + '/docs/user-guide/rule-engine-2-0/action-nodes/#push-to-edge'
+    outgoingMailSettings: helpBaseUrl + '/docs/user-guide/ui/mail-settings',
+    admins: helpBaseUrl + '/docs/user-guide/mqtt-broker/admins',
+    clientCredentials: helpBaseUrl + '/docs/user-guide/mqtt-broker/client-credentials',
+    sessions: helpBaseUrl + '/docs/user-guide/mqtt-broker/sessions',
+    sharedSubscriptions: helpBaseUrl + '/docs/user-guide/mqtt-broker/shared-subscriptions',
   }
 };
 
 export const customTranslationsPrefix = 'custom.';
-export const i18nPrefix = 'i18n';
 
 export const MODULES_MAP = new InjectionToken<{[key: string]: any}>('ModulesMap');
+
+export const NULL_UUID = '13814000-1dd2-11b2-8080-808080808080';

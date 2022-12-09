@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-export * from './id/public-api';
 export * from './page/public-api';
 export * from './authority.enum';
 export * from './base-data';
