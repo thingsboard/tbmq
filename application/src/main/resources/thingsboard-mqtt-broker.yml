@@ -83,8 +83,6 @@ listener:
           key_file: "${LISTENER_SSL_PEM_KEY:mqttserver_key.pem}"
           # Server certificate private key password (optional)
           key_password: "${LISTENER_SSL_PEM_KEY_PASSWORD:server_key_password}"
-          # Path to the certificates file (holds trust certificates)
-          trust_cert_file: "${LISTENER_TRUST_PEM_CERT:truststorechain.pem}"
         # Keystore server credentials
         keystore:
           # Type of the key store (JKS or PKCS12)
@@ -97,12 +95,6 @@ listener:
           key_alias: "${LISTENER_SSL_KEY_ALIAS:}"
           # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
           key_password: "${LISTENER_SSL_KEY_PASSWORD:server_key_password}"
-          # Path to the trust store that holds the SSL certificate
-          trust_store: "${LISTENER_SSL_TRUST_STORE:root_truststore.jks}"
-          # Password used to access the trust store
-          trust_store_password: "${LISTENER_SSL_TRUST_STORE_PASSWORD:truststore_password}"
-          # Type of the trust store
-          trust_store_type: "${LISTENER_SSL_TRUST_STORE_TYPE:JKS}"
       # Skip certificate validity check for client certificates.
       skip_validity_check_for_client_cert: "${LISTENER_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
     netty:
