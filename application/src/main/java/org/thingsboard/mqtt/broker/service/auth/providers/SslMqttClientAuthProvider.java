@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -42,6 +43,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+
+    @Value("${listener.ssl.config.skip_validity_check_for_client_cert:false}")
+    private boolean skipValidityCheckForClientCert;
 
     @Override
     public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
@@ -75,6 +79,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             return null;
         }
         for (X509Certificate certificate : certificates) {
+            checkCertValidity(clientId, certificate);
+
             String commonName;
             try {
                 commonName = SslUtil.parseCommonName(certificate);
@@ -89,6 +95,17 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             }
         }
         return null;
+    }
+
+    private void checkCertValidity(String clientId, X509Certificate certificate) throws AuthenticationException {
+        try {
+            if (!skipValidityCheckForClientCert) {
+                certificate.checkValidity();
+            }
+        } catch (Exception e) {
+            log.trace("[{}] X509 auth failure.", clientId, e);
+            throw new AuthenticationException("X509 auth failure.", e);
+        }
     }
 
     private String getClientCertificateCommonName(SslHandler sslHandler) throws AuthenticationException {
