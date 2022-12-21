@@ -26,8 +26,8 @@ metadata:
 
 managedNodeGroups:
   - name: main-node-group
-    instanceType: m5.large
+    instanceType: m6a.2xlarge
     desiredCapacity: 1
-    maxSize: 1
+    maxSize: 20
     minSize: 1
     labels: { type: node }

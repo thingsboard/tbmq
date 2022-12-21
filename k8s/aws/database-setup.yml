@@ -32,7 +32,7 @@ spec:
   containers:
   - name: tb-db-setup
     imagePullPolicy: Always
-    image: vzikratyi/tb-mqtt-broker:1.0.0-SNAPSHOT
+    image: thingsboard/tb-mqtt-broker:1.0.0
     envFrom:
     - configMapRef:
         name: tb-broker-db-config

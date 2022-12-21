@@ -24,7 +24,7 @@ metadata:
 data:
     SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
     SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
-    SPRING_DATASOURCE_URL: jdbc:postgresql://tb-broker-db.ctaauzbrgb4h.us-east-1.rds.amazonaws.com:5432/thingsboard_mqtt_broker
+    SPRING_DATASOURCE_URL: jdbc:postgresql://PUT_YOUR_RDS_HERE:5432/thingsboard_mqtt_broker
     SPRING_DATASOURCE_USERNAME: postgres
     SPRING_DATASOURCE_PASSWORD: postgres
 ---
@@ -46,6 +46,11 @@ data:
       export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
       export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
       export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      
+      # JMX
+      export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999"
+      export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1"
+      
       export LOG_FILENAME=thingsboard-mqtt-broker.out
       export LOADER_PATH=/usr/share/thingsboard-mqtt-broker/conf
   logback: |
