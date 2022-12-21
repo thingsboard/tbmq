@@ -30,6 +30,8 @@ import java.util.List;
 
 public class TestUtils {
 
+    private static final List<String> ALLOW_ALL_LIST = List.of(".*");
+
     public static void clearPersistedClient(MqttClient persistedClient, MqttClient newClientToClear) throws Exception {
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
@@ -51,11 +53,11 @@ public class TestUtils {
     }
 
     public static MqttClientCredentials createApplicationClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, null, ClientType.APPLICATION, null);
+        return getMqttClientCredentials(clientId, username, null, ClientType.APPLICATION, ALLOW_ALL_LIST);
     }
 
     public static MqttClientCredentials createDeviceClientCredentials(String clientId, String username) {
-        return getMqttClientCredentials(clientId, username, null, ClientType.DEVICE, null);
+        return getMqttClientCredentials(clientId, username, null, ClientType.DEVICE, ALLOW_ALL_LIST);
     }
 
     public static MqttClientCredentials createDeviceClientCredentialsWithAuth(String clientId, List<String> authRulePatterns) {
@@ -63,7 +65,7 @@ public class TestUtils {
     }
 
     public static MqttClientCredentials createDeviceClientCredentialsWithPass(String clientId, String password) {
-        return getMqttClientCredentials(clientId, null, password, ClientType.DEVICE, null);
+        return getMqttClientCredentials(clientId, null, password, ClientType.DEVICE, ALLOW_ALL_LIST);
     }
 
     private static MqttClientCredentials getMqttClientCredentials(String clientId, String username, String password,

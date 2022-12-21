@@ -160,12 +160,25 @@ public class AuthRulePatternsServiceSuiteTest {
                 AuthRulePatterns.newInstance(Collections.emptyList()),
                 AuthRulePatterns.newInstance(Collections.emptyList())
         );
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+    }
+
+    @Test
+    public void testSuccessfulRuleValidation4() {
+        List<AuthRulePatterns> authRulePatterns = List.of(
+                new AuthRulePatterns(List.of(Pattern.compile("2/.*")), List.of(Pattern.compile("1/.*"))),
+                AuthRulePatterns.newInstance(Collections.emptyList())
+        );
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
 
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
     }
 
     @Test
@@ -180,6 +193,6 @@ public class AuthRulePatternsServiceSuiteTest {
 
     @Test
     public void testSuccessfulRuleValidation_NoRule() {
-        Assert.assertTrue(authorizationRuleService.isSubAuthorized("123", Collections.emptyList()));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("123", Collections.emptyList()));
     }
 }

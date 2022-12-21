@@ -95,7 +95,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     private boolean isAuthorized(String topic, Stream<List<Pattern>> stream) {
         List<Pattern> patterns = stream.flatMap(List::stream).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(patterns)) {
-            return true;
+            return false;
         }
         return patterns.stream().anyMatch(pattern -> pattern.matcher(topic).matches());
     }
