@@ -142,7 +142,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   updateView(value: BasicMqttCredentials) {
     for (const rule of Object.keys(value.authRules)) {
-      if (value.authRules[rule] && !value.authRules[rule][0].length) {
+      if (!value.authRules[rule]?.length || (value.authRules[rule].length && !value.authRules[rule][0].length)) {
         value.authRules[rule] = null;
       }
     }
