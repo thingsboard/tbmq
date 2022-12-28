@@ -37,3 +37,14 @@ postgresql:
 helm install --namespace="NAMESPACE WHERE POSTGRES AND KAFKA DEPLOYED" --generate-name -f defaultValues.yaml tboard-standalone/ 
 ```
 
+### Troubleshooting
+
+It may be that due to slow network, some images need more time to be donwloaded. This can cause
+```
+Failed to pull image "someImage": rpc error: code = Unknown desc = context deadline exceeded
+```
+error. To avoid it, pull image by yourself
+```
+docker pull IMAGE_NAME
+```
+and bugged pod will be restarted. Or no to wait, you can delete and restart by yourself. 
