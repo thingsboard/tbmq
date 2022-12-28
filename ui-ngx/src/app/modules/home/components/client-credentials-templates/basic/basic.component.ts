@@ -38,7 +38,6 @@ import {
   ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
-import { Observable } from 'rxjs/internal/Observable';
 import { MatChipInputEvent } from "@angular/material/chips";
 import { EventEmitter } from '@angular/core';
 
@@ -70,11 +69,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType
-
   credentialsMqttFormGroup: FormGroup;
-
-  pubRulesArray: Set<string> = new Set();
-  subRulesArray: Set<string> = new Set();
+  pubRulesSet: Set<string> = new Set();
+  subRulesSet: Set<string> = new Set();
 
   private destroy$ = new Subject();
   private propagateChange = (v: any) => {};
@@ -123,20 +120,22 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     };
   }
 
-  writeValue(mqttBasic: string) {
-    if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
-      const value = JSON.parse(mqttBasic);
-      if (value.authRules.pubAuthRulePatterns?.length) {
-        value.authRules.pubAuthRulePatterns[0].split(',').map(el => {
-          if (el.length) this.pubRulesArray.add(el);
+  writeValue(value: string) {
+    if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
+      this.pubRulesSet.clear();
+      this.subRulesSet.clear();
+      const valueJson = JSON.parse(value);
+      if (valueJson.authRules.pubAuthRulePatterns?.length) {
+        valueJson.authRules.pubAuthRulePatterns[0].split(',').map(el => {
+          if (el.length) this.pubRulesSet.add(el);
         });
       }
-      if (value.authRules.subAuthRulePatterns?.length) {
-        value.authRules.subAuthRulePatterns[0].split(',').map(el => {
-          if (el.length) this.subRulesArray.add(el);
+      if (valueJson.authRules.subAuthRulePatterns?.length) {
+        valueJson.authRules.subAuthRulePatterns[0].split(',').map(el => {
+          if (el.length) this.subRulesSet.add(el);
         });
       }
-      this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
+      this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
     }
   }
 
@@ -171,12 +170,12 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     if ((value || '').trim()) {
       switch (type) {
         case AuthRulePatternsType.PUBLISH:
-          this.pubRulesArray.add(value);
-          this.setAuthRulePatternsControl(this.pubRulesArray, type);
+          this.pubRulesSet.add(value);
+          this.setAuthRulePatternsControl(this.pubRulesSet, type);
           break;
         case AuthRulePatternsType.SUBSCRIBE:
-          this.subRulesArray.add(value);
-          this.setAuthRulePatternsControl(this.subRulesArray, type);
+          this.subRulesSet.add(value);
+          this.setAuthRulePatternsControl(this.subRulesSet, type);
           break;
       }
     }
@@ -188,12 +187,12 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   removeTopicRule(rule: string, type: AuthRulePatternsType) {
     switch (type) {
       case AuthRulePatternsType.PUBLISH:
-        this.pubRulesArray.delete(rule);
-        this.setAuthRulePatternsControl(this.pubRulesArray, type);
+        this.pubRulesSet.delete(rule);
+        this.setAuthRulePatternsControl(this.pubRulesSet, type);
         break;
       case AuthRulePatternsType.SUBSCRIBE:
-        this.subRulesArray.delete(rule);
-        this.setAuthRulePatternsControl(this.subRulesArray, type);
+        this.subRulesSet.delete(rule);
+        this.setAuthRulePatternsControl(this.subRulesSet, type);
         break;
     }
   }

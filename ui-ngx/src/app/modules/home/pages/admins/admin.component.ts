@@ -24,7 +24,7 @@ import { User } from "@shared/models/user.model";
 import { getCurrentAuthUser } from "@core/auth/auth.selectors";
 
 @Component({
-  selector: 'tb-mqtt-client-credentials',
+  selector: 'tb-mqtt-admin-credentials',
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
