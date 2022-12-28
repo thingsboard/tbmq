@@ -12,11 +12,11 @@ autoscaling:
 
 broker:
   replicas: 1
-  imageName: vampir/tb-broker:latest
+  imageName: vampir/tb-mqtt-broker:1.0.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
 
 databaseSetup:
-  imageName: vampir/tb-broker:latest
+  imageName: vampir/tb-mqtt-broker:1.0.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
 
 postgresql:
