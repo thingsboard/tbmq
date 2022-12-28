@@ -191,10 +191,10 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     if ((value || '').trim()) {
       switch (type) {
         case AuthRulePatternsType.SUBSCRIBE:
-          this.subRulesArray[index].push(value);
+          if (this.subRulesArray[index].indexOf(value) < 0) this.subRulesArray[index].push(value);
           break;
         case AuthRulePatternsType.PUBLISH:
-          this.pubRulesArray[index].push(value);
+          if (this.pubRulesArray[index].indexOf(value) < 0) this.pubRulesArray[index].push(value);
           break;
       }
     }
