@@ -1,0 +1,121 @@
+#
+# Copyright © 2016-2022 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tb-broker
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceName: tb-broker
+  replicas: {{ .Values.broker.replicas }}
+  selector:
+    matchLabels:
+      app: tb-broker
+  template:
+    metadata:
+      labels:
+        app: tb-broker
+    spec:
+      volumes:
+        - name: tb-broker-config
+          configMap:
+            name: tb-broker-config
+            items:
+              - key: conf
+                path:  thingsboard-mqtt-broker.conf
+              - key: logback
+                path:  logback.xml
+      containers:
+        - name: server
+          imagePullPolicy: {{ .Values.broker.imagePullPolicy }}
+          image: {{ .Values.broker.imageName }}
+          ports:
+            - containerPort: 8083
+              name: http
+            - containerPort: 1883
+              name: mqtt-tcp
+            - containerPort: 8883
+              name: mqtt-ssl
+          env:
+            - name: TB_SERVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: TB_KAFKA_SERVERS
+              value: kafka.{{ .Release.Namespace }}.svc.cluster.local:9092
+            - name: HTTP_BIND_PORT
+              value: "8083"
+            - name: LISTENER_TCP_BIND_PORT
+              value: "1883"
+            - name: LISTENER_SSL_BIND_PORT
+              value: "8883"
+            - name: STATS_ENABLED
+              value: "true"
+            - name: STATS_PRINT_INTERVAL_MS
+              value: "10000"
+            - name: METRICS_ENDPOINTS_EXPOSE
+              value: "prometheus"
+            - name: TB_KAFKA_ENABLE_TOPIC_DELETION
+              value: "true"
+            - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
+              value: "15000"
+          envFrom:
+            - configMapRef:
+                name: tb-broker-db-config
+          volumeMounts:
+            - mountPath: /config
+              name: tb-broker-config
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+            timeoutSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 5
+          livenessProbe:
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 1883
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tb-broker
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: tb-broker
+  ports:
+    - port: 8083
+      targetPort: 8083
+      nodePort: 30001
+      name: http
+    - port: 1883
+      targetPort: 1883
+      nodePort: 30002
+      name: mqtt-tcp
+    - port: 8883
+      targetPort: 8883
+      nodePort: 30003
+      name: mqtt-ssl

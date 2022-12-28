@@ -1,0 +1,10 @@
+broker:
+  imageName: "vampir/tb-broker:latest"
+databaseSetup:
+  imageName: "vampir/tb-broker:latest"
+kafka:
+  serversUrl: "kafka.tb.svc.cluster.local:9092"
+postgresql:
+  springDataSourceUrl: "jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
+  springDataSourceUsername: "postgres"
+  springDataSourcePassword: "postgres"
