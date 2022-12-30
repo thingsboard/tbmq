@@ -41,6 +41,8 @@ public class ClearSessionMsg extends CallbackMsg implements SessionClusterManage
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Actor was stopped before processing {},sessionId - {}.", actorId, getMsgType(), sessionId);
+        }
     }
 }

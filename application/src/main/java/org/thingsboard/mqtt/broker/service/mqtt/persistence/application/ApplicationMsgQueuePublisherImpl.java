@@ -68,15 +68,16 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
-                        log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                        }
                         callback.onSuccess();
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}. Reason - {}.",
-                                clientId, msgProto.getTopicName(), t.getMessage());
-                        log.debug("Detailed error: ", t);
+                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
+                                clientId, msgProto.getTopicName(), t);
                         callback.onFailure(t);
                     }
                 },
@@ -89,15 +90,16 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
+                        }
                         callback.onSuccess();
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the shared topic queue. Reason - {}.",
-                                sharedTopic, t.getMessage());
-                        log.debug("Detailed error: ", t);
+                        log.error("[{}] Failed to send publish msg to the shared topic queue.",
+                                sharedTopic, t);
                         callback.onFailure(t);
                     }
                 },

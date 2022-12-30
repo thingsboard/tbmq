@@ -88,11 +88,15 @@ public class DefaultLastWillService implements LastWillService {
                                                  boolean newSessionCleanStart, Integer sessionExpiryInterval) {
         MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
         if (lastWillMsgWithSessionInfo == null) {
-            log.trace("[{}] No last will msg.", sessionId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] No last will msg.", sessionId);
+            }
             return;
         }
 
-        log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Removing last will msg, sendMsg - {}", sessionId, sendMsg);
+        }
         lastWillMessages.remove(sessionId);
         if (sendMsg) {
             int willDelay = getWillDelay(lastWillMsgWithSessionInfo, sessionExpiryInterval);
@@ -154,13 +158,14 @@ public class DefaultLastWillService implements LastWillService {
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully acknowledged last will msg.", sessionId);
+                        }
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.warn("[{}] Failed to acknowledge last will msg. Reason - {}.", sessionId, t.getMessage());
-                        log.trace("Detailed error:", t);
+                        log.warn("[{}] Failed to acknowledge last will msg.", sessionId, t);
                     }
                 });
     }

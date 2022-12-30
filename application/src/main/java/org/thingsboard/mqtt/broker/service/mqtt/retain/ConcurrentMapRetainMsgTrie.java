@@ -198,13 +198,14 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
             clearEmptyChildren(root);
             long nodesAfter = nodesCount.get();
             long clearEndTime = System.currentTimeMillis();
-            log.debug("Clearing trie took {} ms, cleared {} nodes.",
-                    clearEndTime - clearStartTime, nodesBefore - nodesAfter);
+            if (log.isDebugEnabled()) {
+                log.debug("Clearing trie took {} ms, cleared {} nodes.",
+                        clearEndTime - clearStartTime, nodesBefore - nodesAfter);
+            }
         } catch (Exception e) {
             long nodesAfter = nodesCount.get();
-            log.error("Failed on clearing empty nodes. Managed to clear {} nodes. Reason - {}.",
-                    nodesBefore - nodesAfter, e.getMessage());
-            log.debug("Detailed error:", e);
+            log.error("Failed on clearing empty nodes. Managed to clear {} nodes.",
+                    nodesBefore - nodesAfter, e);
         } finally {
             lock.writeLock().unlock();
         }

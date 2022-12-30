@@ -43,7 +43,9 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
     @Override
     public boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef) {
         MsgType msgType = msg.getMsgType();
-        log.trace("[{}][{}] Processing {} msg.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), msgType);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing {} msg.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), msgType);
+        }
         keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
         switch (msgType) {
             case MQTT_SUBSCRIBE_MSG:

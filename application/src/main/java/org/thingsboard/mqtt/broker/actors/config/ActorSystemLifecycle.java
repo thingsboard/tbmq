@@ -67,10 +67,14 @@ public class ActorSystemLifecycle {
     }
 
     private void notifyAboutDisconnectedClients() {
-        log.trace("Process notify about disconnected clients.");
+        if (log.isTraceEnabled()) {
+            log.trace("Process notify about disconnected clients.");
+        }
         Collection<ClientSessionCtx> clientSessionContexts = clientSessionCtxService.getAllClientSessionCtx();
         if (clientSessionContexts.isEmpty()) {
-            log.trace("No client sessions left to notify about disconnect.");
+            if (log.isTraceEnabled()) {
+                log.trace("No client sessions left to notify about disconnect.");
+            }
             return;
         }
 
@@ -112,7 +116,9 @@ public class ActorSystemLifecycle {
 
         @Override
         public void onSuccess(TbQueueMsgMetadata metadata) {
-            log.trace("Disconnect request sent successfully: {}", metadata);
+            if (log.isTraceEnabled()) {
+                log.trace("Disconnect request sent successfully: {}", metadata);
+            }
             countDownLatch.countDown();
         }
 

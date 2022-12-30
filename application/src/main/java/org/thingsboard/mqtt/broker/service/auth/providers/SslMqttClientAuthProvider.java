@@ -53,13 +53,17 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             log.error("Could not authenticate client with SSL credentials since SSL listener is not enabled!");
             return new AuthResponse(false, null, null);
         }
-        log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
+        }
         MqttClientCredentials sslCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (sslCredentials == null) {
             log.error("Failed to authenticate client with SSL credentials! No SSL credentials were found!");
             return new AuthResponse(false, null, null);
         }
-        log.trace("[{}] Successfully authenticated with SSL credentials", authContext.getClientId());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Successfully authenticated with SSL credentials", authContext.getClientId());
+        }
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         SslMqttCredentials credentials = JacksonUtil.fromString(sslCredentials.getCredentialsValue(), SslMqttCredentials.class);
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, clientCommonName);
@@ -71,7 +75,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
-            log.debug("Client SSL certification is disabled.");
+            if (log.isDebugEnabled()) {
+                log.debug("Client SSL certification is disabled.");
+            }
             return null;
         }
         if (certificates.length == 0) {
@@ -87,7 +93,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             } catch (CertificateEncodingException e) {
                 throw new AuthenticationException("Couldn't get Common Name from certificate.", e);
             }
-            log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
+            }
             String sslCredentialsId = ProtocolUtil.sslCredentialsId(commonName);
             List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(Collections.singletonList(sslCredentialsId));
             if (!matchingCredentials.isEmpty()) {
@@ -103,7 +111,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
                 certificate.checkValidity();
             }
         } catch (Exception e) {
-            log.trace("[{}] X509 auth failure.", clientId, e);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] X509 auth failure.", clientId, e);
+            }
             throw new AuthenticationException("X509 auth failure.", e);
         }
     }

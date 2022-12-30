@@ -28,13 +28,17 @@ public class BasePublishMsgCallback implements PublishMsgCallback {
 
     @Override
     public void onSuccess() {
-        log.trace("[{}] ON SUCCESS", id);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] ON SUCCESS", id);
+        }
         ctx.onSuccess(id);
     }
 
     @Override
     public void onFailure(Throwable t) {
-        log.trace("[{}] ON FAILURE", id, t);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] ON FAILURE", id, t);
+        }
         ctx.onFailure(id);
     }
 }

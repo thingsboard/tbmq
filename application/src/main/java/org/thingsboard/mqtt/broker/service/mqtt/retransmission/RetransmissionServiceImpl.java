@@ -74,7 +74,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
             sessionCtx.getChannel().writeAndFlush(mqttPubMsg);
             return;
         }
-        log.trace("[{}][{}] Executing startPublishRetransmission", sessionCtx.getClientId(), mqttPubMsg);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Executing startPublishRetransmission", sessionCtx.getClientId(), mqttPubMsg);
+        }
         ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = sessionCtx.getPendingPublishes();
 
         MqttPendingPublish pendingPublish = newMqttPendingPublish(sessionCtx, mqttPubMsg);
@@ -127,7 +129,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
 
     @Override
     public void onPubAckReceived(ClientSessionCtx ctx, int messageId) {
-        log.trace("[{}][{}] Executing onPubAckReceived", ctx.getClientId(), messageId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Executing onPubAckReceived", ctx.getClientId(), messageId);
+        }
         if (!retransmissionEnabled || isMqtt5(ctx)) {
             return;
         }
@@ -142,14 +146,18 @@ public class RetransmissionServiceImpl implements RetransmissionService {
 
     @Override
     public void onPubRecReceived(ClientSessionCtx ctx, MqttMessage pubRelMsg) {
-        log.trace("[{}][{}] Executing onPubRecReceived", ctx.getClientId(), pubRelMsg);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Executing onPubRecReceived", ctx.getClientId(), pubRelMsg);
+        }
         if (!retransmissionEnabled || isMqtt5(ctx)) {
             ctx.getChannel().writeAndFlush(pubRelMsg);
             return;
         }
         MqttPendingPublish pendingPublish = ctx.getPendingPublishes().get(((MqttMessageIdVariableHeader) pubRelMsg.variableHeader()).messageId());
         if (pendingPublish == null) {
-            log.debug("[{}] Sending persisted PUBREL packet {}", ctx.getClientId(), pubRelMsg);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Sending persisted PUBREL packet {}", ctx.getClientId(), pubRelMsg);
+            }
             pendingPublish = newMqttPendingPublish(ctx, pubRelMsg);
             ctx.getPendingPublishes().put(pendingPublish.getPacketId(), pendingPublish);
         } else {
@@ -163,7 +171,9 @@ public class RetransmissionServiceImpl implements RetransmissionService {
 
     @Override
     public void onPubCompReceived(ClientSessionCtx ctx, int messageId) {
-        log.trace("[{}][{}] Executing onPubCompReceived", ctx.getClientId(), messageId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Executing onPubCompReceived", ctx.getClientId(), messageId);
+        }
         if (!retransmissionEnabled || isMqtt5(ctx)) {
             return;
         }

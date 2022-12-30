@@ -84,7 +84,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Override
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
-        log.trace("[{}] Persisting publish msg [topic:[{}], qos:[{}]].", sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting publish msg [topic:[{}], qos:[{}]].",
+                    sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
+        }
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
@@ -274,7 +277,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         String clientId = clientSubscription.getValue().getClientId();
         ClientSession clientSession = clientSessionCache.getClientSession(clientId);
         if (clientSession == null) {
-            log.debug("[{}] Client session not found for existent client subscription.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Client session not found for existent client subscription.", clientId);
+            }
             return null;
         }
         return new Subscription(

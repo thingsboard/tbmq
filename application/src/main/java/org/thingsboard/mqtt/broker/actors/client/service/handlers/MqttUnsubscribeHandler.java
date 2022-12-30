@@ -49,7 +49,9 @@ public class MqttUnsubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
         UUID sessionId = ctx.getSessionId();
         String clientId = ctx.getClientId();
-        log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
+        }
 
         List<MqttReasonCode> codes = msg.getTopics().stream().map(s -> MqttReasonCodeResolver.success(ctx)).collect(Collectors.toList());
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), codes);

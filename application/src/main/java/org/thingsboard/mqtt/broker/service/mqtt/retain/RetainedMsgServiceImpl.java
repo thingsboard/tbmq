@@ -39,13 +39,17 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
 
     @Override
     public void saveRetainedMsg(String topic, RetainedMsg retainedMsg) {
-        log.trace("Executing saveRetainedMsg [{}] [{}]", topic, retainedMsg);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveRetainedMsg [{}] [{}]", topic, retainedMsg);
+        }
         retainMsgTrie.put(topic, retainedMsg);
     }
 
     @Override
     public void clearRetainedMsg(String topic) {
-        log.trace("Executing clearRetainedMsg [{}]", topic);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing clearRetainedMsg [{}]", topic);
+        }
         retainMsgTrie.delete(topic);
     }
 

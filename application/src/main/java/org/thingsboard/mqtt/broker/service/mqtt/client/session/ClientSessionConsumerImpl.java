@@ -87,7 +87,9 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                     String clientId = msg.getKey();
                     if (isClientSessionInfoProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        log.debug("[{}] Encountered empty ClientSessionInfo.", clientId);
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{}] Encountered empty ClientSessionInfo.", clientId);
+                        }
                         allClientSessions.remove(clientId);
                     } else {
                         ClientSessionInfo clientSession = ProtoConverter.convertToClientSessionInfo(msg.getValue());
@@ -145,7 +147,9 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            if (log.isTraceEnabled()) {
+                                log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            }
                         }
                     }
                 }

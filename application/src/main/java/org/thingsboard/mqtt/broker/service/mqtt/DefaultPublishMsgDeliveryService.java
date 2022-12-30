@@ -46,14 +46,18 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
-        log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
+        }
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg) {
-        log.trace("[{}] Sending Retained msg to client {}", sessionCtx.getClientId(), retainedMsg);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Sending Retained msg to client {}", sessionCtx.getClientId(), retainedMsg);
+        }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
@@ -64,9 +68,8 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         try {
             retransmissionService.sendPublishWithRetransmission(sessionCtx, mqttPubMsg);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client. Reason - {}.",
-                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client.",
+                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
         deliveryTimerStats.logDelivery(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
@@ -74,15 +77,16 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
-        log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
+        }
         MqttReasonCode code = MqttReasonCodeResolver.success(sessionCtx);
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId, code);
         try {
             retransmissionService.onPubRecReceived(sessionCtx, mqttPubRelMsg);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client. Reason - {}.",
-                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to send PUBREL msg to MQTT client.",
+                    sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
     }

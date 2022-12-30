@@ -32,7 +32,9 @@ public class MqttPubAckHandler {
     private final RetransmissionService retransmissionService;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        }
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubAck(ctx, messageId);
         }

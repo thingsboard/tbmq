@@ -75,8 +75,10 @@ public class MqttSubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
-                ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
+                    ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
+        }
 
         List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, msg);
         if (CollectionUtils.isEmpty(codes)) {
@@ -242,12 +244,16 @@ public class MqttSubscribeHandler {
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
-            log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+            }
             return;
         }
         Set<TopicSharedSubscription> topicSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
         if (CollectionUtils.isEmpty(topicSharedSubscriptions)) {
-            log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            }
             return;
         }
         ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, topicSharedSubscriptions);

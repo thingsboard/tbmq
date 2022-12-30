@@ -45,7 +45,9 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
-        log.trace("[{}] Authenticating client", authContext.getClientId());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Authenticating client", authContext.getClientId());
+        }
         if (authProviders.isEmpty()) {
             return new AuthResponse(true, ClientType.DEVICE, null);
         }

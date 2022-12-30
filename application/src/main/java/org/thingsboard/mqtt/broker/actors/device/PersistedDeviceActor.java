@@ -44,7 +44,9 @@ public class PersistedDeviceActor extends ContextAwareActor {
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
-        log.trace("[{}] Received {} msg.", clientId, msg.getMsgType());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Received {} msg.", clientId, msg.getMsgType());
+        }
         clientLogger.logEvent(clientId, this.getClass(), "Received msg - " + msg.getMsgType());
         switch (msg.getMsgType()) {
             case DEVICE_CONNECTED_EVENT_MSG:

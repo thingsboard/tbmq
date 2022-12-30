@@ -78,7 +78,9 @@ public class CaffeineCacheConfiguration {
      */
     @Bean
     public CacheManager cacheManager() {
-        log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), specs);
+        if (log.isTraceEnabled()) {
+            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), specs);
+        }
         SimpleCacheManager manager = new SimpleCacheManager();
         if (specs != null) {
             caches =
@@ -98,7 +100,9 @@ public class CaffeineCacheConfiguration {
     @PostConstruct
     public void init() {
         if (cacheStatsEnabled) {
-            log.debug("initializing cache stats scheduled job");
+            if (log.isDebugEnabled()) {
+                log.debug("initializing cache stats scheduled job");
+            }
             scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("cache-stats"));
             scheduler.scheduleAtFixedRate(this::printCacheStats, cacheStatsInterval, cacheStatsInterval, TimeUnit.SECONDS);
         }

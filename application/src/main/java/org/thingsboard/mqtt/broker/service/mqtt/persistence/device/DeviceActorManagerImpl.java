@@ -66,7 +66,9 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         String clientId = clientSessionCtx.getClientId();
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
+            }
         } else {
             deviceActorRef.tellWithHighPriority(new SharedSubscriptionEventMsg(subscriptions));
         }
@@ -76,7 +78,9 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     public void notifyClientDisconnected(String clientId) {
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
+            }
         } else {
             deviceActorRef.tellWithHighPriority(new DeviceDisconnectedEventMsg());
         }

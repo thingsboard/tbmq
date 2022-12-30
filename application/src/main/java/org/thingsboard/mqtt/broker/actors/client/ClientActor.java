@@ -93,7 +93,9 @@ public class ClientActor extends ContextAwareActor {
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
-        log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
+        }
         if (msg instanceof TimedMsg) {
             clientActorStats.logMsgQueueTime(System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
         }
@@ -103,8 +105,10 @@ public class ClientActor extends ContextAwareActor {
 
         try {
             if (sessionNotMatch(msg)) {
-                log.debug("[{}][{}] Received {} for another sessionId - {}.",
-                        state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}][{}] Received {} for another sessionId - {}.",
+                            state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
+                }
                 return true;
             }
 
@@ -185,10 +189,8 @@ public class ClientActor extends ContextAwareActor {
         try {
             mqttMessageHandler.processPubRecResponse(state.getCurrentSessionCtx(), msg.getMessageId());
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process PUBREC response for message {}. Exception - {}, message - {}.",
-                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
-                    e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to process PUBREC response for message {}.",
+                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to PUBREC response. Exception message - " + e.getMessage())));
         }
@@ -198,10 +200,8 @@ public class ClientActor extends ContextAwareActor {
         try {
             mqttMessageHandler.processPubAckResponse(state.getCurrentSessionCtx(), msg.getMessageId());
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process PUBACK response for message {}. Exception - {}, message - {}.",
-                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(),
-                    e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to process PUBACK response for message {}.",
+                    state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to PUBACK response. Exception message - " + e.getMessage())));
         }
@@ -236,8 +236,10 @@ public class ClientActor extends ContextAwareActor {
 
     private boolean processQueueableMqttMsg(QueueableMqttMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
-                    state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
+                        state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
+            }
             return true;
         }
         if (state.getCurrentSessionState() != SessionState.CONNECTING
@@ -263,9 +265,7 @@ public class ClientActor extends ContextAwareActor {
         try {
             return mqttMessageHandler.process(state.getCurrentSessionCtx(), msg, getActorRef());
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process MQTT message. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to process MQTT message.", state.getClientId(), state.getCurrentSessionId(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process MQTT message. Exception message - " + e.getMessage())));
             return true;
@@ -274,8 +274,10 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectMsg(MqttConnectMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            log.debug("[{}][{}] Session is in state {}, ignoring {}",  state.getClientId(), state.getCurrentSessionId(),
-                    SessionState.DISCONNECTED, msg.getMsgType());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
+                        SessionState.DISCONNECTED, msg.getMsgType());
+            }
             return;
         }
 
@@ -291,9 +293,7 @@ public class ClientActor extends ContextAwareActor {
             state.updateSessionState(SessionState.CONNECTING);
             connectService.startConnection(state, msg);
         } catch (Exception e) {
-            log.info("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.info("[{}][{}] Failed to process {}.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
         }
@@ -301,8 +301,10 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionAcceptedMsg(ConnectionAcceptedMsg msg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            log.debug("[{}][{}] Session is in state {}, ignoring {}",  state.getClientId(), state.getCurrentSessionId(),
-                    SessionState.DISCONNECTED, msg.getMsgType());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Session is in state {}, ignoring {}", state.getClientId(), state.getCurrentSessionId(),
+                        SessionState.DISCONNECTED, msg.getMsgType());
+            }
             return;
         }
 
@@ -318,9 +320,7 @@ public class ClientActor extends ContextAwareActor {
             connectService.acceptConnection(state, msg, getActorRef());
             state.updateSessionState(SessionState.CONNECTED);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process {}. Exception - {}, message - {}.", state.getClientId(), state.getCurrentSessionId(),
-                    msg.getMsgType(), e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error:", e);
+            log.warn("[{}][{}] Failed to process {}.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
         }
@@ -332,12 +332,16 @@ public class ClientActor extends ContextAwareActor {
 
     private void processActorStop(StopActorCommandMsg msg) {
         if (!msg.getCommandUUID().equals(state.getStopActorCommandId())) {
-            log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Ignoring {}.", state.getClientId(), msg.getMsgType());
+            }
             return;
         }
 
-        log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
-                state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Stopping actor, current sessionId - {}, current session state - {}",
+                    state.getClientId(), state.getCurrentSessionId(), state.getCurrentSessionState());
+        }
         ctx.stop(ctx.getSelf());
     }
 

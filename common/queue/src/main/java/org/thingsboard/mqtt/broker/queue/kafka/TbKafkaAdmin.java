@@ -65,8 +65,12 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopic(String topic, Map<String, String> topicConfigs) {
-        log.debug("[{}] Creating topic", topic);
-        log.trace("Topic configs - {}.", topicConfigs);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Creating topic", topic);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Topic configs - {}.", topicConfigs);
+        }
         try {
             NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(topicConfigs), extractReplicationFactor(topicConfigs)).configs(topicConfigs);
             client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
@@ -89,10 +93,14 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Override
     public void deleteTopic(String topic, BasicCallback callback) {
         if (!enableTopicDeletion) {
-            log.debug("Ignoring deletion of topic {}", topic);
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring deletion of topic {}", topic);
+            }
             return;
         }
-        log.debug("[{}] Deleting topic", topic);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Deleting topic", topic);
+        }
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         result.all().whenComplete((unused, throwable) -> {
             if (throwable == null) {
@@ -108,7 +116,9 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void deleteConsumerGroups(Collection<String> consumerGroups) {
-        log.debug("Deleting Consumer Groups - {}", consumerGroups);
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting Consumer Groups - {}", consumerGroups);
+        }
         try {
             DeleteConsumerGroupsResult result = client.deleteConsumerGroups(consumerGroups);
             result.all().get();

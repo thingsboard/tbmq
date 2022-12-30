@@ -70,7 +70,9 @@ public class ClientSessionServiceImpl implements ClientSessionService {
                     "Key clientId - {}, ClientSession's clientId - {}.", clientId, clientSession.getSessionInfo().getClientInfo().getClientId());
             throw new MqttException("Key clientId should be equals to ClientSession's clientId");
         }
-        log.trace("[{}] Saving ClientSession.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Saving ClientSession.", clientId);
+        }
 
         ClientSessionInfo clientSessionInfo = new ClientSessionInfo(clientSession, System.currentTimeMillis());
         clientSessionMap.put(clientId, clientSessionInfo);
@@ -85,7 +87,9 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public void clearClientSession(String clientId, BasicCallback callback) {
-        log.trace("[{}] Clearing ClientSession.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing ClientSession.", clientId);
+        }
         ClientSessionInfo removedClientSessionInfo = clientSessionMap.remove(clientId);
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
@@ -118,14 +122,20 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-            log.trace("[{}] Msg was already processed.", clientId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Msg was already processed.", clientId);
+            }
             return;
         }
         if (clientSessionInfo == null) {
-            log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}][{}] Clearing remote ClientSession.", serviceId, clientId);
+            }
             clientSessionMap.remove(clientId);
         } else {
-            log.trace("[{}][{}] Saving remote ClientSession.", serviceId, clientId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}][{}] Saving remote ClientSession.", serviceId, clientId);
+            }
             clientSessionMap.put(clientId, clientSessionInfo);
         }
     }

@@ -125,7 +125,9 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.debug("[{}] Failed to wait until the server has capacity to handle new requests", consumerId, e2);
+                            if (log.isDebugEnabled()) {
+                                log.debug("[{}] Failed to wait until the server has capacity to handle new requests", consumerId, e2);
+                            }
                         }
                     }
                 }

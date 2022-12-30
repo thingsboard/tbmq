@@ -59,11 +59,15 @@ public class DisconnectServiceImpl implements DisconnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
         if (sessionCtx.getSessionInfo() == null) {
-            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            }
             return;
         }
 
-        log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        }
 
         if (needSendDisconnectToClient(sessionCtx, reason)) {
             MqttReasonCode code = MqttReasonCodeResolver.disconnect(reason.getType());
@@ -83,7 +87,9 @@ public class DisconnectServiceImpl implements DisconnectService {
         rateLimitService.remove(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
-        log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        }
     }
 
     private Integer getSessionExpiryInterval(MqttProperties properties) {
@@ -105,12 +111,16 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             sessionCtx.closeChannel();
         } catch (Exception e) {
-            log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            }
         }
     }
 
     void notifyClientDisconnected(ClientActorStateInfo actorState, Integer sessionExpiryInterval) {
-        log.trace("Executing notifyClientDisconnected");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing notifyClientDisconnected");
+        }
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
             clientSessionEventService.notifyClientDisconnected(

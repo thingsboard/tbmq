@@ -64,7 +64,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
-            log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
+            }
             subscriptionService.subscribe(clientId, topicSubscriptions);
         });
     }
@@ -72,7 +74,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         BasicCallback callback = createCallback(
-                () -> log.trace("[{}] Persisted topic subscriptions", clientId),
+                () -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Persisted topic subscriptions", clientId);
+                    }
+                },
                 t -> log.warn("[{}] Failed to persist topic subscriptions. Exception - {}, reason - {}",
                         clientId, t.getClass().getSimpleName(), t.getMessage()));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
@@ -80,7 +86,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
-        log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        }
         Set<TopicSubscription> clientSubscriptions = subscribe(clientId, topicSubscriptions);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, clientSubscriptions, callback);
@@ -88,7 +96,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
+        }
         subscribe(clientId, topicSubscriptions);
     }
 
@@ -104,7 +114,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
         BasicCallback callback = createCallback(
-                () -> log.trace("[{}] Persisted unsubscribed topics", clientId),
+                () -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Persisted unsubscribed topics", clientId);
+                    }
+                },
                 t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}",
                         clientId, t.getClass().getSimpleName(), t.getMessage()));
         unsubscribeAndPersist(clientId, topicFilters, callback);
@@ -112,7 +126,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
-        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        }
         Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
@@ -120,7 +136,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeInternally(String clientId, Collection<String> topicFilters) {
-        log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
+        }
         unsubscribe(clientId, topicFilters);
     }
 
@@ -147,21 +165,27 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
-        log.trace("[{}] Clearing all subscriptions.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing all subscriptions.", clientId);
+        }
         clearSubscriptions(clientId);
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, Collections.emptySet(), callback);
     }
 
     @Override
     public void clearSubscriptionsInternally(String clientId) {
-        log.trace("[{}] Clearing all subscriptions internally.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing all subscriptions internally.", clientId);
+        }
         clearSubscriptions(clientId);
     }
 
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
-            log.debug("[{}] There were no active subscriptions for client.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] There were no active subscriptions for client.", clientId);
+            }
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()

@@ -76,7 +76,9 @@ public class DockerComposeExecutor {
         environment.put(ENV_PROJECT_NAME, identifier);
         final Stream<String> absoluteDockerComposeFilePaths = composeFiles.stream().map(File::getAbsolutePath).map(Objects::toString);
         final String composeFileEnvVariableValue = absoluteDockerComposeFilePaths.collect(joining(File.pathSeparator + ""));
-        log.debug("Set env COMPOSE_FILE={}", composeFileEnvVariableValue);
+        if (log.isDebugEnabled()) {
+            log.debug("Set env COMPOSE_FILE={}", composeFileEnvVariableValue);
+        }
         final File pwd = composeFiles.get(0).getAbsoluteFile().getParentFile().getAbsoluteFile();
         environment.put(ENV_COMPOSE_FILE, composeFileEnvVariableValue);
         log.info("Local Docker Compose is running command: {}", cmd);

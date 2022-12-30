@@ -28,7 +28,9 @@ public class MqttPingHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx) {
-        log.trace("[{}][{}] Received PING msg.", ctx.getClientId(), ctx.getSessionId());
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Received PING msg.", ctx.getClientId(), ctx.getSessionId());
+        }
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
 }

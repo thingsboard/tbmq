@@ -51,7 +51,9 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
 
     @Override
     public void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback) {
-        log.trace("[{}] Persisting client session asynchronously - {}", clientId, clientSessionInfoProto);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting client session asynchronously - {}", clientId, clientSessionInfoProto);
+        }
         clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -72,7 +74,9 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
 
     @Override
     public void persistClientSessionInfoSync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException {
-        log.trace("[{}] Persisting client session synchronously - {}", clientId, clientSessionInfoProto);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting client session synchronously - {}", clientId, clientSessionInfoProto);
+        }
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
         clientSessionProducer.send(generateRequest(clientId, clientSessionInfoProto), new TbQueueCallback() {
@@ -99,7 +103,9 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
             log.warn("[{}] Failed to update client session. Reason - {}.",
                     clientId, error != null ? error.getMessage() : "timeout waiting");
             if (error != null) {
-                log.trace("Detailed error:", error);
+                if (log.isTraceEnabled()) {
+                    log.trace("Detailed error:", error);
+                }
             }
             if (!waitSuccessful) {
                 throw new QueuePersistenceException("Timed out to update client session");

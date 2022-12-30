@@ -37,7 +37,9 @@ public class MqttPubRecHandler {
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        }
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubRec(ctx, messageId);
         } else {
