@@ -293,7 +293,7 @@ public class ClientActor extends ContextAwareActor {
             state.updateSessionState(SessionState.CONNECTING);
             connectService.startConnection(state, msg);
         } catch (Exception e) {
-            log.info("[{}][{}] Failed to process {}.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), e);
+            log.error("[{}][{}] Failed to process {}.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), e);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
         }

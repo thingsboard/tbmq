@@ -85,8 +85,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
                     log.info("[{}] Queue polling was interrupted.", queueName);
                     break;
                 } else {
-                    log.error("[{}] Failed to process {} elements. Exception - {}, reason - {}",
-                            queueName, elements.size(), e.getClass().getSimpleName(), e.getMessage());
+                    log.error("[{}] Failed to process {} elements.", queueName, elements.size(), e);
                 }
             } finally {
                 elements.clear();

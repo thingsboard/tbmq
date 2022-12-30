@@ -85,13 +85,14 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Sent msg to basic down-link queue");
-                        log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
+                        }
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.info("[{}] Failed to publish BASIC msg to {} service. Exception - {}, reason - {}.",
-                                clientId, targetServiceId, t.getClass().getSimpleName(), t.getMessage());
+                        log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t);
                     }
                 },
                 topic
@@ -107,13 +108,14 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Sent msg to persistent down-link queue");
-                        log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
+                        }
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.info("[{}] Failed to publish PERSISTENT msg to {} service. Exception - {}, reason - {}.",
-                                clientId, targetServiceId, t.getClass().getSimpleName(), t.getMessage());
+                        log.warn("[{}] Failed to publish PERSISTENT msg to {} service.", clientId, targetServiceId, t);
                     }
                 },
                 topic
