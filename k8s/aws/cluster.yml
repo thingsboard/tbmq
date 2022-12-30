@@ -22,12 +22,18 @@ availabilityZones: [us-east-1a,us-east-1b,us-east-1c]
 metadata:
   name: thingsboard-mqtt-broker-cluster
   region: us-east-1
-  version: "1.21"
+  version: "1.22"
 
 managedNodeGroups:
-  - name: main-node-group
-    instanceType: m6a.2xlarge
+  - name: tb-mqtt-broker
+    instanceType: m6a.xlarge
     desiredCapacity: 1
-    maxSize: 20
+    maxSize: 10
     minSize: 1
-    labels: { type: node }
+    labels: { role: tb-mqtt-broker }
+  - name: tb-perf-test
+    instanceType: m5.large
+    desiredCapacity: 1
+    maxSize: 10
+    minSize: 1
+    labels: { role: tb-perf-test }

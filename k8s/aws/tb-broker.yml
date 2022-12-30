@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 6
+  replicas: 5
   podManagementPolicy: "Parallel"
   selector:
     matchLabels:
@@ -37,9 +37,11 @@ spec:
             name: tb-broker-config
             items:
               - key: conf
-                path:  thingsboard-mqtt-broker.conf
+                path: thingsboard-mqtt-broker.conf
               - key: logback
-                path:  logback.xml
+                path: logback.xml
+      nodeSelector:
+        role: tb-mqtt-broker
       containers:
         - name: server
           imagePullPolicy: Always
@@ -94,7 +96,7 @@ spec:
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
               value: "0"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
             - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG
               value: "linger.ms:25;batch.size:65536;buffer.memory:67108864"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG
@@ -118,29 +120,29 @@ spec:
             - name: TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
               value: "2"
             - name: TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT
-              value: "2"
+              value: "0"
             - name: TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT
               value: "2"
             - name: TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
               value: "2"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:40;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
             - name: TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:5;replication.factor:1"
             - name: TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1"
             - name: ANALYSIS_LOG_CLIENT_IDS
@@ -188,7 +190,13 @@ spec:
             - name: MQTT_RETRANSMISSION_ENABLED
               value: "false"
             - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
-              value: "gzip"
+              value: "none"
+            - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
+              value: "max.poll.records:512;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728"
+            - name: MQTT_KEEP_ALIVE_MONITORING_DELAY_MS
+              value: "5000"
+            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
+              value: "max.poll.records:8192;fetch.max.bytes:134217728"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
