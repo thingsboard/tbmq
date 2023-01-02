@@ -45,14 +45,14 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tb-mqtt-broker:1.0.0
+          image: dlandiak2110/tb-mqtt-broker:1.0.0-NOSS
           resources:
             limits:
-              cpu: 4
-              memory: 6Gi
+              cpu: 5
+              memory: 10Gi
             requests:
-              cpu: 4
-              memory: 6Gi
+              cpu: 5
+              memory: 10Gi
           ports:
             - containerPort: 8083
               name: http
@@ -80,11 +80,11 @@ spec:
             - name: LISTENER_SSL_BIND_PORT
               value: "8883"
             - name: STATS_ENABLED
-              value: "true"
+              value: "false"
             - name: STATS_PRINT_INTERVAL_MS
               value: "60000"
             - name: METRICS_ENDPOINTS_EXPOSE
-              value: "prometheus"
+              value: "info"
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
             - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
@@ -96,23 +96,13 @@ spec:
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
               value: "0"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
-            - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:65536;buffer.memory:67108864"
-            - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:16384"
-            - name: TB_KAFKA_APP_PERSISTED_MSG_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:65536;buffer.memory:67108864;max.in.flight.requests.per.connection:10"
-            - name: TB_KAFKA_DEVICE_PERSISTED_MSG_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:16384"
-            - name: TB_KAFKA_PUBLISH_MSG_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:16384"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:21474836480;partitions:10;replication.factor:1;max.message.bytes:8388608"
             - name: TB_KAFKA_DEFAULT_PRODUCER_RETRIES
               value: "5"
             - name: TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE
               value: "65536"
             - name: TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS
-              value: "25"
+              value: "50"
             - name: TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS
               value: "16384"
             - name: TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS
@@ -144,7 +134,7 @@ spec:
             - name: TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:5;replication.factor:1"
             - name: TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1;max.message.bytes:8388608"
             - name: ANALYSIS_LOG_CLIENT_IDS
               value: ""
             - name: TCP_NETTY_LEAK_DETECTOR_LVL
@@ -152,8 +142,6 @@ spec:
             - name: SSL_NETTY_LEAK_DETECTOR_LVL
               value: "DISABLED"
             - name: ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED
-              value: "false"
-            - name: TB_DEVICE_PERSISTED_MSG_DETECT_MSG_DUPLICATION
               value: "false"
             - name: TCP_NETTY_SHUTDOWN_TIMEOUT
               value: "10"
@@ -168,13 +156,13 @@ spec:
             - name: ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS
               value: "5000"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS
-              value: "4"
+              value: "0"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE
               value: "10000"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_MAX_DELAY
               value: "20"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS
-              value: "4"
+              value: "0"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_SIZE
               value: "10000"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY
@@ -190,13 +178,15 @@ spec:
             - name: MQTT_RETRANSMISSION_ENABLED
               value: "false"
             - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
-              value: "none"
+              value: "snappy"
             - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:512;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728"
+              value: "max.poll.records:16384;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728"
             - name: MQTT_KEEP_ALIVE_MONITORING_DELAY_MS
-              value: "5000"
+              value: "60000"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:8192;fetch.max.bytes:134217728"
+              value: "max.poll.records:32768;fetch.max.bytes:134217728"
+            - name: ACTORS_SYSTEM_THROUGHPUT
+              value: "20"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
