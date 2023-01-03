@@ -113,7 +113,9 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     public void evict(String clientId) {
         if (clientId != null) {
             var topicAuthMap = publishAuthMap.remove(clientId);
-            topicAuthMap.clear();
+            if (topicAuthMap != null) {
+                topicAuthMap.clear();
+            }
         }
     }
 }
