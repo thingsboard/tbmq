@@ -28,7 +28,9 @@ public interface AuthorizationRuleService {
 
     AuthRulePatterns parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException;
 
-    boolean isPubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns);
+    boolean isPubAuthorized(String clientId, String topic, List<AuthRulePatterns> authRulePatterns);
 
     boolean isSubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns);
+
+    void evict(String clientId);
 }

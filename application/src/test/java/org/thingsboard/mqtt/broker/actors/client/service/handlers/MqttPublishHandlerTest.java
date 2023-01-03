@@ -89,13 +89,13 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void testValidateClientAccess() {
-        when(authorizationRuleService.isPubAuthorized(any(), any())).thenReturn(true);
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }
 
     @Test(expected = MqttException.class)
     public void testValidateClientAccessFail() {
-        when(authorizationRuleService.isPubAuthorized(any(), any())).thenReturn(false);
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
         when(ctx.getAuthRulePatterns()).thenReturn(List.of(AuthRulePatterns.newInstance(Collections.emptyList())));
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }

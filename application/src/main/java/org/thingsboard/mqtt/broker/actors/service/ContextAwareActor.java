@@ -28,11 +28,13 @@ public abstract class ContextAwareActor extends AbstractTbActor {
 
     protected final ActorSystemContext systemContext;
     private final StopWatch stopWatch;
+    private final ActorProcessingMetricService actorProcessingMetricService;
 
     public ContextAwareActor(ActorSystemContext systemContext) {
         super();
         this.systemContext = systemContext;
         this.stopWatch = new StopWatch();
+        this.actorProcessingMetricService = systemContext.getActorProcessingMetricService();
     }
 
     @Override
@@ -50,7 +52,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
             }
         } finally {
             stopWatch.stop();
-            systemContext.getActorProcessingMetricService().logMsgProcessingTime(msg.getMsgType(), stopWatch.getTime());
+            actorProcessingMetricService.logMsgProcessingTime(msg.getMsgType(), stopWatch.getTime());
             stopWatch.reset();
         }
         return false;

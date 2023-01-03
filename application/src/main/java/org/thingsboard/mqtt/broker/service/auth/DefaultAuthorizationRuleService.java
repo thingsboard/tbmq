@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -27,6 +28,8 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,6 +38,9 @@ import java.util.stream.Stream;
 @Service
 @Slf4j
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
+
+    @Getter
+    private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
 
     @Override
     public List<AuthRulePatterns> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException {
@@ -81,9 +87,12 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     }
 
     @Override
-    public boolean isPubAuthorized(String topic, List<AuthRulePatterns> authRulePatterns) {
-        Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
-        return isAuthorized(topic, pubPatterns);
+    public boolean isPubAuthorized(String clientId, String topic, List<AuthRulePatterns> authRulePatterns) {
+        ConcurrentMap<String, Boolean> topicAuthMap = publishAuthMap.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
+        return topicAuthMap.computeIfAbsent(topic, s -> {
+            Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
+            return isAuthorized(topic, pubPatterns);
+        });
     }
 
     @Override
@@ -98,5 +107,13 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
             return false;
         }
         return patterns.stream().anyMatch(pattern -> pattern.matcher(topic).matches());
+    }
+
+    @Override
+    public void evict(String clientId) {
+        if (clientId != null) {
+            var topicAuthMap = publishAuthMap.remove(clientId);
+            topicAuthMap.clear();
+        }
     }
 }

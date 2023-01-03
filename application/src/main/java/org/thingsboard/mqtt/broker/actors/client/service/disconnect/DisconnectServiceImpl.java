@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -52,6 +53,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final ClientSessionEventService clientSessionEventService;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final AuthorizationRuleService authorizationRuleService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -85,6 +87,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         notifyClientDisconnected(actorState, sessionExpiryInterval);
         rateLimitService.remove(sessionCtx.getClientId());
+        authorizationRuleService.evict(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
         if (log.isDebugEnabled()) {
