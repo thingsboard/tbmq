@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -31,15 +31,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersist
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -61,20 +59,15 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
 
     @Override
-    public void processPublish(PublishMsgProto publishMsgProto, List<Subscription> persistentSubscriptions, PublishMsgCallback callback) {
-        List<Subscription> deviceSubscriptions = new ArrayList<>();
-        List<Subscription> applicationSubscriptions = new ArrayList<>();
+    public void processPublish(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
+        List<Subscription> deviceSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getDeviceSubscriptions());
+        List<Subscription> applicationSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getApplicationSubscriptions());
 
-        fillSubscriptions(persistentSubscriptions, deviceSubscriptions, applicationSubscriptions);
+        Set<String> sharedTopics =
+                CollectionUtils.isEmpty(persistentSubscriptions.getAllApplicationSharedSubscriptions()) ?
+                        Collections.emptySet() : getUniqueSharedTopics(persistentSubscriptions);
 
-        Map<SubscriptionType, List<Subscription>> appSubscriptionsByType = collectAppSubscriptionsByType(applicationSubscriptions);
-        List<Subscription> commonAppSubscriptions = appSubscriptionsByType.getOrDefault(SubscriptionType.COMMON, Collections.emptyList());
-        List<Subscription> sharedAppSubscriptions = appSubscriptionsByType.getOrDefault(SubscriptionType.SHARED, Collections.emptyList());
-
-        Set<String> sharedTopics = sharedAppSubscriptions.stream()
-                .collect(Collectors.groupingBy(Subscription::getTopicFilter)).keySet();
-
-        int callbackCount = getCallbackCount(deviceSubscriptions, commonAppSubscriptions) + sharedTopics.size();
+        int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics);
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
 
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
@@ -85,7 +78,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                         getClientIdFromSubscription(deviceSubscription),
                         createReceiverPublishMsg(deviceSubscription, publishMsgProto),
                         callbackWrapper));
-        commonAppSubscriptions.forEach(applicationSubscription ->
+        applicationSubscriptions.forEach(applicationSubscription ->
                 applicationMsgQueuePublisher.sendMsg(
                         getClientIdFromSubscription(applicationSubscription),
                         createReceiverPublishMsg(applicationSubscription, publishMsgProto),
@@ -99,33 +92,30 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
+    private List<Subscription> getSubscriptionsIfNotNull(List<Subscription> persistentSubscriptions) {
+        return persistentSubscriptions != null ? persistentSubscriptions : Collections.emptyList();
+    }
+
+    private Set<String> getUniqueSharedTopics(PersistentMsgSubscriptions persistentSubscriptions) {
+        return persistentSubscriptions
+                .getAllApplicationSharedSubscriptions()
+                .stream()
+                .collect(Collectors.groupingBy(Subscription::getTopicFilter))
+                .keySet();
+    }
+
     private String getClientIdFromSubscription(Subscription subscription) {
-        return subscription.getClientSession().getSessionInfo().getClientInfo().getClientId();
+        return subscription.getClientSession().getClientId();
     }
 
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
-                                 List<Subscription> applicationSubscriptions) {
-        return applicationSubscriptions.size() + deviceSubscriptions.size();
-    }
-
-    private void fillSubscriptions(List<Subscription> persistentSubscriptions,
-                                   List<Subscription> deviceSubscriptions,
-                                   List<Subscription> applicationSubscriptions) {
-        for (Subscription msgSubscription : persistentSubscriptions) {
-            ClientInfo clientInfo = msgSubscription.getClientSession().getSessionInfo().getClientInfo();
-            ClientType clientType = clientInfo.getType();
-            if (clientType == DEVICE) {
-                deviceSubscriptions.add(msgSubscription);
-            } else if (clientType == APPLICATION) {
-                applicationSubscriptions.add(msgSubscription);
-            } else {
-                log.warn("[{}] Persistence for clientType {} is not supported.", clientInfo.getClientId(), clientType);
-            }
-        }
+                                 List<Subscription> applicationSubscriptions,
+                                 Set<String> sharedTopics) {
+        return deviceSubscriptions.size() + applicationSubscriptions.size() + sharedTopics.size();
     }
 
     private PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, PublishMsgProto publishMsgProto) {
-        var minQoSValue = Math.min(clientSubscription.getMqttQoSValue(), publishMsgProto.getQos());
+        var minQoSValue = Math.min(clientSubscription.getQos(), publishMsgProto.getQos());
         var retain = clientSubscription.getOptions().isRetain(publishMsgProto);
         return publishMsgProto.toBuilder()
                 .setPacketId(0)
@@ -227,15 +217,5 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.processPubComp(clientId, packetId);
         }
-    }
-
-    private Map<SubscriptionType, List<Subscription>> collectAppSubscriptionsByType(List<Subscription> applicationSubscriptions) {
-        return applicationSubscriptions
-                .stream()
-                .collect(Collectors.groupingBy(this::getSubscriptionType));
-    }
-
-    private SubscriptionType getSubscriptionType(Subscription subscription) {
-        return StringUtils.isEmpty(subscription.getShareName()) ? SubscriptionType.COMMON : SubscriptionType.SHARED;
     }
 }

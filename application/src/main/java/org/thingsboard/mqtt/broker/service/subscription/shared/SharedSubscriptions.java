@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-@Getter
-@AllArgsConstructor
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Data
+@RequiredArgsConstructor
 @EqualsAndHashCode
-public class Subscription {
+public class SharedSubscriptions {
 
-    private final String topicFilter;
-    private final int qos;
-    private final ClientSession clientSession;
-    private final String shareName;
-    private final SubscriptionOptions options;
+    private final Set<Subscription> applicationSubscriptions;
+    private final Set<Subscription> deviceSubscriptions;
 
-    public Subscription(String topicFilter, int qos, ClientSession clientSession) {
-        this(topicFilter, qos, clientSession, null, SubscriptionOptions.newInstance());
+    public static SharedSubscriptions newInstance() {
+        return new SharedSubscriptions(ConcurrentHashMap.newKeySet(), ConcurrentHashMap.newKeySet());
     }
 }

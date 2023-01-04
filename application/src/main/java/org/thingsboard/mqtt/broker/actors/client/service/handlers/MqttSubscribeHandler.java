@@ -245,7 +245,7 @@ public class MqttSubscribeHandler {
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
             if (log.isDebugEnabled()) {
-                log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+                log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
             }
             return;
         }

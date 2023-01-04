@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,21 +32,19 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
-import org.thingsboard.mqtt.broker.service.subscription.SubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MsgDispatcherServiceImpl.class)
@@ -71,6 +68,8 @@ public class MsgDispatcherServiceImplTest {
     PublishMsgQueuePublisher publishMsgQueuePublisher;
     @MockBean
     SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    @MockBean
+    SharedSubscriptionCache sharedSubscriptionCache;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
@@ -82,45 +81,8 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testConvertClientSubscriptionsToSubscriptionsByType() {
-        when(clientSessionCache.getClientSession(any())).thenReturn(clientSession);
-
-        List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilters =
-                List.of(
-                        newValueWithTopicFilter("client1", 0, "group1"),
-                        newValueWithTopicFilter("client2", 1, "group1"),
-                        newValueWithTopicFilter("client3", 1, "group2"),
-                        newValueWithTopicFilter("client3", 2, "group2"),
-                        newValueWithTopicFilter("client4", 1, "group2"),
-                        newValueWithTopicFilter("client5", 1, null),
-                        newValueWithTopicFilter("client6", 2, null)
-                );
-
-        Map<SubscriptionType, List<Subscription>> subscriptionsByType = msgDispatcherService.collectToSubscriptionsByType(clientSubscriptionWithTopicFilters, null);
-        assertEquals(2, subscriptionsByType.size());
-
-        List<Subscription> commonSubscriptions = subscriptionsByType.get(SubscriptionType.COMMON);
-        assertEquals(2, commonSubscriptions.size());
-
-        List<Subscription> sharedSubscriptions = subscriptionsByType.get(SubscriptionType.SHARED);
-        assertEquals(4, sharedSubscriptions.size());
-
-        Assert.assertTrue(commonSubscriptions.containsAll(List.of(
-                newSubscription(1),
-                newSubscription(2)
-        )));
-
-        Assert.assertTrue(sharedSubscriptions.containsAll(List.of(
-                newSubscription(0, "group1"),
-                newSubscription(1, "group1"),
-                newSubscription(2, "group2"),
-                newSubscription(1, "group2")
-        )));
-    }
-
-    @Test
     public void testConvertToSharedSubscriptionList() {
-        List<Subscription> subscriptions = List.of(
+        Set<Subscription> subscriptions = Set.of(
                 newSubscription(0, "group1"),
                 newSubscription(1, "group1"),
                 newSubscription(2, "group2"),
@@ -136,15 +98,15 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testFilterHighestQosClientSubscriptions5() {
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
-                newValueWithTopicFilter("clientId1", 0, "g1", "+/test/+"),
-                newValueWithTopicFilter("clientId2", 1, "g1", "#"),
+                newValueWithTopicFilter("clientId1", 0, null, "+/test/+"),
+                newValueWithTopicFilter("clientId2", 1, null, "#"),
                 newValueWithTopicFilter("clientId3", 2, null, "topic/+/+"),
                 newValueWithTopicFilter("clientId1", 2, null, "+/+/res")
         );
         assertEquals(4, before.size());
 
         Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
-        assertEquals(4, result.size());
+        assertEquals(3, result.size());
     }
 
     @Test

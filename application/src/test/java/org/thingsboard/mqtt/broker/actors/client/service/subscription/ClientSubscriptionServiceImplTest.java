@@ -24,6 +24,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class ClientSubscriptionServiceImplTest {
     SubscriptionPersistenceService subscriptionPersistenceService;
     SubscriptionService subscriptionService;
     SharedSubscriptionProcessor sharedSubscriptionProcessor;
+    SharedSubscriptionCache sharedSubscriptionCache;
     StatsManager statsManager;
     ClientSubscriptionServiceImpl clientSubscriptionService;
 
@@ -54,11 +56,13 @@ public class ClientSubscriptionServiceImplTest {
         subscriptionPersistenceService = mock(SubscriptionPersistenceService.class);
         subscriptionService = mock(SubscriptionService.class);
         sharedSubscriptionProcessor = mock(SharedSubscriptionProcessor.class);
+        sharedSubscriptionCache = mock(SharedSubscriptionCache.class);
         statsManager = mock(StatsManager.class);
         clientSubscriptionService = spy(new ClientSubscriptionServiceImpl(
                 subscriptionPersistenceService,
                 subscriptionService,
                 sharedSubscriptionProcessor,
+                sharedSubscriptionCache,
                 statsManager));
 
         clientSubscriptionService.init(getClientTopicSubscriptions());

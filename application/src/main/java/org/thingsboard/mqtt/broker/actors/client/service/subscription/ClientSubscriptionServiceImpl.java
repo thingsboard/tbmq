@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -45,17 +46,17 @@ import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCa
 // not thread-safe for operations with the same 'clientId'
 public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
 
-    private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
-
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
     private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
+    private final SharedSubscriptionCache sharedSubscriptionCache;
     private final StatsManager statsManager;
+
+    private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     // TODO: sync subscriptions (and probably ClientSession)
     //      - store events for each action in separate topic + sometimes make snapshots (apply events on 'value' sequentially)
     //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
-
 
     @Override
     public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
@@ -68,6 +69,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                 log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
             }
             subscriptionService.subscribe(clientId, topicSubscriptions);
+            sharedSubscriptionCache.put(clientId, topicSubscriptions);
         });
     }
 
@@ -104,6 +106,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
+
+        sharedSubscriptionCache.put(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscriptions::contains);
@@ -150,7 +154,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         clientSubscriptions.removeIf(topicSubscription -> {
             boolean unsubscribe = topics.contains(topicSubscription.getTopic());
             if (unsubscribe) {
-                processSharedUnsubscribe(topicSubscription);
+                processSharedUnsubscribe(clientId, topicSubscription);
             }
             return unsubscribe;
         });
@@ -189,7 +193,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()
-                .peek(this::processSharedUnsubscribe)
+                .peek(topicSubscription -> processSharedUnsubscribe(clientId, topicSubscription))
                 .map(TopicSubscription::getTopic)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
@@ -200,9 +204,10 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
 
-    private void processSharedUnsubscribe(TopicSubscription topicSubscription) {
+    private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
         if (isSharedSubscription(topicSubscription)) {
             unsubscribeSharedSubscription(topicSubscription);
+            sharedSubscriptionCache.remove(clientId, topicSubscription);
         }
     }
 
