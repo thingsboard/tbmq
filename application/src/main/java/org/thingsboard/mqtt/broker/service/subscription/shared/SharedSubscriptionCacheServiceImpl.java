@@ -94,7 +94,8 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
     @Override
     public void remove(String clientId, TopicSubscription topicSubscription) {
-        SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(getKey(topicSubscription));
+        TopicSharedSubscription key = getKey(topicSubscription);
+        SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(key);
         if (sharedSubscriptions == null) {
             return;
         }
@@ -108,6 +109,9 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             } else {
                 removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription);
             }
+        }
+        if (sharedSubscriptions.isEmpty()) {
+            sharedSubscriptionsMap.remove(key);
         }
     }
 

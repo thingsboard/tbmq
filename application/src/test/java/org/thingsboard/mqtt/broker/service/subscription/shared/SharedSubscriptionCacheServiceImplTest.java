@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -132,13 +132,50 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void remove() {
+        when(clientSession1.getClientType()).thenReturn(ClientType.DEVICE);
+        when(clientSession1.getClientId()).thenReturn(CLIENT_ID_1);
 
+        when(clientSession2.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(clientSession2.getClientId()).thenReturn(CLIENT_ID_2);
+
+        sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
+                new TopicSubscription("/test/topic/1", 2, "g1"),
+                new TopicSubscription("#", 0, "g2"),
+                new TopicSubscription("/test/topic/+", 1, "g3")
+        ));
+        sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
+                new TopicSubscription("/test/topic/1", 1, "g1"),
+                new TopicSubscription("/test/topic/+", 2, "g3")
+        ));
+
+        assertEquals(3, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
+        SharedSubscriptions sharedSubscriptions = sharedSubscriptionCache.getSharedSubscriptionsMap()
+                .get(new TopicSharedSubscription("/test/topic/1", "g1"));
+        assertEquals(1, sharedSubscriptions.getApplicationSubscriptions().size());
+        assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().size());
+        sharedSubscriptions = sharedSubscriptionCache.getSharedSubscriptionsMap()
+                .get(new TopicSharedSubscription("/test/topic/+", "g2"));
+        assertNull(sharedSubscriptions);
+
+        sharedSubscriptionCache.remove(CLIENT_ID_1, new TopicSubscription("#", 0, "g2"));
+        assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
+
+        when(clientSessionCache.getClientSession(CLIENT_ID_2)).thenReturn(null);
+        sharedSubscriptionCache.remove(CLIENT_ID_2, new TopicSubscription("/test/topic/1", 0, "g1"));
+
+        assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
+        sharedSubscriptions = sharedSubscriptionCache.getSharedSubscriptionsMap()
+                .get(new TopicSharedSubscription("/test/topic/1", "g1"));
+        assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().size());
+        sharedSubscriptions = sharedSubscriptionCache.getSharedSubscriptionsMap()
+                .get(new TopicSharedSubscription("/test/topic/+", "g3"));
+        assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().size());
     }
 
     @Test
     public void testGetNothing() {
-        Assert.assertNull(sharedSubscriptionCache.get(null));
-        Assert.assertNull(sharedSubscriptionCache.get(Set.of()));
+        assertNull(sharedSubscriptionCache.get(null));
+        assertNull(sharedSubscriptionCache.get(Set.of()));
     }
 
     @Test
@@ -165,7 +202,7 @@ public class SharedSubscriptionCacheServiceImplTest {
                 new TopicSharedSubscription("/test/topic/+", "g3")
         ));
 
-        Assert.assertEquals(2, sharedSubscriptions.getDeviceSubscriptions().size());
+        assertEquals(2, sharedSubscriptions.getDeviceSubscriptions().size());
         for (Subscription subscription : sharedSubscriptions.getDeviceSubscriptions()) {
             assertEquals("/test/topic/1", subscription.getTopicFilter());
             if (subscription.getClientSession().getClientId().equals(CLIENT_ID_1)) {
