@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -49,7 +49,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
     private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
-    private final SharedSubscriptionCache sharedSubscriptionCache;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final StatsManager statsManager;
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
@@ -69,7 +69,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                 log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
             }
             subscriptionService.subscribe(clientId, topicSubscriptions);
-            sharedSubscriptionCache.put(clientId, topicSubscriptions);
+            sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
     }
 
@@ -107,7 +107,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
-        sharedSubscriptionCache.put(clientId, topicSubscriptions);
+        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscriptions::contains);
@@ -207,7 +207,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
         if (isSharedSubscription(topicSubscription)) {
             unsubscribeSharedSubscription(topicSubscription);
-            sharedSubscriptionCache.remove(clientId, topicSubscription);
+            sharedSubscriptionCacheService.remove(clientId, topicSubscription);
         }
     }
 

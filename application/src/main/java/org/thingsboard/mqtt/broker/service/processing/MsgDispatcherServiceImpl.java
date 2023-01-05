@@ -44,7 +44,7 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
@@ -75,7 +75,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final ClientLogger clientLogger;
     private final PublishMsgQueuePublisher publishMsgQueuePublisher;
     private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
-    private final SharedSubscriptionCache sharedSubscriptionCache;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -186,7 +186,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         Set<Subscription> allApplicationSharedSubscriptions = null;
         Set<Subscription> allDeviceSharedSubscriptions = null;
-        SharedSubscriptions fromCache = sharedSubscriptionCache.get(topicSharedSubscriptions);
+        SharedSubscriptions fromCache = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
         if (fromCache != null) {
             allApplicationSharedSubscriptions = fromCache.getApplicationSubscriptions();
             allDeviceSharedSubscriptions = fromCache.getDeviceSubscriptions();

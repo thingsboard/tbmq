@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SharedSubscriptionCacheImpl implements SharedSubscriptionCache {
+public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCacheService {
 
     private final ClientSessionCache clientSessionCache;
     @Getter

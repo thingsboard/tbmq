@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import java.util.Collection;
 import java.util.Set;
 
-public interface SharedSubscriptionCache {
+public interface SharedSubscriptionCacheService {
 
     void put(String clientId, Collection<TopicSubscription> topicSubscriptions);
 

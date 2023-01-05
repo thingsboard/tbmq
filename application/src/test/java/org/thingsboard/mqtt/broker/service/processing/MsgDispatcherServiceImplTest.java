@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 
 import java.util.Collection;
@@ -69,7 +69,7 @@ public class MsgDispatcherServiceImplTest {
     @MockBean
     SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
     @MockBean
-    SharedSubscriptionCache sharedSubscriptionCache;
+    SharedSubscriptionCacheService sharedSubscriptionCacheService;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
