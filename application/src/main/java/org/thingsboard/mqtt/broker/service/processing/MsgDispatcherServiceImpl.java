@@ -125,43 +125,51 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
     }
 
-    private PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions, PublishMsgProto publishMsgProto) {
-
-        List<Subscription> deviceSubscriptions = new ArrayList<>();
-        List<Subscription> applicationSubscriptions = new ArrayList<>();
-
-        long notPersistentMessagesProcessingStartTime = System.nanoTime();
+    private PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
+                                                                                     PublishMsgProto publishMsgProto) {
+        List<Subscription> applicationSubscriptions = null;
+        List<Subscription> deviceSubscriptions = null;
+        long notPersistentMsgProcessingStartTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            for (Subscription msgSubscription : msgSubscriptions.getCommonSubscriptions()) {
-                if (needToBePersisted(publishMsgProto, msgSubscription)) {
-
-                    ClientType clientType = msgSubscription.getClientSession().getClientType();
-                    if (ClientType.APPLICATION == clientType) {
-                        applicationSubscriptions.add(msgSubscription);
-                    } else {
-                        deviceSubscriptions.add(msgSubscription);
-                    }
-
-                } else {
-                    sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
-                }
-            }
+            applicationSubscriptions = new ArrayList<>();
+            deviceSubscriptions = new ArrayList<>();
+            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto,
+                    applicationSubscriptions, deviceSubscriptions);
         }
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getTargetDeviceSharedSubscriptions())) {
-            for (Subscription msgSubscription : msgSubscriptions.getTargetDeviceSharedSubscriptions()) {
-                if (needToBePersisted(publishMsgProto, msgSubscription)) {
-                    deviceSubscriptions.add(msgSubscription);
-                } else {
-                    sendToNode(createBasicPublishMsg(msgSubscription, publishMsgProto), msgSubscription);
-                }
-            }
+            applicationSubscriptions = initSubscriptionListIfNull(applicationSubscriptions);
+            deviceSubscriptions = initSubscriptionListIfNull(deviceSubscriptions);
+            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto,
+                    applicationSubscriptions, deviceSubscriptions);
         }
 
-        publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+        publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMsgProcessingStartTime, TimeUnit.NANOSECONDS);
+        return new PersistentMsgSubscriptions(
+                deviceSubscriptions,
+                applicationSubscriptions,
+                msgSubscriptions.getAllApplicationSharedSubscriptions()
+        );
+    }
 
-        return new PersistentMsgSubscriptions(deviceSubscriptions, applicationSubscriptions, msgSubscriptions.getAllApplicationSharedSubscriptions());
+    private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
+                                      List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
+        for (Subscription subscription : subscriptions) {
+            if (needToBePersisted(publishMsgProto, subscription)) {
+                if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
+                    applicationSubscriptions.add(subscription);
+                } else {
+                    deviceSubscriptions.add(subscription);
+                }
+            } else {
+                sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription);
+            }
+        }
+    }
+
+    private List<Subscription> initSubscriptionListIfNull(List<Subscription> subscriptions) {
+        return subscriptions == null ? new ArrayList<>() : subscriptions;
     }
 
     private MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
@@ -171,40 +179,32 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         Set<TopicSharedSubscription> topicSharedSubscriptions = new HashSet<>();
         List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>();
 
-        for (ValueWithTopicFilter<ClientSubscription> clientSubsValueWithTopicFilter : clientSubscriptions) {
-
-            String topicFilter = clientSubsValueWithTopicFilter.getTopicFilter();
-            String shareName = clientSubsValueWithTopicFilter.getValue().getShareName();
+        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
+            var topicFilter = clientSubscription.getTopicFilter();
+            var shareName = clientSubscription.getValue().getShareName();
 
             if (!StringUtils.isEmpty(shareName)) {
-                TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription(topicFilter, shareName);
-                topicSharedSubscriptions.add(topicSharedSubscription);
+                topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
             } else {
-                commonClientSubscriptions.add(clientSubsValueWithTopicFilter);
+                commonClientSubscriptions.add(clientSubscription);
             }
         }
 
-        Set<Subscription> allApplicationSharedSubscriptions = null;
-        Set<Subscription> allDeviceSharedSubscriptions = null;
-        SharedSubscriptions fromCache = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
-        if (fromCache != null) {
-            allApplicationSharedSubscriptions = fromCache.getApplicationSubscriptions();
-            allDeviceSharedSubscriptions = fromCache.getDeviceSubscriptions();
-        }
+        SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
 
-        List<Subscription> commonSubscriptions = collectCommonSubscriptions(commonClientSubscriptions, senderClientId);
-        List<Subscription> targetDeviceSharedSubscriptions = getTargetDeviceSharedSubscriptions(allDeviceSharedSubscriptions, publishMsgProto.getQos());
-
-        return new MsgSubscriptions(commonSubscriptions, allApplicationSharedSubscriptions, targetDeviceSharedSubscriptions);
-
+        return new MsgSubscriptions(
+                collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
+                sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
+                getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
+        );
     }
 
-    private List<Subscription> getTargetDeviceSharedSubscriptions(Set<Subscription> deviceSharedSubscriptions, int qos) {
-        if (CollectionUtils.isEmpty(deviceSharedSubscriptions)) {
+    private List<Subscription> getTargetDeviceSharedSubscriptions(SharedSubscriptions sharedSubscriptions, int qos) {
+        if (sharedSubscriptions == null || CollectionUtils.isEmpty(sharedSubscriptions.getDeviceSubscriptions())) {
             return null;
         }
-        List<SharedSubscription> sharedSubscriptions = toSharedSubscriptionList(deviceSharedSubscriptions);
-        return collectOneSubscriptionFromEveryDeviceSharedSubscription(sharedSubscriptions, qos);
+        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(sharedSubscriptions.getDeviceSubscriptions());
+        return collectOneSubscriptionFromEveryDeviceSharedSubscription(sharedSubscriptionList, qos);
     }
 
     List<SharedSubscription> toSharedSubscriptionList(Set<Subscription> sharedSubscriptions) {
@@ -249,6 +249,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     Subscription findAnyConnectedSubscription(List<Subscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
+            return null;
+        }
         return subscriptions
                 .stream()
                 .filter(subscription -> subscription.getClientSession().isConnected())
@@ -280,6 +283,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
                 filterClientSubscriptions(clientSubscriptionWithTopicFilterList, senderClientId);
+        if (CollectionUtils.isEmpty(filteredClientSubscriptions)) {
+            return null;
+        }
 
         return filteredClientSubscriptions.stream()
                 .map(this::convertToSubscription)

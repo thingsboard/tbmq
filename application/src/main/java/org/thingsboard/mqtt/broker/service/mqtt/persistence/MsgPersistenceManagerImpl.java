@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,43 +62,51 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     public void processPublish(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
         List<Subscription> deviceSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getDeviceSubscriptions());
         List<Subscription> applicationSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getApplicationSubscriptions());
-
-        Set<String> sharedTopics =
-                CollectionUtils.isEmpty(persistentSubscriptions.getAllApplicationSharedSubscriptions()) ?
-                        Collections.emptySet() : getUniqueSharedTopics(persistentSubscriptions);
+        Set<String> sharedTopics = getUniqueSharedTopics(persistentSubscriptions.getAllApplicationSharedSubscriptions());
 
         int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics);
+        if (callbackCount == 0) {
+            return;
+        }
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
 
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
-        deviceSubscriptions.forEach(deviceSubscription ->
-                deviceMsgQueuePublisher.sendMsg(
-                        getClientIdFromSubscription(deviceSubscription),
-                        createReceiverPublishMsg(deviceSubscription, publishMsgProto),
-                        callbackWrapper));
-        applicationSubscriptions.forEach(applicationSubscription ->
-                applicationMsgQueuePublisher.sendMsg(
-                        getClientIdFromSubscription(applicationSubscription),
-                        createReceiverPublishMsg(applicationSubscription, publishMsgProto),
-                        callbackWrapper));
-        sharedTopics.forEach(sharedTopic ->
-                applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                        sharedTopic,
-                        createReceiverPublishMsg(publishMsgProto),
-                        callbackWrapper));
+        if (!CollectionUtils.isEmpty(deviceSubscriptions)) {
+            deviceSubscriptions.forEach(deviceSubscription ->
+                    deviceMsgQueuePublisher.sendMsg(
+                            getClientIdFromSubscription(deviceSubscription),
+                            createReceiverPublishMsg(deviceSubscription, publishMsgProto),
+                            callbackWrapper));
+        }
+        if (!CollectionUtils.isEmpty(applicationSubscriptions)) {
+            applicationSubscriptions.forEach(applicationSubscription ->
+                    applicationMsgQueuePublisher.sendMsg(
+                            getClientIdFromSubscription(applicationSubscription),
+                            createReceiverPublishMsg(applicationSubscription, publishMsgProto),
+                            callbackWrapper));
+        }
+        if (!CollectionUtils.isEmpty(sharedTopics)) {
+            sharedTopics.forEach(sharedTopic ->
+                    applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                            sharedTopic,
+                            createReceiverPublishMsg(publishMsgProto),
+                            callbackWrapper));
+        }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
     private List<Subscription> getSubscriptionsIfNotNull(List<Subscription> persistentSubscriptions) {
-        return persistentSubscriptions != null ? persistentSubscriptions : Collections.emptyList();
+        return CollectionUtils.isEmpty(persistentSubscriptions) ? null : persistentSubscriptions;
     }
 
-    private Set<String> getUniqueSharedTopics(PersistentMsgSubscriptions persistentSubscriptions) {
-        return persistentSubscriptions
-                .getAllApplicationSharedSubscriptions()
+    private Set<String> getUniqueSharedTopics(Set<Subscription> allAppSharedSubscriptions) {
+        if (CollectionUtils.isEmpty(allAppSharedSubscriptions)) {
+            return null;
+        }
+        return allAppSharedSubscriptions
                 .stream()
                 .collect(Collectors.groupingBy(Subscription::getTopicFilter))
                 .keySet();
@@ -111,7 +119,13 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
                                  List<Subscription> applicationSubscriptions,
                                  Set<String> sharedTopics) {
-        return deviceSubscriptions.size() + applicationSubscriptions.size() + sharedTopics.size();
+        return getCollectionSize(deviceSubscriptions) +
+                getCollectionSize(applicationSubscriptions) +
+                getCollectionSize(sharedTopics);
+    }
+
+    private <T> int getCollectionSize(Collection<T> collection) {
+        return collection == null ? 0 : collection.size();
     }
 
     private PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, PublishMsgProto publishMsgProto) {
