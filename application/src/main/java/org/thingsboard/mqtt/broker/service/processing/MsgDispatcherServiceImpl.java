@@ -125,8 +125,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
     }
 
-    private PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
-                                                                                     PublishMsgProto publishMsgProto) {
+    PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
+                                                                             PublishMsgProto publishMsgProto) {
         List<Subscription> applicationSubscriptions = null;
         List<Subscription> deviceSubscriptions = null;
         long notPersistentMsgProcessingStartTime = System.nanoTime();
@@ -145,7 +145,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                     applicationSubscriptions, deviceSubscriptions);
         }
 
-        publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMsgProcessingStartTime, TimeUnit.NANOSECONDS);
+        if (publishMsgProcessingTimerStats != null) {
+            publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMsgProcessingStartTime, TimeUnit.NANOSECONDS);
+        }
         return new PersistentMsgSubscriptions(
                 deviceSubscriptions,
                 applicationSubscriptions,
@@ -172,7 +174,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return subscriptions == null ? new ArrayList<>() : subscriptions;
     }
 
-    private MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
+    MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
         List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
 
@@ -225,7 +227,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         long startTime = System.nanoTime();
         List<Subscription> msgSubscriptions = collectSubscriptions(clientSubscriptionWithTopicFilterList, senderClientId);
-        publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        if (publishMsgProcessingTimerStats != null) {
+            publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        }
         return msgSubscriptions;
     }
 
