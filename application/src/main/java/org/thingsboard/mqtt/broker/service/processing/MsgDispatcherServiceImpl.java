@@ -105,6 +105,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
+        if (msgSubscriptions == null) {
+            callback.onSuccess();
+            return;
+        }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Found msg subscribers");
 
@@ -174,11 +178,18 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return subscriptions == null ? new ArrayList<>() : subscriptions;
     }
 
+    private Set<TopicSharedSubscription> initTopicSharedSubscriptionSetIfNull(Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        return topicSharedSubscriptions == null ? new HashSet<>() : topicSharedSubscriptions;
+    }
+
     MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
         List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
+        if (CollectionUtils.isEmpty(clientSubscriptions)) {
+            return null;
+        }
 
-        Set<TopicSharedSubscription> topicSharedSubscriptions = new HashSet<>();
+        Set<TopicSharedSubscription> topicSharedSubscriptions = null;
         List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>();
 
         for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
@@ -186,6 +197,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             var shareName = clientSubscription.getValue().getShareName();
 
             if (!StringUtils.isEmpty(shareName)) {
+                topicSharedSubscriptions = initTopicSharedSubscriptionSetIfNull(topicSharedSubscriptions);
                 topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
             } else {
                 commonClientSubscriptions.add(clientSubscription);
