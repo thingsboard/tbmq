@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -131,9 +130,51 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
-    // TODO: 08.01.23 add test for case when all persistent device clients are offline
+    @Test
+    public void givenTwoPersistentClients_whenBothGotDisconnectedAndMessagesSent_thenBothConnectedAndFirstOneReceiveAllMessages() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
-    private void process(String group1TopicFilter, String group2TopicFilter) throws InterruptedException, ExecutionException {
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        MqttClient shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        MqttClient shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+
+        shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+
+        //disconnect
+        shareSubClient1.disconnect();
+        shareSubClient2.disconnect();
+
+        Thread.sleep(100); // waiting for clients to disconnect completely
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("my/test/data", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE);
+        }
+
+        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        Thread.sleep(50);
+        shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get());
+        assertEquals(0, shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
+
+    private void process(String group1TopicFilter, String group2TopicFilter) throws Exception {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT * 3);
 
         AtomicInteger shareSubClient1Group1ReceivedMessages = new AtomicInteger();
@@ -183,25 +224,25 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         disconnectClient(shareSubClient3);
     }
 
-    private MqttClient getMqttPubClient() throws InterruptedException, ExecutionException {
+    private MqttClient getMqttPubClient() throws Exception {
         return getClient(null);
     }
 
-    private MqttClient getMqttSubClient(MqttHandler handler, String topic) throws InterruptedException, ExecutionException {
+    private MqttClient getMqttSubClient(MqttHandler handler, String topic) throws Exception {
         MqttClient client = getClient(handler);
         client.on(topic, handler, MqttQoS.AT_LEAST_ONCE);
         return client;
     }
 
-    private MqttClient getClient(MqttHandler handler) throws InterruptedException, ExecutionException {
+    private MqttClient getClient(MqttHandler handler) throws Exception {
         return getClient(handler, true);
     }
 
-    private MqttClient getClient(MqttHandler handler, boolean cleanSession) throws InterruptedException, ExecutionException {
+    private MqttClient getClient(MqttHandler handler, boolean cleanSession) throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setCleanSession(cleanSession);
         MqttClient client = MqttClient.create(config, handler);
-        client.connect("localhost", mqttPort).get();
+        client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         return client;
     }
 
