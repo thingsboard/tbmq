@@ -45,7 +45,7 @@ public class TestUtils {
     }
 
     public static String[] getTopicNames(Collection<TopicSubscription> topicSubscriptions) {
-        return topicSubscriptions.stream().map(TopicSubscription::getTopic).toArray(String[]::new);
+        return topicSubscriptions.stream().map(TopicSubscription::getTopicFilter).toArray(String[]::new);
     }
 
     public static int[] getQoSLevels(Collection<TopicSubscription> topicSubscriptions) {

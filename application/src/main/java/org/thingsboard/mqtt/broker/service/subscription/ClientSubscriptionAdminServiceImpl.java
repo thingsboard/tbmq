@@ -61,14 +61,14 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
 
     private Set<TopicSubscription> prepareTopicsForSubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
         return CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
-                Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos));
+                Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos));
     }
 
     private Set<String> prepareTopicsForUnsubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
         return CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions,
-                        Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos))
+                        Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos))
                 .stream()
-                .map(TopicSubscription::getTopic)
+                .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toSet());
     }
 

@@ -111,7 +111,7 @@ public class MqttSubscribeHandler {
         }
 
         for (TopicSubscription subscription : topicSubscriptions) {
-            var topic = subscription.getTopic();
+            var topic = subscription.getTopicFilter();
 
             if (isSharedSubscriptionWithNoLocal(subscription)) {
                 log.warn("[{}] It is a Protocol Error to set the NoLocal option to true on a Shared Subscription.", ctx.getClientId());
@@ -231,7 +231,7 @@ public class MqttSubscribeHandler {
     }
 
     private List<RetainedMsg> getRetainedMessages(TopicSubscription topicSubscription) {
-        return retainedMsgService.getRetainedMessages(topicSubscription.getTopic());
+        return retainedMsgService.getRetainedMessages(topicSubscription.getTopicFilter());
     }
 
     private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
@@ -296,7 +296,7 @@ public class MqttSubscribeHandler {
                 .stream()
                 .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
                 .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
+                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
                 .keySet();
     }
 

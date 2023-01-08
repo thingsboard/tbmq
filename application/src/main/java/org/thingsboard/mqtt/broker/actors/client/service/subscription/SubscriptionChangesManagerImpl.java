@@ -74,12 +74,12 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
     }
 
     private Comparator<TopicSubscription> getComparator() {
-        return Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos);
+        return Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos);
     }
 
     private Set<String> getUnsubscribeTopics(Set<TopicSubscription> removedSubscriptions) {
         return removedSubscriptions.stream()
-                .map(TopicSubscription::getTopic)
+                .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toSet());
     }
 }

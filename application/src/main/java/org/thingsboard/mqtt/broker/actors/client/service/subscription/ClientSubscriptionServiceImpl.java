@@ -152,7 +152,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscription -> {
-            boolean unsubscribe = topics.contains(topicSubscription.getTopic());
+            boolean unsubscribe = topics.contains(topicSubscription.getTopicFilter());
             if (unsubscribe) {
                 processSharedUnsubscribe(clientId, topicSubscription);
             }
@@ -194,7 +194,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()
                 .peek(topicSubscription -> processSharedUnsubscribe(clientId, topicSubscription))
-                .map(TopicSubscription::getTopic)
+                .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
     }
@@ -220,6 +220,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopic(), topicSubscription.getShareName());
+        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
     }
 }

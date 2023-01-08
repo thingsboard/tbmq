@@ -49,7 +49,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
         for (TopicSubscription topicSubscription : topicSubscriptions) {
             subscriptionTrie.put(
-                    topicSubscription.getTopic(),
+                    topicSubscription.getTopicFilter(),
                     new ClientSubscription(
                             clientId,
                             topicSubscription.getQos(),

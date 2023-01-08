@@ -75,7 +75,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {
         return subscriptions.stream()
                 .map(topicSubscription -> new SubscriptionInfoDto(
-                        topicSubscription.getTopic(),
+                        topicSubscription.getTopicFilter(),
                         MqttQoS.valueOf(topicSubscription.getQos())))
                 .collect(Collectors.toList());
     }

@@ -90,7 +90,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     }
 
     private void removeSubscription(Set<Subscription> sharedSubscriptions, String clientId, TopicSubscription topicSubscription) {
-        sharedSubscriptions.removeIf(subs -> clientId.equals(subs.getClientSession().getClientId()) && topicSubscription.getTopic().equals(subs.getTopicFilter()));
+        sharedSubscriptions.removeIf(subs -> clientId.equals(subs.getClientSession().getClientId()) && topicSubscription.getTopicFilter().equals(subs.getTopicFilter()));
     }
 
     @Override
@@ -168,12 +168,12 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     }
 
     private TopicSharedSubscription getKey(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopic(), topicSubscription.getShareName());
+        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
     }
 
     private Subscription newSubscription(TopicSubscription topicSubscription, ClientSession clientSession) {
         return new Subscription(
-                topicSubscription.getTopic(),
+                topicSubscription.getTopicFilter(),
                 topicSubscription.getQos(),
                 clientSession,
                 topicSubscription.getShareName(),
