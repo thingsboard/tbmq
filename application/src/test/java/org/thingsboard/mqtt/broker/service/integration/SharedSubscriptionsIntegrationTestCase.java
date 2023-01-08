@@ -131,6 +131,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
+    // TODO: 08.01.23 add test for case when all persistent device clients are offline
+
     private void process(String group1TopicFilter, String group2TopicFilter) throws InterruptedException, ExecutionException {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT * 3);
 

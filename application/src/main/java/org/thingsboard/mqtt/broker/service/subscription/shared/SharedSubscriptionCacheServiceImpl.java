@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,7 +56,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             return;
         }
 
-        var clientSession = clientSessionCache.getClientSession(clientId);
+        var clientSession = findClientSession(clientId);
         if (clientSession == null) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Client session is not found for client.", clientId);
@@ -99,7 +100,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         if (sharedSubscriptions == null) {
             return;
         }
-        var clientSession = clientSessionCache.getClientSession(clientId);
+        var clientSession = findClientSession(clientId);
         if (clientSession == null) {
             removeSubscription(sharedSubscriptions.getApplicationSubscriptions(), clientId, topicSubscription);
             removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription);
@@ -133,6 +134,13 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             return subscriptions;
         }
         return subscriptions.stream()
+                .map(subscription -> {
+                    var clientSession = findClientSession(subscription.getClientSession().getClientId());
+                    if (clientSession == null) {
+                        return null;
+                    }
+                    return newSubscription(subscription, clientSession);
+                }).filter(Objects::nonNull)
                 .collect(Collectors.toMap(
                         subscription -> subscription.getClientSession().getClientId(),
                         Function.identity(),
@@ -169,7 +177,21 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
                 topicSubscription.getQos(),
                 clientSession,
                 topicSubscription.getShareName(),
-                topicSubscription.getOptions());
+                topicSubscription.getOptions()
+        );
     }
 
+    private Subscription newSubscription(Subscription subscription, ClientSession clientSession) {
+        return new Subscription(
+                subscription.getTopicFilter(),
+                subscription.getQos(),
+                clientSession,
+                subscription.getShareName(),
+                subscription.getOptions()
+        );
+    }
+
+    private ClientSession findClientSession(String clientId) {
+        return clientSessionCache.getClientSession(clientId);
+    }
 }
