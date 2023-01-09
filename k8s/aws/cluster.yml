@@ -34,6 +34,6 @@ managedNodeGroups:
   - name: tb-perf-test
     instanceType: m5.xlarge
     desiredCapacity: 1
-    maxSize: 10
+    maxSize: 21
     minSize: 1
     labels: { role: tb-perf-test }

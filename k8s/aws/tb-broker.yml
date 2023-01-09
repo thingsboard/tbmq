@@ -45,13 +45,13 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: dlandiak2110/tb-mqtt-broker:1.0.0-NOSS
+          image: dlandiak2110/tb-mqtt-broker:1.0.0-SNAPSHOT
           resources:
             limits:
-              cpu: 5
+              cpu: 8
               memory: 10Gi
             requests:
-              cpu: 5
+              cpu: 8
               memory: 10Gi
           ports:
             - containerPort: 8083
