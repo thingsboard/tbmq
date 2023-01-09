@@ -160,7 +160,9 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         consumer.commitAsync(offsetMap, (offsets, exception) -> {
             if (exception != null) {
                 log.warn("[{}][{}] Failed to commit offset {}.", topic, partition, offset);
-                log.trace("Detailed error stack trace:", exception);
+                if (log.isTraceEnabled()) {
+                    log.trace("Detailed error stack trace:", exception);
+                }
             }
         });
     }

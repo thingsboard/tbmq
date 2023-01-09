@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -45,17 +46,17 @@ import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCa
 // not thread-safe for operations with the same 'clientId'
 public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
 
-    private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
-
     private final SubscriptionPersistenceService subscriptionPersistenceService;
     private final SubscriptionService subscriptionService;
     private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final StatsManager statsManager;
+
+    private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     // TODO: sync subscriptions (and probably ClientSession)
     //      - store events for each action in separate topic + sometimes make snapshots (apply events on 'value' sequentially)
     //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
-
 
     @Override
     public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
@@ -64,15 +65,22 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
         clientSubscriptionsMap.forEach((clientId, topicSubscriptions) -> {
-            log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Restoring subscriptions - {}.", clientId, topicSubscriptions);
+            }
             subscriptionService.subscribe(clientId, topicSubscriptions);
+            sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
     }
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         BasicCallback callback = createCallback(
-                () -> log.trace("[{}] Persisted topic subscriptions", clientId),
+                () -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Persisted topic subscriptions", clientId);
+                    }
+                },
                 t -> log.warn("[{}] Failed to persist topic subscriptions. Exception - {}, reason - {}",
                         clientId, t.getClass().getSimpleName(), t.getMessage()));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
@@ -80,7 +88,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions, BasicCallback callback) {
-        log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        }
         Set<TopicSubscription> clientSubscriptions = subscribe(clientId, topicSubscriptions);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, clientSubscriptions, callback);
@@ -88,12 +98,16 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void subscribeInternally(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Subscribing internally to {}.", clientId, topicSubscriptions);
+        }
         subscribe(clientId, topicSubscriptions);
     }
 
     private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
+
+        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscriptions::contains);
@@ -104,7 +118,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
         BasicCallback callback = createCallback(
-                () -> log.trace("[{}] Persisted unsubscribed topics", clientId),
+                () -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Persisted unsubscribed topics", clientId);
+                    }
+                },
                 t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}",
                         clientId, t.getClass().getSimpleName(), t.getMessage()));
         unsubscribeAndPersist(clientId, topicFilters, callback);
@@ -112,7 +130,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback) {
-        log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Unsubscribing from {}.", clientId, topicFilters);
+        }
         Set<TopicSubscription> updatedClientSubscriptions = unsubscribe(clientId, topicFilters);
 
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, updatedClientSubscriptions, callback);
@@ -120,7 +140,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void unsubscribeInternally(String clientId, Collection<String> topicFilters) {
-        log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Unsubscribing internally from {}.", clientId, topicFilters);
+        }
         unsubscribe(clientId, topicFilters);
     }
 
@@ -130,9 +152,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
         clientSubscriptions.removeIf(topicSubscription -> {
-            boolean unsubscribe = topics.contains(topicSubscription.getTopic());
+            boolean unsubscribe = topics.contains(topicSubscription.getTopicFilter());
             if (unsubscribe) {
-                processSharedUnsubscribe(topicSubscription);
+                processSharedUnsubscribe(clientId, topicSubscription);
             }
             return unsubscribe;
         });
@@ -147,26 +169,32 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
-        log.trace("[{}] Clearing all subscriptions.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing all subscriptions.", clientId);
+        }
         clearSubscriptions(clientId);
         subscriptionPersistenceService.persistClientSubscriptionsAsync(clientId, Collections.emptySet(), callback);
     }
 
     @Override
     public void clearSubscriptionsInternally(String clientId) {
-        log.trace("[{}] Clearing all subscriptions internally.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing all subscriptions internally.", clientId);
+        }
         clearSubscriptions(clientId);
     }
 
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
-            log.debug("[{}] There were no active subscriptions for client.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] There were no active subscriptions for client.", clientId);
+            }
             return;
         }
         List<String> unsubscribeTopics = clientSubscriptions.stream()
-                .peek(this::processSharedUnsubscribe)
-                .map(TopicSubscription::getTopic)
+                .peek(topicSubscription -> processSharedUnsubscribe(clientId, topicSubscription))
+                .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
     }
@@ -176,9 +204,10 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
 
-    private void processSharedUnsubscribe(TopicSubscription topicSubscription) {
+    private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
         if (isSharedSubscription(topicSubscription)) {
             unsubscribeSharedSubscription(topicSubscription);
+            sharedSubscriptionCacheService.remove(clientId, topicSubscription);
         }
     }
 
@@ -191,6 +220,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopic(), topicSubscription.getShareName());
+        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
     }
 }

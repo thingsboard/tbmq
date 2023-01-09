@@ -56,13 +56,14 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
         clientDisconnectCommandProducer.send(topic, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                log.trace("[{}] Disconnect command for session {} sent successfully.", clientId, sessionId);
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Disconnect command for session {} sent successfully.", clientId, sessionId);
+                }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.warn("[{}] Failed to send command for session {}. Reason - {}.", clientId, sessionId, t.getMessage());
-                log.trace("Detailed error: ", t);
+                log.warn("[{}] Failed to send command for session {}.", clientId, sessionId, t);
             }
         });
     }

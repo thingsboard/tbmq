@@ -26,12 +26,12 @@ import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 public class Subscription {
 
     private final String topicFilter;
-    private final int mqttQoSValue;
+    private final int qos;
     private final ClientSession clientSession;
     private final String shareName;
     private final SubscriptionOptions options;
 
-    public Subscription(String topicFilter, int mqttQoSValue, ClientSession clientSession) {
-        this(topicFilter, mqttQoSValue, clientSession, null, SubscriptionOptions.newInstance());
+    public Subscription(String topicFilter, int qos, ClientSession clientSession) {
+        this(topicFilter, qos, clientSession, null, SubscriptionOptions.newInstance());
     }
 }

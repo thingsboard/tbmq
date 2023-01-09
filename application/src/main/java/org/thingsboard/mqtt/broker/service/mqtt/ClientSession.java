@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
 @AllArgsConstructor
@@ -30,4 +31,13 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 public class ClientSession {
     private final boolean connected;
     private final SessionInfo sessionInfo;
+
+    public String getClientId() {
+        return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
+                sessionInfo.getClientInfo().getClientId() : null;
+    }
+
+    public ClientType getClientType() {
+        return sessionInfo.getClientInfo().getType();
+    }
 }

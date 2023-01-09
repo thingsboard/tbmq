@@ -27,21 +27,22 @@ import java.util.Objects;
 @Builder(toBuilder = true)
 @ToString
 public class TopicSubscription {
-    private final String topic;
+
+    private final String topicFilter;
     private final int qos;
     private final String shareName;
     private final SubscriptionOptions options;
 
-    public TopicSubscription(String topic, int qos) {
-        this(topic, qos, null, SubscriptionOptions.newInstance());
+    public TopicSubscription(String topicFilter, int qos) {
+        this(topicFilter, qos, null, SubscriptionOptions.newInstance());
     }
 
-    public TopicSubscription(String topic, int qos, String shareName) {
-        this(topic, qos, shareName, SubscriptionOptions.newInstance());
+    public TopicSubscription(String topicFilter, int qos, String shareName) {
+        this(topicFilter, qos, shareName, SubscriptionOptions.newInstance());
     }
 
-    public TopicSubscription(String topic, int qos, SubscriptionOptions options) {
-        this(topic, qos, null, options);
+    public TopicSubscription(String topicFilter, int qos, SubscriptionOptions options) {
+        this(topicFilter, qos, null, options);
     }
 
     @Override
@@ -49,11 +50,11 @@ public class TopicSubscription {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TopicSubscription that = (TopicSubscription) o;
-        return Objects.equals(topic, that.topic);
+        return Objects.equals(topicFilter, that.topicFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(topic);
+        return Objects.hash(topicFilter);
     }
 }

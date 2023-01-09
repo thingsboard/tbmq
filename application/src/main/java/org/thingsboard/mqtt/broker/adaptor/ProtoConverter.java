@@ -213,7 +213,7 @@ public class ProtoConverter {
     private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
         return QueueProtos.TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
-                .setTopic(topicSubscription.getTopic())
+                .setTopic(topicSubscription.getTopicFilter())
                 .setOptions(prepareOptionsProto(topicSubscription))
                 .build();
     }
@@ -221,7 +221,7 @@ public class ProtoConverter {
     private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProtoWithShareName(TopicSubscription topicSubscription) {
         return QueueProtos.TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
-                .setTopic(topicSubscription.getTopic())
+                .setTopic(topicSubscription.getTopicFilter())
                 .setShareName(topicSubscription.getShareName())
                 .setOptions(prepareOptionsProto(topicSubscription))
                 .build();
@@ -231,7 +231,7 @@ public class ProtoConverter {
         return clientSubscriptionsProto.getSubscriptionsList().stream()
                 .map(topicSubscriptionProto -> TopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
-                        .topic(topicSubscriptionProto.getTopic())
+                        .topicFilter(topicSubscriptionProto.getTopic())
                         .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
                         .options(createOptions(topicSubscriptionProto))
                         .build())

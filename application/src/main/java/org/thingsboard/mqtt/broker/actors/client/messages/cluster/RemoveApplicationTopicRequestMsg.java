@@ -36,6 +36,8 @@ public class RemoveApplicationTopicRequestMsg extends CallbackMsg implements Ses
 
     @Override
     public void onTbActorStopped(TbActorId actorId) {
-        log.debug("[{}] Actor was stopped before processing {}.", actorId, getMsgType());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Actor was stopped before processing {}.", actorId, getMsgType());
+        }
     }
 }

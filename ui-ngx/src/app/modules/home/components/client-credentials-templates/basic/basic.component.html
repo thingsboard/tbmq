@@ -51,7 +51,7 @@
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
       <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
-        <mat-chip *ngFor="let rule of pubRulesArray" [value]="rule"
+        <mat-chip *ngFor="let rule of pubRulesSet" [value]="rule"
                   [selectable]="!disabled"
                   [removable]="!disabled"
                   (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
@@ -68,7 +68,7 @@
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
       <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
-        <mat-chip *ngFor="let rule of subRulesArray" [value]="rule"
+        <mat-chip *ngFor="let rule of subRulesSet" [value]="rule"
                   [selectable]="!disabled"
                   [removable]="!disabled"
                   (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">

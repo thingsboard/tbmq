@@ -45,7 +45,9 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Override
     public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
-        log.trace("[{}] Removing ClientSession.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Removing ClientSession.", clientId);
+        }
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
@@ -53,13 +55,17 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         if (clientSessionInfo.getClientSession().isConnected()) {
             throw new ThingsboardException("Client is currently connected", ThingsboardErrorCode.GENERAL);
         }
-        log.debug("[{}] Cleaning up client session.", clientId);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Cleaning up client session.", clientId);
+        }
         clientSessionEventService.requestSessionCleanup(clientSessionInfo.getClientSession().getSessionInfo());
     }
 
     @Override
     public void disconnectClientSession(String clientId, UUID sessionId) throws ThingsboardException {
-        log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
+        }
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || !sameSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);

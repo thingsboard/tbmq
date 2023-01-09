@@ -180,7 +180,9 @@ public class BrokerInitializer {
     private void startSubscriptionListening() {
         clientSubscriptionConsumer.listen((clientId, serviceId, topicSubscriptions) -> {
             if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-                log.trace("[{}] Msg was already processed.", clientId);
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Msg was already processed.", clientId);
+                }
                 return false;
             }
 

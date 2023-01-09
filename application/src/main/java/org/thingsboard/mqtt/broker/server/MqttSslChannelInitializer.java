@@ -53,7 +53,9 @@ public class MqttSslChannelInitializer extends ChannelInitializer<SocketChannel>
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
 
-        log.debug("[{}] Created SSL channel for IP {}.", handler.getSessionId(), ch.localAddress());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Created SSL channel for IP {}.", handler.getSessionId(), ch.localAddress());
+        }
     }
 
 }

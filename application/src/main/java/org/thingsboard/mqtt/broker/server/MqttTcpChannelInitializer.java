@@ -48,7 +48,9 @@ public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel>
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
 
-        log.debug("[{}] Created TCP channel for IP {}.", handler.getSessionId(), ch.localAddress());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Created TCP channel for IP {}.", handler.getSessionId(), ch.localAddress());
+        }
     }
 
 }

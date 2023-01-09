@@ -51,7 +51,9 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
 
         log.info("Restoring stored retained messages for {} topics.", retainedMsgMap.size());
         retainedMsgMap.forEach((topic, retainedMsg) -> {
-            log.trace("[{}] Restoring retained msg - {}.", topic, retainedMsg);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Restoring retained msg - {}.", topic, retainedMsg);
+            }
             retainedMsgService.saveRetainedMsg(topic, retainedMsg);
         });
     }

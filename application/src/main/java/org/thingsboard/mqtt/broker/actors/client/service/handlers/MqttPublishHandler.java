@@ -65,7 +65,9 @@ public class MqttPublishHandler {
         PublishMsg publishMsg = msg.getPublishMsg();
         int msgId = publishMsg.getPacketId();
 
-        log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), msgId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), msgId);
+        }
         boolean validateSuccess = validatePubMsg(ctx, publishMsg);
         if (!validateSuccess) {
             return;
@@ -136,7 +138,9 @@ public class MqttPublishHandler {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
-                log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
+                }
                 sendPubResponseEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
             }
 
@@ -179,9 +183,13 @@ public class MqttPublishHandler {
         if (awaitingPacketInfo == null) {
             ctx.getAwaitingPubRelPacketsCtx().await(clientId, msgId);
         } else if (!awaitingPacketInfo.isPersisted()) {
-            log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
+            }
         } else {
-            log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
+            }
             sendPubResponseEventToActor(actorRef, sessionId, msgId, MqttQoS.EXACTLY_ONCE);
         }
         return awaitingPacketInfo != null;
@@ -211,7 +219,7 @@ public class MqttPublishHandler {
         if (CollectionUtils.isEmpty(ctx.getAuthRulePatterns())) {
             return;
         }
-        boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(topic, ctx.getAuthRulePatterns());
+        boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(ctx.getClientId(), topic, ctx.getAuthRulePatterns());
         if (!isClientAuthorized) {
             log.warn("[{}][{}] Client is not authorized to publish to the topic {}",
                     ctx.getClientId(), ctx.getSessionId(), topic);

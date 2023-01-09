@@ -52,7 +52,9 @@ public class ActorSystemContext {
     private final ClientActorConfiguration clientActorConfiguration;
 
     public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
-        log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
+        if (log.isDebugEnabled()) {
+            log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
+        }
         if (delayInMs > 0) {
             actorSystem.getScheduler().schedule(() -> ctx.tell(msg), delayInMs, TimeUnit.MILLISECONDS);
         } else {

@@ -74,7 +74,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (mqttClientCredentials.getClientType() == null) {
             mqttClientCredentials.setClientType(ClientType.DEVICE);
         }
-        log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
+        }
         credentialsValidator.validate(mqttClientCredentials);
         try {
             MqttClientCredentials currentCredentials = getCurrentCredentialsById(mqttClientCredentials.getId());
@@ -94,7 +96,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public void deleteCredentials(UUID id) {
-        log.trace("Executing deleteCredentials [{}]", id);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteCredentials [{}]", id);
+        }
         MqttClientCredentials clientCredentials = mqttClientCredentialsDao.findById(id);
         mqttClientCredentialsDao.removeById(id);
         if (clientCredentials != null) {
@@ -104,7 +108,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds) {
-        log.trace("Executing findMatchingCredentials [{}]", credentialIds);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findMatchingCredentials [{}]", credentialIds);
+        }
         List<MqttClientCredentials> result = Lists.newArrayList();
         List<String> credentialIdsFromDb = Lists.newArrayList();
 
@@ -127,7 +133,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink) {
-        log.trace("Executing getCredentials, pageLink [{}]", pageLink);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getCredentials, pageLink [{}]", pageLink);
+        }
         validatePageLink(pageLink);
         PageData<MqttClientCredentials> pageData = mqttClientCredentialsDao.findAll(pageLink);
         List<ShortMqttClientCredentials> shortMqttCredentials = pageData.getData().stream()
@@ -138,7 +146,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public Optional<MqttClientCredentials> getCredentialsById(UUID id) {
-        log.trace("Executing getCredentialsById [{}]", id);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getCredentialsById [{}]", id);
+        }
         return Optional.ofNullable(mqttClientCredentialsDao.findById(id));
     }
 

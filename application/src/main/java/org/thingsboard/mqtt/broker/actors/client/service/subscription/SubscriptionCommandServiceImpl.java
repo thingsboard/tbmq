@@ -29,13 +29,17 @@ public class SubscriptionCommandServiceImpl implements SubscriptionCommandServic
     private final ClientSubscriptionService clientSubscriptionService;
     @Override
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        log.debug("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Subscribing to {}.", clientId, topicSubscriptions);
+        }
         clientSubscriptionService.subscribeAndPersist(clientId, topicSubscriptions);
     }
 
     @Override
     public void unsubscribe(String clientId, Collection<String> topics) {
-        log.debug("[{}] Unsubscribing from {}.", clientId, topics);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Unsubscribing from {}.", clientId, topics);
+        }
         clientSubscriptionService.unsubscribeAndPersist(clientId, topics);
     }
 }

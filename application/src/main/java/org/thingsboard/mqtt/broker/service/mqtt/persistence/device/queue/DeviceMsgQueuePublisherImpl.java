@@ -69,9 +69,8 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
                     }
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}. Reason - {}.",
-                                clientId, msgProto.getTopicName(), t.getMessage());
-                        log.debug("Detailed error: ", t);
+                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
+                                clientId, msgProto.getTopicName(), t);
                         callback.onFailure(t);
                     }
                 });

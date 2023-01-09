@@ -30,11 +30,15 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.Applicat
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -87,14 +91,19 @@ public class MsgPersistenceManagerImplTest {
     @Test
     public void testProcessPublish() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
-        List<Subscription> subscriptions = List.of(
-                createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
-                createSubscription("topic2", 2, "devClientId2", ClientType.DEVICE),
-                createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
-                createSubscription("topic4", 0, "appClientId4", ClientType.APPLICATION)
+        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
+                List.of(
+                        createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
+                        createSubscription("topic2", 2, "devClientId2", ClientType.DEVICE)
+                ),
+                List.of(
+                        createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
+                        createSubscription("topic4", 0, "appClientId4", ClientType.APPLICATION)
+                ),
+                Collections.emptySet()
         );
 
-        msgPersistenceManager.processPublish(publishMsgProto, subscriptions, null);
+        msgPersistenceManager.processPublish(publishMsgProto, persistentMsgSubscriptions, null);
 
         ArgumentCaptor<String> deviceMsgQueuePublisherCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> applicationMsgQueuePublisherCaptor = ArgumentCaptor.forClass(String.class);
@@ -109,6 +118,23 @@ public class MsgPersistenceManagerImplTest {
 
         String lastApplicationClientId = applicationMsgQueuePublisherCaptor.getValue();
         assertEquals("appClientId4", lastApplicationClientId);
+    }
+
+    @Test
+    public void testProcessPublishWhenNoSubscriptions() {
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
+                null,
+                null,
+                null
+        );
+
+        msgPersistenceManager.processPublish(publishMsgProto, persistentMsgSubscriptions, null);
+
+        verify(deviceMsgQueuePublisher, times(0)).sendMsg(
+                any(), eq(publishMsgProto), any());
+        verify(applicationMsgQueuePublisher, times(0)).sendMsg(
+                any(), eq(publishMsgProto), any());
     }
 
     private Subscription createSubscription(String topicFilter, int qos, String clientId, ClientType type) {
@@ -138,6 +164,19 @@ public class MsgPersistenceManagerImplTest {
 
         //wantedNumberOfInvocations = 2 since we call msgPersistenceManager.startProcessingPersistedMessages 2 times
         verify(genericClientSessionCtxManager, times(2)).resendPersistedPubRelMessages(eq(ctx));
+    }
+
+    @Test
+    public void testStartProcessingSharedSubscriptions() {
+        Set<TopicSharedSubscription> subscriptions = Set.of(new TopicSharedSubscription("#", "g1"));
+
+        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
+        verify(applicationPersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
+
+        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
+        verify(devicePersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
     }
 
     @Test

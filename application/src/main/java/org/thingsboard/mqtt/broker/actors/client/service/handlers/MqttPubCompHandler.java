@@ -32,7 +32,9 @@ public class MqttPubCompHandler {
     private final RetransmissionService retransmissionService;
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        log.trace("[{}][{}] Received PUBCOMP msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Received PUBCOMP msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
+        }
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubComp(ctx, messageId);
         }

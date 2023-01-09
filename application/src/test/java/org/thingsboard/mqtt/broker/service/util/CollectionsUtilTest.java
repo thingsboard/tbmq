@@ -33,7 +33,7 @@ import java.util.Set;
 public class CollectionsUtilTest {
 
     private static Comparator<TopicSubscription> getComparator() {
-        return Comparator.comparing(TopicSubscription::getTopic).thenComparing(TopicSubscription::getQos);
+        return Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos);
     }
 
     @Test
@@ -44,9 +44,9 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(2, addedSubscriptions.size());
         List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
-        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(1, addedSubscriptionsList.get(0).getQos());
-        Assert.assertEquals("3", addedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals("3", addedSubscriptionsList.get(1).getTopicFilter());
         Assert.assertEquals(0, addedSubscriptionsList.get(1).getQos());
     }
 
@@ -58,7 +58,7 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(1, addedSubscriptions.size());
         List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
-        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("1", addedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(0, addedSubscriptionsList.get(0).getQos());
     }
 
@@ -78,7 +78,7 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(1, addedSubscriptions.size());
         List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
-        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(2, addedSubscriptionsList.get(0).getQos());
     }
 
@@ -90,9 +90,9 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(2, removedSubscriptions.size());
         List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
-        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(0, removedSubscriptionsList.get(0).getQos());
-        Assert.assertEquals("2", removedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals("2", removedSubscriptionsList.get(1).getTopicFilter());
         Assert.assertEquals(0, removedSubscriptionsList.get(1).getQos());
     }
 
@@ -104,7 +104,7 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(1, removedSubscriptions.size());
         List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
-        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("1", removedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(0, removedSubscriptionsList.get(0).getQos());
     }
 
@@ -124,7 +124,7 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(1, removedSubscriptions.size());
         List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
-        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(1, removedSubscriptionsList.get(0).getQos());
     }
 
@@ -144,18 +144,18 @@ public class CollectionsUtilTest {
 
         Assert.assertEquals(2, removedSubscriptions.size());
         List<TopicSubscription> removedSubscriptionsList = new ArrayList<>(removedSubscriptions);
-        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("2", removedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(1, removedSubscriptionsList.get(0).getQos());
-        Assert.assertEquals("3", removedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals("3", removedSubscriptionsList.get(1).getTopicFilter());
         Assert.assertEquals(2, removedSubscriptionsList.get(1).getQos());
 
         Set<TopicSubscription> addedSubscriptions = CollectionsUtil.getAddedValues(newSubscriptions, prevSubscriptions, getComparator());
 
         Assert.assertEquals(2, addedSubscriptions.size());
         List<TopicSubscription> addedSubscriptionsList = new ArrayList<>(addedSubscriptions);
-        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopic());
+        Assert.assertEquals("2", addedSubscriptionsList.get(0).getTopicFilter());
         Assert.assertEquals(2, addedSubscriptionsList.get(0).getQos());
-        Assert.assertEquals("4", addedSubscriptionsList.get(1).getTopic());
+        Assert.assertEquals("4", addedSubscriptionsList.get(1).getTopicFilter());
         Assert.assertEquals(1, addedSubscriptionsList.get(1).getQos());
     }
 }

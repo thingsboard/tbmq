@@ -75,8 +75,10 @@ public class MqttSubscribeHandler {
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
-                ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
+                    ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
+        }
 
         List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, msg);
         if (CollectionUtils.isEmpty(codes)) {
@@ -109,7 +111,7 @@ public class MqttSubscribeHandler {
         }
 
         for (TopicSubscription subscription : topicSubscriptions) {
-            var topic = subscription.getTopic();
+            var topic = subscription.getTopicFilter();
 
             if (isSharedSubscriptionWithNoLocal(subscription)) {
                 log.warn("[{}] It is a Protocol Error to set the NoLocal option to true on a Shared Subscription.", ctx.getClientId());
@@ -229,7 +231,7 @@ public class MqttSubscribeHandler {
     }
 
     private List<RetainedMsg> getRetainedMessages(TopicSubscription topicSubscription) {
-        return retainedMsgService.getRetainedMessages(topicSubscription.getTopic());
+        return retainedMsgService.getRetainedMessages(topicSubscription.getTopicFilter());
     }
 
     private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
@@ -242,12 +244,16 @@ public class MqttSubscribeHandler {
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
-            log.debug("[{}] The client session is not persistent to process shared subscriptions!", ctx.getClientId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
+            }
             return;
         }
         Set<TopicSharedSubscription> topicSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
         if (CollectionUtils.isEmpty(topicSharedSubscriptions)) {
-            log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
+            }
             return;
         }
         ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, topicSharedSubscriptions);
@@ -290,7 +296,7 @@ public class MqttSubscribeHandler {
                 .stream()
                 .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
                 .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopic(), subscription.getShareName(), subscription.getQos())))
+                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
                 .keySet();
     }
 

@@ -74,7 +74,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        log.trace("[{}][{}] Processing msg: {}", clientId, sessionId, msg);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing msg: {}", clientId, sessionId, msg);
+        }
         clientSessionCtx.setChannel(ctx);
         try {
             if (!(msg instanceof MqttMessage)) {
@@ -153,7 +155,9 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         if (checkLimits(msg)) {
             clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
         } else {
-            log.debug("[{}][{}] Disconnecting client on rate limits detection!", clientId, sessionId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Disconnecting client on rate limits detection!", clientId, sessionId);
+            }
             disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, "Rate limits detected"));
         }
     }
@@ -219,11 +223,15 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     void disconnect(DisconnectReason reason) {
         if (clientId == null) {
-            log.debug("[{}] Session wasn't initialized yet, closing channel. Reason - {}.", sessionId, reason);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Session wasn't initialized yet, closing channel. Reason - {}.", sessionId, reason);
+            }
             try {
                 clientSessionCtx.closeChannel();
             } catch (Exception e) {
-                log.debug("[{}] Failed to close channel. Reason - {}.", sessionId, e.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Failed to close channel.", sessionId, e);
+                }
             }
         } else {
             disconnect(new MqttDisconnectMsg(sessionId, reason));

@@ -88,7 +88,9 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                     String topic = msg.getKey();
                     if (isRetainedMsgProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        log.debug("[{}] Encountered empty RetainedMsg.", topic);
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{}] Encountered empty RetainedMsg.", topic);
+                        }
                         allRetainedMsgs.remove(topic);
                     } else {
                         RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());

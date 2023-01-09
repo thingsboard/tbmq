@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -71,6 +72,8 @@ public class DisconnectServiceImplTest {
     RateLimitService rateLimitService;
     @MockBean
     MqttMessageGenerator mqttMessageGenerator;
+    @MockBean
+    AuthorizationRuleService authorizationRuleService;
 
     @SpyBean
     DisconnectServiceImpl disconnectService;

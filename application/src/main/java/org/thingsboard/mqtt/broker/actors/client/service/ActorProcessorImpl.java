@@ -99,8 +99,10 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void disconnectCurrentSession(ClientActorState state, ClientSessionCtx sessionCtx) {
-        log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
-                state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Session was in {} state while Actor received INIT message, prev sessionId - {}, new sessionId - {}.",
+                    state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
+        }
         state.updateSessionState(SessionState.DISCONNECTING);
         DisconnectReason reason = new DisconnectReason(DisconnectReasonType.ON_CONFLICTING_SESSIONS);
         disconnect(state, newDisconnectMsg(state.getCurrentSessionId(), reason));
@@ -147,7 +149,9 @@ public class ActorProcessorImpl implements ActorProcessor {
     @Override
     public void onDisconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg) {
         if (state.getCurrentSessionState() == SessionState.DISCONNECTED) {
-            log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Session is already disconnected.", state.getClientId(), state.getCurrentSessionId());
+            }
             return;
         }
 
@@ -169,7 +173,9 @@ public class ActorProcessorImpl implements ActorProcessor {
             // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc.)
             return authenticationService.authenticate(authContext);
         } catch (AuthenticationException e) {
-            log.debug("[{}] Authentication failed. Reason - {}.", authContext.getClientId(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Authentication failed.", authContext.getClientId(), e);
+            }
             return AuthResponse.builder().success(false).build();
         }
     }

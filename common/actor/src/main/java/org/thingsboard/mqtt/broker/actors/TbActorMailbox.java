@@ -56,7 +56,9 @@ public final class TbActorMailbox implements TbActorCtx {
 
     private void tryInit(int attempt) {
         try {
-            log.debug("[{}] Trying to init actor, attempt: {}", selfId, attempt);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Trying to init actor, attempt: {}", selfId, attempt);
+            }
             if (!destroyInProgress.get()) {
                 actor.init(this);
                 if (!destroyInProgress.get()) {
@@ -65,7 +67,9 @@ public final class TbActorMailbox implements TbActorCtx {
                 }
             }
         } catch (Throwable t) {
-            log.debug("[{}] Failed to init actor, attempt: {}", selfId, attempt, t);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Failed to init actor, attempt: {}", selfId, attempt, t);
+            }
             int attemptIdx = attempt + 1;
             InitFailureStrategy strategy = actor.onInitFailure(attempt, t);
             if (strategy.isStop() || (settings.getMaxActorInitAttempts() > 0 && attemptIdx > settings.getMaxActorInitAttempts())) {
@@ -73,11 +77,15 @@ public final class TbActorMailbox implements TbActorCtx {
                 system.stop(selfId);
             } else if (strategy.getRetryDelay() > 0) {
                 log.info("[{}] Failed to init actor, attempt {}, going to retry in attempts in {}ms", selfId, attempt, strategy.getRetryDelay());
-                log.debug("[{}] Error", selfId, t);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Error", selfId, t);
+                }
                 system.getScheduler().schedule(() -> dispatcher.getExecutor().execute(() -> tryInit(attemptIdx)), strategy.getRetryDelay(), TimeUnit.MILLISECONDS);
             } else {
                 log.info("[{}] Failed to init actor, attempt {}, going to retry immediately", selfId, attempt);
-                log.debug("[{}] Error", selfId, t);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Error", selfId, t);
+                }
                 dispatcher.getExecutor().execute(() -> tryInit(attemptIdx));
             }
         }
@@ -102,13 +110,19 @@ public final class TbActorMailbox implements TbActorCtx {
                 if (busy.compareAndSet(FREE, BUSY)) {
                     dispatcher.getExecutor().execute(this::processMailbox);
                 } else {
-                    log.trace("[{}] MessageBox is busy, new msg: {}", selfId, newMsg);
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] MessageBox is busy, new msg: {}", selfId, newMsg);
+                    }
                 }
             } else {
-                log.trace("[{}] MessageBox is empty, new msg: {}", selfId, newMsg);
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] MessageBox is empty, new msg: {}", selfId, newMsg);
+                }
             }
         } else {
-            log.trace("[{}] MessageBox is not ready, new msg: {}", selfId, newMsg);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] MessageBox is not ready, new msg: {}", selfId, newMsg);
+            }
         }
     }
 
@@ -121,10 +135,14 @@ public final class TbActorMailbox implements TbActorCtx {
             }
             if (msg != null) {
                 try {
-                    log.debug("[{}] Going to process message: {}", selfId, msg);
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Going to process message: {}", selfId, msg);
+                    }
                     actor.process(msg);
                 } catch (Throwable t) {
-                    log.debug("[{}] Failed to process message: {}", selfId, msg, t);
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Failed to process message: {}", selfId, msg, t);
+                    }
                     ProcessFailureStrategy strategy = actor.onProcessFailure(t);
                     if (strategy.isStop()) {
                         system.stop(selfId);

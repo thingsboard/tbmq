@@ -96,10 +96,11 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
         try {
             genericClientSessionCtxService.saveAllGenericClientSessionCtx(genericCtxList);
         } catch (Exception e) {
-            log.warn("Failed to save client contexts. Exception - {}, reason: {}.", e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
+            log.warn("Failed to save client contexts.", e);
         }
-        log.info("Successfully saved client contexts.");
+        if (log.isDebugEnabled()) {
+            log.debug("Successfully saved client contexts.");
+        }
     }
 
     private Collection<ClientSessionCtx> getAllClientSessionCtx() {

@@ -38,7 +38,9 @@ import java.util.stream.Collectors;
 @RunWith(MockitoJUnitRunner.class)
 public class AuthRulePatternsServiceSuiteTest {
 
-    private AuthorizationRuleService authorizationRuleService;
+    private static final String CLIENT_ID = "clientId";
+
+    private DefaultAuthorizationRuleService authorizationRuleService;
 
     @Before
     public void init() {
@@ -132,12 +134,12 @@ public class AuthRulePatternsServiceSuiteTest {
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("1/.*"))),
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("2/.*")))
         );
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(CLIENT_ID, "1/", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(CLIENT_ID, "2/", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
 
-        Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "3/123", authRulePatterns));
     }
 
     @Test
@@ -146,12 +148,12 @@ public class AuthRulePatternsServiceSuiteTest {
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("1/.*"))),
                 AuthRulePatterns.newInstance(Collections.emptyList())
         );
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(CLIENT_ID, "1/", authRulePatterns));
         Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
-        Assert.assertFalse(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "2/", authRulePatterns));
         Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
 
-        Assert.assertFalse(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "3/123", authRulePatterns));
     }
 
     @Test
@@ -160,12 +162,25 @@ public class AuthRulePatternsServiceSuiteTest {
                 AuthRulePatterns.newInstance(Collections.emptyList()),
                 AuthRulePatterns.newInstance(Collections.emptyList())
         );
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("1/", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("2/", authRulePatterns));
-        Assert.assertTrue(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "1/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "2/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "3/123", authRulePatterns));
+    }
 
-        Assert.assertTrue(authorizationRuleService.isPubAuthorized("3/123", authRulePatterns));
+    @Test
+    public void testSuccessfulRuleValidation4() {
+        List<AuthRulePatterns> authRulePatterns = List.of(
+                new AuthRulePatterns(List.of(Pattern.compile("2/.*")), List.of(Pattern.compile("1/.*"))),
+                AuthRulePatterns.newInstance(Collections.emptyList())
+        );
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "1/", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("1/123", authRulePatterns));
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(CLIENT_ID, "2/", authRulePatterns));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
+
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "3/123", authRulePatterns));
     }
 
     @Test
@@ -180,6 +195,21 @@ public class AuthRulePatternsServiceSuiteTest {
 
     @Test
     public void testSuccessfulRuleValidation_NoRule() {
-        Assert.assertTrue(authorizationRuleService.isSubAuthorized("123", Collections.emptyList()));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("123", Collections.emptyList()));
+    }
+
+    @Test
+    public void testPubAuthAndEvict() {
+        List<AuthRulePatterns> authRulePatterns = List.of(
+                AuthRulePatterns.newInstance(List.of(Pattern.compile(".*")))
+        );
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized(CLIENT_ID, "1/", authRulePatterns));
+
+        Assert.assertEquals(1, authorizationRuleService.getPublishAuthMap().size());
+        Assert.assertTrue(authorizationRuleService.getPublishAuthMap().get(CLIENT_ID).get("1/"));
+
+        authorizationRuleService.evict(CLIENT_ID);
+
+        Assert.assertEquals(0, authorizationRuleService.getPublishAuthMap().size());
     }
 }

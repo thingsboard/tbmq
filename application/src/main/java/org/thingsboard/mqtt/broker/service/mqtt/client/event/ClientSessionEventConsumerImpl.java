@@ -87,7 +87,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 if (msgs.isEmpty()) {
                     continue;
                 } else {
-                    log.debug("Going to process {} client session events", msgs.size());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Going to process {} client session events", msgs.size());
+                    }
                 }
                 // TODO: Possible issues:
                 //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
@@ -103,7 +105,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                     try {
                         Thread.sleep(pollDuration);
                     } catch (InterruptedException e2) {
-                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                        }
                     }
                 }
             }
@@ -124,9 +128,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
 
                 @Override
                 public void onFailure(Throwable t) {
-                    log.warn("[{}] Failed to process {} msg. Exception - {}, reason - {}.",
-                            clientId, msg.getValue().getEventType(), t.getClass().getSimpleName(), t.getMessage());
-                    log.trace("Detailed error:", t);
+                    log.warn("[{}] Failed to process {} msg.", clientId, msg.getValue().getEventType(), t);
                     latch.countDown();
                 }
             };
@@ -135,9 +137,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
             try {
                 clientSessionEventActorManager.sendSessionClusterManagementMsg(clientId, sessionClusterManagementMsg);
             } catch (Exception e) {
-                log.warn("[{}] Failed to send {} msg to actor. Exception - {}, reason - {}.", clientId, sessionClusterManagementMsg.getMsgType(),
-                        e.getClass().getSimpleName(), e.getMessage());
-                log.trace("Detailed error: ", e);
+                log.warn("[{}] Failed to send {} msg to actor.", clientId, sessionClusterManagementMsg.getMsgType(), e);
             }
         }
 

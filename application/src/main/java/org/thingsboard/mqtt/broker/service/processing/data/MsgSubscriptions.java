@@ -13,32 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing;
+package org.thingsboard.mqtt.broker.service.processing.data;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-import java.util.UUID;
+import java.util.List;
+import java.util.Set;
 
-@Slf4j
+@Data
 @RequiredArgsConstructor
-public class BasePublishMsgCallback implements PublishMsgCallback {
-    private final UUID id;
-    private final PackProcessingContext ctx;
+public class MsgSubscriptions {
 
-    @Override
-    public void onSuccess() {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] ON SUCCESS", id);
-        }
-        ctx.onSuccess(id);
-    }
+    private final List<Subscription> commonSubscriptions;
+    private final Set<Subscription> allApplicationSharedSubscriptions;
+    private final List<Subscription> targetDeviceSharedSubscriptions;
 
-    @Override
-    public void onFailure(Throwable t) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] ON FAILURE", id, t);
-        }
-        ctx.onFailure(id);
-    }
 }

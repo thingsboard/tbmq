@@ -97,14 +97,18 @@ public class DefaultTbActorSystem implements TbActorSystem {
         TbActorId actorId = creator.createActorId();
         TbActorMailbox actorMailbox = actors.get(actorId);
         if (actorMailbox != null) {
-            log.debug("Actor with id [{}] is already registered!", actorId);
+            if (log.isDebugEnabled()) {
+                log.debug("Actor with id [{}] is already registered!", actorId);
+            }
         } else {
             Lock actorCreationLock = actorCreationLocks.computeIfAbsent(actorId, id -> new ReentrantLock());
             actorCreationLock.lock();
             try {
                 actorMailbox = actors.get(actorId);
                 if (actorMailbox == null) {
-                    log.debug("Creating actor with id [{}]!", actorId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Creating actor with id [{}]!", actorId);
+                    }
                     TbActor actor = creator.createActor();
                     TbActorRef parentRef = null;
                     if (parent != null) {
@@ -121,7 +125,9 @@ public class DefaultTbActorSystem implements TbActorSystem {
                         parentChildMap.computeIfAbsent(parent, id -> ConcurrentHashMap.newKeySet()).add(actorId);
                     }
                 } else {
-                    log.debug("Actor with id [{}] is already registered!", actorId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Actor with id [{}] is already registered!", actorId);
+                    }
                 }
             } finally {
                 actorCreationLock.unlock();
@@ -190,7 +196,9 @@ public class DefaultTbActorSystem implements TbActorSystem {
                 stop(child);
             }
         }
-        log.debug("Stopping actor with id [{}]!", actorId);
+        if (log.isDebugEnabled()) {
+            log.debug("Stopping actor with id [{}]!", actorId);
+        }
         TbActorMailbox mailbox = actors.remove(actorId);
         if (mailbox != null) {
             mailbox.destroy();

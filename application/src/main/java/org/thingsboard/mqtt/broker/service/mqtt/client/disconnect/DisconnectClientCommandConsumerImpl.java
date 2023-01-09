@@ -77,7 +77,9 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
                     try {
                         Thread.sleep(pollDuration);
                     } catch (InterruptedException e2) {
-                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                        }
                     }
                 }
             }

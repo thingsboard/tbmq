@@ -92,7 +92,9 @@ public class ConnectServiceImpl implements ConnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         String clientId = actorState.getClientId();
 
-        log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
+        }
 
         validate(sessionCtx, msg);
 
@@ -145,7 +147,9 @@ public class ConnectServiceImpl implements ConnectService {
 
         var keepAliveSeconds = msg.getKeepAliveTimeSeconds();
         if (MqttVersion.MQTT_5 == mqttVersion && keepAliveSeconds > maxServerKeepAlive) {
-            log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
+            }
             keepAliveSeconds = maxServerKeepAlive;
         }
         return keepAliveSeconds;
@@ -229,11 +233,13 @@ public class ConnectServiceImpl implements ConnectService {
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {
         if (t == null) {
-            log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId());
+            }
         } else {
-            log.debug("[{}][{}] Client wasn't connected. Exception - {}, reason - {}.",
-                    clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), t.getClass().getSimpleName(), t.getMessage());
-            log.trace("Detailed error: ", t);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Client wasn't connected.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), t);
+            }
         }
     }
 
@@ -258,7 +264,9 @@ public class ConnectServiceImpl implements ConnectService {
 
     @PreDestroy
     public void destroy() {
-        log.debug("Shutting down executors");
+        if (log.isDebugEnabled()) {
+            log.debug("Shutting down executors");
+        }
         connectHandlerExecutor.shutdownNow();
     }
 }

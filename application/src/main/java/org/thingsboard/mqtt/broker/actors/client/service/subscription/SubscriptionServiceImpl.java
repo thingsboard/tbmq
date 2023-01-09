@@ -44,10 +44,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
+        }
         for (TopicSubscription topicSubscription : topicSubscriptions) {
             subscriptionTrie.put(
-                    topicSubscription.getTopic(),
+                    topicSubscription.getTopicFilter(),
                     new ClientSubscription(
                             clientId,
                             topicSubscription.getQos(),
@@ -59,11 +61,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void unsubscribe(String clientId, Collection<String> topicFilters) {
-        log.trace("Executing unsubscribe [{}] [{}]", clientId, topicFilters);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing unsubscribe [{}] [{}]", clientId, topicFilters);
+        }
         for (String topicFilter : topicFilters) {
             boolean successfullyDeleted = subscriptionTrie.delete(topicFilter, val -> clientId.equals(val.getClientId()));
             if (!successfullyDeleted) {
-                log.debug("[{}] Client wasn't subscribed to the topic filter {}", clientId, topicFilter);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Client wasn't subscribed to the topic filter {}", clientId, topicFilter);
+                }
             }
         }
     }
@@ -78,7 +84,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void clearEmptyTopicNodes() throws SubscriptionTrieClearException {
-        log.trace("Executing clearEmptyTopicNodes");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing clearEmptyTopicNodes");
+        }
         subscriptionTrie.clearEmptyNodes();
     }
 

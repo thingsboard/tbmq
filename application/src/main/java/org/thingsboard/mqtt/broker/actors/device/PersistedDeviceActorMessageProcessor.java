@@ -96,9 +96,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         try {
             persistedMessages.forEach(this::deliverPersistedMsg);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process persisted messages. Exception - {}, reason - {}", clientId,
-                    sessionCtx.getSessionId(), e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
+            log.warn("[{}][{}] Failed to process persisted messages.", clientId, sessionCtx.getSessionId(), e);
             disconnect("Failed to process persisted messages");
         }
     }
@@ -195,7 +193,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
         if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
-            log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
+            }
             return;
         }
 
@@ -216,8 +216,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private void checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(DevicePublishMsg publishMsg) {
         if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
             long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
-            log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
-                    clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
+                        clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+            }
 
             List<DevicePublishMsg> persistedMessages = findMissedPersistedMsgs(publishMsg, nextPersistedSerialNumber);
             try {
@@ -292,7 +294,11 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         ListenableFuture<Void> resultFuture = deviceMsgService.tryRemovePersistedMessage(targetClientId, packet.getPacketId());
         DonAsynchron.withCallback(
                 resultFuture,
-                unused -> log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId()),
+                unused -> {
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
+                    }
+                },
                 throwable -> log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), throwable)
         );
     }
@@ -307,10 +313,14 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {
         if (msg.getCommandUUID().equals(stopActorCommandUUID)) {
-            log.debug("[{}] Stopping DEVICE actor.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Stopping DEVICE actor.", clientId);
+            }
             ctx.stop(ctx.getSelf());
         } else {
-            log.debug("[{}] Device was reconnected, ignoring actor stop command.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Device was reconnected, ignoring actor stop command.", clientId);
+            }
         }
     }
 }

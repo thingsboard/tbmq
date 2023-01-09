@@ -57,7 +57,9 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void disconnect(String clientId, MqttDisconnectMsg disconnectMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
+            }
         } else {
             clientActorRef.tellWithHighPriority(disconnectMsg);
         }
@@ -67,7 +69,9 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void connect(String clientId, MqttConnectMsg connectMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
+            }
         } else {
             clientActorRef.tell(connectMsg);
         }

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -52,6 +53,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final ClientSessionEventService clientSessionEventService;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final AuthorizationRuleService authorizationRuleService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -59,11 +61,15 @@ public class DisconnectServiceImpl implements DisconnectService {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
 
         if (sessionCtx.getSessionInfo() == null) {
-            log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
+            }
             return;
         }
 
-        log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        }
 
         if (needSendDisconnectToClient(sessionCtx, reason)) {
             MqttReasonCode code = MqttReasonCodeResolver.disconnect(reason.getType());
@@ -81,9 +87,12 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         notifyClientDisconnected(actorState, sessionExpiryInterval);
         rateLimitService.remove(sessionCtx.getClientId());
+        authorizationRuleService.evict(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
-        log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}][{}] Client disconnected due to {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+        }
     }
 
     private Integer getSessionExpiryInterval(MqttProperties properties) {
@@ -105,12 +114,16 @@ public class DisconnectServiceImpl implements DisconnectService {
         try {
             sessionCtx.closeChannel();
         } catch (Exception e) {
-            log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}][{}] Failed to close channel.", sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            }
         }
     }
 
     void notifyClientDisconnected(ClientActorStateInfo actorState, Integer sessionExpiryInterval) {
-        log.trace("Executing notifyClientDisconnected");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing notifyClientDisconnected");
+        }
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
             clientSessionEventService.notifyClientDisconnected(
