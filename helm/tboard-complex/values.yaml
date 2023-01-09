@@ -1,0 +1,32 @@
+# Default values for mqttBroker.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+nameOverride: "tb-complex"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+broker:
+  replicas: 1
+  imageName: vampir/tb-mqtt-broker:1.0.0-SNAPSHOT
+  imagePullPolicy: IfNotPresent
+
+databaseSetup:
+  imageName: vampir/tb-mqtt-broker:1.0.0-SNAPSHOT
+  imagePullPolicy: IfNotPresent
+
+postgresql:
+  fullnameOverride: postgres
+  springJpaDatabasePlatform: org.hibernate.dialect.PostgreSQLDialect
+  springDriverClassname: org.postgresql.Driver
+  springDataSourceUsername: postgres
+  auth:
+    database: thingsboard_mqtt_broker
+    postgresPassword: postgres
+kafka:
+  fullnameOverride: "kafka"
+
