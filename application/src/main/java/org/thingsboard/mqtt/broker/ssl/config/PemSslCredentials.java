@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.ssl.config;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -26,7 +27,12 @@ import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 import org.thingsboard.mqtt.broker.common.data.ResourceUtils;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 
@@ -47,6 +53,7 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 public class PemSslCredentials extends AbstractSslCredentials {
 
     private static final String DEFAULT_KEY_ALIAS = "server";
@@ -83,6 +90,13 @@ public class PemSslCredentials extends AbstractSslCredentials {
                         privateKey = keyConverter.getKeyPair((PEMKeyPair) object).getPrivate();
                     } else if (object instanceof PrivateKeyInfo) {
                         privateKey = keyConverter.getPrivateKey((PrivateKeyInfo) object);
+                    } else if (object instanceof PKCS8EncryptedPrivateKeyInfo) {
+                        try {
+                            InputDecryptorProvider decProv = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPasswordArray);
+                            privateKey = keyConverter.getPrivateKey(((PKCS8EncryptedPrivateKeyInfo) object).decryptPrivateKeyInfo(decProv));
+                        } catch (OperatorCreationException | PKCSException e) {
+                            log.error("Failure during private key decryption from certFile", e);
+                        }
                     }
                 }
             }
@@ -102,6 +116,13 @@ public class PemSslCredentials extends AbstractSslCredentials {
                                 break;
                             } else if (object instanceof PrivateKeyInfo) {
                                 privateKey = keyConverter.getPrivateKey((PrivateKeyInfo) object);
+                            } else if (object instanceof PKCS8EncryptedPrivateKeyInfo) {
+                                try {
+                                    InputDecryptorProvider decProv = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPasswordArray);
+                                    privateKey = keyConverter.getPrivateKey(((PKCS8EncryptedPrivateKeyInfo) object).decryptPrivateKeyInfo(decProv));
+                                } catch (OperatorCreationException | PKCSException e) {
+                                    log.error("Failure during private key decryption from keyFile", e);
+                                }
                             }
                         }
                     }
