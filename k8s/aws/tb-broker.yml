@@ -96,7 +96,7 @@ spec:
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
               value: "0"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:21474836480;partitions:10;replication.factor:1;max.message.bytes:8388608"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:10;replication.factor:1;max.message.bytes:8388608"
             - name: TB_KAFKA_DEFAULT_PRODUCER_RETRIES
               value: "5"
             - name: TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE
@@ -134,7 +134,7 @@ spec:
             - name: TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:5;replication.factor:1"
             - name: TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1;max.message.bytes:8388608"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:10485760000;replication.factor:1;max.message.bytes:8388608"
             - name: ANALYSIS_LOG_CLIENT_IDS
               value: ""
             - name: TCP_NETTY_LEAK_DETECTOR_LVL
