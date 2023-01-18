@@ -49,10 +49,10 @@ spec:
           resources:
             limits:
               cpu: 7.5
-              memory: 10Gi
+              memory: 20Gi
             requests:
               cpu: 7.5
-              memory: 10Gi
+              memory: 20Gi
           ports:
             - containerPort: 8083
               name: http

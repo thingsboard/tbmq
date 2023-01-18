@@ -32,7 +32,7 @@ managedNodeGroups:
     minSize: 1
     labels: { role: tb-mqtt-broker }
   - name: tb-perf-test
-    instanceType: m5.xlarge
+    instanceType: c5.large
     desiredCapacity: 1
     maxSize: 21
     minSize: 1
