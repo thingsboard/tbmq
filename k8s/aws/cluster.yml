@@ -37,3 +37,7 @@ managedNodeGroups:
     maxSize: 21
     minSize: 1
     labels: { role: tb-perf-test }
+
+# In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
+# eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
+# eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-perf-test
