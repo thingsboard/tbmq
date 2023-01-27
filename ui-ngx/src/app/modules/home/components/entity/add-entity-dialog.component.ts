@@ -49,12 +49,10 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
 
   entityComponent: EntityComponent<BaseData>;
   detailsForm: FormGroup;
-
   entitiesTableConfig: EntityTableConfig<BaseData>;
   translations: EntityTypeTranslation;
   resources: EntityTypeResource<BaseData>;
   entity: BaseData;
-
   submitted = false;
 
   @ViewChild('entityDetailsForm', {static: true}) entityDetailsFormAnchor: TbAnchorComponent;

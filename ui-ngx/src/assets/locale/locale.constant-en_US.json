@@ -328,7 +328,9 @@
       "parent-certificate-common-name": "Parent certificate common name",
       "parent-certificate-common-name-required": "Parent certificate common name is required",
       "username": "Username",
-      "user-name-required": "User Name is required."
+      "user-name-required": "User Name is required.",
+      "hint-client-type-application": "hint-client-type-application",
+      "hint-client-type-device": "hint-client-type-device"
     },
     "mqtt-client-session": {
       "add": "Add session",
