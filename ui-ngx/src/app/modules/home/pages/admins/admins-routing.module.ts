@@ -18,18 +18,18 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { AdminsTableConfigResolver } from "@home/pages/admins/admins-table-config-resolver.service";
+import { AdminsTableConfigResolver } from '@home/pages/admins/admins-table-config-resolver.service';
 
 const routes: Routes = [
   {
-    path: 'admins',
+    path: 'users',
     component: EntitiesTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'user.admins',
+      title: 'user.users',
       breadcrumb: {
-        label: 'user.admins',
-        icon: 'mdi:email',
+        label: 'user.users',
+        icon: 'mdi:account-multiple-outline',
         isMdiIcon: true
       }
     },

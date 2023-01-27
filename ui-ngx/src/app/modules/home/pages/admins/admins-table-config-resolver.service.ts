@@ -29,14 +29,17 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
 import { DialogService } from '@core/services/dialog.service';
-import { User } from "@shared/models/user.model";
-import { AdminComponent } from "@home/pages/admins/admin.component";
-import { AdminService } from "@core/http/admin.service";
+import { User } from '@shared/models/user.model';
+import { AdminComponent } from '@home/pages/admins/admin.component';
+import { AdminService } from '@core/http/admin.service';
+import { AuthorityTranslationMap } from '@shared/models/authority.enum';
 
 @Injectable()
 export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User>> {
 
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
+
+  private readonly authorityTranslationMap = AuthorityTranslationMap;
 
   constructor(private store: Store<AppState>,
               private dialogService: DialogService,
@@ -48,15 +51,17 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
     this.config.entityComponent = AdminComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
-    this.config.tableTitle = this.translate.instant('user.admins');
+    this.config.tableTitle = this.translate.instant('user.users');
     this.config.entitiesDeleteEnabled = false;
     this.config.entityTitle = (user) => user ? user.email : '';
 
     this.config.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<User>('firstName', 'user.first-name', '33%'),
-      new EntityTableColumn<User>('lastName', 'user.last-name', '33%'),
-      new EntityTableColumn<User>('email', 'user.email', '33%')
+      new EntityTableColumn<User>('email', 'user.email', '25%'),
+      new EntityTableColumn<User>('authority', 'user.role', '25%',
+        entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority))),
+      new EntityTableColumn<User>('firstName', 'user.first-name', '25%'),
+      new EntityTableColumn<User>('lastName', 'user.last-name', '25%')
     );
 
     this.config.addActionDescriptors.push(
@@ -79,7 +84,6 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
   }
 
   resolve(): EntityTableConfig<User> {
-    const authUser = getCurrentAuthUser(this.store);
     this.config.entitiesFetchFunction = pageLink => this.adminService.getAdmins(pageLink);
     return this.config;
   }

@@ -212,6 +212,7 @@
     },
     "user": {
         "admins": "Admins",
+        "administrator": "Administrator",
         "user": "User",
         "users": "Users",
         "customer-users": "Customer Users",
@@ -265,7 +266,8 @@
         "type-user": "User",
         "type-users": "Users",
         "list-of-users": "{ count, plural, 1 {One user} other {List of # users} }",
-        "user-name-starts-with": "Users whose names start with '{{prefix}}'"
+        "user-name-starts-with": "Users whose names start with '{{prefix}}'",
+        "role": "Role"
     },
     "custom": {},
     "language": {

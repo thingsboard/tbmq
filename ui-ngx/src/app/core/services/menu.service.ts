@@ -63,10 +63,11 @@ export class MenuService {
     sections.push(
       {
         id: guid(),
-        name: 'user.admins',
+        name: 'user.users',
         type: 'link',
-        path: '/admins',
-        icon: 'account_circle'
+        path: '/users',
+        icon: 'mdi:account-multiple-outline',
+        isMdiIcon: true
       },
       {
         id: guid(),

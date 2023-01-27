@@ -19,3 +19,9 @@ export enum Authority {
   REFRESH_TOKEN = 'REFRESH_TOKEN',
   ANONYMOUS = 'ANONYMOUS'
 }
+
+export const AuthorityTranslationMap = new Map<Authority, string>(
+  [
+    [Authority.SYS_ADMIN, 'user.administrator'],
+  ]
+);
