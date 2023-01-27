@@ -297,6 +297,7 @@
       "client-credentials": "Client Credentials",
       "client-id-or-user-name-necessary": "Client ID and/or User Name are necessary",
       "client-credentials-details": "Client Credentials details",
+      "credentials": "Credentials",
       "copy-id": "Copy Id",
       "copy-client-credentials-id": "Copy Credentials Id",
       "delete-client-credentials": "Delete Client Credentials",

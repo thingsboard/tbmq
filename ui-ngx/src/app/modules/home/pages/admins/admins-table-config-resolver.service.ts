@@ -27,7 +27,6 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
 import { DialogService } from '@core/services/dialog.service';
 import { User } from '@shared/models/user.model';
 import { AdminComponent } from '@home/pages/admins/admin.component';

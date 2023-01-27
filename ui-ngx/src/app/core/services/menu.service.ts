@@ -71,7 +71,7 @@ export class MenuService {
       },
       {
         id: guid(),
-        name: 'mqtt-client-credentials.client-credentials',
+        name: 'mqtt-client-credentials.credentials',
         type: 'link',
         path: '/client-credentials',
         icon: 'mdi:shield-lock',
