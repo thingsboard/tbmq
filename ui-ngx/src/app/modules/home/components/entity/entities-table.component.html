@@ -50,13 +50,14 @@
                 <mat-icon>add</mat-icon>
               </button>
               <ng-template #addActions>
-                <button mat-icon-button [disabled]="isLoading$ | async"
+                <button mat-stroked-button [disabled]="isLoading$ | async"
                         *ngIf="entitiesTableConfig.addActionDescriptors.length === 1; else addActionsMenu"
                         [fxShow]="entitiesTableConfig.addActionDescriptors[0].isEnabled()"
                         (click)="entitiesTableConfig.addActionDescriptors[0].onAction($event)"
                         matTooltip="{{ entitiesTableConfig.addActionDescriptors[0].name }}"
                         matTooltipPosition="above">
-                  <mat-icon>{{entitiesTableConfig.addActionDescriptors[0].icon}}</mat-icon>
+<!--                  <mat-icon>{{entitiesTableConfig.addActionDescriptors[0].icon}}</mat-icon>-->
+                  {{ 'action.add' | translate }}
                 </button>
                 <ng-template #addActionsMenu>
                   <button mat-icon-button [disabled]="isLoading$ | async"
