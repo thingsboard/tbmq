@@ -19,5 +19,6 @@ public class CacheConstants {
 
     public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
+    public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
 
 }

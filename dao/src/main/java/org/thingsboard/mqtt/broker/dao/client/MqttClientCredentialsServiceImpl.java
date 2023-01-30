@@ -114,7 +114,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         List<MqttClientCredentials> result = Lists.newArrayList();
         List<String> credentialIdsFromDb = Lists.newArrayList();
 
-        Cache cache = getCache();
+        Cache cache = getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
         for (var credentialsId : credentialIds) {
             var clientCredentials = cache.get(credentialsId, MqttClientCredentials.class);
             if (clientCredentials != null) {
@@ -224,14 +224,15 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     private void evictCache(MqttClientCredentials clientCredentials) {
-        Cache cache = getCache();
+        Cache cache = getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
         if (clientCredentials != null) {
             cache.evictIfPresent(clientCredentials.getCredentialsId());
         }
+        getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE).invalidate();
     }
 
-    private Cache getCache() {
-        return cacheManager.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+    private Cache getCache(String cacheName) {
+        return cacheManager.getCache(cacheName);
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =
