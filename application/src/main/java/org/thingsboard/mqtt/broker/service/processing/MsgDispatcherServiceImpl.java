@@ -160,15 +160,22 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
                                       List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
-        for (Subscription subscription : subscriptions) {
-            if (needToBePersisted(publishMsgProto, subscription)) {
-                if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
-                    applicationSubscriptions.add(subscription);
-                } else {
-                    deviceSubscriptions.add(subscription);
-                }
-            } else {
+        boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
+        if (nonPersistentByPubQos) {
+            for (Subscription subscription : subscriptions) {
                 sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription);
+            }
+        } else {
+            for (Subscription subscription : subscriptions) {
+                if (isPersistentBySubInfo(subscription)) {
+                    if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
+                        applicationSubscriptions.add(subscription);
+                    } else {
+                        deviceSubscriptions.add(subscription);
+                    }
+                } else {
+                    sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription);
+                }
             }
         }
     }
@@ -353,10 +360,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
     }
 
-    private boolean needToBePersisted(PublishMsgProto publishMsgProto, Subscription subscription) {
-        return getSessionInfo(subscription).isPersistent()
-                && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value()
-                && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
+    private boolean isPersistentBySubInfo(Subscription subscription) {
+        return getSessionInfo(subscription).isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
     private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
