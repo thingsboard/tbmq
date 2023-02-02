@@ -117,6 +117,10 @@ queue:
       type: "${TB_PUBLISH_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
       retries: "${TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
+    # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
+    # Helpful when the same client publishes lots of messages in a short amount of time.
+    # It is recommended to count the impact of this parameter before setting it on production.
+    msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:true}"
   application-persisted-msg:
     publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"

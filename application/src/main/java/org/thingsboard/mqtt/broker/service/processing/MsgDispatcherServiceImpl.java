@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -354,13 +353,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
     }
 
-    private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+    private boolean needToBePersisted(PublishMsgProto publishMsgProto, Subscription subscription) {
         return getSessionInfo(subscription).isPersistent()
                 && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value()
                 && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
-    private void sendToNode(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+    private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
         var targetServiceId = getSessionInfo(subscription).getServiceId();
         var clientId = getSessionInfo(subscription).getClientInfo().getClientId();
         downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
@@ -370,7 +369,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return subscription.getClientSession().getSessionInfo();
     }
 
-    private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+    private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
         var retain = subscription.getOptions().isRetain(publishMsgProto);
         return publishMsgProto.toBuilder()

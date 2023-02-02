@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,7 +31,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class BurstSubmitStrategy implements SubmitStrategy {
+
     private final String consumerId;
+    private final boolean processInParallel;
 
     private List<PublishMsgWithId> orderedMsgList;
 
@@ -49,7 +52,15 @@ public class BurstSubmitStrategy implements SubmitStrategy {
         if (log.isDebugEnabled()) {
             log.debug("Consumer [{}] processing [{}] messages.", consumerId, orderedMsgList.size());
         }
-        orderedMsgList.forEach(msgConsumer::accept);
+        if (processInParallel) {
+            Map<String, List<PublishMsgWithId>> msgsByClientMap = collectToMapByClientId();
+            msgsByClientMap
+                    .values()
+                    .parallelStream()
+                    .forEach(clientMsgList -> processMessages(msgConsumer, clientMsgList));
+        } else {
+            processMessages(msgConsumer, orderedMsgList);
+        }
     }
 
     @Override
@@ -61,5 +72,24 @@ public class BurstSubmitStrategy implements SubmitStrategy {
             }
         }
         orderedMsgList = newOrderedMsgList;
+    }
+
+    private Map<String, List<PublishMsgWithId>> collectToMapByClientId() {
+        Map<String, List<PublishMsgWithId>> map = new HashMap<>();
+        for (var msg : orderedMsgList) {
+            var clientId = getClientId(msg);
+            map.computeIfAbsent(clientId, id -> new ArrayList<>()).add(msg);
+        }
+        return map;
+    }
+
+    private String getClientId(PublishMsgWithId msg) {
+        return msg.getPublishMsgProto().getSessionInfo().getClientInfo().getClientId();
+    }
+
+    private void processMessages(Consumer<PublishMsgWithId> msgConsumer, List<PublishMsgWithId> msgList) {
+        for (var msg : msgList) {
+            msgConsumer.accept(msg);
+        }
     }
 }

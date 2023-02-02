@@ -16,12 +16,17 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
 public class SubmitStrategyFactory {
+
+    @Value("${queue.publish-msg.msg-parallel-processing:false}")
+    private boolean processInParallel;
+
     public SubmitStrategy newInstance(String consumerId) {
-        return new BurstSubmitStrategy(consumerId);
+        return new BurstSubmitStrategy(consumerId, processInParallel);
     }
 }
