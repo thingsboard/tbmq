@@ -116,8 +116,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             try {
                 persistedMessages.forEach(this::deliverPersistedMsg);
             } catch (Exception e) {
-                log.warn("[{}][{}] Failed to process shared subscription persisted messages. Exception - {}, reason - {}", clientId,
-                        sessionCtx.getSessionId(), e.getClass().getSimpleName(), e);
+                log.warn("[{}][{}] Failed to process shared subscription persisted messages.", clientId, sessionCtx.getSessionId(), e);
                 disconnect("Failed to process shared subscription persisted messages");
             }
             deviceSessionCtxService.removeDeviceSessionContext(key);

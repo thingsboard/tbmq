@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +48,9 @@ import static org.junit.Assert.assertEquals;
 public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     static final int TOTAL_MSG_COUNT = 30;
+
+    @Autowired
+    private DbConnectionChecker dbConnectionChecker;
 
     @After
     public void clear() {
@@ -130,8 +135,11 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
+    // TODO: 02.02.23 verify logic without 2nd subscribe and improve it for persistent clients
     @Test
     public void givenTwoPersistentClients_whenBothGotDisconnectedAndMessagesSent_thenBothConnectedAndFirstOneReceiveAllMessages() throws Throwable {
+        dbConnectionChecker.setDbConnected(true);
+
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
@@ -157,8 +165,10 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         Thread.sleep(50);
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);

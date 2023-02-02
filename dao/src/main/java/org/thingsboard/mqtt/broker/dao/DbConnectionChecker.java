@@ -16,5 +16,12 @@
 package org.thingsboard.mqtt.broker.dao;
 
 public interface DbConnectionChecker {
+
     boolean isDbConnected();
+
+    /**
+     * should be used for tests only
+     */
+    void setDbConnected(boolean value);
+
 }

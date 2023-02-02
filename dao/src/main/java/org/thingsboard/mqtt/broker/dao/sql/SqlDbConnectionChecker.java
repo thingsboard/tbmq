@@ -39,6 +39,11 @@ public class SqlDbConnectionChecker implements DbConnectionChecker {
         return connected.get();
     }
 
+    @Override
+    public void setDbConnected(boolean value) {
+        connected.set(value);
+    }
+
     @Scheduled(fixedRateString = "${db.connection-check-rate-ms:10000}")
     private void checkConnection() {
         try {
