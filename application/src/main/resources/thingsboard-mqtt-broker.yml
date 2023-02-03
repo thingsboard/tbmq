@@ -338,6 +338,10 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 mqtt:
+  # enable/disable processing of found subscriptions in parallel for published messages.
+  # Helpful when the "PUBLISH" message should be delivered to lots of subscribers.
+  # It is recommended to count the impact of this parameter before setting it on production.
+  msg-subscriptions-parallel-processing: "${MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING:false}"
   pre-connect-queue:
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
