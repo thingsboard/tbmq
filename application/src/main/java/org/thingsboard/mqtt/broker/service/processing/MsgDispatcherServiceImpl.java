@@ -55,12 +55,12 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -335,10 +335,18 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
 
-        return filteredClientSubscriptions.stream()
-                .map(this::convertToSubscription)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        return getSubscriptions(filteredClientSubscriptions);
+    }
+
+    private List<Subscription> getSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions) {
+        List<Subscription> subscriptions = new ArrayList<>(filteredClientSubscriptions.size());
+        for (var filteredClientSubscription : filteredClientSubscriptions) {
+            Subscription subscription = convertToSubscription(filteredClientSubscription);
+            if (subscription != null) {
+                subscriptions.add(subscription);
+            }
+        }
+        return subscriptions;
     }
 
     private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
@@ -360,14 +368,23 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        return clientSubscriptionWithTopicFilterList.stream()
-                .filter(clientSubsWithTopicFilter -> !isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId))
-                .collect(Collectors.toMap(
-                        clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
-                        Function.identity(),
-                        this::getSubscriptionWithHigherQos)
-                )
-                .values();
+        Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
+
+        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
+            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
+            if (noLocalOptionMet) {
+                continue;
+            }
+
+            var clientId = clientSubsWithTopicFilter.getValue().getClientId();
+            var value = map.get(clientId);
+            if (value != null) {
+                map.put(clientId, getSubscriptionWithHigherQos(value, clientSubsWithTopicFilter));
+            } else {
+                map.put(clientId, clientSubsWithTopicFilter);
+            }
+        }
+        return map.values();
     }
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
@@ -381,8 +398,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    private ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
-                                                                                  ValueWithTopicFilter<ClientSubscription> second) {
+    ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
+                                                                          ValueWithTopicFilter<ClientSubscription> second) {
         return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
     }
 

@@ -92,6 +92,20 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
+    public void testGetSubscriptionWithHigherQos() {
+        ClientSubscription clientSubscription1 = newClientSubscription("id", 1, null);
+        ClientSubscription clientSubscription2 = newClientSubscription("id", 0, null);
+
+        ValueWithTopicFilter<ClientSubscription> value1 = new ValueWithTopicFilter<>(clientSubscription1, "#");
+        ValueWithTopicFilter<ClientSubscription> value2 = new ValueWithTopicFilter<>(clientSubscription2, "test/+");
+
+        ValueWithTopicFilter<ClientSubscription> result =
+                msgDispatcherService.getSubscriptionWithHigherQos(value1, value2);
+
+        assertEquals(result, value1);
+    }
+
+    @Test
     public void testConvertToSharedSubscriptionList() {
         Set<Subscription> subscriptions = Set.of(
                 newSubscription(0, "group1"),
