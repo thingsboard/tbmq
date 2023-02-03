@@ -120,7 +120,7 @@ queue:
     # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
     # Helpful when the same client publishes lots of messages in a short amount of time.
     # It is recommended to count the impact of this parameter before setting it on production.
-    msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:true}"
+    msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
     publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
