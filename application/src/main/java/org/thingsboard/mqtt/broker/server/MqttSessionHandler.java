@@ -178,7 +178,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private String generateClientId() {
-        return UUID.randomUUID().toString().replaceAll("-", "");
+        return UUID.randomUUID().toString().replaceAll("-", BrokerConstants.EMPTY_STR);
     }
 
     private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {

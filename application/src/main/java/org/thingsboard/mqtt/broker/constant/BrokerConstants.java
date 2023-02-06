@@ -29,6 +29,7 @@ public class BrokerConstants {
     public static final int SHARE_NAME_IDX = SHARED_SUBSCRIPTION_PREFIX.length();
 
     public static final String SERVICE_ID_HEADER = "serviceId";
+    public static final String EMPTY_STR = "";
 
     public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
     public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();

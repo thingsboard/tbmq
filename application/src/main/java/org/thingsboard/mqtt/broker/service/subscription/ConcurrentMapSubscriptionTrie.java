@@ -67,7 +67,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         }
         List<ValueWithTopicFilter<T>> result = new ArrayList<>();
         Stack<TopicPosition<T>> topicPositions = new Stack<>();
-        topicPositions.add(new TopicPosition<>("", 0, root));
+        topicPositions.add(new TopicPosition<>(BrokerConstants.EMPTY_STR, 0, root));
 
         while (!topicPositions.isEmpty()) {
             TopicPosition<T> topicPosition = topicPositions.pop();

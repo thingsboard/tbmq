@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
@@ -69,7 +70,7 @@ public abstract class BaseController {
             log.error("Error [{}]", exception.getMessage(), exception);
         }
 
-        String cause = "";
+        String cause = BrokerConstants.EMPTY_STR;
         if (exception.getCause() != null) {
             cause = exception.getCause().getClass().getCanonicalName();
         }

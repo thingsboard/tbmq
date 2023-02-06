@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 
@@ -27,7 +28,7 @@ import java.util.UUID;
 public class ClientSessionInfoFactory {
 
     public static ClientSessionInfo getClientSessionInfo(String clientId) {
-        return getClientSessionInfo(clientId, "serviceId");
+        return getClientSessionInfo(clientId, BrokerConstants.SERVICE_ID_HEADER);
     }
 
     public static ClientSessionInfo getClientSessionInfo(String clientId, String serviceId) {
