@@ -52,8 +52,27 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     @Autowired
     private DbConnectionChecker dbConnectionChecker;
 
+    private MqttClient shareSubClient1;
+    private MqttClient shareSubClient2;
+
     @After
-    public void clear() {
+    public void clear() throws Exception {
+        MqttClientConfig config = new MqttClientConfig();
+        config.setCleanSession(true);
+        disconnectWithCleanSession(shareSubClient1, config);
+        disconnectWithCleanSession(shareSubClient2, config);
+    }
+
+    private void disconnectWithCleanSession(MqttClient client, MqttClientConfig config) throws Exception {
+        if (client != null) {
+            if (client.isConnected()) {
+                client.disconnect();
+                Thread.sleep(50);
+            }
+            client = MqttClient.create(config, null);
+            client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+            client.disconnect();
+        }
     }
 
     @Test
@@ -64,8 +83,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        MqttClient shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        MqttClient shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
         shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE);
         shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE);
@@ -146,8 +165,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        MqttClient shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
-        MqttClient shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
         shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
