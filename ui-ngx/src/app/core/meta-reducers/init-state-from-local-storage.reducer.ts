@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 /// limitations under the License.
 ///
 
-import { ActionReducer, INIT, UPDATE } from '@ngrx/store';
+import {ActionReducer, INIT, UPDATE} from '@ngrx/store';
 
-import { LocalStorageService } from '../local-storage/local-storage.service';
-import { AppState } from '../core.state';
+import {LocalStorageService} from '../local-storage/local-storage.service';
+import {AppState} from '../core.state';
 
 export function initStateFromLocalStorage(
   reducer: ActionReducer<AppState>

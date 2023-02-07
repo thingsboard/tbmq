@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { PageComponent } from '@shared/components/page.component';
-import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AdminSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
-import { MailServerService } from '@core/http/mail-server.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
-import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
-import { isDefinedAndNotNull, isString } from '@core/utils';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {PageComponent} from '@shared/components/page.component';
+import {Router} from '@angular/router';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {AdminSettings, MailServerSettings, smtpPortPattern} from '@shared/models/settings.models';
+import {MailServerService} from '@core/http/mail-server.service';
+import {ActionNotificationShow} from '@core/notification/notification.actions';
+import {TranslateService} from '@ngx-translate/core';
+import {HasConfirmForm} from '@core/guards/confirm-on-exit.guard';
+import {isDefinedAndNotNull, isString} from '@core/utils';
+import {Subject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
 
 @Component({
   selector: 'tb-mail-server',

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import { Component, HostListener, Input } from '@angular/core';
-import { PageComponent } from '@shared/components/page.component';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { speedDialFabAnimations } from '@shared/animations/speed-dial-fab.animations';
-import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import {Component, HostListener, Input} from '@angular/core';
+import {PageComponent} from '@shared/components/page.component';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {speedDialFabAnimations} from '@shared/animations/speed-dial-fab.animations';
+import {coerceBooleanProperty} from '@angular/cdk/coercion';
 
 export interface FooterFabButton {
   name: string;

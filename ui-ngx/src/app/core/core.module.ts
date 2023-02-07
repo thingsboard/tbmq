@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HTTP_INTERCEPTORS, HttpClient, HttpClientModule } from '@angular/common/http';
-import { StoreModule } from '@ngrx/store';
-import { EffectsModule } from '@ngrx/effects';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
-import { GlobalHttpInterceptor } from './interceptors/global-http-interceptor';
-import { effects, metaReducers, reducers } from './core.state';
-import { environment as env } from '@env/environment';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule} from '@angular/common/http';
+import {StoreModule} from '@ngrx/store';
+import {EffectsModule} from '@ngrx/effects';
+import {StoreDevtoolsModule} from '@ngrx/store-devtools';
+import {GlobalHttpInterceptor} from './interceptors/global-http-interceptor';
+import {effects, metaReducers, reducers} from './core.state';
+import {environment as env} from '@env/environment';
 
 import {
   MissingTranslationHandler,
@@ -31,15 +31,15 @@ import {
   TranslateModule,
   TranslateParser
 } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { TbMissingTranslationHandler } from './translate/missing-translate-handler';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { FlexLayoutModule } from '@angular/flex-layout';
-import { TranslateDefaultCompiler } from '@core/translate/translate-default-compiler';
-import { WINDOW_PROVIDERS } from '@core/services/window.service';
-import { TranslateDefaultParser } from '@core/translate/translate-default-parser';
+import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import {TbMissingTranslationHandler} from './translate/missing-translate-handler';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {FlexLayoutModule} from '@angular/flex-layout';
+import {TranslateDefaultCompiler} from '@core/translate/translate-default-compiler';
+import {WINDOW_PROVIDERS} from '@core/services/window.service';
+import {TranslateDefaultParser} from '@core/translate/translate-default-parser';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, './assets/locale/locale.constant-', '.json');

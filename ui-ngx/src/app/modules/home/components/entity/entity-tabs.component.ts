@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
-import { PageComponent } from '@shared/components/page.component';
-import { AfterViewInit, Directive, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { MatTab } from '@angular/material/tabs';
-import { BehaviorSubject } from 'rxjs';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
-import { AuthUser } from '@shared/models/user.model';
-import { EntityType } from '@shared/models/entity-type.models';
-import { FormGroup } from '@angular/forms';
-import { PageLink } from '@shared/models/page/page-link';
-import { NULL_UUID } from "@shared/models/constants";
+import {BaseData} from '@shared/models/base-data';
+import {PageComponent} from '@shared/components/page.component';
+import {AfterViewInit, Directive, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
+import {MatTab} from '@angular/material/tabs';
+import {BehaviorSubject} from 'rxjs';
+import {getCurrentAuthUser} from '@core/auth/auth.selectors';
+import {AuthUser} from '@shared/models/user.model';
+import {EntityType} from '@shared/models/entity-type.models';
+import {FormGroup} from '@angular/forms';
+import {PageLink} from '@shared/models/page/page-link';
+import {NULL_UUID} from "@shared/models/constants";
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix

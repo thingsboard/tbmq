@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,32 +14,32 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy, Output } from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, OnDestroy, Output} from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
   FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
-  ValidationErrors, Validator,
+  ValidationErrors,
+  Validator,
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
+import {Subject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
+import {isDefinedAndNotNull, isEmptyStr} from '@core/utils';
 import {
   AuthRulePatternsType,
   BasicMqttCredentials,
   MqttClientCredentials
 } from '@shared/models/client-crenetials.model';
-import { MatDialog } from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
-import { MatChipInputEvent } from "@angular/material/chips";
-import { EventEmitter } from '@angular/core';
+import {MatChipInputEvent} from "@angular/material/chips";
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',

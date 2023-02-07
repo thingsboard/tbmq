@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import { Action } from '@ngrx/store';
-import { User } from '@shared/models/user.model';
-import { AuthPayload } from '@core/auth/auth.models';
+import {Action} from '@ngrx/store';
+import {User} from '@shared/models/user.model';
+import {AuthPayload} from '@core/auth/auth.models';
 
 export enum AuthActionTypes {
   AUTHENTICATED = '[Auth] Authenticated',

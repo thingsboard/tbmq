@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SharedModule } from '@app/shared/shared.module';
-import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { DetailsPanelComponent } from '@home/components/details-panel.component';
-import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
-import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {SharedModule} from '@app/shared/shared.module';
+import {AddEntityDialogComponent} from '@home/components/entity/add-entity-dialog.component';
+import {EntitiesTableComponent} from '@home/components/entity/entities-table.component';
+import {DetailsPanelComponent} from '@home/components/details-panel.component';
+import {EntityDetailsPanelComponent} from '@home/components/entity/entity-details-panel.component';
+import {SharedHomeComponentsModule} from '@home/components/shared-home-components.module';
 
 @NgModule({
   declarations:
