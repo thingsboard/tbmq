@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
@@ -24,9 +25,9 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -46,8 +47,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
         if (clientSessionInfo == null) {
             return null;
         }
-        ClientSession clientSession = clientSessionInfo.getClientSession();
-        SessionInfo sessionInfo = clientSession.getSessionInfo();
+        SessionInfo sessionInfo = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo);
         ConnectionInfo connectionInfo = sessionInfo.getConnectionInfo();
         Set<TopicSubscription> subscriptions = subscriptionCache.getClientSubscriptions(clientId);
 
@@ -56,11 +56,11 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .clientId(sessionInfo.getClientInfo().getClientId())
                 .sessionId(sessionInfo.getSessionId())
                 .clientType(sessionInfo.getClientInfo().getType())
-                .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
+                .connectionState(clientSessionInfo.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
                 .nodeId(sessionInfo.getServiceId())
                 .cleanStart(sessionInfo.isCleanStart())
                 .sessionExpiryInterval(sessionInfo.safeGetSessionExpiryInterval())
-                .sessionEndTs(clientSession.isConnected() || sessionInfo.isNotCleanSession() ? -1 : getSessionEndTs(clientSessionInfo, sessionInfo))
+                .sessionEndTs(clientSessionInfo.isConnected() || sessionInfo.isNotCleanSession() ? -1 : getSessionEndTs(clientSessionInfo, sessionInfo))
                 .subscriptions(collectSubscriptions(subscriptions))
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())

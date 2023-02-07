@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+
 import javax.annotation.Nullable;
 
 @FunctionalInterface

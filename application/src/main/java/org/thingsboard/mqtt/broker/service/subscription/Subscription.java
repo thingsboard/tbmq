@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
 
 @Getter
 @AllArgsConstructor

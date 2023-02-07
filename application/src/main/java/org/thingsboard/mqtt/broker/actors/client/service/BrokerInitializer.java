@@ -31,13 +31,14 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
@@ -47,6 +48,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLi
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -208,29 +210,25 @@ public class BrokerInitializer {
 
     void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
         currentNodeSessions.values().stream()
+                .map(ClientSessionInfoFactory::clientSessionInfoToSessionInfo)
                 .filter(this::isCleanSession)
-                .map(clientSessionInfo -> clientSessionInfo.getClientSession().getSessionInfo())
                 .forEach(clientSessionEventService::requestSessionCleanup);
     }
 
-    boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getClientSession().getSessionInfo().isCleanSession();
+    boolean isCleanSession(SessionInfo sessionInfo) {
+        return sessionInfo.isCleanSession();
     }
 
     private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {
         return serviceInfoProvider.getServiceId()
-                .equals(clientSessionInfo.getClientSession().getSessionInfo().getServiceId());
+                .equals(clientSessionInfo.getServiceId());
     }
 
     private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.toBuilder()
-                .clientSession(clientSessionInfo.getClientSession().toBuilder()
-                        .connected(false)
-                        .build())
-                .build();
+        return clientSessionInfo.toBuilder().connected(false).build();
     }
 
     private String getClientId(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getClientSession().getSessionInfo().getClientInfo().getClientId();
+        return clientSessionInfo.getClientId();
     }
 }

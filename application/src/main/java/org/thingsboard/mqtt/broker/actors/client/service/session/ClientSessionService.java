@@ -16,10 +16,10 @@
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 
 import java.util.Map;
 

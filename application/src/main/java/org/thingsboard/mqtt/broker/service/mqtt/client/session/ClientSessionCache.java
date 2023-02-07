@@ -15,7 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 
 import java.util.Map;
 

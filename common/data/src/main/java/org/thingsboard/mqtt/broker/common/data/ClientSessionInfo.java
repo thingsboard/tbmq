@@ -13,31 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt;
+package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 
-@AllArgsConstructor
-@Getter
+import java.util.UUID;
+
 @Builder(toBuilder = true)
+@Getter
+@AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class ClientSession {
+public class ClientSessionInfo {
+
     private final boolean connected;
-    private final SessionInfo sessionInfo;
+    private final String serviceId;
+    private final UUID sessionId;
+    private final boolean cleanStart;
+    private final Integer sessionExpiryInterval;
+    private final String clientId;
+    private final ClientType type;
+    private final long connectedAt;
+    private final long disconnectedAt;
+    private final int keepAlive;
+    private final long lastUpdateTime;
 
-    public String getClientId() {
-        return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
-                sessionInfo.getClientInfo().getClientId() : null;
-    }
-
-    public ClientType getClientType() {
-        return sessionInfo.getClientInfo().getType();
-    }
 }

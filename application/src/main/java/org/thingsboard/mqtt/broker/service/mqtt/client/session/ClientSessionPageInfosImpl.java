@@ -18,11 +18,11 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 
 import java.util.Comparator;
 import java.util.List;
@@ -45,14 +45,13 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
                 .skip((long) pageLink.getPage() * pageLink.getPageSize())
                 .limit(pageLink.getPageSize())
-                .map(ClientSessionInfo::getClientSession)
-                .map(clientSession -> ShortClientSessionInfoDto.builder()
-                        .id(clientSession.getSessionInfo().getClientInfo().getClientId())
-                        .clientId(clientSession.getSessionInfo().getClientInfo().getClientId())
-                        .clientType(clientSession.getSessionInfo().getClientInfo().getType())
-                        .connectionState(clientSession.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
-                        .nodeId(clientSession.getSessionInfo().getServiceId())
-                        .sessionId(clientSession.getSessionInfo().getSessionId())
+                .map(clientSessionInfo -> ShortClientSessionInfoDto.builder()
+                        .id(clientSessionInfo.getClientId())
+                        .clientId(clientSessionInfo.getClientId())
+                        .clientType(clientSessionInfo.getType())
+                        .connectionState(clientSessionInfo.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
+                        .nodeId(clientSessionInfo.getServiceId())
+                        .sessionId(clientSessionInfo.getSessionId())
                         .build())
                 .sorted(sorted(pageLink))
                 .collect(Collectors.toList());
@@ -70,13 +69,13 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     private List<ClientSessionInfo> filterClientSessionInfos(Map<String, ClientSessionInfo> allClientSessions, PageLink pageLink) {
         return allClientSessions.values().stream()
-                .filter(clientSessionInfo -> filter(pageLink, clientSessionInfo.getClientSession()))
+                .filter(clientSessionInfo -> filter(pageLink, clientSessionInfo))
                 .collect(Collectors.toList());
     }
 
-    private boolean filter(PageLink pageLink, ClientSession clientSession) {
+    private boolean filter(PageLink pageLink, ClientSessionInfo clientSessionInfo) {
         if (pageLink.getTextSearch() != null) {
-            return clientSession.getSessionInfo().getClientInfo().getClientId().contains(pageLink.getTextSearch());
+            return clientSessionInfo.getClientId().contains(pageLink.getTextSearch());
         }
         return true;
     }

@@ -16,12 +16,12 @@
 package org.thingsboard.mqtt.broker.util;
 
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.constant.BrokerConstants;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 
 import java.util.UUID;
 
@@ -40,13 +40,22 @@ public class ClientSessionInfoFactory {
         ConnectionInfo connectionInfo = getConnectionInfo();
         SessionInfo sessionInfo = getSessionInfo(serviceId, clientInfo, connectionInfo);
         ClientSession clientSession = getClientSession(connected, sessionInfo);
-        return getClientSessionInfo(clientSession);
+        return clientSessionToClientSessionInfo(clientSession);
     }
 
-    private static ClientSessionInfo getClientSessionInfo(ClientSession clientSession) {
+    public static ClientSessionInfo clientSessionToClientSessionInfo(ClientSession clientSession) {
         return ClientSessionInfo.builder()
                 .lastUpdateTime(System.currentTimeMillis())
-                .clientSession(clientSession)
+                .keepAlive(clientSession.getSessionInfo().getConnectionInfo().getKeepAlive())
+                .disconnectedAt(clientSession.getSessionInfo().getConnectionInfo().getDisconnectedAt())
+                .connectedAt(clientSession.getSessionInfo().getConnectionInfo().getConnectedAt())
+                .type(clientSession.getClientType())
+                .clientId(clientSession.getClientId())
+                .sessionExpiryInterval(clientSession.getSessionInfo().getSessionExpiryInterval())
+                .cleanStart(clientSession.getSessionInfo().isCleanStart())
+                .sessionId(clientSession.getSessionInfo().getSessionId())
+                .serviceId(clientSession.getSessionInfo().getServiceId())
+                .connected(clientSession.isConnected())
                 .build();
     }
 
@@ -54,6 +63,21 @@ public class ClientSessionInfoFactory {
         return ClientSession.builder()
                 .connected(connected)
                 .sessionInfo(sessionInfo)
+                .build();
+    }
+
+    public static SessionInfo clientSessionInfoToSessionInfo(ClientSessionInfo clientSessionInfo) {
+        return SessionInfo.builder()
+                .serviceId(clientSessionInfo.getServiceId())
+                .sessionId(clientSessionInfo.getSessionId())
+                .cleanStart(clientSessionInfo.isCleanStart())
+                .sessionExpiryInterval(clientSessionInfo.getSessionExpiryInterval())
+                .clientInfo(getClientInfo(clientSessionInfo.getClientId(), clientSessionInfo.getType()))
+                .connectionInfo(
+                        getConnectionInfo(
+                                clientSessionInfo.getKeepAlive(),
+                                clientSessionInfo.getConnectedAt(),
+                                clientSessionInfo.getDisconnectedAt()))
                 .build();
     }
 
@@ -87,8 +111,13 @@ public class ClientSessionInfoFactory {
     }
 
     public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt) {
+        return getConnectionInfo(keepAlive, connectedAt, 0);
+    }
+
+    public static ConnectionInfo getConnectionInfo(int keepAlive, long connectedAt, long disconnectedAt) {
         return ConnectionInfo.builder()
                 .connectedAt(connectedAt)
+                .disconnectedAt(disconnectedAt)
                 .keepAlive(keepAlive)
                 .build();
     }
