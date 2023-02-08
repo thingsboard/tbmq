@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {PageComponent} from '@shared/components/page.component';
-import {Router} from '@angular/router';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {AdminSettings, MailServerSettings, smtpPortPattern} from '@shared/models/settings.models';
-import {MailServerService} from '@core/http/mail-server.service';
-import {ActionNotificationShow} from '@core/notification/notification.actions';
-import {TranslateService} from '@ngx-translate/core';
-import {HasConfirmForm} from '@core/guards/confirm-on-exit.guard';
-import {isDefinedAndNotNull, isString} from '@core/utils';
-import {Subject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { PageComponent } from '@shared/components/page.component';
+import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AdminSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
+import { MailServerService } from '@core/http/mail-server.service';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
+import { isDefinedAndNotNull, isString } from '@core/utils';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-mail-server',
@@ -53,6 +53,12 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
     super(store);
   }
 
+  private get mailSettingsFormValue(): MailServerSettings {
+    const formValue = this.mailSettings.value;
+    delete formValue.changePassword;
+    return formValue;
+  }
+
   ngOnInit() {
     this.buildMailServerSettingsForm();
     this.adminService.getAdminSettings<MailServerSettings>('mail').subscribe(
@@ -62,7 +68,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
           this.adminSettings.jsonValue.enableTls = (this.adminSettings.jsonValue.enableTls as any) === 'true';
         }
         this.showChangePassword =
-          isDefinedAndNotNull(this.adminSettings.jsonValue.showChangePassword) ? this.adminSettings.jsonValue.showChangePassword : true ;
+          isDefinedAndNotNull(this.adminSettings.jsonValue.showChangePassword) ? this.adminSettings.jsonValue.showChangePassword : true;
         delete this.adminSettings.jsonValue.showChangePassword;
         this.mailSettings.reset(this.adminSettings.jsonValue);
         this.enableMailPassword(!this.showChangePassword);
@@ -138,8 +144,10 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
     this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettingsFormValue};
     this.adminService.sendTestMail(this.adminSettings).subscribe(
       () => {
-        this.store.dispatch(new ActionNotificationShow({ message: this.translate.instant('admin.test-mail-sent'),
-          type: 'success' }));
+        this.store.dispatch(new ActionNotificationShow({
+          message: this.translate.instant('admin.test-mail-sent'),
+          type: 'success'
+        }));
       }
     );
   }
@@ -157,11 +165,5 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
 
   confirmForm(): FormGroup {
     return this.mailSettings;
-  }
-
-  private get mailSettingsFormValue(): MailServerSettings {
-    const formValue = this.mailSettings.value;
-    delete formValue.changePassword;
-    return formValue;
   }
 }

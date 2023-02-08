@@ -95,11 +95,21 @@ export class MenuService {
       },
       {
         id: guid(),
-        name: 'admin.outgoing-mail',
-        type: 'link',
-        path: '/outgoing-mail',
-        icon: 'mdi:email',
-        isMdiIcon: true
+        name: 'admin.system-settings',
+        type: 'toggle',
+        path: '/settings',
+        height: '320px',
+        icon: 'settings',
+        pages: [
+          {
+            id: guid(),
+            name: 'admin.outgoing-mail',
+            type: 'link',
+            path: '/settings/outgoing-mail',
+            icon: 'mdi:email',
+            isMdiIcon: true
+          }
+        ]
       }
     );
     return sections;

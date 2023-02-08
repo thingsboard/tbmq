@@ -14,32 +14,53 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 
-import {MailServerComponent} from '@modules/home/pages/mail-server/mail-server.component';
-import {ConfirmOnExitGuard} from '@core/guards/confirm-on-exit.guard';
-import {Authority} from '@shared/models/authority.enum';
+import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { Authority } from '@shared/models/authority.enum';
 
 const routes: Routes = [
   {
-    path: 'outgoing-mail',
-    component: MailServerComponent,
-    canDeactivate: [ConfirmOnExitGuard],
+    path: 'settings',
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'admin.outgoing-mail-settings',
       breadcrumb: {
-        label: 'admin.outgoing-mail',
-        icon: 'mdi:email',
-        isMdiIcon: true
+        label: 'admin.system-settings',
+        icon: 'settings'
       }
-    }
+    },
+    children: [
+      {
+        path: '',
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          redirectTo: {
+            SYS_ADMIN: '/settings/outgoing-mail'
+          }
+        }
+      },
+      {
+        path: 'outgoing-mail',
+        component: MailServerComponent,
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'admin.outgoing-mail-settings',
+          breadcrumb: {
+            label: 'admin.outgoing-mail',
+            icon: 'mdi:email',
+            isMdiIcon: true
+          }
+        }
+      }
+    ]
   }
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  imports: [RouterModule.forChild(routes)], exports: [RouterModule]
 })
-export class MailServerRoutingModule { }
+export class MailServerRoutingModule {
+}
