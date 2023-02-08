@@ -136,8 +136,15 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         });
       }
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
+    } else {
+      this.setDefaultSubPubValues();
     }
   }
+
+  private setDefaultSubPubValues(defaultValue: string = '.*') {
+    this.pubRulesSet.add(defaultValue);
+    this.subRulesSet.add(defaultValue);
+}
 
   updateView(value: BasicMqttCredentials) {
     for (const rule of Object.keys(value.authRules)) {

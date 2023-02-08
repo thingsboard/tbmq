@@ -70,11 +70,13 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
         name: [entity ? entity.name : null, [Validators.required]],
         clientType: [entity ? entity.clientType : null, [Validators.required]],
         credentialsType: [entity ? entity.credentialsType : null, [Validators.required]],
-        credentialsValue: [entity ? entity.credentialsValue : null]
+        credentialsValue: [entity ? entity.credentialsValue : null, []]
       }
     );
-    form.get('clientType').setValue(ClientType.DEVICE, {emitEvent: true});
-    form.get('credentialsType').setValue(MqttCredentialsType.MQTT_BASIC, {emitEvent: true});
+    form.patchValue({
+      clientType: ClientType.DEVICE,
+      credentialsType: MqttCredentialsType.MQTT_BASIC
+    });
     form.get('credentialsType').valueChanges.subscribe(() => {
       form.patchValue({credentialsValue: null});
     });

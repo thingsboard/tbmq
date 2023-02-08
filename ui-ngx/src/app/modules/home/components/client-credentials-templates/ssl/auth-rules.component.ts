@@ -86,8 +86,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       pubAuthRulePatterns: [null, []],
       subAuthRulePatterns: [null, []]
     }));
-    this.subRulesArray.push([]);
-    this.pubRulesArray.push([]);
+    this.subRulesArray.push(['.*']);
+    this.pubRulesArray.push(['.*']);
   }
 
   removeRule(index: number) {

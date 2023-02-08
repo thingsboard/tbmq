@@ -24,8 +24,8 @@ export enum MqttCredentialsType {
 
 export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'MQTT Basic'],
-    [MqttCredentialsType.SSL, 'SSL']
+    [MqttCredentialsType.MQTT_BASIC, 'Basic'],
+    [MqttCredentialsType.SSL, 'X.509 Certificate chain']
   ]
 );
 

@@ -330,7 +330,18 @@
       "username": "Username",
       "user-name-required": "User Name is required.",
       "hint-client-type-application": "hint-client-type-application",
-      "hint-client-type-device": "hint-client-type-device"
+      "hint-client-type-device": "hint-client-type-device",
+      "hint-credentials-type": "hint-credentials-type",
+      "hint-name": "hint-name",
+      "hint-certificate-regex": "hint-certificate-regex",
+      "hint-rule-patterns-pub": "hint-rule-patterns-pub",
+      "hint-rule-patterns-sub": "hint-rule-patterns-sub",
+      "hint-basic-client-id": "hint-basic-client-id",
+      "hint-basic-username": "hint-basic-username",
+      "hint-basic-password": "hint-basic-password",
+      "hint-basic-patterns-sub": "hint-basic-patterns-sub",
+      "hint-basic-patterns-pub": "hint-basic-patterns-pub",
+      "hint-ssl-cert-common-name": "hint-ssl-cert-common-name"
     },
     "mqtt-client-session": {
       "add": "Add session",
