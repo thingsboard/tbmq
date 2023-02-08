@@ -14,17 +14,17 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot} from '@angular/router';
-import {FormGroup} from '@angular/forms';
-import {select, Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {AuthState} from '@core/auth/auth.models';
-import {selectAuth} from '@core/auth/auth.selectors';
-import {take} from 'rxjs/operators';
-import {DialogService} from '@core/services/dialog.service';
-import {TranslateService} from '@ngx-translate/core';
-import {isDefined} from '../utils';
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot } from '@angular/router';
+import { FormGroup } from '@angular/forms';
+import { select, Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { AuthState } from '@core/auth/auth.models';
+import { selectAuth } from '@core/auth/auth.selectors';
+import { take } from 'rxjs/operators';
+import { DialogService } from '@core/services/dialog.service';
+import { TranslateService } from '@ngx-translate/core';
+import { isDefined } from '../utils';
 
 export interface HasConfirmForm {
   confirmForm(): FormGroup;
@@ -41,7 +41,8 @@ export class ConfirmOnExitGuard implements CanDeactivate<HasConfirmForm & HasDir
 
   constructor(private store: Store<AppState>,
               private dialogService: DialogService,
-              private translate: TranslateService) { }
+              private translate: TranslateService) {
+  }
 
   canDeactivate(component: HasConfirmForm & HasDirtyFlag,
                 route: ActivatedRouteSnapshot,
