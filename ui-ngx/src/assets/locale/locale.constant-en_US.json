@@ -343,7 +343,8 @@
       "hint-basic-password": "hint-basic-password",
       "hint-basic-patterns-sub": "hint-basic-patterns-sub",
       "hint-basic-patterns-pub": "hint-basic-patterns-pub",
-      "hint-ssl-cert-common-name": "hint-ssl-cert-common-name"
+      "hint-ssl-cert-common-name": "hint-ssl-cert-common-name",
+      "rule": "Rule"
     },
     "mqtt-client-session": {
       "add": "Add session",

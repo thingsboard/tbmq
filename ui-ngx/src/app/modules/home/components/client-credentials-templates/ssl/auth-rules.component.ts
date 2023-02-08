@@ -82,7 +82,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   addRule(): void {
     this.rulesMappings = this.rulesFormArray() as FormArray;
     this.rulesMappings.push(this.fb.group({
-      certificateMatcherRegex: [null, [Validators.required]],
+      certificateMatcherRegex: ['.*', [Validators.required]],
       pubAuthRulePatterns: [null, []],
       subAuthRulePatterns: [null, []]
     }));
