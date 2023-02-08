@@ -79,6 +79,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
     }
 
     @Data
+    @RequiredArgsConstructor
     static class SharedSubscriptionIterator {
         private final SharedSubscription sharedSubscription;
         private final Iterator<Subscription> iterator;

@@ -16,11 +16,13 @@
 package org.thingsboard.mqtt.broker.dto;
 
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.nio.charset.StandardCharsets;
 
 @Data
+@RequiredArgsConstructor
 public class RetainedMsgDto {
 
     private final String topic;

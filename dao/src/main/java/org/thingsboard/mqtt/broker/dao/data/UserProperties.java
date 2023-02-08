@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -77,6 +78,7 @@ public class UserProperties {
     }
 
     @Data
+    @EqualsAndHashCode
     @AllArgsConstructor
     @NoArgsConstructor
     public static final class StringPair {

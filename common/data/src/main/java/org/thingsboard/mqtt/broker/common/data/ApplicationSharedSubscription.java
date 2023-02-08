@@ -17,10 +17,12 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.UUID;
 
 @Data
+@ToString
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationSharedSubscription extends SearchTextBased {
 

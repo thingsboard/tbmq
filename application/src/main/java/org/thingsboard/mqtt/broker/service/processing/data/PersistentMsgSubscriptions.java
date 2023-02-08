@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing.data;
 
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@RequiredArgsConstructor
 public class PersistentMsgSubscriptions {
 
     private final List<Subscription> deviceSubscriptions;

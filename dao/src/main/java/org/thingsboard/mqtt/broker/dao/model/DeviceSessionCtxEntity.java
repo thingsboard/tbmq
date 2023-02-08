@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
 
 import javax.persistence.Column;
@@ -24,6 +25,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Data
+@EqualsAndHashCode
 @Entity
 @Table(name = ModelConstants.DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME)
 public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
