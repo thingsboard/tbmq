@@ -17,10 +17,8 @@ package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 
 @Data
-@RequiredArgsConstructor
 @EqualsAndHashCode(exclude = "qos")
 public class TopicSharedSubscription {
 

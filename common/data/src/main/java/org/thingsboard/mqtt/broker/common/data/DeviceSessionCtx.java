@@ -17,13 +17,9 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 @Data
-@ToString
 @Builder(toBuilder = true)
-@EqualsAndHashCode
 public class DeviceSessionCtx {
     private String clientId;
     private long lastUpdatedTime;

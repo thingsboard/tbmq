@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.dao.model.sql;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -33,7 +32,6 @@ import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 @Data
-@EqualsAndHashCode
 @Entity
 @Table(name = ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME)
 @IdClass(DevicePublishMsgCompositeKey.class)

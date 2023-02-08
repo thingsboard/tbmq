@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.dao.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
@@ -32,7 +31,6 @@ import java.io.IOException;
 import java.util.Set;
 
 @Data
-@EqualsAndHashCode
 @Entity
 @TypeDef(name = "json", typeClass = JsonStringType.class)
 @Table(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME)

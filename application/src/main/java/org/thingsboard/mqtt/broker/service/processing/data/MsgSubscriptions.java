@@ -16,14 +16,12 @@
 package org.thingsboard.mqtt.broker.service.processing.data;
 
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 import java.util.List;
 import java.util.Set;
 
 @Data
-@RequiredArgsConstructor
 public class MsgSubscriptions {
 
     private final List<Subscription> commonSubscriptions;

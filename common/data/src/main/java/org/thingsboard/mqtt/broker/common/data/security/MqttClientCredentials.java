@@ -17,14 +17,12 @@ package org.thingsboard.mqtt.broker.common.data.security;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
 
 import java.util.UUID;
 
 @Data
-@ToString
 @EqualsAndHashCode(callSuper = true)
 public class MqttClientCredentials extends SearchTextBased {
     private String credentialsId;

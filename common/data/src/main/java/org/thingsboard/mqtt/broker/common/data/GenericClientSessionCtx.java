@@ -17,15 +17,11 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.util.Set;
 
 @Data
-@ToString
 @Builder(toBuilder = true)
-@EqualsAndHashCode
 public class GenericClientSessionCtx {
     private String clientId;
     private long lastUpdatedTime;

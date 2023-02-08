@@ -16,8 +16,6 @@
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
@@ -25,8 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Data
-@RequiredArgsConstructor
-@EqualsAndHashCode
 public class SharedSubscriptions {
 
     private final Set<Subscription> applicationSubscriptions;
