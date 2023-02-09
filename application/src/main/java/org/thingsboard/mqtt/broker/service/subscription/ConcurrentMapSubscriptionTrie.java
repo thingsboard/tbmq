@@ -21,7 +21,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 

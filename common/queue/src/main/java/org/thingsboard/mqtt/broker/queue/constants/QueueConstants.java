@@ -15,9 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.queue.constants;
 
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+
 public class QueueConstants {
+
     public static final String REPLICATION_FACTOR = "replication.factor";
     public static final String PARTITIONS = "partitions";
     public final static String CLEANUP_POLICY_PROPERTY = "cleanup.policy";
     public final static String COMPACT_POLICY = "compact";
+
+    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
+    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
+
 }

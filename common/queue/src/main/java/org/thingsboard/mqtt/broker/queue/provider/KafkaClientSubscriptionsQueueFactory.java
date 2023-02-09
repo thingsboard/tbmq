@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
@@ -92,7 +93,7 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
         consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("client-subscriptions-consumer-" + consumerId);
-        consumerBuilder.groupId("client-subscriptions-group-" + groupId);
+        consumerBuilder.groupId(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSubscriptionsProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);

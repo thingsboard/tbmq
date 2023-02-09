@@ -38,7 +38,7 @@ import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;

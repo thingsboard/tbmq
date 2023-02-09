@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;

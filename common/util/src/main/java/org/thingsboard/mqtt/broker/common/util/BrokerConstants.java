@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.constant;
-
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+package org.thingsboard.mqtt.broker.common.util;
 
 public class BrokerConstants {
 
@@ -31,9 +29,6 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
-    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
-    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
-
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
@@ -41,4 +36,9 @@ public class BrokerConstants {
 
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
 
+    public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-publish-group-";
+    public static final String PERSISTENT_DOWNLINK_CG_PREFIX = "persistent-downlink-publish-group-";
+    public static final String CLIENT_SESSION_CG_PREFIX = "client-session-group-";
+    public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-group-";
+    public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-group-";
 }

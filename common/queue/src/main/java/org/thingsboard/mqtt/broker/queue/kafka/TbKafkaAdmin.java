@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.ConsumerGroupListing;
 import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -24,6 +25,7 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
@@ -31,10 +33,13 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -47,7 +52,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings) {
         client = AdminClient.create(adminSettings.toProps());
-
+        deleteOldConsumerGroups();
         try {
             topics.addAll(client.listTopics().names().get());
         } catch (InterruptedException | ExecutionException e) {
@@ -152,8 +157,40 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             topicConfigs.remove(QueueConstants.REPLICATION_FACTOR);
             return Short.parseShort(replicationFactorStr);
         } else {
-            return  1;
+            return 1;
         }
+    }
+
+    private void deleteOldConsumerGroups() {
+        try {
+            long start = System.nanoTime();
+            List<String> groupIdsToDelete = client.listConsumerGroups().all().get(5, TimeUnit.SECONDS)
+                    .stream().map(ConsumerGroupListing::groupId)
+                    .filter(this::isConsumerGroupToDelete)
+                    .collect(Collectors.toList());
+
+            if (log.isDebugEnabled()) {
+                log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+            }
+            client.deleteConsumerGroups(groupIdsToDelete).all().get(5, TimeUnit.SECONDS);
+            long end = System.nanoTime();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to get/delete old consumer groups!", e);
+            }
+        }
+    }
+
+    private boolean isConsumerGroupToDelete(String consumerGroupId) {
+        return consumerGroupId.startsWith(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX) ||
+                consumerGroupId.startsWith(BrokerConstants.PERSISTENT_DOWNLINK_CG_PREFIX) ||
+                consumerGroupId.startsWith(BrokerConstants.CLIENT_SESSION_CG_PREFIX) ||
+                consumerGroupId.startsWith(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX) ||
+                consumerGroupId.startsWith(BrokerConstants.RETAINED_MSG_CG_PREFIX);
     }
 
     @PreDestroy
