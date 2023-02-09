@@ -50,7 +50,7 @@
                 <mat-icon>add</mat-icon>
               </button>
               <ng-template #addActions>
-                <button mat-mini-fab color="accent" class="mat-elevation-z2"
+                <button mat-mini-fab color="primary" class="mat-elevation-z2"
                         [disabled]="isLoading$ | async"
                         *ngIf="entitiesTableConfig.addActionDescriptors.length === 1; else addActionsMenu"
                         [fxShow]="entitiesTableConfig.addActionDescriptors[0].isEnabled()"
