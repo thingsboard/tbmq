@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<form style="min-width: 500px">
+<form style="min-width: 500px; padding-top: 6px">
   <mat-expansion-panel [expanded]="true">
     <mat-expansion-panel-header>
       <mat-panel-title>
@@ -27,7 +27,7 @@
     </mat-expansion-panel-header>
       <div fxLayout="column" class="tb-auth-rules-list" [formGroup]="rulesMappingFormGroup">
         <div class="body">
-          <div *ngFor="let rulesControl of rulesFormArray().controls; let $index = index" formArrayName="authRulesMapping">
+          <div *ngFor="let rulesControl of rulesFormArray.controls; let $index = index" formArrayName="authRulesMapping">
             <fieldset class="fields-group">
               <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ ($index +  1) }}</legend>
               <div [formGroupName]="$index" fxFlex fxLayout="space-around">
@@ -36,8 +36,11 @@
                     <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
                     <input matInput formControlName="certificateMatcherRegex">
                     <mat-hint>{{ 'mqtt-client-credentials.hint-certificate-regex' | translate }}</mat-hint>
-                    <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
+                    <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').hasError('required')">
                       {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
+                    </mat-error>
+                    <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').hasError('notUnique')">
+                      {{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}
                     </mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline">

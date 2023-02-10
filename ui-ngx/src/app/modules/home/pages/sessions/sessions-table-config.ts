@@ -60,14 +60,14 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
 
-    this.addActionDescriptors.push(
+    /*this.addActionDescriptors.push(
       {
         name: this.translate.instant('help.goto-help-page'),
         icon: 'help',
         isEnabled: () => true,
         onAction: () => this.gotoHelpPage()
       }
-    );
+    );*/
 
     this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),

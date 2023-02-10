@@ -14,21 +14,21 @@
 /// limitations under the License.
 ///
 
-import {Component, forwardRef, Input, OnDestroy} from '@angular/core';
+import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
   FormArray,
-  FormBuilder,
+  FormBuilder, FormControl,
   FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ValidationErrors,
-  Validator,
+  Validator, ValidatorFn,
   Validators
 } from '@angular/forms';
-import {Subject, Subscription} from 'rxjs';
-import {MatChipInputEvent} from "@angular/material/chips";
+import { Subject, Subscription } from 'rxjs';
+import { MatChipInputEvent } from "@angular/material/chips";
 import {
   AuthRulePatternsType,
   AuthRulesMapping,
@@ -66,25 +66,25 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   private destroy$ = new Subject();
   private propagateChange = (v: any) => {};
 
+  get rulesFormArray(): FormArray {
+    return this.rulesMappingFormGroup.get('authRulesMapping') as FormArray;
+  }
+
   constructor(public fb: FormBuilder) {
     this.rulesMappingFormGroup = this.fb.group({});
     this.rulesMappingFormGroup.addControl('authRulesMapping',
       this.fb.array([]));
-    this.rulesFormArray().valueChanges.subscribe((value) => {
+    this.rulesFormArray.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
   }
 
-  rulesFormArray(): FormArray {
-    return this.rulesMappingFormGroup.get('authRulesMapping') as FormArray;
-  }
-
   addRule(): void {
-    this.rulesMappings = this.rulesFormArray() as FormArray;
+    this.rulesMappings = this.rulesFormArray;
     this.rulesMappings.push(this.fb.group({
-      certificateMatcherRegex: ['.*', [Validators.required]],
-      pubAuthRulePatterns: [null, []],
-      subAuthRulePatterns: [null, []]
+      certificateMatcherRegex: [null, [Validators.required, this.validateUniqness()]],
+      pubAuthRulePatterns: [['.*'], []],
+      subAuthRulePatterns: [['.*'], []]
     }));
     this.subRulesArray.push(['.*']);
     this.pubRulesArray.push(['.*']);
@@ -92,9 +92,9 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   removeRule(index: number) {
     this.rulesMappingFormGroup.markAsDirty();
-    this.subRulesArray[index].splice(0);
-    this.pubRulesArray[index].splice(0);
-    (this.rulesFormArray() as FormArray).removeAt(index);
+    this.subRulesArray.splice(index, 1);
+    this.pubRulesArray.splice(index, 1);
+    this.rulesFormArray.removeAt(index);
   }
 
   ngOnDestroy(): void {
@@ -118,10 +118,22 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   validate(): ValidationErrors | null {
-    if (!this.rulesFormArray().value?.length) {
+    if (!this.rulesFormArray.value?.length) {
       return { rulesMappingLength: true };
     }
     return this.rulesMappingFormGroup.valid ? null : { rulesMapping: true };
+  }
+
+  validateUniqness(): ValidatorFn {
+    return () => {
+      const values = this.rulesFormArray.value;
+      if (values) {
+        var certificateMatcherRegexList = values.map(function(item){ return item.certificateMatcherRegex });
+        var hasDuplicates = certificateMatcherRegexList.some((item, idx) => certificateMatcherRegexList.indexOf(item) != idx);
+        if (hasDuplicates) return { notUnique: {valid: false} };
+        return null;
+      }
+    };
   }
 
   writeValue(authRulesMapping: SslMqttCredentialsAuthRules): void {
@@ -133,7 +145,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       let index = 0;
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
-          certificateMatcherRegex: [rule, [Validators.required]],
+          certificateMatcherRegex: [rule, [Validators.required, this.validateUniqness()]],
           subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [], []],
           pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [], []]
         });
@@ -206,26 +218,26 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   removeTopicRule(rule: string, index: number, type: AuthRulePatternsType) {
     let optIndex;
-      switch (type) {
-        case AuthRulePatternsType.SUBSCRIBE:
-          optIndex = this.subRulesArray[index].indexOf(rule);
-          if (optIndex >= 0) this.subRulesArray[index].splice(optIndex, 1);
-          break;
-        case AuthRulePatternsType.PUBLISH:
-          optIndex = this.pubRulesArray[index].indexOf(rule);
-          if (optIndex >= 0) this.pubRulesArray[index].splice(optIndex, 1);
-          break;
-      }
+    switch (type) {
+      case AuthRulePatternsType.SUBSCRIBE:
+        optIndex = this.subRulesArray[index].indexOf(rule);
+        if (optIndex >= 0) this.subRulesArray[index].splice(optIndex, 1);
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        optIndex = this.pubRulesArray[index].indexOf(rule);
+        if (optIndex >= 0) this.pubRulesArray[index].splice(optIndex, 1);
+        break;
+    }
     this.updateTopicRuleControl(index, type);
   }
 
   private updateTopicRuleControl(index: number, type: AuthRulePatternsType) {
     switch (type) {
       case AuthRulePatternsType.SUBSCRIBE:
-        this.rulesFormArray().at(index).get('subAuthRulePatterns').setValue(this.subRulesArray[index].join(','));
+        this.rulesFormArray.at(index).get('subAuthRulePatterns').setValue(this.subRulesArray[index].join(','));
         break;
       case AuthRulePatternsType.PUBLISH:
-        this.rulesFormArray().at(index).get('pubAuthRulePatterns').setValue(this.pubRulesArray[index].join(','));
+        this.rulesFormArray.at(index).get('pubAuthRulePatterns').setValue(this.pubRulesArray[index].join(','));
         break;
     }
   }

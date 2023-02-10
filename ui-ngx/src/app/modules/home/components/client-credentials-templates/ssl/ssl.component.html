@@ -24,11 +24,12 @@
       {{ 'mqtt-client-credentials.parent-certificate-common-name-required' | translate }}
     </mat-error>
   </mat-form-field>
-  <section fxLayout="column" fxLayoutAlign="center start">
+  <!--<section fxLayout="column" fxLayoutAlign="center start">
     <mat-slide-toggle formControlName="allowSelfSignedCertificates">
       {{ 'mqtt-client-credentials.allow-self-signed-certificates' | translate }}
     </mat-slide-toggle>
     <span class="tb-hint">{{ 'mqtt-client-credentials.hint-allow-self-signed-certificates' | translate }}</span>
-  </section>
+  </section>-->
+  <mat-divider></mat-divider>
   <tb-auth-rules formControlName="authRulesMapping"></tb-auth-rules>
 </section>
