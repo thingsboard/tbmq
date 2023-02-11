@@ -82,7 +82,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   addRule(): void {
     this.rulesMappings = this.rulesFormArray;
     this.rulesMappings.push(this.fb.group({
-      certificateMatcherRegex: [null, [Validators.required, this.validateUniqness()]],
+      certificateMatcherRegex: [null, [Validators.required, this.validateUnique()]],
       pubAuthRulePatterns: [['.*'], []],
       subAuthRulePatterns: [['.*'], []]
     }));
@@ -124,15 +124,20 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     return this.rulesMappingFormGroup.valid ? null : { rulesMapping: true };
   }
 
-  validateUniqness(): ValidatorFn {
-    return () => {
-      const values = this.rulesFormArray.value;
-      if (values) {
-        var certificateMatcherRegexList = values.map(function(item){ return item.certificateMatcherRegex });
-        var hasDuplicates = certificateMatcherRegexList.some((item, idx) => certificateMatcherRegexList.indexOf(item) != idx);
-        if (hasDuplicates) return { notUnique: {valid: false} };
-        return null;
-      }
+  validateUnique(): ValidatorFn {
+    return (control: FormControl) => {
+      let duplicateItem: string;
+      const value = control.value;
+      const certificateMatcherRegexList = this.rulesFormArray.value.map(function(item){ return item.certificateMatcherRegex });
+      const formArrayHasDuplicates = certificateMatcherRegexList.some(
+        (item, idx) => {
+          const hasDuplicates = certificateMatcherRegexList.indexOf(item) !== idx;
+          if (hasDuplicates) duplicateItem = item;
+          return hasDuplicates;
+        }
+      );
+      if (formArrayHasDuplicates && duplicateItem === value) return { notUnique: {valid: false} };
+      return null;
     };
   }
 
@@ -145,7 +150,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       let index = 0;
       for (const rule of Object.keys(authRulesMapping)) {
         const rulesControl = this.fb.group({
-          certificateMatcherRegex: [rule, [Validators.required, this.validateUniqness()]],
+          certificateMatcherRegex: [rule, [Validators.required, this.validateUnique()]],
           subAuthRulePatterns: [authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [], []],
           pubAuthRulePatterns: [authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [], []]
         });

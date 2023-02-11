@@ -295,7 +295,7 @@
       "allow-self-signed-certificates": "Allow self-signed certificates",
       "certificate-matcher-regex": "Certificate matcher regex",
       "certificate-matcher-regex-required": "Certificate matcher regex is required",
-      "certificate-matcher-regex-not-unique": "Certificate matcher regex have duplicates",
+      "certificate-matcher-regex-not-unique": "Certificate matcher regex should be unique",
       "client-credentials": "Client Credentials",
       "client-id-or-user-name-necessary": "Client ID and/or User Name are necessary",
       "client-credentials-details": "Client Credentials details",
