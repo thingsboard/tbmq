@@ -24,10 +24,10 @@
       </mat-panel-description>
     </mat-expansion-panel-header>
     <div class="container">
-      <div fxFlex fxLayout="row" fxLayoutGap="8px"
+      <div fxLayout="row" fxLayoutGap="8px"
            *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index"
            [formGroup]="topicFilter">
-        <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block"
+        <mat-form-field fxFlex="80" floatLabel="always" hideRequiredMarker class="mat-block"
                         style="margin: 10px 0 0; max-height: 40px;">
           <mat-label></mat-label>
           <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
@@ -36,7 +36,7 @@
             {{ 'mqtt-client-session.topic-filter-required' | translate }}
           </mat-error>
         </mat-form-field>
-        <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block"
+        <mat-form-field fxFlex="20" floatLabel="always" hideRequiredMarker class="mat-block"
                         style="margin: 4px 0px 0px 0px; max-height: 40px;">
           <mat-label></mat-label>
           <mat-select required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
