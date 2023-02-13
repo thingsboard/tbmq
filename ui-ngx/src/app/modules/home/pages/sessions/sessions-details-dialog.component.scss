@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 :host ::ng-deep {
-  tb-entities-table.tb-details-mode {
-    .mat-drawer-container {
-      background-color: white;
-    }
-  }
-
   .tb-checkbox {
     display: flex;
     align-content: center;
     align-items: center;
-    height: 70px;
+    height: 30px;
+
+    .mat-checkbox-disabled .mat-checkbox-label {
+      color: rgba(0, 0, 0, 0.87);
+    }
   }
 }

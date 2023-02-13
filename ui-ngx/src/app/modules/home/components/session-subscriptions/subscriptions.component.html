@@ -15,56 +15,49 @@
     limitations under the License.
 
 -->
-<form>
-  <mat-expansion-panel #matExpansionPanel [expanded]="!!topicListFormGroup.get('subscriptions').value.length">
-    <mat-expansion-panel-header>
-      <mat-panel-title translate>mqtt-client-session.subscriptions</mat-panel-title>
-      <mat-panel-description *ngIf="!matExpansionPanel.expanded && !topicListFormGroup.get('subscriptions').value.length">
-        <mat-error translate>mqtt-client-session.add-topic-filter-prompt</mat-error>
-      </mat-panel-description>
-    </mat-expansion-panel-header>
-    <div class="container">
-      <div fxLayout="row" fxLayoutGap="8px"
-           *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index"
-           [formGroup]="topicFilter">
-        <mat-form-field fxFlex="80" floatLabel="always" hideRequiredMarker class="mat-block"
-                        style="margin: 10px 0 0; max-height: 40px;">
-          <mat-label></mat-label>
-          <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
-                 required name="topicFilterTopic" formControlName="topic">
-          <mat-error *ngIf="topicFilter.invalid">
-            {{ 'mqtt-client-session.topic-filter-required' | translate }}
-          </mat-error>
-        </mat-form-field>
-        <mat-form-field fxFlex="20" floatLabel="always" hideRequiredMarker class="mat-block"
-                        style="margin: 4px 0px 0px 0px; max-height: 40px;">
-          <mat-label></mat-label>
-          <mat-select required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
-                      formControlName="qos">
-            <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-              {{mqttQoS.name | translate}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-        <button mat-button mat-icon-button color="primary"
-                [fxShow]="!disabled"
-                type="button"
-                style="width: 40px; min-width: 40px;"
-                (click)="removeTopic($index)"
-                matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"
-                matTooltipPosition="above">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      <button mat-button mat-raised-button color="primary"
+<mat-expansion-panel #matExpansionPanel [expanded]="!!topicListFormGroup.get('subscriptions').value.length">
+  <mat-expansion-panel-header>
+    <mat-panel-title translate>mqtt-client-session.subscriptions</mat-panel-title>
+    <mat-panel-description *ngIf="!topicListFormGroup.get('subscriptions').value.length">
+      <mat-error translate>mqtt-client-session.add-topic-filter-prompt</mat-error>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+  <div fxLayout="row" fxLayoutGap="8px"
+         *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index"
+         [formGroup]="topicFilter">
+      <mat-form-field fxFlex="70" floatLabel="always" hideRequiredMarker class="mat-block">
+        <mat-label translate>mqtt-client-session.topic</mat-label>
+        <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
+               required name="topicFilterTopic" formControlName="topic">
+        <mat-error *ngIf="topicFilter.invalid">
+          {{ 'mqtt-client-session.topic-filter-required' | translate }}
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field fxFlex="30" floatLabel="always" hideRequiredMarker class="mat-block">
+        <mat-label translate>mqtt-client-session.qos</mat-label>
+        <mat-select required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
+                    formControlName="qos">
+          <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
+            {{mqttQoS.name | translate}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-button mat-icon-button color="warn"
               [fxShow]="!disabled"
-              (click)="addTopic()"
               type="button"
-              matTooltip="{{ 'mqtt-client-session.add-subscription-to-client' | translate }}"
+              (click)="removeTopic($index)"
+              matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"
               matTooltipPosition="above">
-        <mat-icon>add</mat-icon>
-        {{ 'action.add' | translate }}
+        <mat-icon>close</mat-icon>
       </button>
     </div>
-  </mat-expansion-panel>
-</form>
+  <button mat-stroked-button mat-raised-button color="primary"
+          [fxShow]="!disabled"
+          (click)="addTopic()"
+          type="button"
+          matTooltip="{{ 'mqtt-client-session.add-subscription-to-client' | translate }}"
+          matTooltipPosition="above">
+    <mat-icon>add</mat-icon>
+    {{ 'action.add' | translate }}
+  </button>
+</mat-expansion-panel>

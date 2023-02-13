@@ -71,7 +71,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
     this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '12%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.status', '12%',
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '12%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),

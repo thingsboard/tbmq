@@ -384,7 +384,6 @@
       "selected-sessions": "{ count, plural, 1 {1 session} other {# sessions} } selected",
       "subscriptions": "Subscriptions",
       "subscriptions-count": "Subscriptions Count",
-      "status": "Status",
       "topic": "Topic",
       "topic-filter-required": "Topic filter is required",
       "type-session": "Session",
