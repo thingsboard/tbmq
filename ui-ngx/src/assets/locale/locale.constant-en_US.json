@@ -414,9 +414,11 @@
       "name": "Name",
       "name-required": "Name is required",
       "partitions": "Partitions",
+      "partitions-hint": "partitions-hint",
       "partitions-required": "Partitions are required",
       "partitions-min": "Minimum value is 1",
       "topic": "Topic",
+      "topic-hint": "topic-hint",
       "topic-required": "Topic is required",
       "shared-subscription": "Shared Subscription",
       "shared-subscriptions": "Shared Subscriptions"
