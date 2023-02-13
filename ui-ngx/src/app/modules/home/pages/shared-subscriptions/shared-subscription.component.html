@@ -39,7 +39,7 @@
       <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.partitions</mat-label>
         <input matInput formControlName="partitions" required type="number" min="1" step="1">
-        <mat-hint translate>shared-subscription.partitions-hint</mat-hint>
+        <mat-hint translate>shared-subscription.hint-partitions</mat-hint>
         <mat-error *ngIf="entityForm.get('partitions').hasError('required')">
           {{ 'shared-subscription.partitions-required' | translate }}
         </mat-error>
@@ -50,7 +50,7 @@
       <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.topic</mat-label>
         <input matInput formControlName="topic" required>
-        <mat-hint translate>shared-subscription.topic-hint</mat-hint>
+        <mat-hint translate>shared-subscription.hint-topic</mat-hint>
         <mat-error *ngIf="entityForm.get('topic').hasError('required')">
           {{ 'shared-subscription.topic-required' | translate }}
         </mat-error>

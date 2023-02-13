@@ -22,7 +22,9 @@
     <div tb-help="sessions"></div>
     <button mat-icon-button
             [mat-dialog-close]="false"
-            type="button">
+            type="button"
+            matTooltip="{{ 'action.close' | translate }}"
+            matTooltipPosition="above">
       <mat-icon class="material-icons">close</mat-icon>
     </button>
   </mat-toolbar>
@@ -33,20 +35,26 @@
     <button mat-raised-button
             ngxClipboard
             (cbOnSuccess)="onSessionIdCopied()"
-            [cbContent]="entity?.sessionId">
+            [cbContent]="entity?.sessionId"
+            matTooltip="{{ 'mqtt-client-session.copy-session-id' | translate }}"
+            matTooltipPosition="above">
       <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
       <span translate>mqtt-client-session.copy-session-id</span>
     </button>
     <button mat-raised-button
             [disabled]="(isLoading$ | async) || !isConnected()"
-            (click)="onEntityAction($event, 'disconnect')">
+            (click)="onEntityAction($event, 'disconnect')"
+            matTooltip="{{ 'mqtt-client-session.disconnect-client' | translate }}"
+            matTooltipPosition="above">
       <mat-icon svgIcon="mdi:link-off"></mat-icon>
       <span translate>mqtt-client-session.disconnect-client</span>
     </button>
     <button mat-raised-button
             ngxClipboard
             [disabled]="(isLoading$ | async) || isConnected()"
-            (click)="onEntityAction($event, 'remove')">
+            (click)="onEntityAction($event, 'remove')"
+            matTooltip="{{ 'mqtt-client-session.remove-session' | translate }}"
+            matTooltipPosition="above">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>mqtt-client-session.remove-session</span>
     </button>
@@ -67,22 +75,22 @@
           <input fxHide matInput formControlName="clientType" readonly>
           <span>{{ entityForm.get('clientType')?.value | titlecase }}</span>
         </mat-form-field>
-        <mat-form-field *ngIf="isConnected()" class="mat-block">
+        <mat-form-field *ngIf="isConnected()" class="mat-block hint">
           <mat-label translate>mqtt-client-session.keep-alive</mat-label>
           <input matInput formControlName="keepAliveSeconds" readonly>
-          <mat-hint translate>mqtt-client-session.keep-alive-hint</mat-hint>
+          <mat-hint translate>mqtt-client-session.hint-keep-alive</mat-hint>
         </mat-form-field>
-        <mat-form-field class="mat-block">
+        <mat-form-field class="mat-block hint">
           <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
           <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
           {{ entity?.sessionExpiryInterval }}
-          <mat-hint translate>mqtt-client-session.session-expiry-interval-hint</mat-hint>
+          <mat-hint translate>mqtt-client-session.hint-session-expiry-interval</mat-hint>
         </mat-form-field>
-        <mat-form-field class="mat-block">
+        <mat-form-field class="mat-block hint">
           <mat-label translate>mqtt-client-session.session-end</mat-label>
           <input matInput fxHide formControlName="sessionEndTs" readonly>
           {{ entity?.sessionEndTs === -1 ? ('mqtt-client-session.never' | translate) : (entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss') }}
-          <mat-hint translate>mqtt-client-session.session-end-hint</mat-hint>
+          <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
         </mat-form-field>
       </div>
       <div fxFlex="50">
@@ -118,7 +126,7 @@
               {{ 'mqtt-client-session.clean-start' | translate }}
             </mat-checkbox>
           </section>
-          <div class="tb-hint" translate>mqtt-client-session.clean-start-hint</div>
+          <div class="tb-hint" translate>mqtt-client-session.hint-clean-start</div>
         </div>
       </div>
     </div>
@@ -129,12 +137,16 @@
     <button mat-button color="primary"
             type="button"
             [disabled]="(isLoading$ | async)"
-            [mat-dialog-close]="false" cdkFocusInitial>
+            [mat-dialog-close]="false" cdkFocusInitial
+            matTooltip="{{ 'action.cancel' | translate }}"
+            matTooltipPosition="above">
       {{ 'action.cancel' | translate }}
     </button>
     <button mat-raised-button color="primary"
             (click)="onEntityAction($event, 'save')"
-            [disabled]="(isLoading$ | async) || entityForm.invalid || !entityForm.dirty">
+            [disabled]="(isLoading$ | async) || entityForm.invalid || !entityForm.dirty"
+            matTooltip="{{ 'action.update' | translate }}"
+            matTooltipPosition="above">
       {{ 'action.update' | translate }}
     </button>
   </div>
