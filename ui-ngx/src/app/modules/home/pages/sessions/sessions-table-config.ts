@@ -15,6 +15,7 @@
 ///
 
 import {
+  checkBoxCell,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
@@ -87,8 +88,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '15%',
         (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('keepAliveSeconds', 'mqtt-client-session.keep-alive', '15%',
-        () => '60')
+      new EntityTableColumn<DetailedClientSessionInfo>('shareName', 'shared-subscription.shared-subscription', '10%',
+        (entity) => checkBoxCell(entity.subscriptions?.some(el => el.shareName))
+      )
     );
   }
 

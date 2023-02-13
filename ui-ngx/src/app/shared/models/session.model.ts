@@ -50,6 +50,7 @@ export interface ConnectionInfo {
 export interface TopicSubscription {
   topic: string;
   qos: MqttQoS;
+  shareName: string;
 }
 
 export enum MqttQoS {
