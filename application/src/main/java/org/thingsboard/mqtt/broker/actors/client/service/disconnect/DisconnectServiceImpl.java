@@ -68,7 +68,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("[{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
+            log.debug("[{}][{}][{}] Init client disconnection. Reason - {}.", sessionCtx.getAddress(), sessionCtx.getClientId(), sessionCtx.getSessionId(), reason);
         }
 
         if (needSendDisconnectToClient(sessionCtx, reason)) {

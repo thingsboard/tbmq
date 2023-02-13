@@ -93,7 +93,7 @@ public class ConnectServiceImpl implements ConnectService {
         String clientId = actorState.getClientId();
 
         if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
+            log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
         }
 
         validate(sessionCtx, msg);

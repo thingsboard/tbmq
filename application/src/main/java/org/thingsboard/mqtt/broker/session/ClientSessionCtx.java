@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +61,9 @@ public class ClientSessionCtx implements SessionContext {
     @Getter
     @Setter
     private volatile MqttVersion mqttVersion;
+    @Getter
+    @Setter
+    private volatile InetSocketAddress address;
 
     @Getter
     private ChannelHandlerContext channel;

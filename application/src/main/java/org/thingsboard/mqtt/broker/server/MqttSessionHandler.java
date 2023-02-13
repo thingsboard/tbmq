@@ -29,6 +29,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -50,10 +51,13 @@ import org.thingsboard.mqtt.broker.session.SessionContext;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.UUID;
 
 @Slf4j
 public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>>, SessionContext {
+
+    public static final AttributeKey<InetSocketAddress> ADDRESS = AttributeKey.newInstance("SRC_ADDRESS");
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
@@ -63,6 +67,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final UUID sessionId = UUID.randomUUID();
 
     private String clientId;
+    private InetSocketAddress address;
 
     public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger,
                               RateLimitService rateLimitService, SslHandler sslHandler, int maxInFlightMsgs) {
@@ -74,8 +79,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        if (address == null) {
+            address = getAddress(ctx);
+            clientSessionCtx.setAddress(address);
+        }
         if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing msg: {}", clientId, sessionId, msg);
+            log.trace("[{}][{}][{}] Processing msg: {}", address, clientId, sessionId, msg);
         }
         clientSessionCtx.setChannel(ctx);
         try {
@@ -240,5 +249,24 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     void disconnect(MqttDisconnectMsg disconnectMsg) {
         clientMqttActorManager.disconnect(clientId, disconnectMsg);
+    }
+
+    InetSocketAddress getAddress(ChannelHandlerContext ctx) {
+        var address = ctx.channel().attr(ADDRESS).get();
+        if (address == null) {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Received empty address.", ctx.channel().id());
+            }
+            InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Going to use address: {}", ctx.channel().id(), remoteAddress);
+            }
+            return remoteAddress;
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Received address: {}", ctx.channel().id(), address);
+            }
+        }
+        return address;
     }
 }

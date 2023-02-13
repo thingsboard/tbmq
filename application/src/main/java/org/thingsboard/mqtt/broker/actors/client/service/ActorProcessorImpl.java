@@ -73,7 +73,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             return;
         }
 
-        finishSessionAuth(sessionCtx, authResponse);
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse);
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
@@ -114,19 +114,19 @@ public class ActorProcessorImpl implements ActorProcessor {
         state.clearStopActorCommandId();
     }
 
-    private void finishSessionAuth(ClientSessionCtx sessionCtx, AuthResponse authResponse) {
+    private void finishSessionAuth(String clientId, ClientSessionCtx sessionCtx, AuthResponse authResponse) {
         List<AuthRulePatterns> authRulePatterns = authResponse.getAuthRulePatterns();
         if (!CollectionUtils.isEmpty(authRulePatterns)) {
-            logAuthRules(sessionCtx, authRulePatterns);
+            logAuthRules(clientId, authRulePatterns);
             sessionCtx.setAuthRulePatterns(authRulePatterns);
         }
         sessionCtx.setClientType(authResponse.getClientType());
     }
 
-    private void logAuthRules(ClientSessionCtx sessionCtx, List<AuthRulePatterns> authRulePatterns) {
+    private void logAuthRules(String clientId, List<AuthRulePatterns> authRulePatterns) {
         if (log.isDebugEnabled()) {
             log.debug("[{}] Authorization rules for client - pub: {}, sub: {}.",
-                    sessionCtx.getClientId(), toPubSet(authRulePatterns), toSubSet(authRulePatterns));
+                    clientId, toPubSet(authRulePatterns), toSubSet(authRulePatterns));
         }
     }
 
