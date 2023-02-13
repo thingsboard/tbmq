@@ -290,6 +290,7 @@
       "add-authorization-rules": "Add authorization rule",
       "add-authorization-rule-prompt": "Please add authorization rule",
       "authorization-rules-mapping": "Authorization rules mapping",
+      "authorization-rules-mapping-hint": "authorization-rules-mapping-hint",
       "authorization-rule-patterns-pub": "Publish authorization rule patterns",
       "authorization-rule-patterns-sub": "Subscribe authorization rule patterns",
       "allow-self-signed-certificates": "Allow self-signed certificates",

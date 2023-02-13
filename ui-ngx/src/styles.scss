@@ -1057,4 +1057,21 @@ mat-label {
   .tb-toast-panel {
     pointer-events: none !important;
   }
+
+  mat-expansion-panel {
+    button {
+      margin-left: 15px;
+    }
+  }
+
+  .fields-group {
+    padding: 8px 16px 0;
+    margin: 10px 0;
+    border: 1px groove rgba(0, 0, 0, .25);
+    border-radius: 4px;
+
+    legend {
+      color: rgba(0, 0, 0, .7);
+    }
+  }
 }
