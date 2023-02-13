@@ -70,18 +70,25 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     );
 
     this.columns.push(
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '12%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.status', '12%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '12%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIp', 'mqtt-client-session.client-ip', '12%',
+        () => '127.0.0.1'
+      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '12%',
+        (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
+      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '12%',
         (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '25%',
-        (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
-      )
+      new EntityTableColumn<DetailedClientSessionInfo>('keepAliveSeconds', 'mqtt-client-session.keep-alive', '12%',
+        () => '60'),
+      new EntityTableColumn<DetailedClientSessionInfo>('sessionExpiryInterval', 'mqtt-client-session.session-expiry-interval', '12%',
+        () => '360')
     );
   }
 
