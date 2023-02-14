@@ -57,8 +57,8 @@ export interface BasicMqttCredentials {
 }
 
 export interface AuthRules {
-  subAuthRulePatterns: Array<string>;
-  pubAuthRulePatterns: Array<string>;
+  subAuthRulePatterns: any
+  pubAuthRulePatterns: any;
 }
 
 export interface AuthRulesMapping extends AuthRules {
