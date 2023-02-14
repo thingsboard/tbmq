@@ -50,15 +50,15 @@
                 <mat-icon>add</mat-icon>
               </button>
               <ng-template #addActions>
-                <button mat-mini-fab color="primary" class="mat-elevation-z2"
+                <button mat-raised-button color="primary"
                         [disabled]="isLoading$ | async"
                         *ngIf="entitiesTableConfig.addActionDescriptors.length === 1; else addActionsMenu"
                         [fxShow]="entitiesTableConfig.addActionDescriptors[0].isEnabled()"
                         (click)="entitiesTableConfig.addActionDescriptors[0].onAction($event)"
                         matTooltip="{{ entitiesTableConfig.addActionDescriptors[0].name }}"
                         matTooltipPosition="above">
+                  <mat-icon>{{entitiesTableConfig.addActionDescriptors[0].icon}}</mat-icon>
                   {{ 'action.add' | translate }}
-<!--                  <mat-icon>{{entitiesTableConfig.addActionDescriptors[0].icon}}</mat-icon>-->
                 </button>
                 <ng-template #addActionsMenu>
                   <button mat-icon-button [disabled]="isLoading$ | async"
@@ -87,14 +87,14 @@
               <mat-icon *ngIf="actionDescriptor.isMdiIcon" [svgIcon]="actionDescriptor.icon"></mat-icon>
               <mat-icon *ngIf="!actionDescriptor.isMdiIcon">{{actionDescriptor.icon}}</mat-icon>
             </button>
-            <button mat-mini-fab color="none" class="mat-elevation-z2"
+            <button mat-mini-fab color="none"
                     [disabled]="isLoading$ | async" (click)="updateData()"
                     matTooltip="{{ 'action.refresh' | translate }}"
                     matTooltipPosition="above">
               <mat-icon>refresh</mat-icon>
             </button>
             <button *ngIf="entitiesTableConfig.searchEnabled"
-                    mat-mini-fab color="none" class="mat-elevation-z2"
+                    mat-mini-fab color="none"
                     [disabled]="isLoading$ | async" (click)="enterFilterMode()"
                     matTooltip="{{ translations.search | translate }}"
                     matTooltipPosition="above">
