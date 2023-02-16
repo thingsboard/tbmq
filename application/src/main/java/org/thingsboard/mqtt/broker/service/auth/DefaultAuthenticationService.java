@@ -54,15 +54,15 @@ public class DefaultAuthenticationService implements AuthenticationService {
         try {
             if (AuthStrategy.BOTH == authStrategy) {
                 for (var authProviderType : AuthProviderType.values()) {
-                    var authResponse = authorize(authProviderType, authContext);
+                    var authResponse = authenticate(authProviderType, authContext);
                     if (authResponse != null) {
                         return authResponse;
                     }
                 }
             } else {
                 var authResponse = authContext.getSslHandler() != null ?
-                        authorize(AuthProviderType.SSL, authContext) :
-                        authorize(AuthProviderType.BASIC, authContext);
+                        authenticate(AuthProviderType.SSL, authContext) :
+                        authenticate(AuthProviderType.BASIC, authContext);
                 if (authResponse != null) {
                     return authResponse;
                 }
@@ -74,10 +74,10 @@ public class DefaultAuthenticationService implements AuthenticationService {
         throw new AuthenticationException("Failed to authenticate client");
     }
 
-    private AuthResponse authorize(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
+    private AuthResponse authenticate(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
         var authProvider = authProviders.get(type);
         if (authProvider != null) {
-            var authResponse = authProvider.authorize(authContext);
+            var authResponse = authProvider.authenticate(authContext);
             if (authResponse.isSuccess()) {
                 return authResponse;
             }
