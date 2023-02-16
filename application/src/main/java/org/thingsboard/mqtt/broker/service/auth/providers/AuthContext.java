@@ -19,15 +19,25 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.ToString;
+
+import java.nio.charset.StandardCharsets;
 
 @Builder
 @Getter
 @AllArgsConstructor
-@ToString
 public class AuthContext {
     private final String clientId;
     private final String username;
     private final byte[] passwordBytes;
     private final SslHandler sslHandler;
+
+    @Override
+    public String toString() {
+        return "AuthContext{" +
+                "clientId='" + clientId + '\'' +
+                ", username='" + username + '\'' +
+                ", passwordBytes=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
+                ", sslHandler=" + sslHandler +
+                '}';
+    }
 }
