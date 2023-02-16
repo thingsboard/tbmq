@@ -19,10 +19,12 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @Builder
 @Getter
 @AllArgsConstructor
+@ToString
 public class AuthContext {
     private final String clientId;
     private final String username;
