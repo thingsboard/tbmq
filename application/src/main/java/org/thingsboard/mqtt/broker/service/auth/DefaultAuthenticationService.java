@@ -61,7 +61,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
                 }
             } else {
                 var authResponse = authContext.getSslHandler() != null ?
-                        authenticate(AuthProviderType.SSL, authContext) :
+                        authenticate(AuthProviderType.X_509_CERTIFICATE_CHAIN, authContext) :
                         authenticate(AuthProviderType.BASIC, authContext);
                 if (authResponse != null) {
                     return authResponse;

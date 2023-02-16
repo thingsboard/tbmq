@@ -190,7 +190,7 @@ public class DefaultAuthenticationServiceTest {
                                             SslMqttClientAuthProvider sslMqttClientAuthProvider) {
         when(mqttClientAuthProviderManager.getActiveAuthProviders()).thenReturn(Map.of(
                 AuthProviderType.BASIC, basicMqttClientAuthProvider,
-                AuthProviderType.SSL, sslMqttClientAuthProvider
+                AuthProviderType.X_509_CERTIFICATE_CHAIN, sslMqttClientAuthProvider
         ));
     }
 
