@@ -36,7 +36,7 @@ public class AuthContext {
         return "AuthContext{" +
                 "clientId='" + clientId + '\'' +
                 ", username='" + username + '\'' +
-                ", passwordBytes=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
+                ", password=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
                 ", sslHandler=" + sslHandler +
                 '}';
     }
