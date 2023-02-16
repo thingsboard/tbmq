@@ -22,7 +22,6 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -42,7 +41,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     private final ClientSubscriptionCache subscriptionCache;
 
     @Override
-    public DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) throws ThingsboardException {
+    public DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) {
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
             return null;
@@ -74,9 +73,12 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {
         return subscriptions.stream()
-                .map(topicSubscription -> new SubscriptionInfoDto(
-                        topicSubscription.getTopicFilter(),
-                        MqttQoS.valueOf(topicSubscription.getQos())))
+                .map(topicSubscription ->
+                        new SubscriptionInfoDto(
+                                topicSubscription.getTopicFilter(),
+                                MqttQoS.valueOf(topicSubscription.getQos()),
+                                topicSubscription.getShareName()
+                        ))
                 .collect(Collectors.toList());
     }
 }
