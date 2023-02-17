@@ -35,26 +35,20 @@
     <button mat-raised-button
             ngxClipboard
             (cbOnSuccess)="onSessionIdCopied()"
-            [cbContent]="entity?.sessionId"
-            matTooltip="{{ 'mqtt-client-session.copy-session-id' | translate }}"
-            matTooltipPosition="above">
+            [cbContent]="entity?.sessionId">
       <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
       <span translate>mqtt-client-session.copy-session-id</span>
     </button>
     <button mat-raised-button
             [disabled]="(isLoading$ | async) || !isConnected()"
-            (click)="onEntityAction($event, 'disconnect')"
-            matTooltip="{{ 'mqtt-client-session.disconnect-client' | translate }}"
-            matTooltipPosition="above">
+            (click)="onEntityAction($event, 'disconnect')">
       <mat-icon svgIcon="mdi:link-off"></mat-icon>
       <span translate>mqtt-client-session.disconnect-client</span>
     </button>
     <button mat-raised-button
             ngxClipboard
             [disabled]="(isLoading$ | async) || isConnected()"
-            (click)="onEntityAction($event, 'remove')"
-            matTooltip="{{ 'mqtt-client-session.remove-session' | translate }}"
-            matTooltipPosition="above">
+            (click)="onEntityAction($event, 'remove')">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>mqtt-client-session.remove-session</span>
     </button>
@@ -80,17 +74,9 @@
           <input matInput formControlName="keepAliveSeconds" readonly>
           <mat-hint translate>mqtt-client-session.hint-keep-alive</mat-hint>
         </mat-form-field>
-        <mat-form-field class="mat-block hint">
-          <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
-          <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
-          {{ entity?.sessionExpiryInterval }}
-          <mat-hint translate>mqtt-client-session.hint-session-expiry-interval</mat-hint>
-        </mat-form-field>
-        <mat-form-field class="mat-block hint">
-          <mat-label translate>mqtt-client-session.session-end</mat-label>
-          <input matInput fxHide formControlName="sessionEndTs" readonly>
-          {{ entity?.sessionEndTs === -1 ? ('mqtt-client-session.never' | translate) : (entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss') }}
-          <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
+          <input matInput formControlName="subscriptionsCount" readonly>
         </mat-form-field>
       </div>
       <div fxFlex="50">
@@ -115,18 +101,24 @@
             {{ isConnected() ? (entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss') : (entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss') }}
           </span>
         </mat-form-field>
-        <div [formGroup]="sessionDetailsForm" fxFlex>
-          <mat-form-field class="mat-block">
-            <mat-label translate>mqtt-client-session.subscriptions-count</mat-label>
-            <input matInput formControlName="subscriptionsCount" readonly>
-          </mat-form-field>
-          <section class="tb-checkbox">
-            <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate"
-                          labelPosition="after" disabled>
-              {{ 'mqtt-client-session.clean-start' | translate }}
-            </mat-checkbox>
-          </section>
-          <div class="tb-hint" translate>mqtt-client-session.hint-clean-start</div>
+        <mat-form-field *ngIf="!isConnected()" class="mat-block hint">
+          <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
+          <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
+          {{ entity?.sessionExpiryInterval }}
+          <mat-hint translate>mqtt-client-session.hint-session-expiry-interval</mat-hint>
+        </mat-form-field>
+        <mat-form-field *ngIf="!isConnected() && entity?.sessionEndTs > -1" class="mat-block hint">
+          <mat-label translate>mqtt-client-session.session-end</mat-label>
+          <input matInput fxHide formControlName="sessionEndTs" readonly>
+          {{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}
+          <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
+        </mat-form-field>
+        <div fxLayout="column" style="padding-top: 6px">
+          <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate" labelPosition="after" disabled>
+            {{ 'mqtt-client-session.clean-start' | translate }}
+          </mat-checkbox>
+          <div *ngIf="entity?.cleanStart" class="tb-hint" translate>mqtt-client-session.hint-clean-start-true</div>
+          <div *ngIf="!entity?.cleanStart" class="tb-hint" translate>mqtt-client-session.hint-clean-start-false</div>
         </div>
       </div>
     </div>

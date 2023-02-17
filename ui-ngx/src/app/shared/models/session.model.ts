@@ -31,6 +31,7 @@ export interface DetailedClientSessionInfo extends BaseData {
   sessionExpiryInterval: number;
   sessionEndTs: number;
   clientIp: string;
+  subscriptionsCount?: number;
 }
 
 export interface SessionInfo {

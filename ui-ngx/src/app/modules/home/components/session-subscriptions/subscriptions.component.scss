@@ -17,4 +17,15 @@
   mat-expansion-panel button {
     margin-left: 0;
   }
+
+  .fields-group {
+    .tb-hint {
+      padding: 0;
+      max-width: fit-content;
+    }
+  }
+
+  .add-button {
+    margin: 8px 0 8px 0;
+  }
 }

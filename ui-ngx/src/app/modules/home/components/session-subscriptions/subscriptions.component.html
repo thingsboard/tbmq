@@ -15,22 +15,18 @@
     limitations under the License.
 
 -->
-<mat-expansion-panel #matExpansionPanel [expanded]="!!topicListFormGroup.get('subscriptions').value.length">
-  <mat-expansion-panel-header>
-    <mat-panel-title translate>mqtt-client-session.subscriptions</mat-panel-title>
-    <mat-panel-description *ngIf="!topicListFormGroup.get('subscriptions').value.length">
-      <mat-error translate>mqtt-client-session.add-topic-filter-prompt</mat-error>
-    </mat-panel-description>
-  </mat-expansion-panel-header>
-  <div fxLayout="row" fxLayoutGap="8px"
-         *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index"
-         [formGroup]="topicFilter">
+<fieldset class="fields-group">
+  <legend class="group-title" translate>mqtt-client-session.subscriptions</legend>
+  <tb-error *ngIf="!topicListFormGroup.get('subscriptions').value.length" translate>mqtt-client-session.add-topic-filter-prompt</tb-error>
+  <div class="container">
+    <div [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px"
+         *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex="70" floatLabel="always" hideRequiredMarker class="mat-block">
-        <mat-label translate>mqtt-client-session.topic</mat-label>
+        <mat-label translate>mqtt-client-session.topic-filter</mat-label>
         <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
                required name="topicFilterTopic" formControlName="topic">
         <mat-error *ngIf="topicFilter.invalid">
-          {{ 'mqtt-client-session.topic-filter-required' | translate }}
+          {{ 'mqtt-client-session.topic-required' | translate }}
         </mat-error>
       </mat-form-field>
       <mat-form-field fxFlex="30" floatLabel="always" hideRequiredMarker class="mat-block">
@@ -51,13 +47,18 @@
         <mat-icon>close</mat-icon>
       </button>
     </div>
-  <button mat-stroked-button mat-raised-button color="primary"
+    <section>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.support-level-wildcards' | translate }}"></div>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.single-level-wildcards-hint' | translate }}"></div>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.multi-level-wildcards-hint' | translate }}"></div>
+    </section>
+  </div>
+  <button mat-stroked-button color="primary" *ngIf="!subscriptionsFormArray().disabled"
+          class="add-button"
           [fxShow]="!disabled"
           (click)="addTopic()"
-          type="button"
-          matTooltip="{{ 'mqtt-client-session.add-subscription-to-client' | translate }}"
-          matTooltipPosition="above">
+          type="button">
     <mat-icon>add</mat-icon>
-    {{ 'action.add' | translate }}
+    {{ 'mqtt-client-session.add-subscription' | translate }}
   </button>
-</mat-expansion-panel>
+</fieldset>
