@@ -64,6 +64,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
                 .disconnectedAt(connectionInfo.getDisconnectedAt())
+                .clientIpAdr(sessionInfo.getClientInfo().getClientIpAdr())
                 .build();
     }
 

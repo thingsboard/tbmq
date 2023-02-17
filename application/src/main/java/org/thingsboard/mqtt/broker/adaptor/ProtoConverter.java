@@ -111,6 +111,7 @@ public class ProtoConverter {
                 .sessionExpiryInterval(clientSessionProto.getSessionInfo().getSessionExpiryInterval())
                 .clientId(clientSessionProto.getSessionInfo().getClientInfo().getClientId())
                 .type(ClientType.valueOf(clientSessionProto.getSessionInfo().getClientInfo().getClientType()))
+                .clientIpAdr(clientSessionProto.getSessionInfo().getClientInfo().getClientIpAdr())
                 .connectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getConnectedAt())
                 .disconnectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getDisconnectedAt())
                 .keepAlive(clientSessionProto.getSessionInfo().getConnectionInfo().getKeepAlive())
@@ -169,7 +170,16 @@ public class ProtoConverter {
         return clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
                 .setClientId(clientInfo.getClientId())
                 .setClientType(clientInfo.getType().toString())
+                .setClientIpAdr(clientInfo.getClientIpAdr())
                 .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
+    }
+
+    public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
+        return clientInfoProto != null ? ClientInfo.builder()
+                .clientId(clientInfoProto.getClientId())
+                .type(ClientType.valueOf(clientInfoProto.getClientType()))
+                .clientIpAdr(clientInfoProto.getClientIpAdr())
+                .build() : null;
     }
 
     public static QueueProtos.ConnectionInfoProto convertToConnectionInfoProto(ConnectionInfo connectionInfo) {
@@ -178,13 +188,6 @@ public class ProtoConverter {
                 .setDisconnectedAt(connectionInfo.getDisconnectedAt())
                 .setKeepAlive(connectionInfo.getKeepAlive())
                 .build() : QueueProtos.ConnectionInfoProto.getDefaultInstance();
-    }
-
-    public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
-        return clientInfoProto != null ? ClientInfo.builder()
-                .clientId(clientInfoProto.getClientId())
-                .type(ClientType.valueOf(clientInfoProto.getClientType()))
-                .build() : null;
     }
 
     private static ConnectionInfo convertToConnectionInfo(QueueProtos.ConnectionInfoProto connectionInfoProto) {

@@ -99,7 +99,10 @@ public class ConnectServiceImpl implements ConnectService {
         validate(sessionCtx, msg);
 
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
-        sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(), sessionExpiryInterval));
+        sessionCtx.setSessionInfo(
+                getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
+                        sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().toString())
+        );
 
         keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));
 
@@ -243,12 +246,13 @@ public class ConnectServiceImpl implements ConnectService {
         }
     }
 
-    SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId, ClientType clientType, int sessionExpiryInterval) {
+    SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId,
+                               ClientType clientType, int sessionExpiryInterval, String clientIpAdr) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
                 msg.isCleanStart(),
                 serviceInfoProvider.getServiceId(),
-                new ClientInfo(clientId, clientType),
+                new ClientInfo(clientId, clientType, clientIpAdr),
                 ClientSessionInfoFactory.getConnectionInfo(msg.getKeepAliveTimeSeconds()),
                 sessionExpiryInterval);
     }

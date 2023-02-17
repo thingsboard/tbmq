@@ -68,6 +68,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .subscriptionsCount(clientSubscriptionCache.getClientSubscriptions(clientSessionInfo.getClientId()).size())
                 .connectedAt(clientSessionInfo.getConnectedAt())
                 .disconnectedAt(clientSessionInfo.getDisconnectedAt())
+                .clientIpAdr(clientSessionInfo.getClientIpAdr())
                 .build();
     }
 

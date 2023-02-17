@@ -50,6 +50,7 @@ public class ClientSessionInfoFactory {
                 .disconnectedAt(clientSession.getSessionInfo().getConnectionInfo().getDisconnectedAt())
                 .connectedAt(clientSession.getSessionInfo().getConnectionInfo().getConnectedAt())
                 .type(clientSession.getClientType())
+                .clientIpAdr(clientSession.getSessionInfo().getClientInfo().getClientIpAdr())
                 .clientId(clientSession.getClientId())
                 .sessionExpiryInterval(clientSession.getSessionInfo().getSessionExpiryInterval())
                 .cleanStart(clientSession.getSessionInfo().isCleanStart())
@@ -72,7 +73,7 @@ public class ClientSessionInfoFactory {
                 .sessionId(clientSessionInfo.getSessionId())
                 .cleanStart(clientSessionInfo.isCleanStart())
                 .sessionExpiryInterval(clientSessionInfo.getSessionExpiryInterval())
-                .clientInfo(getClientInfo(clientSessionInfo.getClientId(), clientSessionInfo.getType()))
+                .clientInfo(getClientInfo(clientSessionInfo.getClientId(), clientSessionInfo.getType(), clientSessionInfo.getClientIpAdr()))
                 .connectionInfo(
                         getConnectionInfo(
                                 clientSessionInfo.getKeepAlive(),
@@ -127,9 +128,14 @@ public class ClientSessionInfoFactory {
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
+        return getClientInfo(clientId, clientType, "localhost");
+    }
+
+    public static ClientInfo getClientInfo(String clientId, ClientType clientType, String clientIpAdr) {
         return ClientInfo.builder()
                 .clientId(clientId)
                 .type(clientType)
+                .clientIpAdr(clientIpAdr)
                 .build();
     }
 }

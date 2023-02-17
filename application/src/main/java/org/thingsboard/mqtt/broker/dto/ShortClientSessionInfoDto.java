@@ -44,6 +44,7 @@ public class ShortClientSessionInfoDto {
     private int subscriptionsCount;
     private long connectedAt;
     private long disconnectedAt;
+    private String clientIpAdr;
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
         switch (sortOrder.getProperty()) {
@@ -62,6 +63,8 @@ public class ShortClientSessionInfoDto {
                 return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getConnectedAt);
             case "disconnectedAt":
                 return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getDisconnectedAt);
+            case "clientIpAdr":
+                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientIpAdr);
             default:
                 return null;
         }
