@@ -56,8 +56,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
 
-    // TODO: think about case when client is DEVICE and then is changed to APPLICATION and vice versa
-
     @Override
     public void processPublish(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
         List<Subscription> deviceSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getDeviceSubscriptions());
