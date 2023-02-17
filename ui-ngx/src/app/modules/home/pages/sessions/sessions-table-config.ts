@@ -15,7 +15,6 @@
 ///
 
 import {
-  checkBoxCell,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
@@ -74,21 +73,23 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     );*/
 
     this.columns.push(
-      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connection-info', '10%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '20%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIp', 'mqtt-client-session.client-ip', '20%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '30%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '10%',
+        (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
+      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIp', 'mqtt-client-session.client-ip', '10%',
         () => '127.0.0.1'
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '15%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '15%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '15%',
-        (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
-      )
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', '10%')
     );
   }
 
