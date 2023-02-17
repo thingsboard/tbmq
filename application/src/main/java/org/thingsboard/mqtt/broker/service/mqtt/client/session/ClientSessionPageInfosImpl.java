@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 
 import java.util.Comparator;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     private final ClientSessionCache clientSessionCache;
+    private final ClientSubscriptionCache clientSubscriptionCache;
 
     @Override
     public PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink) {
@@ -45,14 +47,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
                 .skip((long) pageLink.getPage() * pageLink.getPageSize())
                 .limit(pageLink.getPageSize())
-                .map(clientSessionInfo -> ShortClientSessionInfoDto.builder()
-                        .id(clientSessionInfo.getClientId())
-                        .clientId(clientSessionInfo.getClientId())
-                        .clientType(clientSessionInfo.getType())
-                        .connectionState(clientSessionInfo.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
-                        .nodeId(clientSessionInfo.getServiceId())
-                        .sessionId(clientSessionInfo.getSessionId())
-                        .build())
+                .map(this::toShortSessionInfo)
                 .sorted(sorted(pageLink))
                 .collect(Collectors.toList());
 
@@ -60,6 +55,20 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 filteredByTextSearch.size() / pageLink.getPageSize(),
                 filteredByTextSearch.size(),
                 pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < filteredByTextSearch.size());
+    }
+
+    private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {
+        return ShortClientSessionInfoDto.builder()
+                .id(clientSessionInfo.getClientId())
+                .clientId(clientSessionInfo.getClientId())
+                .clientType(clientSessionInfo.getType())
+                .connectionState(clientSessionInfo.isConnected() ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED)
+                .nodeId(clientSessionInfo.getServiceId())
+                .sessionId(clientSessionInfo.getSessionId())
+                .subscriptionsCount(clientSubscriptionCache.getClientSubscriptions(clientSessionInfo.getClientId()).size())
+                .connectedAt(clientSessionInfo.getConnectedAt())
+                .disconnectedAt(clientSessionInfo.getDisconnectedAt())
+                .build();
     }
 
     private Comparator<? super ShortClientSessionInfoDto> sorted(PageLink pageLink) {

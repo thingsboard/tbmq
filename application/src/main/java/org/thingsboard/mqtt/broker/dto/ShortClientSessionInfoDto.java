@@ -41,25 +41,52 @@ public class ShortClientSessionInfoDto {
     private ClientType clientType;
     private String nodeId;
     private UUID sessionId;
+    private int subscriptionsCount;
+    private long connectedAt;
+    private long disconnectedAt;
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
         switch (sortOrder.getProperty()) {
             case "id":
             case "clientId":
-                return getComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
+                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
             case "connectionState":
-                return getComparator(sortOrder.getDirection(), csi -> csi.getConnectionState().name());
+                return getStrComparator(sortOrder.getDirection(), csi -> csi.getConnectionState().name());
             case "clientType":
-                return getComparator(sortOrder.getDirection(), csi -> csi.getClientType().name());
+                return getStrComparator(sortOrder.getDirection(), csi -> csi.getClientType().name());
             case "nodeId":
-                return getComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getNodeId);
+                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getNodeId);
+            case "subscriptionsCount":
+                return getIntComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getSubscriptionsCount);
+            case "connectedAt":
+                return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getConnectedAt);
+            case "disconnectedAt":
+                return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getDisconnectedAt);
             default:
                 return null;
         }
     }
 
-    private static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder.Direction direction,
-                                                                       Function<ShortClientSessionInfoDto, String> func) {
+    private static Comparator<ShortClientSessionInfoDto> getStrComparator(SortOrder.Direction direction,
+                                                                          Function<ShortClientSessionInfoDto, String> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
+
+    private static Comparator<ShortClientSessionInfoDto> getIntComparator(SortOrder.Direction direction,
+                                                                          Function<ShortClientSessionInfoDto, Integer> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
+
+    private static Comparator<ShortClientSessionInfoDto> getLongComparator(SortOrder.Direction direction,
+                                                                           Function<ShortClientSessionInfoDto, Long> func) {
         if (direction == SortOrder.Direction.DESC) {
             return Comparator.comparing(func, Comparator.reverseOrder());
         } else {

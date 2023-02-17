@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,9 +25,12 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -35,18 +39,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClientSessionInfo;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClientSessionPageInfosImplTest {
 
     ClientSessionCache clientSessionCache;
+    ClientSubscriptionCache clientSubscriptionCache;
     ClientSessionPageInfosImpl clientSessionPageInfos;
 
     @Before
     public void setUp() {
         clientSessionCache = mock(ClientSessionCache.class);
-        clientSessionPageInfos = spy(new ClientSessionPageInfosImpl(clientSessionCache));
+        clientSubscriptionCache = mock(ClientSubscriptionCache.class);
+        clientSessionPageInfos = spy(new ClientSessionPageInfosImpl(clientSessionCache, clientSubscriptionCache));
 
         Map<String, ClientSessionInfo> clientSessionInfoMap = getClientSessionInfoMap();
         doReturn(clientSessionInfoMap).when(clientSessionCache).getAllClientSessions();
@@ -113,5 +120,29 @@ public class ClientSessionPageInfosImplTest {
         assertNotNull(clientSessionInfos);
         assertEquals(10, clientSessionInfos.getTotalElements());
         assertFalse(clientSessionInfos.hasNext());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithPageLinkAndSortingBySubscriptionsCount() {
+        when(clientSubscriptionCache.getClientSubscriptions("clientId1")).thenReturn(Set.of(getTopicSubscription()));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId2")).thenReturn(Set.of(getTopicSubscription(), getTopicSubscription()));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId3")).thenReturn(Set.of(getTopicSubscription()));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId4")).thenReturn(Set.of());
+        when(clientSubscriptionCache.getClientSubscriptions("clientId5")).thenReturn(Set.of(getTopicSubscription(), getTopicSubscription(), getTopicSubscription()));
+
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(
+                new PageLink(100, 0, "clientId", new SortOrder("subscriptionsCount")));
+        List<ShortClientSessionInfoDto> data = clientSessionInfos.getData();
+
+        assertEquals(5, data.size());
+        assertEquals(5, clientSessionInfos.getTotalElements());
+        assertFalse(clientSessionInfos.hasNext());
+
+        assertEquals("clientId4", data.get(0).getClientId());
+        assertEquals("clientId5", data.get(4).getClientId());
+    }
+
+    private TopicSubscription getTopicSubscription() {
+        return new TopicSubscription(RandomStringUtils.randomAlphabetic(10), 1);
     }
 }
