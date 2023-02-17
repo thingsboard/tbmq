@@ -36,6 +36,7 @@ import {
 } from "@shared/models/session.model";
 import { clientTypeTranslationMap } from "@shared/models/client.model";
 import { HelpLinks } from "@shared/models/constants";
+import { Direction } from "@shared/models/page/sort-order";
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -56,32 +57,39 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
+    this.defaultSortOrder = { property: 'connectionState', direction: Direction.ASC };
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
 
-    this.headerActionDescriptors.push(
+    /*this.headerActionDescriptors.push(
       {
         name: this.translate.instant('help.goto-help-page'),
-        icon: 'help',
+        icon: 'help_outline',
         isEnabled: () => true,
-        onAction: () => this.gotoHelpPage()
+        onAction: () => this.gotoHelpPage(),
+
       }
-    );
+    );*/
 
     this.columns.push(
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connect', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connection-info', '10%',
         (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '30%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '10%',
         (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIp', 'mqtt-client-session.client-ip', '10%',
+        () => '127.0.0.1'
+      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
-      )
+      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', '10%')
     );
   }
 

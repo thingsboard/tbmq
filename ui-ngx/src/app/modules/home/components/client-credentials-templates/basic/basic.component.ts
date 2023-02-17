@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {Component, EventEmitter, forwardRef, Input, OnDestroy, Output} from '@angular/core';
+import { Component, EventEmitter, forwardRef, Input, OnDestroy, Output } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -26,20 +26,20 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import {Subject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
-import {isDefinedAndNotNull, isEmptyStr} from '@core/utils';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import {
   AuthRulePatternsType,
   BasicMqttCredentials,
   MqttClientCredentials
 } from '@shared/models/client-crenetials.model';
-import {MatDialog} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
-import {MatChipInputEvent} from "@angular/material/chips";
+import { MatChipInputEvent } from "@angular/material/chips";
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -55,7 +55,7 @@ import {MatChipInputEvent} from "@angular/material/chips";
       useExisting: forwardRef(() => MqttCredentialsBasicComponent),
       multi: true,
     }],
-  styleUrls: []
+  styleUrls: ['./basic.component.scss']
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy {
 
@@ -122,34 +122,40 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   writeValue(value: string) {
     if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
-      this.pubRulesSet.clear();
-      this.subRulesSet.clear();
+      this.clearRuleSets();
       const valueJson = JSON.parse(value);
-      if (valueJson.authRules.pubAuthRulePatterns?.length) {
-        valueJson.authRules.pubAuthRulePatterns[0].split(',').map(el => {
-          if (el.length) this.pubRulesSet.add(el);
-        });
-      }
-      if (valueJson.authRules.subAuthRulePatterns?.length) {
-        valueJson.authRules.subAuthRulePatterns[0].split(',').map(el => {
-          if (el.length) this.subRulesSet.add(el);
-        });
+      for (const rule of Object.keys(valueJson.authRules)) {
+        if (valueJson.authRules[rule]?.length) {
+          valueJson.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
+          const commaSeparatedRuleValues = valueJson.authRules[rule].join(',');
+          valueJson.authRules[rule] = [commaSeparatedRuleValues];
+        }
       }
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
     } else {
-      this.setDefaultSubPubValues();
+      this.setDefaultAuthRuleValue();
     }
   }
 
-  private setDefaultSubPubValues(defaultValue: string = '.*') {
-    this.pubRulesSet.add(defaultValue);
-    this.subRulesSet.add(defaultValue);
+  private clearRuleSets() {
+    this.pubRulesSet.clear();
+    this.subRulesSet.clear();
+  }
+
+  private setDefaultAuthRuleValue(defaultValue: string = '.*') {
+    const authRulesControl = this.credentialsMqttFormGroup.get('authRules');
+    for (const rule of Object.keys(authRulesControl.value)) {
+      authRulesControl.patchValue({ [rule]: defaultValue });
+      this.addValueToAuthRulesSet(rule, defaultValue);
+    }
 }
 
   updateView(value: BasicMqttCredentials) {
     for (const rule of Object.keys(value.authRules)) {
       if (!value.authRules[rule]?.length || (value.authRules[rule].length && !value.authRules[rule][0].length)) {
         value.authRules[rule] = null;
+      } else {
+        value.authRules[rule] = value.authRules[rule][0].split(',');
       }
     }
     const formValue = JSON.stringify(value);
@@ -188,6 +194,17 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     }
     if (input) {
       input.value = '';
+    }
+  }
+
+  addValueToAuthRulesSet(type: string, value: string) {
+    switch (type) {
+      case 'subAuthRulePatterns':
+        this.subRulesSet.add(value);
+        break;
+      case 'pubAuthRulePatterns':
+        this.pubRulesSet.add(value);
+        break;
     }
   }
 

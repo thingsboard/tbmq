@@ -30,6 +30,8 @@ export interface DetailedClientSessionInfo extends BaseData {
   disconnectedAt: number;
   sessionExpiryInterval: number;
   sessionEndTs: number;
+  clientIp: string;
+  subscriptionsCount?: number;
 }
 
 export interface SessionInfo {
@@ -49,6 +51,7 @@ export interface ConnectionInfo {
 export interface TopicSubscription {
   topic: string;
   qos: MqttQoS;
+  shareName: string;
 }
 
 export enum MqttQoS {

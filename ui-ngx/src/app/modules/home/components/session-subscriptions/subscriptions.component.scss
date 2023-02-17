@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  .container{
-    overflow-x: auto;
+:host ::ng-deep {
+  mat-expansion-panel button {
+    margin-left: 0;
+  }
 
-    button {
-      margin-top: 8px;
+  .fields-group {
+    .tb-hint {
+      padding: 0;
+      max-width: fit-content;
     }
   }
 
-  .tb-integration-panel-group {
-    margin-top: 16px;
-    margin-bottom: 32px;
-    display: block;
+  .add-button {
+    margin: 8px 0 8px 0;
   }
 }

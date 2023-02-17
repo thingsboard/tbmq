@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 :host {
-  mat-expansion-panel button {
-    margin-left: 0;
-  }
-
-  section {
-    .tb-hint:first-child {
-      padding-bottom: 0;
-    }
+  .tb-hint {
+    padding-bottom: 0;
   }
 }
