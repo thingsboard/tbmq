@@ -21,9 +21,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.MULTI_LEVEL_WILDCARD;
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.SINGLE_LEVEL_WILDCARD;
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.TOPIC_DELIMITER;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MULTI_LEVEL_WILDCARD;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SINGLE_LEVEL_WILDCARD;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.TOPIC_DELIMITER;
 
 @Service
 public class DefaultTopicValidationService implements TopicValidationService {

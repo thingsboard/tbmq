@@ -48,7 +48,7 @@ public class MqttClientAuthProviderManagerImpl implements MqttClientAuthProvider
             tmpProvidersMap.put(AuthProviderType.BASIC, basicMqttClientAuthProvider);
         }
         if (sslAuthEnabled) {
-            tmpProvidersMap.put(AuthProviderType.SSL, sslMqttClientAuthProvider);
+            tmpProvidersMap.put(AuthProviderType.X_509_CERTIFICATE_CHAIN, sslMqttClientAuthProvider);
         }
 
         this.authProviders = Collections.unmodifiableMap(tmpProvidersMap);

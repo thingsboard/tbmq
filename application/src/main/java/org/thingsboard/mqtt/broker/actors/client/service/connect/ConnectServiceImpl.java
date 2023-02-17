@@ -38,8 +38,8 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -93,13 +93,16 @@ public class ConnectServiceImpl implements ConnectService {
         String clientId = actorState.getClientId();
 
         if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing connect msg.", clientId, sessionId);
+            log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
         }
 
         validate(sessionCtx, msg);
 
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
-        sessionCtx.setSessionInfo(getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(), sessionExpiryInterval));
+        sessionCtx.setSessionInfo(
+                getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
+                        sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getHostName())
+        );
 
         keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));
 
@@ -243,12 +246,13 @@ public class ConnectServiceImpl implements ConnectService {
         }
     }
 
-    SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId, ClientType clientType, int sessionExpiryInterval) {
+    SessionInfo getSessionInfo(MqttConnectMsg msg, UUID sessionId, String clientId,
+                               ClientType clientType, int sessionExpiryInterval, String clientIpAdr) {
         return ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
                 msg.isCleanStart(),
                 serviceInfoProvider.getServiceId(),
-                new ClientInfo(clientId, clientType),
+                new ClientInfo(clientId, clientType, clientIpAdr),
                 ClientSessionInfoFactory.getConnectionInfo(msg.getKeepAliveTimeSeconds()),
                 sessionExpiryInterval);
     }

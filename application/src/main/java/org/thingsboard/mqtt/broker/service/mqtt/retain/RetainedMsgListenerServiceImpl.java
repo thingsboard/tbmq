@@ -21,9 +21,9 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.Map;
@@ -102,7 +102,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         log.trace("[{}] Executing clearRetainedMsgAndPersist", topic);
         clearRetainedMsg(topic);
 
-        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, BrokerConstants.EMPTY_RETAINED_MSG_PROTO, callback);
+        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO, callback);
     }
 
     @Override

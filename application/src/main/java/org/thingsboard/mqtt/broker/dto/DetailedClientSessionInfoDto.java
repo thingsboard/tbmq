@@ -30,6 +30,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetailedClientSessionInfoDto {
+
     private String id;
     private String clientId;
     private UUID sessionId;
@@ -43,4 +44,6 @@ public class DetailedClientSessionInfoDto {
     private int keepAliveSeconds;
     private long connectedAt;
     private long disconnectedAt;
+    private String clientIpAdr;
+
 }

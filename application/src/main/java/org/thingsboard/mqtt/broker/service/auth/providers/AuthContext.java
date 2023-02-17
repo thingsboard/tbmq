@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.nio.charset.StandardCharsets;
+
 @Builder
 @Getter
 @AllArgsConstructor
@@ -28,4 +30,14 @@ public class AuthContext {
     private final String username;
     private final byte[] passwordBytes;
     private final SslHandler sslHandler;
+
+    @Override
+    public String toString() {
+        return "AuthContext{" +
+                "clientId='" + clientId + '\'' +
+                ", username='" + username + '\'' +
+                ", password=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
+                ", sslHandler=" + sslHandler +
+                '}';
+    }
 }

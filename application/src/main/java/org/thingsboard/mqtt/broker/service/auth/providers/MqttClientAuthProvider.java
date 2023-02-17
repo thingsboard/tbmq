@@ -18,5 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
 public interface MqttClientAuthProvider {
-    AuthResponse authorize(AuthContext authContext) throws AuthenticationException;
+
+    AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
+
 }

@@ -17,5 +17,5 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 
 public enum AuthProviderType {
     BASIC,
-    SSL
+    X_509_CERTIFICATE_CHAIN
 }

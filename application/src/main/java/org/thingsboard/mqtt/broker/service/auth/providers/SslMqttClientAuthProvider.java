@@ -48,9 +48,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     private boolean skipValidityCheckForClientCert;
 
     @Override
-    public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
-            log.error("Could not authenticate client with SSL credentials since SSL listener is not enabled!");
+            log.error("[{}] Could not authenticate client with SSL credentials since SSL listener is not enabled!", authContext);
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {

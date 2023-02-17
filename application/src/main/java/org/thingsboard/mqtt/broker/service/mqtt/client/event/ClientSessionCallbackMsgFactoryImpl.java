@@ -31,9 +31,9 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 import java.util.UUID;
 
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_ID_HEADER;
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.REQUEST_TIME;
-import static org.thingsboard.mqtt.broker.constant.BrokerConstants.RESPONSE_TOPIC_HEADER;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.REQUEST_ID_HEADER;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.RESPONSE_TOPIC_HEADER;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToLong;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;

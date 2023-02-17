@@ -17,12 +17,14 @@ package org.thingsboard.mqtt.broker.service.security.authorization;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class AuthRulePatterns {
 
     private final List<Pattern> pubPatterns;

@@ -221,8 +221,8 @@ public class MqttPublishHandler {
         }
         boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(ctx.getClientId(), topic, ctx.getAuthRulePatterns());
         if (!isClientAuthorized) {
-            log.warn("[{}][{}] Client is not authorized to publish to the topic {}",
-                    ctx.getClientId(), ctx.getSessionId(), topic);
+            log.warn("[{}][{}][{}] Client is not authorized to publish to the topic {}",
+                    ctx.getClientId(), ctx.getSessionId(), ctx.getAuthRulePatterns(), topic);
             throw new MqttException("Client is not authorized to publish to the topic");
         }
     }

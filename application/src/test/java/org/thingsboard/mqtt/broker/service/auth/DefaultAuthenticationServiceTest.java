@@ -68,7 +68,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
-        when(basicMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(false, null, null));
+        when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(null);
         authenticationService.authenticate(authContext);
@@ -85,7 +85,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
-        when(sslMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(false, null, null));
+        when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
         authenticationService.authenticate(authContext);
@@ -102,7 +102,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
-        when(sslMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
+        when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -121,7 +121,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
-        when(basicMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
+        when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(null);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -139,7 +139,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
-        when(basicMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
+        when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(null);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -158,8 +158,8 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
-        when(basicMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(false, ClientType.DEVICE, null));
-        when(sslMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
+        when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, ClientType.DEVICE, null));
+        when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -178,7 +178,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
-        when(basicMqttClientAuthProvider.authorize(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
+        when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -190,7 +190,7 @@ public class DefaultAuthenticationServiceTest {
                                             SslMqttClientAuthProvider sslMqttClientAuthProvider) {
         when(mqttClientAuthProviderManager.getActiveAuthProviders()).thenReturn(Map.of(
                 AuthProviderType.BASIC, basicMqttClientAuthProvider,
-                AuthProviderType.SSL, sslMqttClientAuthProvider
+                AuthProviderType.X_509_CERTIFICATE_CHAIN, sslMqttClientAuthProvider
         ));
     }
 

@@ -67,7 +67,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     @Override
-    public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());
         }
