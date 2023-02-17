@@ -96,6 +96,7 @@ public class ProtoConverterTest {
                 .clientInfo(ClientInfo.builder()
                         .clientId("clientId")
                         .type(ClientType.DEVICE)
+                        .clientIpAdr("localhost")
                         .build())
                 .connectionInfo(ConnectionInfo.builder()
                         .connectedAt(10)
