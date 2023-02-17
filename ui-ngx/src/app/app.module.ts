@@ -25,6 +25,7 @@ import {HomeModule} from '@home/home.module';
 
 import {AppComponent} from './app.component';
 import {RouterModule, Routes} from '@angular/router';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions } from "@angular/material/form-field";
 
 const routes: Routes = [
   {
@@ -40,6 +41,9 @@ const routes: Routes = [
 })
 export class PageNotFoundRoutingModule { }
 
+const appearance: MatFormFieldDefaultOptions = {
+  appearance: 'fill'
+};
 
 @NgModule({
   declarations: [
@@ -54,7 +58,12 @@ export class PageNotFoundRoutingModule { }
     HomeModule,
     PageNotFoundRoutingModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: appearance
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
