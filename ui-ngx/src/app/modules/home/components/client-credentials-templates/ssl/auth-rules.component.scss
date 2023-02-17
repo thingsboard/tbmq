@@ -13,4 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {}
+:host {
+  mat-expansion-panel button {
+    margin-left: 0;
+  }
+
+  section {
+    .tb-hint:first-child {
+      padding-bottom: 0;
+    }
+  }
+}

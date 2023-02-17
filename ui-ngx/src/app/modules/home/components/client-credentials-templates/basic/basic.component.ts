@@ -55,7 +55,7 @@ import { MatChipInputEvent } from "@angular/material/chips";
       useExisting: forwardRef(() => MqttCredentialsBasicComponent),
       multi: true,
     }],
-  styleUrls: []
+  styleUrls: ['./basic.component.scss']
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy {
 

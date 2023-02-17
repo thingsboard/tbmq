@@ -16,78 +16,92 @@
 
 -->
 <section [formGroup]="credentialsMqttFormGroup">
-  <mat-form-field class="mat-block hint">
-    <mat-label translate>mqtt-client.client-id</mat-label>
-    <input matInput formControlName="clientId">
-    <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
-      {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
-    </mat-error>
-    <mat-hint translate>mqtt-client-credentials.hint-basic-client-id</mat-hint>
-  </mat-form-field>
-  <mat-form-field class="mat-block hint">
-    <mat-label translate>mqtt-client-credentials.username</mat-label>
-    <input matInput formControlName="userName">
-    <mat-hint translate>mqtt-client-credentials.hint-basic-username</mat-hint>
-    <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
-      {{ 'mqtt-client-credentials.user-name-required' | translate }}
-    </mat-error>
-  </mat-form-field>
-  <tb-error *ngIf="credentialsMqttFormGroup.dirty"
-            [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
-            ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
-  </tb-error>
-  <mat-form-field class="mat-block hint" *ngIf="!entity?.id">
-    <mat-label translate>mqtt-client-credentials.password</mat-label>
-    <input matInput formControlName="password"
-           autocomplete="new-password"
-           type="password">
-    <tb-toggle-password matSuffix></tb-toggle-password>
-    <mat-hint translate>mqtt-client-credentials.hint-basic-password</mat-hint>
-  </mat-form-field>
-  <button mat-button mat-raised-button color="primary"
-          *ngIf="entity?.id"
-          type="button"
-          [disabled]="disabled" (click)="changePassword()">
-    {{'profile.change-password' | translate}}
-  </button>
-  <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
-    <mat-form-field class="mat-block hint">
-      <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-      <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
-        <mat-chip *ngFor="let rule of pubRulesSet" [value]="rule"
-                  [selectable]="!disabled"
-                  [removable]="!disabled"
-                  (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
-          {{ rule }}
-          <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-        </mat-chip>
-        <input matInput type="text"
-               placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-               matChipInputAddOnBlur
-               [matChipInputFor]="chipListPub"
-               (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
-      </mat-chip-list>
-      <mat-hint translate>mqtt-client-credentials.hint-basic-patterns-pub</mat-hint>
+  <fieldset class="fields-group">
+    <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
+    <div style="line-height: 7px;" class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
+    <mat-form-field class="mat-block">
+      <mat-label translate>mqtt-client.client-id</mat-label>
+      <input matInput formControlName="clientId">
+      <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
+        {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
+      </mat-error>
     </mat-form-field>
-    <mat-form-field class="mat-block hint">
-      <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-      <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
-        <mat-chip *ngFor="let rule of subRulesSet" [value]="rule"
-                  [selectable]="!disabled"
-                  [removable]="!disabled"
-                  (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
-          {{ rule }}
-          <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-        </mat-chip>
-        <input matInput type="text"
-               placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-               matChipInputAddOnBlur
-               [matChipInputFor]="chipListSub"
-               (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
-      </mat-chip-list>
-      <mat-hint translate>mqtt-client-credentials.hint-basic-patterns-sub</mat-hint>
-    </mat-form-field>
-  </div>
+    <div fxLayout="column">
+      <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
+        <mat-form-field fxFlex class="mat-block">
+          <mat-label translate>mqtt-client-credentials.username</mat-label>
+          <input matInput formControlName="userName">
+          <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
+            {{ 'mqtt-client-credentials.user-name-required' | translate }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field fxFlex class="mat-block" *ngIf="!entity?.id">
+          <mat-label translate>mqtt-client-credentials.password</mat-label>
+          <input matInput formControlName="password"
+                 autocomplete="new-password"
+                 type="password">
+          <tb-toggle-password matSuffix></tb-toggle-password>
+        </mat-form-field>
+      </div>
+      <tb-error *ngIf="credentialsMqttFormGroup.dirty"
+                [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
+                ('mqtt-client-credentials.client-id-or-user-name-necessary' | translate) : ''">
+      </tb-error>
+    </div>
+    <button mat-stroked-button color="primary" style="margin-bottom: 20px"
+            *ngIf="entity?.id"
+            type="button"
+            [disabled]="disabled" (click)="changePassword()">
+      {{'profile.change-password' | translate}}
+    </button>
+  </fieldset>
+  <mat-expansion-panel [expanded]="false">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <div translate>mqtt-client-credentials.authorization</div>
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+    <section>
+      <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
+      <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+    </section>
+    <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
+      <mat-form-field class="mat-block">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+        <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
+          <mat-chip *ngFor="let rule of pubRulesSet" [value]="rule"
+                    [selectable]="!disabled"
+                    [removable]="!disabled"
+                    (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+            {{ rule }}
+            <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+          </mat-chip>
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputFor]="chipListPub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+        </mat-chip-list>
+      </mat-form-field>
+      <mat-form-field class="mat-block">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+        <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
+          <mat-chip *ngFor="let rule of subRulesSet" [value]="rule"
+                    [selectable]="!disabled"
+                    [removable]="!disabled"
+                    (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+            {{ rule }}
+            <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
+          </mat-chip>
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputFor]="chipListSub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+        </mat-chip-list>
+      </mat-form-field>
+    </div>
+  </mat-expansion-panel>
   <div fxLayout="row" style="padding-bottom: 16px;">
   </div>
 </section>
