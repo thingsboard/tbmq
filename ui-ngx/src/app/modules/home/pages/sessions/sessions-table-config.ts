@@ -15,6 +15,7 @@
 ///
 
 import {
+  DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
@@ -81,15 +82,13 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '10%',
         (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIp', 'mqtt-client-session.client-ip', '10%',
-        () => '127.0.0.1'
-      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', '10%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', '10%')
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '150px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '150px')
     );
   }
 

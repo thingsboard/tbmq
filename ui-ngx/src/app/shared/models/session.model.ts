@@ -30,7 +30,7 @@ export interface DetailedClientSessionInfo extends BaseData {
   disconnectedAt: number;
   sessionExpiryInterval: number;
   sessionEndTs: number;
-  clientIp: string;
+  clientIpAdr: string;
   subscriptionsCount?: number;
 }
 

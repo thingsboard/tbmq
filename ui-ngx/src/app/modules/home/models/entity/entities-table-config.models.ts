@@ -123,7 +123,10 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
     super(key,
           title,
           width,
-          (entity, property) => datePipe.transform(entity[property], dateFormat),
+          (entity, property) => {
+            if (entity[property] === 0) return '';
+            return datePipe.transform(entity[property], dateFormat)
+          },
           cellStyleFunction);
   }
 }
