@@ -28,9 +28,9 @@ import {
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
+import { isDefinedAndNotNull, isEmptyStr, isString } from '@core/utils';
 import {
-  AuthRulePatternsType,
+  AuthRulePatternsType, AuthRules,
   BasicMqttCredentials,
   MqttClientCredentials
 } from '@shared/models/client-crenetials.model';
@@ -151,15 +151,19 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 }
 
   updateView(value: BasicMqttCredentials) {
-    for (const rule of Object.keys(value.authRules)) {
-      if (!value.authRules[rule]?.length || (value.authRules[rule].length && !value.authRules[rule][0].length)) {
-        value.authRules[rule] = null;
-      } else {
-        value.authRules[rule] = value.authRules[rule][0].split(',');
-      }
-    }
+    value.authRules = this.formatAuthRules(value.authRules);
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
+  }
+
+  private formatAuthRules(authRules: AuthRules): AuthRules {
+    const result = {} as AuthRules;
+    for (const rule of Object.keys(authRules)) {
+      const value = authRules[rule];
+       if (isString(value)) result[rule] = value.length ? [authRules[rule]] : null;
+       if (Array.isArray(value)) result[rule] = authRules[rule][0].length ? authRules[rule][0].split(',') : null;
+    }
+    return result;
   }
 
   changePassword(): void {

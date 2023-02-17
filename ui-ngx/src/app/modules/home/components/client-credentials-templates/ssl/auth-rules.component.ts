@@ -170,12 +170,12 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   }
 
   updateView(value: any) {
-    value.authRulesMapping = this.formatValue(value.authRulesMapping);
+    value.authRulesMapping = this.formatAuthRules(value.authRulesMapping);
     this.rulesMappingFormGroup.patchValue(value, { emitEvent: false });
     this.propagateChange(this.prepareValues(value.authRulesMapping));
   }
 
-  private formatValue(authRulesMapping) {
+  private formatAuthRules(authRulesMapping: any) {
     const newValue = [];
     authRulesMapping.forEach(
       rule => {
@@ -183,7 +183,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
           certificateMatcherRegex: rule.certificateMatcherRegex,
           pubAuthRulePatterns: Array.isArray(rule.pubAuthRulePatterns) ? rule.pubAuthRulePatterns[0] : rule.pubAuthRulePatterns,
           subAuthRulePatterns: Array.isArray(rule.subAuthRulePatterns) ? rule.subAuthRulePatterns[0] : rule.subAuthRulePatterns
-        })
+        });
       }
     );
     return newValue;
@@ -195,12 +195,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
       const key = obj?.certificateMatcherRegex;
       if (key) {
         result[key] = {};
-        obj?.pubAuthRulePatterns
-          ? result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns.split(',')
-          : result[key].pubAuthRulePatterns = null;
-        obj?.subAuthRulePatterns
-          ? result[key].subAuthRulePatterns = obj?.subAuthRulePatterns.split(',')
-          : result[key].subAuthRulePatterns = null;
+        result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns ? obj?.pubAuthRulePatterns.split(',') : null;
+        result[key].subAuthRulePatterns = obj?.subAuthRulePatterns ? obj?.subAuthRulePatterns.split(',') : null;
       }
     });
     return result;
