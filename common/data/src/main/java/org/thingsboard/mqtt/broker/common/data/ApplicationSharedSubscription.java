@@ -27,7 +27,7 @@ import java.util.UUID;
 public class ApplicationSharedSubscription extends SearchTextBased {
 
     private String name;
-    private String topic;
+    private String topicFilter;
     private int partitions;
 
     public ApplicationSharedSubscription() {
@@ -45,7 +45,7 @@ public class ApplicationSharedSubscription extends SearchTextBased {
     public ApplicationSharedSubscription(ApplicationSharedSubscription mqttClientCredentials) {
         super(mqttClientCredentials);
         this.name = mqttClientCredentials.getName();
-        this.topic = mqttClientCredentials.getTopic();
+        this.topicFilter = mqttClientCredentials.getTopicFilter();
         this.partitions = mqttClientCredentials.getPartitions();
     }
 

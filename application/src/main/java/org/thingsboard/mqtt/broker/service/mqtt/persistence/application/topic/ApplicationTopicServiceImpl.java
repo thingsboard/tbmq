@@ -45,7 +45,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
     @Override
     public void createSharedTopic(ApplicationSharedSubscription subscription) {
-        String topic = subscription.getTopic();
+        String topic = subscription.getTopicFilter();
         log.debug("[{}] Creating shared APPLICATION topic", topic);
 
         final var topicToCreate = MqttApplicationClientUtil.getKafkaTopic(topic);
@@ -66,7 +66,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
     @Override
     public void deleteSharedTopic(ApplicationSharedSubscription subscription) {
-        String topic = subscription.getTopic();
+        String topic = subscription.getTopicFilter();
         log.debug("[{}] Deleting shared APPLICATION topic", topic);
 
         final var topicToDelete = MqttApplicationClientUtil.getKafkaTopic(topic);
