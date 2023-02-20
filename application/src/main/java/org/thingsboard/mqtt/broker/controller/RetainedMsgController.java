@@ -56,4 +56,15 @@ public class RetainedMsgController extends BaseController {
             throw handleException(e);
         }
     }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"topicName"}, method = RequestMethod.DELETE)
+    @ResponseBody
+    public void deleteRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
+        try {
+            retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
 }
