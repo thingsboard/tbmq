@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class TbKafkaAdmin implements TbQueueAdmin {
+
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
 
@@ -128,7 +129,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             DeleteConsumerGroupsResult result = client.deleteConsumerGroups(consumerGroups);
             result.all().get();
         } catch (Exception e) {
-            log.warn("Failed to delete consumer groups {}. Exception - {}, reason - {}.", consumerGroups, e.getClass().getSimpleName(), e.getMessage());
+            log.warn("Failed to delete consumer groups {}", consumerGroups, e);
         }
     }
 

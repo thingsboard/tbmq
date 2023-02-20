@@ -178,8 +178,7 @@ public class MqttSubscribeHandler {
                             sendSubAck(ctx, subAckMessage);
                             processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
-                        t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
-                                clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
+                        t -> log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t))
         );
     }
 

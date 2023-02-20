@@ -51,16 +51,22 @@ public class ApplicationRemovedEventServiceImpl implements ApplicationRemovedEve
                 .setClientId(clientId)
                 .build();
 
-        log.trace("[{}] Sending application removed event.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Sending application removed event.", clientId);
+        }
         eventProducer.send(new TbProtoQueueMsg<>(serviceInfoProvider.getServiceId(), eventProto), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                log.trace("[{}] Event sent: {}", clientId, metadata);
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Event sent: {}", clientId, metadata);
+                }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.debug("[{}] Failed to send event. Exception - {}, reason - {}.", clientId, t.getClass().getSimpleName(), t.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Failed to send event", clientId, t);
+                }
             }
         });
     }
