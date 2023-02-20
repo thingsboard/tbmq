@@ -418,13 +418,14 @@
       "selected-shared-subscriptions": "{ count, plural, 1 {1 Shared Subscription} other {# Shared Subscriptions} } selected",
       "name": "Name",
       "name-required": "Name is required",
-      "hint-topic": "hint-topic",
-      "hint-partitions": "hint-partitions",
+      "hint-topic-filter": "Shared Subscription has a standard format <code>$share/{ShareName}/{TopicFilter}</code>. </br> E.g., if it equals to <b>$share/group1/country/+/city/+/home/#</b>, set Topic filter as <b>country/+/city/+/home/#</b>",
+      "hint-partitions": "It is recommended that the number of partitions to be <b>equal or multiple of a number of clients</b> to the shared subscription.</br>For example, if 5 clients are going to be subscribed to this topic, set the number of partitions to 5/10/15. </br>This will guarantee the load is distributed evenly by the subscribers.",
+      "hint-shared-subscription-notes": "<b>Note:</b><ul><li><i>Topic filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Shared Subscription feature works with MQTT v5 and earlier versions.</li></ul>",
       "partitions": "Partitions",
       "partitions-required": "Partitions are required",
       "partitions-min": "Minimum value is 1",
-      "topic": "Topic",
-      "topic-required": "Topic is required",
+      "topic-filter": "Topic filter",
+      "topic-filter-required": "Topic filter is required",
       "shared-subscription": "Shared Subscription",
       "shared-subscriptions": "Shared Subscriptions"
     }
