@@ -21,5 +21,7 @@ import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import java.util.List;
 
 public interface ClientSubscriptionAdminService {
+
     void updateSubscriptions(String clientId, List<SubscriptionInfoDto> subscriptions) throws ThingsboardException;
+
 }
