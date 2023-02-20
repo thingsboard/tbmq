@@ -41,7 +41,7 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
     const form = this.fb.group(
       {
         name: [entity ? entity.name : '', [Validators.required]],
-        partitions: [entity ? entity.partitions : 2, [Validators.required, Validators.min(1)]],
+        partitions: [2, [Validators.required, Validators.min(1)]],
         topic: [entity ? entity.topic : '', [Validators.required]]
       }
     );
