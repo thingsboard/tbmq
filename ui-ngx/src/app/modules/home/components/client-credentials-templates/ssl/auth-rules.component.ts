@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -31,7 +31,7 @@ import { Subject, Subscription } from 'rxjs';
 import { MatChipInputEvent } from "@angular/material/chips";
 import {
   AuthRulePatternsType,
-  AuthRulesMapping,
+  AuthRulesMapping, MqttClientCredentials,
   SslMqttCredentialsAuthRules
 } from "@shared/models/client-crenetials.model";
 
@@ -51,14 +51,17 @@ import {
     }],
   styleUrls: ['./auth-rules.component.scss']
 })
-export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
   @Input()
   disabled: boolean;
 
+  @Input()
+  entity: MqttClientCredentials;
+
   authRulePatternsType = AuthRulePatternsType;
   rulesMappingFormGroup: FormGroup;
-  rulesMappings: FormArray;
+  authRulesMappings: FormArray;
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
 
@@ -70,24 +73,29 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     return this.rulesMappingFormGroup.get('authRulesMapping') as FormArray;
   }
 
-  constructor(public fb: FormBuilder) {
-    this.rulesMappingFormGroup = this.fb.group({});
-    this.rulesMappingFormGroup.addControl('authRulesMapping',
-      this.fb.array([]));
-    this.rulesFormArray.valueChanges.subscribe((value) => {
-      this.updateView(value);
+  constructor(public fb: FormBuilder,
+              public cd: ChangeDetectorRef) {
+    this.rulesMappingFormGroup = this.fb.group({
+      authRulesMapping: this.fb.array([])
     });
   }
 
+  ngAfterViewInit() {
+    if (!this.entity?.credentialsId) {
+      this.addRule();
+    }
+  }
+
   addRule(): void {
-    this.rulesMappings = this.rulesFormArray;
-    this.rulesMappings.push(this.fb.group({
-      certificateMatcherRegex: [null, [Validators.required, this.isUnique()]],
+    this.authRulesMappings = this.rulesFormArray;
+    this.authRulesMappings.push(this.fb.group({
+      certificateMatcherRegex: ['.*', [Validators.required, this.isUnique()]],
       pubAuthRulePatterns: [['.*'], []],
       subAuthRulePatterns: [['.*'], []]
     }));
     this.subRulesArray.push(['.*']);
     this.pubRulesArray.push(['.*']);
+    this.cd.markForCheck();
   }
 
   removeRule(index: number) {
