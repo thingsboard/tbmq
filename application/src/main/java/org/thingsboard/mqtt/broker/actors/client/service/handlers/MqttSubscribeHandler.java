@@ -234,7 +234,13 @@ public class MqttSubscribeHandler {
     }
 
     private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
-        return new RetainedMsg(retainedMsg.getTopic(), retainedMsg.getPayload(), minQoSValue, retainedMsg.getProperties());
+        return new RetainedMsg(
+                retainedMsg.getTopic(),
+                retainedMsg.getPayload(),
+                minQoSValue,
+                retainedMsg.getProperties(),
+                retainedMsg.getCreatedTime()
+        );
     }
 
     private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {

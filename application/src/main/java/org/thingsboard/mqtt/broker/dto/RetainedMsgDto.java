@@ -27,13 +27,15 @@ public class RetainedMsgDto {
 
     private final String topic;
     private final String payload;
-    private final int qosLevel;
+    private final int qos;
+    private final long createdTime;
 
     public static RetainedMsgDto newInstance(RetainedMsg retainedMsg) {
         return new RetainedMsgDto(
                 retainedMsg.getTopic(),
                 new String(retainedMsg.getPayload(), StandardCharsets.UTF_8),
-                retainedMsg.getQosLevel()
+                retainedMsg.getQosLevel(),
+                retainedMsg.getCreatedTime()
         );
     }
 }

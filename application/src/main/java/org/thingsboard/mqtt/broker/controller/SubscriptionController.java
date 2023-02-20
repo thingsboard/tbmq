@@ -60,7 +60,7 @@ public class SubscriptionController extends BaseController {
 
         try {
             detailedClientSessionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
-                    topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopic()));
+                    topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter()));
 
             subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
             return detailedClientSessionInfoDto;

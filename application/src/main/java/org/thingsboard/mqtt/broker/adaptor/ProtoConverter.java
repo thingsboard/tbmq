@@ -323,6 +323,7 @@ public class ProtoConverter {
                 .setQos(retainedMsg.getQosLevel())
                 .setTopic(retainedMsg.getTopic())
                 .addAllUserProperties(userPropertyProtos)
+                .setCreatedTime(retainedMsg.getCreatedTime())
                 .build();
     }
 
@@ -340,7 +341,8 @@ public class ProtoConverter {
                 retainedMsgProto.getTopic(),
                 retainedMsgProto.getPayload().toByteArray(),
                 retainedMsgProto.getQos(),
-                createMqttProperties(retainedMsgProto.getUserPropertiesList())
+                createMqttProperties(retainedMsgProto.getUserPropertiesList()),
+                retainedMsgProto.getCreatedTime()
         );
     }
 
