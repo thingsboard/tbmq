@@ -15,9 +15,16 @@
     limitations under the License.
 
 -->
-<fieldset class="fields-group">
-  <legend class="group-title">{{ 'mqtt-client-session.subscriptions' | translate }} ({{ topicListFormGroup.get('subscriptions').value.length }})</legend>
-  <tb-error *ngIf="!topicListFormGroup.get('subscriptions').value.length" translate>mqtt-client-session.add-topic-filter-prompt</tb-error>
+
+<mat-expansion-panel [expanded]="false">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <span>{{ 'mqtt-client-session.subscriptions' | translate }} ({{ topicListFormGroup.get('subscriptions').value.length }})</span>
+    </mat-panel-title>
+    <mat-panel-description>
+      <tb-error *ngIf="!topicListFormGroup.get('subscriptions').value.length" translate>mqtt-client-session.add-topic-filter-prompt</tb-error>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
   <div class="container">
     <section style="margin-bottom: 8px;">
       <mat-slide-toggle (click)="toggleShowShareName($event)" ([ngModel])="showShareName">
@@ -70,4 +77,4 @@
     <mat-icon>add</mat-icon>
     {{ 'mqtt-client-session.add-subscription' | translate }}
   </button>
-</fieldset>
+</mat-expansion-panel>

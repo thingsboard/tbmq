@@ -48,6 +48,9 @@
   }
 }
 
-::ng-deep .session-details .mat-input-element, span {
-  cursor: not-allowed !important;
+::ng-deep .session-details {
+  ::ng-deep .mat-input-element, span {
+    cursor: not-allowed !important;
+
+  }
 }

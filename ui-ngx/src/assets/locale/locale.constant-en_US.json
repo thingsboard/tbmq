@@ -360,6 +360,8 @@
       "copy-session-id": "Copy Session ID",
       "clean-start": "Clean Start",
       "client-ip": "Client IP",
+      "client-info": "Client info",
+      "connection-info": "Connection info",
       "details": "Session details",
       "info": "Session info",
       "disconnected": "Disconnected",
