@@ -47,14 +47,14 @@ export class SharedSubscriptionsTableConfigResolver implements Resolve<EntityTab
     this.config.entityComponent = SharedSubscriptionComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.SHARED_SUBSCRIPTION);
     this.config.entityResources = entityTypeResources.get(EntityType.SHARED_SUBSCRIPTION);
-    this.config.tableTitle = this.translate.instant('shared-subscription.shared-subscriptions');
+    this.config.tableTitle = this.translate.instant('shared-subscription.application-shared-subscriptions');
     this.config.entityTitle = (entity) => entity ? entity.name : '';
 
     this.config.columns.push(
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '33%'),
       new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '33%'),
-      new EntityTableColumn<SharedSubscription>('topic', 'shared-subscription.topic', '33%')
+      new EntityTableColumn<SharedSubscription>('topic', 'shared-subscription.topic-filter', '33%')
     );
 
     this.config.addActionDescriptors.push(
