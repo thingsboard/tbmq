@@ -27,10 +27,10 @@ import java.util.Map;
 @AllArgsConstructor
 public class SslMqttCredentials {
 
-    private String parentCertCommonName;
+    private String certCommonName;
     private Map<String, PubSubAuthorizationRules> authRulesMapping;
 
-    public static SslMqttCredentials newInstance(String parentCertCommonName, String key, List<String> authRules) {
-        return new SslMqttCredentials(parentCertCommonName, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+    public static SslMqttCredentials newInstance(String certCommonName, String key, List<String> authRules) {
+        return new SslMqttCredentials(certCommonName, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
     }
 }
