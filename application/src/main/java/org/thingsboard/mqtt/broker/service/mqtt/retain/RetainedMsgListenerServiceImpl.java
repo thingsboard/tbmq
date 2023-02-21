@@ -26,6 +26,8 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -133,6 +135,14 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         }
         RetainedMsg retainedMsg = retainedMessagesMap.getOrDefault(topic, null);
         return retainedMsg != null ? RetainedMsgDto.newInstance(retainedMsg) : null;
+    }
+
+    @Override
+    public List<RetainedMsg> getRetainedMessages() {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getRetainedMessages");
+        }
+        return new ArrayList<>(retainedMessagesMap.values());
     }
 
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
