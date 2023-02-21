@@ -27,13 +27,6 @@
       </mat-error>
     </mat-form-field>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-ssl-cert-common-name' | translate }}"></div>
-    <!--<section fxLayout="column" fxLayoutAlign="center start">
-      <mat-slide-toggle formControlName="allowSelfSignedCertificates">
-        {{ 'mqtt-client-credentials.allow-self-signed-certificates' | translate }}
-      </mat-slide-toggle>
-      <span class="tb-hint">{{ 'mqtt-client-credentials.hint-allow-self-signed-certificates' | translate }}</span>
-    </section>
-    <mat-divider></mat-divider>-->
   </fieldset>
   <tb-auth-rules [entity]="entity" formControlName="authRulesMapping"></tb-auth-rules>
 </section>
