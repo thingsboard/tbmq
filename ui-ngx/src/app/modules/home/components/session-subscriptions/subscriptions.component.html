@@ -16,12 +16,21 @@
 
 -->
 <fieldset class="fields-group">
-  <legend class="group-title" translate>mqtt-client-session.subscriptions</legend>
+  <legend class="group-title">{{ 'mqtt-client-session.subscriptions' | translate }} ({{ topicListFormGroup.get('subscriptions').value.length }})</legend>
   <tb-error *ngIf="!topicListFormGroup.get('subscriptions').value.length" translate>mqtt-client-session.add-topic-filter-prompt</tb-error>
   <div class="container">
-    <div [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px"
+    <section style="margin-bottom: 8px;">
+      <mat-slide-toggle (click)="toggleShowShareName($event)" ([ngModel])="showShareName">
+        {{ 'mqtt-client-session.show-share-name' | translate }} ({{ shareNamesFound }})
+      </mat-slide-toggle>
+    </section>
+    <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start center"
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
-      <mat-form-field fxFlex="70" floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" hideRequiredMarker class="mat-block">
+        <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
+        <input style="cursor: not-allowed;" matInput name="shareName" formControlName="shareName" readonly>
+      </mat-form-field>
+      <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
         <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
                required name="topicFilterTopic" formControlName="topic">
@@ -29,7 +38,7 @@
           {{ 'mqtt-client-session.topic-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex="30" floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.qos</mat-label>
         <mat-select required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
                     formControlName="qos">

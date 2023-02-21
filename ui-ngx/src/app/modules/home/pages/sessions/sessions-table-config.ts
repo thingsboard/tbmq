@@ -15,6 +15,7 @@
 ///
 
 import {
+  checkBoxCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -87,8 +88,11 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '150px'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '150px')
+      new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
+          entity => checkBoxCell(entity?.cleanStart)
+      ),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '120px')
     );
   }
 

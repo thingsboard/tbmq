@@ -47,3 +47,7 @@
     }
   }
 }
+
+::ng-deep .session-details .mat-input-element, span {
+  cursor: not-allowed !important;
+}
