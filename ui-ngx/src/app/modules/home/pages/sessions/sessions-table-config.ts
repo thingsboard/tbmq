@@ -80,9 +80,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '30%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '10%',
-        (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
-      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
