@@ -14,16 +14,17 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
+import { NgModule } from '@angular/core';
 
-import {MODULES_MAP} from '@shared/public-api';
-import {modulesMap} from '../../common/modules-map';
-import {MqttClientCredentialsModule} from './mqtt-client-credentials/mqtt-client-credentials.module';
-import {ProfileModule} from './profile/profile.module';
-import {MailServerModule} from "@home/pages/mail-server/mail-server.module";
-import {SessionsModule} from "@home/pages/sessions/sessions.module";
-import {AdminsModule} from "@home/pages/admins/admins.module";
-import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared-subscriptions.module";
+import { MODULES_MAP } from '@shared/public-api';
+import { modulesMap } from '../../common/modules-map';
+import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
+import { ProfileModule } from './profile/profile.module';
+import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
+import { SessionsModule } from "@home/pages/sessions/sessions.module";
+import { AdminsModule } from "@home/pages/admins/admins.module";
+import { SharedSubscriptionsModule } from "@home/pages/shared-subscriptions/shared-subscriptions.module";
+import { StatsModule } from "@home/pages/stats/stats.module";
 
 @NgModule({
   exports: [
@@ -32,7 +33,8 @@ import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared
     MqttClientCredentialsModule,
     SessionsModule,
     AdminsModule,
-    SharedSubscriptionsModule
+    SharedSubscriptionsModule,
+    StatsModule
   ],
   providers: [
     {
@@ -41,4 +43,5 @@ import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared
     }
   ]
 })
-export class HomePagesModule { }
+export class HomePagesModule {
+}

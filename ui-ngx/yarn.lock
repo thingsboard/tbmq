@@ -1649,6 +1649,13 @@
   resolved "https://registry.yarnpkg.com/@types/cors/-/cors-2.8.10.tgz#61cc8469849e5bcdd0c7044122265c39cec10cf4"
   integrity sha512-C7srjHiVG3Ey1nR6d511dtDkCEjxuN9W1HWAEjGq8kpcwmNM6JJkpC0xvabM7BXTG2wDq8Eu33iH9aQKa7IvLQ==
 
+"@types/flot@^0.0.31":
+  version "0.0.31"
+  resolved "https://registry.yarnpkg.com/@types/flot/-/flot-0.0.31.tgz#0daca37c6c855b69a0a7e2e37dd0f84b3db8c8c1"
+  integrity sha512-X+RcMQCqPlQo8zPT6cUFTd/PoYBShMQlHUeOXf05jWlfYnvLuRmluB9z+2EsOKFgUzqzZve5brx+gnFxBaHEUw==
+  dependencies:
+    "@types/jquery" "*"
+
 "@types/glob@^7.1.1":
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/@types/glob/-/glob-7.1.3.tgz#e6ba80f36b7daad2c685acd9266382e68985c183"
@@ -4383,6 +4390,10 @@ flatted@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-2.0.2.tgz#4575b21e2bcee7434aa9be662f4b7b5f9c2b5138"
   integrity sha512-r5wGx7YeOwNWNlCA0wQ86zKyDLMQr+/RB8xy74M4hTphfmjlijTSSXGuH8rnvKZnfT9i+75zmd8jcKdMR4O6jA==
+
+"flot@https://github.com/thingsboard/flot.git#0.9-work":
+  version "0.9.0-alpha"
+  resolved "https://github.com/thingsboard/flot.git#0ff0c775db7c74e705f6c3c2bba92080a202ccd4"
 
 flush-write-stream@^1.0.0:
   version "1.1.1"

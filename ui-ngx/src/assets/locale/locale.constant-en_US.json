@@ -181,7 +181,8 @@
         "logout": "Logout",
         "menu": "Menu",
         "avatar": "Avatar",
-        "open-user-menu": "Open user menu"
+        "open-user-menu": "Open user menu",
+        "stats": "Stats"
     },
     "login": {
         "login": "Login",
