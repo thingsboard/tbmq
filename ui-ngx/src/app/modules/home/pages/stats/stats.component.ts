@@ -23,6 +23,8 @@ import { FormBuilder } from '@angular/forms';
 import { MailServerService } from '@core/http/mail-server.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
+import Chart from 'chart.js';
+import moment from "moment";
 
 @Component({
   selector: 'tb-mail-server',
@@ -42,7 +44,87 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   ngAfterViewInit(): void {
-    $.plot($("#placeholder"), [ [[0, 0], [1, 1]] ], { yaxis: { max: 1 } });
+    var ctx = document.getElementById('myChart') as HTMLCanvasElement;
+
+    var s1 = {
+      label: 's1',
+      fill: false,
+      backgroundColor: 'rgb(252,141,98, 0.5)',
+      borderColor: 'rgb(252,141,98, 0.5)',
+      hoverBackgroundColor: 'rgb(252,141,98, 0.75)',
+      hoverBorderColor: 'rgb(252,141,98)',
+      data: [
+        { x: 1606943100000, y: 1.5 },
+        { x: 1607943200000, y: 2.7 },
+        { x: 1608943300000, y: 1.3 },
+        { x: 1609943400000, y: 5.2 },
+        { x: 1610943500000, y: 9.4 },
+        { x: 1611943600000, y: 6.5 },
+      ]
+    };
+
+    var s2 = {
+      label: 's2',
+      fill: false,
+      backgroundColor: 'rgb(141,160,203, 0.25)',
+      borderColor: 'rgb(141,160,203, 0.5)',
+      hoverBackgroundColor: 'rgb(141,160,203, 0.75)',
+      hoverBorderColor: 'rgb(141,160,203)',
+      data: [
+        { x: 1604953100000, y: 4.5 },
+        { x: 1607963200000, y: 2.7 },
+        { x: 1608973300000, y: 3.3 },
+        { x: 1613983400000, y: 4.2 },
+        { x: 1620993500000, y: 7.4 },
+        { x: 1632043600000, y: 6.5 },
+      ]
+    };
+
+    var ctx = document.getElementById('myChart') as HTMLCanvasElement;
+    var chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [s1, s2] },
+      options: {
+        scales: {
+          xAxes: [{
+            type: 'time',
+            //distribution: 'series',
+            time: {
+              unitStepSize: 500,
+              unit: 'hour',
+              displayFormats: {
+                hour: 'hA',
+                day: 'YYYY-MM-DD',
+                month: 'YYYY-MM'
+              }
+            }
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        },
+        plugins: {
+          zoom: {
+            // Container for pan options
+            pan: {
+              // Boolean to enable panning
+              enabled: true,
+              // Panning directions. Remove the appropriate direction to disable
+              // Eg. 'y' would only allow panning in the y direction
+              mode: 'x'
+            },
+            // Container for zoom options
+            zoom: {
+              // Boolean to enable zooming
+              enabled: true,
+              // Zooming directions. Remove the appropriate direction to disable
+              // Eg. 'y' would only allow zooming in the y direction
+              mode: 'x',
+            }
+          }
+        }
+      }
+    });
   }
 
   ngOnInit() {

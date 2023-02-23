@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common';
 import { SharedModule } from '@app/shared/shared.module';
 import { StatsComponent } from "@home/pages/stats/stats.component";
 import { StatsRoutingModule } from "@home/pages/stats/stats-routing.module";
+import { ChartsModule } from "ng2-charts";
 
 @NgModule({
   declarations: [

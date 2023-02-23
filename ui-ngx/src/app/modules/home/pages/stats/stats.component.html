@@ -27,7 +27,9 @@
     </mat-progress-bar>
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
-      <div id="placeholder" style="width:600px;height:300px"></div>
+      <div style="width:400px; height: 400px">
+        <canvas id="myChart"></canvas>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>

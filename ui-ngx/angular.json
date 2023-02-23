@@ -64,7 +64,9 @@
               "moment-timezone",
               "lodash",
               "jquery",
-              "jquery.terminal"
+              "jquery.terminal",
+              "moment",
+              "chart.js"
             ]
           },
           "configurations": {
