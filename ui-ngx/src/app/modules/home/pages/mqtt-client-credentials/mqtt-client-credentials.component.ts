@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { EntityComponent } from '@home/components/entity/entity.component';
-import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import {
-  credentialsTypeNames,
-  MqttClientCredentials,
-  MqttCredentialsType
-} from '@shared/models/client-crenetials.model';
-import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { TranslateService } from "@ngx-translate/core";
+import {ChangeDetectorRef, Component, EventEmitter, Inject, Output} from '@angular/core';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {EntityComponent} from '@home/components/entity/entity.component';
+import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
+import {credentialsTypeNames, MqttClientCredentials, MqttCredentialsType} from '@shared/models/client-crenetials.model';
+import {ClientType, clientTypeTranslationMap} from '@shared/models/client.model';
+import {ActionNotificationShow} from '@core/notification/notification.actions';
+import {TranslateService} from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -43,6 +39,8 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
   credentialsTypes = Object.values(MqttCredentialsType);
   credentialsTypeTranslationMap = credentialsTypeNames;
   clientTypes = Object.values(ClientType);
+
+  ClientType = ClientType;
   clientTypeTranslationMap = clientTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
@@ -71,6 +69,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
         credentialsValue: [ entity ? entity.credentialsValue : '']
       }
     );
+    form.get('clientType').setValue(ClientType.DEVICE, {emitEvent: true});
     form.get('credentialsType').valueChanges.subscribe(() => {
       form.patchValue({ credentialsValue: null });
     });

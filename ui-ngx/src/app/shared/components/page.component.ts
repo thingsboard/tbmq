@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import { Directive, OnDestroy } from '@angular/core';
-import { select, Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { Observable, Subscription } from 'rxjs';
-import { selectIsLoading } from '@core/interceptors/load.selectors';
-import { delay, share } from 'rxjs/operators';
-import { AbstractControl } from "@angular/forms";
+import {Directive, OnDestroy} from '@angular/core';
+import {select, Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {Observable, Subscription} from 'rxjs';
+import {selectIsLoading} from '@core/interceptors/load.selectors';
+import {delay, share} from 'rxjs/operators';
+import {AbstractControl} from "@angular/forms";
 
 @Directive()
 export abstract class PageComponent implements OnDestroy {

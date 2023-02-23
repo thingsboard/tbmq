@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
+import {NgModule} from '@angular/core';
 
-import { MODULES_MAP } from '@shared/public-api';
-import { modulesMap } from '../../common/modules-map';
-import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
-import { ProfileModule } from './profile/profile.module';
-import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
-import { SessionsModule } from "@home/pages/sessions/sessions.module";
-import { AdminsModule } from "@home/pages/admins/admins.module";
-import { SharedSubscriptionsModule } from "@home/pages/shared-subscriptions/shared-subscriptions.module";
+import {MODULES_MAP} from '@shared/public-api';
+import {modulesMap} from '../../common/modules-map';
+import {MqttClientCredentialsModule} from './mqtt-client-credentials/mqtt-client-credentials.module';
+import {ProfileModule} from './profile/profile.module';
+import {MailServerModule} from "@home/pages/mail-server/mail-server.module";
+import {SessionsModule} from "@home/pages/sessions/sessions.module";
+import {AdminsModule} from "@home/pages/admins/admins.module";
+import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared-subscriptions.module";
 
 @NgModule({
   exports: [

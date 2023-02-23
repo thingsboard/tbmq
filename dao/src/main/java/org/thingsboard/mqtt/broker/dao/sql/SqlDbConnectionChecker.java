@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +39,19 @@ public class SqlDbConnectionChecker implements DbConnectionChecker {
         return connected.get();
     }
 
+    @Override
+    public void setDbConnected(boolean value) {
+        connected.set(value);
+    }
+
     @Scheduled(fixedRateString = "${db.connection-check-rate-ms:10000}")
     private void checkConnection() {
         try {
             jdbcTemplate.query("select 1", (rs, rowNum) -> OBJ);
             connected.getAndSet(true);
         } catch (Exception e) {
-            log.warn("Failed to connect to the DB. Exception - {}, reason - {}.", e.getClass().getSimpleName(), e.getMessage());
+            log.warn("Failed to connect to the DB", e);
             connected.getAndSet(false);
         }
     }
-
 }

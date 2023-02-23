@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core';
-import { fromEvent, Observable } from 'rxjs';
-import { select, Store } from '@ngrx/store';
-import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import {AfterViewInit, Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
+import {fromEvent, Observable} from 'rxjs';
+import {select, Store} from '@ngrx/store';
+import {debounceTime, distinctUntilChanged, map, tap} from 'rxjs/operators';
 
-import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
-import { User } from '@shared/models/user.model';
-import { PageComponent } from '@shared/components/page.component';
-import { AppState } from '@core/core.state';
-import { getCurrentAuthState, selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
-import { MediaBreakpoints } from '@shared/models/constants';
+import {BreakpointObserver, BreakpointState} from '@angular/cdk/layout';
+import {User} from '@shared/models/user.model';
+import {PageComponent} from '@shared/components/page.component';
+import {AppState} from '@core/core.state';
+import {getCurrentAuthState, selectAuthUser, selectUserDetails} from '@core/auth/auth.selectors';
+import {MediaBreakpoints} from '@shared/models/constants';
 import * as _screenfull from 'screenfull';
-import { MatSidenav } from '@angular/material/sidenav';
-import { AuthState } from '@core/auth/auth.models';
-import { WINDOW } from '@core/services/window.service';
-import { instanceOfSearchableComponent, ISearchableComponent } from '@home/models/searchable-component.models';
+import {MatSidenav} from '@angular/material/sidenav';
+import {AuthState} from '@core/auth/auth.models';
+import {WINDOW} from '@core/services/window.service';
+import {instanceOfSearchableComponent, ISearchableComponent} from '@home/models/searchable-component.models';
 
 const screenfull = _screenfull as _screenfull.Screenfull;
 

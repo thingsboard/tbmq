@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,5 +19,6 @@ public class CacheConstants {
 
     public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
+    public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
 
 }

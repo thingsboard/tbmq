@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
             new DataValidator<>() {
                 @Override
                 protected void validateCreate(ApplicationSharedSubscription subscription) {
-                    if (applicationSharedSubscriptionDao.findByTopic(subscription.getTopic()) != null) {
+                    if (applicationSharedSubscriptionDao.findByTopic(subscription.getTopicFilter()) != null) {
                         throw new DataValidationException("Such Application Shared Subscription is already created!");
                     }
                 }
@@ -104,7 +104,7 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
                     if (existingSubscription == null) {
                         throw new DataValidationException("Unable to update non-existent Application Shared Subscription!");
                     }
-                    if (!existingSubscription.getTopic().equals(subscription.getTopic())) {
+                    if (!existingSubscription.getTopicFilter().equals(subscription.getTopicFilter())) {
                         throw new DataValidationException("Updating topic name is not allowed for existed subscription!");
                     }
                     if (existingSubscription.getPartitions() != subscription.getPartitions()) {
@@ -117,7 +117,7 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
                     if (StringUtils.isEmpty(subscription.getName())) {
                         throw new DataValidationException("Application Shared Subscription name should be specified!");
                     }
-                    if (StringUtils.isEmpty(subscription.getTopic())) {
+                    if (StringUtils.isEmpty(subscription.getTopicFilter())) {
                         throw new DataValidationException("Application Shared Subscription topic should be specified!");
                     }
                     if (subscription.getPartitions() <= 0) {

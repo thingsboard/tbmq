@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { TranslateService } from '@ngx-translate/core';
-import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
-import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { AuthService } from "@core/http/auth.service";
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs';
+import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
+import {TranslateService} from '@ngx-translate/core';
+import {ConfirmDialogComponent} from '@shared/components/dialog/confirm-dialog.component';
+import {AlertDialogComponent} from '@shared/components/dialog/alert-dialog.component';
+import {AuthService} from "@core/http/auth.service";
 
 @Injectable(
   {

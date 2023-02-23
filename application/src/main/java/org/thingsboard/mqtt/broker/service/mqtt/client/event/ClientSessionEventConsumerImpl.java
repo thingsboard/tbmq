@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,10 +95,10 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                 //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
                 //          - failures (make sure method can be safely called multiple times)
                 //          - will block till timeout if message is lost in Actor System
-                consumer.commitSync();
                 long packProcessingStart = System.nanoTime();
                 processMessages(msgs);
                 stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
+                consumer.commitSync();
             } catch (Exception e) {
                 if (!stopped) {
                     log.error("Failed to process messages from queue.", e);

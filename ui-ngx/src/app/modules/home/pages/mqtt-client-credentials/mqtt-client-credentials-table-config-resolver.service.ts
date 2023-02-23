@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,27 +14,26 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 
-import { Resolve } from '@angular/router';
+import {Resolve} from '@angular/router';
 import {
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
-import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
-import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { getCurrentAuthUser } from '@app/core/auth/auth.selectors';
-import { DialogService } from '@core/services/dialog.service';
-import { Direction } from '@shared/models/page/sort-order';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
-import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
-import { MatDialog } from '@angular/material/dialog';
-import { clientTypeTranslationMap } from '@shared/models/client.model';
-import { credentialsTypeNames, MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import {TranslateService} from '@ngx-translate/core';
+import {DatePipe} from '@angular/common';
+import {EntityType, entityTypeResources, entityTypeTranslations} from '@shared/models/entity-type.models';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {DialogService} from '@core/services/dialog.service';
+import {Direction} from '@shared/models/page/sort-order';
+import {MqttClientCredentialsService} from '@core/http/mqtt-client-credentials.service';
+import {MqttClientCredentialsComponent} from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import {MatDialog} from '@angular/material/dialog';
+import {clientTypeTranslationMap} from '@shared/models/client.model';
+import {credentialsTypeNames, MqttClientCredentials} from '@shared/models/client-crenetials.model';
 
 @Injectable()
 export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<MqttClientCredentials>> {
@@ -91,7 +90,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
   }
 
   resolve(): EntityTableConfig<MqttClientCredentials> {
-    const authUser = getCurrentAuthUser(this.store);
     this.config.entitiesFetchFunction = pageLink => this.mqttClientCredentialsService.getMqttClientsCredentials(pageLink);
     return this.config;
   }

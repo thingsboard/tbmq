@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
 
-import { HomeRoutingModule } from './home-routing.module';
-import { HomeComponent } from './home.component';
-import { SharedModule } from '@app/shared/shared.module';
-import { MenuLinkComponent } from '@modules/home/menu/menu-link.component';
-import { MenuToggleComponent } from '@modules/home/menu/menu-toggle.component';
-import { SideMenuComponent } from '@modules/home/menu/side-menu.component';
+import {HomeRoutingModule} from './home-routing.module';
+import {HomeComponent} from './home.component';
+import {SharedModule} from '@app/shared/shared.module';
+import {MenuLinkComponent} from '@modules/home/menu/menu-link.component';
+import {MenuToggleComponent} from '@modules/home/menu/menu-toggle.component';
+import {SideMenuComponent} from '@modules/home/menu/side-menu.component';
 
 @NgModule({
   declarations:

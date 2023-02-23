@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,16 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.constant.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPersistenceService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,8 +45,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSessionServiceImpl implements ClientSessionService {
-
-    private static final ClientSessionInfo EMPTY_CLIENT_SESSION_INFO = new ClientSessionInfo(null, 0);
 
     private final ClientSessionPersistenceService clientSessionPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -74,7 +74,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
             log.trace("[{}] Saving ClientSession.", clientId);
         }
 
-        ClientSessionInfo clientSessionInfo = new ClientSessionInfo(clientSession, System.currentTimeMillis());
+        ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
         clientSessionMap.put(clientId, clientSessionInfo);
 
         QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
@@ -94,7 +94,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         if (removedClientSessionInfo == null) {
             log.warn("[{}] No client session found while clearing session.", clientId);
         }
-        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, BrokerConstants.EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
+        clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO, callback);
     }
 
     @Override
@@ -106,7 +106,12 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public ClientSession getClientSession(String clientId) {
-        return clientSessionMap.getOrDefault(clientId, EMPTY_CLIENT_SESSION_INFO).getClientSession();
+        ClientSessionInfo clientSessionInfo = clientSessionMap.getOrDefault(clientId, null);
+        if (clientSessionInfo != null) {
+            SessionInfo sessionInfo = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo);
+            return new ClientSession(clientSessionInfo.isConnected(), sessionInfo);
+        }
+        return null;
     }
 
     @Override
@@ -141,6 +146,6 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     private boolean isPersistent(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getClientSession().getSessionInfo().isPersistent();
+        return ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo).isPersistent();
     }
 }

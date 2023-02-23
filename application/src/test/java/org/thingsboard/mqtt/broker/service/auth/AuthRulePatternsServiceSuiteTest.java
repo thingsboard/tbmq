@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,22 @@ public class AuthRulePatternsServiceSuiteTest {
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test1/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test2/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
+    }
+
+    @Test
+    public void testSuccessfulCredentialsParse_Ssl3() throws AuthenticationException {
+        SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of(
+                ".*", new PubSubAuthorizationRules(List.of("all/.*"), List.of("all/.*"))
+        ));
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        Assert.assertEquals(1, authRulePatterns.size());
+        Assert.assertEquals("all/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
+        Assert.assertEquals("all/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
+
+        List<AuthRulePatterns> authRulePatterns1 = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "test.test-12345678999.qwerty");
+        Assert.assertEquals(1, authRulePatterns1.size());
+        Assert.assertEquals("all/.*", authRulePatterns1.get(0).getPubPatterns().get(0).pattern());
+        Assert.assertEquals("all/.*", authRulePatterns1.get(0).getSubPatterns().get(0).pattern());
     }
 
     @Test

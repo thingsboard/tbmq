@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { PageComponent } from '@shared/components/page.component';
-import { FormBuilder } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Constants } from '@shared/models/constants';
-import { Router } from '@angular/router';
-import { AuthService } from "@core/http/auth.service";
+import {Component} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {PageComponent} from '@shared/components/page.component';
+import {FormBuilder} from '@angular/forms';
+import {HttpErrorResponse} from '@angular/common/http';
+import {Constants} from '@shared/models/constants';
+import {Router} from '@angular/router';
+import {AuthService} from "@core/http/auth.service";
 
 @Component({
   selector: 'tb-login',

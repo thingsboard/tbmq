@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.util.CollectionsUtil;
@@ -74,7 +74,7 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
 
     private Set<TopicSubscription> collectNewSubscriptions(List<SubscriptionInfoDto> subscriptions) {
         return subscriptions.stream()
-                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopic(), subscriptionInfoDto.getQos().value()))
+                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopicFilter(), subscriptionInfoDto.getQos().value()))
                 .collect(Collectors.toSet());
     }
 }

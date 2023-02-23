@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class MqttClientAuthProviderManagerImpl implements MqttClientAuthProvider
             tmpProvidersMap.put(AuthProviderType.BASIC, basicMqttClientAuthProvider);
         }
         if (sslAuthEnabled) {
-            tmpProvidersMap.put(AuthProviderType.SSL, sslMqttClientAuthProvider);
+            tmpProvidersMap.put(AuthProviderType.X_509_CERTIFICATE_CHAIN, sslMqttClientAuthProvider);
         }
 
         this.authProviders = Collections.unmodifiableMap(tmpProvidersMap);

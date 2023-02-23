@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
 
-import { LoginRoutingModule } from './login-routing.module';
-import { LoginComponent } from './pages/login/login.component';
-import { SharedModule } from '@app/shared/shared.module';
-import { ResetPasswordRequestComponent } from '@modules/login/pages/login/reset-password-request.component';
-import { ResetPasswordComponent } from '@modules/login/pages/login/reset-password.component';
-import { CreatePasswordComponent } from '@modules/login/pages/login/create-password.component';
+import {LoginRoutingModule} from './login-routing.module';
+import {LoginComponent} from './pages/login/login.component';
+import {SharedModule} from '@app/shared/shared.module';
+import {ResetPasswordRequestComponent} from '@modules/login/pages/login/reset-password-request.component';
+import {ResetPasswordComponent} from '@modules/login/pages/login/reset-password.component';
+import {CreatePasswordComponent} from '@modules/login/pages/login/create-password.component';
 
 @NgModule({
   declarations: [

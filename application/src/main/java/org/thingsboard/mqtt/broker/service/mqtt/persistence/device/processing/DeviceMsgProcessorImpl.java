@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
@@ -31,7 +32,6 @@ import org.thingsboard.mqtt.broker.dto.PacketIdAndSerialNumberDto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
+
     private static final int BLANK_PACKET_ID = -1;
     private static final long BLANK_SERIAL_NUMBER = -1L;
 
@@ -85,9 +86,13 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
             ClientSession clientSession = clientSessionCache.getClientSession(devicePublishMsg.getClientId());
             if (clientSession == null) {
-                log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                }
             } else if (!clientSession.isConnected()) {
-                log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
+                }
             } else {
                 String targetServiceId = clientSession.getSessionInfo().getServiceId();
                 if (messageWasPersisted(devicePublishMsg)) {
@@ -127,7 +132,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                 log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());
                 ctx.disableMsgDuplicationDetection();
             } catch (Exception e) {
-                log.warn("[{}] Failed to save device messages. Exception - {}, reason - {}.", consumerId, e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Failed to save device messages", consumerId, e);
             }
 
             DeviceProcessingDecision decision = ackStrategy.analyze(ctx);

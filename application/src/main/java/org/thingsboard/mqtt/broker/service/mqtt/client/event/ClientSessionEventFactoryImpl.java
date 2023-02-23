@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
@@ -39,7 +40,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
         SessionInfo disconnectSessionInfo = SessionInfo.builder()
                 .sessionId(sessionId)
                 .clientInfo(clientInfo)
-                .serviceId("")
+                .serviceId(BrokerConstants.EMPTY_STR)
                 .sessionExpiryInterval(sessionExpiryInterval)
                 .build();
         return QueueProtos.ClientSessionEventProto.newBuilder()

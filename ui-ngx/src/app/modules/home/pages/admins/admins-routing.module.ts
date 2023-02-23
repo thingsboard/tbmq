@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { AdminsTableConfigResolver } from "@home/pages/admins/admins-table-config-resolver.service";
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
+import {Authority} from '@shared/models/authority.enum';
+import {EntitiesTableComponent} from '@home/components/entity/entities-table.component';
+import {AdminsTableConfigResolver} from '@home/pages/admins/admins-table-config-resolver.service';
 
 const routes: Routes = [
   {
-    path: 'admins',
+    path: 'users',
     component: EntitiesTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'user.admins',
+      title: 'user.users',
       breadcrumb: {
-        label: 'user.admins',
-        icon: 'mdi:email',
+        label: 'user.users',
+        icon: 'mdi:account-multiple-outline',
         isMdiIcon: true
       }
     },

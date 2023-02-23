@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@ package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -54,12 +54,13 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,6 +80,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
+
+    @Value("${mqtt.msg-subscriptions-parallel-processing:false}")
+    private boolean processSubscriptionsInParallel;
 
     @PostConstruct
     public void init() {
@@ -136,8 +140,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         long notPersistentMsgProcessingStartTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            applicationSubscriptions = new ArrayList<>();
-            deviceSubscriptions = new ArrayList<>();
+            applicationSubscriptions = initArrayList();
+            deviceSubscriptions = initArrayList();
             processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto,
                     applicationSubscriptions, deviceSubscriptions);
         }
@@ -161,21 +165,49 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
                                       List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
-        for (Subscription subscription : subscriptions) {
-            if (needToBePersisted(publishMsgProto, subscription)) {
-                if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
-                    applicationSubscriptions.add(subscription);
-                } else {
-                    deviceSubscriptions.add(subscription);
-                }
+        boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
+        if (nonPersistentByPubQos) {
+            if (processSubscriptionsInParallel) {
+                subscriptions
+                        .parallelStream()
+                        .forEach(subscription -> deliver(publishMsgProto, subscription));
             } else {
-                sendToNode(createBasicPublishMsg(subscription, publishMsgProto), subscription);
+                for (Subscription subscription : subscriptions) {
+                    deliver(publishMsgProto, subscription);
+                }
+            }
+        } else {
+            if (processSubscriptionsInParallel) {
+                subscriptions
+                        .parallelStream()
+                        .forEach(subscription -> processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions));
+            } else {
+                for (Subscription subscription : subscriptions) {
+                    processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions);
+                }
             }
         }
     }
 
+    private void processSubscription(Subscription subscription, PublishMsgProto publishMsgProto,
+                                     List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
+        if (isPersistentBySubInfo(subscription)) {
+            if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
+                applicationSubscriptions.add(subscription);
+            } else {
+                deviceSubscriptions.add(subscription);
+            }
+        } else {
+            deliver(publishMsgProto, subscription);
+        }
+    }
+
     private List<Subscription> initSubscriptionListIfNull(List<Subscription> subscriptions) {
-        return subscriptions == null ? new ArrayList<>() : subscriptions;
+        return subscriptions == null ? initArrayList() : subscriptions;
+    }
+
+    private List<Subscription> initArrayList() {
+        return processSubscriptionsInParallel ? Collections.synchronizedList(new ArrayList<>()) : new ArrayList<>();
     }
 
     private Set<TopicSharedSubscription> initTopicSharedSubscriptionSetIfNull(Set<TopicSharedSubscription> topicSharedSubscriptions) {
@@ -303,10 +335,18 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
 
-        return filteredClientSubscriptions.stream()
-                .map(this::convertToSubscription)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        return getSubscriptions(filteredClientSubscriptions);
+    }
+
+    private List<Subscription> getSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions) {
+        List<Subscription> subscriptions = new ArrayList<>(filteredClientSubscriptions.size());
+        for (var filteredClientSubscription : filteredClientSubscriptions) {
+            Subscription subscription = convertToSubscription(filteredClientSubscription);
+            if (subscription != null) {
+                subscriptions.add(subscription);
+            }
+        }
+        return subscriptions;
     }
 
     private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
@@ -328,14 +368,23 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        return clientSubscriptionWithTopicFilterList.stream()
-                .filter(clientSubsWithTopicFilter -> !isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId))
-                .collect(Collectors.toMap(
-                        clientSubsWithTopicFilter -> clientSubsWithTopicFilter.getValue().getClientId(),
-                        Function.identity(),
-                        this::getSubscriptionWithHigherQos)
-                )
-                .values();
+        Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
+
+        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
+            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
+            if (noLocalOptionMet) {
+                continue;
+            }
+
+            var clientId = clientSubsWithTopicFilter.getValue().getClientId();
+            var value = map.get(clientId);
+            if (value != null) {
+                map.put(clientId, getSubscriptionWithHigherQos(value, clientSubsWithTopicFilter));
+            } else {
+                map.put(clientId, clientSubsWithTopicFilter);
+            }
+        }
+        return map.values();
     }
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
@@ -349,18 +398,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    private ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
-                                                                                  ValueWithTopicFilter<ClientSubscription> second) {
+    ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
+                                                                          ValueWithTopicFilter<ClientSubscription> second) {
         return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
     }
 
-    private boolean needToBePersisted(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
-        return getSessionInfo(subscription).isPersistent()
-                && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value()
-                && publishMsgProto.getQos() != MqttQoS.AT_MOST_ONCE.value();
+    private boolean isPersistentBySubInfo(Subscription subscription) {
+        return getSessionInfo(subscription).isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
-    private void sendToNode(QueueProtos.PublishMsgProto publishMsgProto, Subscription subscription) {
+    private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
         var targetServiceId = getSessionInfo(subscription).getServiceId();
         var clientId = getSessionInfo(subscription).getClientInfo().getClientId();
         downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
@@ -370,12 +417,17 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return subscription.getClientSession().getSessionInfo();
     }
 
-    private QueueProtos.PublishMsgProto createBasicPublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+    private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
         var retain = subscription.getOptions().isRetain(publishMsgProto);
         return publishMsgProto.toBuilder()
                 .setQos(minQos)
                 .setRetain(retain)
                 .build();
+    }
+
+    private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {
+        PublishMsgProto publishMsg = createBasicPublishMsg(subscription, publishMsgProto);
+        sendToNode(publishMsg, subscription);
     }
 }

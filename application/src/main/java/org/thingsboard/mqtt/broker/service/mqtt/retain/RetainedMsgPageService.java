@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
-@Builder(toBuilder = true)
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-public class ClientSessionInfo {
-    private final ClientSession clientSession;
-    private final long lastUpdateTime;
+public interface RetainedMsgPageService {
+
+    PageData<RetainedMsgDto> getRetainedMessages(PageLink pageLink);
+
 }

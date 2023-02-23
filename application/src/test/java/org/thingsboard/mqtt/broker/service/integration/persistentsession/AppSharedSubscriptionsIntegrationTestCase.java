@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     private ApplicationSharedSubscription getSubscription() {
         ApplicationSharedSubscription subscription = new ApplicationSharedSubscription();
         subscription.setName("test");
-        subscription.setTopic("test/+");
+        subscription.setTopicFilter("test/+");
         subscription.setPartitions(10);
         return subscription;
     }

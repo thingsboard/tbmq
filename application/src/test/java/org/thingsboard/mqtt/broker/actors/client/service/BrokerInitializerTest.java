@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,13 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
@@ -110,13 +109,13 @@ public class BrokerInitializerTest {
         ClientSessionInfo clientSessionInfo = getSessionForServiceId(allClientSessions);
 
         Assert.assertNotNull(clientSessionInfo);
-        Assert.assertFalse(clientSessionInfo.getClientSession().isConnected());
+        Assert.assertFalse(clientSessionInfo.isConnected());
     }
 
     private ClientSessionInfo getSessionForServiceId(Map<String, ClientSessionInfo> allClientSessions) {
         return allClientSessions
                 .values().stream()
-                .filter(csi -> csi.getClientSession().getSessionInfo().getServiceId().equals("serviceId1"))
+                .filter(csi -> csi.getServiceId().equals("serviceId1"))
                 .findFirst().orElse(null);
     }
 
@@ -129,10 +128,10 @@ public class BrokerInitializerTest {
 
     @Test
     public void testIsNotPersistent() {
-        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(false, 0);
-        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, 10);
-        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(true, 0);
-        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, 10);
+        SessionInfo clientSessionInfo1 = getSessionInfo(false, 0);
+        SessionInfo clientSessionInfo2 = getSessionInfo(false, 10);
+        SessionInfo clientSessionInfo3 = getSessionInfo(true, 0);
+        SessionInfo clientSessionInfo4 = getSessionInfo(true, 10);
 
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo1));
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo2));
@@ -140,14 +139,10 @@ public class BrokerInitializerTest {
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo4));
     }
 
-    private ClientSessionInfo getClientSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
-        return ClientSessionInfo.builder()
-                .clientSession(ClientSession.builder()
-                        .sessionInfo(SessionInfo.builder()
-                                .cleanStart(cleanStart)
-                                .sessionExpiryInterval(sessionExpiryInterval)
-                                .build())
-                        .build())
+    private SessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
+        return SessionInfo.builder()
+                .cleanStart(cleanStart)
+                .sessionExpiryInterval(sessionExpiryInterval)
                 .build();
     }
 }

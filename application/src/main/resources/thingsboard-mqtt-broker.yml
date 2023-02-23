@@ -1,5 +1,5 @@
 #
-# Copyright © 2016-2022 The Thingsboard Authors
+# Copyright © 2016-2023 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -117,6 +117,10 @@ queue:
       type: "${TB_PUBLISH_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
       retries: "${TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
+    # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
+    # Helpful when the same client publishes lots of messages in a short amount of time.
+    # It is recommended to count the impact of this parameter before setting it on production.
+    msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
     publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
@@ -334,6 +338,10 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 mqtt:
+  # enable/disable processing of found subscriptions in parallel for published messages.
+  # Helpful when the "PUBLISH" message should be delivered to lots of subscribers.
+  # It is recommended to count the impact of this parameter before setting it on production.
+  msg-subscriptions-parallel-processing: "${MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING:false}"
   pre-connect-queue:
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
@@ -415,6 +423,9 @@ caffeine:
     mqttClientCredentials:
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
       maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+    basicCredentialsPassword:
+      timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}" # it is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
+      maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
 
 stats:
   enabled: "${STATS_ENABLED:true}"

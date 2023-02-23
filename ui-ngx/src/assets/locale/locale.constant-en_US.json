@@ -212,6 +212,7 @@
     },
     "user": {
         "admins": "Admins",
+        "administrator": "Administrator",
         "user": "User",
         "users": "Users",
         "customer-users": "Customer Users",
@@ -265,7 +266,8 @@
         "type-user": "User",
         "type-users": "Users",
         "list-of-users": "{ count, plural, 1 {One user} other {List of # users} }",
-        "user-name-starts-with": "Users whose names start with '{{prefix}}'"
+        "user-name-starts-with": "Users whose names start with '{{prefix}}'",
+        "role": "Role"
     },
     "custom": {},
     "language": {
@@ -295,6 +297,7 @@
       "client-credentials": "Client Credentials",
       "client-id-or-user-name-necessary": "Client ID and/or User Name are necessary",
       "client-credentials-details": "Client Credentials details",
+      "credentials": "Credentials",
       "copy-id": "Copy Id",
       "copy-client-credentials-id": "Copy Credentials Id",
       "delete-client-credentials": "Delete Client Credentials",
@@ -325,7 +328,9 @@
       "parent-certificate-common-name": "Parent certificate common name",
       "parent-certificate-common-name-required": "Parent certificate common name is required",
       "username": "Username",
-      "user-name-required": "User Name is required."
+      "user-name-required": "User Name is required.",
+      "hint-client-type-application": "hint-client-type-application",
+      "hint-client-type-device": "hint-client-type-device"
     },
     "mqtt-client-session": {
       "add": "Add session",

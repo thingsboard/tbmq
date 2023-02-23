@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2022 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -19,3 +19,9 @@ export enum Authority {
   REFRESH_TOKEN = 'REFRESH_TOKEN',
   ANONYMOUS = 'ANONYMOUS'
 }
+
+export const AuthorityTranslationMap = new Map<Authority, string>(
+  [
+    [Authority.SYS_ADMIN, 'user.administrator'],
+  ]
+);

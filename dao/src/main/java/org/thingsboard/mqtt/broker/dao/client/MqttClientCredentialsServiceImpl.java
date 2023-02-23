@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         List<MqttClientCredentials> result = Lists.newArrayList();
         List<String> credentialIdsFromDb = Lists.newArrayList();
 
-        Cache cache = getCache();
+        Cache cache = getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
         for (var credentialsId : credentialIds) {
             var clientCredentials = cache.get(credentialsId, MqttClientCredentials.class);
             if (clientCredentials != null) {
@@ -174,8 +174,8 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         SslMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, SslMqttCredentials.class);
-        if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
-            throw new DataValidationException("Parent certificate's common name should be specified!");
+        if (StringUtils.isEmpty(mqttCredentials.getCertCommonName())) {
+            throw new DataValidationException("Certificate common name should be specified!");
         }
         if (CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
@@ -192,7 +192,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             compileAuthRules(authRules);
         });
 
-        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
+        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCommonName());
         mqttClientCredentials.setCredentialsId(credentialsId);
     }
 
@@ -224,14 +224,15 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     private void evictCache(MqttClientCredentials clientCredentials) {
-        Cache cache = getCache();
+        Cache cache = getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
         if (clientCredentials != null) {
             cache.evictIfPresent(clientCredentials.getCredentialsId());
         }
+        getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE).invalidate();
     }
 
-    private Cache getCache() {
-        return cacheManager.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+    private Cache getCache(String cacheName) {
+        return cacheManager.getCache(cacheName);
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =

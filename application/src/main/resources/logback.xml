@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
 
-    Copyright © 2016-2022 The Thingsboard Authors
+    Copyright © 2016-2023 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@
     <logger name="org.thingsboard.mqtt.broker.session.ClientMqttActorManagerImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl" level="INFO"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.ActorProcessorImpl" level="INFO"/>
 
     <logger name="org.apache.kafka" level="WARN"/>
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>

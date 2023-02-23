@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.constant;
-
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+package org.thingsboard.mqtt.broker.common.util;
 
 public class BrokerConstants {
 
@@ -29,9 +27,7 @@ public class BrokerConstants {
     public static final int SHARE_NAME_IDX = SHARED_SUBSCRIPTION_PREFIX.length();
 
     public static final String SERVICE_ID_HEADER = "serviceId";
-
-    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
-    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
+    public static final String EMPTY_STR = "";
 
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
@@ -40,4 +36,9 @@ public class BrokerConstants {
 
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
 
+    public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-publish-group-";
+    public static final String PERSISTENT_DOWNLINK_CG_PREFIX = "persistent-downlink-publish-group-";
+    public static final String CLIENT_SESSION_CG_PREFIX = "client-session-group-";
+    public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-group-";
+    public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-group-";
 }

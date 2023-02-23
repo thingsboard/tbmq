@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     public void process(String clientId, QueueProtos.PublishMsgProto msg) {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
         if (clientSessionCtx == null) {
-            log.trace("[{}] No client session on the node.", clientId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] No client session on the node.", clientId);
+            }
             return;
         }
         try {
@@ -52,8 +54,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
         } catch (Exception e) {
-            log.warn("[{}] Failed to deliver msg to client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
-            log.trace("Detailed error: ", e);
+            log.warn("[{}] Failed to deliver msg to client.", clientId, e);
             disconnect(clientId, clientSessionCtx);
         }
     }

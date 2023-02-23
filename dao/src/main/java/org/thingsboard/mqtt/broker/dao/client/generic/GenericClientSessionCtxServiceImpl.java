@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,39 +37,51 @@ public class GenericClientSessionCtxServiceImpl implements GenericClientSessionC
 
     @Override
     public void saveAllGenericClientSessionCtx(Collection<GenericClientSessionCtx> genericClientSessionContexts) {
-        log.trace("Executing saveAllGenericClientSessionCtx [{}]", genericClientSessionContexts);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveAllGenericClientSessionCtx [{}]", genericClientSessionContexts);
+        }
         genericClientSessionContexts.forEach(this::validate);
         genericClientSessionCtxDao.saveAll(genericClientSessionContexts);
     }
 
     @Override
     public GenericClientSessionCtx saveGenericClientSessionCtx(GenericClientSessionCtx genericClientSessionCtx) {
-        log.trace("Executing saveGenericClientSessionCtx [{}]", genericClientSessionCtx);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveGenericClientSessionCtx [{}]", genericClientSessionCtx);
+        }
         validate(genericClientSessionCtx);
         return genericClientSessionCtxDao.save(genericClientSessionCtx);
     }
 
     @Override
     public void deleteGenericClientSessionCtx(String clientId) {
-        log.trace("Executing deleteGenericClientSessionCtx [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteGenericClientSessionCtx [{}]", clientId);
+        }
         try {
             genericClientSessionCtxDao.remove(clientId);
         } catch (EmptyResultDataAccessException noDataException) {
-            log.debug("[{}] No session for clientId.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No session for clientId.", clientId);
+            }
         } catch (Exception e) {
-            log.warn("[{}] Failed to delete generic client session context. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}] Failed to delete generic client session context.", clientId, e);
         }
     }
 
     @Override
     public Optional<GenericClientSessionCtx> findGenericClientSessionCtx(String clientId) {
-        log.trace("Executing findGenericClientSessionCtx [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findGenericClientSessionCtx [{}]", clientId);
+        }
         return Optional.ofNullable(genericClientSessionCtxDao.findByClientId(clientId));
     }
 
     @Override
     public ListenableFuture<GenericClientSessionCtx> findGenericClientSessionCtxAsync(String clientId) {
-        log.trace("Executing findGenericClientSessionCtxAsync [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findGenericClientSessionCtxAsync [{}]", clientId);
+        }
         return genericClientSessionCtxDao.findByClientIdAsync(clientId);
     }
 

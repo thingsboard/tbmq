@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -87,9 +86,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
                     AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
-                    List<PublishMsgWithId> messagesWithId = msgs.stream()
-                            .map(msg -> new PublishMsgWithId(UUID.randomUUID(), msg.getValue()))
-                            .collect(Collectors.toList());
+                    List<PublishMsgWithId> messagesWithId = toPubMsgWithIdList(msgs);
                     submitStrategy.init(messagesWithId);
 
                     long packProcessingStart = System.nanoTime();
@@ -134,6 +131,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
             }
             log.info("[{}] Publish Msg Consumer stopped.", consumerId);
         });
+    }
+
+    private List<PublishMsgWithId> toPubMsgWithIdList(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
+        List<PublishMsgWithId> messagesWithId = new ArrayList<>(msgs.size());
+        for (var msg : msgs) {
+            messagesWithId.add(new PublishMsgWithId(UUID.randomUUID(), msg.getValue()));
+        }
+        return messagesWithId;
     }
 
 

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.mqtt.ClientSession;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
-import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -88,8 +88,7 @@ public class ProtoConverter {
     }
 
     public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
-        return publishMsgProto != null && publishMsgProto.getSessionInfo() != null && publishMsgProto.getSessionInfo().getClientInfo() != null ?
-                publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;
+        return publishMsgProto != null ? publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;
     }
 
     public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
@@ -104,18 +103,26 @@ public class ProtoConverter {
     }
 
     public static ClientSessionInfo convertToClientSessionInfo(QueueProtos.ClientSessionInfoProto clientSessionProto) {
-        ClientSession clientSession = ClientSession.builder()
+        return ClientSessionInfo.builder()
                 .connected(clientSessionProto.getConnected())
-                .sessionInfo(convertToSessionInfo(clientSessionProto.getSessionInfo()))
+                .serviceId(clientSessionProto.getSessionInfo().getServiceInfo().getServiceId())
+                .sessionId(new UUID(clientSessionProto.getSessionInfo().getSessionIdMSB(), clientSessionProto.getSessionInfo().getSessionIdLSB()))
+                .cleanStart(clientSessionProto.getSessionInfo().getCleanStart())
+                .sessionExpiryInterval(clientSessionProto.getSessionInfo().getSessionExpiryInterval())
+                .clientId(clientSessionProto.getSessionInfo().getClientInfo().getClientId())
+                .type(ClientType.valueOf(clientSessionProto.getSessionInfo().getClientInfo().getClientType()))
+                .clientIpAdr(clientSessionProto.getSessionInfo().getClientInfo().getClientIpAdr())
+                .connectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getConnectedAt())
+                .disconnectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getDisconnectedAt())
+                .keepAlive(clientSessionProto.getSessionInfo().getConnectionInfo().getKeepAlive())
+                .lastUpdateTime(clientSessionProto.getLastUpdatedTime())
                 .build();
-        return new ClientSessionInfo(clientSession, clientSessionProto.getLastUpdatedTime());
     }
 
     public static QueueProtos.ClientSessionInfoProto convertToClientSessionInfoProto(ClientSessionInfo clientSessionInfo) {
-        ClientSession clientSession = clientSessionInfo.getClientSession();
         return QueueProtos.ClientSessionInfoProto.newBuilder()
-                .setConnected(clientSession.isConnected())
-                .setSessionInfo(convertToSessionInfoProto(clientSession.getSessionInfo()))
+                .setConnected(clientSessionInfo.isConnected())
+                .setSessionInfo(convertToSessionInfoProto(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo)))
                 .setLastUpdatedTime(clientSessionInfo.getLastUpdateTime())
                 .build();
     }
@@ -150,7 +157,7 @@ public class ProtoConverter {
 
     public static SessionInfo convertToSessionInfo(QueueProtos.SessionInfoProto sessionInfoProto) {
         return SessionInfo.builder()
-                .serviceId(sessionInfoProto.getServiceInfo() != null ? sessionInfoProto.getServiceInfo().getServiceId() : null)
+                .serviceId(sessionInfoProto.getServiceInfo().getServiceId())
                 .sessionId(new UUID(sessionInfoProto.getSessionIdMSB(), sessionInfoProto.getSessionIdLSB()))
                 .cleanStart(sessionInfoProto.getCleanStart())
                 .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
@@ -163,7 +170,16 @@ public class ProtoConverter {
         return clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
                 .setClientId(clientInfo.getClientId())
                 .setClientType(clientInfo.getType().toString())
+                .setClientIpAdr(clientInfo.getClientIpAdr())
                 .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
+    }
+
+    public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
+        return clientInfoProto != null ? ClientInfo.builder()
+                .clientId(clientInfoProto.getClientId())
+                .type(ClientType.valueOf(clientInfoProto.getClientType()))
+                .clientIpAdr(clientInfoProto.getClientIpAdr())
+                .build() : null;
     }
 
     public static QueueProtos.ConnectionInfoProto convertToConnectionInfoProto(ConnectionInfo connectionInfo) {
@@ -172,13 +188,6 @@ public class ProtoConverter {
                 .setDisconnectedAt(connectionInfo.getDisconnectedAt())
                 .setKeepAlive(connectionInfo.getKeepAlive())
                 .build() : QueueProtos.ConnectionInfoProto.getDefaultInstance();
-    }
-
-    public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
-        return clientInfoProto != null ? ClientInfo.builder()
-                .clientId(clientInfoProto.getClientId())
-                .type(ClientType.valueOf(clientInfoProto.getClientType()))
-                .build() : null;
     }
 
     private static ConnectionInfo convertToConnectionInfo(QueueProtos.ConnectionInfoProto connectionInfoProto) {
@@ -314,6 +323,7 @@ public class ProtoConverter {
                 .setQos(retainedMsg.getQosLevel())
                 .setTopic(retainedMsg.getTopic())
                 .addAllUserProperties(userPropertyProtos)
+                .setCreatedTime(retainedMsg.getCreatedTime())
                 .build();
     }
 
@@ -331,7 +341,8 @@ public class ProtoConverter {
                 retainedMsgProto.getTopic(),
                 retainedMsgProto.getPayload().toByteArray(),
                 retainedMsgProto.getQos(),
-                createMqttProperties(retainedMsgProto.getUserPropertiesList())
+                createMqttProperties(retainedMsgProto.getUserPropertiesList()),
+                retainedMsgProto.getCreatedTime()
         );
     }
 

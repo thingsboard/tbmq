@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     private boolean skipValidityCheckForClientCert;
 
     @Override
-    public AuthResponse authorize(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
-            log.error("Could not authenticate client with SSL credentials since SSL listener is not enabled!");
+            log.error("[{}] Could not authenticate client with SSL credentials since SSL listener is not enabled!", authContext);
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {
@@ -124,7 +124,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
             return SslUtil.parseCommonName(certificates[0]);
         } catch (Exception e) {
-            log.error("Failed to get client's certificate common name. Exception - {}, reason - {}.", e.getClass().getSimpleName(), e.getMessage());
+            log.error("Failed to get client's certificate common name", e);
             throw new AuthenticationException("Failed to get client's certificate common name.", e);
         }
 

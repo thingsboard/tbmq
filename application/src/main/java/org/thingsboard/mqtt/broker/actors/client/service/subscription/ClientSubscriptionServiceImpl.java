@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2022 The Thingsboard Authors
+ * Copyright © 2016-2023 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                         log.trace("[{}] Persisted topic subscriptions", clientId);
                     }
                 },
-                t -> log.warn("[{}] Failed to persist topic subscriptions. Exception - {}, reason - {}",
-                        clientId, t.getClass().getSimpleName(), t.getMessage()));
+                t -> log.warn("[{}] Failed to persist topic subscriptions", clientId, t));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }
 
@@ -123,8 +122,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                         log.trace("[{}] Persisted unsubscribed topics", clientId);
                     }
                 },
-                t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}",
-                        clientId, t.getClass().getSimpleName(), t.getMessage()));
+                t -> log.warn("[{}] Failed to persist unsubscribed topics", clientId, t));
         unsubscribeAndPersist(clientId, topicFilters, callback);
     }
 
