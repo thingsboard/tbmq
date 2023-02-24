@@ -22,7 +22,7 @@ availabilityZones: [ eu-west-1a,eu-west-1b,eu-west-1c ]
 metadata:
   name: thingsboard-mqtt-broker-cluster
   region: eu-west-1
-  version: "1.22"
+  version: "1.24"
 
 managedNodeGroups:
   - name: tb-mqtt-broker
@@ -31,12 +31,16 @@ managedNodeGroups:
     maxSize: 10
     minSize: 1
     labels: { role: tb-mqtt-broker }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
   - name: tb-perf-test
     instanceType: c5.large
     desiredCapacity: 1
     maxSize: 21
     minSize: 1
     labels: { role: tb-perf-test }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
 
 # In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 # eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
