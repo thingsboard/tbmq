@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
+
     private static final int BLANK_PACKET_ID = -1;
     private static final long BLANK_SERIAL_NUMBER = -1L;
 
@@ -85,9 +86,13 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
             ClientSession clientSession = clientSessionCache.getClientSession(devicePublishMsg.getClientId());
             if (clientSession == null) {
-                log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                }
             } else if (!clientSession.isConnected()) {
-                log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
+                }
             } else {
                 String targetServiceId = clientSession.getSessionInfo().getServiceId();
                 if (messageWasPersisted(devicePublishMsg)) {
@@ -127,7 +132,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                 log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());
                 ctx.disableMsgDuplicationDetection();
             } catch (Exception e) {
-                log.warn("[{}] Failed to save device messages. Exception - {}, reason - {}.", consumerId, e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Failed to save device messages", consumerId, e);
             }
 
             DeviceProcessingDecision decision = ackStrategy.analyze(ctx);

@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 @AllArgsConstructor
 public class SubscriptionInfoDto {
 
-    private String topic;
+    private String topicFilter;
     private MqttQoS qos;
     private String shareName;
 

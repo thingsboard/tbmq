@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.retain;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
+import java.util.List;
 import java.util.Map;
 
 public interface RetainedMsgListenerService {
@@ -39,5 +40,7 @@ public interface RetainedMsgListenerService {
     void clearRetainedMsg(String topic);
 
     RetainedMsgDto getRetainedMsgForTopic(String topic);
+
+    List<RetainedMsg> getRetainedMessages();
 
 }

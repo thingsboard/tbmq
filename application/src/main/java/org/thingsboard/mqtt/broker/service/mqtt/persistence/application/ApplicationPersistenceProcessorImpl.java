@@ -488,7 +488,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 jobs.forEach(this::cancelJob);
                 statsManager.clearSharedApplicationProcessorStats(clientId);
             } catch (Exception e) {
-                log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Exception stopping future for client", clientId, e);
             }
         }
     }
@@ -502,7 +502,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 processingFuture.cancel(true);
                 statsManager.clearApplicationProcessorStats(clientId);
             } catch (Exception e) {
-                log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Exception stopping future for client.", clientId, e);
             }
         }
     }
@@ -561,7 +561,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             try {
                 jobs.removeAll(collectCancelledJobs(subscriptions, clientId, jobs));
             } catch (Exception e) {
-                log.warn("[{}] Exception stopping future for client. Exception - {}, reason - {}.", clientId, e.getClass().getSimpleName(), e.getMessage());
+                log.warn("[{}] Exception stopping future for client", clientId, e);
             }
         }
     }

@@ -23,8 +23,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 
 @RestController
@@ -34,6 +37,7 @@ public class RetainedMsgController extends BaseController {
 
     private final RetainedMsgService retainedMsgService;
     private final RetainedMsgListenerService retainedMsgListenerService;
+    private final RetainedMsgPageService retainedMsgPageService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/topic-trie/clear", method = RequestMethod.DELETE)
@@ -52,6 +56,33 @@ public class RetainedMsgController extends BaseController {
     public RetainedMsgDto getRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         try {
             return checkNotNull(retainedMsgListenerService.getRetainedMsgForTopic(topicName));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"topicName"}, method = RequestMethod.DELETE)
+    @ResponseBody
+    public void deleteRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
+        try {
+            retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<RetainedMsgDto> getRetainedMessages(@RequestParam int pageSize,
+                                                        @RequestParam int page,
+                                                        @RequestParam(required = false) String textSearch,
+                                                        @RequestParam(required = false) String sortProperty,
+                                                        @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+        try {
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(retainedMsgPageService.getRetainedMessages(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }

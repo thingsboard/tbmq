@@ -53,6 +53,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Slf4j
 public class MqttPublishHandler {
+
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgDispatcherService msgDispatcherService;
     private final TopicValidationService topicValidationService;
@@ -210,8 +211,7 @@ public class MqttPublishHandler {
                     throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");
             }
         } catch (Exception e) {
-            log.error("[{}][{}] Failed to send msg finished event to actor. Exception - {}, message - {}",
-                    actorRef.getActorId(), sessionId, e.getClass().getSimpleName(), e.getMessage());
+            log.error("[{}][{}] Failed to send msg finished event to actor", actorRef.getActorId(), sessionId, e);
         }
     }
 

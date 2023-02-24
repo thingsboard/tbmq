@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
-import java.util.List;
+public interface RetainedMsgPageService {
 
-public interface ClientSubscriptionAdminService {
-
-    void updateSubscriptions(String clientId, List<SubscriptionInfoDto> subscriptions) throws ThingsboardException;
+    PageData<RetainedMsgDto> getRetainedMessages(PageLink pageLink);
 
 }
