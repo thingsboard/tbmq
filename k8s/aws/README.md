@@ -3,8 +3,8 @@
 This folder containing scripts and Kubernetes resources configurations to run ThingsBoard MQTT Broker on AWS EKS
 cluster.
 
-You can find the deployment guide by the [**link
-**](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/).
+You can find the deployment guide by the 
+[**link**](https://thingsboard.io/docs/mqtt-broker/install/cluster/aws-cluster-setup/).
 
 # Custom user data for launch template
 
@@ -28,13 +28,13 @@ echo "* hard nofile 100000" >> /etc/security/limits.conf
 
 base64 -w 0 test.sh | xclip -selection clipboard
 
+# Launch template name example for broker node group
+eksctl-thingsboard-mqtt-broker-cluster-nodegroup-tb-mqtt-broker
+
 # Create new version of launch template from source version with updated data
 
-aws ec2 create-launch-template-version --launch-template-name
-eksctl-thingsboard-mqtt-broker-cluster-nodegroup-tb-mqtt-broker --source-version 1 --launch-template-data '{"
-UserData":""}'
+aws ec2 create-launch-template-version --launch-template-name $NAME --source-version 1 --launch-template-data '{"UserData":""}'
 
 # Set default version for the launch template
 
-aws ec2 modify-launch-template --launch-template-name eksctl-thingsboard-mqtt-broker-cluster-nodegroup-tb-mqtt-broker
---default-version 2
+aws ec2 modify-launch-template --launch-template-name $NAME --default-version 2
