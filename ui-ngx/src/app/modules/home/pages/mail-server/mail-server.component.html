@@ -60,7 +60,8 @@
               <mat-error *ngIf="mailSettings.get('smtpPort').hasError('required')">
                 {{ 'admin.smtp-port-required' | translate }}
               </mat-error>
-              <mat-error *ngIf="mailSettings.get('smtpPort').hasError('pattern') || mailSettings.get('smtpPort').hasError('maxlength')">
+              <mat-error
+                *ngIf="mailSettings.get('smtpPort').hasError('pattern') || mailSettings.get('smtpPort').hasError('maxlength')">
                 {{ 'admin.smtp-port-invalid' | translate }}
               </mat-error>
             </mat-form-field>
@@ -72,7 +73,8 @@
             <mat-error *ngIf="mailSettings.get('timeout').hasError('required')">
               {{ 'admin.timeout-required' | translate }}
             </mat-error>
-            <mat-error *ngIf="mailSettings.get('timeout').hasError('pattern') || mailSettings.get('timeout').hasError('maxlength')">
+            <mat-error
+              *ngIf="mailSettings.get('timeout').hasError('pattern') || mailSettings.get('timeout').hasError('maxlength')">
               {{ 'admin.timeout-invalid' | translate }}
             </mat-error>
           </mat-form-field>
@@ -141,7 +143,8 @@
                     [disabled]="(isLoading$ | async) || mailSettings.invalid" (click)="sendTestMail()">
               {{'admin.send-test-mail' | translate}}
             </button>
-            <button mat-raised-button color="primary" [disabled]="(isLoading$ | async) || mailSettings.invalid || !mailSettings.dirty"
+            <button mat-raised-button color="primary"
+                    [disabled]="(isLoading$ | async) || mailSettings.invalid || !mailSettings.dirty"
                     type="submit">{{'action.save' | translate}}
             </button>
           </div>

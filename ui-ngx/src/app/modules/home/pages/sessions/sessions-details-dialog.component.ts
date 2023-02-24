@@ -69,7 +69,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private buildForms(entity: DetailedClientSessionInfo): void {
     this.buildSessionForm(entity);
-    this.buildSessionInfoForm(entity);
     this.updateFormsValues(entity);
   }
 
@@ -77,6 +76,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm = this.fb.group({
       clientId: [entity ? entity.clientId : null],
       clientType: [entity ? entity.clientType : null],
+      clientIpAdr: [entity ? entity.clientIpAdr : null],
       nodeId: [entity ? entity.nodeId : null],
       keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
       sessionExpiryInterval: [entity ? entity.sessionExpiryInterval : null],
@@ -84,17 +84,12 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       connectedAt: [entity ? entity.connectedAt : null],
       connectionState: [entity ? entity.connectionState : null],
       disconnectedAt: [entity ? entity.disconnectedAt : null],
-      subscriptions: [entity ? entity.subscriptions : null]
+      subscriptions: [entity ? entity.subscriptions : null],
+      cleanStart: [entity ? entity.cleanStart : null],
+      subscriptionsCount: [entity ? entity.subscriptionsCount : null]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
       this.entity.subscriptions = value;
-    });
-  }
-
-  private buildSessionInfoForm(entity: DetailedClientSessionInfo): void {
-    this.sessionDetailsForm = this.fb.group({
-      cleanStart: [entity ? entity.cleanStart : null],
-      subscriptionsCount: [entity ? entity.subscriptions.length : null]
     });
   }
 
@@ -154,6 +149,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   private updateFormsValues(entity: DetailedClientSessionInfo): void {
     this.entityForm.patchValue({clientId: entity.clientId} );
     this.entityForm.patchValue({clientType: entity.clientType} );
+    this.entityForm.patchValue({clientIpAdr: entity.clientIpAdr} );
     this.entityForm.patchValue({nodeId: entity.nodeId} );
     this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds} );
     this.entityForm.patchValue({sessionExpiryInterval: entity.sessionExpiryInterval} );
@@ -162,8 +158,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm.patchValue({connectionState: entity.connectionState});
     this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt} );
     this.entityForm.patchValue({subscriptions: entity.subscriptions} );
-    this.sessionDetailsForm.patchValue({cleanStart: entity.cleanStart});
-    this.sessionDetailsForm.patchValue({subscriptionsCount: entity.subscriptions.length});
+    this.entityForm.patchValue({cleanStart: entity.cleanStart} );
+    this.entityForm.patchValue({subscriptionsCount: entity.subscriptions.length} );
   }
 
   private closeDialog(): void {

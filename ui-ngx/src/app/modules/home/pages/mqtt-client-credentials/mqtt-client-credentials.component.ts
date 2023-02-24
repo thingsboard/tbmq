@@ -14,16 +14,20 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Inject, Output} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {EntityComponent} from '@home/components/entity/entity.component';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {credentialsTypeNames, MqttClientCredentials, MqttCredentialsType} from '@shared/models/client-crenetials.model';
-import {ClientType, clientTypeTranslationMap} from '@shared/models/client.model';
-import {ActionNotificationShow} from '@core/notification/notification.actions';
-import {TranslateService} from '@ngx-translate/core';
+import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { EntityComponent } from '@home/components/entity/entity.component';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import {
+  credentialsTypeNames,
+  MqttClientCredentials,
+  MqttCredentialsType
+} from '@shared/models/client-crenetials.model';
+import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -63,24 +67,27 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
   buildForm(entity: MqttClientCredentials): FormGroup {
     const form = this.fb.group(
       {
-        name: [entity ? entity.name : '', [Validators.required]],
-        clientType: [entity ? entity.clientType : '', [Validators.required]],
-        credentialsType: [entity ? entity.credentialsType : '', [Validators.required]],
-        credentialsValue: [ entity ? entity.credentialsValue : '']
+        name: [entity ? entity.name : null, [Validators.required]],
+        clientType: [entity ? entity.clientType : null, [Validators.required]],
+        credentialsType: [entity ? entity.credentialsType : null, [Validators.required]],
+        credentialsValue: [entity ? entity.credentialsValue : null, []]
       }
     );
-    form.get('clientType').setValue(ClientType.DEVICE, {emitEvent: true});
+    form.patchValue({
+      clientType: ClientType.DEVICE,
+      credentialsType: MqttCredentialsType.MQTT_BASIC
+    });
     form.get('credentialsType').valueChanges.subscribe(() => {
-      form.patchValue({ credentialsValue: null });
+      form.patchValue({credentialsValue: null});
     });
     return form;
   }
 
   updateForm(entity: MqttClientCredentials) {
-    this.entityForm.patchValue({name: entity.name} );
-    this.entityForm.patchValue({credentialsType: entity.credentialsType} );
-    this.entityForm.patchValue({credentialsValue: entity.credentialsValue} );
-    this.entityForm.patchValue({clientType: entity.clientType} );
+    this.entityForm.patchValue({name: entity.name});
+    this.entityForm.patchValue({credentialsType: entity.credentialsType});
+    this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
+    this.entityForm.patchValue({clientType: entity.clientType});
   }
 
   onChangePasswordCloseDialog($event: MqttClientCredentials) {

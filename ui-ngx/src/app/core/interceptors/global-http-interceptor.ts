@@ -14,21 +14,21 @@
 /// limitations under the License.
 ///
 
-import {HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
-import {Observable} from 'rxjs/internal/Observable';
-import {Inject, Injectable} from '@angular/core';
-import {Constants} from '@shared/models/constants';
-import {InterceptorHttpParams} from './interceptor-http-params';
-import {catchError, delay, finalize, mergeMap, switchMap} from 'rxjs/operators';
-import {of, throwError} from 'rxjs';
-import {InterceptorConfig} from './interceptor-config';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {ActionLoadFinish, ActionLoadStart} from './load.actions';
-import {ActionNotificationShow} from '@app/core/notification/notification.actions';
-import {DialogService} from '@core/services/dialog.service';
-import {TranslateService} from '@ngx-translate/core';
-import {AuthService} from "@core/http/auth.service";
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { Observable } from 'rxjs/internal/Observable';
+import { Inject, Injectable } from '@angular/core';
+import { Constants } from '@shared/models/constants';
+import { InterceptorHttpParams } from './interceptor-http-params';
+import { catchError, delay, finalize, mergeMap, switchMap } from 'rxjs/operators';
+import { of, throwError } from 'rxjs';
+import { InterceptorConfig } from './interceptor-config';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { ActionLoadFinish, ActionLoadStart } from './load.actions';
+import { ActionNotificationShow } from '@app/core/notification/notification.actions';
+import { DialogService } from '@core/services/dialog.service';
+import { TranslateService } from '@ngx-translate/core';
+import { AuthService } from "@core/http/auth.service";
 
 let tmpHeaders = {};
 
@@ -58,7 +58,10 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
       let observable$: Observable<HttpEvent<any>>;
       if (this.isTokenBasedAuthEntryPoint(req.url)) {
         if (!AuthService.getJwtToken() && !this.authService.refreshTokenPending()) {
-          observable$ = this.handleResponseError(req, next, new HttpErrorResponse({error: {message: 'Unauthorized!'}, status: 401}));
+          observable$ = this.handleResponseError(req, next, new HttpErrorResponse({
+            error: {message: 'Unauthorized!'},
+            status: 401
+          }));
         } else if (!AuthService.isJwtTokenValid()) {
           observable$ = this.handleResponseError(req, next, new HttpErrorResponse({error: {refreshTokenPending: true}}));
         } else {
@@ -104,8 +107,8 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
     const errorCode = errorResponse.error ? errorResponse.error.errorCode : null;
     if (errorResponse.error && errorResponse.error.refreshTokenPending || errorResponse.status === 401) {
       if (errorResponse.error && errorResponse.error.refreshTokenPending ||
-          errorCode && errorCode === Constants.serverErrorCode.jwtTokenExpired) {
-          return this.refreshTokenAndRetry(req, next);
+        errorCode && errorCode === Constants.serverErrorCode.jwtTokenExpired) {
+        return this.refreshTokenAndRetry(req, next);
       } else if (errorCode !== Constants.serverErrorCode.credentialsExpired) {
         unhandled = true;
       }
@@ -118,7 +121,7 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
         this.dialogService.forbidden();
       }
     } else if (errorResponse.status === 0 || errorResponse.status === -1) {
-        this.showError('Unable to connect');
+      this.showError('Unable to connect');
     } else if (!(req.url.startsWith('/api/rpc') || req.url.startsWith('/api/plugins/rpc'))) {
       if (errorResponse.status === 404) {
         if (!ignoreErrors) {
@@ -135,7 +138,8 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
       if (req.responseType === 'text') {
         try {
           error = errorResponse.error ? JSON.parse(errorResponse.error) : null;
-        } catch (e) {}
+        } catch (e) {
+        }
       } else {
         error = errorResponse.error;
       }
@@ -169,24 +173,27 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
   }
 
   private retryRequest(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const thisTimeout =  1000 + Math.random() * 3000;
+    const thisTimeout = 1000 + Math.random() * 3000;
     return of(null).pipe(
       delay(thisTimeout),
       mergeMap(() => {
-        return this.jwtIntercept(req, next);
-      }
-    ));
+          return this.jwtIntercept(req, next);
+        }
+      ));
   }
 
   private refreshTokenAndRetry(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return this.authService.refreshJwtToken().pipe(switchMap(() => {
-      return this.jwtIntercept(req, next);
-    }),
-    catchError((err: Error) => {
-      this.authService.logout(true);
-      const message = err ? err.message : 'Unauthorized!';
-      return this.handleResponseError(req, next, new HttpErrorResponse({error: {message, timeout: 200}, status: 401}));
-    }));
+        return this.jwtIntercept(req, next);
+      }),
+      catchError((err: Error) => {
+        this.authService.logout(true);
+        const message = err ? err.message : 'Unauthorized!';
+        return this.handleResponseError(req, next, new HttpErrorResponse({
+          error: {message, timeout: 200},
+          status: 401
+        }));
+      }));
   }
 
   private updateAuthorizationHeader(req: HttpRequest<any>): HttpRequest<any> {
@@ -213,7 +220,7 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
   }
 
   private isTokenBasedAuthEntryPoint(url): boolean {
-    return  url.startsWith('/api/') &&
+    return url.startsWith('/api/') &&
       !url.startsWith(Constants.entryPoints.login) &&
       !url.startsWith(Constants.entryPoints.tokenRefresh) &&
       !url.startsWith(Constants.entryPoints.nonTokenBased);

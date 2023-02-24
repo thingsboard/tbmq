@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
-import {MailServerRoutingModule} from './mail-server-routing.module';
-import {SharedModule} from '@app/shared/shared.module';
-import {MailServerComponent} from '@modules/home/pages/mail-server/mail-server.component';
-import {HomeComponentsModule} from '@modules/home/components/home-components.module';
+import { MailServerRoutingModule } from './mail-server-routing.module';
+import { SharedModule } from '@app/shared/shared.module';
+import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
+import { HomeComponentsModule } from '@modules/home/components/home-components.module';
 
 @NgModule({
   declarations:
@@ -34,4 +34,5 @@ import {HomeComponentsModule} from '@modules/home/components/home-components.mod
     MailServerRoutingModule
   ]
 })
-export class MailServerModule { }
+export class MailServerModule {
+}

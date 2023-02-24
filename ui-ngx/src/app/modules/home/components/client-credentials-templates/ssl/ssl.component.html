@@ -16,14 +16,17 @@
 
 -->
 <section [formGroup]="credentialsMqttFormGroup">
-  <mat-form-field class="mat-block">
-    <mat-label translate>mqtt-client-credentials.parent-certificate-common-name</mat-label>
-    <input required matInput formControlName="parentCertCommonName">
-    <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
-      {{ 'mqtt-client-credentials.parent-certificate-common-name-required' | translate }}
-    </mat-error>
-  </mat-form-field>
-  <tb-auth-rules
-    formControlName="authRulesMapping">
-  </tb-auth-rules>
+  <fieldset class="fields-group">
+    <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
+    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-ssl' | translate }}"></div>
+    <mat-form-field class="mat-block">
+      <mat-label translate>mqtt-client-credentials.certificate-common-name</mat-label>
+      <input required matInput formControlName="parentCertCommonName">
+      <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
+        {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
+      </mat-error>
+    </mat-form-field>
+    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-ssl-cert-common-name' | translate }}"></div>
+  </fieldset>
+  <tb-auth-rules [entity]="entity" formControlName="authRulesMapping"></tb-auth-rules>
 </section>

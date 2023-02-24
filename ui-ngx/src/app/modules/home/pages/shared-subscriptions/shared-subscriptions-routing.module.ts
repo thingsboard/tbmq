@@ -28,7 +28,7 @@ const routes: Routes = [
       auth: [Authority.SYS_ADMIN],
       title: 'shared-subscription.shared-subscriptions',
       breadcrumb: {
-        label: 'shared-subscription.shared-subscriptions',
+        label: 'shared-subscription.application-shared-subscriptions',
         icon: 'mdi:monitor-share',
         isMdiIcon: true
       }

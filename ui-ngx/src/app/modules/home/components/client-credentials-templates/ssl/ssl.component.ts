@@ -27,7 +27,7 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { SslMqttCredentials } from "@shared/models/client-crenetials.model";
+import { MqttClientCredentials, SslMqttCredentials } from "@shared/models/client-crenetials.model";
 
 @Component({
   selector: 'tb-mqtt-credentials-ssl',
@@ -49,6 +49,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
 
   @Input()
   disabled: boolean;
+
+  @Input()
+  entity: MqttClientCredentials;
 
   credentialsMqttFormGroup: FormGroup;
 
