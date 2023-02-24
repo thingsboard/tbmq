@@ -55,7 +55,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   topicListFormGroup: FormGroup;
   mqttQoSTypes = mqttQoSTypes;
   showShareName: boolean = false;
-  shareNamesFound: number = 0;
+  shareNameCounter: number = 0;
 
   private propagateChange = null;
 
@@ -100,7 +100,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (topics) {
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
-        if (topic.shareName?.length) this.shareNamesFound++;
+        if (topic.shareName?.length) this.shareNameCounter++;
         if (this.disabled) {
           topicControl.disable();
         }
@@ -120,7 +120,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   addTopic() {
     const subscriptionsFormArray = this.topicListFormGroup.get('subscriptions') as FormArray;
     subscriptionsFormArray.push(this.fb.group({
-      topic: [null, [Validators.required]],
+      topicFilter: [null, [Validators.required]],
       shareName: [null],
       qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
     }));
