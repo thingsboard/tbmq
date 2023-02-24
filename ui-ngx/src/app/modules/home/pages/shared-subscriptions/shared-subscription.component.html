@@ -45,8 +45,8 @@
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.topic-filter</mat-label>
-        <input matInput formControlName="topic" required>
-        <mat-error *ngIf="entityForm.get('topic').hasError('required')">
+        <input matInput formControlName="topicFilter" required>
+        <mat-error *ngIf="entityForm.get('topicFilter').hasError('required')">
           {{ 'shared-subscription.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>

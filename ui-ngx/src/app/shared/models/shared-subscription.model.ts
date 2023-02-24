@@ -19,5 +19,5 @@ import { BaseData } from '@shared/models/base-data';
 export interface SharedSubscription extends BaseData {
   name: string;
   partitions: number;
-  topic: string;
+  topicFilter: string;
 }

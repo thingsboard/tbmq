@@ -42,7 +42,7 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
       {
         name: [entity ? entity.name : '', [Validators.required]],
         partitions: [2, [Validators.required, Validators.min(1)]],
-        topic: [entity ? entity.topic : '', [Validators.required]]
+        topicFilter: [entity ? entity.topicFilter : '', [Validators.required]]
       }
     );
     return form;
@@ -51,7 +51,7 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
   updateForm(entity: SharedSubscription) {
     this.entityForm.patchValue({name: entity.name} );
     this.entityForm.patchValue({partitions: entity.partitions} );
-    this.entityForm.patchValue({topic: entity.topic} );
+    this.entityForm.patchValue({topicFilter: entity.topicFilter} );
     this.entityForm.get('partitions').disable();
     this.entityForm.get('topic').disable();
   }
