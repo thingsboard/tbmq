@@ -19,7 +19,7 @@
 <mat-expansion-panel [expanded]="false">
   <mat-expansion-panel-header>
     <mat-panel-title>
-      <span>{{ 'mqtt-client-session.subscriptions' | translate }} ({{ topicListFormGroup.get('subscriptions').value.length }})</span>
+      <span>{{ 'mqtt-client-session.subscriptions' | translate }} ({{ subscriptionsFormArray().length }})</span>
     </mat-panel-title>
     <mat-panel-description>
       <tb-error *ngIf="!topicListFormGroup.get('subscriptions').value.length" translate>mqtt-client-session.add-topic-filter-prompt</tb-error>
@@ -28,33 +28,35 @@
   <div class="container">
     <section style="margin-bottom: 8px;">
       <mat-slide-toggle (click)="toggleShowShareName($event)" ([ngModel])="showShareName">
-        {{ 'mqtt-client-session.show-share-name' | translate }} ({{ shareNamesFound }})
+        {{ 'mqtt-client-session.show-share-name' | translate }} ({{ shareNameCounter }})
       </mat-slide-toggle>
     </section>
     <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start center"
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
-        <input style="cursor: not-allowed;" matInput name="shareName" formControlName="shareName" readonly>
+        <input name="shareName" formControlName="shareName" readonly style="cursor: not-allowed;" matInput >
       </mat-form-field>
       <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
-        <input matInput placeholder="{{ 'mqtt-client-session.topic' | translate }}"
-               required name="topicFilterTopic" formControlName="topic">
+        <input matInput name="topicFilter" formControlName="topicFilter" required placeholder="{{ 'mqtt-client-session.topic' | translate }}"
+               [readonly]="topicFilter.get('shareName').value?.length"
+               [ngStyle]="{'cursor': topicFilter.get('shareName').value?.length ? 'not-allowed' : 'default'}">
         <mat-error *ngIf="topicFilter.invalid">
           {{ 'mqtt-client-session.topic-required' | translate }}
         </mat-error>
       </mat-form-field>
       <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.qos</mat-label>
-        <mat-select required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
-                    formControlName="qos">
+        <mat-select formControlName="qos" required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
+                    [disabled]="topicFilter.get('shareName').value?.length">
           <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
             {{mqttQoS.name | translate}}
           </mat-option>
         </mat-select>
       </mat-form-field>
       <button mat-button mat-icon-button color="warn"
+              [disabled]="topicFilter.get('shareName').value?.length > 0"
               [fxShow]="!disabled"
               type="button"
               (click)="removeTopic($index)"
