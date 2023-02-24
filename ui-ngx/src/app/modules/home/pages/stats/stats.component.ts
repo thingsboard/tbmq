@@ -20,11 +20,11 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { Router } from '@angular/router';
 import { FormBuilder } from '@angular/forms';
-import { MailServerService } from '@core/http/mail-server.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import Chart from 'chart.js';
-import moment from "moment";
+import { StatsService } from "@core/http/stats.service";
+import { deepClone } from "@core/utils";
 
 @Component({
   selector: 'tb-mail-server',
@@ -33,102 +33,31 @@ import moment from "moment";
 })
 export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
 
+  public keys = ['incomingMessages', 'outgoingMessages'];
+
+  public data = {
+    "incomingMessages": [],
+    "outgoingMessages": []
+  }
+
+  public charts = {};
+
   private destroy$ = new Subject();
 
   constructor(protected store: Store<AppState>,
               private router: Router,
-              private adminService: MailServerService,
+              private statsService: StatsService,
               private translate: TranslateService,
               public fb: FormBuilder) {
     super(store);
   }
 
-  ngAfterViewInit(): void {
-    var ctx = document.getElementById('myChart') as HTMLCanvasElement;
+  ngOnInit() {
 
-    var s1 = {
-      label: 's1',
-      fill: false,
-      backgroundColor: 'rgb(252,141,98, 0.5)',
-      borderColor: 'rgb(252,141,98, 0.5)',
-      hoverBackgroundColor: 'rgb(252,141,98, 0.75)',
-      hoverBorderColor: 'rgb(252,141,98)',
-      data: [
-        { x: 1606943100000, y: 1.5 },
-        { x: 1607943200000, y: 2.7 },
-        { x: 1608943300000, y: 1.3 },
-        { x: 1609943400000, y: 5.2 },
-        { x: 1610943500000, y: 9.4 },
-        { x: 1611943600000, y: 6.5 },
-      ]
-    };
-
-    var s2 = {
-      label: 's2',
-      fill: false,
-      backgroundColor: 'rgb(141,160,203, 0.25)',
-      borderColor: 'rgb(141,160,203, 0.5)',
-      hoverBackgroundColor: 'rgb(141,160,203, 0.75)',
-      hoverBorderColor: 'rgb(141,160,203)',
-      data: [
-        { x: 1604953100000, y: 4.5 },
-        { x: 1607963200000, y: 2.7 },
-        { x: 1608973300000, y: 3.3 },
-        { x: 1613983400000, y: 4.2 },
-        { x: 1620993500000, y: 7.4 },
-        { x: 1632043600000, y: 6.5 },
-      ]
-    };
-
-    var ctx = document.getElementById('myChart') as HTMLCanvasElement;
-    var chart = new Chart(ctx, {
-      type: 'line',
-      data: { datasets: [s1, s2] },
-      options: {
-        scales: {
-          xAxes: [{
-            type: 'time',
-            //distribution: 'series',
-            time: {
-              unitStepSize: 500,
-              unit: 'hour',
-              displayFormats: {
-                hour: 'hA',
-                day: 'YYYY-MM-DD',
-                month: 'YYYY-MM'
-              }
-            }
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        },
-        plugins: {
-          zoom: {
-            // Container for pan options
-            pan: {
-              // Boolean to enable panning
-              enabled: true,
-              // Panning directions. Remove the appropriate direction to disable
-              // Eg. 'y' would only allow panning in the y direction
-              mode: 'x'
-            },
-            // Container for zoom options
-            zoom: {
-              // Boolean to enable zooming
-              enabled: true,
-              // Zooming directions. Remove the appropriate direction to disable
-              // Eg. 'y' would only allow zooming in the y direction
-              mode: 'x',
-            }
-          }
-        }
-      }
-    });
   }
 
-  ngOnInit() {
-    this.createChart();
+  ngAfterViewInit(): void {
+    this.initCharts();
   }
 
   ngOnDestroy() {
@@ -137,6 +66,65 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     super.ngOnDestroy();
   }
 
-  private createChart() {
+  initCharts() {
+    for (let i = 0; i < this.keys.length; i++) {
+      const key = this.keys[i];
+      let id = key + i;
+      let ctx = document.getElementById(id) as HTMLCanvasElement;
+      let dataSet = {
+        label: key,
+        fill: false,
+        backgroundColor: 'rgb(252,141,98, 0.5)',
+        borderColor: 'rgb(252,141,98, 0.5)',
+        hoverBackgroundColor: 'rgb(252,141,98, 0.75)',
+        hoverBorderColor: 'rgb(252,141,98)',
+        data: this.data[key]
+      };
+      this.charts[key] = {};
+      this.charts[key] = new Chart(ctx, {
+        type: 'line',
+        data: {datasets: [dataSet]},
+        options: {
+          title: {
+            display: true,
+            text: 'Title '+ id
+          },
+          scales: {
+            xAxes: [{
+              type: 'time',
+              time: {
+                unitStepSize: 500,
+                unit: 'hour',
+                displayFormats: {
+                  hour: 'hA',
+                  day: 'YYYY-MM-DD',
+                  month: 'YYYY-MM'
+                }
+              }
+            }]
+          },
+          hover: {
+            mode: 'point'
+          }
+        }
+      });
+    }
   }
+
+  changeTimerange() {
+    this.statsService.getEntityTimeseriesMock().subscribe(
+      data => {
+        this.updateCharts(data);
+      }
+    )
+  }
+
+  updateCharts(data) {
+    for (let key of Object.keys(data)) {
+      this.data = null;
+      this.data = deepClone(data);
+      this.charts[key].update();
+    }
+  }
+
 }

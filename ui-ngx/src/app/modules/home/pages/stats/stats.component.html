@@ -27,8 +27,36 @@
     </mat-progress-bar>
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
-      <div style="width:400px; height: 400px">
-        <canvas id="myChart"></canvas>
+      <button mat-stroked-button (click)="changeTimerange()">Change time</button>
+      <div fxFlex fxLayout="column">
+        <div fxFlex *ngFor="let key of keys; let $index = index"
+             fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="10px">
+          <div class="chart">
+            <canvas [id]="key+$index"></canvas>
+          </div>
+        </div>
+        <!--<div fxFlex fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="10px">
+          <div class="chart">
+            <canvas id="myChart1"></canvas>
+          </div>
+          <div class="chart">
+            <canvas id="myChart2"></canvas>
+          </div>
+          <div class="chart">
+            <canvas id="myChart3"></canvas>
+          </div>
+        </div>
+        <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
+          <div class="chart">
+            <canvas id="myChart4"></canvas>
+          </div>
+          <div class="chart">
+            <canvas id="myChart5"></canvas>
+          </div>
+          <div class="chart">
+            <canvas id="myChart6"></canvas>
+          </div>
+        </div>-->
       </div>
     </mat-card-content>
   </mat-card>

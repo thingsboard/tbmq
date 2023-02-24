@@ -14,9 +14,26 @@
 /// limitations under the License.
 ///
 
-export * from './http-utils';
-export * from './mqtt-client-credentials.service';
-export * from './mqtt-client-session.service';
-export * from './admin.service';
-export * from './auth.service';
-export * from './stats.service';
+export interface TimeseriesData {
+  [key: string]: Array<TsValue>;
+}
+
+export interface TsValue {
+  ts: number;
+  value: string;
+  count?: number;
+}
+
+export enum DataSortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC'
+}
+
+export enum AggregationType {
+  MIN = 'MIN',
+  MAX = 'MAX',
+  AVG = 'AVG',
+  SUM = 'SUM',
+  COUNT = 'COUNT',
+  NONE = 'NONE'
+}

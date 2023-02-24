@@ -20,3 +20,4 @@ export * from './base-data';
 export * from './constants';
 export * from './entity-type.models';
 export * from './login.models';
+export * from './stats.model';
