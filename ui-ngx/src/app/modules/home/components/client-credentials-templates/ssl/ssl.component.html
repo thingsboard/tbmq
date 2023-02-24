@@ -21,8 +21,8 @@
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-ssl' | translate }}"></div>
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client-credentials.certificate-common-name</mat-label>
-      <input required matInput formControlName="parentCertCommonName">
-      <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
+      <input required matInput formControlName="certCommonName">
+      <mat-error *ngIf="credentialsMqttFormGroup.get('certCommonName').hasError('required')">
         {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
       </mat-error>
     </mat-form-field>
