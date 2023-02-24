@@ -15,6 +15,7 @@
 ///
 
 import {
+  checkBoxCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -79,16 +80,17 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '30%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptions', 'mqtt-client-session.subscriptions-count', '10%',
-        (entity) => entity.subscriptions ? entity.subscriptions.length.toString() : '0'
-      ),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '150px'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '150px')
+      new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
+          entity => checkBoxCell(entity?.cleanStart)
+      ),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '120px')
     );
   }
 

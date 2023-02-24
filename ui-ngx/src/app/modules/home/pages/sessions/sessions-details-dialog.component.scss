@@ -47,3 +47,10 @@
     }
   }
 }
+
+::ng-deep .session-details {
+  ::ng-deep .mat-input-element, span {
+    cursor: not-allowed !important;
+
+  }
+}

@@ -20,20 +20,13 @@
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-ssl' | translate }}"></div>
     <mat-form-field class="mat-block">
-      <mat-label translate>mqtt-client-credentials.parent-certificate-common-name</mat-label>
+      <mat-label translate>mqtt-client-credentials.certificate-common-name</mat-label>
       <input required matInput formControlName="parentCertCommonName">
       <mat-error *ngIf="credentialsMqttFormGroup.get('parentCertCommonName').hasError('required')">
-        {{ 'mqtt-client-credentials.parent-certificate-common-name-required' | translate }}
+        {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
       </mat-error>
     </mat-form-field>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-ssl-cert-common-name' | translate }}"></div>
-    <!--<section fxLayout="column" fxLayoutAlign="center start">
-      <mat-slide-toggle formControlName="allowSelfSignedCertificates">
-        {{ 'mqtt-client-credentials.allow-self-signed-certificates' | translate }}
-      </mat-slide-toggle>
-      <span class="tb-hint">{{ 'mqtt-client-credentials.hint-allow-self-signed-certificates' | translate }}</span>
-    </section>
-    <mat-divider></mat-divider>-->
   </fieldset>
-  <tb-auth-rules formControlName="authRulesMapping"></tb-auth-rules>
+  <tb-auth-rules [entity]="entity" formControlName="authRulesMapping"></tb-auth-rules>
 </section>

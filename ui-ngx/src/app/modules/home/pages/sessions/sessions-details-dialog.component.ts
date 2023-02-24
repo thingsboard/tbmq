@@ -76,6 +76,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.entityForm = this.fb.group({
       clientId: [entity ? entity.clientId : null],
       clientType: [entity ? entity.clientType : null],
+      clientIpAdr: [entity ? entity.clientIpAdr : null],
       nodeId: [entity ? entity.nodeId : null],
       keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
       sessionExpiryInterval: [entity ? entity.sessionExpiryInterval : null],
@@ -148,6 +149,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   private updateFormsValues(entity: DetailedClientSessionInfo): void {
     this.entityForm.patchValue({clientId: entity.clientId} );
     this.entityForm.patchValue({clientType: entity.clientType} );
+    this.entityForm.patchValue({clientIpAdr: entity.clientIpAdr} );
     this.entityForm.patchValue({nodeId: entity.nodeId} );
     this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds} );
     this.entityForm.patchValue({sessionExpiryInterval: entity.sessionExpiryInterval} );

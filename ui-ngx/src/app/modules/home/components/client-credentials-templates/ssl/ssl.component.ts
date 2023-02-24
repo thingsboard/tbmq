@@ -27,7 +27,7 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { SslMqttCredentials } from "@shared/models/client-crenetials.model";
+import { MqttClientCredentials, SslMqttCredentials } from "@shared/models/client-crenetials.model";
 
 @Component({
   selector: 'tb-mqtt-credentials-ssl',
@@ -50,6 +50,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
   @Input()
   disabled: boolean;
 
+  @Input()
+  entity: MqttClientCredentials;
+
   credentialsMqttFormGroup: FormGroup;
 
   private destroy$ = new Subject();
@@ -58,7 +61,6 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
   constructor(public fb: FormBuilder) {
     this.credentialsMqttFormGroup = this.fb.group({
       parentCertCommonName: [null, [Validators.required]],
-      // allowSelfSignedCertificates: [false, [Validators.required]],
       authRulesMapping: [null]
     });
     this.credentialsMqttFormGroup.valueChanges.pipe(
