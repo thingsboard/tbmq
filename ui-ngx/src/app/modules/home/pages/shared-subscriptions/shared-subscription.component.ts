@@ -53,6 +53,6 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
     this.entityForm.patchValue({partitions: entity.partitions} );
     this.entityForm.patchValue({topicFilter: entity.topicFilter} );
     this.entityForm.get('partitions').disable();
-    this.entityForm.get('topic').disable();
+    this.entityForm.get('topicFilter').disable();
   }
 }
