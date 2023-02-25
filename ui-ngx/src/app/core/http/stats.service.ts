@@ -59,21 +59,21 @@ export class StatsService {
       return of({
         "incomingMessages": [
           {
-            "value": 20,
+            "value": 2,
             "ts": 1609459200000
           },
           {
-            "value": 30,
+            "value": 3,
             "ts": 1609459201000
           }
         ],
         "outgoingMessages": [
           {
-            "value": 20,
+            "value": 12,
             "ts": 1609459200000
           },
           {
-            "value": 30,
+            "value": 16,
             "ts": 1609459201000
           }
         ]
@@ -83,22 +83,30 @@ export class StatsService {
       return of({
         "incomingMessages": [
           {
-            "value": 12,
-            "ts": 1609459300000
+            "value": 100,
+            "ts": 1609259200000
           },
           {
-            "value": 13,
-            "ts": 1609459401000
+            "value": 1,
+            "ts": 1609269200000
+          },
+          {
+            "value": 66,
+            "ts": 1609279200000
           }
         ],
         "outgoingMessages": [
           {
-            "value": 50,
+            "value": 532,
             "ts": 1609459200000
           },
           {
-            "value": 60,
-            "ts": 1609459201000
+            "value": 767,
+            "ts": 1609469200000
+          },
+          {
+            "value": 800,
+            "ts": 1609479200000
           }
         ]
       });

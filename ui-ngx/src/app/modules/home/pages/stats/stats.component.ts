@@ -24,7 +24,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import Chart from 'chart.js';
 import { StatsService } from "@core/http/stats.service";
-import { deepClone } from "@core/utils";
 
 @Component({
   selector: 'tb-mail-server',
@@ -34,12 +33,6 @@ import { deepClone } from "@core/utils";
 export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
 
   public keys = ['incomingMessages', 'outgoingMessages'];
-
-  public data = {
-    "incomingMessages": [],
-    "outgoingMessages": []
-  }
-
   public charts = {};
 
   private destroy$ = new Subject();
@@ -53,11 +46,14 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   ngOnInit() {
-
   }
 
   ngAfterViewInit(): void {
-    this.initCharts();
+    this.statsService.getEntityTimeseriesMock().subscribe(
+      data => {
+        this.initCharts(data);
+      }
+    );
   }
 
   ngOnDestroy() {
@@ -66,9 +62,10 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     super.ngOnDestroy();
   }
 
-  initCharts() {
+  initCharts(data) {
     for (let i = 0; i < this.keys.length; i++) {
       const key = this.keys[i];
+      this.charts[key] = {} as Chart;
       let id = key + i;
       let ctx = document.getElementById(id) as HTMLCanvasElement;
       let dataSet = {
@@ -78,9 +75,8 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
         borderColor: 'rgb(252,141,98, 0.5)',
         hoverBackgroundColor: 'rgb(252,141,98, 0.75)',
         hoverBorderColor: 'rgb(252,141,98)',
-        data: this.data[key]
+        data: data[key].map(el => { return { x: el['ts'], y: el['value'] }})
       };
-      this.charts[key] = {};
       this.charts[key] = new Chart(ctx, {
         type: 'line',
         data: {datasets: [dataSet]},
@@ -112,19 +108,19 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   changeTimerange() {
-    this.statsService.getEntityTimeseriesMock().subscribe(
+    this.statsService.getEntityTimeseriesMock(false).subscribe(
       data => {
-        this.updateCharts(data);
+        for (let i = 0; i < this.keys.length; i++) {
+          const key = this.keys[i];
+          this.charts[key].data.datasets[0].data = data[key].map(el => {
+            return {
+              x: el['ts'],
+              y: el['value']
+            }
+          });
+          this.charts[key].update();
+        }
       }
-    )
+    );
   }
-
-  updateCharts(data) {
-    for (let key of Object.keys(data)) {
-      this.data = null;
-      this.data = deepClone(data);
-      this.charts[key].update();
-    }
-  }
-
 }
