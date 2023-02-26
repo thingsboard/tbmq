@@ -18,8 +18,16 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { AggregationType, DataSortOrder, TimeseriesData, TsValue } from "@shared/models/stats.model";
+import {
+  AggregationType,
+  DataSortOrder,
+  StatChartData,
+  StatChartType,
+  TimeseriesData,
+  TsValue
+} from "@shared/models/stats.model";
 import { isDefinedAndNotNull } from "@core/utils";
+import { StatsType } from "@home/components/chart/chart.component";
 
 @Injectable({
   providedIn: 'root'
@@ -53,64 +61,19 @@ export class StatsService {
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 
-  public getEntityTimeseriesMock(option = true, config?: RequestConfig): Observable<TimeseriesData> {
-    if (option) {
-      //@ts-ignore
-      return of({
-        "incomingMessages": [
-          {
-            "value": 2,
-            "ts": 1609459200000
-          },
-          {
-            "value": 3,
-            "ts": 1609459201000
-          }
-        ],
-        "outgoingMessages": [
-          {
-            "value": 12,
-            "ts": 1609459200000
-          },
-          {
-            "value": 16,
-            "ts": 1609459201000
-          }
-        ]
-      });
-    } else {
-      //@ts-ignore
-      return of({
-        "incomingMessages": [
-          {
-            "value": 100,
-            "ts": 1609259200000
-          },
-          {
-            "value": 1,
-            "ts": 1609269200000
-          },
-          {
-            "value": 66,
-            "ts": 1609279200000
-          }
-        ],
-        "outgoingMessages": [
-          {
-            "value": 532,
-            "ts": 1609459200000
-          },
-          {
-            "value": 767,
-            "ts": 1609469200000
-          },
-          {
-            "value": 800,
-            "ts": 1609479200000
-          }
-        ]
-      });
+  public getEntityTimeseriesMock(config?: RequestConfig): Observable<StatChartData> {
+    const dataset: StatChartData = {};
+    for (let chart in StatChartType) {
+      const randomValuesNumber = Math.floor(Math.random() * 10) + 5;
+      const data = [];
+      let ts = 1609459200000;
+      for (let i = 0; i < randomValuesNumber; i++) {
+        ts += 100000;
+        let value = Math.floor(Math.random() * 10) + 5;
+        data.push({ value, ts });
+      }
+      dataset[chart] = data;
     }
-
+    return of(dataset);
   }
 }

@@ -24,6 +24,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import Chart from 'chart.js';
 import { StatsService } from "@core/http/stats.service";
+import { StatChartType, StatChartTypeTranslationMap } from "@shared/models/stats.model";
 
 @Component({
   selector: 'tb-mail-server',
@@ -32,8 +33,15 @@ import { StatsService } from "@core/http/stats.service";
 })
 export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  public keys = ['incomingMessages', 'outgoingMessages'];
+  public keys = ['INCOMING_MESSAGES',
+    'OUTGOING_MESSAGES',
+    'DROPPED_GMESSAGES',
+    'SESSIONS',
+    'SUBSCRIPTIONS',
+    'TOPICS'];
   public charts = {};
+
+  private statChartTypeTranslationMap = StatChartTypeTranslationMap;
 
   private destroy$ = new Subject();
 
@@ -63,39 +71,47 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   initCharts(data) {
-    for (let i = 0; i < this.keys.length; i++) {
-      const key = this.keys[i];
-      this.charts[key] = {} as Chart;
-      let id = key + i;
+    for (let chart in StatChartType) {
+      this.charts[chart] = {} as Chart;
+      let id = chart;
       let ctx = document.getElementById(id) as HTMLCanvasElement;
+      //@ts-ignore
+      let label = this.translate.instant(this.statChartTypeTranslationMap.get(chart));
       let dataSet = {
-        label: key,
-        fill: false,
-        backgroundColor: 'rgb(252,141,98, 0.5)',
-        borderColor: 'rgb(252,141,98, 0.5)',
-        hoverBackgroundColor: 'rgb(252,141,98, 0.75)',
-        hoverBorderColor: 'rgb(252,141,98)',
-        data: data[key].map(el => { return { x: el['ts'], y: el['value'] }})
+        label: label,
+        backgroundColor: 'rgb(1,141,98, 0.5)',
+        borderColor: 'rgb(1,141,98, 0.5)',
+        hoverBackgroundColor: 'rgb(1,141,98, 0.75)',
+        hoverBorderColor: 'rgb(1,141,98)',
+        borderWidth: 1,
+        data: data[chart].map(el => { return { x: el['ts'], y: el['value'] }})
       };
-      this.charts[key] = new Chart(ctx, {
-        type: 'line',
+      this.charts[chart] = new Chart(ctx, {
+        type: 'bar',
         data: {datasets: [dataSet]},
         options: {
+          legend: {
+            display: false
+          },
           title: {
             display: true,
-            text: 'Title '+ id
+            text: label
           },
           scales: {
+            yAxes: [{
+              display: true
+            }],
             xAxes: [{
               type: 'time',
               time: {
-                unitStepSize: 500,
-                unit: 'hour',
+                unitStepSize: 1,
+                /*unit: 'minute',
                 displayFormats: {
                   hour: 'hA',
                   day: 'YYYY-MM-DD',
-                  month: 'YYYY-MM'
-                }
+                  month: 'YYYY-MM',
+                  minute: 'MMM DD',
+                }*/
               }
             }]
           },
@@ -108,19 +124,16 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   changeTimerange() {
-    this.statsService.getEntityTimeseriesMock(false).subscribe(
-      data => {
-        for (let i = 0; i < this.keys.length; i++) {
-          const key = this.keys[i];
-          this.charts[key].data.datasets[0].data = data[key].map(el => {
-            return {
-              x: el['ts'],
-              y: el['value']
-            }
-          });
-          this.charts[key].update();
-        }
+    this.statsService.getEntityTimeseriesMock().subscribe(data => {
+      for (let chart in StatChartType) {
+        this.charts[chart].data.datasets[0].data = data[chart].map(el => {
+          return {
+            x: el['ts'],
+            y: el['value']
+          }
+        });
+        this.charts[chart].update();
       }
-    );
+    });
   }
 }

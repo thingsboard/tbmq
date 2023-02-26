@@ -28,11 +28,11 @@
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
       <button mat-stroked-button (click)="changeTimerange()">Change time</button>
-      <div fxFlex fxLayout="column">
-        <div fxFlex *ngFor="let key of keys; let $index = index"
-             fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="10px">
+      <div fxFlex fxLayout="row wrap" fxLayoutAlign="space-around center" fxLayoutGap="10px">
+        <div fxLayout="column" fxFlex="40" fxLayoutGap="10px"
+             *ngFor="let key of keys; let $index = index">
           <div class="chart">
-            <canvas [id]="key+$index"></canvas>
+            <canvas [id]="key"></canvas>
           </div>
         </div>
       </div>

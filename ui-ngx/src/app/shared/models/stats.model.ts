@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import { Authority } from "@shared/models/authority.enum";
+
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -37,3 +39,32 @@ export enum AggregationType {
   COUNT = 'COUNT',
   NONE = 'NONE'
 }
+
+export interface StatChartData {
+  incomingMessages?: Array<TsValue>;
+  outgoingMessages?: Array<TsValue>;
+  droppedMessages?: Array<TsValue>;
+  sessions?: Array<TsValue>;
+  subscriptions?: Array<TsValue>;
+  topics?: Array<TsValue>;
+}
+
+export enum StatChartType {
+  INCOMING_MESSAGES = 'INCOMING_MESSAGES',
+  OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
+  DROPPED_GMESSAGES = 'DROPPED_GMESSAGES',
+  SESSIONS = 'SESSIONS',
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS',
+  TOPICS = 'TOPICS'
+}
+
+export const StatChartTypeTranslationMap = new Map<StatChartType, string>(
+  [
+    [StatChartType.INCOMING_MESSAGES, 'stats.incoming-messages'],
+    [StatChartType.OUTGOING_MESSAGES, 'stats.outgoing-messages'],
+    [StatChartType.DROPPED_GMESSAGES, 'stats.dropped-messages'],
+    [StatChartType.SESSIONS, 'stats.sessions'],
+    [StatChartType.SUBSCRIPTIONS, 'stats.subscriptions'],
+    [StatChartType.TOPICS, 'stats.topics']
+  ]
+);

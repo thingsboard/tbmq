@@ -436,5 +436,13 @@
       "topic-filter-required": "Topic filter is required",
       "shared-subscription": "Application Shared Subscription",
       "shared-subscriptions": "Shared Subscriptions"
+    },
+    "stats": {
+      "incoming-messages": "Incoming messages",
+      "outgoing-messages": "Outgoing messages",
+      "dropped-messages": "Dropped messages",
+      "sessions": "Sessions",
+      "subscriptions": "Subscriptions",
+      "topics": "Topics"
     }
 }
