@@ -18,16 +18,10 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import {
-  AggregationType,
-  DataSortOrder,
-  StatChartData,
-  StatChartType,
-  TimeseriesData,
-  TsValue
-} from "@shared/models/stats.model";
+import { StatsChartType, TimeseriesData } from "@shared/models/stats.model";
 import { isDefinedAndNotNull } from "@core/utils";
-import { StatsType } from "@home/components/chart/chart.component";
+import { AggregationType } from "@shared/models/time/time.models";
+import { Direction } from "@shared/models/page/sort-order";
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +33,7 @@ export class StatsService {
 
   public getEntityTimeseries(keys: Array<string>, startTs: number, endTs: number,
                              limit: number = 100, agg: AggregationType = AggregationType.NONE, interval?: number,
-                             orderBy: DataSortOrder = DataSortOrder.DESC, useStrictDataTypes: boolean = false,
+                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false,
                              config?: RequestConfig): Observable<TimeseriesData> {
     let url = `/api/plugins/telemetry/values/timeseries?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
@@ -61,9 +55,9 @@ export class StatsService {
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 
-  public getEntityTimeseriesMock(config?: RequestConfig): Observable<StatChartData> {
-    const dataset: StatChartData = {};
-    for (let chart in StatChartType) {
+  public getEntityTimeseriesMock(config?: RequestConfig): Observable<any> {
+    const dataset: any = {};
+    for (let chart in StatsChartType) {
       const randomValuesNumber = Math.floor(Math.random() * 10) + 5;
       const data = [];
       let ts = 1609459200000;

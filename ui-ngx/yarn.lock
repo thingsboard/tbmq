@@ -1408,6 +1408,13 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
+"@mat-datetimepicker/core@~6.0.2":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@mat-datetimepicker/core/-/core-6.0.3.tgz#67e372cd8be2f32cd0b3373eac84b5822306e04e"
+  integrity sha512-/8mD5SI/NrMoX/m1OlK/rwWlZQGRPy5aII2vpEGc3aT3icG+Eteta7LkZ2E+M8KIZWPPToEMHl96LI7T/0aNdg==
+  dependencies:
+    tslib "^2.0.0"
+
 "@material-ui/core@^4.11.4":
   version "4.11.4"
   resolved "https://registry.yarnpkg.com/@material-ui/core/-/core-4.11.4.tgz#4fb9fe5dec5dcf780b687e3a40cff78b2b9640a4"
@@ -3569,6 +3576,11 @@ date-format@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/date-format/-/date-format-3.0.0.tgz#eb8780365c7d2b1511078fb491e6479780f3ad95"
   integrity sha512-eyTcpKOcamdhWJXj56DpQMo1ylSQpcGtGKXcU0Tb97+K56/CF5amAqqqNj0+KvA0iw2ynxtHWFsPDSClCxe48w==
+
+dayjs@^1.10.4:
+  version "1.11.7"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.7.tgz#4b296922642f70999544d1144a2c25730fce63e2"
+  integrity sha512-+Yw9U6YO5TQohxLcIkrXBeY73WP3ejHWVvx8XCk3gxvQDCTEmS48ZrSZCKciI7Bhl/uCMyxYtE9UqRILmFphkQ==
 
 debug@2.6.9, debug@^2.2.0, debug@^2.3.3:
   version "2.6.9"
@@ -6517,6 +6529,14 @@ ngx-clipboard@^14.0.1:
   integrity sha512-y6fDrvAso1cbM+VvHgB2kJ3dcQ/EBPol33nLaqqKB1jNO/Kd3l17EHdXNW/oKY0wUKCHk7ZCuiinREgUHEYfXg==
   dependencies:
     ngx-window-token ">=4.0.0"
+    tslib "^2.0.0"
+
+ngx-daterangepicker-material@^5.0.1:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/ngx-daterangepicker-material/-/ngx-daterangepicker-material-5.0.2.tgz#e3869dfc0aa1387616a35b1b67fa56ecae23b319"
+  integrity sha512-1NV47l5kzvSxwZpMv91hAbTXuvysgCocQeRhsdkk67szeCTgzdXMof3s+jW5uhRiN1+a7NI8X0mHFv8trBjceg==
+  dependencies:
+    dayjs "^1.10.4"
     tslib "^2.0.0"
 
 ngx-drag-drop@^2.0.0:

@@ -13,18 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../../scss/constants";
-
 :host {
-  mat-card.stats-card {
-    margin: 8px;
-  }
+  min-width: 52px;
+  margin: 8px 0;
+  section.tb-timewindow {
+    min-height: 32px;
+    padding: 0 6px;
+    font-size: 16px !important;
 
-  .interval-section {
-    min-height: 66px;
-    .interval-label {
-      margin-bottom: 7px;
-      margin-top: -1px;
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: all;
+      cursor: pointer;
+    }
+
+    .timezone-abbr {
+      font-weight: 500;
     }
   }
 }

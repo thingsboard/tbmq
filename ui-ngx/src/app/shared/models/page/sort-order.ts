@@ -24,3 +24,7 @@ export enum Direction {
   ASC = 'ASC',
   DESC = 'DESC'
 }
+
+export function getDefaultSortOrder() {
+  return { property: 'createdTime', direction: Direction.DESC };
+}

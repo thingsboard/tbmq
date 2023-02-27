@@ -22,9 +22,15 @@ import { Router } from '@angular/router';
 import { FormBuilder } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
-import Chart from 'chart.js';
 import { StatsService } from "@core/http/stats.service";
-import { StatChartType, StatChartTypeTranslationMap } from "@shared/models/stats.model";
+import { StatsChartType, StatsChartTypeTranslationMap } from "@shared/models/stats.model";
+import {
+  calculateFixedWindowTimeMs,
+  FixedWindow,
+  Timewindow
+} from "@shared/models/time/time.models";
+import { TimeService } from "@core/services/time.service";
+import Chart from 'chart.js';
 
 @Component({
   selector: 'tb-mail-server',
@@ -33,27 +39,24 @@ import { StatChartType, StatChartTypeTranslationMap } from "@shared/models/stats
 })
 export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  public keys = ['INCOMING_MESSAGES',
-    'OUTGOING_MESSAGES',
-    'DROPPED_GMESSAGES',
-    'SESSIONS',
-    'SUBSCRIPTIONS',
-    'TOPICS'];
-  public charts = {};
+  statsCharts = Object.values(StatsChartType);
+  charts = {};
+  timewindow: Timewindow;
 
-  private statChartTypeTranslationMap = StatChartTypeTranslationMap;
-
+  private statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private destroy$ = new Subject();
 
   constructor(protected store: Store<AppState>,
               private router: Router,
               private statsService: StatsService,
               private translate: TranslateService,
+              private timeService: TimeService,
               public fb: FormBuilder) {
     super(store);
   }
 
   ngOnInit() {
+    this.timewindow = this.timeService.defaultTimewindow();
   }
 
   ngAfterViewInit(): void {
@@ -71,23 +74,21 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   }
 
   initCharts(data) {
-    for (let chart in StatChartType) {
+    for (let chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
-      let id = chart;
-      let ctx = document.getElementById(id) as HTMLCanvasElement;
-      //@ts-ignore
-      let label = this.translate.instant(this.statChartTypeTranslationMap.get(chart));
+      let ctx = document.getElementById(chart) as HTMLCanvasElement;
+      let label = this.translate.instant(this.statChartTypeTranslationMap.get(<StatsChartType>chart));
       let dataSet = {
         label: label,
-        backgroundColor: 'rgb(1,141,98, 0.5)',
-        borderColor: 'rgb(1,141,98, 0.5)',
-        hoverBackgroundColor: 'rgb(1,141,98, 0.75)',
-        hoverBorderColor: 'rgb(1,141,98)',
+        backgroundColor: 'rgba(255, 87, 34, 0.5)',
+        borderColor: 'rgba(255, 87, 34, 0.5)',
+        hoverBackgroundColor: 'rgba(255, 87, 34, 0.75)',
+        hoverBorderColor: 'rgba(255, 87, 34, 1)',
         borderWidth: 1,
-        data: data[chart].map(el => { return { x: el['ts'], y: el['value'] }})
+        data: this.transformData(data[chart])
       };
       this.charts[chart] = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {datasets: [dataSet]},
         options: {
           legend: {
@@ -99,19 +100,22 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
           },
           scales: {
             yAxes: [{
-              display: true
+              display: true,
+              type: 'linear'
             }],
             xAxes: [{
               type: 'time',
+              ticks: {
+                display: true,
+                min: 1609459200000,
+                max: 1609460200000,
+              },
               time: {
-                unitStepSize: 1,
-                /*unit: 'minute',
+                unitStepSize: 100000,
+                unit: 'millisecond',
                 displayFormats: {
-                  hour: 'hA',
-                  day: 'YYYY-MM-DD',
-                  month: 'YYYY-MM',
-                  minute: 'MMM DD',
-                }*/
+                  millisecond: 'hh:mm'
+                }
               }
             }]
           },
@@ -123,9 +127,18 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     }
   }
 
-  changeTimerange() {
+  onTimewindowChange() {
+    this.updateData();
+  }
+
+  private updateData() {
+    const fixedWindowTimeMs: FixedWindow = calculateFixedWindowTimeMs(this.timewindow);
+    this.updateCharts(fixedWindowTimeMs)
+  }
+
+  private updateCharts(fixedWindowTimeMs: FixedWindow) {
     this.statsService.getEntityTimeseriesMock().subscribe(data => {
-      for (let chart in StatChartType) {
+      for (let chart in StatsChartType) {
         this.charts[chart].data.datasets[0].data = data[chart].map(el => {
           return {
             x: el['ts'],
@@ -135,5 +148,11 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
         this.charts[chart].update();
       }
     });
+  }
+
+  private transformData(data: Array<any>) {
+    if (data?.length) {
+      return data.map(el => { return { x: el['ts'], y: el['value'] } });
+    }
   }
 }

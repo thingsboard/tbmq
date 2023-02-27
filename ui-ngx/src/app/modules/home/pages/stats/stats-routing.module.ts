@@ -25,9 +25,9 @@ const routes: Routes = [
     component: StatsComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'home.stats',
+      title: 'overview.overview',
       breadcrumb: {
-        label: 'home.stats',
+        label: 'overview.overview',
         icon: 'mdi:view-dashboard-outline',
         isMdiIcon: true
       }

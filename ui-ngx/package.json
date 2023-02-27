@@ -44,6 +44,7 @@
     "ngx-hm-carousel": "^2.0.0-rc.1",
     "ngx-markdown": "^10.1.1",
     "ngx-translate-messageformat-compiler": "^4.9.0",
+    "ngx-daterangepicker-material": "^5.0.1",
     "prop-types": "^15.7.2",
     "react": "~16.14.0",
     "rxjs": "~6.6.7",
@@ -55,7 +56,8 @@
     "@types/chart.js": "^2.9.32",
     "chart.js": "^2.9.3",
     "chartjs-plugin-annotation": "^0.5.7",
-    "ng2-charts": "^2.2.3"
+    "ng2-charts": "^2.2.3",
+    "@mat-datetimepicker/core": "~6.0.2"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "~11.1.1",

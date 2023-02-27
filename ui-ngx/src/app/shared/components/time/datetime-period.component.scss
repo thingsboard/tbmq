@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../../scss/constants";
+@import '../../../../scss/constants';
 
-:host {
-  mat-card.stats-card {
-    margin: 8px;
+:host ::ng-deep {
+  .mat-form-field-wrapper {
+    padding-bottom: 8px;
   }
+  .mat-form-field-underline {
+    bottom: 8px;
+  }
+  .mat-form-field-infix {
+    width: 150px;
 
-  .interval-section {
-    min-height: 66px;
-    .interval-label {
-      margin-bottom: 7px;
-      margin-top: -1px;
+    @media #{$mat-xs} {
+      width: 100%;
     }
   }
 }

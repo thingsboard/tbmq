@@ -28,7 +28,7 @@
           <span style="height: 4px;" *ngIf="!(isLoading$ | async)"></span>
           <div tb-toast fxLayout="column" class="layout-padding">
             <span style="height: 50px;"></span>
-            <mat-form-field appearance="standard">
+            <mat-form-field>
               <mat-label translate>login.username</mat-label>
               <input id="username-input" matInput type="email" autofocus formControlName="username" email required/>
               <mat-icon matPrefix>email</mat-icon>
@@ -36,7 +36,7 @@
                 {{ 'user.invalid-email-format' | translate }}
               </mat-error>
             </mat-form-field>
-            <mat-form-field appearance="standard">
+            <mat-form-field>
               <mat-label translate>common.password</mat-label>
               <input id="password-input" matInput type="password" formControlName="password"/>
               <tb-toggle-password matSuffix></tb-toggle-password>

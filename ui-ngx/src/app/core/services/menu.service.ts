@@ -63,7 +63,7 @@ export class MenuService {
     sections.push(
       {
         id: guid(),
-        name: 'home.stats',
+        name: 'overview.overview',
         type: 'link',
         path: '/stats',
         icon: 'mdi:view-dashboard-outline',

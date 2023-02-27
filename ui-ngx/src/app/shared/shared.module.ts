@@ -75,6 +75,15 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
 import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
+import { TimewindowComponent } from "@shared/components/time/timewindow.component";
+import { TimewindowPanelComponent } from "@shared/components/time/timewindow-panel.component";
+import { TimeintervalComponent } from "@shared/components/time/timeinterval.component";
+import { DatetimePeriodComponent } from "@shared/components/time/datetime-period.component";
+import { DatetimeComponent } from "@shared/components/time/datetime.component";
+import { TimezoneSelectComponent } from "@shared/components/time/timezone-select.component";
+import { QuickTimeIntervalComponent } from "@shared/components/time/quick-time-interval.component";
+import { MatDatepicker, MatDatepickerModule } from "@angular/material/datepicker";
+import { MatDatetimepickerModule, MatNativeDatetimeModule } from "@mat-datetimepicker/core";
 
 @NgModule({
   providers: [
@@ -105,7 +114,14 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     MillisecondsToTimeStringPipe,
     HighlightPipe,
     CopyButtonComponent,
-    TogglePasswordComponent
+    TogglePasswordComponent,
+    TimewindowComponent,
+    TimewindowPanelComponent,
+    TimeintervalComponent,
+    TimezoneSelectComponent,
+    DatetimePeriodComponent,
+    DatetimeComponent,
+    QuickTimeIntervalComponent
   ],
   imports: [
     CommonModule,
@@ -139,6 +155,9 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     MatAutocompleteModule,
     MatChipsModule,
     MatListModule,
+    MatDatepickerModule,
+    MatNativeDatetimeModule,
+    MatDatetimepickerModule,
     ClipboardModule,
     FlexLayoutModule.withConfig({addFlexToParent: false}),
     FormsModule,
@@ -196,6 +215,9 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     MatAutocompleteModule,
     MatChipsModule,
     MatListModule,
+    MatDatepickerModule,
+    MatNativeDatetimeModule,
+    MatDatetimepickerModule,
     ClipboardModule,
     FlexLayoutModule,
     FormsModule,
@@ -211,7 +233,14 @@ import { TbCheckboxComponent } from "@shared/components/tb-checkbox.component";
     HighlightPipe,
     TranslateModule,
     CopyButtonComponent,
-    TogglePasswordComponent
+    TogglePasswordComponent,
+    TimewindowComponent,
+    TimewindowPanelComponent,
+    TimeintervalComponent,
+    TimezoneSelectComponent,
+    DatetimePeriodComponent,
+    DatetimeComponent,
+    QuickTimeIntervalComponent
   ]
 })
 export class SharedModule { }

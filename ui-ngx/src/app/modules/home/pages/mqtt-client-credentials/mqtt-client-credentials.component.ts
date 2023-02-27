@@ -28,11 +28,19 @@ import {
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from "@angular/material/form-field";
+import { appearance } from "@shared/models/constants";
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
   templateUrl: './mqtt-client-credentials.component.html',
-  styleUrls: ['./mqtt-client-credentials.component.scss']
+  styleUrls: ['./mqtt-client-credentials.component.scss'],
+  providers: [
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: appearance
+    }
+  ]
 })
 export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCredentials> {
 

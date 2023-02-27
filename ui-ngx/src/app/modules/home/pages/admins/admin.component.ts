@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {EntityComponent} from '@home/components/entity/entity.component';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {User} from "@shared/models/user.model";
-import {getCurrentAuthUser} from "@core/auth/auth.selectors";
+import { ChangeDetectorRef, Component, Inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { EntityComponent } from '@home/components/entity/entity.component';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { User } from "@shared/models/user.model";
+import { getCurrentAuthUser } from "@core/auth/auth.selectors";
 
 @Component({
   selector: 'tb-mqtt-admin-credentials',
@@ -65,9 +65,9 @@ export class AdminComponent extends EntityComponent<User> {
   }
 
   updateForm(entity: User) {
-    this.entityForm.patchValue({email: entity.email} );
-    this.entityForm.patchValue({firstName: entity.firstName} );
-    this.entityForm.patchValue({lastName: entity.lastName} );
+    this.entityForm.patchValue({email: entity.email});
+    this.entityForm.patchValue({firstName: entity.firstName});
+    this.entityForm.patchValue({lastName: entity.lastName});
     this.entityForm.patchValue({additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}});
   }
 }

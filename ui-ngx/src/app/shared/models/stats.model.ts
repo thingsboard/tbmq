@@ -26,45 +26,22 @@ export interface TsValue {
   count?: number;
 }
 
-export enum DataSortOrder {
-  ASC = 'ASC',
-  DESC = 'DESC'
-}
-
-export enum AggregationType {
-  MIN = 'MIN',
-  MAX = 'MAX',
-  AVG = 'AVG',
-  SUM = 'SUM',
-  COUNT = 'COUNT',
-  NONE = 'NONE'
-}
-
-export interface StatChartData {
-  incomingMessages?: Array<TsValue>;
-  outgoingMessages?: Array<TsValue>;
-  droppedMessages?: Array<TsValue>;
-  sessions?: Array<TsValue>;
-  subscriptions?: Array<TsValue>;
-  topics?: Array<TsValue>;
-}
-
-export enum StatChartType {
+export enum StatsChartType {
   INCOMING_MESSAGES = 'INCOMING_MESSAGES',
   OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
-  DROPPED_GMESSAGES = 'DROPPED_GMESSAGES',
+  DROPPED_MESSAGES = 'DROPPED_MESSAGES',
   SESSIONS = 'SESSIONS',
   SUBSCRIPTIONS = 'SUBSCRIPTIONS',
   TOPICS = 'TOPICS'
 }
 
-export const StatChartTypeTranslationMap = new Map<StatChartType, string>(
+export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
   [
-    [StatChartType.INCOMING_MESSAGES, 'stats.incoming-messages'],
-    [StatChartType.OUTGOING_MESSAGES, 'stats.outgoing-messages'],
-    [StatChartType.DROPPED_GMESSAGES, 'stats.dropped-messages'],
-    [StatChartType.SESSIONS, 'stats.sessions'],
-    [StatChartType.SUBSCRIPTIONS, 'stats.subscriptions'],
-    [StatChartType.TOPICS, 'stats.topics']
+    [StatsChartType.INCOMING_MESSAGES, 'overview.incoming-messages'],
+    [StatsChartType.OUTGOING_MESSAGES, 'overview.outgoing-messages'],
+    [StatsChartType.DROPPED_MESSAGES, 'overview.dropped-messages'],
+    [StatsChartType.SESSIONS, 'overview.sessions'],
+    [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
+    [StatsChartType.TOPICS, 'overview.topics']
   ]
 );

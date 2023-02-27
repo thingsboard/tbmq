@@ -19,7 +19,7 @@
   <mat-card class="stats-card">
     <mat-card-title>
       <div fxLayout="row">
-        <span class="mat-headline" translate>home.stats</span>
+        <span class="mat-headline" translate>overview.overview</span>
         <span fxFlex></span>
       </div>
     </mat-card-title>
@@ -27,12 +27,23 @@
     </mat-progress-bar>
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
-      <button mat-stroked-button (click)="changeTimerange()">Change time</button>
-      <div fxFlex fxLayout="row wrap" fxLayoutAlign="space-around center" fxLayoutGap="10px">
-        <div fxLayout="column" fxFlex="40" fxLayoutGap="10px"
-             *ngFor="let key of keys; let $index = index">
-          <div class="chart">
-            <canvas [id]="key"></canvas>
+      <div fxFlex fxLayout="column" fxLayoutGap="12px">
+        <div style="padding-left: 4em">
+          <tb-timewindow [(ngModel)]="timewindow"
+                         (ngModelChange)="onTimewindowChange()"
+                         direction="left"
+                         tooltipPosition="left"
+                         aggregation="false"
+                         timezone="false"
+                         >
+          </tb-timewindow>
+        </div>
+        <div fxFlex fxLayout="row wrap" fxLayoutAlign="space-around center" style="width: 50%">
+          <div fxLayout="column" fxFlex="40"
+               *ngFor="let chart of statsCharts; let $index = index">
+            <div class="chart mat-elevation-z4">
+              <canvas [id]="chart"></canvas>
+            </div>
           </div>
         </div>
       </div>

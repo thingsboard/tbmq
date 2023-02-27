@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../../scss/constants";
+@import '../../../../scss/constants';
 
 :host {
-  mat-card.stats-card {
-    margin: 8px;
+  min-width: 355px;
+
+  .advanced-switch {
+    margin-bottom: 16px;
+  }
+
+  .advanced-label {
+    margin: 5px 0;
+  }
+
+  .hide-label {
+    margin-bottom: 5px;
+    margin-right: 5px;
   }
 
   .interval-section {
@@ -25,6 +36,19 @@
     .interval-label {
       margin-bottom: 7px;
       margin-top: -1px;
+    }
+  }
+
+  @media #{$mat-xs} {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+:host ::ng-deep {
+  .number-input {
+    .mat-form-field-infix {
+      width: 70px;
     }
   }
 }
