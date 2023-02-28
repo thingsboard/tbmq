@@ -21,6 +21,7 @@ import { MqttClientSessionService } from "@core/http/mqtt-client-session.service
 import { TranslateService } from "@ngx-translate/core";
 import { DatePipe } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
+import { DialogService } from "@core/services/dialog.service";
 
 @Component({
   selector: 'tb-sessions-table',
@@ -66,7 +67,8 @@ export class SessionsTableComponent implements OnInit {
   constructor(private mqttClientSessionService: MqttClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
-              private dialog: MatDialog) {
+              private dialog: MatDialog,
+              private dialogService: DialogService) {
   }
 
   ngOnInit(): void {
@@ -76,6 +78,7 @@ export class SessionsTableComponent implements OnInit {
       this.translate,
       this.datePipe,
       this.dialog,
+      this.dialogService,
       this.entityIdValue
     );
   }

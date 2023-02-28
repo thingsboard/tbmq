@@ -31,8 +31,7 @@ export enum StatsChartType {
   OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
   DROPPED_MESSAGES = 'DROPPED_MESSAGES',
   SESSIONS = 'SESSIONS',
-  SUBSCRIPTIONS = 'SUBSCRIPTIONS',
-  TOPICS = 'TOPICS'
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS'
 }
 
 export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
@@ -42,6 +41,5 @@ export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
     [StatsChartType.DROPPED_MESSAGES, 'overview.dropped-messages'],
     [StatsChartType.SESSIONS, 'overview.sessions'],
     [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
-    [StatsChartType.TOPICS, 'overview.topics']
   ]
 );

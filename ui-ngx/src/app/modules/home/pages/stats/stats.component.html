@@ -28,7 +28,7 @@
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
       <div fxFlex fxLayout="column" fxLayoutGap="12px">
-        <div style="padding-left: 4em">
+        <div style="padding-left: 0">
           <tb-timewindow [(ngModel)]="timewindow"
                          (ngModelChange)="onTimewindowChange()"
                          direction="left"
@@ -38,7 +38,7 @@
                          >
           </tb-timewindow>
         </div>
-        <div fxFlex fxLayout="row wrap" fxLayoutAlign="space-around center" style="width: 50%">
+        <div fxFlex fxLayout="column" fxLayoutAlign="space-around start" style="width: 50%">
           <div fxLayout="column" fxFlex="40"
                *ngFor="let chart of statsCharts; let $index = index">
             <div class="chart mat-elevation-z4">

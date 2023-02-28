@@ -58,7 +58,7 @@ export class StatsService {
   public getEntityTimeseriesMock(config?: RequestConfig): Observable<any> {
     const dataset: any = {};
     for (let chart in StatsChartType) {
-      const randomValuesNumber = Math.floor(Math.random() * 10) + 5;
+      const randomValuesNumber = 5 //Math.floor(Math.random() * 10) + 5;
       const data = [];
       let ts = 1609459200000;
       for (let i = 0; i < randomValuesNumber; i++) {

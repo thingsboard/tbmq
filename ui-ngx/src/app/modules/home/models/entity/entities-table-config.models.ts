@@ -29,6 +29,8 @@ import {EntitiesTableComponent} from '@home/components/entity/entities-table.com
 import {EntityTableHeaderComponent} from '@home/components/entity/entity-table-header.component';
 import {ActivatedRoute} from '@angular/router';
 import {EntityTabsComponent} from '../../components/entity/entity-tabs.component';
+import { MqttCredentialsType } from "@shared/models/client-crenetials.model";
+import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -191,4 +193,19 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
 
 export function checkBoxCell(value: boolean): string {
   return `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
+}
+
+export function defaultCellStyle(value: string | number): string {
+  return '<span style="background: rgba(111, 116, 242, 0.07); border-radius: 16px; padding: 4px 8px;">' + value + '</span>';
+}
+
+export function credetialsTypeCell(value: MqttCredentialsType): string {
+  const color = value === MqttCredentialsType.MQTT_BASIC ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
+  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;">${value}</span>`;
+}
+
+export function clientTypeCell(value: ClientType): string {
+  const tooltip = "tenant-profile.rate-limits.add-limit";
+  const icon = value === ClientType.DEVICE ? 'devices' : 'desktop_mac';
+  return `<mat-icon class="material-icons mat-icon">${icon}</mat-icon>`;
 }

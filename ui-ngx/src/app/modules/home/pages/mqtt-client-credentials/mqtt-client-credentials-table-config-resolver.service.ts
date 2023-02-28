@@ -14,26 +14,32 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 
-import {Resolve} from '@angular/router';
+import { Resolve } from '@angular/router';
 import {
-  DateEntityTableColumn,
+  clientTypeCell,
+  credetialsTypeCell,
+  DateEntityTableColumn, defaultCellStyle,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
-import {TranslateService} from '@ngx-translate/core';
-import {DatePipe} from '@angular/common';
-import {EntityType, entityTypeResources, entityTypeTranslations} from '@shared/models/entity-type.models';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {DialogService} from '@core/services/dialog.service';
-import {Direction} from '@shared/models/page/sort-order';
-import {MqttClientCredentialsService} from '@core/http/mqtt-client-credentials.service';
-import {MqttClientCredentialsComponent} from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
-import {MatDialog} from '@angular/material/dialog';
-import {clientTypeTranslationMap} from '@shared/models/client.model';
-import {credentialsTypeNames, MqttClientCredentials} from '@shared/models/client-crenetials.model';
+import { TranslateService } from '@ngx-translate/core';
+import { DatePipe } from '@angular/common';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { DialogService } from '@core/services/dialog.service';
+import { Direction } from '@shared/models/page/sort-order';
+import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import { MatDialog } from '@angular/material/dialog';
+import { clientTypeTranslationMap } from '@shared/models/client.model';
+import {
+  credentialsTypeNames,
+  MqttClientCredentials,
+  MqttCredentialsType
+} from '@shared/models/client-crenetials.model';
 
 @Injectable()
 export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<MqttClientCredentials>> {
@@ -61,11 +67,12 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
     this.config.columns.push(
       new DateEntityTableColumn<MqttClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%'),
+      new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
+        (entity) => defaultCellStyle(entity.name)),
       new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
-        (entity) => translate.instant(clientTypeTranslationMap.get(entity.clientType))),
+        (entity) => clientTypeCell(entity.clientType)),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
-        (entity) => credentialsTypeNames.get(entity.credentialsType))
+        (entity) => credetialsTypeCell(entity.credentialsType))
     );
 
     this.config.addActionDescriptors.push(

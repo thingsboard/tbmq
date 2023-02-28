@@ -80,17 +80,29 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
       let label = this.translate.instant(this.statChartTypeTranslationMap.get(<StatsChartType>chart));
       let dataSet = {
         label: label,
-        backgroundColor: 'rgba(255, 87, 34, 0.5)',
-        borderColor: 'rgba(255, 87, 34, 0.5)',
-        hoverBackgroundColor: 'rgba(255, 87, 34, 0.75)',
-        hoverBorderColor: 'rgba(255, 87, 34, 1)',
-        borderWidth: 1,
+        fill: true,
+        backgroundColor: 'rgba(0, 87, 34, 0.5)',
+        borderColor: 'rgba(0, 87, 34, 0.5)',
+        hoverBackgroundColor: 'rgba(0, 87, 34, 0.75)',
+        hoverBorderColor: 'rgba(0, 87, 34, 1)',
+        borderWidth: 0,
         data: this.transformData(data[chart])
       };
       this.charts[chart] = new Chart(ctx, {
         type: 'line',
         data: {datasets: [dataSet]},
         options: {
+          animation: {
+            duration: 2000
+          },
+          layout: {
+            padding: {
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 10
+            }
+          },
           legend: {
             display: false
           },
@@ -101,16 +113,22 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
           scales: {
             yAxes: [{
               display: true,
-              type: 'linear'
+              type: 'linear',
+              ticks: {
+                min: 0,
+                stepSize: Math.floor(dataSet.data.length)
+              }
             }],
             xAxes: [{
               type: 'time',
               ticks: {
                 display: true,
-                min: 1609459200000,
-                max: 1609460200000,
+                source: 'auto'
               },
+              distribution: 'series',
+              bounds: 'data',
               time: {
+                round: 'second',
                 unitStepSize: 100000,
                 unit: 'millisecond',
                 displayFormats: {
