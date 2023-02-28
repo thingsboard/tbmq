@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {ClientInfo, ClientType} from '@shared/models/client.model';
-import {BaseData} from '@shared/models/base-data';
+import { ClientInfo, ClientType } from '@shared/models/client.model';
+import { BaseData } from '@shared/models/base-data';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;

@@ -14,12 +14,8 @@
 /// limitations under the License.
 ///
 
-export * from './page/public-api';
-export * from './authority.enum';
-export * from './base-data';
-export * from './constants';
-export * from './entity-type.models';
-export * from './login.models';
-export * from './stats.model';
-export * from './retained-message.model';
-export * from './time/time.models';
+export interface RetainedMessage {
+  topic: string;
+  payload: string;
+  qosLevel: number;
+}
