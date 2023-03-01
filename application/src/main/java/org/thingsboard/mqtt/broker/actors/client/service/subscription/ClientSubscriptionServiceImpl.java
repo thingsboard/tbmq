@@ -81,8 +81,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                         log.trace("[{}] Persisted topic subscriptions", clientId);
                     }
                 },
-                t -> log.warn("[{}] Failed to persist topic subscriptions. Exception - {}, reason - {}",
-                        clientId, t.getClass().getSimpleName(), t.getMessage()));
+                t -> log.warn("[{}] Failed to persist topic subscriptions", clientId, t));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }
 
@@ -123,8 +122,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                         log.trace("[{}] Persisted unsubscribed topics", clientId);
                     }
                 },
-                t -> log.warn("[{}] Failed to persist unsubscribed topics. Exception - {}, reason - {}",
-                        clientId, t.getClass().getSimpleName(), t.getMessage()));
+                t -> log.warn("[{}] Failed to persist unsubscribed topics", clientId, t));
         unsubscribeAndPersist(clientId, topicFilters, callback);
     }
 

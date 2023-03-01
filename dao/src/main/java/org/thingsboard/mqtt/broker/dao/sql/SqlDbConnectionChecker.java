@@ -50,9 +50,8 @@ public class SqlDbConnectionChecker implements DbConnectionChecker {
             jdbcTemplate.query("select 1", (rs, rowNum) -> OBJ);
             connected.getAndSet(true);
         } catch (Exception e) {
-            log.warn("Failed to connect to the DB. Exception - {}, reason - {}.", e.getClass().getSimpleName(), e.getMessage());
+            log.warn("Failed to connect to the DB", e);
             connected.getAndSet(false);
         }
     }
-
 }

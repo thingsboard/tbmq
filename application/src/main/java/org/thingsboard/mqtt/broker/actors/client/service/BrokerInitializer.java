@@ -104,7 +104,7 @@ public class BrokerInitializer {
             log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
             startConsuming();
         } catch (Exception e) {
-            log.error("Failed to initialize broker. Exception - {}, reason - {}", e.getClass().getSimpleName(), e.getMessage());
+            log.error("Failed to initialize broker", e);
             throw new RuntimeException(e);
         }
     }

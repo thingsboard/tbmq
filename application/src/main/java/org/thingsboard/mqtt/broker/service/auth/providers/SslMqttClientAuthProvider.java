@@ -124,7 +124,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
             return SslUtil.parseCommonName(certificates[0]);
         } catch (Exception e) {
-            log.error("Failed to get client's certificate common name. Exception - {}, reason - {}.", e.getClass().getSimpleName(), e.getMessage());
+            log.error("Failed to get client's certificate common name", e);
             throw new AuthenticationException("Failed to get client's certificate common name.", e);
         }
 

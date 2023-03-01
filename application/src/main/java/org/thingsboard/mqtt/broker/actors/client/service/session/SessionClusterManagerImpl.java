@@ -222,7 +222,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 }
             }
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to clear session. Exception - {}, reason - {}.", clientId, sessionId, e.getClass().getSimpleName(), e.getMessage());
+            log.warn("[{}][{}] Failed to clear session", clientId, sessionId, e);
         }
     }
 

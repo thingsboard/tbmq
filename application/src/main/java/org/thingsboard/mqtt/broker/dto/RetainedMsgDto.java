@@ -16,24 +16,70 @@
 package org.thingsboard.mqtt.broker.dto;
 
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.dao.data.UserProperties;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.function.Function;
 
 @Data
-@RequiredArgsConstructor
 public class RetainedMsgDto {
 
     private final String topic;
     private final String payload;
-    private final int qosLevel;
+    private final int qos;
+    private final long createdTime;
+    private final UserProperties userProperties;
 
     public static RetainedMsgDto newInstance(RetainedMsg retainedMsg) {
         return new RetainedMsgDto(
                 retainedMsg.getTopic(),
                 new String(retainedMsg.getPayload(), StandardCharsets.UTF_8),
-                retainedMsg.getQosLevel()
+                retainedMsg.getQosLevel(),
+                retainedMsg.getCreatedTime(),
+                UserProperties.newInstance(retainedMsg.getProperties())
         );
+    }
+
+    public static Comparator<RetainedMsgDto> getComparator(SortOrder sortOrder) {
+        switch (sortOrder.getProperty()) {
+            case "topic":
+                return getStrComparator(sortOrder.getDirection(), RetainedMsgDto::getTopic);
+            case "qos":
+                return getIntComparator(sortOrder.getDirection(), RetainedMsgDto::getQos);
+            case "createdTime":
+                return getLongComparator(sortOrder.getDirection(), RetainedMsgDto::getCreatedTime);
+            default:
+                return null;
+        }
+    }
+
+    private static Comparator<RetainedMsgDto> getStrComparator(SortOrder.Direction direction,
+                                                               Function<RetainedMsgDto, String> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
+
+    private static Comparator<RetainedMsgDto> getIntComparator(SortOrder.Direction direction,
+                                                               Function<RetainedMsgDto, Integer> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
+
+    private static Comparator<RetainedMsgDto> getLongComparator(SortOrder.Direction direction,
+                                                                Function<RetainedMsgDto, Long> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
     }
 }

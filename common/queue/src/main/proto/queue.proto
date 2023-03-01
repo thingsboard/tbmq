@@ -80,6 +80,7 @@ message RetainedMsgProto {
   int32 qos = 2;
   string topic = 3;
   repeated UserPropertyProto userProperties = 4;
+  int64 createdTime = 5;
 }
 
 message ClientSessionInfoProto {

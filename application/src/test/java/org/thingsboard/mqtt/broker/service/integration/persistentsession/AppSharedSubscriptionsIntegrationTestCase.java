@@ -108,7 +108,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     private ApplicationSharedSubscription getSubscription() {
         ApplicationSharedSubscription subscription = new ApplicationSharedSubscription();
         subscription.setName("test");
-        subscription.setTopic("test/+");
+        subscription.setTopicFilter("test/+");
         subscription.setPartitions(10);
         return subscription;
     }

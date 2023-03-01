@@ -54,7 +54,7 @@ public class AppSharedSubscriptionController extends BaseController {
     public ApplicationSharedSubscription saveSharedSubscription(@RequestBody ApplicationSharedSubscription sharedSubscription) throws ThingsboardException {
         checkNotNull(sharedSubscription);
         try {
-            topicValidationService.validateTopicFilter(sharedSubscription.getTopic());
+            topicValidationService.validateTopicFilter(sharedSubscription.getTopicFilter());
 
             ApplicationSharedSubscription applicationSharedSubscription =
                     checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));

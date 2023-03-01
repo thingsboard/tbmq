@@ -178,8 +178,7 @@ public class MqttSubscribeHandler {
                             sendSubAck(ctx, subAckMessage);
                             processRetainedMessages(ctx, newSubscriptions, currentSubscriptions);
                         },
-                        t -> log.warn("[{}][{}] Fail to process client subscription. Exception - {}, reason - {}",
-                                clientId, ctx.getSessionId(), t.getClass().getSimpleName(), t.getMessage()))
+                        t -> log.warn("[{}][{}] Failed to process client subscription.", clientId, ctx.getSessionId(), t))
         );
     }
 
@@ -235,7 +234,13 @@ public class MqttSubscribeHandler {
     }
 
     private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
-        return new RetainedMsg(retainedMsg.getTopic(), retainedMsg.getPayload(), minQoSValue, retainedMsg.getProperties());
+        return new RetainedMsg(
+                retainedMsg.getTopic(),
+                retainedMsg.getPayload(),
+                minQoSValue,
+                retainedMsg.getProperties(),
+                retainedMsg.getCreatedTime()
+        );
     }
 
     private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {

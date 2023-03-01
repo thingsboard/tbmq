@@ -174,8 +174,8 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         SslMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, SslMqttCredentials.class);
-        if (StringUtils.isEmpty(mqttCredentials.getParentCertCommonName())) {
-            throw new DataValidationException("Parent certificate's common name should be specified!");
+        if (StringUtils.isEmpty(mqttCredentials.getCertCommonName())) {
+            throw new DataValidationException("Certificate common name should be specified!");
         }
         if (CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
@@ -192,7 +192,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             compileAuthRules(authRules);
         });
 
-        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getParentCertCommonName());
+        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCommonName());
         mqttClientCredentials.setCredentialsId(credentialsId);
     }
 

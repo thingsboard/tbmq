@@ -74,7 +74,7 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
 
     private Set<TopicSubscription> collectNewSubscriptions(List<SubscriptionInfoDto> subscriptions) {
         return subscriptions.stream()
-                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopic(), subscriptionInfoDto.getQos().value()))
+                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopicFilter(), subscriptionInfoDto.getQos().value()))
                 .collect(Collectors.toSet());
     }
 }
