@@ -69,6 +69,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .connectedAt(clientSessionInfo.getConnectedAt())
                 .disconnectedAt(clientSessionInfo.getDisconnectedAt())
                 .clientIpAdr(clientSessionInfo.getClientIpAdr())
+                .cleanStart(clientSessionInfo.isCleanStart())
                 .build();
     }
 

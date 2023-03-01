@@ -45,6 +45,7 @@ public class ShortClientSessionInfoDto {
     private long connectedAt;
     private long disconnectedAt;
     private String clientIpAdr;
+    private boolean cleanStart;
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
         switch (sortOrder.getProperty()) {
@@ -65,6 +66,8 @@ public class ShortClientSessionInfoDto {
                 return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getDisconnectedAt);
             case "clientIpAdr":
                 return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientIpAdr);
+            case "cleanStart":
+                return getBoolComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::isCleanStart);
             default:
                 return null;
         }
@@ -90,6 +93,15 @@ public class ShortClientSessionInfoDto {
 
     private static Comparator<ShortClientSessionInfoDto> getLongComparator(SortOrder.Direction direction,
                                                                            Function<ShortClientSessionInfoDto, Long> func) {
+        if (direction == SortOrder.Direction.DESC) {
+            return Comparator.comparing(func, Comparator.reverseOrder());
+        } else {
+            return Comparator.comparing(func);
+        }
+    }
+
+    private static Comparator<ShortClientSessionInfoDto> getBoolComparator(SortOrder.Direction direction,
+                                                                           Function<ShortClientSessionInfoDto, Boolean> func) {
         if (direction == SortOrder.Direction.DESC) {
             return Comparator.comparing(func, Comparator.reverseOrder());
         } else {
