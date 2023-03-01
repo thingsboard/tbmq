@@ -63,6 +63,7 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     this.statsService.getEntityTimeseriesMock().subscribe(
       data => {
         this.initCharts(data);
+        this.initDemoChart();
       }
     );
   }
@@ -71,6 +72,289 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     this.destroy$.next();
     this.destroy$.complete();
     super.ngOnDestroy();
+  }
+
+  initDemoChart() {
+    let ctx1 = document.getElementById('demoChart1') as HTMLCanvasElement;
+    let ctx2 = document.getElementById('demoChart2') as HTMLCanvasElement;
+    let ctx3 = document.getElementById('demoChart3') as HTMLCanvasElement;
+    let ctx4 = document.getElementById('demoChart4') as HTMLCanvasElement;
+    let ctx5 = document.getElementById('demoChart5') as HTMLCanvasElement;
+    let dataSet1 = {
+      label: "Incoming messages",
+      fill: true,
+      backgroundColor: 'rgba(255, 55, 34, 0.5)',
+      borderColor: 'rgba(255, 87, 34, 0.5)',
+      hoverBackgroundColor: 'rgba(255, 87, 34, 0.75)',
+      hoverBorderColor: 'rgba(255, 87, 34, 1)',
+      borderWidth: 1,
+      data: [{
+        x: 0,
+        y: 44
+      },{
+        x: 1,
+        y: 150
+      },{
+        x: 2,
+        y: 200
+      },{
+        x: 3,
+        y: 124
+      },{
+        x: 4,
+        y: 200
+      }]
+    };
+    let dataSet2 = {
+      label: "Incoming messages",
+      fill: true,
+      backgroundColor: 'rgba(0, 255, 34, 0.5)',
+      borderColor: 'rgba(0, 255, 34, 0.5)',
+      hoverBackgroundColor: 'rgba(0, 255, 34, 0.75)',
+      hoverBorderColor: 'rgba(0, 255, 34, 1)',
+      borderWidth: 1,
+      data: [{
+        x: 0,
+        y: 100
+      },{
+        x: 1,
+        y: 150
+      },{
+        x: 2,
+        y: 200
+      },{
+        x: 3,
+        y: 175
+      },{
+        x: 4,
+        y: 200
+      }]
+    };
+    let dataSet3 = {
+      label: "Incoming messages",
+      fill: true,
+      backgroundColor: 'rgba(0, 87, 255, 0.5)',
+      borderColor: 'rgba(0, 87, 255, 0.5)',
+      hoverBackgroundColor: 'rgba(0, 87, 255, 0.75)',
+      hoverBorderColor: 'rgba(0, 87, 255, 1)',
+      borderWidth: 1,
+      data: [{
+        x: 0,
+        y: 100
+      },{
+        x: 1,
+        y: 150
+      },{
+        x: 2,
+        y: 200
+      },{
+        x: 3,
+        y: 160
+      },{
+        x: 4,
+        y: 155
+      }]
+    };
+    let dataSet4 = {
+      label: "Incoming messages",
+      fill: true,
+      backgroundColor: 'rgba(255, 87, 255, 0.5)',
+      borderColor: 'rgba(255, 87, 255, 0.5)',
+      hoverBackgroundColor: 'rgba(255, 87, 255, 0.75)',
+      hoverBorderColor: 'rgba(255, 87, 255, 1)',
+      borderWidth: 1,
+      data: [{
+        x: 0,
+        y: 100
+      },{
+        x: 1,
+        y: 150
+      },{
+        x: 2,
+        y: 200
+      },{
+        x: 3,
+        y: 200
+      },{
+        x: 4,
+        y: 200
+      }]
+    };
+    let dataSet5 = {
+      label: "Incoming messages",
+      fill: true,
+      backgroundColor: 'rgba(0, 255, 255, 0.5)',
+      borderColor: 'rgba(0, 255, 255, 0.5)',
+      hoverBackgroundColor: 'rgba(0, 255, 255, 0.75)',
+      hoverBorderColor: 'rgba(0, 255, 255, 1)',
+      borderWidth: 1,
+      data: [{
+        x: 0,
+        y: 100
+      },{
+        x: 1,
+        y: 150
+      },{
+        x: 2,
+        y: 200
+      },{
+        x: 3,
+        y: 124
+      },{
+        x: 4,
+        y: 200
+      }]
+    };
+    let demoChart1 = new Chart(ctx1, {
+      type: 'line',
+      data: {datasets: [dataSet1]},
+      options: {
+        animation: {
+          duration: 1000
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: false
+        },
+        scales: {
+          yAxes: [{
+            display: false,
+            ticks: {
+              max: 250
+            },
+          }],
+          xAxes: [{
+            display: false,
+            type: 'linear'
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        }
+      }
+    });
+    let demoChart2 = new Chart(ctx2, {
+      type: 'line',
+      data: {datasets: [dataSet2]},
+      options: {
+        animation: {
+          duration: 1000
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: false
+        },
+        scales: {
+          yAxes: [{
+            display: false,
+            ticks: {
+              max: 250
+            },
+          }],
+          xAxes: [{
+            display: false,
+            type: 'linear'
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        }
+      }
+    });
+    let demoChart3 = new Chart(ctx3, {
+      type: 'line',
+      data: {datasets: [dataSet3]},
+      options: {
+        animation: {
+          duration: 1000
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: false
+        },
+        scales: {
+          yAxes: [{
+            display: false,
+            ticks: {
+              max: 250
+            },
+          }],
+          xAxes: [{
+            display: false,
+            type: 'linear'
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        }
+      }
+    });
+    let demoChart4 = new Chart(ctx4, {
+      type: 'line',
+      data: {datasets: [dataSet4]},
+      options: {
+        animation: {
+          duration: 1000
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: false
+        },
+        scales: {
+          yAxes: [{
+            display: false,
+            ticks: {
+              max: 250
+            },
+          }],
+          xAxes: [{
+            display: false,
+            type: 'linear'
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        }
+      }
+    });
+    let demoChart5 = new Chart(ctx5, {
+      type: 'line',
+      data: {datasets: [dataSet5]},
+      options: {
+        animation: {
+          duration: 1000
+        },
+        legend: {
+          display: false
+        },
+        title: {
+          display: false
+        },
+        scales: {
+          yAxes: [{
+            display: false,
+            ticks: {
+              max: 250
+            },
+          }],
+          xAxes: [{
+            display: false,
+            type: 'linear'
+          }]
+        },
+        hover: {
+          mode: 'dataset'
+        }
+      }
+    });
   }
 
   initCharts(data) {
@@ -114,6 +398,9 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
             yAxes: [{
               display: true,
               type: 'linear',
+              gridLines: {
+                display: false
+              },
               ticks: {
                 min: 0,
                 stepSize: Math.floor(dataSet.data.length)
@@ -121,6 +408,9 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
             }],
             xAxes: [{
               type: 'time',
+              gridLines: {
+                display: false
+              },
               ticks: {
                 display: true,
                 source: 'auto'

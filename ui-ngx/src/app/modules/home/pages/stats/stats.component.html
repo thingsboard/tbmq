@@ -27,22 +27,73 @@
     </mat-progress-bar>
     <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
     <mat-card-content style="padding-top: 16px;">
-      <div fxFlex fxLayout="column" fxLayoutGap="12px">
-        <div style="padding-left: 0">
-          <tb-timewindow [(ngModel)]="timewindow"
-                         (ngModelChange)="onTimewindowChange()"
-                         direction="left"
-                         tooltipPosition="left"
-                         aggregation="false"
-                         timezone="false"
-                         >
-          </tb-timewindow>
+
+      <div fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start center">
+            <section fxFlex class="mat-elevation-z2">
+              <div fxLayout="column" fxLayoutAlign="center center">
+                <h5>Messages</h5>
+                <h4>12</h4>
+              </div>
+              <div style="height: 100px; width: 200px; padding: 5px">
+                <canvas id="demoChart1"></canvas>
+              </div>
+            </section>
+            <section fxFlex class="mat-elevation-z2">
+              <div fxLayout="column" fxLayoutAlign="center center">
+                <h5>Sessions</h5>
+                <h4>325</h4>
+              </div>
+              <div style="height: 100px; width: 200px; padding: 5px">
+                <canvas id="demoChart2"></canvas>
+              </div>
+            </section>
+            <section fxFlex class="mat-elevation-z2">
+              <div fxLayout="column" fxLayoutAlign="center center">
+                <h5>Clients</h5>
+                <h4>35</h4>
+              </div>
+              <div style="height: 100px; width: 200px; padding: 5px">
+                <canvas id="demoChart3"></canvas>
+              </div>
+            </section>
+            <section fxFlex class="mat-elevation-z2">
+              <div fxLayout="column" fxLayoutAlign="center center">
+                <h5>Topics</h5>
+                <h4>23</h4>
+              </div>
+              <div style="height: 100px; width: 200px; padding: 5px">
+                <canvas id="demoChart4"></canvas>
+              </div>
+            </section>
+            <section fxFlex class="mat-elevation-z2">
+              <div fxLayout="column" fxLayoutAlign="center center">
+                <h5>Retained messages</h5>
+                <h4>276</h4>
+              </div>
+              <div style="height: 100px; width: 200px; padding: 5px">
+                <canvas id="demoChart5"></canvas>
+              </div>
+            </section>
         </div>
-        <div fxFlex fxLayout="column" fxLayoutAlign="space-around start" style="width: 50%">
-          <div fxLayout="column" fxFlex="40"
-               *ngFor="let chart of statsCharts; let $index = index">
-            <div class="chart mat-elevation-z4">
-              <canvas [id]="chart"></canvas>
+
+      <div fxFlex fxLayout="row" fxLayoutGap="12px">
+        <div fxFlex="25" fxLayout="column" fxLayoutGap="12px">
+          <div style="padding-left: 0">
+            <tb-timewindow [(ngModel)]="timewindow"
+                           (ngModelChange)="onTimewindowChange()"
+                           direction="left"
+                           tooltipPosition="left"
+                           aggregation="false"
+                           timezone="false"
+                           >
+            </tb-timewindow>
+          </div>
+          <div fxFlex fxLayout="column" fxLayoutAlign="start">
+            <div fxLayout="column" fxFlex="40"
+                 *ngFor="let chart of statsCharts; let $index = index">
+              <div class="chart mat-elevation-z2">
+                <canvas [id]="chart"></canvas>
+              </div>
             </div>
           </div>
         </div>
