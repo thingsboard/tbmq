@@ -145,7 +145,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private int extractPartitionsNumber(Map<String, String> topicConfigs) {
         String numPartitionsStr = topicConfigs.get(QueueConstants.PARTITIONS);
         if (numPartitionsStr != null) {
-            topicConfigs.remove(QueueConstants.PARTITIONS);
             return Integer.parseInt(numPartitionsStr);
         } else {
             return 1;
@@ -155,7 +154,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private short extractReplicationFactor(Map<String, String> topicConfigs) {
         String replicationFactorStr = topicConfigs.get(QueueConstants.REPLICATION_FACTOR);
         if (replicationFactorStr != null) {
-            topicConfigs.remove(QueueConstants.REPLICATION_FACTOR);
             return Short.parseShort(replicationFactorStr);
         } else {
             return 1;
