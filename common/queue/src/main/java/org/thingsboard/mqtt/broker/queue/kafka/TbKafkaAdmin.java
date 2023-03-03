@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,14 +72,15 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopic(String topic, Map<String, String> topicConfigs) {
+        Map<String, String> configs = new HashMap<>(topicConfigs);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Creating topic", topic);
         }
         if (log.isTraceEnabled()) {
-            log.trace("Topic configs - {}.", topicConfigs);
+            log.trace("Topic configs - {}.", configs);
         }
         try {
-            NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(topicConfigs), extractReplicationFactor(topicConfigs)).configs(topicConfigs);
+            NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(configs), extractReplicationFactor(configs)).configs(configs);
             client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
             topics.add(topic);
         } catch (ExecutionException ee) {
