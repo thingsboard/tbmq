@@ -32,6 +32,7 @@ import java.util.List;
 @Slf4j
 @Service
 public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedEventProcessor {
+
     private static final int MAX_EMPTY_EVENTS = 5;
     private volatile boolean stopped = false;
 
@@ -58,7 +59,9 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
 
     @Override
     public void processEvents() {
-        log.debug("Start processing APPLICATION removed events.");
+        if (log.isDebugEnabled()) {
+            log.debug("Start processing APPLICATION removed events.");
+        }
         int currentEmptyEvents = 0;
         while (!stopped) {
             List<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> msgs = consumer.poll(pollDuration);
@@ -71,12 +74,16 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
             }
             currentEmptyEvents = 0;
             for (TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto> msg : msgs) {
-                log.debug("[{}] Requesting topic removal", msg.getValue().getClientId());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Requesting topic removal", msg.getValue().getClientId());
+                }
                 clientSessionEventService.requestApplicationTopicRemoved(msg.getValue().getClientId());
             }
             consumer.commitSync();
         }
-        log.debug("Finished processing APPLICATION removed events.");
+        if (log.isDebugEnabled()) {
+            log.debug("Finished processing APPLICATION removed events.");
+        }
     }
 
     @PreDestroy
