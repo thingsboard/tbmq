@@ -123,7 +123,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       {
         message: this.translate.instant('mqtt-client-session.session-id-copied-message'),
         type: 'success',
-        duration: 750,
+        duration: 2000,
         verticalPosition: 'bottom',
         horizontalPosition: 'right'
       }));

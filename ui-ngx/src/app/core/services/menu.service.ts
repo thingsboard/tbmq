@@ -63,7 +63,7 @@ export class MenuService {
     sections.push(
       {
         id: guid(),
-        name: 'overview.overview',
+        name: 'home.home',
         type: 'link',
         path: '/stats',
         icon: 'mdi:view-dashboard-outline',
@@ -99,6 +99,14 @@ export class MenuService {
         type: 'link',
         path: '/shared-subscriptions',
         icon: 'mdi:monitor-share',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
+        name: 'retained-message.retained-messages',
+        type: 'link',
+        path: '/retained-messages',
+        icon: 'mdi:archive-outline',
         isMdiIcon: true
       },
       {

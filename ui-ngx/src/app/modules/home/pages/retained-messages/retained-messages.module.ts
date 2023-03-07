@@ -15,27 +15,23 @@
 ///
 
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { Authority } from '@shared/models/authority.enum';
-import { StatsComponent } from "@home/pages/stats/stats.component";
-
-const routes: Routes = [
-  {
-    path: 'stats',
-    component: StatsComponent,
-    data: {
-      auth: [Authority.SYS_ADMIN],
-      title: 'home.home',
-      breadcrumb: {
-        label: 'home.home',
-        icon: 'mdi:view-dashboard-outline',
-        isMdiIcon: true
-      }
-    }
-  }
-];
+import { CommonModule } from '@angular/common';
+import { SharedModule } from '@shared/shared.module';
+import { HomeComponentsModule } from '@home/components/home-components.module';
+import { RetainedMessagesComponent } from "@home/pages/retained-messages/retained-messages.component";
+import { RetainedMessagesRoutingModule } from "@home/pages/retained-messages/retained-messages-routing.module";
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)], exports: [RouterModule]
+  declarations: [
+    RetainedMessagesComponent
+  ],
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    RetainedMessagesRoutingModule
+  ]
 })
-export class StatsRoutingModule {}
+
+export class RetainedMessagesModule {
+}

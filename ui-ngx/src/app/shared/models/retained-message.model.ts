@@ -14,8 +14,15 @@
 /// limitations under the License.
 ///
 
-export interface RetainedMessage {
+import { BaseData } from "@shared/models/base-data";
+
+export interface RetainedMessage extends BaseData {
   topic: string;
   payload: string;
-  qosLevel: number;
+  qos: number;
+  userProperties: UserProperties
+}
+
+export interface UserProperties {
+  [key: string]: any;
 }

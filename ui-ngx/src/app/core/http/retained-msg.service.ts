@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {PageLink} from '@shared/models/page/page-link';
-import {PageData} from '@shared/models/page/page-data';
-import {DetailedClientSessionInfo} from '@shared/models/session.model';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { RetainedMessage } from "@shared/models/retained-message.model";
 
 @Injectable({
   providedIn: 'root'
@@ -30,16 +30,20 @@ export class RetainedMsgService {
   constructor(private http: HttpClient) {
   }
 
-  public getRetainedMessages(topicName:string, config?: RequestConfig): Observable<any> {
-    return this.http.get<any>(`/api/retained-msg?topicName=${topicName}`, defaultHttpOptionsFromConfig(config));
+  public getRetainedMessages(pageLink: PageLink, config?: RequestConfig): Observable<PageData<RetainedMessage>> {
+    return this.http.get<PageData<RetainedMessage>>(`/api/retained-msg${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getRetainedMessage(topicName:string, config?: RequestConfig): Observable<any> {
-    return this.http.get<any>(`/api/retained-msg?topicName=${topicName}`, defaultHttpOptionsFromConfig(config));
+  public getRetainedMessage(topicName: string, config?: RequestConfig): Observable<RetainedMessage> {
+    return this.http.get<RetainedMessage>(`/api/retained-msg?topicName=${topicName}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public clearEmptyRetainedMsgNodes(config?: RequestConfig): Observable<any> {
-    return this.http.delete<any>(`/api/retained-msg?/topic-trie/clear`, defaultHttpOptionsFromConfig(config));
+  public deleteRetainedMessage(topicName: string, config?: RequestConfig): Observable<void> {
+    return this.http.delete<void>(`/api/retained-msg?topicName=${topicName}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public clearEmptyRetainedMsgNodes(config?: RequestConfig): Observable<void> {
+    return this.http.delete<void>(`/api/retained-msg/topic-trie/clear`, defaultHttpOptionsFromConfig(config));
   }
 
 }

@@ -78,7 +78,7 @@
                 </ng-template>
               </ng-template>
             </div>
-            <button mat-icon-button [disabled]="isLoading$ | async"
+            <button mat-mini-fab [disabled]="isLoading$ | async" class="mat-elevation-z4" color="primary"
                     [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
                     matTooltip="{{ actionDescriptor.name }}"
                     matTooltipPosition="above"

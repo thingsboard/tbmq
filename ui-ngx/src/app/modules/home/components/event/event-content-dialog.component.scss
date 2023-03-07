@@ -13,3 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+:host {
+  .tb-event-content {
+    width: 100%;
+    min-width: 400px;
+    height: 100%;
+    min-height: 50px;
+  }
+}

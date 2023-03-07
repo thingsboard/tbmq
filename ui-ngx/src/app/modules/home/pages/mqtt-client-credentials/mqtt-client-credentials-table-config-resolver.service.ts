@@ -70,7 +70,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
         (entity) => defaultCellStyle(entity.name)),
       new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
-        (entity) => clientTypeCell(entity.clientType)),
+        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
         (entity) => credetialsTypeCell(entity.credentialsType))
     );

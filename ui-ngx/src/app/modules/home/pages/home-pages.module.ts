@@ -25,6 +25,7 @@ import { SessionsModule } from "@home/pages/sessions/sessions.module";
 import { AdminsModule } from "@home/pages/admins/admins.module";
 import { SharedSubscriptionsModule } from "@home/pages/shared-subscriptions/shared-subscriptions.module";
 import { StatsModule } from "@home/pages/stats/stats.module";
+import { RetainedMessagesModule } from "@home/pages/retained-messages/retained-messages.module";
 
 @NgModule({
   exports: [
@@ -34,7 +35,8 @@ import { StatsModule } from "@home/pages/stats/stats.module";
     SessionsModule,
     AdminsModule,
     SharedSubscriptionsModule,
-    StatsModule
+    StatsModule,
+    RetainedMessagesModule
   ],
   providers: [
     {

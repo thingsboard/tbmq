@@ -17,25 +17,37 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { StatsComponent } from "@home/pages/stats/stats.component";
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import {
+  RetainedMessagesTableConfigResolver
+} from "@home/pages/retained-messages/retained-messages-table-config-resolver.service";
 
 const routes: Routes = [
   {
-    path: 'stats',
-    component: StatsComponent,
+    path: 'retained-messages',
+    component: EntitiesTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'home.home',
+      title: 'retained-message.retained-messages',
       breadcrumb: {
-        label: 'home.home',
-        icon: 'mdi:view-dashboard-outline',
+        label: 'retained-message.retained-messages',
+        icon: 'mdi:archive-outline',
         isMdiIcon: true
       }
+    },
+    resolve: {
+      entitiesTableConfig: RetainedMessagesTableConfigResolver
     }
   }
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)], exports: [RouterModule]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule],
+  providers: [
+    RetainedMessagesTableConfigResolver
+  ]
 })
-export class StatsRoutingModule {}
+
+export class RetainedMessagesRoutingModule {
+}

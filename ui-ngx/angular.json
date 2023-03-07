@@ -27,6 +27,26 @@
               "src/thingsboard-mqtt-broker.ico",
               "src/assets",
               {
+                "glob": "worker-html.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-css.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-json.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-javascript.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
                 "glob": "**/*",
                 "input": "node_modules/material-design-icons/iconfont/",
                 "output": "assets/fonts"
@@ -54,6 +74,7 @@
             "allowedCommonJsDependencies": [
               "hammerjs",
               "react",
+              "react-ace",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
               "prop-types",
@@ -66,7 +87,8 @@
               "jquery",
               "jquery.terminal",
               "moment",
-              "chart.js"
+              "chart.js",
+              "js-beautify"
             ]
           },
           "configurations": {

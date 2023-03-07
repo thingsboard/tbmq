@@ -56,7 +56,8 @@
       "discard-changes": "Discard Changes",
       "download": "Download",
       "read-more": "Read more",
-      "hide": "Hide"
+      "hide": "Hide",
+      "on-copied": "Copied"
   },
   "admin": {
       "admins": "Admins",
@@ -447,6 +448,38 @@
     "topic-filter-required": "Topic filter is required",
     "shared-subscription": "Application Shared Subscription",
     "shared-subscriptions": "Shared Subscriptions"
+  },
+  "retained-message": {
+    "retained-message": "Retained Message",
+    "retained-messages": "Retained Messages",
+    "add": "Add retained message",
+    "delete": "Delete retained message",
+    "add-retained-message-text": "Add new retained message",
+    "no-retained-messages-text": "No retained messages found",
+    "delete-retained-message-title": "Are you sure you want to delete the retained message '{{topic}}'?",
+    "delete-retained-message-text": "Be careful, after the confirmation the retained message and all related data will become unrecoverable.",
+    "delete-retained-messages-title": "Are you sure you want to delete { count, plural, 1 {1 retained message} other {# retained messages} }?",
+    "delete-retained-messages-action-title": "Delete { count, plural, 1 {1 retained message} other {# retained messages} }",
+    "delete-retained-messages-text": "Be careful, after the confirmation all selected retained messages will be removed and all related data will become unrecoverable.",
+    "select-retained-message": "Select retained message",
+    "clear-empty-retained-message-nodes": "Clear empty retained message nodes",
+    "clear-empty-retained-message-nodes-title": "Clear empty retained message nodes?",
+    "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation will be cleared all empty retained message nodes.",
+    "no-retained-messages-matching": "No retained messages matching '{{entity}}' were found.",
+    "topic-required": "Topic is required",
+    "details": "Retained Message Details",
+    "search": "Search retained messages",
+    "selected-retained-messages": "{ count, plural, 1 {1 retained message} other {# retained messages} } selected",
+    "type-retained-message": "Retained message",
+    "type-retained-messages": "Retained messages",
+    "list-of-retained-messages": "{ count, plural, 1 {One retained message} other {List of # retained messages} }",
+    "retained-message-name-starts-with": "Retained messages whose topic start with '{{prefix}}'",
+    "topic": "Topic",
+    "qos": "QoS",
+    "payload": "Payload",
+    "metadata": "Metadata",
+    "show-data": "Payload",
+    "show-user-properties": "User Properties"
   },
   "overview": {
     "overview": "Overview",

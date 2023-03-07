@@ -107,7 +107,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
       {
         message: this.translate.instant('mqtt-client-credentials.id-copied-message'),
         type: 'success',
-        duration: 750,
+        duration: 2000,
         verticalPosition: 'bottom',
         horizontalPosition: 'right'
       }));
@@ -118,7 +118,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
       {
         message: this.translate.instant('mqtt-client-credentials.client-credentials-id-copied-message'),
         type: 'success',
-        duration: 750,
+        duration: 2000,
         verticalPosition: 'bottom',
         horizontalPosition: 'right'
       }));

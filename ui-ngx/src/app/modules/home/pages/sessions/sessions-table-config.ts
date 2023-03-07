@@ -87,14 +87,14 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           return '<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:' +
             connectionStateColor.get(entity.connectionState) +
             '"></span>' +
-            '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">' +
+            '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600">' +
             this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)) +
         '</span>'
         },
         (entity) => ({ color: connectionStateColor.get(entity.connectionState) })
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
-        (entity) => clientTypeCell(entity.clientType)),
+        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
         (entity) => defaultCellStyle(entity.clientId),
         () => { return {'font-weight': 500} }),

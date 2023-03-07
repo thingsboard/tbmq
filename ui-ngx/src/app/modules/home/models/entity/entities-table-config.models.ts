@@ -205,7 +205,7 @@ export function credetialsTypeCell(value: MqttCredentialsType): string {
 }
 
 export function clientTypeCell(value: ClientType): string {
-  const tooltip = "tenant-profile.rate-limits.add-limit";
-  const icon = value === ClientType.DEVICE ? 'devices' : 'desktop_mac';
-  return `<mat-icon class="material-icons mat-icon">${icon}</mat-icon>`;
+  const icon = value.toUpperCase() === ClientType.DEVICE ? 'devices_other' : 'desktop_mac';
+  const color = value.toUpperCase() === ClientType.DEVICE ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
+  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;
 }

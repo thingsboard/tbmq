@@ -189,6 +189,12 @@ export function base64toObj(b64Encoded: string): any {
   return JSON.parse(json);
 }
 
+export function base64toString(b64Encoded: string): string {
+  return decodeURIComponent(atob(b64Encoded).split('').map((c) => {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
+
 const scrollRegex = /(auto|scroll)/;
 
 function parentNodes(node: Node, nodes: Node[]): Node[] {
