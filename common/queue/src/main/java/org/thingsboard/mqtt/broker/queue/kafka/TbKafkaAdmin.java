@@ -64,7 +64,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void createTopicIfNotExists(String topic, Map<String, String> topicConfigs) {
-        // TODO: rethink this logic to work when multiple nodes have access to same topics
         if (!topics.contains(topic)) {
             createTopic(topic, topicConfigs);
         }
@@ -85,7 +84,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             topics.add(topic);
         } catch (ExecutionException ee) {
             if (ee.getCause() instanceof TopicExistsException) {
-                //do nothing
+                topics.add(topic);
             } else {
                 log.warn("[{}] Failed to create topic", topic, ee);
                 throw new RuntimeException(ee);
