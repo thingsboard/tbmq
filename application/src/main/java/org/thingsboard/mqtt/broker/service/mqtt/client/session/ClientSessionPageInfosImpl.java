@@ -86,7 +86,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     private boolean filter(PageLink pageLink, ClientSessionInfo clientSessionInfo) {
         if (pageLink.getTextSearch() != null) {
-            return clientSessionInfo.getClientId().contains(pageLink.getTextSearch());
+            return clientSessionInfo.getClientId().toLowerCase().contains(pageLink.getTextSearch().toLowerCase());
         }
         return true;
     }
