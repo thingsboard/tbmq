@@ -67,7 +67,7 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> createEventConsumer(String consumerName) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSessionEventSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(clientSessionEventSettings.getTopic(), clientSessionEventSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(clientSessionEventSettings.getTopic());
         consumerBuilder.topicConfigs(QueueUtil.getConfigs(clientSessionEventSettings.getTopicProperties()));
         consumerBuilder.clientId("client-session-event-consumer-" + consumerName);
@@ -91,8 +91,9 @@ public class KafkaClientSessionEventQueueFactory implements ClientSessionEventQu
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> createEventResponseConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(clientSessionEventResponseSettings.getAdditionalConsumerConfig()));
-        consumerBuilder.topic(clientSessionEventResponseSettings.getTopicPrefix() + "." + serviceId);
+        String topic = clientSessionEventResponseSettings.getTopicPrefix() + "." + serviceId;
+        consumerBuilder.properties(consumerSettings.toProps(topic, clientSessionEventResponseSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(QueueUtil.getConfigs(clientSessionEventResponseSettings.getTopicProperties()));
         consumerBuilder.clientId("client-session-event-response-consumer-" + serviceId);
         consumerBuilder.groupId("client-session-event-response-consumer-group-" + serviceId);

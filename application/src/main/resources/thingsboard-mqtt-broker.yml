@@ -262,6 +262,14 @@ queue:
       topic-properties: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       additional-consumer: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
+    # Custom consumer configuration per Kafka topic
+    consumer-properties-per-topic:
+      publish_msg:
+        - key: max.poll.records
+          value: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
+      mqtt_broker_application_client_test_client:
+        - key: max.poll.records
+          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
 
 service:
   id: "${TB_SERVICE_ID:}"
