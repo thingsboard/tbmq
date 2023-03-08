@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
+
+    @Getter
     private final String clientId;
 
     private List<PersistedMsg> orderedMessages;

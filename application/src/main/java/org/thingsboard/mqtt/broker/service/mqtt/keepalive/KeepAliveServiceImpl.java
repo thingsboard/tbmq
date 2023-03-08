@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @RequiredArgsConstructor
 public class KeepAliveServiceImpl implements KeepAliveService {
+
     private static final int CLEARED_KEEP_ALIVE_VALUE = -1;
 
     private final Map<UUID, KeepAliveInfo> keepAliveInfoMap = new ConcurrentHashMap<>();
@@ -70,20 +71,26 @@ public class KeepAliveServiceImpl implements KeepAliveService {
 
     @Override
     public void registerSession(String clientId, UUID sessionId, int keepAliveSeconds) throws MqttException {
-        log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Registering keep-alive session for {} seconds", sessionId, keepAliveSeconds);
+        }
         keepAliveInfoMap.put(sessionId, new KeepAliveInfo(clientId, keepAliveSeconds,
                 new AtomicLong(System.currentTimeMillis())));
     }
 
     @Override
     public void unregisterSession(UUID sessionId) {
-        log.trace("[{}] Unregistering keep-alive session", sessionId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Unregistering keep-alive session", sessionId);
+        }
         keepAliveInfoMap.remove(sessionId);
     }
 
     @Override
     public void acknowledgeControlPacket(UUID sessionId) throws MqttException {
-        log.trace("[{}] Acknowledging control packet for session", sessionId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Acknowledging control packet for session", sessionId);
+        }
         KeepAliveInfo keepAliveInfo = keepAliveInfoMap.get(sessionId);
         if (keepAliveInfo == null) {
             log.warn("[{}] Cannot find keepAliveInfo", sessionId);

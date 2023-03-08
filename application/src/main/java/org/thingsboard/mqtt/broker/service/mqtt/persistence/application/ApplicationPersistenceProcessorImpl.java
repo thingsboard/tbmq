@@ -510,7 +510,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private ApplicationPackProcessingCtx collectPackProcessingCtx(String clientId) {
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.remove(clientId);
         if (processingContext == null) {
-            processingContext = new ApplicationPackProcessingCtx();
+            processingContext = new ApplicationPackProcessingCtx(clientId);
         }
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.remove(clientId);
         if (!CollectionUtils.isEmpty(contexts)) {
