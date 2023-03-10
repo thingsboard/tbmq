@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.queue;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
 
 import java.util.Collection;
 import java.util.Map;
@@ -31,4 +32,8 @@ public interface TbQueueAdmin {
     void deleteConsumerGroups(Collection<String> consumerGroups);
 
     int getNumberOfPartitions(String topic);
+
+    ClusterInfo getClusterInfo();
+
+    void getTopics();
 }
