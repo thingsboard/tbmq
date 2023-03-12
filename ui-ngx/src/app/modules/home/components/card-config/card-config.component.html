@@ -1,0 +1,14 @@
+<div class="config-table">
+  <div *ngFor="let item of overviewConfig | async">
+    <div class="config-row">
+      <div class="flex1">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
+      <div style="font-weight: 500" class="flex1">
+        {{item.value}}
+        <mat-icon style="cursor: pointer; color: #0a5b25; font-size: 15px; width: 15px; height: 15px; padding-left: 4em"
+                  *ngIf="item.key === configParams.PORT_MQTT ">
+          content_copy
+        </mat-icon>
+      </div>
+    </div>
+  </div>
+</div>

@@ -16,88 +16,216 @@
 
 -->
 <div>
-  <mat-card class="stats-card">
-    <mat-card-title>
-      <div fxLayout="row">
-        <span class="mat-headline" translate>home.home</span>
-        <span fxFlex></span>
-      </div>
-    </mat-card-title>
-    <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-    </mat-progress-bar>
-    <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
-    <mat-card-content style="padding-top: 16px;">
-
-      <div fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start center">
-            <section fxFlex class="mat-elevation-z2">
-              <div fxLayout="column" fxLayoutAlign="center center">
-                <h5>Messages</h5>
-                <h4>12</h4>
-              </div>
-              <div style="height: 100px; width: 200px; padding: 5px">
-                <canvas id="demoChart1"></canvas>
-              </div>
-            </section>
-            <section fxFlex class="mat-elevation-z2">
-              <div fxLayout="column" fxLayoutAlign="center center">
-                <h5>Sessions</h5>
-                <h4>325</h4>
-              </div>
-              <div style="height: 100px; width: 200px; padding: 5px">
-                <canvas id="demoChart2"></canvas>
-              </div>
-            </section>
-            <section fxFlex class="mat-elevation-z2">
-              <div fxLayout="column" fxLayoutAlign="center center">
-                <h5>Clients</h5>
-                <h4>35</h4>
-              </div>
-              <div style="height: 100px; width: 200px; padding: 5px">
-                <canvas id="demoChart3"></canvas>
-              </div>
-            </section>
-            <section fxFlex class="mat-elevation-z2">
-              <div fxLayout="column" fxLayoutAlign="center center">
-                <h5>Topics</h5>
-                <h4>23</h4>
-              </div>
-              <div style="height: 100px; width: 200px; padding: 5px">
-                <canvas id="demoChart4"></canvas>
-              </div>
-            </section>
-            <section fxFlex class="mat-elevation-z2">
-              <div fxLayout="column" fxLayoutAlign="center center">
-                <h5>Retained messages</h5>
-                <h4>276</h4>
-              </div>
-              <div style="height: 100px; width: 200px; padding: 5px">
-                <canvas id="demoChart5"></canvas>
-              </div>
-            </section>
-        </div>
-
-      <div fxFlex fxLayout="row" fxLayoutGap="12px">
-        <div fxFlex="25" fxLayout="column" fxLayoutGap="12px">
-          <div style="padding-left: 0">
-            <tb-timewindow [(ngModel)]="timewindow"
-                           (ngModelChange)="onTimewindowChange()"
-                           direction="left"
-                           tooltipPosition="left"
-                           aggregation="false"
-                           timezone="false"
-                           >
-            </tb-timewindow>
-          </div>
-          <div fxFlex fxLayout="column" fxLayoutAlign="start">
-            <div fxLayout="column" fxFlex="40"
-                 *ngFor="let chart of statsCharts; let $index = index">
-              <div class="chart mat-elevation-z2">
-                <canvas [id]="chart"></canvas>
+  <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async"></mat-progress-bar>
+  <div class="wrapper">
+    <div #col1 class="container flex2">
+      <div class="c1">
+        <div #row1 class="c1 flex1">
+          <div class="card height10">
+            <div fxFlex fxLayout="row">
+              <div class="card-table">
+                <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                  <button mat-button
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('metrics')"
+                          matTooltip="{{'home.metrics' | translate}}">
+                    {{'home.metrics' | translate}} &#8599;
+                  </button>
+                  <span fxFlex></span>
+                  <section>
+                    <tb-timewindow [(ngModel)]="timewindow"
+                                   (ngModelChange)="onTimewindowChange()"
+                                   direction="left"
+                                   tooltipPosition="left"
+                                   aggregation="false"
+                                   timezone="false">
+                    </tb-timewindow>
+                  </section>
+                </div>
+                <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                  <div fxLayout="column" *ngFor="let chart of statsCharts; let $index = index">
+                    <div style="padding: 4px">
+                      <canvas [id]="chart"
+                              style=" background-color: transparent;
+                                      width: 170px;
+                                      height: 120px;
+                                      border: 1px solid #e3e3e3;
+                                      border-radius: 20px;"
+                      ></canvas>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <div class="c1 flex1">
+          <div #row2 fxFlex fxLayout="row" class="column">
+            <div #sessions fxFlex class="card height20">
+              <div class="card-table">
+                <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                  <button mat-button
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="navigateToPage('session')"
+                          matTooltip="{{'mqtt-client-session.sessions' | translate}}">
+                    {{'mqtt-client-session.sessions' | translate}} &#8599;
+                  </button>
+                  <span fxFlex></span>
+                  <button mat-stroked-button color="primary"
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('session')"
+                          matTooltip="{{'mqtt-client-session.sessions' | translate}}">
+                    {{'home.view-docs' | translate}}
+                  </button>
+                </div>
+                <span fxFlex></span>
+                <tb-card-three-items [data]="sessionCardConfig"></tb-card-three-items>
+                <span fxFlex></span>
+              </div>
+            </div>
+            <div #clientCredentials fxFlex class="card height20">
+              <div class="card-table">
+                <div fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
+                  <button mat-button
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="navigateToPage('session')"
+                          matTooltip="{{'mqtt-client-credentials.type-client-credentials' | translate}}">
+                    {{'mqtt-client-credentials.type-client-credentials' | translate}} &#8599;
+                  </button>
+                  <span fxFlex></span>
+                  <button mat-stroked-button color="primary"
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('client-credentials')"
+                          matTooltip="{{'mqtt-client-session.sessions' | translate}}">
+                    {{'home.view-docs' | translate}}
+                  </button>
+                  <button mat-raised-button color="primary"
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('session')"
+                          matTooltip="{{'mqtt-client-credentials.add' | translate}}">
+                    {{'mqtt-client-credentials.add-client' | translate}}
+                  </button>
+                </div>
+                <span fxFlex></span>
+                <tb-card-three-items [data]="clientCredentialsCardConfig"></tb-card-three-items>
+                <span fxFlex></span>
+              </div>
+            </div>
+          </div>
+          <div #row3 fxFlex fxLayout="row" class="column">
+            <div #config fxFlex class="card height20">
+              <div class="card-table">
+                <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                  <button mat-button
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('config')"
+                          matTooltip="{{'home.config' | translate}}">
+                    {{'home.config' | translate}} &#8599;
+                  </button>
+                  <span fxFlex></span>
+                  <button mat-stroked-button color="primary"
+                          type="button"
+                          [disabled]="isLoading$ | async"
+                          (click)="viewDocumentation('config')"
+                          matTooltip="{{'home.config' | translate}}">
+                    {{'home.view-docs' | translate}}
+                  </button>
+                </div>
+                <tb-card-config></tb-card-config>
+              </div>
+            </div>
+            <div #kafka1 fxFlex class="card height20">
+              <div class="card-table">
+                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
+                  <button mat-button type="button"
+                          matTooltip="{{'kafka.topics' | translate}}">
+                    {{'kafka.topics' | translate}}
+                  </button>
+                  <span fxFlex></span>
+                </div>
+                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                  <tb-kafka-table></tb-kafka-table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div #row4 fxFlex fxLayout="row" class="column">
+            <div #kafka2 fxFlex class="card height20">
+              <div class="card-table">
+                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
+                  <button mat-button type="button"
+                          matTooltip="{{'kafka.consumer-groups' | translate}}">
+                    {{'kafka.consumer-groups' | translate}}
+                  </button>
+                  <span fxFlex></span>
+                </div>
+                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                  <tb-kafka-table></tb-kafka-table>
+                </div>
+              </div>
+            </div>
+            <div #kafka3 fxFlex class="card height20">
+              <div class="card-table">
+                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
+                  <button mat-button type="button"
+                          matTooltip="{{'kafka.brokers' | translate}}">
+                    {{'kafka.brokers' | translate}}
+                  </button>
+                  <span fxFlex></span>
+                </div>
+                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                  <tb-kafka-table></tb-kafka-table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div #row5 fxFlex fxLayout="row" class="column">
+            <div #version fxFlex class="card height20">
+              <div class="card-table">
+                <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                  <button mat-button matTooltip="{{'version.version' | translate}}">
+                    {{'version.version' | translate}}
+                  </button>
+                  <span fxFlex></span>
+                  <button mat-raised-button color="primary"
+                          type="button"
+                          [disabled]="(isLoading$ | async) || !(updateAvailable$ | async)"
+                          (click)="viewDocumentation('update')"
+                          matTooltip="{{'version.update' | translate}}">
+                    {{'version.update' | translate}}
+                  </button>
+                </div>
+                <div style="padding: 16px">
+                  <tb-version-card></tb-version-card>
+                </div>
+              </div>
+            </div>
+            <div #quickLinks fxFlex class="card height20">
+              <div class="card-table">
+                  <div fxFlex fxLayout="row" fxLayoutAlign="start">
+                    <button mat-button matTooltip="{{'home.quick-links' | translate}}">
+                      {{'home.quick-links' | translate}}
+                    </button>
+                    <span fxFlex></span>
+                  </div>
+                  <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                    <tb-quick-links></tb-quick-links>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+    <div #col1 class="container flex1">
+      <div class="card">Getting started</div>
+    </div>
+  </div>
 </div>

@@ -21,7 +21,7 @@ import { StatsComponent } from "@home/pages/stats/stats.component";
 
 const routes: Routes = [
   {
-    path: 'stats',
+    path: 'home',
     component: StatsComponent,
     data: {
       auth: [Authority.SYS_ADMIN],

@@ -20,11 +20,21 @@ import { SharedModule } from '@app/shared/shared.module';
 import { StatsComponent } from "@home/pages/stats/stats.component";
 import { StatsRoutingModule } from "@home/pages/stats/stats-routing.module";
 import { ChartComponent } from "@home/components/chart/chart.component";
+import { QuickLinksComponent } from "@home/components/quick-links/quick-links.component";
+import { VersionCardComponent } from "@home/components/version-card/version-card.component";
+import { CardThreeItemsComponent } from "@home/components/card-three-items/card-three-items.component";
+import { CardConfigComponent } from "@home/components/card-config/card-config.component";
+import { KafkaTableComponent } from "@home/components/kafka-table/kafka-table.component";
 
 @NgModule({
   declarations: [
     StatsComponent,
-    ChartComponent
+    ChartComponent,
+    QuickLinksComponent,
+    VersionCardComponent,
+    CardThreeItemsComponent,
+    CardConfigComponent,
+    KafkaTableComponent
   ],
   imports: [
     CommonModule,

@@ -20,7 +20,7 @@ import {AppState} from '../core.state';
 import {selectAuth, selectIsAuthenticated} from '../auth/auth.selectors';
 import {take} from 'rxjs/operators';
 import {MenuSection} from '@core/services/menu.models';
-import {BehaviorSubject, Observable, Subject} from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import {Authority} from '@shared/models/authority.enum';
 import {guid} from '@core/utils';
 import {AuthState} from '@core/auth/auth.models';
@@ -65,7 +65,7 @@ export class MenuService {
         id: guid(),
         name: 'home.home',
         type: 'link',
-        path: '/stats',
+        path: '/home',
         icon: 'mdi:view-dashboard-outline',
         isMdiIcon: true
       },
@@ -133,6 +133,47 @@ export class MenuService {
 
   public menuSections(): Observable<Array<MenuSection>> {
     return this.menuSections$;
+  }
+
+  public quickLinks(): Observable<Array<any>> {
+    return of([
+      {
+        name: 'mqtt-client-credentials.credentials',
+        path: '/client-credentials',
+        icon: 'mdi:shield-lock',
+        isMdiIcon: true
+      },
+      {
+        name: 'mqtt-client-session.sessions',
+        path: '/sessions',
+        icon: 'mdi:book-multiple',
+        isMdiIcon: true
+      },
+      {
+        name: 'shared-subscription.shared-subscriptions',
+        path: '/shared-subscriptions',
+        icon: 'mdi:monitor-share',
+        isMdiIcon: true
+      },
+      {
+        name: 'retained-message.retained-messages',
+        path: '/retained-messages',
+        icon: 'mdi:archive-outline',
+        isMdiIcon: true
+      },
+      {
+        name: 'user.users',
+        path: '/users',
+        icon: 'mdi:account-multiple-outline',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.rest-api',
+        path: '/rest-api',
+        icon: 'mdi:api',
+        isMdiIcon: true
+      }
+    ]);
   }
 
 }

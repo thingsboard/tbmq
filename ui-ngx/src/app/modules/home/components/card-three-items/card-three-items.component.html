@@ -1,0 +1,11 @@
+<div class="cards">
+  <div fxFlex class="key-value" *ngFor="let item of data?.items">
+    <div class="key">
+      {{ item.label | translate }}
+    </div>
+    <div class="value">
+      {{ item.value }}
+    </div>
+  </div>
+</div>
+

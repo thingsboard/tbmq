@@ -43,3 +43,50 @@ export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
     [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
   ]
 );
+
+export interface ThreeCardsData {
+  title: string,
+  link: {
+    enabled: boolean,
+    href: string
+  },
+  docs: {
+    enabled: boolean,
+    href: string
+  },
+  actions: {
+    enabled: boolean,
+    items: Array<any>
+  },
+  items: Array<CardItem>
+}
+
+export interface CardItem {
+  key: string;
+  value: number | string;
+  label: string;
+}
+
+export enum ConfigParams {
+  PORT_MQTT = 'PORT_MQTT',
+  TCP_LISTENER = 'TCP_LISTENER',
+  TCP_LISTENER_MAX_PAYLOAD_SIZE = 'TCP_LISTENER_MAX_PAYLOAD_SIZE',
+  TLS_LISTENER = 'TLS_LISTENER',
+  TLS_LISTENER_MAX_PAYLOAD_SIZE = 'TLS_LISTENER_MAX_PAYLOAD_SIZE',
+  TLS_TCP_PORT = 'TLS_TCP_PORT',
+  BASIC_AUTH = 'BASIC_AUTH',
+  X509_CERT_CHAIN_AUTH = 'X509_CERT_CHAIN_AUTH',
+}
+
+export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
+  [
+    [ConfigParams.PORT_MQTT, 'config.port-mqtt'],
+    [ConfigParams.TCP_LISTENER, 'config.tcp-listener'],
+    [ConfigParams.TCP_LISTENER_MAX_PAYLOAD_SIZE, 'config.tcp-listener-max-payload-size'],
+    [ConfigParams.TLS_LISTENER, 'config.tls-listener'],
+    [ConfigParams.TLS_LISTENER_MAX_PAYLOAD_SIZE, 'config.tls-listener-max-payload-size'],
+    [ConfigParams.TLS_TCP_PORT, 'config.tls-tcp-port'],
+    [ConfigParams.BASIC_AUTH, 'config.basic-auth'],
+    [ConfigParams.X509_CERT_CHAIN_AUTH, 'config.ssl-auth'],
+  ]
+);

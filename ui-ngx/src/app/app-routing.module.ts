@@ -20,7 +20,7 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'sessions',
+    redirectTo: 'home',
     pathMatch: 'full',
     data: {
       breadcrumb: {

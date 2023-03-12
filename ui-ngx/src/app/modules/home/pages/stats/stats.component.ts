@@ -21,9 +21,13 @@ import { PageComponent } from '@shared/components/page.component';
 import { Router } from '@angular/router';
 import { FormBuilder } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { StatsService } from "@core/http/stats.service";
-import { StatsChartType, StatsChartTypeTranslationMap } from "@shared/models/stats.model";
+import {
+  StatsChartType,
+  StatsChartTypeTranslationMap,
+  ThreeCardsData
+} from "@shared/models/stats.model";
 import {
   calculateFixedWindowTimeMs,
   FixedWindow,
@@ -42,6 +46,78 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
   statsCharts = Object.values(StatsChartType);
   charts = {};
   timewindow: Timewindow;
+
+  updateAvailable$: Observable<boolean> = of(false);
+
+  sessionCardConfig: ThreeCardsData = {
+    title: 'mqtt-client-session.sessions',
+    link: {
+      enabled: true,
+      href: 'sessions'
+    },
+    docs: {
+      enabled: true,
+      href: 'docs/sessions'
+    },
+    actions: {
+      enabled: false,
+      items: null
+    },
+    items: [
+      {
+        key: 'connected',
+        label: 'mqtt-client-session.connected',
+        value: 155
+      },
+      {
+        key: 'disconnected',
+        label: 'mqtt-client-session.disconnected',
+        value: 100
+      },
+      {
+        key: 'total',
+        label: 'home.total',
+        value: 255
+      }
+    ]
+  }
+  clientCredentialsCardConfig: ThreeCardsData = {
+    title: 'mqtt-client-credentials.client-credentials-type',
+    link: {
+      enabled: true,
+      href: 'client-credentials'
+    },
+    docs: {
+      enabled: true,
+      href: 'docs/client-credentials'
+    },
+    actions: {
+      enabled: false,
+      items: [
+        {
+          label: 'mqtt-client-credentials.add',
+          href: '/client-credentials'
+        }
+      ]
+    },
+    items: [
+      {
+        key: 'connected',
+        label: 'mqtt-client-credentials.type-devices',
+        value: 11
+      },
+      {
+        key: 'disconnected',
+        label: 'mqtt-client-credentials.type-applications',
+        value: 44
+      },
+      {
+        key: 'total',
+        label: 'home.total',
+        value: 55
+      }
+    ]
+  }
 
   private statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private destroy$ = new Subject();
@@ -63,7 +139,6 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     this.statsService.getEntityTimeseriesMock().subscribe(
       data => {
         this.initCharts(data);
-        this.initDemoChart();
       }
     );
   }
@@ -74,302 +149,25 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
     super.ngOnDestroy();
   }
 
-  initDemoChart() {
-    let ctx1 = document.getElementById('demoChart1') as HTMLCanvasElement;
-    let ctx2 = document.getElementById('demoChart2') as HTMLCanvasElement;
-    let ctx3 = document.getElementById('demoChart3') as HTMLCanvasElement;
-    let ctx4 = document.getElementById('demoChart4') as HTMLCanvasElement;
-    let ctx5 = document.getElementById('demoChart5') as HTMLCanvasElement;
-    let dataSet1 = {
-      label: "Incoming messages",
-      fill: true,
-      backgroundColor: 'rgba(255, 55, 34, 0.5)',
-      borderColor: 'rgba(255, 87, 34, 0.5)',
-      hoverBackgroundColor: 'rgba(255, 87, 34, 0.75)',
-      hoverBorderColor: 'rgba(255, 87, 34, 1)',
-      borderWidth: 1,
-      data: [{
-        x: 0,
-        y: 44
-      },{
-        x: 1,
-        y: 150
-      },{
-        x: 2,
-        y: 200
-      },{
-        x: 3,
-        y: 124
-      },{
-        x: 4,
-        y: 200
-      }]
-    };
-    let dataSet2 = {
-      label: "Incoming messages",
-      fill: true,
-      backgroundColor: 'rgba(0, 255, 34, 0.5)',
-      borderColor: 'rgba(0, 255, 34, 0.5)',
-      hoverBackgroundColor: 'rgba(0, 255, 34, 0.75)',
-      hoverBorderColor: 'rgba(0, 255, 34, 1)',
-      borderWidth: 1,
-      data: [{
-        x: 0,
-        y: 100
-      },{
-        x: 1,
-        y: 150
-      },{
-        x: 2,
-        y: 200
-      },{
-        x: 3,
-        y: 175
-      },{
-        x: 4,
-        y: 200
-      }]
-    };
-    let dataSet3 = {
-      label: "Incoming messages",
-      fill: true,
-      backgroundColor: 'rgba(0, 87, 255, 0.5)',
-      borderColor: 'rgba(0, 87, 255, 0.5)',
-      hoverBackgroundColor: 'rgba(0, 87, 255, 0.75)',
-      hoverBorderColor: 'rgba(0, 87, 255, 1)',
-      borderWidth: 1,
-      data: [{
-        x: 0,
-        y: 100
-      },{
-        x: 1,
-        y: 150
-      },{
-        x: 2,
-        y: 200
-      },{
-        x: 3,
-        y: 160
-      },{
-        x: 4,
-        y: 155
-      }]
-    };
-    let dataSet4 = {
-      label: "Incoming messages",
-      fill: true,
-      backgroundColor: 'rgba(255, 87, 255, 0.5)',
-      borderColor: 'rgba(255, 87, 255, 0.5)',
-      hoverBackgroundColor: 'rgba(255, 87, 255, 0.75)',
-      hoverBorderColor: 'rgba(255, 87, 255, 1)',
-      borderWidth: 1,
-      data: [{
-        x: 0,
-        y: 100
-      },{
-        x: 1,
-        y: 150
-      },{
-        x: 2,
-        y: 200
-      },{
-        x: 3,
-        y: 200
-      },{
-        x: 4,
-        y: 200
-      }]
-    };
-    let dataSet5 = {
-      label: "Incoming messages",
-      fill: true,
-      backgroundColor: 'rgba(0, 255, 255, 0.5)',
-      borderColor: 'rgba(0, 255, 255, 0.5)',
-      hoverBackgroundColor: 'rgba(0, 255, 255, 0.75)',
-      hoverBorderColor: 'rgba(0, 255, 255, 1)',
-      borderWidth: 1,
-      data: [{
-        x: 0,
-        y: 100
-      },{
-        x: 1,
-        y: 150
-      },{
-        x: 2,
-        y: 200
-      },{
-        x: 3,
-        y: 124
-      },{
-        x: 4,
-        y: 200
-      }]
-    };
-    let demoChart1 = new Chart(ctx1, {
-      type: 'line',
-      data: {datasets: [dataSet1]},
-      options: {
-        animation: {
-          duration: 1000
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: false
-        },
-        scales: {
-          yAxes: [{
-            display: false,
-            ticks: {
-              max: 250
-            },
-          }],
-          xAxes: [{
-            display: false,
-            type: 'linear'
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        }
-      }
-    });
-    let demoChart2 = new Chart(ctx2, {
-      type: 'line',
-      data: {datasets: [dataSet2]},
-      options: {
-        animation: {
-          duration: 1000
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: false
-        },
-        scales: {
-          yAxes: [{
-            display: false,
-            ticks: {
-              max: 250
-            },
-          }],
-          xAxes: [{
-            display: false,
-            type: 'linear'
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        }
-      }
-    });
-    let demoChart3 = new Chart(ctx3, {
-      type: 'line',
-      data: {datasets: [dataSet3]},
-      options: {
-        animation: {
-          duration: 1000
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: false
-        },
-        scales: {
-          yAxes: [{
-            display: false,
-            ticks: {
-              max: 250
-            },
-          }],
-          xAxes: [{
-            display: false,
-            type: 'linear'
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        }
-      }
-    });
-    let demoChart4 = new Chart(ctx4, {
-      type: 'line',
-      data: {datasets: [dataSet4]},
-      options: {
-        animation: {
-          duration: 1000
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: false
-        },
-        scales: {
-          yAxes: [{
-            display: false,
-            ticks: {
-              max: 250
-            },
-          }],
-          xAxes: [{
-            display: false,
-            type: 'linear'
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        }
-      }
-    });
-    let demoChart5 = new Chart(ctx5, {
-      type: 'line',
-      data: {datasets: [dataSet5]},
-      options: {
-        animation: {
-          duration: 1000
-        },
-        legend: {
-          display: false
-        },
-        title: {
-          display: false
-        },
-        scales: {
-          yAxes: [{
-            display: false,
-            ticks: {
-              max: 250
-            },
-          }],
-          xAxes: [{
-            display: false,
-            type: 'linear'
-          }]
-        },
-        hover: {
-          mode: 'dataset'
-        }
-      }
-    });
+  getColor(index) {
+    var colors = ['#65655e', '#b0a3d4',  '#7d80da', '#c6afb1', '#79addc'];
+    return colors[index];
   }
 
   initCharts(data) {
+    let index = 0;
     for (let chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
       let ctx = document.getElementById(chart) as HTMLCanvasElement;
       let label = this.translate.instant(this.statChartTypeTranslationMap.get(<StatsChartType>chart));
       let dataSet = {
         label: label,
-        fill: true,
-        backgroundColor: 'rgba(0, 87, 34, 0.5)',
-        borderColor: 'rgba(0, 87, 34, 0.5)',
-        hoverBackgroundColor: 'rgba(0, 87, 34, 0.75)',
-        hoverBorderColor: 'rgba(0, 87, 34, 1)',
-        borderWidth: 0,
+        fill: false,
+        backgroundColor: this.getColor(index),
+        borderColor: this.getColor(index),
+        hoverBackgroundColor: this.getColor(index),
+        hoverBorderColor: this.getColor(index),
+        borderWidth: 1,
         data: this.transformData(data[chart])
       };
       this.charts[chart] = new Chart(ctx, {
@@ -377,7 +175,7 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
         data: {datasets: [dataSet]},
         options: {
           animation: {
-            duration: 2000
+            duration: 1000
           },
           layout: {
             padding: {
@@ -392,11 +190,16 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
           },
           title: {
             display: true,
-            text: label
+            text: [label, Math.floor(Math.random()*100)],
+            lineHeight: 1.5,
+            padding: 15,
+            fontStyle: 'normal',
+            fontColor: '#2f2f2f',
+            fontSize: 13,
           },
           scales: {
             yAxes: [{
-              display: true,
+              display: false,
               type: 'linear',
               gridLines: {
                 display: false
@@ -412,11 +215,11 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
                 display: false
               },
               ticks: {
-                display: true,
+                display: false,
                 source: 'auto'
               },
               distribution: 'series',
-              bounds: 'data',
+              bounds: 'dataset',
               time: {
                 round: 'second',
                 unitStepSize: 100000,
@@ -428,15 +231,24 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
             }]
           },
           hover: {
-            mode: 'point'
+            mode: 'dataset'
           }
         }
       });
+      index++;
     }
   }
 
   onTimewindowChange() {
     this.updateData();
+  }
+
+  viewDocumentation(type) {
+    this.router.navigateByUrl('');
+  }
+
+  navigateToPage(type) {
+    this.router.navigateByUrl('');
   }
 
   private updateData() {

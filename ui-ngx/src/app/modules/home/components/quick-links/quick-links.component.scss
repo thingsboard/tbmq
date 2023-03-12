@@ -1,0 +1,15 @@
+:host {
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .link {
+    width: 45%;
+    color: #494949;
+
+    a {
+      border: 1px solid transparent;
+    }
+  }
+}

@@ -1,0 +1,19 @@
+:host {
+  .config-table {
+    display: flex;
+    font-size: 12px;
+    color: #6c6c6c;
+    justify-content: center;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .config-row {
+    display: flex;
+  }
+
+  .flex1 {
+    flex: 1;
+  }
+}
