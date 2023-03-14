@@ -10,7 +10,9 @@ export interface KafkaBroker {
 }
 
 const ELEMENT_DATA: KafkaBroker[] = [
-  {id: 'id_1', address: 'localhost', size: '77.2 B'}
+  {id: 'id_1', address: 'localhost', size: '77.2 B'},
+  {id: 'id_2', address: '123.124.22.21', size: '77.2 B'},
+  {id: 'id_3', address: '125.224.42.21', size: '77.2 B'},
 ];
 
 @Component({

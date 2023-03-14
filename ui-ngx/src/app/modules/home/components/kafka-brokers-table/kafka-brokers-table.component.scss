@@ -4,22 +4,11 @@
   }
 
   .example-container {
-    height: 150px;
     max-width: 100%;
     overflow: auto;
-  }
-
-  .example-header {
-    min-height: 20px;
-    padding: 0 18px 0;
   }
 
   .mat-row, .mat-header-row {
     height: 21px;
   }
-
-  .mat-paginator-container {
-    flex-wrap: nowrap;
-  }
-
 }

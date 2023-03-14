@@ -23,7 +23,6 @@ import { MonitorChartsComponent } from "@home/components/monitor-charts/monitor-
 import { QuickLinksComponent } from "@home/components/quick-links/quick-links.component";
 import { VersionCardComponent } from "@home/components/version-card/version-card.component";
 import { CardConfigComponent } from "@home/components/card-config/card-config.component";
-import { KafkaTableComponent } from "@home/components/kafka-table/kafka-table.component";
 import { KafkaTopicsTableComponent } from "@home/components/kafka-topics-table/kafka-topics-table.component";
 import { KafkaBrokersTableComponent } from "@home/components/kafka-brokers-table/kafka-brokers-table.component";
 import { KafkaConsumersTableComponent } from "@home/components/kafka-consumers-table/kafka-consumers-table.component";
@@ -43,7 +42,6 @@ import { MonitorSessionsCardComponent } from "@home/components/monitor-sessions-
     MonitorClientCredentialsCardComponent,
     MonitorSessionsCardComponent,
     CardConfigComponent,
-    KafkaTableComponent,
     KafkaTopicsTableComponent,
     KafkaBrokersTableComponent,
     KafkaConsumersTableComponent

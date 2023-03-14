@@ -46,6 +46,22 @@
                 <tb-card-config></tb-card-config>
               </div>
             </div>
+            <div #kafka3 fxFlex class="card">
+              <div class="card-table">
+                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
+                  <button mat-button type="button"
+                          matTooltip="{{'kafka.brokers' | translate}}">
+                    {{'kafka.brokers' | translate}}
+                  </button>
+                  <span fxFlex></span>
+                </div>
+                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                  <tb-kafka-brokers-table></tb-kafka-brokers-table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div #row4 fxFlex fxLayout="row" class="column">
             <div #kafka1 fxFlex class="card">
               <div class="card-table">
                 <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
@@ -60,8 +76,6 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div #row4 fxFlex fxLayout="row" class="column">
             <div #kafka2 fxFlex class="card">
               <div class="card-table">
                 <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
@@ -73,20 +87,6 @@
                 </div>
                 <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
                   <tb-kafka-consumers-table></tb-kafka-consumers-table>
-                </div>
-              </div>
-            </div>
-            <div #kafka3 fxFlex class="card">
-              <div class="card-table">
-                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
-                  <button mat-button type="button"
-                          matTooltip="{{'kafka.brokers' | translate}}">
-                    {{'kafka.brokers' | translate}}
-                  </button>
-                  <span fxFlex></span>
-                </div>
-                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
-                  <tb-kafka-brokers-table></tb-kafka-brokers-table>
                 </div>
               </div>
             </div>

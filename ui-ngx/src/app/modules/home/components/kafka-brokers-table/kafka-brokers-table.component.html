@@ -1,8 +1,3 @@
-<div class="example-header">
-  <mat-form-field>
-    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Quick search">
-  </mat-form-field>
-</div>
 <div class="example-container">
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container *ngFor="let col of displayedColumns" [matColumnDef]="col">
@@ -12,5 +7,4 @@
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </mat-table>
-  <mat-paginator [pageSizeOptions]="[10, 20, 50, 100]" hidePageSize></mat-paginator>
 </div>
