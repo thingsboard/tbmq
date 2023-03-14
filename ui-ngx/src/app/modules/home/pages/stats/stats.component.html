@@ -55,13 +55,14 @@
                   </button>
                   <span fxFlex></span>
                 </div>
-                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+                <div class="config-table" fxLayoutGap="16px">
                   <tb-kafka-brokers-table></tb-kafka-brokers-table>
                 </div>
               </div>
             </div>
           </div>
-          <div #row4 fxFlex fxLayout="row" class="column">
+         <tb-kafka-tables-tab-group></tb-kafka-tables-tab-group>
+          <!--<div #row4 fxFlex fxLayout="row" class="column">
             <div #kafka1 fxFlex class="card">
               <div class="card-table">
                 <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
@@ -90,7 +91,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div>-->
           <div #row5 fxFlex fxLayout="row" class="column">
             <div #version fxFlex class="card">
               <div class="card-table">
@@ -120,7 +121,7 @@
                     </button>
                     <span fxFlex></span>
                   </div>
-                  <div class="config-table" fxFlex fxLayout="column">
+                  <div class="config-table">
                     <tb-quick-links></tb-quick-links>
                   </div>
                 </div>

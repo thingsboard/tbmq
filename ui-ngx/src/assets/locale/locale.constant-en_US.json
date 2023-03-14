@@ -583,6 +583,14 @@
     "copy-port": "Copy port"
   },
   "kafka": {
+    "name": "Name",
+    "partitions": "Partitions",
+    "replicas": "Replicas",
+    "size": "Size",
+    "lag": "Lag",
+    "id": "ID",
+    "state": "State",
+    "members": "Members",
     "brokers": "Kafka Brokers",
     "topics": "Kafka Topics",
     "consumer-groups": "Kafka Consumer Groups"

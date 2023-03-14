@@ -31,6 +31,7 @@ import {
   MonitorClientCredentialsCardComponent
 } from "@home/components/monitor-client-credentials-card/monitor-client-credentials-card.component";
 import { MonitorSessionsCardComponent } from "@home/components/monitor-sessions-card/monitor-sessions-card.component";
+import { KafkaTablesTabGroupComponent } from "@home/components/kafka-tables-tab-group/kafka-tables-tab-group.component";
 
 @NgModule({
   declarations: [
@@ -44,7 +45,8 @@ import { MonitorSessionsCardComponent } from "@home/components/monitor-sessions-
     CardConfigComponent,
     KafkaTopicsTableComponent,
     KafkaBrokersTableComponent,
-    KafkaConsumersTableComponent
+    KafkaConsumersTableComponent,
+    KafkaTablesTabGroupComponent
   ],
   imports: [
     CommonModule,

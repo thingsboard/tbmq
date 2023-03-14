@@ -2,28 +2,31 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
+import { EntityColumn, EntityTableColumn } from "@home/models/entity/entities-table-config.models";
+import { BaseData } from "@shared/models/base-data";
+import { isUndefined } from "@core/utils";
+import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 
 export interface KafkaTopic {
   name: string;
   partitions: number;
   replicas: number;
-  cleanupPolicy: string;
-  size: string;
+  size: number;
 }
 
 const ELEMENT_DATA: KafkaTopic[] = [
-  {name: 'client_session_1', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_2', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_3', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_4', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_5', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_6', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_7', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_8', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_9', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_10', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_11', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'},
-  {name: 'client_session_12', partitions: 50, replicas: 5, cleanupPolicy: 'compact', size: '71 B'}
+  {name: 'client_session_1', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_2', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_3', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_4', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_5', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_6', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_7', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_8', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_9', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_10', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_11', partitions: 50, replicas: 5, size: 71},
+  {name: 'client_session_12', partitions: 50, replicas: 5, size: 71}
 ];
 
 @Component({
@@ -33,16 +36,73 @@ const ELEMENT_DATA: KafkaTopic[] = [
 })
 export class KafkaTopicsTableComponent implements OnInit {
 
-  displayedColumns: string[] = ['name', 'partitions', 'replicas', 'cleanupPolicy', 'size'];
+  displayedColumns: Array<string> = [];
   dataSource: MatTableDataSource<any>;
+  columns: Array<EntityColumn<any>>;
+  cellStyleCache: Array<any> = [];
+  cellContentCache: Array<SafeHtml> = [];
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor() { }
+  constructor(private domSanitizer: DomSanitizer) { }
 
   ngOnInit(): void {
+    this.columns = this.getColumns();
+    this.columns.forEach(
+      column => {
+        this.displayedColumns.push(column.key);
+      }
+    );
     this.dataSource = new MatTableDataSource(ELEMENT_DATA);
+  }
+
+  getColumns() {
+    const columns: Array<EntityColumn<any>> = [];
+    columns.push(
+      new EntityTableColumn<any>('name', 'kafka.name', '25%'),
+      new EntityTableColumn<any>('partitions', 'kafka.partitions', '25%'),
+      new EntityTableColumn<any>('replicas', 'kafka.replicas', '25%'),
+      new EntityTableColumn<any>('size', 'kafka.size', '25%', entity => {
+        return entity.size + ' B'
+      })
+    )
+    return columns;
+  }
+
+  cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
+    const col = this.columns.indexOf(column);
+    const index = row * this.columns.length + col;
+    let res = this.cellStyleCache[index];
+    if (!res) {
+      const widthStyle: any = {width: column.width};
+      if (column.width !== '0px') {
+        widthStyle.minWidth = column.width;
+        widthStyle.maxWidth = column.width;
+      }
+      if (column instanceof EntityTableColumn) {
+        res = {...column.cellStyleFunction(entity, column.key), ...widthStyle};
+      } else {
+        res = widthStyle;
+      }
+      this.cellStyleCache[index] = res;
+    }
+    return res;
+  }
+
+  cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
+    if (column instanceof EntityTableColumn) {
+      const col = this.columns.indexOf(column);
+      const index = row * this.columns.length + col;
+      let res = this.cellContentCache[index];
+      if (isUndefined(res)) {
+        res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
+        this.cellContentCache[index] = res;
+      }
+      return res;
+    } else {
+      return '';
+    }
   }
 
   ngAfterViewInit() {

@@ -1,0 +1,20 @@
+<div #row4 class="home-column flex1">
+  <mat-tab-group class="tabs-group-card" animationDuration="200ms">
+
+    <mat-tab [label]="label('topics')">
+      <div #kafka1 fxFlex class="card">
+        <div class="config-table" fxFlex>
+          <tb-kafka-topics-table></tb-kafka-topics-table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab [label]="label('consumerGroups')">
+      <div #kafka2 fxFlex class="card">
+        <div class="config-table" fxFlex>
+          <tb-kafka-consumers-table></tb-kafka-consumers-table>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

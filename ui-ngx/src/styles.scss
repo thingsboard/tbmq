@@ -1093,7 +1093,6 @@ mat-label {
   }
 
   .card {
-    //text-align: center;
     padding: 8px;
     background: #f4f4f4;
     display: flex;
@@ -1136,11 +1135,12 @@ mat-label {
   }
 
   .config-table {
+    display: flex;
+    flex-direction: column;
     font-size: 14px;
     color: #6c6c6c;
     justify-content: center;
     align-items: stretch;
-    flex-direction: column;
   }
 
   .card-table {
