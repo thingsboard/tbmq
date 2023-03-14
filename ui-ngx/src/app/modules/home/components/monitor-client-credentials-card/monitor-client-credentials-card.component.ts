@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { Router } from "@angular/router";
-import { ThreeCardsData } from "@shared/models/stats.model";
-import { TranslateService } from "@ngx-translate/core";
 import { Observable } from "rxjs";
 
 @Component({

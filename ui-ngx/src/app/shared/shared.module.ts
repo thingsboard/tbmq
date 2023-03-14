@@ -84,6 +84,7 @@ import { TimezoneSelectComponent } from "@shared/components/time/timezone-select
 import { QuickTimeIntervalComponent } from "@shared/components/time/quick-time-interval.component";
 import { MatDatepicker, MatDatepickerModule } from "@angular/material/datepicker";
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from "@mat-datetimepicker/core";
+import { BooleanPipe } from "@shared/pipe/boolean.pipe";
 
 @NgModule({
   providers: [
@@ -113,6 +114,7 @@ import { MatDatetimepickerModule, MatNativeDatetimeModule } from "@mat-datetimep
     NospacePipe,
     MillisecondsToTimeStringPipe,
     HighlightPipe,
+    BooleanPipe,
     CopyButtonComponent,
     TogglePasswordComponent,
     TimewindowComponent,
@@ -240,7 +242,8 @@ import { MatDatetimepickerModule, MatNativeDatetimeModule } from "@mat-datetimep
     TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
-    QuickTimeIntervalComponent
+    QuickTimeIntervalComponent,
+    BooleanPipe
   ]
 })
 export class SharedModule { }

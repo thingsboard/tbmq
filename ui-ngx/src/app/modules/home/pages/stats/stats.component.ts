@@ -19,8 +19,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { Router } from '@angular/router';
-import { Observable, of, Subject } from 'rxjs';
-import { ThreeCardsData } from "@shared/models/stats.model";
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'tb-mail-server',

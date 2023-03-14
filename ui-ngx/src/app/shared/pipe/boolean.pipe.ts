@@ -14,7 +14,18 @@
 /// limitations under the License.
 ///
 
-export * from './highlight.pipe';
-export * from './milliseconds-to-time-string.pipe';
-export * from './nospace.pipe';
-export * from './boolean.pipe';
+import {Pipe, PipeTransform} from '@angular/core';
+import { TranslateService } from "@ngx-translate/core";
+
+@Pipe({ name: 'boolean' })
+export class BooleanPipe implements PipeTransform {
+
+  constructor(public translate: TranslateService) {
+  }
+  transform(value: boolean): string {
+    if (typeof value === 'boolean') {
+      return value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
+    }
+    return value;
+  }
+}

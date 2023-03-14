@@ -1,8 +1,6 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Router } from "@angular/router";
-import { StatsChartType, ThreeCardsData } from "@shared/models/stats.model";
-import { forkJoin, interval, Observable, Subject, timer } from "rxjs";
-import { Timewindow } from "@shared/models/time/time.models";
+import { forkJoin, Observable, Subject, timer } from "rxjs";
 import { retry, switchMap, takeUntil } from "rxjs/operators";
 import { StatsService } from "@core/http/stats.service";
 

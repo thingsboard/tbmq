@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { of } from "rxjs";
 import { ConfigParams, ConfigParamsTranslationMap } from "@shared/models/stats.model";
+import { ActionNotificationShow } from "@core/notification/notification.actions";
+import { Store } from "@ngrx/store";
+import { AppState } from "@core/core.state";
+import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: 'tb-card-config',
@@ -47,9 +51,22 @@ export class CardConfigComponent implements OnInit {
     }
   ]);
 
-  constructor() { }
+  constructor(protected store: Store<AppState>,
+              private translate: TranslateService) { }
 
   ngOnInit(): void {
+  }
+
+  onCopy() {
+    const message = this.translate.instant('config.port-copied');
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message,
+        type: 'success',
+        duration: 1500,
+        verticalPosition: 'top',
+        horizontalPosition: 'left'
+      }));
   }
 
 }

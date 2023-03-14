@@ -1,15 +1,21 @@
-<div class="config-table">
+<div fxFlex fxLayout="column" class="config-card-container">
   <div *ngFor="let item of overviewConfig | async">
-    <div class="config-row">
-      <div class="flex1">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
-      <div style="font-weight: 500" class="flex1">
-        {{item.value}}
-        <mat-icon style="cursor: pointer; color: #0a5b25; font-size: 15px; width: 15px; height: 15px; padding-left: 4em"
-                  *ngIf="item.key === configParams.PORT_MQTT ">
-          content_copy
-        </mat-icon>
-      </div>
+    <div fxFlex fxLayout="row">
+      <span class="flex1">{{ configParamsTranslationMap.get(item.key) | translate }}</span>
+      <span class="flex1 config-value">
+        <span>{{item.value | boolean }}</span>
+        <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
+          <mat-icon class="config-material-icon"
+                    ngxClipboard
+                    (cbOnSuccess)="onCopy()"
+                    [cbContent]="item.value"
+                    matTooltip="{{'config.copy-port' | translate}} {{item.value}}">
+            content_copy
+          </mat-icon>
+        </span>
+      </span>
     </div>
+    <mat-divider></mat-divider>
   </div>
   <span fxFlex></span>
 </div>

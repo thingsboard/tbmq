@@ -162,7 +162,9 @@
     "enter-search": "Enter search",
     "created-time": "Created time",
     "loading": "Loading...",
-    "proceed": "Proceed"
+    "proceed": "Proceed",
+    "enabled": "enabled",
+    "disabled": "disabled"
   },
   "details": {
     "details": "Details",
@@ -576,7 +578,9 @@
     "tls-listener-max-payload-size": "TLS Listener Max Payload Size",
     "tls-tcp-port": "TLS TCP Port",
     "basic-auth": "Basic Auth",
-    "ssl-auth": "X.509 Certificate Auth"
+    "ssl-auth": "X.509 Certificate Auth",
+    "port-copied": "Port has been copied to clipboard",
+    "copy-port": "Copy port"
   },
   "kafka": {
     "brokers": "Kafka Brokers",
