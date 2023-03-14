@@ -1,12 +1,12 @@
-<div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
+<div class="config-table" fxFlex fxLayout="column" fxLayoutGap="8px">
   <section>
     <span>{{'version.current-version' | translate }}: </span>
-    <a style="font-weight: 600" target="_blank" href="">{{versionData.currentVersion}}</a>
+    <a target="_blank" href="">{{versionData.currentVersion}}</a>
   </section>
   <span *ngIf="!versionData.updateAvailable" [innerHTML]="'version.no-updates-available' | translate"></span>
   <section *ngIf="versionData.updateAvailable">
     <span  [innerHTML]="'version.updates-available' | translate"></span>
-    <a style="font-weight: 600" target="_blank" href="">{{versionData.latestVersion}}</a>
+    <a target="_blank" href="">{{versionData.latestVersion}}</a>
   </section>
   <section *ngIf="versionData.updateAvailable" fxFlex fxLayout="column">
     <span [innerHTML]="'version.release-notes' | translate"></span>

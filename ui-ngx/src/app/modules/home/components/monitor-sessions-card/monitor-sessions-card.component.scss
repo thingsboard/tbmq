@@ -1,0 +1,42 @@
+:host {
+
+  padding: 15px 15px 0 15px;
+
+  .cards {
+    display: flex;
+    justify-content: space-evenly;
+    gap: 18px;
+  }
+
+  .key-value {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    gap: 30px;
+  }
+
+  .key-value:first-child {
+    background-color: #f5f9f8;
+  }
+
+  .key-value:nth-child(2) {
+    background-color: #fff8f8;
+  }
+
+  .key-value:nth-child(3) {
+    background-color: #fcfcfc;
+  }
+
+  .key {
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  .value {
+    font-size: 20px;
+    font-weight: 800;
+  }
+}

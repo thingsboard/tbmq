@@ -1080,3 +1080,116 @@ mat-label {
     margin-bottom: 10px;
   }
 }
+
+.tb-home {
+  display: flex;
+  flex-direction: row;
+  padding: 8px;
+  gap: 8px;
+  background-color: #dcdcdc;
+
+  button {
+    height: 40px;
+  }
+
+  .card {
+    //text-align: center;
+    padding: 8px;
+    background: #f4f4f4;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    flex-grow: 1;
+    border-radius: 10px;
+
+    .title {
+      font-size: 13px;
+      font-weight: 500;
+      //margin-top: auto;
+      color: #6c6c6c;
+      cursor: pointer;
+    }
+  }
+
+  .column {
+    display: flex;
+    gap: 8px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .home-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .flex1 {
+    flex: 1;
+  }
+
+  .flex2 {
+    flex: 2;
+  }
+
+  .config-row {
+    display: flex;
+  }
+
+  .config-table {
+    font-size: 14px;
+    color: #6c6c6c;
+    justify-content: center;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .card-table {
+    flex: 1 0 0;
+    box-sizing: border-box;
+    flex-direction: column;
+    display: flex;
+    justify-content: space-evenly;
+  }
+
+  .cards {
+    display: flex;
+    justify-content: space-evenly;
+    gap: 8px;
+  }
+
+  .key-value {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    gap: 30px;
+  }
+
+  .key-value:first-child {
+    background-color: #f5f9f8;
+  }
+
+  .key-value:nth-child(2) {
+    background-color: #fff8f8;
+  }
+
+  .key-value:nth-child(3) {
+    background-color: #fcfcfc;
+  }
+
+  .key {
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  .value {
+    font-size: 20px;
+    font-weight: 800;
+  }
+}

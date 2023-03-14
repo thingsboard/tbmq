@@ -200,14 +200,14 @@ export function defaultTimewindow(timeService: TimeService): Timewindow {
     selectedTab: TimewindowType.REALTIME,
     realtime: {
       realtimeType: RealtimeWindowType.LAST_INTERVAL,
-      interval: SECOND,
-      timewindowMs: MINUTE,
+      interval: HOUR,
+      timewindowMs: HOUR,
       quickInterval: QuickTimeInterval.CURRENT_DAY
     },
     history: {
       historyType: HistoryWindowType.LAST_INTERVAL,
-      interval: SECOND,
-      timewindowMs: MINUTE,
+      interval: HOUR,
+      timewindowMs: HOUR,
       fixedTimewindow: {
         startTimeMs: currentTime - DAY,
         endTimeMs: currentTime
@@ -732,7 +732,7 @@ export interface TimeInterval {
 }
 
 export const defaultTimeIntervals = new Array<TimeInterval>(
-  {
+  /*{
     name: 'timeinterval.seconds-interval',
     translateParams: {seconds: 1},
     value: SECOND
@@ -786,7 +786,7 @@ export const defaultTimeIntervals = new Array<TimeInterval>(
     name: 'timeinterval.minutes-interval',
     translateParams: {minutes: 30},
     value: 30 * MINUTE
-  },
+  },*/
   {
     name: 'timeinterval.hours-interval',
     translateParams: {hours: 1},

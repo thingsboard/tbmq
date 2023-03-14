@@ -6,4 +6,16 @@
     align-items: stretch;
     flex-direction: column;
   }
+
+  .card-table {
+    box-sizing: border-box;
+    flex-direction: column;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: stretch;
+  }
+
+  a {
+    font-weight: 600;
+  }
 }

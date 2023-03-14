@@ -19,22 +19,34 @@ import { CommonModule } from '@angular/common';
 import { SharedModule } from '@app/shared/shared.module';
 import { StatsComponent } from "@home/pages/stats/stats.component";
 import { StatsRoutingModule } from "@home/pages/stats/stats-routing.module";
-import { ChartComponent } from "@home/components/chart/chart.component";
+import { MonitorChartsComponent } from "@home/components/monitor-charts/monitor-charts.component";
 import { QuickLinksComponent } from "@home/components/quick-links/quick-links.component";
 import { VersionCardComponent } from "@home/components/version-card/version-card.component";
-import { CardThreeItemsComponent } from "@home/components/card-three-items/card-three-items.component";
 import { CardConfigComponent } from "@home/components/card-config/card-config.component";
 import { KafkaTableComponent } from "@home/components/kafka-table/kafka-table.component";
+import { KafkaTopicsTableComponent } from "@home/components/kafka-topics-table/kafka-topics-table.component";
+import { KafkaBrokersTableComponent } from "@home/components/kafka-brokers-table/kafka-brokers-table.component";
+import { KafkaConsumersTableComponent } from "@home/components/kafka-consumers-table/kafka-consumers-table.component";
+import { MonitorCardsComponent } from "@home/components/monitor-cards/monitor-cards.component";
+import {
+  MonitorClientCredentialsCardComponent
+} from "@home/components/monitor-client-credentials-card/monitor-client-credentials-card.component";
+import { MonitorSessionsCardComponent } from "@home/components/monitor-sessions-card/monitor-sessions-card.component";
 
 @NgModule({
   declarations: [
     StatsComponent,
-    ChartComponent,
+    MonitorChartsComponent,
     QuickLinksComponent,
     VersionCardComponent,
-    CardThreeItemsComponent,
+    MonitorCardsComponent,
+    MonitorClientCredentialsCardComponent,
+    MonitorSessionsCardComponent,
     CardConfigComponent,
-    KafkaTableComponent
+    KafkaTableComponent,
+    KafkaTopicsTableComponent,
+    KafkaBrokersTableComponent,
+    KafkaConsumersTableComponent
   ],
   imports: [
     CommonModule,

@@ -19,7 +19,7 @@ import {
   AggregationType,
   DAY,
   defaultTimeIntervals,
-  defaultTimewindow,
+  defaultTimewindow, HOUR, MINUTE,
   SECOND,
   Timewindow
 } from '@shared/models/time/time.models';
@@ -35,7 +35,7 @@ export interface TimeInterval {
   value: number;
 }
 
-const MIN_INTERVAL = SECOND;
+const MIN_INTERVAL = HOUR;
 const MAX_INTERVAL = 365 * 20 * DAY;
 
 const MIN_LIMIT = 7;
@@ -111,7 +111,7 @@ export class TimeService {
 
   public boundIntervalToTimewindow(timewindow: number, intervalMs: number, aggType: AggregationType): number {
     if (aggType === AggregationType.NONE) {
-      return SECOND;
+      return HOUR;
     } else {
       const min = this.minIntervalLimit(timewindow);
       const max = this.maxIntervalLimit(timewindow);
