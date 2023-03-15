@@ -16,6 +16,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { MenuService } from "@core/services/menu.service";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-quick-links',
@@ -26,9 +27,19 @@ export class QuickLinksComponent implements OnInit {
 
   quickLinks$ = this.menuService.quickLinks();
 
-  constructor(private menuService: MenuService) { }
+  constructor(private router: Router,
+              private menuService: MenuService) { }
 
   ngOnInit(): void {
+  }
+
+  navigate(path: string) {
+    if (path === 'rest-api') {
+      const location = window.location.origin + '/swagger-ui.html';
+      window.open(location, '_blank');
+    } else {
+      this.router.navigateByUrl(path);
+    }
   }
 
 }

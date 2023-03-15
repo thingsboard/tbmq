@@ -26,77 +26,30 @@
           <div #row3 fxFlex fxLayout="row" class="column">
             <div #config fxFlex class="card">
               <div class="card-table">
-                <div fxFlex fxLayout="row" fxLayoutAlign="start">
-                  <button mat-button
-                          type="button"
-                          [disabled]="isLoading$ | async"
-                          (click)="viewDocumentation('config')"
-                          matTooltip="{{'home.config' | translate}}">
-                    {{'home.config' | translate}} &#8599;
-                  </button>
-                  <span fxFlex></span>
-                  <button mat-stroked-button color="primary"
-                          type="button"
-                          [disabled]="isLoading$ | async"
-                          (click)="viewDocumentation('config')"
-                          matTooltip="{{'home.config' | translate}}">
-                    {{'home.view-docs' | translate}}
-                  </button>
-                </div>
-                <tb-card-config></tb-card-config>
+                <tb-card-config [isLoading$]="isLoading$"></tb-card-config>
               </div>
             </div>
             <div #kafka3 fxFlex class="card">
               <div class="card-table">
                 <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
-                  <button mat-button type="button"
+                  <button mat-button disabled type="button"
                           matTooltip="{{'kafka.brokers' | translate}}">
                     {{'kafka.brokers' | translate}}
                   </button>
                   <span fxFlex></span>
                 </div>
                 <div class="config-table" fxLayoutGap="16px">
-                  <tb-kafka-brokers-table></tb-kafka-brokers-table>
                 </div>
+                <tb-kafka-brokers-table></tb-kafka-brokers-table>
               </div>
             </div>
           </div>
          <tb-kafka-tables-tab-group></tb-kafka-tables-tab-group>
-          <!--<div #row4 fxFlex fxLayout="row" class="column">
-            <div #kafka1 fxFlex class="card">
-              <div class="card-table">
-                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
-                  <button mat-button type="button"
-                          matTooltip="{{'kafka.topics' | translate}}">
-                    {{'kafka.topics' | translate}}
-                  </button>
-                  <span fxFlex></span>
-                </div>
-                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
-                  <tb-kafka-topics-table></tb-kafka-topics-table>
-                </div>
-              </div>
-            </div>
-            <div #kafka2 fxFlex class="card">
-              <div class="card-table">
-                <div  fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
-                  <button mat-button type="button"
-                          matTooltip="{{'kafka.consumer-groups' | translate}}">
-                    {{'kafka.consumer-groups' | translate}}
-                  </button>
-                  <span fxFlex></span>
-                </div>
-                <div class="config-table" fxFlex fxLayout="column" fxLayoutGap="16px">
-                  <tb-kafka-consumers-table></tb-kafka-consumers-table>
-                </div>
-              </div>
-            </div>
-          </div>-->
           <div #row5 fxFlex fxLayout="row" class="column">
             <div #version fxFlex class="card">
               <div class="card-table">
                 <div fxFlex fxLayout="row" fxLayoutAlign="start">
-                  <button mat-button matTooltip="{{'version.version' | translate}}">
+                  <button mat-button disabled matTooltip="{{'version.version' | translate}}">
                     {{'version.version' | translate}}
                   </button>
                   <span fxFlex></span>
@@ -116,7 +69,7 @@
             <div #quickLinks fxFlex class="card">
               <div class="card-table">
                   <div fxFlex fxLayout="row" fxLayoutAlign="start">
-                    <button mat-button matTooltip="{{'home.quick-links' | translate}}">
+                    <button disabled mat-button matTooltip="{{'home.quick-links' | translate}}">
                       {{'home.quick-links' | translate}}
                     </button>
                     <span fxFlex></span>

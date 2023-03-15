@@ -169,7 +169,7 @@ export class MenuService {
       },
       {
         name: 'home.rest-api',
-        path: '/rest-api',
+        path: 'rest-api',
         icon: 'mdi:api',
         isMdiIcon: true
       }

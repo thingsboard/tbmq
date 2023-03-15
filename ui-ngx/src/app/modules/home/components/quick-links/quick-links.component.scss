@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 :host {
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
+  }
+
   .links {
     display: flex;
     flex-wrap: wrap;

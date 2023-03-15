@@ -20,11 +20,11 @@
     <div fxFlex fxLayout="row">
       <div class="card-table">
         <div fxFlex fxLayout="row" fxLayoutAlign="start">
-          <button mat-button
+          <button mat-button disabled
                   type="button"
                   (click)="viewDocumentation('metrics')"
-                  matTooltip="{{'home.metrics' | translate}}"> <!--[disabled]="isLoading$ | async"-->
-            {{'home.metrics' | translate}} &#8599;
+                  matTooltip="{{'home.metrics' | translate}}">
+            {{'home.metrics' | translate}}
           </button>
           <span fxFlex></span>
           <section>
@@ -40,11 +40,13 @@
         <div fxFlex fxLayout="row" fxLayoutAlign="start">
           <div fxLayout="column" *ngFor="let chart of statsCharts; let $index = index">
             <div style="padding: 4px">
-              <canvas [id]="chart"
-                      style="background-color: transparent;
+              <div fxFlex fxLayout="column" fxLayoutAlign="start center">
+                <span style="font-size: 10px; color: #6c6c6c">{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][0] : '' }}</span>
+                <span style="font-size: 20px; font-weight: 500">{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][1] : '' }}</span>
+              </div>
+              <canvas [id]="chart" style="background-color: transparent;
                                      width: 160px;
-                                     height: 130px;
-                                     border-right: 1px solid #e3e3e3">
+                                     height: 80px;">
               </canvas>
             </div>
           </div>

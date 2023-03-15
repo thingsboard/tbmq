@@ -19,6 +19,15 @@ import { Router } from "@angular/router";
 import { forkJoin, Observable, Subject, timer } from "rxjs";
 import { retry, switchMap, takeUntil } from "rxjs/operators";
 import { StatsService } from "@core/http/stats.service";
+import { MatDialog } from '@angular/material/dialog';
+import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { BaseData } from '@shared/models/base-data';
+import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 
 @Component({
   selector: 'tb-monitor-cards',
@@ -28,7 +37,7 @@ import { StatsService } from "@core/http/stats.service";
 export class MonitorCardsComponent implements OnInit, AfterViewInit {
 
   @Input()
-  isLoading$: Observable<boolean>
+  isLoading$: Observable<boolean>;
 
   pollData$: Observable<any>;
   private stopPolling = new Subject();
@@ -37,6 +46,8 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit {
   clientCredentialsValue: any;
 
   constructor(private statsService: StatsService,
+              private dialog: MatDialog,
+              private mqttClientCredentialsService: MqttClientCredentialsService,
               private router: Router) { }
 
   ngOnInit(): void {
@@ -50,12 +61,35 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit {
     );
   }
 
-  viewDocumentation(type) {
-    this.router.navigateByUrl('');
+  viewDocumentation(page: string) {
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  navigateToPage(type) {
-    this.router.navigateByUrl('');
+  navigateToPage(page: string) {
+    this.router.navigateByUrl(`/${page}`);
+  }
+
+  addClientCredentials() {
+    const config = new EntityTableConfig<MqttClientCredentials>();
+    config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    config.entityComponent = MqttClientCredentialsComponent;
+    config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    const $entity = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<MqttClientCredentials>,
+      MqttClientCredentials>(AddEntityDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        entitiesTableConfig: config
+      }
+    }).afterClosed();
+    $entity.subscribe(
+      (entity) => {
+        if (entity) {
+          this.mqttClientCredentialsService.saveMqttClientCredentials(entity).subscribe();
+        }
+      }
+    );
   }
 
   ngAfterViewInit(): void {

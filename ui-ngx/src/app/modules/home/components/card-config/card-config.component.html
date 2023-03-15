@@ -15,6 +15,22 @@
     limitations under the License.
 
 -->
+<div fxFlex fxLayout="row" fxLayoutAlign="start">
+  <button mat-button disabled
+          type="button"
+          (click)="viewDocumentation('metrics')"
+          matTooltip="{{'home.config' | translate}}">
+    {{'home.config' | translate}}
+  </button>
+  <span fxFlex></span>
+  <button mat-stroked-button color="primary"
+          type="button"
+          [disabled]="isLoading$ | async"
+          (click)="viewDocumentation('config')"
+          matTooltip="{{'home.config' | translate}}">
+    {{'home.view-docs' | translate}}
+  </button>
+</div>
 <div fxFlex fxLayout="column" class="config-card-container">
   <div *ngFor="let item of overviewConfig | async">
     <div fxFlex fxLayout="row">

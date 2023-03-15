@@ -22,7 +22,7 @@
         <button mat-button
                 type="button"
                 [disabled]="isLoading$ | async"
-                (click)="navigateToPage('session')"
+                (click)="navigateToPage('sessions')"
                 matTooltip="{{'mqtt-client-session.sessions' | translate}}">
           {{'mqtt-client-session.sessions' | translate}} &#8599;
         </button>
@@ -46,24 +46,24 @@
         <button mat-button
                 type="button"
                 [disabled]="isLoading$ | async"
-                (click)="navigateToPage('session')"
+                (click)="navigateToPage('client-credentials')"
                 matTooltip="{{'mqtt-client-credentials.type-client-credentials' | translate}}">
           {{'mqtt-client-credentials.type-client-credentials' | translate}} &#8599;
         </button>
         <span fxFlex></span>
+        <button mat-raised-button color="primary"
+                type="button"
+                [disabled]="isLoading$ | async"
+                (click)="addClientCredentials()"
+                matTooltip="{{'mqtt-client-credentials.add' | translate}}">
+          {{'mqtt-client-credentials.add-client' | translate}}
+        </button>
         <button mat-stroked-button color="primary"
                 type="button"
                 [disabled]="isLoading$ | async"
                 (click)="viewDocumentation('client-credentials')"
-                matTooltip="{{'mqtt-client-session.sessions' | translate}}">
+                matTooltip="{{'mqtt-client-credentials.client-credentials' | translate}}">
           {{'home.view-docs' | translate}}
-        </button>
-        <button mat-raised-button color="primary"
-                type="button"
-                [disabled]="isLoading$ | async"
-                (click)="viewDocumentation('session')"
-                matTooltip="{{'mqtt-client-credentials.add' | translate}}">
-          {{'mqtt-client-credentials.add-client' | translate}}
         </button>
       </div>
       <span fxFlex></span>

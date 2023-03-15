@@ -37,4 +37,8 @@
     line-height: 9px;
     padding: 0 1em 0 1em;
   }
+
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
+  }
 }

@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
-import { of } from "rxjs";
+import { Component, Input, OnInit } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { ConfigParams, ConfigParamsTranslationMap } from "@shared/models/stats.model";
 import { ActionNotificationShow } from "@core/notification/notification.actions";
 import { Store } from "@ngrx/store";
 import { AppState } from "@core/core.state";
 import { TranslateService } from "@ngx-translate/core";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-card-config',
@@ -67,7 +68,10 @@ export class CardConfigComponent implements OnInit {
     }
   ]);
 
+  @Input() isLoading$: Observable<boolean>;
+
   constructor(protected store: Store<AppState>,
+              private router: Router,
               private translate: TranslateService) { }
 
   ngOnInit(): void {
@@ -83,6 +87,14 @@ export class CardConfigComponent implements OnInit {
         verticalPosition: 'top',
         horizontalPosition: 'left'
       }));
+  }
+
+  viewDocumentation(page: string) {
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
+  }
+
+  navigateToPage(page: string) {
+    this.router.navigateByUrl(`/${page}`);
   }
 
 }

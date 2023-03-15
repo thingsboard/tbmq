@@ -16,4 +16,7 @@
 @import "../../../../../scss/constants";
 
 :host {
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
+  }
 }

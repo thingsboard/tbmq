@@ -17,7 +17,7 @@
 -->
 <div fxFlex class="links">
   <div class="link" *ngFor="let section of quickLinks$ | async">
-    <a mat-button>
+    <a mat-button (click)="navigate(section.path)">
       <mat-icon color="primary" [svgIcon]="section.icon"></mat-icon>
       <span>{{section.name | translate}}</span>
     </a>
