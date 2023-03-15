@@ -595,5 +595,18 @@
     "brokers": "Kafka Brokers",
     "topics": "Kafka Topics",
     "consumer-groups": "Kafka Consumer Groups"
+  },
+  "getting-started": {
+    "get-started": "Get started",
+    "start-session": {
+      "add": "View all client sessions, click on the row to open session details",
+      "details": "View the client session details"
+    },
+    "connect-client": {
+      "add": "Add Client Credentials",
+      "name": "Input credentials name. For example, 'Getting Started Credentials'. Choose 'Device' client type and 'MQTT Basic' credentials type.",
+      "username": "Input 'username' and 'password' with chosen values, add publish authorization pattern to be able to publish to certain topics. For example,\n'home/.*' will allow publishing to all topics starting with 'home/'.",
+      "save": "Click 'Save' to save credentials"
+    }
   }
 }
