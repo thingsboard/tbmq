@@ -45,10 +45,10 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ClientSessionInfo> filteredByTextSearch = filterClientSessionInfos(allClientSessions, pageLink);
 
         List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
-                .skip((long) pageLink.getPage() * pageLink.getPageSize())
-                .limit(pageLink.getPageSize())
                 .map(this::toShortSessionInfo)
                 .sorted(sorted(pageLink))
+                .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
         return new PageData<>(data,
