@@ -583,6 +583,7 @@
     "copy-port": "Copy port"
   },
   "kafka": {
+    "address": "Address",
     "name": "Name",
     "partitions": "Partitions",
     "replicas": "Replicas",

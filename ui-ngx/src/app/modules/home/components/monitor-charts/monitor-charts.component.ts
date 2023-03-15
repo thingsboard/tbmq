@@ -49,7 +49,6 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
   chartsLatestValues = {};
   statsCharts = Object.values(StatsChartType);
   pollChartsData$: Observable<any>;
-  colors = ['#65655e', '#b0a3d4', '#7d80da', '#c6afb1', '#79addc'];
 
   private statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private stopPolling$ = new Subject();
@@ -90,30 +89,33 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   getColor(index) {
-    var colors = ['#65655e', '#b0a3d4', '#7d80da', '#c6afb1', '#79addc'];
+    var colors = ['#65655e', '#c6afb1', '#b0a3d4', '#7d80da', '#79addc'];
     return colors[index];
   }
 
   initCharts(data) {
     let index = 0;
+    // tslint:disable-next-line:forin
     for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
-      let ctx = document.getElementById(chart) as HTMLCanvasElement;
-      let label = this.translate.instant(this.statChartTypeTranslationMap.get(<StatsChartType> chart));
-      let lastValue = data[chart].length ? data[chart][data[chart].length - 1].value : 0;
-      let dataSet = {
-        label: label,
+      const ctx = document.getElementById(chart) as HTMLCanvasElement;
+      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
+      const lastValue = data[chart].length ? data[chart][data[chart].length - 1].value : 0;
+      const dataSet = {
+        label,
         fill: false,
-        backgroundColor: this.getColor(index),
+        // backgroundColor: this.getColor(index),
         borderColor: this.getColor(index),
-        hoverBackgroundColor: this.getColor(index),
-        hoverBorderColor: this.getColor(index),
-        borderWidth: 3,
+        // hoverBackgroundColor: this.getColor(index),
+        // hoverBorderColor: this.getColor(index),
+        borderWidth: 2,
         data: this.transformData(data[chart])
       };
       this.charts[chart] = new Chart(ctx, {
         type: 'line',
-        data: {datasets: [dataSet]},
+        data: {
+          datasets: [dataSet]
+        },
         options: {
           elements: {
             point: {
@@ -198,7 +200,6 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     for (const key of Object.keys(this.charts)) {
       this.chartsLatestValues[key] = this.charts[key].options.title.text;
     }
-    console.log('this.chartsLatestValues', this.chartsLatestValues)
     this.cd.detectChanges();
   }
 
