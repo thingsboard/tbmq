@@ -14,9 +14,11 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { TranslateService } from "@ngx-translate/core";
 import { MatAccordion } from '@angular/material/expansion';
+import { of } from 'rxjs';
+import { number } from 'prop-types';
 
 @Component({
   selector: 'tb-getting-started',
@@ -25,40 +27,85 @@ import { MatAccordion } from '@angular/material/expansion';
 })
 export class GettingStartedComponent implements OnInit {
 
-  @ViewChild(MatAccordion) accordion: MatAccordion;
-  step1: boolean;
-  step2: boolean;
-  step3: boolean;
-  step4: boolean;
-  step5: boolean;
-  step6: boolean;
+  steps = of([
+    {
+      position: 1,
+      title: 'Create client',
+      showButton: false,
+      buttonTitle: 'Add client',
+      isOpen: false
+    },
+    {
+      position: 2,
+      title: 'Subscribe for topic',
+      showButton: false,
+      isOpen: false
+    },
+    {
+      position: 3,
+      title: 'Publish message',
+      showButton: false,
+      isOpen: false
+    },
+    {
+      position: 4,
+      title: 'Disconnect client',
+      showButton: false,
+      isOpen: false
+    }
+  ]);
 
-  constructor(private translate: TranslateService) { }
+  @ViewChild(MatAccordion) accordion: MatAccordion;
+
+  expandedStep = 1;
+
+  constructor(private translate: TranslateService,
+              private cd: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     console.log('this.accordion', this.accordion);
   }
 
-  expandedChange(step: number) {
-    switch (step) {
+  expandedChange(index: number) {
+    this.expandedStep = index;
+    this.cd.detectChanges();
+  }
+
+  stepActive(index): boolean {
+    console.log('this.expandedStepIndex', this.expandedStep);
+    return index + 1 === this.expandedStep;
+  }
+
+  stepDone(index): boolean {
+    return this.expandedStep > index + 1;
+  }
+
+  stepNotDone(index): boolean {
+    return this.expandedStep < index + 1 ;
+  }
+
+  getContent(position: number) {
+    switch (position) {
       case 1:
-        // this.step2 = !this.step1;
-        break;
+        return this.translate.instant('getting-started.connect-client.add') + '<br><br>' +
+          this.translate.instant('getting-started.connect-client.name') + '<br><br>' +
+          this.translate.instant('getting-started.connect-client.username') + '<br><br>' +
+          this.translate.instant('getting-started.connect-client.save');
       case 2:
-        // this.step1 = !this.step1;
-        break;
+        return this.translate.instant('getting-started.start-session.add') + '<br><br>' +
+          this.translate.instant('getting-started.start-session.details');
       case 3:
-        // this.step3 = !this.step3;
-        break;
+        return 'Once you have a connected client, you can also publish messages to a topic:\n' +
+          '\n' +
+          '              tabs: Linux/Windows/Mac OS:\n' +
+          '\n' +
+          '              mosquitto_pub -h localhost -p 1883 -V mqttv5 -t test_topic -q 1 -m "Hello, MQTT"';
       case 4:
-        // this.step3 = !this.step3;
-        break;
+        return 'Once you are finished using the client, you can disconnect the client.';
       case 5:
-        // this.step3 = !this.step3;
-        break;
+        return 'Change password';
       case 6:
-        // this.step3 = !this.step3;
-        break;
+        return 'Add admins';
     }
   }
 }

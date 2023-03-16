@@ -27,196 +27,35 @@
         </div>
         <div fxFlex fxLayout="row" fxLayoutAlign="start">
           <mat-accordion class="example-headers-align">
-            <mat-expansion-panel (expandedChange)="expandedChange(1)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step1">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
+            <ng-container *ngFor="let step of steps | async; let index = index;">
+              <mat-expansion-panel [expanded]="index === 0">
+                <mat-expansion-panel-header (click)="expandedChange(step.position)">
+                  <mat-panel-title>
+                    <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
+                      <div class="step-expansion-header">
+                        <span class="step-icon"
+                              [ngClass]="{'step-done': stepDone(index),
+                                          'material-icons': stepDone(index),
+                                          'step-not-done' : stepNotDone(index),
+                                          'step-active' : stepActive(index)}">
+                          {{step.position}}
+                        </span>
+                        <span style="padding-left: 8px">
+                          {{step.title}}
+                        </span>
                       </div>
-                      <span *ngIf="!step1" class="icon-number">1</span>
-                      <span style="padding-left: 8px">Create client</span>
-                    </div>
-                    <div style="align-self: end">
-                      <button mat-button>Add Client</button>
-                    </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-
-              <span [innerHTML]="'getting-started.connect-client.add' | translate"></span>
-              <br><br>
-              <span [innerHTML]="'getting-started.connect-client.name' | translate"></span>
-              <br><br>
-              <span [innerHTML]="'getting-started.connect-client.username' | translate"></span>
-              <br><br>
-              <span [innerHTML]="'getting-started.connect-client.save' | translate"></span>
-
-            </mat-expansion-panel>
-
-            <mat-expansion-panel (expandedChange)="expandedChange(2)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step2">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
+                      <div *ngIf="step.showButton" style="align-self: end">
+                        <button mat-button>{{step.buttonTitle}}</button>
                       </div>
-                      <span *ngIf="!step2" class="icon-number">2</span>
-                      <span style="padding-left: 8px">Subscribe for MQTT topic</span>
                     </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-              <span [innerHTML]="'getting-started.start-session.add' | translate"></span>
-              <br><br>
-              <span [innerHTML]="'getting-started.start-session.details' | translate"></span>
-            </mat-expansion-panel>
-
-            <mat-expansion-panel (expandedChange)="expandedChange(3)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step3">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-                      </div>
-                      <span *ngIf="!step3" class="icon-number">3</span>
-                      <span style="padding-left: 8px">Publish message</span>
-                    </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-
-              Once you have a connected client, you can also publish messages to a topic:
-
-              tabs: Linux/Windows/Mac OS:
-
-              mosquitto_pub -h localhost -p 1883 -V mqttv5 -t test_topic -q 1 -m "Hello, MQTT"
-
-
-            </mat-expansion-panel>
-
-            <mat-expansion-panel (expandedChange)="expandedChange(4)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step4">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-                      </div>
-                      <span *ngIf="!step4" class="icon-number">4</span>
-                      <span style="padding-left: 8px">Disconnect client</span>
-                    </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-              Once you are finished using the client, you can disconnect the client.
-
-              <button>Sessions</button>
-
-            </mat-expansion-panel>
-
-            <mat-expansion-panel (expandedChange)="expandedChange(5)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step5">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-                      </div>
-                      <span *ngIf="!step5" class="icon-number">5</span>
-                      <span style="padding-left: 8px">Change password</span>
-                    </div>
-                    <div style="align-self: end">
-                      <button mat-button>Change Password</button>
-                    </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-              Change password
-            </mat-expansion-panel>
-
-            <mat-expansion-panel (expandedChange)="expandedChange(5)">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                    <div class="step-header">
-                      <div *ngIf="step6">
-                        <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-                      </div>
-                      <span *ngIf="!step6" class="icon-number">6</span>
-                      <span style="padding-left: 8px">Add admins</span>
-                    </div>
-                    <div style="align-self: end">
-                      <button mat-button>Add User</button>
-                    </div>
-                  </div>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-              Add admins
-            </mat-expansion-panel>
-
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <span [innerHTML]="getContent(step.position)"></span>
+              </mat-expansion-panel>
+            </ng-container>
           </mat-accordion>
-
-
         </div>
       </div>
     </div>
   </div>
 </div>
-
-
-
-<!--<div #row4 class="home-column flex1">
-  <mat-accordion class="example-headers-align">
-    <mat-expansion-panel (expandedChange)="expandedChange(1)">
-      <mat-expansion-panel-header>
-          <mat-panel-title>
-            <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-              <div class="step-header">
-                <div *ngIf="step1">
-                  <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-                </div>
-                <span *ngIf="!step1" class="icon-number">1</span>
-                <span style="padding-left: 8px">Create session</span>
-              </div>
-              <div style="align-self: end">
-                <button mat-button>View sessions</button>
-              </div>
-            </div>
-          </mat-panel-title>
-      </mat-expansion-panel-header>
-      <span [innerHTML]="'getting-started.start-session.add' | translate"></span>
-      <br><br>
-      <span [innerHTML]="'getting-started.start-session.details' | translate"></span>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel (expandedChange)="expandedChange(2)">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-            <div class="step-header">
-              <div *ngIf="step2">
-                <mat-icon class="material-icons material-icons-expansion">check</mat-icon>
-              </div>
-              <span *ngIf="!step2" class="icon-number">2</span>
-              <span style="padding-left: 8px">Create Credentials</span>
-            </div>
-            <div style="align-self: end">
-              <button mat-button>Create Credentials</button>
-            </div>
-          </div>
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-      <span [innerHTML]="'getting-started.connect-client.add' | translate"></span>
-      <br><br>
-      <span [innerHTML]="'getting-started.connect-client.name' | translate"></span>
-      <br><br>
-      <span [innerHTML]="'getting-started.connect-client.username' | translate"></span>
-      <br><br>
-      <span [innerHTML]="'getting-started.connect-client.save' | translate"></span>
-    </mat-expansion-panel>
-  </mat-accordion>
-</div>-->
