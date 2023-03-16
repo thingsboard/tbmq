@@ -22,25 +22,55 @@ availabilityZones: [ eu-west-1a,eu-west-1b,eu-west-1c ]
 metadata:
   name: thingsboard-mqtt-broker-cluster
   region: eu-west-1
-  version: "1.24"
+  version: "1.22"
 
 managedNodeGroups:
   - name: tb-mqtt-broker
     instanceType: m6a.2xlarge
     desiredCapacity: 1
-    maxSize: 10
-    minSize: 1
+    maxSize: 1
+    minSize: 0
     labels: { role: tb-mqtt-broker }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
   - name: tb-perf-test
     instanceType: c5.large
     desiredCapacity: 1
-    maxSize: 21
-    minSize: 1
+    maxSize: 1
+    minSize: 0
     labels: { role: tb-perf-test }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
+    ami: ami-0bf7b00321bd68560
+    amiFamily: AmazonLinux2
+    overrideBootstrapCommand: |
+      #!/bin/bash
+      /etc/eks/bootstrap.sh thingsboard-mqtt-broker-cluster \
+        --container-runtime dockerd \
+        --use-max-pods true \
+        --docker-config-json '{
+        "bridge":"none",
+        "log-driver":"json-file",
+        "log-opts":{
+          "max-size":"10m",
+          "max-file":"10"
+        },
+        "live-restore":true,
+        "max-concurrent-downloads":10,
+        "default-ulimits":{
+          "memlock":{
+            "Hard":-1,
+            "Name":"memlock",
+            "Soft":-1
+          },
+          "nofile":{
+            "Hard":2097152,
+            "Name":"nofile",
+            "Soft":2097152
+          }
+        }
+      }' \
+        --kubelet-extra-args "--node-labels=alpha.eksctl.io/cluster-name=thingsboard-mqtt-broker-cluster,alpha.eksctl.io/nodegroup-name=tb-perf-test,alpha.eksctl.io/nodegroup-type=managed"    
 
 # In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 # eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
