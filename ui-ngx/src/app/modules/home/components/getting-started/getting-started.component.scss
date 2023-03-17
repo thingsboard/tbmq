@@ -59,4 +59,155 @@
   .mat-button:disabled {
     color: rgba(0,0,0,0.87);
   }
+
+  .mat-expansion-panel button {
+    margin-left: 0;
+  }
+
+  a {
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .code-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 20px 8px 20px 8px;
+    max-width: 400px;
+    overflow-x: scroll;
+    white-space: nowrap;
+  }
+
+  .config-material-icon {
+    color: #0a5b25;
+    cursor: pointer;
+    line-height: 2em;
+    height: 24px;
+    width: 24px;
+    font-size: 20px;
+  }
+
+  ::ng-deep .mat-tab-label {
+    min-width: 100px !important;
+  }
+
+  .tb-markdown-view {
+    display: block;
+    ::ng-deep {
+      h1 {
+        font-size: 32px;
+        padding-right: 60px;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        line-height: normal;
+        font-weight: 500;
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ccc;
+      }
+
+      p {
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.25em;
+        margin: 0;
+      }
+
+      p+p {
+        margin-top: 10px;
+      }
+
+      table {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-spacing: 0;
+        margin-top: 30px;
+        margin-bottom: 30px;
+      }
+
+      thead {
+        background-color: #555;
+        color: #fff;
+      }
+
+      th, td {
+        font-size: .85em;
+        padding: 8px;
+        margin: 0;
+        text-align: left;
+      }
+
+      td[align=center], th[align=center] {
+        text-align: center;
+      }
+
+      td[align=right], th[align=right] {
+        text-align: right;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f7f7f7;
+      }
+
+      code:not([class*=language-]) {
+        background: #f5f5f5;
+        border-radius: 2px;
+        color: #dd4a68;
+        padding: 2px 4px;
+      }
+
+      div.code-wrapper {
+        position: relative;
+        button.clipboard-btn {
+          cursor: pointer;
+          margin: 0;
+          border: 0;
+          outline: none;
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          background: #fff;
+          box-shadow: 0 1px 8px 0 rgba(0,0,0,0.2), 0 3px 4px 0 rgba(0,0,0,0.14), 0 3px 3px -2px rgba(0,0,0,0.12);
+          border-radius: 5px;
+          opacity: 0;
+          transition: opacity .3s;
+          padding: 3px 6px;
+          line-height: 16px;
+          img {
+            width: 18px;
+          }
+          &:hover {
+            background: #f9f9f9;
+          }
+          &:active {
+            background-color: #ececec;
+            box-shadow: inset 1px -1px 4px 0px rgba(0,0,0,0.4);
+          }
+        }
+        &:hover {
+          button.clipboard-btn {
+            opacity: .85;
+          }
+        }
+      }
+
+      th, td {
+        div.code-wrapper {
+          display: inline-block;
+          button.clipboard-btn {
+            top: -5px;
+            right: -30px;
+            padding: 0 3px;
+          }
+        }
+      }
+
+    }
+  }
+
 }
