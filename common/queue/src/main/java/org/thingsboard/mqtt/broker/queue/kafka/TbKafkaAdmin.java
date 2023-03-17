@@ -17,16 +17,19 @@ package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.ConsumerGroupListing;
 import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
-import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.ListConsumerGroupsResult;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.ReplicaInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.ConsumerGroupState;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
@@ -35,6 +38,9 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -159,9 +165,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     public ClusterInfo getClusterInfo() {
         try {
             DescribeClusterResult describeClusterResult = client.describeCluster();
-            Node controllerNode = describeClusterResult.controller().get();
-
-            Map<Integer, Node> brokerNodes = describeClusterResult.nodes().get().stream().collect(Collectors.toMap(Node::id, Function.identity()));
+            Map<Integer, Node> brokerNodes = describeClusterResultToNodes(describeClusterResult);
             DescribeLogDirsResult describeLogDirsResult = client.describeLogDirs(brokerNodes.keySet());
             Map<Integer, Map<String, LogDirDescription>> logDirDescriptionsPerBroker = describeLogDirsResult.allDescriptions().get();
 
@@ -177,6 +181,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 }
                 kafkaBrokers.add(new KafkaBroker(brokerId, brokerNodes.get(brokerId).host(), brokerTotalSize));
             }
+            Node controllerNode = describeClusterResult.controller().get();
             return new ClusterInfo(controllerNode.id(), kafkaBrokers);
         } catch (InterruptedException | ExecutionException e) {
             log.warn("Failed to get Kafka cluster info", e);
@@ -185,59 +190,89 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void getTopics() {
+    public List<KafkaTopic> getTopics() {
         try {
-            ListTopicsResult listTopicsResult = client.listTopics();
-            Set<String> topics = listTopicsResult.names().get();
+            Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
+            Set<String> topics = client.listTopics().names().get();
+            Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).all().get();
 
-            Map<String, TopicDescription> topicDescriptionMap = client.describeTopics(topics).all().get();
-
-
-            for (Map.Entry<String, TopicDescription> entry : topicDescriptionMap.entrySet()) {
-
-                String topic = entry.getKey();
-                TopicDescription topicDescription = entry.getValue();
+            for (Map.Entry<String, TopicDescription> topicDescriptionEntry : topicDescriptionsMap.entrySet()) {
+                String topic = topicDescriptionEntry.getKey();
+                TopicDescription topicDescription = topicDescriptionEntry.getValue();
+                kafkaTopicsMap.put(topic, createKafkaTopic(topic, topicDescription));
             }
 
-
-            DescribeClusterResult describeClusterResult = client.describeCluster();
-
-            Map<Integer, Node> brokerNodes = describeClusterResult.nodes().get().stream().collect(Collectors.toMap(Node::id, Function.identity()));
+            Map<Integer, Node> brokerNodes = describeClusterResultToNodes(client.describeCluster());
             DescribeLogDirsResult describeLogDirsResult = client.describeLogDirs(brokerNodes.keySet());
             Map<Integer, Map<String, LogDirDescription>> logDirDescriptionsPerBroker = describeLogDirsResult.allDescriptions().get();
 
-            Map<String, Long> topicsSize = new HashMap<>();
+            Map<String, Long> kafkaTopicSizesMap = new HashMap<>();
 
-            for (Map.Entry<Integer, Map<String, LogDirDescription>> entry : logDirDescriptionsPerBroker.entrySet()) {
-                int brokerId = entry.getKey();
-                long brokerTotalSize = 0L;
-                for (LogDirDescription logDirDescription : entry.getValue().values()) {
+            for (Map.Entry<Integer, Map<String, LogDirDescription>> logDirDescriptionsEntry : logDirDescriptionsPerBroker.entrySet()) {
+                for (LogDirDescription logDirDescription : logDirDescriptionsEntry.getValue().values()) {
                     for (Map.Entry<TopicPartition, ReplicaInfo> topicReplicaInfoEntry : logDirDescription.replicaInfos().entrySet()) {
 
-
                         String topic = topicReplicaInfoEntry.getKey().topic();
-
                         long size = topicReplicaInfoEntry.getValue().size();
 
-                        topicsSize.compute(topic, (s, currentSize) -> {
+                        kafkaTopicSizesMap.compute(topic, (s, currentSize) -> {
                             if (currentSize == null) {
                                 currentSize = 0L;
                             }
                             return currentSize + size;
                         });
-
-
                     }
                 }
             }
 
-
-        } catch (InterruptedException | ExecutionException e) {
+            for (Map.Entry<String, Long> kafkaTopicSizeEntry : kafkaTopicSizesMap.entrySet()) {
+                KafkaTopic kafkaTopic = kafkaTopicsMap.get(kafkaTopicSizeEntry.getKey());
+                if (kafkaTopic != null) {
+                    kafkaTopic.setSize(kafkaTopicSizeEntry.getValue());
+                }
+            }
+            return new ArrayList<>(kafkaTopicsMap.values());
+        } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
             throw new RuntimeException(e);
         }
+    }
 
+    @Override
+    public List<KafkaConsumerGroup> getConsumerGroups() {
+        try {
+            ListConsumerGroupsResult listConsumerGroupsResult = client.listConsumerGroups();
+            List<KafkaConsumerGroup> consumerGroupListings = listConsumerGroupsResult.all().get().stream()
+                    .map(consumerGroupListing -> {
+                        KafkaConsumerGroup kafkaConsumerGroup = new KafkaConsumerGroup();
+                        kafkaConsumerGroup.setGroupId(consumerGroupListing.groupId());
+                        ConsumerGroupState consumerGroupState = consumerGroupListing.state().orElse(ConsumerGroupState.UNKNOWN);
+                        KafkaConsumerGroupState state = KafkaConsumerGroupState.toState(consumerGroupState.toString());
+                        kafkaConsumerGroup.setState(state);
+                        return kafkaConsumerGroup;
+                    }).collect(Collectors.toList());
+            List<String> groupIds = consumerGroupListings.stream().map(KafkaConsumerGroup::getGroupId).collect(Collectors.toList());
+
+            DescribeConsumerGroupsResult describeConsumerGroupsResult = client.describeConsumerGroups(groupIds);
+            Map<String, ConsumerGroupDescription> stringConsumerGroupDescriptionMap = describeConsumerGroupsResult.all().get();
+            return null;
+        } catch (Exception e) {
+            log.warn("Failed to get Kafka consumer groups", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<Integer, Node> describeClusterResultToNodes(DescribeClusterResult describeClusterResult) throws InterruptedException, ExecutionException {
+        return describeClusterResult.nodes().get().stream().collect(Collectors.toMap(Node::id, Function.identity()));
+    }
+
+    private KafkaTopic createKafkaTopic(String topic, TopicDescription topicDescription) {
+        KafkaTopic kafkaTopic = new KafkaTopic();
+        kafkaTopic.setName(topic);
+        kafkaTopic.setPartitions(topicDescription.partitions().size());
+        kafkaTopic.setReplicationFactor(topicDescription.partitions().get(0).replicas().size());
+        return kafkaTopic;
     }
 
     private int extractPartitionsNumber(Map<String, String> topicConfigs) {

@@ -26,10 +26,13 @@ import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -64,11 +67,33 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/teeeeeeest", method = RequestMethod.GET)
+    @RequestMapping(value = "/cluster-info", method = RequestMethod.GET)
     @ResponseBody
-    public ClusterInfo getCluster() throws ThingsboardException {
+    public ClusterInfo getKafkaClusterInfo() throws ThingsboardException {
         try {
             return tbQueueAdmin.getClusterInfo();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/kafka-topics", method = RequestMethod.GET)
+    @ResponseBody
+    public List<KafkaTopic> getKafkaTopics() throws ThingsboardException {
+        try {
+            return tbQueueAdmin.getTopics();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/consumer-groups", method = RequestMethod.GET)
+    @ResponseBody
+    public List<KafkaConsumerGroup> getKafkaConsumerGroups() throws ThingsboardException {
+        try {
+            return tbQueueAdmin.getConsumerGroups();
         } catch (Exception e) {
             throw handleException(e);
         }
