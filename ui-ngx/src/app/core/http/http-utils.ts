@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import {InterceptorHttpParams} from '../interceptors/interceptor-http-params';
-import {HttpHeaders} from '@angular/common/http';
-import {InterceptorConfig} from '../interceptors/interceptor-config';
+import { InterceptorHttpParams } from '../interceptors/interceptor-http-params';
+import { HttpHeaders } from '@angular/common/http';
+import { InterceptorConfig } from '../interceptors/interceptor-config';
 
 export interface RequestConfig {
   ignoreLoading?: boolean;

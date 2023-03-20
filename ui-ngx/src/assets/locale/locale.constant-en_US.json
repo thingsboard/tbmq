@@ -599,6 +599,7 @@
   "getting-started": {
     "get-started": "Get started",
     "see-docs": "See Docs",
+    "view-credentials": "View my Credentials",
     "subscribe": {
       "info": "The second step is to setup your subscriptions.<br><br>For demo purpose we will use  an open source message broker <a href='' target='_blank'>Eclipse Mosquitto</a>.<br><br>Use simple commands to install Mosquitto broker and subscribe for topic:"
     },

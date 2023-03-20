@@ -14,24 +14,28 @@
 /// limitations under the License.
 ///
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
+import { $e } from 'codelyzer/angular/styles/chars';
 
 @Component({
-  selector: 'tb-mail-server',
+  selector: 'tb-home',
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.scss']
 })
-export class StatsComponent extends PageComponent implements OnInit, OnDestroy {
+export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  mqttPort: number;
 
   private destroy$ = new Subject();
 
   constructor(protected store: Store<AppState>,
-              private router: Router) {
+              private router: Router,
+              private cd: ChangeDetectorRef) {
     super(store);
   }
 
@@ -50,5 +54,15 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy {
 
   navigateToPage(type) {
     this.router.navigateByUrl('');
+  }
+
+  setMqttPort($event) {
+    if ($event) {
+      this.mqttPort = $event;
+    }
+  }
+
+  ngAfterViewInit(): void {
+    this.cd.detectChanges();
   }
 }

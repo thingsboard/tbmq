@@ -1,5 +1,5 @@
-### Subscribe
+Once you are finished using the client, you can disconnect it with the following instructions:
 
-Once you are finished using the client, you can disconnect the client.
-
-Click Disconnect.
+1. Go to the [Sessions](/sessions) page
+2. Click on the session in the table
+3. Click **Disconnect client**

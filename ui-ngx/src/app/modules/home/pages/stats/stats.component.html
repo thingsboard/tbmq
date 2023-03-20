@@ -26,7 +26,7 @@
           <div #row3 fxFlex fxLayout="row" class="column">
             <div #config fxFlex class="card">
               <div class="card-table">
-                <tb-card-config [isLoading$]="isLoading$"></tb-card-config>
+                <tb-card-config [isLoading$]="isLoading$" (sharedConfigParams)="setMqttPort($event)"></tb-card-config>
               </div>
             </div>
             <div #kafka3 fxFlex class="card">
@@ -85,7 +85,7 @@
     </div>
     <div #col1 fxLayout="column" class="flex1">
       <div class="card">
-        <tb-getting-started></tb-getting-started>
+        <tb-getting-started [configParams]="mqttPort"></tb-getting-started>
       </div>
     </div>
   </div>

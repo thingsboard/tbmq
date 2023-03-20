@@ -18,10 +18,10 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { StatsChartType, TimeseriesData } from "@shared/models/stats.model";
-import { isDefinedAndNotNull } from "@core/utils";
-import { AggregationType } from "@shared/models/time/time.models";
-import { Direction } from "@shared/models/page/sort-order";
+import { StatsChartType, TimeseriesData } from '@shared/models/stats.model';
+import { isDefinedAndNotNull } from '@core/utils';
+import { AggregationType } from '@shared/models/time/time.models';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable({
   providedIn: 'root'
@@ -63,7 +63,7 @@ export class StatsService {
       for (let i = 0; i < 10; i++) {
         ts = ts + (5 * 1000);
         let value = Math.floor(Math.random() * 10) + 5;
-        data.push({ value, ts });
+        data.push({value, ts});
       }
       dataset[chart] = data;
     }
@@ -78,7 +78,7 @@ export class StatsService {
       let ts = Date.now() + (10 * 1000);
       for (let i = 0; i < randomValuesNumber; i++) {
         let value = Math.floor(Math.random() * 10) + 5;
-        data.push({ value, ts });
+        data.push({value, ts});
       }
       dataset[chart] = data;
     }
@@ -89,13 +89,13 @@ export class StatsService {
     const connected = Math.floor(Math.random() * 10) + 5;
     const disconnected = Math.floor(Math.random() * 10) + 5;
     const total = connected + disconnected;
-    return of({ connected, disconnected, total });
+    return of({connected, disconnected, total});
   }
 
   public getClientCredentialsInfoMock(config?: RequestConfig) {
     const devices = Math.floor(Math.random() * 10) + 5;
     const applications = Math.floor(Math.random() * 10) + 5;
     const total = devices + applications;
-    return of({ devices, applications, total });
+    return of({devices, applications, total});
   }
 }

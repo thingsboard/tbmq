@@ -29,7 +29,7 @@
           <mat-accordion class="example-headers-align">
             <ng-container *ngFor="let step of steps | async; let index = index;">
               <mat-expansion-panel [expanded]="index === 0">
-                <mat-expansion-panel-header (click)="expandedChange(step.position)">
+                <mat-expansion-panel-header (click)="expandedChange(step)">
                   <mat-panel-title>
                     <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
                       <div class="step-expansion-header">
@@ -44,75 +44,26 @@
                           {{step.title}}
                         </span>
                       </div>
-                      <div *ngIf="step.showButton" style="align-self: end">
-                        <button mat-button>{{step.buttonTitle}}</button>
-                      </div>
                     </div>
                   </mat-panel-title>
                 </mat-expansion-panel-header>
-                <ng-container *ngIf="expandedStep === 1;">
-                  <div fxFlex fxLayout="column" fxLayoutAlign="start" fxLayoutGap="8px">
-                    <section>
-                      <span [innerHTML]="'getting-started.client.info' | translate"></span>
-                      <ul>
-                        <li><b>Name</b> 'tb_mqtt_demo'</li>
-                        <li><b>Username</b> 'tb_mqtt_demo'</li>
-                        <li><b>Password</b> 'tb_mqtt_demo'</li>
-                      </ul>
-                    </section>
-                    <section>
-                      <button mat-stroked-button
-                              color="primary"
-                              type="button"
-                              (click)="addClient()"
-                              matTooltip="{{'getting-started.client.info-button' | translate}}">
-                        {{'getting-started.client.info-button' | translate}}
-                      </button>
-                    </section>
-                    <section>
-                      <span [innerHTML]="'getting-started.client.additional' | translate"></span>
-                      <a href="" target="_blank"> {{'getting-started.see-docs' | translate}} &#8594;</a>
-                    </section>
-                  </div>
-                </ng-container>
-                <ng-container *ngIf="expandedStep === 2;">
-                  <div fxFlex fxLayout="column" fxLayoutAlign="start" fxLayoutGap="8px">
-                    <section>
-                      <span [innerHTML]="'getting-started.subscribe.info' | translate"></span>
-                    </section>
-                    <section>
-                      <mat-tab-group mat-stretch-tabs mat-align-tabs="center">
-                        <mat-tab label="Linux">
-                          <div style="max-width: 400px">
-                            <markdown [data]="markdown" class="tb-markdown-view"></markdown>
-                          </div>
-                        </mat-tab>
-                        <mat-tab label="Mac OS">
-                          <div style="max-width: 400px">
-                            <markdown [data]="markdown" class="tb-markdown-view"></markdown>
-                          </div>
-                        </mat-tab>
-                        <mat-tab label="Windows">
-                          <div style="max-width: 400px">
-                            <markdown [data]="markdown" class="tb-markdown-view"></markdown>
-                          </div>
-                        </mat-tab>
-                      </mat-tab-group>
-                    </section>
-                  </div>
-                </ng-container>
-                <ng-container *ngIf="expandedStep === 3;">
-                  <div fxFlex fxLayout="column" fxLayoutAlign="start" fxLayoutGap="8px">
-                    <span [innerHTML]="'getting-started.publish.info' | translate"></span>
-                  </div>
-                </ng-container>
-                <ng-container *ngIf="expandedStep === 4;">
-                  <div fxFlex fxLayout="column" fxLayoutAlign="start" fxLayoutGap="8px">
-                    <section>
-                      <span [innerHTML]="'getting-started.disconnect.info' | translate"></span>
-                    </section>
-                  </div>
-                </ng-container>
+                <div class="tb-markdown-view" style="max-width: 380px">
+                  <markdown [data]="data | async"></markdown>
+                </div>
+                <div fxFlex *ngIf="step.id==='client'"
+                     fxLayoutAlign="start start"
+                     fxLayout="column" fxLayoutGap="4px" style="margin-top: 20px">
+                  <button mat-raised-button color="primary"
+                          type="button"
+                          (click)="addClientCredentials()">
+                    {{'mqtt-client-credentials.add' | translate}}
+                  </button>
+                  <button mat-raised-button
+                          type="button"
+                          (click)="navigate('client-credentials')">
+                    {{'getting-started.view-credentials' | translate}}
+                  </button>
+                </div>
               </mat-expansion-panel>
             </ng-container>
           </mat-accordion>

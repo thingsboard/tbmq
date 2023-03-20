@@ -27,6 +27,11 @@ export function markedOptionsFactory(): MarkedOptions {
 
   renderer.code = (code: string, language: string | undefined, isEscaped: boolean) => {
     if (code.endsWith(copyCodeBlock)) {
+      if (code.includes('{:hostname}')) {
+        code = code.replace('{:hostname}', window.location.hostname);
+        // @ts-ignore
+        code = code.replace('{:port}', window.mqttPort);
+      }
       code = code.substring(0, code.length - copyCodeBlock.length);
       const content = renderer2.code(code, language, isEscaped);
       id++;

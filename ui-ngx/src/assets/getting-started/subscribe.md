@@ -1,16 +1,11 @@
-### Subscribe
+Let's create a subscription with an open source message broker 
+**Eclipse Mosquitto** (<a href='https://mosquitto.org/download' target="_blank">how to install?</a>).
 
-The second step is to setup your subscriptions.
-For demo purpose we will use  an open source message broker <a>Eclipse Mosquitto</a>.
-Use simple commands to install Mosquitto broker and subscribe for topic:
+Paste this code in a new terminal tab:
 
-
-```text
-sudo apt get 
+```bash
+mosquitto_sub -h {:hostname} -p {:port} -d --qos 1 -i tb_mqtt_demo -P tb_mqtt_demo -t demo/topic -k 60 -x 120 -V mqttv5
+{:copy-code}
 ```
-{: .copy-code}
 
-```text
-mosquitto_sub -h localhost -p 1883 --qos 0 -i tb_mqtt_demo -P tb_mqtt_demo3 -u tb_mqtt_demo -t demo/tb_mqtt -k 100 -x 100 -V mqttv5 
-```
-{: .copy-code}
+This will create a subscription for the MQTT **topic** <i>demo/topic</i> for clients with **client-id and password** <i>tb_mqtt_demo</i>.

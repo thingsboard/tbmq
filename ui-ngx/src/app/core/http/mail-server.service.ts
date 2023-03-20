@@ -14,11 +14,11 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {AdminSettings, MailServerSettings,} from '@shared/models/settings.models';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { AdminSettings, MailServerSettings, } from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +27,8 @@ export class MailServerService {
 
   constructor(
     private http: HttpClient
-  ) { }
+  ) {
+  }
 
   public getAdminSettings<T>(key: string, config?: RequestConfig): Observable<AdminSettings<T>> {
     return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig(config));

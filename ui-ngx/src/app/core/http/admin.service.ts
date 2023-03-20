@@ -14,20 +14,21 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {User} from '@shared/models/user.model';
-import {PageLink} from "@shared/models/page/page-link";
-import {PageData} from "@shared/models/page/page-data";
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { User } from '@shared/models/user.model';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+  }
 
   public getAdmin(userId: string, config?: RequestConfig): Observable<User> {
     return this.http.get<User>(`/api/admin/user/${userId}`, defaultHttpOptionsFromConfig(config));

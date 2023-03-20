@@ -14,80 +14,64 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
-import { TranslateService } from "@ngx-translate/core";
+import {
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import { MatAccordion } from '@angular/material/expansion';
-import { of } from 'rxjs';
-import { number } from 'prop-types';
+import { Observable, of } from 'rxjs';
+import { InstructionsService } from '@core/http/instructions.service';
+import { MatDialog } from '@angular/material/dialog';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { Router } from '@angular/router';
+import { ConfigParams } from '@shared/models/stats.model';
 
 @Component({
   selector: 'tb-getting-started',
   templateUrl: './getting-started.component.html',
   styleUrls: ['./getting-started.component.scss']
 })
-export class GettingStartedComponent implements OnInit {
-
-  steps = of([
-    {
-      position: 1,
-      title: 'Create client',
-      showButton: false,
-      buttonTitle: 'Add client',
-      isOpen: false
-    },
-    {
-      position: 2,
-      title: 'Subscribe for topic',
-      showButton: false,
-      isOpen: false
-    },
-    {
-      position: 3,
-      title: 'Publish message',
-      showButton: false,
-      isOpen: false
-    },
-    {
-      position: 4,
-      title: 'Disconnect client',
-      showButton: false,
-      isOpen: false
-    }
-  ]);
-
+export class GettingStartedComponent implements OnChanges {
+  @Input() configParams: any;
   @ViewChild(MatAccordion) accordion: MatAccordion;
 
+  steps: Observable<Array<any>> = of([]);
   expandedStep = 1;
+  data: Observable<string>;
 
-  markdown = `### Create Client
-
-The first step is to create the MQTT Client with a simple Authentication method based on Username and Password.
-Please click on the button below and fill the following fields:
-* name: 'TB MQTT Demo' (can be any)
-* username: 'tb_mqtt_demo'
-* password: 'tb_mqtt_demo'
-
-<See Clients>
-
-<-- Additional info-->
-(Info)
-Note that Thingsboard MQTT Broker has different Authentication and Authorization methods.
-<Read docs>
-
-\`\`\`bash
-mosquitto_sub -h localhost -p 1883 --qos 0 -i tb_mqtt_demo -P tb_mqtt_demo3 -u tb_mqtt_demo -t demo/tb_mqtt -k 100 -x 100 -V mqttv5
-{:copy-code}
-\`\`\``;
-
-  constructor(private translate: TranslateService,
-              private cd: ChangeDetectorRef) { }
-
-  ngOnInit(): void {
+  constructor(private instructionsService: InstructionsService,
+              private dialog: MatDialog,
+              private mqttClientCredentialsService: MqttClientCredentialsService,
+              private router: Router) {
   }
 
-  expandedChange(index: number) {
-    this.expandedStep = index;
-    this.cd.detectChanges();
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'configParams' && change.currentValue) {
+          this.steps = this.instructionsService.setSteps(change.currentValue[ConfigParams.BASIC_AUTH]);
+          change.currentValue[ConfigParams.BASIC_AUTH] ? this.init('client') : this.init('subscribe');
+        }
+      }
+    }
+  }
+
+  private init(id: string) {
+    this.data = this.getStep(id);
+  }
+
+  getStep(id: string): Observable<string> {
+    return this.instructionsService.getGetStartedInstruction(id);
   }
 
   stepActive(index): boolean {
@@ -99,14 +83,40 @@ mosquitto_sub -h localhost -p 1883 --qos 0 -i tb_mqtt_demo -P tb_mqtt_demo3 -u t
   }
 
   stepNotDone(index): boolean {
-    return this.expandedStep < index + 1 ;
+    return this.expandedStep < index + 1;
   }
 
-  addClient() {
-
+  expandedChange(step: any) {
+    this.expandedStep = step?.position;
+    // @ts-ignore
+    window.mqttPort = this.configParams.PORT_MQTT;
+    this.data = this.getStep(step.id);
   }
 
-  onCopy(content) {
+  navigate(path: string) {
+    this.router.navigateByUrl(`/${path}`);
+  }
 
+  addClientCredentials() {
+    const config = new EntityTableConfig<MqttClientCredentials>();
+    config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    config.entityComponent = MqttClientCredentialsComponent;
+    config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    const $entity = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<MqttClientCredentials>,
+      MqttClientCredentials>(AddEntityDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        entitiesTableConfig: config
+      }
+    }).afterClosed();
+    $entity.subscribe(
+      (entity) => {
+        if (entity) {
+          this.mqttClientCredentialsService.saveMqttClientCredentials(entity).subscribe();
+        }
+      }
+    );
   }
 }

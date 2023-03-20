@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ConfigParams, ConfigParamsTranslationMap } from "@shared/models/stats.model";
 import { ActionNotificationShow } from "@core/notification/notification.actions";
@@ -22,6 +22,7 @@ import { Store } from "@ngrx/store";
 import { AppState } from "@core/core.state";
 import { TranslateService } from "@ngx-translate/core";
 import { Router } from '@angular/router';
+import { map, mergeMap, take } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-card-config',
@@ -33,40 +34,9 @@ export class CardConfigComponent implements OnInit {
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
 
-  overviewConfig: any = of([
-    {
-      key: 'PORT_MQTT',
-      value: 1883
-    },
-    {
-      key: 'TLS_TCP_PORT',
-      value: 8883
-    },
-    {
-      key: 'TCP_LISTENER',
-      value: true
-    },
-    {
-      key: 'TCP_LISTENER_MAX_PAYLOAD_SIZE',
-      value: '65536 bytes'
-    },
-    {
-      key: 'TLS_LISTENER',
-      value: true
-    },
-    {
-      key: 'TLS_LISTENER_MAX_PAYLOAD_SIZE',
-      value: '65536 bytes'
-    },
-    {
-      key: 'BASIC_AUTH',
-      value: true
-    },
-    {
-      key: 'X509_CERT_CHAIN_AUTH',
-      value: true
-    }
-  ]);
+  @Output() sharedConfigParams = new EventEmitter<any>();
+
+  overviewConfig: any;
 
   @Input() isLoading$: Observable<boolean>;
 
@@ -75,6 +45,17 @@ export class CardConfigComponent implements OnInit {
               private translate: TranslateService) { }
 
   ngOnInit(): void {
+    this.overviewConfig = this.getConfig().pipe(
+      map((data) => {
+        const portMqtt = data.find(el => el.key === ConfigParams.PORT_MQTT)?.value;
+        const basicAuth = data.find(el => el.key === ConfigParams.BASIC_AUTH)?.value;
+        this.sharedConfigParams.emit({
+          [ConfigParams.PORT_MQTT]: portMqtt,
+          [ConfigParams.BASIC_AUTH]: basicAuth
+        });
+        return data;
+      }
+    ));
   }
 
   onCopy() {
@@ -95,6 +76,43 @@ export class CardConfigComponent implements OnInit {
 
   navigateToPage(page: string) {
     this.router.navigateByUrl(`/${page}`);
+  }
+
+  private getConfig() {
+    return of([
+      {
+        key: 'PORT_MQTT',
+        value: 1883
+      },
+      {
+        key: 'TLS_TCP_PORT',
+        value: 8883
+      },
+      {
+        key: 'TCP_LISTENER',
+        value: true
+      },
+      {
+        key: 'TCP_LISTENER_MAX_PAYLOAD_SIZE',
+        value: '65536 bytes'
+      },
+      {
+        key: 'TLS_LISTENER',
+        value: true
+      },
+      {
+        key: 'TLS_LISTENER_MAX_PAYLOAD_SIZE',
+        value: '65536 bytes'
+      },
+      {
+        key: 'BASIC_AUTH',
+        value: true
+      },
+      {
+        key: 'X509_CERT_CHAIN_AUTH',
+        value: true
+      }
+    ]);
   }
 
 }
