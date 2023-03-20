@@ -16,6 +16,11 @@
 package org.thingsboard.mqtt.broker.queue;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 
 import java.util.Collection;
 import java.util.Map;
@@ -31,4 +36,10 @@ public interface TbQueueAdmin {
     void deleteConsumerGroups(Collection<String> consumerGroups);
 
     int getNumberOfPartitions(String topic);
+
+    ClusterInfo getClusterInfo();
+
+    PageData<KafkaTopic> getTopics(PageLink pageLink);
+
+    PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
 }
