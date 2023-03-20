@@ -20,11 +20,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
@@ -32,7 +35,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
 import java.util.Collection;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -78,22 +80,32 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/kafka-topics", method = RequestMethod.GET)
+    @RequestMapping(value = "/kafka-topics", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public List<KafkaTopic> getKafkaTopics() throws ThingsboardException {
+    public PageData<KafkaTopic> getKafkaTopics(@RequestParam int pageSize,
+                                               @RequestParam int page,
+                                               @RequestParam(required = false) String textSearch,
+                                               @RequestParam(required = false) String sortProperty,
+                                               @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
-            return tbQueueAdmin.getTopics();
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(tbQueueAdmin.getTopics(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/consumer-groups", method = RequestMethod.GET)
+    @RequestMapping(value = "/consumer-groups", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public List<KafkaConsumerGroup> getKafkaConsumerGroups() throws ThingsboardException {
+    public PageData<KafkaConsumerGroup> getKafkaConsumerGroups(@RequestParam int pageSize,
+                                                               @RequestParam int page,
+                                                               @RequestParam(required = false) String textSearch,
+                                                               @RequestParam(required = false) String sortProperty,
+                                                               @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
-            return tbQueueAdmin.getConsumerGroups();
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(tbQueueAdmin.getConsumerGroups(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }

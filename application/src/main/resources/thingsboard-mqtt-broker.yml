@@ -199,6 +199,9 @@ queue:
       print-interval-ms: "${TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS:60000}"
       kafka-response-timeout-ms: "${TB_KAFKA_CONSUMER_STATS_RESPONSE_TIMEOUT_MS:1000}"
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
+    home-page:
+      consumer-config: "${TB_KAFKA_HOME_PAGE_CONSUMER_CONFIG:}"
+      kafka-response-timeout-ms: "${TB_KAFKA_HOME_PAGE_RESPONSE_TIMEOUT_MS:1000}"
     publish-msg:
       topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
       topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"

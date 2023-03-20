@@ -24,11 +24,14 @@ import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
-import org.apache.kafka.clients.admin.ListConsumerGroupsResult;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.ReplicaInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.ConsumerGroupState;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -36,6 +39,8 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
@@ -44,15 +49,19 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
 import javax.annotation.PreDestroy;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -69,8 +78,10 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     private final AdminClient client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
+    private final Consumer<String, byte[]> consumer;
+    private final Duration timeoutDuration;
 
-    public TbKafkaAdmin(TbKafkaAdminSettings adminSettings) {
+    public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         client = AdminClient.create(adminSettings.toProps());
         deleteOldConsumerGroups();
         try {
@@ -78,6 +89,17 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to get all topics.", e);
         }
+        this.consumer = createConsumer(consumerSettings, homePageConsumerKafkaSettings);
+        this.timeoutDuration = Duration.ofMillis(homePageConsumerKafkaSettings.getKafkaResponseTimeoutMs());
+    }
+
+    private Consumer<String, byte[]> createConsumer(TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
+        Properties consumerProps = consumerSettings.toProps("kafka_admin_home_page", homePageConsumerKafkaSettings.getConsumerProperties());
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "home-page-client");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "home-page-client-group");
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        return new KafkaConsumer<>(consumerProps);
     }
 
     @Override
@@ -190,7 +212,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public List<KafkaTopic> getTopics() {
+    public PageData<KafkaTopic> getTopics(PageLink pageLink) {
         try {
             Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
@@ -232,7 +254,28 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     kafkaTopic.setSize(kafkaTopicSizeEntry.getValue());
                 }
             }
-            return new ArrayList<>(kafkaTopicsMap.values());
+
+            List<KafkaTopic> kafkaTopics;
+            if (pageLink.getTextSearch() != null) {
+                kafkaTopics = kafkaTopicsMap
+                        .values()
+                        .stream()
+                        .filter(kafkaTopic -> kafkaTopic.getName().toLowerCase().contains(pageLink.getTextSearch().toLowerCase()))
+                        .collect(Collectors.toList());
+            } else {
+                kafkaTopics = new ArrayList<>(kafkaTopicsMap.values());
+            }
+
+            List<KafkaTopic> data = kafkaTopics.stream()
+                    .sorted(KafkaTopic.sorted(pageLink))
+                    .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                    .limit(pageLink.getPageSize())
+                    .collect(Collectors.toList());
+
+            return new PageData<>(data,
+                    kafkaTopics.size() / pageLink.getPageSize(),
+                    kafkaTopics.size(),
+                    pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaTopics.size());
         } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
             throw new RuntimeException(e);
@@ -240,27 +283,73 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public List<KafkaConsumerGroup> getConsumerGroups() {
+    public PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink) {
         try {
-            ListConsumerGroupsResult listConsumerGroupsResult = client.listConsumerGroups();
-            List<KafkaConsumerGroup> consumerGroupListings = listConsumerGroupsResult.all().get().stream()
+            List<KafkaConsumerGroup> kafkaConsumerGroups = client.listConsumerGroups().all().get()
+                    .stream()
                     .map(consumerGroupListing -> {
                         KafkaConsumerGroup kafkaConsumerGroup = new KafkaConsumerGroup();
                         kafkaConsumerGroup.setGroupId(consumerGroupListing.groupId());
-                        ConsumerGroupState consumerGroupState = consumerGroupListing.state().orElse(ConsumerGroupState.UNKNOWN);
-                        KafkaConsumerGroupState state = KafkaConsumerGroupState.toState(consumerGroupState.toString());
-                        kafkaConsumerGroup.setState(state);
+                        kafkaConsumerGroup.setState(getKafkaConsumerGroupState(consumerGroupListing));
                         return kafkaConsumerGroup;
                     }).collect(Collectors.toList());
-            List<String> groupIds = consumerGroupListings.stream().map(KafkaConsumerGroup::getGroupId).collect(Collectors.toList());
 
+            List<String> groupIds = kafkaConsumerGroups.stream().map(KafkaConsumerGroup::getGroupId).collect(Collectors.toList());
             DescribeConsumerGroupsResult describeConsumerGroupsResult = client.describeConsumerGroups(groupIds);
-            Map<String, ConsumerGroupDescription> stringConsumerGroupDescriptionMap = describeConsumerGroupsResult.all().get();
-            return null;
+            Map<String, ConsumerGroupDescription> consumerGroupDescriptionsMap = describeConsumerGroupsResult.all().get();
+
+            for (KafkaConsumerGroup kafkaConsumerGroup : kafkaConsumerGroups) {
+                String groupId = kafkaConsumerGroup.getGroupId();
+                ConsumerGroupDescription consumerGroupDescription = consumerGroupDescriptionsMap.get(groupId);
+                if (consumerGroupDescription != null) {
+                    kafkaConsumerGroup.setMembers(consumerGroupDescription.members().size());
+                }
+
+                Map<TopicPartition, OffsetAndMetadata> groupOffsets = client.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata().get();
+                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(groupOffsets.keySet(), timeoutDuration);
+
+                long lag = getConsumerGroupLag(groupOffsets, endOffsets);
+                kafkaConsumerGroup.setLag(lag);
+            }
+
+            if (pageLink.getTextSearch() != null) {
+                kafkaConsumerGroups = kafkaConsumerGroups
+                        .stream()
+                        .filter(kafkaTopic -> kafkaTopic.getGroupId().toLowerCase().contains(pageLink.getTextSearch().toLowerCase()))
+                        .collect(Collectors.toList());
+            }
+
+            List<KafkaConsumerGroup> data = kafkaConsumerGroups.stream()
+                    .sorted(KafkaConsumerGroup.sorted(pageLink))
+                    .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                    .limit(pageLink.getPageSize())
+                    .collect(Collectors.toList());
+
+            return new PageData<>(data,
+                    kafkaConsumerGroups.size() / pageLink.getPageSize(),
+                    kafkaConsumerGroups.size(),
+                    pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaConsumerGroups.size());
         } catch (Exception e) {
             log.warn("Failed to get Kafka consumer groups", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private KafkaConsumerGroupState getKafkaConsumerGroupState(ConsumerGroupListing consumerGroupListing) {
+        ConsumerGroupState consumerGroupState = consumerGroupListing.state().orElse(ConsumerGroupState.UNKNOWN);
+        return KafkaConsumerGroupState.toState(consumerGroupState.toString());
+    }
+
+    private long getConsumerGroupLag(Map<TopicPartition, OffsetAndMetadata> groupOffsets,
+                                     Map<TopicPartition, Long> endOffsets) {
+        long totalLag = 0L;
+        for (Map.Entry<TopicPartition, OffsetAndMetadata> groupOffsetEntry : groupOffsets.entrySet()) {
+            long endOffset = endOffsets.get(groupOffsetEntry.getKey());
+            long committedOffset = groupOffsetEntry.getValue().offset();
+            long lag = endOffset - committedOffset;
+            totalLag += lag;
+        }
+        return totalLag;
     }
 
     private Map<Integer, Node> describeClusterResultToNodes(DescribeClusterResult describeClusterResult) throws InterruptedException, ExecutionException {

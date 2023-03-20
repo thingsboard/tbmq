@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.queue;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Data;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-@Data
-public class KafkaBroker {
+@Getter
+@Component
+public class HomePageConsumerKafkaSettings {
 
-    private final int brokerId;
-    private final String address;
-    private final long brokerSize; // in bytes
+    @Value("${queue.kafka.home-page.consumer-config}")
+    private String consumerProperties;
+    @Value("${queue.kafka.home-page.kafka-response-timeout-ms}")
+    private long kafkaResponseTimeoutMs;
 
 }
