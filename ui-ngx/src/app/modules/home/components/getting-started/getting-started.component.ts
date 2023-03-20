@@ -14,14 +14,7 @@
 /// limitations under the License.
 ///
 
-import {
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  ViewChild
-} from '@angular/core';
-import { MatAccordion } from '@angular/material/expansion';
+import { Component } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,36 +27,44 @@ import { AddEntityDialogData } from '@home/models/entity/entity-component.models
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { Router } from '@angular/router';
 import { ConfigParams } from '@shared/models/stats.model';
+import { select, Store } from '@ngrx/store';
+import { selectUserDetails } from '@core/auth/auth.selectors';
+import { map } from 'rxjs/operators';
+import { AppState } from '@core/core.state';
 
 @Component({
   selector: 'tb-getting-started',
   templateUrl: './getting-started.component.html',
   styleUrls: ['./getting-started.component.scss']
 })
-export class GettingStartedComponent implements OnChanges {
-  @Input() configParams: any;
-  @ViewChild(MatAccordion) accordion: MatAccordion;
+export class GettingStartedComponent {
 
   steps: Observable<Array<any>> = of([]);
-  expandedStep = 1;
   data: Observable<string>;
+  configParams: any;
+  expandedStep = 1;
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
               private mqttClientCredentialsService: MqttClientCredentialsService,
-              private router: Router) {
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName of Object.keys(changes)) {
-      const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'configParams' && change.currentValue) {
-          this.steps = this.instructionsService.setSteps(change.currentValue[ConfigParams.BASIC_AUTH]);
-          change.currentValue[ConfigParams.BASIC_AUTH] ? this.init('client') : this.init('subscribe');
+              private router: Router,
+              private store: Store<AppState>) {
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => user.additionalInfo?.config)).pipe(
+      map((data) => {
+          const portMqtt = data.find(el => el.key === ConfigParams.PORT_MQTT)?.value;
+          const basicAuth = data.find(el => el.key === ConfigParams.BASIC_AUTH)?.value;
+          this.steps = this.instructionsService.setSteps(basicAuth);
+          // @ts-ignore
+          window.mqttPort = portMqtt;
+          this.configParams = {};
+          this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
+          this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
+          this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
+          return data;
         }
-      }
-    }
+      )).subscribe();
   }
 
   private init(id: string) {
@@ -88,8 +89,6 @@ export class GettingStartedComponent implements OnChanges {
 
   expandedChange(step: any) {
     this.expandedStep = step?.position;
-    // @ts-ignore
-    window.mqttPort = this.configParams.PORT_MQTT;
     this.data = this.getStep(step.id);
   }
 

@@ -29,8 +29,6 @@ import { $e } from 'codelyzer/angular/styles/chars';
 })
 export class StatsComponent extends PageComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  mqttPort: number;
-
   private destroy$ = new Subject();
 
   constructor(protected store: Store<AppState>,
@@ -54,12 +52,6 @@ export class StatsComponent extends PageComponent implements OnInit, OnDestroy, 
 
   navigateToPage(type) {
     this.router.navigateByUrl('');
-  }
-
-  setMqttPort($event) {
-    if ($event) {
-      this.mqttPort = $event;
-    }
   }
 
   ngAfterViewInit(): void {

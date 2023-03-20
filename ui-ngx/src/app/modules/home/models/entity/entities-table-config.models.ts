@@ -209,3 +209,7 @@ export function clientTypeCell(value: ClientType): string {
   const color = value.toUpperCase() === ClientType.DEVICE ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
   return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;
 }
+
+export function clientTypeWarning(value: string) {
+  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: rgb(255,202,17)" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
+}

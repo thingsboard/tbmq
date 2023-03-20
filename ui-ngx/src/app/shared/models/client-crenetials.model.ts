@@ -29,6 +29,13 @@ export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   ]
 );
 
+export const credentialsWarningTranslations = new Map<MqttCredentialsType, string>(
+  [
+    [MqttCredentialsType.MQTT_BASIC, 'Basic Auth disabled'],
+    [MqttCredentialsType.SSL, 'SSL Auth disabled']
+  ]
+);
+
 export interface MqttClientCredentials extends BaseData {
   credentialsId: string;
   name: string;

@@ -38,6 +38,7 @@ import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.com
 import { isMobileApp } from '@core/utils';
 import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
 import { getCurrentAuthState, getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { ConfigService } from '@core/http/config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -52,6 +53,7 @@ export class AuthService {
               private zone: NgZone,
               private utils: UtilsService,
               private translate: TranslateService,
+              private configService: ConfigService,
               private dialog: MatDialog) {
   }
 
@@ -302,10 +304,17 @@ export class AuthService {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
         }
         if (authPayload.authUser.userId) {
-          this.getUser().subscribe(
+          let configValue = {};
+          this.configService.getConfig().pipe(
+            mergeMap((config) => {
+              configValue = config;
+              return this.getUser();
+            })
+          ).subscribe(
             (user) => {
               authPayload.userDetails = user;
               let userLang;
+              authPayload.userDetails.additionalInfo.config = configValue;
               if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
                 userLang = authPayload.userDetails.additionalInfo.lang;
               } else {

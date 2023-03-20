@@ -22,3 +22,4 @@ export * from './auth.service';
 export * from './stats.service';
 export * from './retained-msg.service';
 export * from './instructions.service';
+export * from './config.service';

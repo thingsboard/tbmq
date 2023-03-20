@@ -18,16 +18,17 @@ import { Injectable } from '@angular/core';
 
 import { Resolve } from '@angular/router';
 import {
-  clientTypeCell,
+  clientTypeCell, clientTypeWarning,
   credetialsTypeCell,
-  DateEntityTableColumn, defaultCellStyle,
+  DateEntityTableColumn,
+  defaultCellStyle,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { DialogService } from '@core/services/dialog.service';
 import { Direction } from '@shared/models/page/sort-order';
@@ -37,9 +38,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { clientTypeTranslationMap } from '@shared/models/client.model';
 import {
   credentialsTypeNames,
+  credentialsWarningTranslations,
   MqttClientCredentials,
   MqttCredentialsType
 } from '@shared/models/client-crenetials.model';
+import { ConfigService } from '@core/http/config.service';
+import { map } from 'rxjs/operators';
+import { selectUserDetails } from '@core/auth/auth.selectors';
+import { ConfigParams } from '@shared/models/stats.model';
 
 @Injectable()
 export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<MqttClientCredentials>> {
@@ -51,6 +57,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private translate: TranslateService,
               private datePipe: DatePipe,
+              private configService: ConfigService,
               private dialog: MatDialog) {
 
     this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
@@ -72,7 +79,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
         (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
-        (entity) => credetialsTypeCell(entity.credentialsType))
+        (entity) => credetialsTypeCell(this.translate.instant(credentialsTypeNames.get(entity.credentialsType))))
     );
 
     this.config.addActionDescriptors.push(
@@ -97,6 +104,35 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
   resolve(): EntityTableConfig<MqttClientCredentials> {
     this.config.entitiesFetchFunction = pageLink => this.mqttClientCredentialsService.getMqttClientsCredentials(pageLink);
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => {
+        this.config.componentsData = {};
+        this.config.componentsData.config = {
+          basicAuthEnabled: user.additionalInfo?.config.find(el => el.key === ConfigParams.BASIC_AUTH).value,
+          sslAuthEnabled: user.additionalInfo?.config.find(el => el.key === ConfigParams.X509_CERT_CHAIN_AUTH).value
+        };
+        if (!this.config.columns.find(el => el.key === 'warning')) {
+          this.config.columns.push(
+            new EntityTableColumn<MqttClientCredentials>('warning', null, '200px',
+              (entity) => {
+                if (entity.credentialsType === MqttCredentialsType.MQTT_BASIC) {
+                  if (!this.config.componentsData.config?.basicAuthEnabled) {
+                    return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
+                  }
+                }
+                if (entity.credentialsType === MqttCredentialsType.SSL) {
+                  if (!this.config.componentsData.config?.sslAuthEnabled) {
+                    return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
+                  }
+                }
+                return '';
+              })
+          );
+        }
+        return true;
+      })
+    ).subscribe();
     return this.config;
   }
 
