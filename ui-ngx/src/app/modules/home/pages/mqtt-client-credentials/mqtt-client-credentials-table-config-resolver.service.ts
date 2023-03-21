@@ -114,17 +114,11 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
         };
         if (!this.config.columns.find(el => el.key === 'warning')) {
           this.config.columns.push(
-            new EntityTableColumn<MqttClientCredentials>('warning', null, '200px',
+            new EntityTableColumn<MqttClientCredentials>('warning', null, '300px',
               (entity) => {
-                if (entity.credentialsType === MqttCredentialsType.MQTT_BASIC) {
-                  if (!this.config.componentsData.config?.basicAuthEnabled) {
+                if ((entity.credentialsType === MqttCredentialsType.MQTT_BASIC && !this.config.componentsData.config?.basicAuthEnabled) ||
+                    (entity.credentialsType === MqttCredentialsType.SSL && !this.config.componentsData.config?.sslAuthEnabled)) {
                     return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
-                  }
-                }
-                if (entity.credentialsType === MqttCredentialsType.SSL) {
-                  if (!this.config.componentsData.config?.sslAuthEnabled) {
-                    return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
-                  }
                 }
                 return '';
               })

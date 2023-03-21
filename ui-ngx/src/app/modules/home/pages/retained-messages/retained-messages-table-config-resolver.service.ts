@@ -30,16 +30,17 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { DialogService } from '@core/services/dialog.service';
-import { RetainedMessage } from "@shared/models/retained-message.model";
-import { RetainedMsgService } from "@core/http/retained-msg.service";
-import { forkJoin, Observable } from "rxjs";
+import { RetainedMessage } from '@shared/models/retained-message.model';
+import { RetainedMsgService } from '@core/http/retained-msg.service';
+import { forkJoin, Observable } from 'rxjs';
 import {
   EventContentDialogComponent,
   EventContentDialogData
-} from "@home/components/event/event-content-dialog.component";
-import { ContentType } from "@shared/models/constants";
-import { MatDialog } from "@angular/material/dialog";
-import { isNotNullOrUndefined } from "codelyzer/util/isNotNullOrUndefined";
+} from '@home/components/event/event-content-dialog.component';
+import { ContentType } from '@shared/models/constants';
+import { MatDialog } from '@angular/material/dialog';
+import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
+import { QoSTranslationMap } from '@shared/models/session.model';
 
 @Injectable()
 export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableConfig<RetainedMessage>> {
@@ -75,12 +76,14 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       onAction: ($event) => {
         this.clearEmptyRetainedMsgNodes($event);
       }
-    })
+    });
 
     this.config.columns.push(
       new DateEntityTableColumn<RetainedMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%'),
-      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%')
+      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', (entity) => {
+        return entity.qos + ' - ' + this.translate.instant(QoSTranslationMap.get(entity.qos));
+      })
     );
   }
 

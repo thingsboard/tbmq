@@ -75,6 +75,14 @@ export const mqttQoSTypes = [
   }
 ];
 
+export const QoSTranslationMap = new Map<number, string>(
+  [
+    [0, 'mqtt-client-session.qos-at-most-once'],
+    [1, 'mqtt-client-session.qos-at-least-once'],
+    [2, 'mqtt-client-session.qos-exactly-once']
+  ]
+);
+
 export enum ConnectionState {
   CONNECTED = 'CONNECTED',
   DISCONNECTED = 'DISCONNECTED'

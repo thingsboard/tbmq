@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
@@ -22,46 +22,29 @@ import { EntityColumn, EntityTableColumn } from "@home/models/entity/entities-ta
 import { BaseData } from "@shared/models/base-data";
 import { isUndefined } from "@core/utils";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
-
-export interface KafkaTopic {
-  name: string;
-  partitions: number;
-  replicas: number;
-  size: number;
-}
-
-const ELEMENT_DATA: KafkaTopic[] = [
-  {name: 'client_session_1', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_2', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_3', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_4', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_5', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_6', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_7', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_8', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_9', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_10', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_11', partitions: 50, replicas: 5, size: 71},
-  {name: 'client_session_12', partitions: 50, replicas: 5, size: 71}
-];
+import { KafkaService } from '@core/http/kafka.service';
+import { PageLink } from '@shared/models/page/page-link';
+import { KafkaTopic } from '@shared/models/kafka.model';
 
 @Component({
   selector: 'tb-kafka-topics-table',
   templateUrl: './kafka-topics-table.component.html',
   styleUrls: ['./kafka-topics-table.component.scss']
 })
-export class KafkaTopicsTableComponent implements OnInit {
-
-  displayedColumns: Array<string> = [];
-  dataSource: MatTableDataSource<any>;
-  columns: Array<EntityColumn<any>>;
-  cellStyleCache: Array<any> = [];
-  cellContentCache: Array<SafeHtml> = [];
+export class KafkaTopicsTableComponent implements OnInit, AfterViewInit {
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor(private domSanitizer: DomSanitizer) { }
+  displayedColumns: Array<string> = [];
+  dataSource: MatTableDataSource<KafkaTopic>  = new MatTableDataSource();
+  columns: Array<EntityColumn<KafkaTopic>>;
+  cellStyleCache: Array<any> = [];
+  cellContentCache: Array<SafeHtml> = [];
+
+  constructor(private kafkaService: KafkaService,
+              private domSanitizer: DomSanitizer) {
+  }
 
   ngOnInit(): void {
     this.columns = this.getColumns();
@@ -70,19 +53,18 @@ export class KafkaTopicsTableComponent implements OnInit {
         this.displayedColumns.push(column.key);
       }
     );
-    this.dataSource = new MatTableDataSource(ELEMENT_DATA);
   }
 
   getColumns() {
-    const columns: Array<EntityColumn<any>> = [];
+    const columns: Array<EntityColumn<KafkaTopic>> = [];
     columns.push(
-      new EntityTableColumn<any>('name', 'kafka.name', '25%'),
-      new EntityTableColumn<any>('partitions', 'kafka.partitions', '25%'),
-      new EntityTableColumn<any>('replicas', 'kafka.replicas', '25%'),
-      new EntityTableColumn<any>('size', 'kafka.size', '25%', entity => {
-        return entity.size + ' B'
+      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '25%'),
+      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '25%'),
+      new EntityTableColumn<KafkaTopic>('replicas', 'kafka.replicas', '25%'),
+      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '25%', entity => {
+        return entity.size + ' B';
       })
-    )
+    );
     return columns;
   }
 
@@ -124,11 +106,17 @@ export class KafkaTopicsTableComponent implements OnInit {
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+    const pageLink = new PageLink(20);
+    this.kafkaService.getKafkaTopics(pageLink).subscribe(
+      data => {
+        this.dataSource = new MatTableDataSource(data.data);
+      }
+    );
   }
 
   applyFilter(filterValue: string) {
-    filterValue = filterValue.trim(); // Remove whitespace
-    filterValue = filterValue.toLowerCase(); // Datasource defaults to lowercase matches
+    filterValue = filterValue.trim();
+    filterValue = filterValue.toLowerCase();
     this.dataSource.filter = filterValue;
   }
 

@@ -8,7 +8,7 @@ Please click on the button below and fill the following fields:
           <td>TB Demo Credentials</td>
       </tr>
       <tr>
-          <td><b>ID</b></td>
+          <td><b>Client ID</b></td>
           <td>tb_demo</td>
       </tr>
       <tr>

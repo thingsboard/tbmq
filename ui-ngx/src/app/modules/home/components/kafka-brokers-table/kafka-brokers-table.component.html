@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div class="example-container">
+<div class="tb-kafka-table">
   <table mat-table [dataSource]="dataSource" matSort>
     <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
       <mat-header-cell *matHeaderCellDef mat-sort-header>
@@ -29,5 +29,4 @@
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
   </table>
-  <mat-paginator [pageSizeOptions]="[10, 20, 50, 100]" hidePageSize></mat-paginator>
 </div>

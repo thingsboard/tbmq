@@ -22,18 +22,9 @@ import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-ta
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BaseData } from '@shared/models/base-data';
 import { isUndefined } from '@core/utils';
-
-export interface KafkaBroker {
-  id: string;
-  address: string;
-  size: number;
-}
-
-const ELEMENT_DATA: KafkaBroker[] = [
-  {id: 'id_1', address: 'localhost', size: 35},
-  {id: 'id_2', address: '123.124.22.21', size: 325},
-  {id: 'id_3', address: '125.224.42.21', size: 1244},
-];
+import { KafkaService } from '@core/http/kafka.service';
+import { PageLink } from '@shared/models/page/page-link';
+import { KafkaBroker } from '@shared/models/kafka.model';
 
 @Component({
   selector: 'tb-kafka-brokers-table',
@@ -43,15 +34,16 @@ const ELEMENT_DATA: KafkaBroker[] = [
 export class KafkaBrokersTableComponent implements OnInit {
 
   displayedColumns: Array<string> = [];
-  dataSource: MatTableDataSource<any>;
-  columns: Array<EntityColumn<any>>;
+  dataSource: MatTableDataSource<KafkaBroker> = new MatTableDataSource();
+  columns: Array<EntityColumn<KafkaBroker>>;
   cellStyleCache: Array<any> = [];
   cellContentCache: Array<SafeHtml> = [];
 
-  @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor(private domSanitizer: DomSanitizer) { }
+  constructor(private kafkaService: KafkaService,
+              private domSanitizer: DomSanitizer) {
+  }
 
   ngOnInit(): void {
     this.columns = this.getColumns();
@@ -60,20 +52,23 @@ export class KafkaBrokersTableComponent implements OnInit {
         this.displayedColumns.push(column.key);
       }
     );
-    this.dataSource = new MatTableDataSource(ELEMENT_DATA);
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+    this.kafkaService.getKafkaBroker(new PageLink(100)).subscribe(
+      data => {
+        this.dataSource = new MatTableDataSource(data.data);
+      }
+    );
   }
 
   getColumns() {
-    const columns: Array<EntityColumn<any>> = [];
+    const columns: Array<EntityColumn<KafkaBroker>> = [];
     columns.push(
-      new EntityTableColumn<any>('id', 'kafka.id', '25%'),
-      new EntityTableColumn<any>('address', 'kafka.address', '25%'),
-      new EntityTableColumn<any>('size', 'kafka.size', '25%', entity => {
+      new EntityTableColumn<KafkaBroker>('id', 'kafka.id', '25%'),
+      new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '25%'),
+      new EntityTableColumn<KafkaBroker>('size', 'kafka.size', '25%', entity => {
         return entity.size + ' B';
       })
     );
@@ -116,8 +111,8 @@ export class KafkaBrokersTableComponent implements OnInit {
   }
 
   applyFilter(filterValue: string) {
-    filterValue = filterValue.trim(); // Remove whitespace
-    filterValue = filterValue.toLowerCase(); // Datasource defaults to lowercase matches
+    filterValue = filterValue.trim();
+    filterValue = filterValue.toLowerCase();
     this.dataSource.filter = filterValue;
   }
 

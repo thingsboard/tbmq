@@ -89,7 +89,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
             '"></span>' +
             '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600">' +
             this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)) +
-        '</span>'
+        '</span>';
         },
         (entity) => ({ color: connectionStateColor.get(entity.connectionState) })
       ),
@@ -125,7 +125,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            session: session
+            session
           }
         }).afterClosed().subscribe(() =>{
           this.table.updateData();
@@ -241,7 +241,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   }
 
   private gotoHelpPage(): void {
-    let helpUrl = HelpLinks.linksMap['sessions'];
+    const helpUrl = HelpLinks.linksMap.sessions;
     if (helpUrl) {
       window.open(helpUrl, '_blank');
     }

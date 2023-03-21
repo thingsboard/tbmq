@@ -14,27 +14,31 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { ConfigParams, ConfigParamsTranslationMap } from "@shared/models/stats.model";
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { Store } from "@ngrx/store";
-import { AppState } from "@core/core.state";
-import { TranslateService } from "@ngx-translate/core";
+import { ConfigParams, ConfigParamsTranslationMap } from '@shared/models/stats.model';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
-import { map, mergeMap, take } from 'rxjs/operators';
 import { ConfigService } from '@core/http/config.service';
+import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { PageLink } from '@shared/models/page/page-link';
+import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
 
 @Component({
   selector: 'tb-card-config',
   templateUrl: './card-config.component.html',
   styleUrls: ['./card-config.component.scss']
 })
-export class CardConfigComponent implements OnInit {
+export class CardConfigComponent implements OnInit, AfterViewInit {
 
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
 
+  hasBasicCredentials: Observable<boolean>;
+  hasX509AuthCredentials: Observable<boolean>;
   overviewConfig: any;
 
   @Input() isLoading$: Observable<boolean>;
@@ -42,10 +46,10 @@ export class CardConfigComponent implements OnInit {
   constructor(protected store: Store<AppState>,
               private router: Router,
               private translate: TranslateService,
-              private configService: ConfigService) { }
+              private configService: ConfigService,
+              private mqttClientCredentialsService: MqttClientCredentialsService) { }
 
   ngOnInit(): void {
-    this.overviewConfig = this.configService.getConfig();
   }
 
   onCopy() {
@@ -66,5 +70,15 @@ export class CardConfigComponent implements OnInit {
 
   navigateToPage(page: string) {
     this.router.navigateByUrl(`/${page}`);
+  }
+
+  ngAfterViewInit(): void {
+    this.overviewConfig = this.configService.getConfig();
+    this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(100)).subscribe(
+      data => {
+        this.hasBasicCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.MQTT_BASIC));
+        this.hasX509AuthCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.SSL));
+      }
+    );
   }
 }

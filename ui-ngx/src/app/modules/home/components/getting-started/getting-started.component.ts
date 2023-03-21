@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -29,7 +29,7 @@ import { Router } from '@angular/router';
 import { ConfigParams } from '@shared/models/stats.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { AppState } from '@core/core.state';
 
 @Component({
@@ -37,7 +37,7 @@ import { AppState } from '@core/core.state';
   templateUrl: './getting-started.component.html',
   styleUrls: ['./getting-started.component.scss']
 })
-export class GettingStartedComponent {
+export class GettingStartedComponent implements AfterViewInit {
 
   steps: Observable<Array<any>> = of([]);
   data: Observable<string>;
@@ -49,22 +49,6 @@ export class GettingStartedComponent {
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private router: Router,
               private store: Store<AppState>) {
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => user.additionalInfo?.config)).pipe(
-      map((data) => {
-          const portMqtt = data.find(el => el.key === ConfigParams.PORT_MQTT)?.value;
-          const basicAuth = data.find(el => el.key === ConfigParams.BASIC_AUTH)?.value;
-          this.steps = this.instructionsService.setSteps(basicAuth);
-          // @ts-ignore
-          window.mqttPort = portMqtt;
-          this.configParams = {};
-          this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
-          this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
-          this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
-          return data;
-        }
-      )).subscribe();
   }
 
   private init(id: string) {
@@ -117,5 +101,24 @@ export class GettingStartedComponent {
         }
       }
     );
+  }
+
+  ngAfterViewInit(): void {
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => user.additionalInfo?.config)).pipe(
+      map((data) => {
+          const portMqtt = data.find(el => el.key === ConfigParams.PORT_MQTT)?.value;
+          const basicAuth = data.find(el => el.key === ConfigParams.BASIC_AUTH)?.value;
+          this.steps = this.instructionsService.setSteps(basicAuth);
+          // @ts-ignore
+          window.mqttPort = portMqtt;
+          this.configParams = {};
+          this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
+          this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
+          this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
+          return data;
+        }
+      )).subscribe();
   }
 }

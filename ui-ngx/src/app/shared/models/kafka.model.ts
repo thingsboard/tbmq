@@ -14,13 +14,26 @@
 /// limitations under the License.
 ///
 
-export * from './page/public-api';
-export * from './authority.enum';
-export * from './base-data';
-export * from './constants';
-export * from './entity-type.models';
-export * from './login.models';
-export * from './stats.model';
-export * from './retained-message.model';
-export * from './time/time.models';
-export * from './kafka.model';
+import { BaseData } from '@shared/models/base-data';
+
+export interface KafkaBroker extends BaseData {
+  id: string;
+  address: string;
+  size: number;
+}
+
+export interface KafkaTopic extends BaseData {
+  name: string;
+  partitions: number;
+  replicas: number;
+  size: number;
+}
+
+export interface KafkaConsumerGroup extends BaseData {
+  state: string;
+  id: string;
+  members: number;
+  lag: number;
+}
+
+

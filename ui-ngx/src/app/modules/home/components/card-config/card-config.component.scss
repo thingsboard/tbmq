@@ -24,7 +24,7 @@
   }
 
   .config-value {
-    font-weight: 500;
+    font-weight: 400;
   }
 
   .config-material-icon {
@@ -33,9 +33,16 @@
     font-size: 14px;
     height: 14px;
     width: 14px;
-    margin-left: 5em;
+    margin-left: 4px;
     line-height: 9px;
-    padding: 0 1em 0 1em;
+  }
+
+  .config-material-icon-warning {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    margin-left: 4px;
+    line-height: 9px;
   }
 
   .mat-button:disabled {

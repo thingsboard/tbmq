@@ -33,9 +33,9 @@
 </div>
 <div fxFlex fxLayout="column" class="config-card-container">
   <div *ngFor="let item of overviewConfig | async">
-    <div fxFlex fxLayout="row">
-      <span class="flex1">{{ configParamsTranslationMap.get(item.key) | translate }}</span>
-      <span class="flex1 config-value">
+    <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
+      <div style="color: rgba(0,0,0,0.87)">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
+      <div class="config-value">
         <span>{{item.value | boolean }}</span>
         <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
           <mat-icon class="config-material-icon"
@@ -46,9 +46,16 @@
             content_copy
           </mat-icon>
         </span>
-      </span>
+        <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
+                      || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
+                      && !item.value">
+                        <mat-icon class="config-material-icon-warning" color="accent" matTooltip="{{'config.warning' | translate}} {{item.key}}.">
+            warning
+          </mat-icon>
+        </span>
+      </div>
     </div>
-    <mat-divider></mat-divider>
+<!--    <mat-divider></mat-divider>-->
   </div>
   <span fxFlex></span>
 </div>

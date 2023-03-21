@@ -51,14 +51,14 @@
                   <markdown [data]="data | async"></markdown>
                 </div>
                 <div fxFlex *ngIf="step.id==='client'"
-                     fxLayoutAlign="start start"
-                     fxLayout="column" fxLayoutGap="4px" style="margin-top: 20px">
+                     fxLayoutAlign="space-between start"
+                     fxLayout="row" fxLayoutGap="4px" style="margin: 0 0 16px">
                   <button mat-raised-button color="primary"
                           type="button"
                           (click)="addClientCredentials()">
                     {{'mqtt-client-credentials.add' | translate}}
                   </button>
-                  <button mat-raised-button
+                  <button mat-raised-button color="primary"
                           type="button"
                           (click)="navigate('client-credentials')">
                     {{'getting-started.view-credentials' | translate}}

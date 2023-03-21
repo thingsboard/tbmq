@@ -191,6 +191,62 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
 }
 
+export class KafkaEntityTableConfig<T extends BaseData, P extends PageLink = PageLink, L extends BaseData = T> {
+
+  constructor() {}
+
+  componentsData: any = null;
+
+  loadDataOnInit = true;
+  onLoadAction: (route: ActivatedRoute) => void = null;
+  table: EntitiesTableComponent = null;
+  entityType: EntityType = null;
+  tableTitle = '';
+  selectionEnabled = true;
+  searchEnabled = true;
+  addEnabled = true;
+  entitiesDeleteEnabled = true;
+  detailsPanelEnabled = true;
+  hideDetailsTabsOnEdit = true;
+  actionsColumnTitle = null;
+  entityTranslations: EntityTypeTranslation;
+  entityResources: EntityTypeResource<T>;
+  entityComponent: Type<EntityComponent<T, P, L>>;
+  entityTabsComponent: Type<EntityTabsComponent<T, P, L>>;
+  addDialogStyle = {};
+  defaultSortOrder: SortOrder = {property: 'createdTime', direction: Direction.DESC};
+  displayPagination = true;
+  defaultPageSize = 20;
+  columns: Array<EntityColumn<L>> = [];
+  cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
+  groupActionDescriptors: Array<GroupActionDescriptor<L>> = [];
+  headerActionDescriptors: Array<HeaderActionDescriptor> = [];
+  addActionDescriptors: Array<HeaderActionDescriptor> = [];
+  headerComponent: Type<EntityTableHeaderComponent<T, P, L>>;
+  addEntity: CreateEntityOperation<T> = null;
+  dataSource: (dataLoadedFunction: (col?: number, row?: number) => void)
+    => EntitiesDataSource<L> = (dataLoadedFunction: (col?: number, row?: number) => void) => {
+    return new EntitiesDataSource(this.entitiesFetchFunction, this.entitySelectionEnabled, dataLoadedFunction);
+  }
+  detailsReadonly: EntityBooleanFunction<T> = () => false;
+  entitySelectionEnabled: EntityBooleanFunction<L> = () => true;
+  deleteEnabled: EntityBooleanFunction<T | L> = () => true;
+  deleteEntityTitle: EntityStringFunction<L> = () => '';
+  deleteEntityContent: EntityStringFunction<L> = () => '';
+  deleteEntitiesTitle: EntityCountStringFunction = () => '';
+  deleteEntitiesContent: EntityCountStringFunction = () => '';
+  loadEntity: EntityByIdOperation<T | L> = () => of();
+  saveEntity: EntityTwoWayOperation<T> = (entity, originalEntity) => of(entity);
+  deleteEntity: EntityIdOneWayOperation = () => of();
+  entitiesFetchFunction: EntitiesFetchFunction<L, P> = () => of(emptyPageData<L>());
+  onEntityAction: EntityActionFunction<T> = () => false;
+  handleRowClick: EntityRowClickFunction<L> = () => false;
+  entityTitle: EntityStringFunction<T> = () => '';
+  entityAdded: EntityVoidFunction<T> = () => {};
+  entityUpdated: EntityVoidFunction<T> = () => {};
+  entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
+}
+
 export function checkBoxCell(value: boolean): string {
   return `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
 }

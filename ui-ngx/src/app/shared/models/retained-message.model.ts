@@ -20,7 +20,7 @@ export interface RetainedMessage extends BaseData {
   topic: string;
   payload: string;
   qos: number;
-  userProperties: UserProperties
+  userProperties: UserProperties;
 }
 
 export interface UserProperties {

@@ -15,18 +15,19 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from "@shared/models/session.model";
-import { DialogComponent } from "@shared/components/dialog.component";
-import { AppState } from "@core/core.state";
-import { Store } from "@ngrx/store";
-import { Router } from "@angular/router";
-import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
-import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
-import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { TranslateService } from "@ngx-translate/core";
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from "@angular/material/form-field";
-import { appearance } from "@shared/models/constants";
+import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from '@shared/models/session.model';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
+import { Router } from '@angular/router';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { appearance } from '@shared/models/constants';
+import { ClientType } from '@shared/models/client.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -49,6 +50,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entity: DetailedClientSessionInfo;
   entityForm: FormGroup;
   connectionStateColor = connectionStateColor;
+  warning: boolean;
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -67,6 +69,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
+    this.warning = this.entity.clientType === ClientType.DEVICE &&
+      (!this.entity.cleanStart || this.entity.sessionExpiryInterval === 0 ||
+        this.entity.sessionExpiryInterval > 0);
     this.buildForms(this.entity);
   }
 
@@ -103,7 +108,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   onEntityAction($event, action): void {
     switch (action) {
       case ('save'):
-        this.onSave()
+        this.onSave();
         break;
       case ('remove'):
         this.onRemove();
