@@ -14,43 +14,30 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource } from "@angular/material/table";
-import { MatPaginator } from "@angular/material/paginator";
-import { MatSort } from "@angular/material/sort";
-import { EntityColumn, EntityTableColumn } from "@home/models/entity/entities-table-config.models";
-import { BaseData } from "@shared/models/base-data";
-import { isUndefined } from "@core/utils";
-import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
+import { Component } from '@angular/core';
+import { MatTableDataSource } from '@angular/material/table';
+import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
+import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
-import { PageLink } from '@shared/models/page/page-link';
 import { KafkaTopic } from '@shared/models/kafka.model';
+import { KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 
 @Component({
   selector: 'tb-kafka-topics-table',
   templateUrl: './kafka-topics-table.component.html',
   styleUrls: ['./kafka-topics-table.component.scss']
 })
-export class KafkaTopicsTableComponent implements OnInit, AfterViewInit {
-
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
-
-  displayedColumns: Array<string> = [];
-  dataSource: MatTableDataSource<KafkaTopic>  = new MatTableDataSource();
-  columns: Array<EntityColumn<KafkaTopic>>;
-  cellStyleCache: Array<any> = [];
-  cellContentCache: Array<SafeHtml> = [];
+export class KafkaTopicsTableComponent extends KafkaTableComponent<KafkaTopic> {
 
   constructor(private kafkaService: KafkaService,
-              private domSanitizer: DomSanitizer) {
+              protected domSanitizer: DomSanitizer) {
+    super(domSanitizer);
   }
 
-  ngOnInit(): void {
-    this.columns = this.getColumns();
-    this.columns.forEach(
-      column => {
-        this.displayedColumns.push(column.key);
+  ngAfterViewInit() {
+    this.kafkaService.getKafkaTopics(this.pageLink).subscribe(
+      data => {
+        this.dataSource = new MatTableDataSource(data.data);
       }
     );
   }
@@ -67,57 +54,4 @@ export class KafkaTopicsTableComponent implements OnInit, AfterViewInit {
     );
     return columns;
   }
-
-  cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
-    const col = this.columns.indexOf(column);
-    const index = row * this.columns.length + col;
-    let res = this.cellStyleCache[index];
-    if (!res) {
-      const widthStyle: any = {width: column.width};
-      if (column.width !== '0px') {
-        widthStyle.minWidth = column.width;
-        widthStyle.maxWidth = column.width;
-      }
-      if (column instanceof EntityTableColumn) {
-        res = {...column.cellStyleFunction(entity, column.key), ...widthStyle};
-      } else {
-        res = widthStyle;
-      }
-      this.cellStyleCache[index] = res;
-    }
-    return res;
-  }
-
-  cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
-    if (column instanceof EntityTableColumn) {
-      const col = this.columns.indexOf(column);
-      const index = row * this.columns.length + col;
-      let res = this.cellContentCache[index];
-      if (isUndefined(res)) {
-        res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
-        this.cellContentCache[index] = res;
-      }
-      return res;
-    } else {
-      return '';
-    }
-  }
-
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-    const pageLink = new PageLink(20);
-    this.kafkaService.getKafkaTopics(pageLink).subscribe(
-      data => {
-        this.dataSource = new MatTableDataSource(data.data);
-      }
-    );
-  }
-
-  applyFilter(filterValue: string) {
-    filterValue = filterValue.trim();
-    filterValue = filterValue.toLowerCase();
-    this.dataSource.filter = filterValue;
-  }
-
 }

@@ -17,7 +17,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { StatsComponent } from "@home/pages/stats/stats.component";
+import { StatsComponent } from '@home/pages/stats/stats.component';
+import { AdminsTableConfigResolver } from '@home/pages/admins/admins-table-config-resolver.service';
 
 const routes: Routes = [
   {
@@ -31,6 +32,9 @@ const routes: Routes = [
         icon: 'mdi:view-dashboard-outline',
         isMdiIcon: true
       }
+    },
+    resolve: {
+      kafkaBrokersTableConfig: AdminsTableConfigResolver
     }
   }
 ];
@@ -38,4 +42,5 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forChild(routes)], exports: [RouterModule]
 })
-export class StatsRoutingModule {}
+export class StatsRoutingModule {
+}

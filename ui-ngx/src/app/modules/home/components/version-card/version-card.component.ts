@@ -15,8 +15,8 @@
 ///
 
 import { Component, Input, OnInit } from '@angular/core';
-import { Observable, of } from "rxjs";
-import { Router } from "@angular/router";
+import { Observable, of } from 'rxjs';
+import { Router } from '@angular/router';
 
 export interface VersionData {
   currentVersion: string;
@@ -31,12 +31,12 @@ export interface VersionData {
 })
 export class VersionCardComponent implements OnInit {
 
-  @Input() isLoading$: Observable<boolean>
+  @Input() isLoading$: Observable<boolean>;
 
   versionData: VersionData;
-  updateAvailable$: Observable<boolean> = of(false);
 
-  constructor(private router: Router) { }
+  constructor(private router: Router) {
+  }
 
   ngOnInit(): void {
     this.getData().subscribe(versionData => this.versionData = versionData);

@@ -15,9 +15,8 @@
 ///
 
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
-import { Router } from "@angular/router";
-import { TranslateService } from "@ngx-translate/core";
-import { Observable } from "rxjs";
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'tb-monitor-sessions-card',

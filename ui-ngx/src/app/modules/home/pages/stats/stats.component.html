@@ -53,13 +53,6 @@
                     {{'version.version' | translate}}
                   </button>
                   <span fxFlex></span>
-                  <button mat-raised-button color="primary"
-                          type="button"
-                          [disabled]="(isLoading$ | async)"
-                          (click)="viewDocumentation('update')"
-                          matTooltip="{{'version.update' | translate}}">
-                    {{'version.update' | translate}}
-                  </button>
                 </div>
                 <div fxFlex fxLayout="column" style="padding: 0 16px 0 16px">
                   <tb-version-card [isLoading$]="isLoading$"></tb-version-card>

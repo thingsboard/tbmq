@@ -14,23 +14,23 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
-import {EntitiesDataSource, EntitiesFetchFunction} from '@home/models/datasource/entity-datasource';
-import {Observable, of} from 'rxjs';
-import {emptyPageData} from '@shared/models/page/page-data';
-import {DatePipe} from '@angular/common';
-import {Direction, SortOrder} from '@shared/models/page/sort-order';
-import {EntityType, EntityTypeResource, EntityTypeTranslation} from '@shared/models/entity-type.models';
-import {EntityComponent} from '@home/components/entity/entity.component';
-import {Type} from '@angular/core';
-import {EntityAction} from './entity-component.models';
-import {PageLink} from '@shared/models/page/page-link';
-import {EntitiesTableComponent} from '@home/components/entity/entities-table.component';
-import {EntityTableHeaderComponent} from '@home/components/entity/entity-table-header.component';
-import {ActivatedRoute} from '@angular/router';
-import {EntityTabsComponent} from '../../components/entity/entity-tabs.component';
-import { MqttCredentialsType } from "@shared/models/client-crenetials.model";
-import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
+import { BaseData } from '@shared/models/base-data';
+import { EntitiesDataSource, EntitiesFetchFunction } from '@home/models/datasource/entity-datasource';
+import { Observable, of } from 'rxjs';
+import { emptyPageData } from '@shared/models/page/page-data';
+import { DatePipe } from '@angular/common';
+import { Direction, SortOrder } from '@shared/models/page/sort-order';
+import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { EntityComponent } from '@home/components/entity/entity.component';
+import { Type } from '@angular/core';
+import { EntityAction } from './entity-component.models';
+import { PageLink } from '@shared/models/page/page-link';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
+import { ActivatedRoute } from '@angular/router';
+import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
+import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
+import { ClientType } from '@shared/models/client.model';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -123,13 +123,15 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
               dateFormat: string = 'yyyy-MM-dd HH:mm:ss',
               cellStyleFunction: CellStyleFunction<T> = () => ({})) {
     super(key,
-          title,
-          width,
-          (entity, property) => {
-            if (entity[property] === 0) return '';
-            return datePipe.transform(entity[property], dateFormat)
-          },
-          cellStyleFunction);
+      title,
+      width,
+      (entity, property) => {
+        if (entity[property] === 0) {
+          return '';
+        }
+        return datePipe.transform(entity[property], dateFormat);
+      },
+      cellStyleFunction);
   }
 }
 
@@ -137,7 +139,8 @@ export type EntityColumn<T extends BaseData> = EntityTableColumn<T> | EntityActi
 
 export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink, L extends BaseData = T> {
 
-  constructor() {}
+  constructor() {
+  }
 
   componentsData: any = null;
 
@@ -171,7 +174,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   dataSource: (dataLoadedFunction: (col?: number, row?: number) => void)
     => EntitiesDataSource<L> = (dataLoadedFunction: (col?: number, row?: number) => void) => {
     return new EntitiesDataSource(this.entitiesFetchFunction, this.entitySelectionEnabled, dataLoadedFunction);
-  }
+  };
   detailsReadonly: EntityBooleanFunction<T> = () => false;
   entitySelectionEnabled: EntityBooleanFunction<L> = () => true;
   deleteEnabled: EntityBooleanFunction<T | L> = () => true;
@@ -186,65 +189,12 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   onEntityAction: EntityActionFunction<T> = () => false;
   handleRowClick: EntityRowClickFunction<L> = () => false;
   entityTitle: EntityStringFunction<T> = () => '';
-  entityAdded: EntityVoidFunction<T> = () => {};
-  entityUpdated: EntityVoidFunction<T> = () => {};
-  entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
-}
-
-export class KafkaEntityTableConfig<T extends BaseData, P extends PageLink = PageLink, L extends BaseData = T> {
-
-  constructor() {}
-
-  componentsData: any = null;
-
-  loadDataOnInit = true;
-  onLoadAction: (route: ActivatedRoute) => void = null;
-  table: EntitiesTableComponent = null;
-  entityType: EntityType = null;
-  tableTitle = '';
-  selectionEnabled = true;
-  searchEnabled = true;
-  addEnabled = true;
-  entitiesDeleteEnabled = true;
-  detailsPanelEnabled = true;
-  hideDetailsTabsOnEdit = true;
-  actionsColumnTitle = null;
-  entityTranslations: EntityTypeTranslation;
-  entityResources: EntityTypeResource<T>;
-  entityComponent: Type<EntityComponent<T, P, L>>;
-  entityTabsComponent: Type<EntityTabsComponent<T, P, L>>;
-  addDialogStyle = {};
-  defaultSortOrder: SortOrder = {property: 'createdTime', direction: Direction.DESC};
-  displayPagination = true;
-  defaultPageSize = 20;
-  columns: Array<EntityColumn<L>> = [];
-  cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
-  groupActionDescriptors: Array<GroupActionDescriptor<L>> = [];
-  headerActionDescriptors: Array<HeaderActionDescriptor> = [];
-  addActionDescriptors: Array<HeaderActionDescriptor> = [];
-  headerComponent: Type<EntityTableHeaderComponent<T, P, L>>;
-  addEntity: CreateEntityOperation<T> = null;
-  dataSource: (dataLoadedFunction: (col?: number, row?: number) => void)
-    => EntitiesDataSource<L> = (dataLoadedFunction: (col?: number, row?: number) => void) => {
-    return new EntitiesDataSource(this.entitiesFetchFunction, this.entitySelectionEnabled, dataLoadedFunction);
-  }
-  detailsReadonly: EntityBooleanFunction<T> = () => false;
-  entitySelectionEnabled: EntityBooleanFunction<L> = () => true;
-  deleteEnabled: EntityBooleanFunction<T | L> = () => true;
-  deleteEntityTitle: EntityStringFunction<L> = () => '';
-  deleteEntityContent: EntityStringFunction<L> = () => '';
-  deleteEntitiesTitle: EntityCountStringFunction = () => '';
-  deleteEntitiesContent: EntityCountStringFunction = () => '';
-  loadEntity: EntityByIdOperation<T | L> = () => of();
-  saveEntity: EntityTwoWayOperation<T> = (entity, originalEntity) => of(entity);
-  deleteEntity: EntityIdOneWayOperation = () => of();
-  entitiesFetchFunction: EntitiesFetchFunction<L, P> = () => of(emptyPageData<L>());
-  onEntityAction: EntityActionFunction<T> = () => false;
-  handleRowClick: EntityRowClickFunction<L> = () => false;
-  entityTitle: EntityStringFunction<T> = () => '';
-  entityAdded: EntityVoidFunction<T> = () => {};
-  entityUpdated: EntityVoidFunction<T> = () => {};
-  entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
+  entityAdded: EntityVoidFunction<T> = () => {
+  };
+  entityUpdated: EntityVoidFunction<T> = () => {
+  };
+  entitiesDeleted: EntityIdsVoidFunction<T> = () => {
+  };
 }
 
 export function checkBoxCell(value: boolean): string {

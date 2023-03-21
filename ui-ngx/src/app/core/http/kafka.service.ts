@@ -32,7 +32,7 @@ export class KafkaService {
   ) {
   }
 
-  public getKafkaBroker(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaBroker>> {
+  public getKafkaBrokers(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaBroker>> {
     const data: PageData<KafkaBroker> = {
       data: [],
       totalPages: pageLink.pageSize,
@@ -55,10 +55,10 @@ export class KafkaService {
     const data: PageData<KafkaTopic> = {
       data: [],
       totalPages: pageLink.pageSize,
-      totalElements: 100,
+      totalElements: 110,
       hasNext: true
     };
-    for (let i = 1; i < 1000; i++) {
+    for (let i = 1; i < 12; i++) {
       data.data.push({
         name: 'client_session_' + i,
         partitions: i,
@@ -75,10 +75,10 @@ export class KafkaService {
     const data: PageData<KafkaConsumerGroup> = {
       data: [],
       totalPages: pageLink.pageSize,
-      totalElements: 100,
+      totalElements: 110,
       hasNext: true
     };
-    for (let i = 1; i < 1000; i++) {
+    for (let i = 1; i < 12; i++) {
       data.data.push({
         state: 'stable',
         id: 'id' + i,
