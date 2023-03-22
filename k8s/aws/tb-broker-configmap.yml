@@ -37,8 +37,8 @@ metadata:
     name: tb-broker-config
 data:
   conf: |
-      # Memory for 20Gi pod (14Gi heap + 6Gi stack and etc)
-      export JAVA_OPTS="$JAVA_OPTS -Xmx14336M -Xms14336M -Xss384k -XX:+AlwaysPreTouch"
+      # Memory for 45Gi pod (32Gi heap + 13Gi stack and etc)
+      export JAVA_OPTS="$JAVA_OPTS -Xmx32768M -Xms32768M -Xss384k -XX:+AlwaysPreTouch"
 
       export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
       export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"

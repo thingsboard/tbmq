@@ -48,11 +48,11 @@ spec:
           image: dlandiak2110/tb-mqtt-broker:1.0.0-SNAPSHOT
           resources:
             limits:
-              cpu: 7.5
-              memory: 20Gi
+              cpu: 11
+              memory: 45Gi
             requests:
-              cpu: 7.5
-              memory: 20Gi
+              cpu: 11
+              memory: 45Gi
           ports:
             - containerPort: 8083
               name: http
