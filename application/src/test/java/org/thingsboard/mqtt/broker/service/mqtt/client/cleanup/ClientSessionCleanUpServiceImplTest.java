@@ -105,9 +105,9 @@ public class ClientSessionCleanUpServiceImplTest {
                 .build();
     }
 
-    private ClientSessionInfo getClientSessionInfo(long lastUpdateTime, boolean cleanStart, int sessionExpiryInterval) {
+    private ClientSessionInfo getClientSessionInfo(long disconnectedAt, boolean cleanStart, int sessionExpiryInterval) {
         return ClientSessionInfo.builder()
-                .lastUpdateTime(lastUpdateTime)
+                .disconnectedAt(disconnectedAt)
                 .connected(false)
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)

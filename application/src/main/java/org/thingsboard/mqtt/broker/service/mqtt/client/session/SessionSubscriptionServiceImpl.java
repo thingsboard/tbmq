@@ -69,7 +69,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     }
 
     private long getSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
-        return clientSessionInfo.getLastUpdateTime() + TimeUnit.SECONDS.toMillis(sessionInfo.safeGetSessionExpiryInterval());
+        return clientSessionInfo.getDisconnectedAt() + TimeUnit.SECONDS.toMillis(sessionInfo.safeGetSessionExpiryInterval());
     }
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {
