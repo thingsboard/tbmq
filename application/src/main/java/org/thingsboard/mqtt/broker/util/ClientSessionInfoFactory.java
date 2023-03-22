@@ -127,7 +127,7 @@ public class ClientSessionInfoFactory {
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
-        return getClientInfo(clientId, clientType, "localhost");
+        return getClientInfo(clientId, clientType, "127.0.0.1");
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType, String clientIpAdr) {

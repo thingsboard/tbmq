@@ -35,6 +35,6 @@ public class ClientInfo {
     public ClientInfo(String clientId, ClientType type) {
         this.clientId = clientId;
         this.type = type;
-        this.clientIpAdr = "localhost";
+        this.clientIpAdr = "127.0.0.1";
     }
 }

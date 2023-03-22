@@ -165,7 +165,7 @@ public class ConnectServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         String clientId = "clientId";
         MqttConnectMsg msg = getMqttConnectMsg(sessionId, clientId);
-        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0, "localhost");
+        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0, "127.0.0.1");
 
         SessionInfo expectedSessionInfo = ClientSessionInfoFactory.getSessionInfo(
                 sessionId,
