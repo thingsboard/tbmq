@@ -156,13 +156,13 @@ public class MqttSubscribeHandlerTest {
                 newRetainedMsg("payload3", 0), newRetainedMsg("payload4", 0)
         ));
         when(retainedMsgService.getRetainedMessages(eq("three"))).thenReturn(List.of(
-                newRetainedMsg("payload5", 2), newRetainedMsg("payload5", 2)
+                newRetainedMsg("payload5", 2)
         ));
         when(retainedMsgService.getRetainedMessages(eq("four"))).thenReturn(List.of(
-                newRetainedMsg("payload6", 1), newRetainedMsg("payload1", 1)
+                newRetainedMsg("payload6", 1)
         ));
         when(retainedMsgService.getRetainedMessages(eq("five"))).thenReturn(List.of(
-                newRetainedMsg("payload6", 2), newRetainedMsg("payload4", 1)
+                newRetainedMsg("payload7", 2)
         ));
 
         Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(

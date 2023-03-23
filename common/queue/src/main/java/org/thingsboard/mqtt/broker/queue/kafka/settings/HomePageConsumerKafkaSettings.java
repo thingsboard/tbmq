@@ -13,28 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class ClientInfo {
+@Component
+public class HomePageConsumerKafkaSettings {
 
-    private final String clientId;
-    private final ClientType type;
-    private final String clientIpAdr;
+    @Value("${queue.kafka.home-page.consumer-config}")
+    private String consumerProperties;
+    @Value("${queue.kafka.home-page.kafka-response-timeout-ms}")
+    private long kafkaResponseTimeoutMs;
 
-    public ClientInfo(String clientId, ClientType type) {
-        this.clientId = clientId;
-        this.type = type;
-        this.clientIpAdr = "127.0.0.1";
-    }
 }

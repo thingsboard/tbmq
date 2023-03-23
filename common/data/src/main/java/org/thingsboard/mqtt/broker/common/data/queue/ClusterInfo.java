@@ -13,28 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.common.data.queue;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class ClientInfo {
+import java.util.List;
 
-    private final String clientId;
-    private final ClientType type;
-    private final String clientIpAdr;
+@Data
+public class ClusterInfo {
 
-    public ClientInfo(String clientId, ClientType type) {
-        this.clientId = clientId;
-        this.type = type;
-        this.clientIpAdr = "127.0.0.1";
-    }
+    private final int controllerId;
+    private final List<KafkaBroker> brokers;
+
 }

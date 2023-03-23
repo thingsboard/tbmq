@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdminService {
+
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientMqttActorManager clientMqttActorManager;
@@ -48,9 +49,12 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
         Set<TopicSubscription> oldSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
+        oldSubscriptions = filterOutSharedSubscriptions(oldSubscriptions);
         Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
-        log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
-                clientId, oldSubscriptions, newSubscriptions);
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
+                    clientId, oldSubscriptions, newSubscriptions);
+        }
 
         Set<String> unsubscribeTopics = prepareTopicsForUnsubscribe(newSubscriptions, oldSubscriptions);
         clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
@@ -76,5 +80,9 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         return subscriptions.stream()
                 .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopicFilter(), subscriptionInfoDto.getQos().value()))
                 .collect(Collectors.toSet());
+    }
+
+    private Set<TopicSubscription> filterOutSharedSubscriptions(Set<TopicSubscription> subscriptions) {
+        return subscriptions.stream().filter(subscription -> subscription.getShareName() == null).collect(Collectors.toSet());
     }
 }

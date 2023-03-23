@@ -41,6 +41,5 @@ public class ClientSessionInfo {
     private final long connectedAt;
     private final long disconnectedAt;
     private final int keepAlive;
-    private final long lastUpdateTime;
 
 }

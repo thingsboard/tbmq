@@ -15,26 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
 
-@Getter
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
-@ToString
-public class ClientInfo {
+@Data
+public class TbProperty {
 
-    private final String clientId;
-    private final ClientType type;
-    private final String clientIpAdr;
-
-    public ClientInfo(String clientId, ClientType type) {
-        this.clientId = clientId;
-        this.type = type;
-        this.clientIpAdr = "127.0.0.1";
-    }
+    private String key;
+    private String value;
 }

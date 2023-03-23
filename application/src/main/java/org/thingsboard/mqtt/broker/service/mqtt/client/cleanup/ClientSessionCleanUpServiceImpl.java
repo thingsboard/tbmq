@@ -114,7 +114,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     }
 
     private boolean isExpired(ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs, long currentTs) {
-        return clientSessionInfo.getLastUpdateTime() + sessionExpiryIntervalMs < currentTs;
+        return clientSessionInfo.getDisconnectedAt() + sessionExpiryIntervalMs < currentTs;
     }
 
     private long getSessionExpiryIntervalMs(SessionInfo sessionInfo) {

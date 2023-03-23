@@ -101,7 +101,7 @@ public class ConnectServiceImpl implements ConnectService {
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
         sessionCtx.setSessionInfo(
                 getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
-                        sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getHostName())
+                        sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getHostAddress())
         );
 
         keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));

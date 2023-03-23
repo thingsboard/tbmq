@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
@@ -35,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,26 +53,23 @@ public class SubscriptionController extends BaseController {
         checkNotNull(detailedClientSessionInfoDto);
         checkNotNull(detailedClientSessionInfoDto.getSubscriptions());
 
-        boolean sharedSubsPresent = isAnySharedSubscriptionPresent(detailedClientSessionInfoDto.getSubscriptions());
-        if (sharedSubsPresent) {
-            throw new ThingsboardException("Shared subscriptions updates are not allowed!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-        }
-
         try {
             detailedClientSessionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
                     topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter()));
 
-            subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), detailedClientSessionInfoDto.getSubscriptions());
+            List<SubscriptionInfoDto> subscriptions = filterOutSharedSubscriptions(detailedClientSessionInfoDto.getSubscriptions());
+            subscriptionAdminService.updateSubscriptions(detailedClientSessionInfoDto.getClientId(), subscriptions);
             return detailedClientSessionInfoDto;
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
-    private boolean isAnySharedSubscriptionPresent(List<SubscriptionInfoDto> subscriptions) {
+    private List<SubscriptionInfoDto> filterOutSharedSubscriptions(List<SubscriptionInfoDto> subscriptions) {
         return subscriptions
                 .stream()
-                .anyMatch(subscription -> subscription.getShareName() != null);
+                .filter(subscription -> subscription.getShareName() == null)
+                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")

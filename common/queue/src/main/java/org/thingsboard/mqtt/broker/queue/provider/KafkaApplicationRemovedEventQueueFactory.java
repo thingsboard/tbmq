@@ -60,7 +60,7 @@ public class KafkaApplicationRemovedEventQueueFactory implements ApplicationRemo
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        Properties props = consumerSettings.toProps(kafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(kafkaSettings.getTopic(), kafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationRemovedEventQueue-" + serviceId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
         consumerBuilder.topic(kafkaSettings.getTopic());

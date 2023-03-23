@@ -74,7 +74,7 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer(String topic, String serviceId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(disconnectClientCommandSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(topic, disconnectClientCommandSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("disconnect-client-command-" + serviceId + "-consumer");

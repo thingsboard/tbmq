@@ -45,10 +45,10 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ClientSessionInfo> filteredByTextSearch = filterClientSessionInfos(allClientSessions, pageLink);
 
         List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
-                .skip((long) pageLink.getPage() * pageLink.getPageSize())
-                .limit(pageLink.getPageSize())
                 .map(this::toShortSessionInfo)
                 .sorted(sorted(pageLink))
+                .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
         return new PageData<>(data,
@@ -69,6 +69,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .connectedAt(clientSessionInfo.getConnectedAt())
                 .disconnectedAt(clientSessionInfo.getDisconnectedAt())
                 .clientIpAdr(clientSessionInfo.getClientIpAdr())
+                .cleanStart(clientSessionInfo.isCleanStart())
                 .build();
     }
 
@@ -85,7 +86,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     private boolean filter(PageLink pageLink, ClientSessionInfo clientSessionInfo) {
         if (pageLink.getTextSearch() != null) {
-            return clientSessionInfo.getClientId().contains(pageLink.getTextSearch());
+            return clientSessionInfo.getClientId().toLowerCase().contains(pageLink.getTextSearch().toLowerCase());
         }
         return true;
     }

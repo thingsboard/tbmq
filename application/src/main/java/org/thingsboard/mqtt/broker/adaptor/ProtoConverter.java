@@ -115,7 +115,6 @@ public class ProtoConverter {
                 .connectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getConnectedAt())
                 .disconnectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getDisconnectedAt())
                 .keepAlive(clientSessionProto.getSessionInfo().getConnectionInfo().getKeepAlive())
-                .lastUpdateTime(clientSessionProto.getLastUpdatedTime())
                 .build();
     }
 
@@ -123,7 +122,6 @@ public class ProtoConverter {
         return QueueProtos.ClientSessionInfoProto.newBuilder()
                 .setConnected(clientSessionInfo.isConnected())
                 .setSessionInfo(convertToSessionInfoProto(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo)))
-                .setLastUpdatedTime(clientSessionInfo.getLastUpdateTime())
                 .build();
     }
 
