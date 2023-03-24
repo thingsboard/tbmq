@@ -109,8 +109,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
         long sessionExpiryIntervalMs = getSessionExpiryIntervalMs(sessionInfo);
-        return isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs)
-                && !clientSessionInfo.isConnected();
+        return !clientSessionInfo.isConnected() && isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs);
     }
 
     private boolean isExpired(ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs, long currentTs) {
