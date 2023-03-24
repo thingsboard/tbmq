@@ -114,6 +114,7 @@ public class ClientSessionCleanUpServiceImplTest {
                 .connected(false)
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
+                .serviceId("tb-broker")
                 .build();
     }
 }
