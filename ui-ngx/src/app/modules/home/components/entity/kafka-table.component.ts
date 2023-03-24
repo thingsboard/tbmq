@@ -23,8 +23,6 @@ import { MatTableDataSource } from '@angular/material/table';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { isUndefined } from '@core/utils';
-import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
-import { SortOrder } from '@shared/models/page/sort-order';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
