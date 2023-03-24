@@ -22,10 +22,11 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import java.util.UUID;
 
 public interface ClientSessionEventFactory {
+
     QueueProtos.ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo);
 
     QueueProtos.ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                     Integer sessionExpiryInterval);
+                                                                     int sessionExpiryInterval);
 
     QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo);
 

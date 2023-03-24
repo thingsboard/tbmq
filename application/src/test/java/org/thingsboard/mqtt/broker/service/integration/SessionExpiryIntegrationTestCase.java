@@ -165,7 +165,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
 
         clientSession = clientSessionCache.getClientSession(CLIENT_ID);
         Assert.assertNotNull(clientSession);
-        Assert.assertEquals(5, clientSession.getSessionInfo().getSessionExpiryInterval().intValue());
+        Assert.assertEquals(5, clientSession.getSessionInfo().getSessionExpiryInterval());
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(CLIENT_ID);
         Assert.assertNotNull(clientSubscriptions);
         Assert.assertEquals(1, clientSubscriptions.size());

@@ -36,7 +36,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
 
     @Override
     public QueueProtos.ClientSessionEventProto createDisconnectedEventProto(ClientInfo clientInfo, UUID sessionId,
-                                                                            Integer sessionExpiryInterval) {
+                                                                            int sessionExpiryInterval) {
         SessionInfo disconnectSessionInfo = SessionInfo.builder()
                 .sessionId(sessionId)
                 .clientInfo(clientInfo)

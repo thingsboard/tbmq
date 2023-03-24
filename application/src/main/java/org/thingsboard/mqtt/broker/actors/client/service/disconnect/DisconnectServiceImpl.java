@@ -95,13 +95,13 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
     }
 
-    private Integer getSessionExpiryInterval(MqttProperties properties) {
+    private int getSessionExpiryInterval(MqttProperties properties) {
         MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
                 .getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value());
         if (property != null) {
             return property.value();
         }
-        return null;
+        return -1;
     }
 
     // only for mqtt 5 clients disconnect packet can be sent from server, when client did not send DISCONNECT and connection was successful
@@ -120,7 +120,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
     }
 
-    void notifyClientDisconnected(ClientActorStateInfo actorState, Integer sessionExpiryInterval) {
+    void notifyClientDisconnected(ClientActorStateInfo actorState, int sessionExpiryInterval) {
         if (log.isTraceEnabled()) {
             log.trace("Executing notifyClientDisconnected");
         }
@@ -136,7 +136,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
     }
 
-    void clearClientSession(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg, Integer sessionExpiryInterval) {
+    void clearClientSession(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg, int sessionExpiryInterval) {
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         ClientInfo clientInfo = sessionCtx.getSessionInfo().getClientInfo();
         var disconnectReasonType = disconnectMsg.getReason().getType();
