@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -68,7 +69,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .subscriptionsCount(clientSubscriptionCache.getClientSubscriptions(clientSessionInfo.getClientId()).size())
                 .connectedAt(clientSessionInfo.getConnectedAt())
                 .disconnectedAt(clientSessionInfo.getDisconnectedAt())
-                .clientIpAdr(clientSessionInfo.getClientIpAdr())
+                .clientIpAdr(BytesUtil.toHostAddress(clientSessionInfo.getClientIpAdr()))
                 .cleanStart(clientSessionInfo.isCleanStart())
                 .build();
     }

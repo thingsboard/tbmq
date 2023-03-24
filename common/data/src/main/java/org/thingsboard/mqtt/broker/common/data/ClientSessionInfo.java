@@ -37,7 +37,7 @@ public class ClientSessionInfo {
     private final int sessionExpiryInterval;
     private final String clientId;
     private final ClientType type;
-    private final String clientIpAdr; // to bytes
+    private final byte[] clientIpAdr;
     private final long connectedAt;
     private final long disconnectedAt;
     private final int keepAlive;

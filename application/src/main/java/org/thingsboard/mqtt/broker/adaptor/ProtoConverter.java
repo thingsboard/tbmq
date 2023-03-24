@@ -111,7 +111,7 @@ public class ProtoConverter {
                 .sessionExpiryInterval(clientSessionProto.getSessionInfo().getSessionExpiryInterval())
                 .clientId(clientSessionProto.getSessionInfo().getClientInfo().getClientId())
                 .type(ClientType.valueOf(clientSessionProto.getSessionInfo().getClientInfo().getClientType()))
-                .clientIpAdr(clientSessionProto.getSessionInfo().getClientInfo().getClientIpAdr())
+                .clientIpAdr(clientSessionProto.getSessionInfo().getClientInfo().getClientIpAdr().toByteArray())
                 .connectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getConnectedAt())
                 .disconnectedAt(clientSessionProto.getSessionInfo().getConnectionInfo().getDisconnectedAt())
                 .keepAlive(clientSessionProto.getSessionInfo().getConnectionInfo().getKeepAlive())
@@ -168,7 +168,7 @@ public class ProtoConverter {
         return clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
                 .setClientId(clientInfo.getClientId())
                 .setClientType(clientInfo.getType().toString())
-                .setClientIpAdr(clientInfo.getClientIpAdr())
+                .setClientIpAdr(ByteString.copyFrom(clientInfo.getClientIpAdr()))
                 .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
     }
 
@@ -176,7 +176,7 @@ public class ProtoConverter {
         return clientInfoProto != null ? ClientInfo.builder()
                 .clientId(clientInfoProto.getClientId())
                 .type(ClientType.valueOf(clientInfoProto.getClientType()))
-                .clientIpAdr(clientInfoProto.getClientIpAdr())
+                .clientIpAdr(clientInfoProto.getClientIpAdr().toByteArray())
                 .build() : null;
     }
 

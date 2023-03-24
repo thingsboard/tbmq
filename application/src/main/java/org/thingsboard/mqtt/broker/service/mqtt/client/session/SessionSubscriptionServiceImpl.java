@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.List;
@@ -64,7 +65,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
                 .disconnectedAt(connectionInfo.getDisconnectedAt())
-                .clientIpAdr(sessionInfo.getClientInfo().getClientIpAdr())
+                .clientIpAdr(BytesUtil.toHostAddress(sessionInfo.getClientInfo().getClientIpAdr()))
                 .build();
     }
 

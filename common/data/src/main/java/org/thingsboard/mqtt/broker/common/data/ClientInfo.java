@@ -19,22 +19,26 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.ToString;
+
+import java.net.InetAddress;
 
 @Getter
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude = "clientIpAdr")
 @ToString
 public class ClientInfo {
 
     private final String clientId;
     private final ClientType type;
-    private final String clientIpAdr;
+    private final byte[] clientIpAdr;
 
+    @SneakyThrows
     public ClientInfo(String clientId, ClientType type) {
         this.clientId = clientId;
         this.type = type;
-        this.clientIpAdr = "127.0.0.1";
+        this.clientIpAdr = InetAddress.getLocalHost().getAddress();
     }
 }

@@ -127,10 +127,10 @@ public class ClientSessionInfoFactory {
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
-        return getClientInfo(clientId, clientType, "127.0.0.1");
+        return getClientInfo(clientId, clientType, BrokerConstants.LOCAL_ADR);
     }
 
-    public static ClientInfo getClientInfo(String clientId, ClientType clientType, String clientIpAdr) {
+    public static ClientInfo getClientInfo(String clientId, ClientType clientType, byte[] clientIpAdr) {
         return ClientInfo.builder()
                 .clientId(clientId)
                 .type(clientType)

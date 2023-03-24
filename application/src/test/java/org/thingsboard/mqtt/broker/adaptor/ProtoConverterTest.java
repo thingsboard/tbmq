@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -96,7 +97,7 @@ public class ProtoConverterTest {
                 .clientInfo(ClientInfo.builder()
                         .clientId("clientId")
                         .type(ClientType.DEVICE)
-                        .clientIpAdr("127.0.0.1")
+                        .clientIpAdr(BrokerConstants.LOCAL_ADR)
                         .build())
                 .connectionInfo(ConnectionInfo.builder()
                         .connectedAt(10)

@@ -15,11 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+@Slf4j
 public class BytesUtil {
+
     public static byte[] uuidToBytes(UUID uuid) {
         ByteBuffer buf = ByteBuffer.allocate(16);
         buf.putLong(uuid.getMostSignificantBits());
@@ -50,5 +56,14 @@ public class BytesUtil {
 
     public static String bytesToString(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    public static String toHostAddress(byte[] ipAddr) {
+        try {
+            return InetAddress.getByAddress(ipAddr).getHostAddress();
+        } catch (UnknownHostException e) {
+            log.warn("Failed to convert IP address [{}] to textual form", ipAddr);
+            return "unknown";
+        }
     }
 }
