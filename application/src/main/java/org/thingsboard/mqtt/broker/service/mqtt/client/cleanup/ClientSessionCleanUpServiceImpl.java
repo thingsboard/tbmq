@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.cleanup;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -42,6 +44,10 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
     private final ClientSessionCache clientSessionCache;
     private final ClientSessionEventService clientSessionEventService;
     private final DisconnectClientCommandService disconnectClientCommandService;
+    private final ServiceInfoProvider serviceInfoProvider;
+
+    @Value("${mqtt.client-session-expiry.ttl:0}")
+    private int ttl;
 
     @Override
     public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
@@ -91,8 +97,23 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
         List<SessionInfo> clientSessionsToRemove = new ArrayList<>();
         for (ClientSessionInfo clientSessionInfo : clientSessionInfos.values()) {
+            if (clientSessionFromAnotherNode(clientSessionInfo)) {
+                continue;
+            }
             SessionInfo sessionInfo = ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo);
-            if (!isNotCleanSession(sessionInfo) && needsToBeRemoved(currentTs, clientSessionInfo, sessionInfo)) {
+
+            long sessionExpiryIntervalMs;
+            if (isNotCleanSession(sessionInfo)) {
+                if (ttl > 0) {
+                    sessionExpiryIntervalMs = getSessionExpiryIntervalMs(ttl);
+                } else {
+                    continue;
+                }
+            } else {
+                sessionExpiryIntervalMs = getSessionExpiryIntervalMs(sessionInfo.safeGetSessionExpiryInterval());
+            }
+
+            if (needsToBeRemoved(currentTs, clientSessionInfo, sessionExpiryIntervalMs)) {
                 clientSessionsToRemove.add(sessionInfo);
             }
         }
@@ -103,21 +124,23 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         }
     }
 
+    private boolean clientSessionFromAnotherNode(ClientSessionInfo clientSessionInfo) {
+        return !clientSessionInfo.getServiceId().equals(serviceInfoProvider.getServiceId());
+    }
+
     boolean isNotCleanSession(SessionInfo sessionInfo) {
         return sessionInfo.isNotCleanSession();
     }
 
-    private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
-        long sessionExpiryIntervalMs = getSessionExpiryIntervalMs(sessionInfo);
-        return isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs)
-                && !clientSessionInfo.isConnected();
+    private boolean needsToBeRemoved(long currentTs, ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs) {
+        return !clientSessionInfo.isConnected() && isExpired(clientSessionInfo, sessionExpiryIntervalMs, currentTs);
     }
 
     private boolean isExpired(ClientSessionInfo clientSessionInfo, long sessionExpiryIntervalMs, long currentTs) {
         return clientSessionInfo.getDisconnectedAt() + sessionExpiryIntervalMs < currentTs;
     }
 
-    private long getSessionExpiryIntervalMs(SessionInfo sessionInfo) {
-        return TimeUnit.SECONDS.toMillis(sessionInfo.safeGetSessionExpiryInterval());
+    private long getSessionExpiryIntervalMs(int sessionExpiryInterval) {
+        return TimeUnit.SECONDS.toMillis(sessionExpiryInterval);
     }
 }

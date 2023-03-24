@@ -41,7 +41,6 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
@@ -184,7 +183,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public ClusterInfo getClusterInfo() {
+    public PageData<KafkaBroker> getClusterInfo() {
         try {
             DescribeClusterResult describeClusterResult = client.describeCluster();
             Map<Integer, Node> brokerNodes = describeClusterResultToNodes(describeClusterResult);
@@ -203,8 +202,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 }
                 kafkaBrokers.add(new KafkaBroker(brokerId, brokerNodes.get(brokerId).host(), brokerTotalSize));
             }
-            Node controllerNode = describeClusterResult.controller().get();
-            return new ClusterInfo(controllerNode.id(), kafkaBrokers);
+            return new PageData<>(kafkaBrokers, 1, kafkaBrokers.size(), false);
         } catch (InterruptedException | ExecutionException e) {
             log.warn("Failed to get Kafka cluster info", e);
             throw new RuntimeException(e);

@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscripti
 @RequestMapping("/api/client-session")
 @RequiredArgsConstructor
 public class ClientSessionController extends BaseController {
+
     private final ClientSessionCleanUpService clientSessionCleanUpService;
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
