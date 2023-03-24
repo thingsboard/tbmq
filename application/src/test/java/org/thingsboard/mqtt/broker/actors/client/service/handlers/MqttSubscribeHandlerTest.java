@@ -149,20 +149,21 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void testGetRetainedMsgsForTopics() {
+        long ts = System.currentTimeMillis();
         when(retainedMsgService.getRetainedMessages(eq("one"))).thenReturn(List.of(
-                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 1)
+                newRetainedMsg("payload1", 1, ts), newRetainedMsg("payload2", 1, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("two"))).thenReturn(List.of(
-                newRetainedMsg("payload3", 0), newRetainedMsg("payload4", 0)
+                newRetainedMsg("payload3", 0, ts), newRetainedMsg("payload4", 0, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("three"))).thenReturn(List.of(
-                newRetainedMsg("payload5", 2)
+                newRetainedMsg("payload5", 2, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("four"))).thenReturn(List.of(
-                newRetainedMsg("payload6", 1)
+                newRetainedMsg("payload6", 1, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("five"))).thenReturn(List.of(
-                newRetainedMsg("payload7", 2)
+                newRetainedMsg("payload7", 2, ts)
         ));
 
         Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
@@ -179,20 +180,21 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void testGetRetainedMsgsForTopicsWithOptions() {
+        long ts = System.currentTimeMillis();
         when(retainedMsgService.getRetainedMessages(eq("one"))).thenReturn(List.of(
-                newRetainedMsg("payload1", 1), newRetainedMsg("payload2", 1)
+                newRetainedMsg("payload1", 1, ts), newRetainedMsg("payload2", 1, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("two"))).thenReturn(List.of(
-                newRetainedMsg("payload3", 0), newRetainedMsg("payload4", 0)
+                newRetainedMsg("payload3", 0, ts), newRetainedMsg("payload4", 0, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("three"))).thenReturn(List.of(
-                newRetainedMsg("payload5", 2), newRetainedMsg("payload5", 2)
+                newRetainedMsg("payload5", 2, ts), newRetainedMsg("payload5", 2, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("four"))).thenReturn(List.of(
-                newRetainedMsg("payload6", 1), newRetainedMsg("payload1", 1)
+                newRetainedMsg("payload6", 1, ts), newRetainedMsg("payload1", 1, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("five"))).thenReturn(List.of(
-                newRetainedMsg("payload6", 2), newRetainedMsg("payload4", 1)
+                newRetainedMsg("payload6", 2, ts), newRetainedMsg("payload4", 1, ts)
         ));
 
         Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
@@ -249,7 +251,7 @@ public class MqttSubscribeHandlerTest {
         return new TopicSubscription(topic, qos, options);
     }
 
-    private RetainedMsg newRetainedMsg(String payload, int qos) {
-        return new RetainedMsg("#", payload.getBytes(StandardCharsets.UTF_8), qos);
+    private RetainedMsg newRetainedMsg(String payload, int qos, long ts) {
+        return new RetainedMsg("#", payload.getBytes(StandardCharsets.UTF_8), qos, MqttProperties.NO_PROPERTIES, ts);
     }
 }

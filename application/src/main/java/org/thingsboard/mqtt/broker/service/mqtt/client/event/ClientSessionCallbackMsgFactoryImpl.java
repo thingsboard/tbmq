@@ -40,6 +40,7 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToUuid;
 
 @Service
 public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbackMsgFactory {
+
     @Override
     public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback) {
         QueueProtos.ClientSessionEventProto eventProto = msg.getValue();

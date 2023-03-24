@@ -245,7 +245,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         applicationTopicService.deleteTopic(clientId, CallbackUtil.createCallback(callback::onSuccess, callback::onFailure));
     }
 
-    private void finishDisconnect(ClientSession clientSession, boolean forceClearSession, Integer sessionExpiryInterval) {
+    private void finishDisconnect(ClientSession clientSession, boolean forceClearSession, int sessionExpiryInterval) {
         SessionInfo sessionInfo = clientSession.getSessionInfo();
         String clientId = sessionInfo.getClientInfo().getClientId();
         if (log.isTraceEnabled()) {
@@ -266,14 +266,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         clearSessionAndSubscriptions(clientId);
     }
 
-    private ClientSession markSessionDisconnected(ClientSession clientSession, Integer sessionExpiryInterval) {
+    private ClientSession markSessionDisconnected(ClientSession clientSession, int sessionExpiryInterval) {
         ConnectionInfo connectionInfo = clientSession.getSessionInfo().getConnectionInfo().toBuilder()
                 .disconnectedAt(System.currentTimeMillis())
                 .build();
         SessionInfo sessionInfo = clientSession.getSessionInfo().toBuilder()
                 .connectionInfo(connectionInfo)
                 .build();
-        sessionInfo = sessionExpiryInterval == null ? sessionInfo :
+        sessionInfo = sessionExpiryInterval == -1 ? sessionInfo :
                 sessionInfo.toBuilder().sessionExpiryInterval(sessionExpiryInterval).build();
         return clientSession.toBuilder()
                 .connected(false)
@@ -392,7 +392,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     clientId, currentSessionServiceId, currentClientSessionId);
         }
         disconnectCurrentSession(currentSessionServiceId, clientId, currentClientSessionId, sessionInfo.isCleanStart());
-        finishDisconnect(currentClientSession, true, null);
+        finishDisconnect(currentClientSession, true, -1);
     }
 
     private UUID getCurrentClientSessionIdIfPresent(ClientSession currentlyConnectedSession) {

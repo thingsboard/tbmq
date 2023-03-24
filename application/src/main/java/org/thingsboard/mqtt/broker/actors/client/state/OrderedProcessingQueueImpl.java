@@ -28,6 +28,7 @@ import java.util.Queue;
  */
 @RequiredArgsConstructor
 public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
+
     private final Queue<Integer> awaitingMsgIds = new LinkedList<>();
     private final Queue<Integer> finishedMsgIds = new LinkedList<>();
 

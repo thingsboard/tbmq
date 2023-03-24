@@ -15,7 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import java.nio.charset.StandardCharsets;
+
 public class BrokerConstants {
+
+    public static final byte[] LOCAL_ADR = "127.0.0.1".getBytes(StandardCharsets.UTF_8);
 
     public static final String MQTT_PROTOCOL_NAME = "MQTT";
     public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";

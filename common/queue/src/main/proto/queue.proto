@@ -67,6 +67,7 @@ message ClientInfoProto {
   string clientId = 1;
   string clientType = 2;
   string clientIpAdr = 3;
+//  bytes clientIpAdr = 3;
 }
 
 message ConnectionInfoProto {

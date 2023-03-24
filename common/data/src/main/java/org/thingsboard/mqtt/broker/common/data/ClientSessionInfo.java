@@ -34,10 +34,10 @@ public class ClientSessionInfo {
     private final String serviceId;
     private final UUID sessionId;
     private final boolean cleanStart;
-    private final Integer sessionExpiryInterval;
+    private final int sessionExpiryInterval;
     private final String clientId;
     private final ClientType type;
-    private final String clientIpAdr;
+    private final String clientIpAdr; // to bytes
     private final long connectedAt;
     private final long disconnectedAt;
     private final int keepAlive;

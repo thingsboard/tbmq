@@ -126,7 +126,7 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
-        return sessionInfo.getSessionExpiryInterval() == null ?
+        return sessionInfo.getSessionExpiryInterval() == -1 ?
                 getSessionInfoProto(sessionInfo) : getSessionInfoProtoWithSessionExpiryInterval(sessionInfo);
     }
 
@@ -160,7 +160,7 @@ public class ProtoConverter {
                 .cleanStart(sessionInfoProto.getCleanStart())
                 .clientInfo(convertToClientInfo(sessionInfoProto.getClientInfo()))
                 .connectionInfo(convertToConnectionInfo(sessionInfoProto.getConnectionInfo()))
-                .sessionExpiryInterval(sessionInfoProto.hasSessionExpiryInterval() ? sessionInfoProto.getSessionExpiryInterval() : null)
+                .sessionExpiryInterval(sessionInfoProto.hasSessionExpiryInterval() ? sessionInfoProto.getSessionExpiryInterval() : -1)
                 .build();
     }
 

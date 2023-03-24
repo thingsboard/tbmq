@@ -24,7 +24,7 @@ public interface LastWillService {
 
     void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg);
 
-    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean newSessionCleanStart, Integer sessionExpiryInterval);
+    void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg, boolean newSessionCleanStart, int sessionExpiryInterval);
 
     void cancelLastWillDelayIfScheduled(String clientId);
 }
