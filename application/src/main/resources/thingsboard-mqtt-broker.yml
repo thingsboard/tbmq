@@ -391,6 +391,10 @@ mqtt:
     zone: "${MQTT_CLIENT_SESSION_EXPIRY_ZONE:UTC}"
     # Specify max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
     max-expiry-interval: "${MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL:604800}"
+    # Administration TTL in seconds for clearing sessions that do not expire by session expiry interval
+    # (e.g. MQTTv3 cleanSession=false or MQTTv5 cleanStart=false && sessionExpiryInterval == 0).
+    # The current value corresponds to one week. 0 or negative value means this TTL is disabled
+    ttl: "${MQTT_CLIENT_SESSION_EXPIRY_TTL:604800}"
   version-3-1:
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
   persistent-session:

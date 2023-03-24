@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
@@ -41,6 +42,9 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache subscriptionCache;
 
+    @Value("${mqtt.client-session-expiry.ttl:0}")
+    private int ttl;
+
     @Override
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) {
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
@@ -60,7 +64,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .nodeId(sessionInfo.getServiceId())
                 .cleanStart(sessionInfo.isCleanStart())
                 .sessionExpiryInterval(sessionInfo.safeGetSessionExpiryInterval())
-                .sessionEndTs(clientSessionInfo.isConnected() || sessionInfo.isNotCleanSession() ? -1 : getSessionEndTs(clientSessionInfo, sessionInfo))
+                .sessionEndTs(computeSessionEndTs(clientSessionInfo, sessionInfo))
                 .subscriptions(collectSubscriptions(subscriptions))
                 .keepAliveSeconds(connectionInfo.getKeepAlive())
                 .connectedAt(connectionInfo.getConnectedAt())
@@ -69,8 +73,18 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
                 .build();
     }
 
-    private long getSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
-        return clientSessionInfo.getDisconnectedAt() + TimeUnit.SECONDS.toMillis(sessionInfo.safeGetSessionExpiryInterval());
+    private long computeSessionEndTs(ClientSessionInfo clientSessionInfo, SessionInfo sessionInfo) {
+        if (clientSessionInfo.isConnected()) {
+            return -1;
+        }
+        if (sessionInfo.isNotCleanSession()) {
+            return ttl > 0 ? getSessionEndTs(clientSessionInfo, ttl) : -1;
+        }
+        return getSessionEndTs(clientSessionInfo, sessionInfo.safeGetSessionExpiryInterval());
+    }
+
+    private long getSessionEndTs(ClientSessionInfo clientSessionInfo, int sessionExpiryInterval) {
+        return clientSessionInfo.getDisconnectedAt() + TimeUnit.SECONDS.toMillis(sessionExpiryInterval);
     }
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {

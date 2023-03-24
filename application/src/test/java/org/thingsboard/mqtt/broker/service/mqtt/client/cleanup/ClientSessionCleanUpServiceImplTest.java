@@ -24,6 +24,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
@@ -55,6 +56,8 @@ public class ClientSessionCleanUpServiceImplTest {
     ClientSessionEventService clientSessionEventService;
     @MockBean
     DisconnectClientCommandService disconnectClientCommandService;
+    @MockBean
+    ServiceInfoProvider serviceInfoProvider;
 
     @SpyBean
     ClientSessionCleanUpServiceImpl clientSessionCleanUpService;
