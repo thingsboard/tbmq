@@ -26,14 +26,7 @@
         <span [innerHTML]="cellContent(entity, column, row)"></span>
       </mat-cell>
     </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-    <mat-paginator hidden *ngIf="displayPagination"
-                   [pageIndex]="pageLink.page"
-                   [length]="totalElements"
-                   [pageSize]="pageLink.pageSize"
-                   [pageSizeOptions]="pageSizeOptions"
-                   (page)="pageChanged($event)"
-                   showFirstLastButtons></mat-paginator>
   </table>
 </div>

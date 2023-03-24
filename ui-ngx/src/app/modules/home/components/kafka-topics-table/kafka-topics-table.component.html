@@ -31,10 +31,11 @@
         <span [innerHTML]="cellContent(entity, column, row)"></span>
       </mat-cell>
     </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
   </table>
   <mat-paginator *ngIf="displayPagination"
+                 class="mat-paginator-sticky"
                  [pageIndex]="pageLink.page"
                  [length]="totalElements"
                  [pageSize]="pageLink.pageSize"

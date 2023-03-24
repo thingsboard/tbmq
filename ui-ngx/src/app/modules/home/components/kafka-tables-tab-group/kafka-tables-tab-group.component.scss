@@ -18,4 +18,12 @@
     background: #f4f4f4;
     border-radius: 10px;
   }
+
+  .dropdown {
+    position: absolute;
+    background-color: red;
+    top: 0px;
+    right: 10px;
+    z-index: 99;
+  }
 }

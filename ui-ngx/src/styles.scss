@@ -1214,4 +1214,11 @@ mat-label {
 .tb-kafka-table-search {
   min-height: 20px;
   padding: 0 18px 0;
+  font-size: 12px;
+}
+
+.mat-paginator-sticky {
+  bottom: 0px;
+  position: sticky;
+  z-index: 10;
 }
