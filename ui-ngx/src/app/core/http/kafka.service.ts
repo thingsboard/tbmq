@@ -33,62 +33,14 @@ export class KafkaService {
   }
 
   public getKafkaBrokers(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaBroker>> {
-    const data: PageData<KafkaBroker> = {
-      data: [],
-      totalPages: pageLink.pageSize,
-      totalElements: 100,
-      hasNext: true
-    };
-    for (let i = 1; i < 11; i++) {
-      data.data.push({
-        id: 'id_' + i,
-        address: 'localhost',
-        size: i * 1000,
-      });
-    }
-    return of(data);
-    // return this.http.get<PageData<KafkaBroker>>(`/api/mqtt/kafka/brokers${pageLink.toQuery()}`,
-    //   defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaBroker>>(`/api/app/cluster-info${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getKafkaTopics(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaTopic>> {
-    const data: PageData<KafkaTopic> = {
-      data: [],
-      totalPages: pageLink.pageSize,
-      totalElements: 110,
-      hasNext: true
-    };
-    for (let i = 1; i < 12; i++) {
-      data.data.push({
-        name: 'client_session_' + i,
-        partitions: i,
-        replicas: i * 5,
-        size: i * 1000
-      });
-    }
-    return of(data);
-    // return this.http.get<PageData<KafkaTopic>>(`/api/mqtt/kafka/topics${pageLink.toQuery()}`,
-    //   defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaTopic>>(`/api/app/kafka-topics${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getKafkaConsumerGroups(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaConsumerGroup>> {
-    const data: PageData<KafkaConsumerGroup> = {
-      data: [],
-      totalPages: pageLink.pageSize,
-      totalElements: 110,
-      hasNext: true
-    };
-    for (let i = 1; i < 12; i++) {
-      data.data.push({
-        state: 'stable',
-        id: 'id' + i,
-        members: i,
-        lag: i
-      });
-    }
-    return of(data);
-    // return this.http.get<PageData<KafkaConsumerGroup>>(`/api/mqtt/kafka/consumerGroups${pageLink.toQuery()}`,
-    //   defaultHttpOptionsFromConfig(config));
+    return this.http.get<PageData<KafkaConsumerGroup>>(`/api/app/consumer-groups${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
-
 }

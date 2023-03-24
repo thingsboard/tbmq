@@ -15,7 +15,6 @@
 ///
 
 import { Component } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
@@ -29,17 +28,11 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
 })
 export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker> {
 
+  fetchEntities$ = () => this.kafkaService.getKafkaBrokers(this.pageLink);
+
   constructor(private kafkaService: KafkaService,
               protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
-  }
-
-  ngAfterViewInit() {
-    this.kafkaService.getKafkaBrokers(this.pageLink).subscribe(
-      data => {
-        this.dataSource = new MatTableDataSource(data.data);
-      }
-    );
   }
 
   getColumns() {

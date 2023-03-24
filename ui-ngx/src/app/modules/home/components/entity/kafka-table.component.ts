@@ -14,19 +14,20 @@
 /// limitations under the License.
 ///
 
-import { Directive, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Directive, OnInit, ViewChild } from '@angular/core';
 import { BaseData } from '@shared/models/base-data';
 import { MatSort } from '@angular/material/sort';
-import { MatPaginator } from '@angular/material/paginator';
-import { PageLink } from '@shared/models/page/page-link';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
 import { MatTableDataSource } from '@angular/material/table';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { isUndefined } from '@core/utils';
+import { Observable } from 'rxjs';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
-export abstract class KafkaTableComponent<T extends BaseData> implements OnInit {
+export abstract class KafkaTableComponent<T extends BaseData> implements OnInit, AfterViewInit {
 
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -34,14 +35,18 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit 
   columns = [];
   dataSource: MatTableDataSource<T> = new MatTableDataSource();
   displayedColumns: Array<string> = [];
+  displayPagination = true;
 
-  defaultPageSize = 20;
+  defaultPageSize = 10;
   pageSizeOptions;
   pageLink: PageLink;
 
   cellContentCache: Array<SafeHtml> = [];
   cellTooltipCache: Array<string> = [];
   cellStyleCache: Array<any> = [];
+  totalElements: number;
+
+  abstract fetchEntities$: () => Observable<any>;
 
   constructor(protected domSanitizer: DomSanitizer) {
   }
@@ -51,12 +56,32 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit 
     this.dataSource.paginator = this.paginator;
     this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
     this.pageLink = new PageLink(10, 0, null);
+    this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.columns = this.getColumns();
     this.columns.forEach(
       column => {
         this.displayedColumns.push(column.key);
       }
     );
+  }
+
+  ngAfterViewInit() {
+    this.loadEntities();
+  }
+
+  private loadEntities() {
+    this.fetchEntities$().subscribe(
+      data => {
+        this.totalElements = data.totalElements;
+        this.dataSource = new MatTableDataSource(data.data);
+      }
+    );
+  }
+
+  pageChanged(event: PageEvent) {
+    this.pageLink.pageSize = event.pageSize;
+    this.pageLink.page = event.pageIndex;
+    this.loadEntities();
   }
 
   cellStyle(entity: T, column: EntityColumn<T>, row: number) {

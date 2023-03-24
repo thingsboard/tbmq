@@ -25,15 +25,15 @@ export interface KafkaBroker extends BaseData {
 export interface KafkaTopic extends BaseData {
   name: string;
   partitions: number;
-  replicas: number;
+  replicationFactor: number;
   size: number;
 }
 
 export interface KafkaConsumerGroup extends BaseData {
   state: string;
-  id: string;
+  groupId: string;
   members: number;
-  lag: number;
+  lag: string;
 }
 
 

@@ -34,5 +34,11 @@
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
   </table>
-  <mat-paginator [pageSizeOptions]="pageSizeOptions" showFirstLastButtons></mat-paginator>
+  <mat-paginator *ngIf="displayPagination"
+                 [pageIndex]="pageLink.page"
+                 [length]="totalElements"
+                 [pageSize]="pageLink.pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 (page)="pageChanged($event)"
+                 showFirstLastButtons></mat-paginator>
 </div>

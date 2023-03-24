@@ -15,7 +15,6 @@
 ///
 
 import { Component } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
@@ -29,26 +28,20 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
 })
 export class KafkaTopicsTableComponent extends KafkaTableComponent<KafkaTopic> {
 
+  fetchEntities$ = () => this.kafkaService.getKafkaTopics(this.pageLink);
+
   constructor(private kafkaService: KafkaService,
               protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
   }
 
-  ngAfterViewInit() {
-    this.kafkaService.getKafkaTopics(this.pageLink).subscribe(
-      data => {
-        this.dataSource = new MatTableDataSource(data.data);
-      }
-    );
-  }
-
   getColumns() {
     const columns: Array<EntityColumn<KafkaTopic>> = [];
     columns.push(
-      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '25%'),
-      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '25%'),
-      new EntityTableColumn<KafkaTopic>('replicas', 'kafka.replicas', '25%'),
-      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '25%', entity => {
+      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
+      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%'),
+      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%'),
+      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%', entity => {
         return entity.size + ' B';
       })
     );

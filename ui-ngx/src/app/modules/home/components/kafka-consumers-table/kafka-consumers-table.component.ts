@@ -15,7 +15,6 @@
 ///
 
 import { Component } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
@@ -29,26 +28,20 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
 })
 export class KafkaConsumersTableComponent extends KafkaTableComponent<KafkaConsumerGroup> {
 
+  fetchEntities$ = () => this.kafkaService.getKafkaConsumerGroups(this.pageLink);
+
   constructor(private kafkaService: KafkaService,
               protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
   }
 
-  ngAfterViewInit() {
-    this.kafkaService.getKafkaConsumerGroups(this.pageLink).subscribe(
-      data => {
-        this.dataSource = new MatTableDataSource(data.data);
-      }
-    );
-  }
-
   getColumns() {
     const columns: Array<EntityColumn<KafkaConsumerGroup>> = [];
     columns.push(
-      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '25%'),
-      new EntityTableColumn<KafkaConsumerGroup>('id', 'kafka.id', '25%'),
-      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '25%'),
-      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '25%')
+      new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '70%'),
+      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%'),
+      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%'),
+      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%', entity => entity.lag)
     );
     return columns;
   }
