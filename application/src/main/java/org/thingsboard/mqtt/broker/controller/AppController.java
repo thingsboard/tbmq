@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -71,9 +71,9 @@ public class AppController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/cluster-info", method = RequestMethod.GET)
     @ResponseBody
-    public ClusterInfo getKafkaClusterInfo() throws ThingsboardException {
+    public PageData<KafkaBroker> getKafkaClusterInfo() throws ThingsboardException {
         try {
-            return tbQueueAdmin.getClusterInfo();
+            return checkNotNull(tbQueueAdmin.getClusterInfo());
         } catch (Exception e) {
             throw handleException(e);
         }

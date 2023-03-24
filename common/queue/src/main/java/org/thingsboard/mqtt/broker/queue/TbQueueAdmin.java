@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.queue;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.queue.ClusterInfo;
+import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 
@@ -37,7 +37,7 @@ public interface TbQueueAdmin {
 
     int getNumberOfPartitions(String topic);
 
-    ClusterInfo getClusterInfo();
+    PageData<KafkaBroker> getClusterInfo();
 
     PageData<KafkaTopic> getTopics(PageLink pageLink);
 
