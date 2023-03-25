@@ -15,10 +15,44 @@
     limitations under the License.
 
 -->
-<div class="tb-kafka-table-search">
-  <mat-form-field>
-    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Quick search">
-  </mat-form-field>
+<div fxLayout="column" fxLayoutAlign="start end">
+  <div fxFlex [fxShow]="!textSearchMode">
+    <div class="mat-toolbar-tools" style="padding: 0" fxLayoutGap="4px">
+      <button mat-mini-fab color="none"
+              [disabled]="isLoading$ | async" (click)="updateData()"
+              matTooltip="{{ 'action.refresh' | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button *ngIf="searchEnabled"
+              mat-mini-fab color="none"
+              [disabled]="isLoading$ | async" (click)="enterFilterMode()"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>search</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div [fxShow]="textSearchMode">
+    <div class="mat-toolbar-tools" fxLayoutAlign="space-evenly">
+      <button mat-icon-button
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>search</mat-icon>
+      </button>
+      <mat-form-field>
+        <mat-label>&nbsp;</mat-label>
+        <input matInput #searchInput
+               [(ngModel)]="pageLink.textSearch"
+               placeholder="{{ translations.search | translate }}"/>
+      </mat-form-field>
+      <button mat-icon-button (click)="exitFilterMode()"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
 </div>
 <div class="tb-kafka-table">
   <table mat-table [dataSource]="dataSource" matSort>

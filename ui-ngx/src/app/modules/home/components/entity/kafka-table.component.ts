@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Directive, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BaseData } from '@shared/models/base-data';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -23,7 +23,10 @@ import { MatTableDataSource } from '@angular/material/table';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { isUndefined } from '@core/utils';
-import { Observable } from 'rxjs';
+import { fromEvent, Observable, of } from 'rxjs';
+import { EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
@@ -31,11 +34,19 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
 
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild(MatPaginator) paginator: MatPaginator;
+  @ViewChild('searchInput') searchInputField: ElementRef;
+
+  isLoading$: Observable<boolean> = of(false);
+
+  translations = {
+    search: 'action.search'
+  };
 
   columns = [];
   dataSource: MatTableDataSource<T> = new MatTableDataSource();
   displayedColumns: Array<string> = [];
   displayPagination = true;
+  // translations: EntityTypeTranslation;
 
   defaultPageSize = 10;
   pageSizeOptions;
@@ -45,6 +56,8 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
   cellTooltipCache: Array<string> = [];
   cellStyleCache: Array<any> = [];
   totalElements: number;
+  searchEnabled = true;
+  textSearchMode = false;
 
   abstract fetchEntities$: () => Observable<any>;
 
@@ -55,7 +68,8 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;
     this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
-    this.pageLink = new PageLink(10, 0, null);
+    this.pageLink = new PageLink(10, 0, '');
+    this.pageLink.textSearch = '';
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.columns = this.getColumns();
     this.columns.forEach(
@@ -66,7 +80,56 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
   }
 
   ngAfterViewInit() {
+    if (this.searchInputField?.nativeElement) {
+      fromEvent(this.searchInputField.nativeElement, 'keyup')
+        .pipe(
+          debounceTime(150),
+          distinctUntilChanged(),
+          tap(() => {
+            if (this.displayPagination) {
+              this.paginator.pageIndex = 0;
+            }
+            this.updateData();
+          })
+        )
+        .subscribe();
+    }
+  }
+
+  updateData(closeDetails: boolean = true) {
+    if (this.displayPagination) {
+      this.pageLink.page = this.paginator.pageIndex;
+      this.pageLink.pageSize = this.paginator.pageSize;
+    } else {
+      this.pageLink.page = 0;
+    }
+    /*if (this.sort.active) {
+      this.pageLink.sortOrder = {
+        property: this.sort.active,
+        direction: Direction[this.sort.direction.toUpperCase()]
+      };
+    } else {
+      this.pageLink.sortOrder = null;
+    }*/
     this.loadEntities();
+  }
+
+  enterFilterMode() {
+    this.textSearchMode = true;
+    this.pageLink.textSearch = '';
+    setTimeout(() => {
+      this.searchInputField.nativeElement.focus();
+      this.searchInputField.nativeElement.setSelectionRange(0, 0);
+    }, 10);
+  }
+
+  exitFilterMode() {
+    this.textSearchMode = false;
+    this.pageLink.textSearch = null;
+    if (this.displayPagination) {
+      this.paginator.pageIndex = 0;
+    }
+    this.updateData();
   }
 
   private loadEntities() {
