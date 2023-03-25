@@ -40,8 +40,8 @@ export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker>
     columns.push(
       new EntityTableColumn<KafkaBroker>('brokerId', 'kafka.id', '25%', entity => entity.brokerId),
       new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '25%'),
-      new EntityTableColumn<KafkaBroker>('size', 'kafka.size', '25%', entity => {
-        return entity.size + ' B';
+      new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '25%', entity => {
+        return this.formatBytes(entity.brokerSize);
       })
     );
     return columns;

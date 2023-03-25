@@ -739,6 +739,11 @@ mat-label {
     //max-height: 64px;
     padding: 0 16px;
     //margin: 0;
+
+    .mat-mini-fab {
+      color: rgba(0, 0, 0, 0.87);
+      background-color: transparent !important;
+    }
   }
 
   .mat-icon {

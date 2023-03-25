@@ -39,7 +39,9 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
   isLoading$: Observable<boolean> = of(false);
 
   translations = {
-    search: 'action.search'
+    search: 'action.search',
+    refresh: 'action.refresh',
+    close: 'action.close'
   };
 
   columns = [];
@@ -77,6 +79,7 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
         this.displayedColumns.push(column.key);
       }
     );
+    this.loadEntities();
   }
 
   ngAfterViewInit() {
@@ -186,6 +189,15 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
     filterValue = filterValue.trim();
     filterValue = filterValue.toLowerCase();
     this.dataSource.filter = filterValue;
+  }
+
+  formatBytes(bytes, decimals = 1) {
+    if (!+bytes) { return '0 Bytes'; }
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 
   abstract getColumns();

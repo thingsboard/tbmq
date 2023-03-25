@@ -15,16 +15,17 @@
     limitations under the License.
 
 -->
-<div fxLayout="column" fxLayoutAlign="start end">
-  <div fxFlex [fxShow]="!textSearchMode">
+<div fxLayout="column" fxLayoutAlign="stretch end">
+  <div [fxShow]="!textSearchMode">
     <div class="mat-toolbar-tools" style="padding: 0" fxLayoutGap="4px">
-      <button mat-mini-fab color="none"
+      <button class="mat-elevation-z0"
+              mat-mini-fab color="none"
               [disabled]="isLoading$ | async" (click)="updateData()"
-              matTooltip="{{ 'action.refresh' | translate }}"
+              matTooltip="{{ translations.refresh | translate }}"
               matTooltipPosition="above">
         <mat-icon>refresh</mat-icon>
       </button>
-      <button *ngIf="searchEnabled"
+      <button class="mat-elevation-z0" *ngIf="searchEnabled"
               mat-mini-fab color="none"
               [disabled]="isLoading$ | async" (click)="enterFilterMode()"
               matTooltip="{{ translations.search | translate }}"
@@ -33,25 +34,25 @@
       </button>
     </div>
   </div>
-  <div [fxShow]="textSearchMode">
-    <div class="mat-toolbar-tools" fxLayoutAlign="space-evenly">
-      <button mat-icon-button
-              matTooltip="{{ translations.search | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>search</mat-icon>
-      </button>
-      <mat-form-field>
-        <mat-label>&nbsp;</mat-label>
-        <input matInput #searchInput
-               [(ngModel)]="pageLink.textSearch"
-               placeholder="{{ translations.search | translate }}"/>
-      </mat-form-field>
-      <button mat-icon-button (click)="exitFilterMode()"
-              matTooltip="{{ translations.search | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
+</div>
+<div fxLayout="column">
+  <div fxFlex fxLayout="row" fxLayoutAlign="stretch center" [fxShow]="textSearchMode">
+    <button mat-icon-button fxFlex="5"
+            matTooltip="{{ translations.search | translate }}"
+            matTooltipPosition="above">
+      <mat-icon>search</mat-icon>
+    </button>
+    <mat-form-field fxFlex="90">
+      <mat-label>&nbsp;</mat-label>
+      <input matInput #searchInput
+             [(ngModel)]="pageLink.textSearch"
+             placeholder="{{ translations.search | translate }}"/>
+    </mat-form-field>
+    <button mat-icon-button fxFlex="5" (click)="exitFilterMode()"
+            matTooltip="{{ translations.close | translate }}"
+            matTooltipPosition="above">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 </div>
 <div class="tb-kafka-table">

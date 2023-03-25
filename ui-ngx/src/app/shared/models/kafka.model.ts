@@ -19,7 +19,7 @@ import { BaseData } from '@shared/models/base-data';
 export interface KafkaBroker extends BaseData {
   brokerId: string;
   address: string;
-  size: number;
+  brokerSize: number;
 }
 
 export interface KafkaTopic extends BaseData {

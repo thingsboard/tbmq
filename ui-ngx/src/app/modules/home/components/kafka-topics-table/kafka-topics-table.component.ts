@@ -42,7 +42,7 @@ export class KafkaTopicsTableComponent extends KafkaTableComponent<KafkaTopic> {
       new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%'),
       new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%'),
       new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%', entity => {
-        return entity.size + ' B';
+        return this.formatBytes(entity.size);
       })
     );
     return columns;
