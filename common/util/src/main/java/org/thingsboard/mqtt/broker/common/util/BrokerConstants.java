@@ -30,6 +30,8 @@ public class BrokerConstants {
         }
     }
 
+    public static final int DEFAULT_PAGE_SIZE = 1000;
+
     public static final String MQTT_PROTOCOL_NAME = "MQTT";
     public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";
 

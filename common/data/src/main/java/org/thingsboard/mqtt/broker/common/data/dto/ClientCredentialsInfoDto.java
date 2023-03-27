@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.common.data.dto;
 
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
-import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
+import lombok.Data;
 
-public interface ClientSessionPageInfos {
+@Data
+public class ClientCredentialsInfoDto {
 
-    PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink);
-
-    ClientSessionStatsInfoDto getClientSessionStatsInfo();
+    private final long deviceCredentialsCount;
+    private final long applicationCredentialsCount;
+    private final long totalCount;
 
 }

@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
@@ -56,6 +57,15 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 filteredByTextSearch.size() / pageLink.getPageSize(),
                 filteredByTextSearch.size(),
                 pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < filteredByTextSearch.size());
+    }
+
+    @Override
+    public ClientSessionStatsInfoDto getClientSessionStatsInfo() {
+        var allClientSessions = clientSessionCache.getAllClientSessions();
+        int totalCount = allClientSessions.size();
+        long connectedCount = allClientSessions.values().stream().filter(ClientSessionInfo::isConnected).count();
+        long disconnectedCount = totalCount - connectedCount;
+        return new ClientSessionStatsInfoDto(connectedCount, disconnectedCount, totalCount);
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {

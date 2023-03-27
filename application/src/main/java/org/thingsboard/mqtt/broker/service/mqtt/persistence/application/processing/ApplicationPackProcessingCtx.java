@@ -93,7 +93,6 @@ public class ApplicationPackProcessingCtx {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Couldn't find PUBLISH packet {} to process PubAck msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
             }
-            log.warn("[{}] Couldn't find PUBLISH packet {} to process PubAck msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
         }
         return false;
     }
@@ -114,7 +113,6 @@ public class ApplicationPackProcessingCtx {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Couldn't find PUBLISH packet {} to process PubRec msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
             }
-            log.warn("[{}] Couldn't find PUBLISH packet {} to process PubRec msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
         }
         return false;
     }
@@ -127,7 +125,6 @@ public class ApplicationPackProcessingCtx {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Couldn't find PUBLISH packet {} to process PubRec msg successfully from {}.", clientId, packetId, publishPendingMsgMap.keySet());
             }
-            log.warn("[{}] Couldn't find PUBLISH packet {} to process PubRec msg successfully from {}.", clientId, packetId, publishPendingMsgMap.keySet());
         }
     }
 
@@ -144,7 +141,6 @@ public class ApplicationPackProcessingCtx {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Couldn't find packet {} to complete delivery from {}.", clientId, packetId, pubRelPendingMsgMap.keySet());
             }
-            log.warn("[{}] Couldn't find packet {} to complete delivery from {}.", clientId, packetId, pubRelPendingMsgMap.keySet());
         }
         return false;
     }
