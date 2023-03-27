@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { ConfigParams, ConfigParamsTranslationMap } from '@shared/models/stats.model';
+import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap } from '@shared/models/stats.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -39,7 +39,7 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
 
   hasBasicCredentials: Observable<boolean>;
   hasX509AuthCredentials: Observable<boolean>;
-  overviewConfig: any;
+  overviewConfig: Observable<BrokerConfig>;
 
   @Input() isLoading$: Observable<boolean>;
 
@@ -73,7 +73,7 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.overviewConfig = this.configService.getConfig();
+    this.overviewConfig = this.configService.getBrokerConfig();
     this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(100)).subscribe(
       data => {
         this.hasBasicCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.MQTT_BASIC));

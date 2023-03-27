@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import { Authority } from "@shared/models/authority.enum";
-
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -67,15 +65,26 @@ export interface CardItem {
   label: string;
 }
 
+export interface BrokerConfig {
+  tcpPort: number;
+  tlsPort: number;
+  tcpMaxPayloadSize: number;
+  tlsMaxPayloadSize: number;
+  tcpListenerEnabled: boolean;
+  tlsListenerEnabled: boolean;
+  basicAuthEnabled: boolean;
+  x509AuthEnabled: boolean;
+}
+
 export enum ConfigParams {
-  PORT_MQTT = 'PORT_MQTT',
-  TCP_LISTENER = 'TCP_LISTENER',
-  TCP_LISTENER_MAX_PAYLOAD_SIZE = 'TCP_LISTENER_MAX_PAYLOAD_SIZE',
-  TLS_LISTENER = 'TLS_LISTENER',
-  TLS_LISTENER_MAX_PAYLOAD_SIZE = 'TLS_LISTENER_MAX_PAYLOAD_SIZE',
-  TLS_TCP_PORT = 'TLS_TCP_PORT',
-  BASIC_AUTH = 'BASIC_AUTH',
-  X509_CERT_CHAIN_AUTH = 'X509_CERT_CHAIN_AUTH',
+  PORT_MQTT = 'tlsPort',
+  TCP_LISTENER = 'tcpListenerEnabled',
+  TCP_LISTENER_MAX_PAYLOAD_SIZE = 'tcpMaxPayloadSize',
+  TLS_LISTENER = 'tlsListenerEnabled',
+  TLS_LISTENER_MAX_PAYLOAD_SIZE = 'tlsMaxPayloadSize',
+  TLS_TCP_PORT = 'tcpPort',
+  BASIC_AUTH = 'basicAuthEnabled',
+  X509_CERT_CHAIN_AUTH = 'x509AuthEnabled',
 }
 
 export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(

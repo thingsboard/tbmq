@@ -32,7 +32,7 @@
   </button>
 </div>
 <div fxFlex fxLayout="column" class="config-card-container">
-  <div *ngFor="let item of overviewConfig | async">
+  <div *ngFor="let item of overviewConfig | async | keyvalue">
     <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
       <div style="color: rgba(0,0,0,0.87)">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
       <div class="config-value">

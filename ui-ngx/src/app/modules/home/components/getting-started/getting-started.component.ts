@@ -26,7 +26,7 @@ import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dia
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { Router } from '@angular/router';
-import { ConfigParams } from '@shared/models/stats.model';
+import { BrokerConfig, ConfigParams } from '@shared/models/stats.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map, take } from 'rxjs/operators';
@@ -41,7 +41,7 @@ export class GettingStartedComponent implements AfterViewInit {
 
   steps: Observable<Array<any>> = of([]);
   data: Observable<string>;
-  configParams: any;
+  configParams: BrokerConfig;
   expandedStep = 1;
 
   constructor(private instructionsService: InstructionsService,
@@ -108,17 +108,17 @@ export class GettingStartedComponent implements AfterViewInit {
       select(selectUserDetails),
       map((user) => user.additionalInfo?.config)).pipe(
       map((data) => {
-          const portMqtt = data.find(el => el.key === ConfigParams.PORT_MQTT)?.value;
-          const basicAuth = data.find(el => el.key === ConfigParams.BASIC_AUTH)?.value;
-          this.steps = this.instructionsService.setSteps(basicAuth);
-          // @ts-ignore
-          window.mqttPort = portMqtt;
-          this.configParams = {};
-          this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
-          this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
-          this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
-          return data;
-        }
-      )).subscribe();
+        const portMqtt = data[ConfigParams.PORT_MQTT];
+        const basicAuth = data[ConfigParams.BASIC_AUTH];
+        this.steps = this.instructionsService.setSteps(basicAuth);
+        // @ts-ignore
+        window.mqttPort = portMqtt;
+        this.configParams = {} as BrokerConfig;
+        this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
+        this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
+        this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
+        return data;
+      }
+    )).subscribe();
   }
 }

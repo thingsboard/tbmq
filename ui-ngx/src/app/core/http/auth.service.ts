@@ -297,7 +297,7 @@ export class AuthService {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
     this.validateJwtToken(doTokenRefresh).subscribe(
       () => {
-        let authPayload = {} as AuthPayload;
+        const authPayload = {} as AuthPayload;
         const jwtToken = AuthService._storeGet('jwt_token');
         authPayload.authUser = this.jwtHelper.decodeToken(jwtToken);
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
@@ -305,7 +305,7 @@ export class AuthService {
         }
         if (authPayload.authUser.userId) {
           let configValue = {};
-          this.configService.getConfig().pipe(
+          this.configService.getBrokerConfig().pipe(
             mergeMap((config) => {
               configValue = config;
               return this.getUser();

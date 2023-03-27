@@ -21,6 +21,8 @@ import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { DetailedClientSessionInfo } from '@shared/models/session.model';
+import { KafkaBroker } from '@shared/models/kafka.model';
+import { BrokerConfig } from '@shared/models/stats.model';
 
 @Injectable({
   providedIn: 'root'
@@ -30,42 +32,8 @@ export class ConfigService {
   constructor(private http: HttpClient) {
   }
 
-  public getConfig(config?: RequestConfig): Observable<any> {
-    return of([
-        {
-          key: 'PORT_MQTT',
-          value: 1883
-        },
-        {
-          key: 'TLS_TCP_PORT',
-          value: 8883
-        },
-        {
-          key: 'TCP_LISTENER',
-          value: true
-        },
-        {
-          key: 'TCP_LISTENER_MAX_PAYLOAD_SIZE',
-          value: '65536 bytes'
-        },
-        {
-          key: 'TLS_LISTENER',
-          value: true
-        },
-        {
-          key: 'TLS_LISTENER_MAX_PAYLOAD_SIZE',
-          value: '65536 bytes'
-        },
-        {
-          key: 'BASIC_AUTH',
-          value: true
-        },
-        {
-          key: 'X509_CERT_CHAIN_AUTH',
-          value: false
-        }
-      ]
-    );
+  public getBrokerConfig(config?: RequestConfig): Observable<BrokerConfig> {
+    return this.http.get<BrokerConfig>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
   }
 
 }

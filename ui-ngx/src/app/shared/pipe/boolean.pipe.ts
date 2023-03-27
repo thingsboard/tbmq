@@ -14,14 +14,15 @@
 /// limitations under the License.
 ///
 
-import {Pipe, PipeTransform} from '@angular/core';
-import { TranslateService } from "@ngx-translate/core";
+import { Pipe, PipeTransform } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
-@Pipe({ name: 'boolean' })
+@Pipe({name: 'boolean'})
 export class BooleanPipe implements PipeTransform {
 
   constructor(public translate: TranslateService) {
   }
+
   transform(value: boolean): string {
     if (typeof value === 'boolean') {
       return value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
