@@ -16,7 +16,7 @@
 :host {
   .config-card-container {
     font-size: 12px;
-    color: #6c6c6c;
+    color: rgba(0,0,0,0.87);
     justify-content: center;
     align-items: stretch;
     padding: 18px;
@@ -25,6 +25,10 @@
 
   .config-value {
     font-weight: 400;
+  }
+
+  .config-key {
+    color: rgba(61, 61, 61, 0.87)
   }
 
   .config-material-icon {

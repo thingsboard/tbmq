@@ -26,6 +26,7 @@ import { ConfigService } from '@core/http/config.service';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { PageLink } from '@shared/models/page/page-link';
 import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
+import { formatBytes } from '@home/components/entity/kafka-table.component';
 
 @Component({
   selector: 'tb-card-config',
@@ -80,5 +81,12 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
         this.hasX509AuthCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.SSL));
       }
     );
+  }
+
+  transformValue(item) {
+    if (item.key === ConfigParams.TCP_LISTENER_MAX_PAYLOAD_SIZE || item.key === ConfigParams.TLS_LISTENER_MAX_PAYLOAD_SIZE) {
+      return formatBytes(item.value);
+    }
+    return item.value;
   }
 }
