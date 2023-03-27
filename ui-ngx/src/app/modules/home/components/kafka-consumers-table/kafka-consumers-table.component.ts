@@ -14,12 +14,10 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
-import { DomSanitizer } from '@angular/platform-browser';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { KafkaService } from '@core/http/kafka.service';
-import { KafkaConsumerGroup } from '@shared/models/kafka.model';
-import { KafkaTableComponent } from '@home/components/entity/kafka-table.component';
+import { TranslateService } from '@ngx-translate/core';
+import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-consumers-table/kafka-consumer-groups-table-config';
 
 @Component({
   selector: 'tb-kafka-consumers-table',
@@ -27,23 +25,18 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
   styleUrls: ['./kafka-consumers-table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class KafkaConsumersTableComponent extends KafkaTableComponent<KafkaConsumerGroup> {
+export class KafkaConsumersTableComponent implements OnInit {
 
-  fetchEntities$ = () => this.kafkaService.getKafkaConsumerGroups(this.pageLink);
+  kafkaTableConfig: KafkaConsumerGroupsTableConfig;
 
   constructor(private kafkaService: KafkaService,
-              protected domSanitizer: DomSanitizer) {
-    super(domSanitizer);
+              private translate: TranslateService,
+  ) {
   }
 
-  getColumns() {
-    const columns: Array<EntityColumn<KafkaConsumerGroup>> = [];
-    columns.push(
-      new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '70%'),
-      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%', entity => entity.lag)
-    );
-    return columns;
+  ngOnInit(): void {
+    this.kafkaTableConfig = new KafkaConsumerGroupsTableConfig(
+      this.kafkaService,
+      this.translate);
   }
 }

@@ -598,7 +598,11 @@
     "members": "Members",
     "brokers": "Kafka Brokers",
     "topics": "Kafka Topics",
-    "consumer-groups": "Kafka Consumer Groups"
+    "topics-search": "Search Topics",
+    "consumer-groups": "Kafka Consumer Groups",
+    "consumer-groups-search": "Search Consumer Groups",
+    "no-kafka-consumer-group-text": "No Kafka consumer groups found",
+    "no-kafka-topic-text": "No Kafka topics found"
   },
   "getting-started": {
     "get-started": "Get started",

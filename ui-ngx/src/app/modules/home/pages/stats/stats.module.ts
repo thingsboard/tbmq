@@ -17,22 +17,23 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@app/shared/shared.module';
-import { StatsComponent } from "@home/pages/stats/stats.component";
-import { StatsRoutingModule } from "@home/pages/stats/stats-routing.module";
-import { MonitorChartsComponent } from "@home/components/monitor-charts/monitor-charts.component";
-import { QuickLinksComponent } from "@home/components/quick-links/quick-links.component";
-import { VersionCardComponent } from "@home/components/version-card/version-card.component";
-import { CardConfigComponent } from "@home/components/card-config/card-config.component";
-import { KafkaTopicsTableComponent } from "@home/components/kafka-topics-table/kafka-topics-table.component";
-import { KafkaBrokersTableComponent } from "@home/components/kafka-brokers-table/kafka-brokers-table.component";
-import { KafkaConsumersTableComponent } from "@home/components/kafka-consumers-table/kafka-consumers-table.component";
-import { MonitorCardsComponent } from "@home/components/monitor-cards/monitor-cards.component";
+import { StatsComponent } from '@home/pages/stats/stats.component';
+import { StatsRoutingModule } from '@home/pages/stats/stats-routing.module';
+import { MonitorChartsComponent } from '@home/components/monitor-charts/monitor-charts.component';
+import { QuickLinksComponent } from '@home/components/quick-links/quick-links.component';
+import { VersionCardComponent } from '@home/components/version-card/version-card.component';
+import { CardConfigComponent } from '@home/components/card-config/card-config.component';
+import { KafkaTopicsTableComponent } from '@home/components/kafka-topics-table/kafka-topics-table.component';
+import { KafkaBrokersTableComponent } from '@home/components/kafka-brokers-table/kafka-brokers-table.component';
+import { KafkaConsumersTableComponent } from '@home/components/kafka-consumers-table/kafka-consumers-table.component';
+import { MonitorCardsComponent } from '@home/components/monitor-cards/monitor-cards.component';
 import {
   MonitorClientCredentialsCardComponent
-} from "@home/components/monitor-client-credentials-card/monitor-client-credentials-card.component";
-import { MonitorSessionsCardComponent } from "@home/components/monitor-sessions-card/monitor-sessions-card.component";
-import { KafkaTablesTabGroupComponent } from "@home/components/kafka-tables-tab-group/kafka-tables-tab-group.component";
+} from '@home/components/monitor-client-credentials-card/monitor-client-credentials-card.component';
+import { MonitorSessionsCardComponent } from '@home/components/monitor-sessions-card/monitor-sessions-card.component';
+import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables-tab-group/kafka-tables-tab-group.component';
 import { GettingStartedComponent } from '@home/components/getting-started/getting-started.component';
+import { KafkaEntitiesTableComponent } from '@home/components/entity/kafka-entities-table.component';
 
 @NgModule({
   declarations: [
@@ -48,7 +49,8 @@ import { GettingStartedComponent } from '@home/components/getting-started/gettin
     KafkaBrokersTableComponent,
     KafkaConsumersTableComponent,
     KafkaTablesTabGroupComponent,
-    GettingStartedComponent
+    GettingStartedComponent,
+    KafkaEntitiesTableComponent
   ],
   imports: [
     CommonModule,

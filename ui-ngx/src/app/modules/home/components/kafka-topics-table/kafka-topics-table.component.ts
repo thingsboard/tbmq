@@ -14,12 +14,10 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
-import { DomSanitizer } from '@angular/platform-browser';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { KafkaService } from '@core/http/kafka.service';
-import { KafkaTopic } from '@shared/models/kafka.model';
-import { KafkaTableComponent } from '@home/components/entity/kafka-table.component';
+import { KafkaTopicsTableConfig } from '@home/components/kafka-topics-table/kafka-topics-table-config';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-kafka-topics-table',
@@ -27,25 +25,18 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
   styleUrls: ['./kafka-topics-table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class KafkaTopicsTableComponent extends KafkaTableComponent<KafkaTopic> {
+export class KafkaTopicsTableComponent implements OnInit {
 
-  fetchEntities$ = () => this.kafkaService.getKafkaTopics(this.pageLink);
+  kafkaTableConfig: KafkaTopicsTableConfig;
 
   constructor(private kafkaService: KafkaService,
-              protected domSanitizer: DomSanitizer) {
-    super(domSanitizer);
+              private translate: TranslateService,
+              ) {
   }
 
-  getColumns() {
-    const columns: Array<EntityColumn<KafkaTopic>> = [];
-    columns.push(
-      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
-      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%'),
-      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%'),
-      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%', entity => {
-        return this.formatBytes(entity.size);
-      })
-    );
-    return columns;
+  ngOnInit(): void {
+    this.kafkaTableConfig = new KafkaTopicsTableConfig(
+      this.kafkaService,
+      this.translate);
   }
 }

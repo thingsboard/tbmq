@@ -19,7 +19,7 @@ import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-ta
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaBroker } from '@shared/models/kafka.model';
-import { KafkaTableComponent } from '@home/components/entity/kafka-table.component';
+import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 
 @Component({
   selector: 'tb-kafka-brokers-table',
@@ -41,7 +41,7 @@ export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker>
       new EntityTableColumn<KafkaBroker>('brokerId', 'kafka.id', '25%', entity => entity.brokerId),
       new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '25%'),
       new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '25%', entity => {
-        return this.formatBytes(entity.brokerSize);
+        return formatBytes(entity.brokerSize);
       })
     );
     return columns;
