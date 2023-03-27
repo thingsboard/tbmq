@@ -27,21 +27,21 @@ import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import {
   SessionsDetailsDialogComponent,
   SessionsDetailsDialogData
-} from "@home/pages/sessions/sessions-details-dialog.component";
+} from '@home/pages/sessions/sessions-details-dialog.component';
 import {
   ConnectionState,
   connectionStateColor,
   connectionStateTranslationMap,
   DetailedClientSessionInfo
-} from "@shared/models/session.model";
-import { clientTypeTranslationMap } from "@shared/models/client.model";
-import { HelpLinks } from "@shared/models/constants";
-import { Direction } from "@shared/models/page/sort-order";
-import { DialogService } from "@core/services/dialog.service";
+} from '@shared/models/session.model';
+import { clientTypeTranslationMap } from '@shared/models/client.model';
+import { HelpLinks } from '@shared/models/constants';
+import { Direction } from '@shared/models/page/sort-order';
+import { DialogService } from '@core/services/dialog.service';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -63,7 +63,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
-    this.defaultSortOrder = { property: 'connectionState', direction: Direction.ASC };
+    this.defaultSortOrder = {property: 'connectionState', direction: Direction.ASC};
     /*this.groupActionDescriptors = this.configureGroupActions();
     this.cellActionDescriptors = this.configureCellActions();*/
 
@@ -89,15 +89,15 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
             '"></span>' +
             '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600">' +
             this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)) +
-        '</span>';
+            '</span>';
         },
-        (entity) => ({ color: connectionStateColor.get(entity.connectionState) })
+        (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
         (entity) => defaultCellStyle(entity.clientId),
-        () => { return {'font-weight': 500} }),
+        () => ({'font-weight': 500})),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
         (entity) => defaultCellStyle(entity.clientIpAdr)),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
@@ -105,7 +105,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
         (entity) => defaultCellStyle(entity.nodeId)),
       new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '120px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '120px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))
     );
@@ -127,7 +127,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           data: {
             session
           }
-        }).afterClosed().subscribe(() =>{
+        }).afterClosed().subscribe(() => {
           this.table.updateData();
         });
       }

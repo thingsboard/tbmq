@@ -15,13 +15,13 @@
 ///
 
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { SessionsTableConfig } from "@home/pages/sessions/sessions-table-config";
-import { EntitiesTableComponent } from "@home/components/entity/entities-table.component";
-import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
-import { TranslateService } from "@ngx-translate/core";
-import { DatePipe } from "@angular/common";
-import { MatDialog } from "@angular/material/dialog";
-import { DialogService } from "@core/services/dialog.service";
+import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { TranslateService } from '@ngx-translate/core';
+import { DatePipe } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogService } from '@core/services/dialog.service';
 
 @Component({
   selector: 'tb-sessions-table',
@@ -62,7 +62,7 @@ export class SessionsTableComponent implements OnInit {
 
   @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
 
-  sessionsTableConfig: SessionsTableConfig
+  sessionsTableConfig: SessionsTableConfig;
 
   constructor(private mqttClientSessionService: MqttClientSessionService,
               private translate: TranslateService,

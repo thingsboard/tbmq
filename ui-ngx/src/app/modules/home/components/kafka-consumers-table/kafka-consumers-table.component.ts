@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
@@ -24,7 +24,8 @@ import { KafkaTableComponent } from '@home/components/entity/kafka-table.compone
 @Component({
   selector: 'tb-kafka-consumers-table',
   templateUrl: './kafka-consumers-table.component.html',
-  styleUrls: ['./kafka-consumers-table.component.scss']
+  styleUrls: ['./kafka-consumers-table.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KafkaConsumersTableComponent extends KafkaTableComponent<KafkaConsumerGroup> {
 
