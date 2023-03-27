@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
@@ -86,6 +87,17 @@ public class ClientSessionController extends BaseController {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(clientSessionPageInfos.getClientSessionInfos(pageLink));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/info", method = RequestMethod.GET)
+    @ResponseBody
+    public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
+        try {
+            return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
         } catch (Exception e) {
             throw handleException(e);
         }
