@@ -12,6 +12,8 @@
       "element",
       "tb",
       "kebab-case"
-    ]
+    ],
+    "forin": false,
+    "max-line-length": false
   }
 }

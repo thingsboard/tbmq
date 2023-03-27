@@ -19,11 +19,11 @@
   <div class="card">
     <div fxFlex fxLayout="row">
       <div class="card-table">
-        <div fxFlex fxLayout="row" fxLayoutAlign="start">
+        <div fxFlex fxLayout="row" fxLayoutAlign="center center">
           <button mat-button disabled
                   type="button"
-                  matTooltip="{{'home.metrics' | translate}}">
-            {{'home.metrics' | translate}}
+                  matTooltip="{{'home.monitors' | translate}}">
+            {{'home.monitors' | translate}}
           </button>
           <span fxFlex></span>
           <section>
@@ -36,16 +36,14 @@
             </tb-timewindow>
           </section>
         </div>
-        <div fxFlex fxLayout="row" fxLayoutAlign="start">
-          <div fxLayout="column" *ngFor="let chart of statsCharts; let $index = index">
-            <div style="padding: 4px">
+        <div fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
+          <div *ngFor="let chart of statsCharts; let $index = index">
+            <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
               <div fxFlex fxLayout="column" fxLayoutAlign="start center">
-                <span style="font-size: 10px; color: #6c6c6c">{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][0] : '' }}</span>
-                <span style="font-size: 20px; font-weight: 500">{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][1] : '' }}</span>
+                <span>{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][0] : '' }}</span>
+                <span>{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][1] : '' }}</span>
               </div>
-              <canvas [id]="chart" style="background-color: transparent;
-                                     width: 160px;
-                                     height: 80px;">
+              <canvas style="z-index: 99;" class="chart" [id]="chart">
               </canvas>
             </div>
           </div>

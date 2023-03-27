@@ -88,14 +88,16 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.destroy$.complete();
   }
 
-  getColor(index) {
-    var colors = ['#65655e', '#c6afb1', '#b0a3d4', '#7d80da', '#79addc'];
-    return colors[index];
+  viewDocumentation(type) {
+    this.router.navigateByUrl('');
+  }
+
+  navigateToPage(type) {
+    this.router.navigateByUrl('');
   }
 
   initCharts(data) {
     let index = 0;
-    // tslint:disable-next-line:forin
     for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
       const ctx = document.getElementById(chart) as HTMLCanvasElement;
@@ -103,13 +105,14 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
       const lastValue = data[chart].length ? data[chart][data[chart].length - 1].value : 0;
       const dataSet = {
         label,
-        fill: false,
-        // backgroundColor: this.getColor(index),
+        fill: true,
+        backgroundColor: 'rgba(50,50,50,0.02)',
         borderColor: this.getColor(index),
         // hoverBackgroundColor: this.getColor(index),
         // hoverBorderColor: this.getColor(index),
-        borderWidth: 2,
-        data: this.transformData(data[chart])
+        borderWidth: 3,
+        data: this.transformData(data[chart]),
+        hover: true
       };
       this.charts[chart] = new Chart(ctx, {
         type: 'line',
@@ -119,7 +122,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
         options: {
           elements: {
             point: {
-              pointStyle: 'line'
+              pointStyle: 'circle',
+              radius: 0
             }
           },
           animation: {
@@ -127,8 +131,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
           },
           layout: {
             padding: {
-              left: 0,
-              right: 0,
+              left: 20,
+              right: 20,
               top: 0,
               bottom: 0
             }
@@ -163,7 +167,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
                 display: false
               },
               ticks: {
-                display: true,
+                display: false,
                 fontSize: 8,
                 fontColor: '#000000',
                 fontFamily: 'sans serif',
@@ -185,8 +189,10 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
               }
             }]
           },
-          hover: {
-            mode: 'dataset'
+          tooltips: {
+            mode: 'x-axis',
+            intersect: true,
+            axis: 'x'
           }
         }
       });
@@ -274,12 +280,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.setLatestValues();
   }
 
-  viewDocumentation(type) {
-    this.router.navigateByUrl('');
+  private getColor(index) {
+    const colors = ['#65655e', '#c6afb1', '#b0a3d4', '#7d80da', '#79addc'];
+    return colors[index];
   }
-
-  navigateToPage(type) {
-    this.router.navigateByUrl('');
-  }
-
 }

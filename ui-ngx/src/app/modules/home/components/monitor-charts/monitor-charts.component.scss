@@ -18,3 +18,30 @@
     color: rgba(0,0,0,0.87);
   }
 }
+
+:host::ng-deep {
+  .chart-container {
+
+    border-right: 1px solid #dcdcdc;
+
+    span {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    span:first-child {
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .chart {
+      background-color: transparent;
+      width: 160px;
+      height: 80px;
+    }
+  }
+
+  .chart-border-left {
+    border-left: 1px solid #dcdcdc;
+  }
+}
