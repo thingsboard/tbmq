@@ -17,6 +17,7 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { ClientSessionStatsInfo } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-monitor-sessions-card',
@@ -29,14 +30,20 @@ export class MonitorSessionsCardComponent implements OnInit {
   @Input() isLoading$: Observable<boolean>;
 
   @Input()
-  data: any;
+  data: ClientSessionStatsInfo;
 
   config = [{
-    key: 'connected', label: 'mqtt-client-session.connected', value: 0
+    key: 'connectedCount',
+    label: 'mqtt-client-session.connected',
+    value: 0
   }, {
-    key: 'disconnected', label: 'mqtt-client-session.disconnected', value: 0
+    key: 'disconnectedCount',
+    label: 'mqtt-client-session.disconnected',
+    value: 0
   }, {
-    key: 'total', label: 'home.total', value: 0
+    key: 'totalCount',
+    label: 'home.total',
+    value: 0
   }];
 
   constructor(protected router: Router) {

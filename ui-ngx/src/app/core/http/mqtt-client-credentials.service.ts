@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { ClientCredentialsInfo, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 
 @Injectable({
   providedIn: 'root'
@@ -51,5 +51,9 @@ export class MqttClientCredentialsService {
 
   public changePassword(currentPassword: string, newPassword: string, credentialsId: string) {
     return this.http.post(`/api/mqtt/client/credentials/${credentialsId}`, {currentPassword, newPassword});
+  }
+
+  public getClientCredentialsStatsInfo(config?: RequestConfig): Observable<ClientCredentialsInfo> {
+    return this.http.get<ClientCredentialsInfo>(`/api/mqtt/client/credentials/info`, defaultHttpOptionsFromConfig(config));
   }
 }

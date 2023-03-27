@@ -15,8 +15,9 @@
 ///
 
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
-import { Router } from "@angular/router";
-import { Observable } from "rxjs";
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 
 @Component({
   selector: 'tb-monitor-client-credentials-card',
@@ -27,14 +28,20 @@ import { Observable } from "rxjs";
 export class MonitorClientCredentialsCardComponent implements OnInit {
 
   @Input() isLoading$: Observable<boolean>;
-  @Input('data') data: any;
+  @Input('data') data: ClientCredentialsInfo;
 
   config = [{
-    key: 'devices', label: 'mqtt-client-credentials.type-devices', value: 0
+    key: 'deviceCredentialsCount',
+    label: 'mqtt-client-credentials.type-devices',
+    value: 0
   }, {
-    key: 'applications', label: 'mqtt-client-credentials.type-applications', value: 0
+    key: 'applicationCredentialsCount',
+    label: 'mqtt-client-credentials.type-applications',
+    value: 0
   }, {
-    key: 'total', label: 'home.total', value: 0
+    key: 'totalCount',
+    label: 'home.total',
+    value: 0
   }];
 
   constructor(protected router: Router) {
@@ -53,6 +60,4 @@ export class MonitorClientCredentialsCardComponent implements OnInit {
   navigateToPage(type) {
     this.router.navigateByUrl('');
   }
-
-
 }

@@ -101,3 +101,9 @@ export const connectionStateTranslationMap = new Map<ConnectionState, string>(
     [ConnectionState.DISCONNECTED, 'mqtt-client-session.disconnected']
   ]
 );
+
+export interface ClientSessionStatsInfo {
+  connectedCount: number;
+  disconnectedCount: number;
+  totalCount: number;
+}

@@ -15,19 +15,21 @@
 ///
 
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
-import { Router } from "@angular/router";
-import { forkJoin, Observable, Subject, timer } from "rxjs";
-import { retry, switchMap, takeUntil } from "rxjs/operators";
-import { StatsService } from "@core/http/stats.service";
+import { Router } from '@angular/router';
+import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { retry, switchMap, takeUntil } from 'rxjs/operators';
+import { StatsService } from '@core/http/stats.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { BaseData } from '@shared/models/base-data';
-import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { ClientCredentialsInfo, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ClientSessionStatsInfo } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-monitor-cards',
@@ -42,19 +44,21 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit {
   pollData$: Observable<any>;
   private stopPolling = new Subject();
 
-  sessionsValue: any;
-  clientCredentialsValue: any;
+  sessionsValue: ClientSessionStatsInfo;
+  clientCredentialsValue: ClientCredentialsInfo;
 
   constructor(private statsService: StatsService,
               private dialog: MatDialog,
               private mqttClientCredentialsService: MqttClientCredentialsService,
-              private router: Router) { }
+              private mqttClientSessionService: MqttClientSessionService,
+              private router: Router) {
+  }
 
   ngOnInit(): void {
     this.pollData$ = timer(0, 5000).pipe(
       switchMap(() => forkJoin(
-        this.statsService.getSessionsInfoMock(),
-        this.statsService.getClientCredentialsInfoMock()
+        this.mqttClientSessionService.getClientSessionsStats(),
+        this.mqttClientCredentialsService.getClientCredentialsStatsInfo()
       )),
       retry(),
       takeUntil(this.stopPolling)

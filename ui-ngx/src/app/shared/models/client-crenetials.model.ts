@@ -76,3 +76,9 @@ export enum AuthRulePatternsType {
   SUBSCRIBE = 'SUBSCRIBE',
   PUBLISH = 'PUBLISH'
 }
+
+export interface ClientCredentialsInfo {
+  deviceCredentialsCount: number;
+  applicationCredentialsCount: number;
+  totalCount: number;
+}
