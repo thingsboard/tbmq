@@ -31,6 +31,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
+import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
+import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
@@ -44,6 +46,7 @@ public class AppController extends BaseController {
     private final TbActorSystem tbActorSystem;
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
     private final TbQueueAdmin tbQueueAdmin;
+    private final BrokerHomePageConfig brokerHomePageConfig;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @ApiOperation(value = "Get all running actors", hidden = true)
@@ -106,6 +109,17 @@ public class AppController extends BaseController {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(tbQueueAdmin.getConsumerGroups(pageLink));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/config", method = RequestMethod.GET)
+    @ResponseBody
+    public HomePageConfigDto getBrokerConfig() throws ThingsboardException {
+        try {
+            return brokerHomePageConfig.getConfig();
         } catch (Exception e) {
             throw handleException(e);
         }
