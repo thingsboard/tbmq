@@ -29,16 +29,19 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -150,6 +153,31 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             log.trace("Executing getCredentialsById [{}]", id);
         }
         return Optional.ofNullable(mqttClientCredentialsDao.findById(id));
+    }
+
+    @Override
+    public ClientCredentialsInfoDto getClientCredentialsInfo() {
+        List<MqttClientCredentials> allMqttClientCredentials = new ArrayList<>();
+
+        PageLink pageLink = new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE);
+        PageData<MqttClientCredentials> batch;
+        boolean hasNextBatch;
+        do {
+            batch = mqttClientCredentialsDao.findAll(pageLink);
+            allMqttClientCredentials.addAll(batch.getData());
+
+            hasNextBatch = batch.hasNext();
+            pageLink = pageLink.nextPageLink();
+        } while (hasNextBatch);
+
+        int totalCount = allMqttClientCredentials.size();
+        long deviceCredentialsCount = allMqttClientCredentials
+                .stream()
+                .filter(credentials -> ClientType.DEVICE == credentials.getClientType())
+                .count();
+        long applicationCredentialsCount = totalCount - deviceCredentialsCount;
+
+        return new ClientCredentialsInfoDto(deviceCredentialsCount, applicationCredentialsCount, totalCount);
     }
 
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {

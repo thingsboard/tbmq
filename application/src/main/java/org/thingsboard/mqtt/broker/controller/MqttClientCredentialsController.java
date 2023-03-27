@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -119,6 +120,17 @@ public class MqttClientCredentialsController extends BaseController {
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
 
             return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/info", method = RequestMethod.GET)
+    @ResponseBody
+    public ClientCredentialsInfoDto getClientCredentialsStatsInfo() throws ThingsboardException {
+        try {
+            return checkNotNull(mqttClientCredentialsService.getClientCredentialsInfo());
         } catch (Exception e) {
             throw handleException(e);
         }
