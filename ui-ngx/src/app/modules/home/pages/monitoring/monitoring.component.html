@@ -36,7 +36,12 @@
     <mat-card-content>
       <div fxFlex fxLayout="column" fxLayoutGap="16px">
         <div *ngFor="let chart of statsCharts" class="mat-padding mat-elevation-z1">
+          <div fxLayout="row" fxLayoutGap="10px">
+            <span style="font-size: 20px; font-weight: 500">{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+          </div>
+          <div>
             <canvas [id]="chart+'1'" width="500" height="100"></canvas>
+          </div>
         </div>
       </div>
     </mat-card-content>
