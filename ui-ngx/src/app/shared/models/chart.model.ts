@@ -20,7 +20,7 @@ export function getColor(index: number): string {
   return chartColors[index];
 }
 
-export function defaultChartJsParams() {
+export function homeChartJsParams() {
   return {
     type: 'line',
     options: {
@@ -37,7 +37,7 @@ export function defaultChartJsParams() {
         padding: {
           left: 20,
           right: 20,
-          top: 0,
+          top: 20,
           bottom: 0
         }
       },
@@ -77,7 +77,7 @@ export function defaultChartJsParams() {
             autoSkip: true,
             autoSkipPadding: (60 * 60 * 1000),
             maxRotation: 0,
-            padding: -20,
+            padding: 0,
             labelOffset: 0
           },
           distribution: 'series',
@@ -85,6 +85,70 @@ export function defaultChartJsParams() {
           time: {
             round: 'second',
             unitStepSize: 5 * 60 * 1000,
+            unit: 'millisecond',
+            displayFormats: {
+              millisecond: 'hh:mm'
+            }
+          }
+        }]
+      },
+      tooltips: {
+        mode: 'x-axis',
+        intersect: true,
+        axis: 'x'
+      }
+    }
+  };
+}
+
+export function monitoringChartJsParams(index: number, label: string, rangeMs: number = 60000) {
+  return {
+    type: 'line',
+    options: {
+      elements: {
+        point: {
+          pointStyle: 'circle',
+          radius: 1
+        }
+      },
+      animation: {
+        duration: 1000
+      },
+      legend: {
+        display: true,
+        position: 'bottom',
+        align: 'start',
+        labels: {
+          fontSize: 16,
+          boxWidth: 40
+        }
+      },
+      title: {
+        display: false,
+        position: 'bottom',
+        fontColor: 'rgba(0,0,0,0.87)',
+        fontSize: 20,
+        text: label
+      },
+      scales: {
+        yAxes: [{
+          display: true
+        }],
+        xAxes: [{
+          type: 'time',
+          ticks: {
+            display: true,
+            // fontColor: getColor(index),
+            // fontFamily: 'sans serif',
+            // autoSkip: true,
+            // autoSkipPadding: (60 * 60 * 1000),
+            maxRotation: 0,
+            // padding: 20,
+            // labelOffset: 0
+          },
+          time: {
+            round: 'second',
+            unitStepSize: rangeMs / 100,
             unit: 'millisecond',
             displayFormats: {
               millisecond: 'hh:mm'

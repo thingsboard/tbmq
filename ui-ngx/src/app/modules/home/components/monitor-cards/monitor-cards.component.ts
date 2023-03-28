@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin, interval, Observable, Subject, timer } from 'rxjs';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
@@ -22,7 +22,6 @@ import { StatsService } from '@core/http/stats.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
-import { BaseData } from '@shared/models/base-data';
 import { ClientCredentialsInfo, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
@@ -36,7 +35,7 @@ import { ClientSessionStatsInfo } from '@shared/models/session.model';
   templateUrl: './monitor-cards.component.html',
   styleUrls: ['./monitor-cards.component.scss']
 })
-export class MonitorCardsComponent implements OnInit, AfterViewInit {
+export class MonitorCardsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Input()
   isLoading$: Observable<boolean>;
@@ -63,6 +62,10 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit {
       retry(),
       takeUntil(this.stopPolling)
     );
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling.next();
   }
 
   viewDocumentation(page: string) {

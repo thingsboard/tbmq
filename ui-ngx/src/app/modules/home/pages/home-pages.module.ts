@@ -20,12 +20,13 @@ import { MODULES_MAP } from '@shared/public-api';
 import { modulesMap } from '../../common/modules-map';
 import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
 import { ProfileModule } from './profile/profile.module';
-import { MailServerModule } from "@home/pages/mail-server/mail-server.module";
-import { SessionsModule } from "@home/pages/sessions/sessions.module";
-import { AdminsModule } from "@home/pages/admins/admins.module";
-import { SharedSubscriptionsModule } from "@home/pages/shared-subscriptions/shared-subscriptions.module";
-import { StatsModule } from "@home/pages/stats/stats.module";
-import { RetainedMessagesModule } from "@home/pages/retained-messages/retained-messages.module";
+import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
+import { SessionsModule } from '@home/pages/sessions/sessions.module';
+import { AdminsModule } from '@home/pages/admins/admins.module';
+import { SharedSubscriptionsModule } from '@home/pages/shared-subscriptions/shared-subscriptions.module';
+import { StatsModule } from '@home/pages/stats/stats.module';
+import { RetainedMessagesModule } from '@home/pages/retained-messages/retained-messages.module';
+import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 
 @NgModule({
   exports: [
@@ -36,7 +37,8 @@ import { RetainedMessagesModule } from "@home/pages/retained-messages/retained-m
     AdminsModule,
     SharedSubscriptionsModule,
     StatsModule,
-    RetainedMessagesModule
+    RetainedMessagesModule,
+    MonitoringModule
   ],
   providers: [
     {

@@ -193,7 +193,6 @@
     "open-user-menu": "Open user menu",
     "view-docs": "View Docs",
     "config": "Config",
-    "monitors": "Monitors",
     "quick-links": "Quick links",
     "rest-api": "Rest API",
     "total": "Total"
@@ -292,6 +291,9 @@
       "uk_UA": "Українська",
       "de_DE": "Deutsch"
     }
+  },
+  "monitoring": {
+    "monitoring": "Monitoring"
   },
   "mqtt-client": {
     "client-id": "Client ID",

@@ -71,6 +71,14 @@ export class MenuService {
       },
       {
         id: guid(),
+        name: 'monitoring.monitoring',
+        type: 'link',
+        path: '/monitoring',
+        icon: 'mdi:monitor-dashboard',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
         name: 'user.users',
         type: 'link',
         path: '/users',

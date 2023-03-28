@@ -55,6 +55,36 @@ export class StatsService {
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 
+  public getMonitoringGraphMock(startTime?: number, endTime?: number, config?: RequestConfig): Observable<any> {
+    const dataset: any = {};
+    for (const chart in StatsChartType) {
+      const data = [];
+      let ts = Date.now() - (60 * 1000);
+      for (let i = 0; i < 10; i++) {
+        ts = ts + (5 * 1000);
+        const value = Math.floor(Math.random() * 10) + 5;
+        data.push({value, ts});
+      }
+      dataset[chart] = data;
+    }
+    return of(dataset);
+  }
+
+  public pollMonitoringGraphMock(config?: RequestConfig): Observable<any> {
+    const dataset: any = {};
+    for (const chart in StatsChartType) {
+      const randomValuesNumber = 1;
+      const data = [];
+      const ts = Date.now() + (10 * 1000);
+      for (let i = 0; i < randomValuesNumber; i++) {
+        const value = Math.floor(Math.random() * 10) + 5;
+        data.push({value, ts});
+      }
+      dataset[chart] = data;
+    }
+    return of(dataset);
+  }
+
   public getEntityTimeseriesMock(startTime?: number, endTime?: number, config?: RequestConfig): Observable<any> {
     const dataset: any = {};
     for (let chart in StatsChartType) {
@@ -83,19 +113,5 @@ export class StatsService {
       dataset[chart] = data;
     }
     return of(dataset);
-  }
-
-  public getSessionsInfoMock(config?: RequestConfig) {
-    const connected = Math.floor(Math.random() * 10) + 5;
-    const disconnected = Math.floor(Math.random() * 10) + 5;
-    const total = connected + disconnected;
-    return of({connected, disconnected, total});
-  }
-
-  public getClientCredentialsInfoMock(config?: RequestConfig) {
-    const devices = Math.floor(Math.random() * 10) + 5;
-    const applications = Math.floor(Math.random() * 10) + 5;
-    const total = devices + applications;
-    return of({devices, applications, total});
   }
 }

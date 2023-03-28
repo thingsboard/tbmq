@@ -14,25 +14,28 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
-import { Observable, Subject, timer } from 'rxjs';
-import { Router } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
-import Chart, { ChartConfiguration } from 'chart.js';
-import { StatsChartType, StatsChartTypeTranslationMap } from '@shared/models/stats.model';
-import { StatsService } from '@core/http/stats.service';
+import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
-import { TimeService } from '@core/services/time.service';
-import { retry, switchMap, takeUntil } from 'rxjs/operators';
-import { homeChartJsParams, getColor } from '@shared/models/chart.model';
+import { StatsChartType, StatsChartTypeTranslationMap } from '@shared/models/stats.model';
+import { Observable, Subject, timer } from 'rxjs';
 import { KeyValue } from '@angular/common';
+import { TranslateService } from '@ngx-translate/core';
+import { TimeService } from '@core/services/time.service';
+import { Router } from '@angular/router';
+import { StatsService } from '@core/http/stats.service';
+import { retry, switchMap, takeUntil } from 'rxjs/operators';
+import Chart, { ChartConfiguration } from 'chart.js';
+import { getColor, monitoringChartJsParams } from '@shared/models/chart.model';
+import { PageComponent } from '@shared/components/page.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
 
 @Component({
-  selector: 'tb-monitor-charts',
-  templateUrl: './monitor-charts.component.html',
-  styleUrls: ['./monitor-charts.component.scss']
+  selector: 'tb-mqtt-admin-credentials',
+  templateUrl: './monitoring.component.html',
+  styleUrls: ['./monitoring.component.scss']
 })
-export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit {
+export class MonitoringComponent extends PageComponent {
 
   @Output() timewindowObject = new EventEmitter<Timewindow>();
 
@@ -42,31 +45,34 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
   statsCharts = Object.values(StatsChartType);
   pollChartsData$: Observable<Array<KeyValue<string, any>>>;
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  fixedWindowTimeMs: FixedWindow;
 
   private stopPolling$ = new Subject();
 
   private destroy$ = new Subject();
 
-  constructor(private translate: TranslateService,
+  constructor(protected store: Store<AppState>,
+              private translate: TranslateService,
               private timeService: TimeService,
               private router: Router,
               private statsService: StatsService,
               private cd: ChangeDetectorRef) {
+    super(store);
     this.setTitles();
   }
 
   ngOnInit() {
     this.timewindow = this.timeService.defaultTimewindow();
+    this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
     this.pollChartsData$ = timer(0, 5000).pipe(
-      switchMap(() => this.statsService.pollEntityTimeseriesMock()),
+      switchMap(() => this.statsService.pollMonitoringGraphMock()),
       retry(),
       takeUntil(this.stopPolling$)
     );
   }
 
   ngAfterViewInit(): void {
-    const fixedWindowTimeMs: FixedWindow = calculateFixedWindowTimeMs(this.timewindow);
-    this.statsService.getEntityTimeseriesMock().pipe(
+    this.statsService.getMonitoringGraphMock().pipe(
       takeUntil(this.stopPolling$)
     ).subscribe(
       data => {
@@ -93,7 +99,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     let index = 0;
     for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
-      const ctx = document.getElementById(chart) as HTMLCanvasElement;
+      const ctx = document.getElementById(chart + '1') as HTMLCanvasElement;
       const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
       const dataSet = {
         label,
@@ -104,7 +110,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
         data: this.transformData(data[chart]),
         hover: true
       };
-      const params = {...homeChartJsParams(), ...{ data: {datasets: [dataSet]} }};
+      const params = {...monitoringChartJsParams(index, label, this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs), ...{ data: {datasets: [dataSet]} }};
       this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
       index++;
     }
@@ -139,7 +145,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
 
   private fetchData(fixedWindowTimeMs: FixedWindow) {
     this.stopPolling();
-    this.statsService.getEntityTimeseriesMock(fixedWindowTimeMs.startTimeMs, fixedWindowTimeMs.endTimeMs).pipe(
+    this.statsService.getMonitoringGraphMock(fixedWindowTimeMs.startTimeMs, fixedWindowTimeMs.endTimeMs).pipe(
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
       for (const chart in StatsChartType) {
@@ -174,7 +180,6 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
             y: el.value
           };
         })[0];
-        this.chartsLatestValues[chart] =
         this.charts[chart].data.datasets[0].data.shift();
         this.charts[chart].data.datasets[0].data.push(value);
         this.setLatestValues(data);
