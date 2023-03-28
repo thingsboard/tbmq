@@ -40,8 +40,8 @@
           <div *ngFor="let chart of statsCharts; let $index = index">
             <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
               <div fxFlex fxLayout="column" fxLayoutAlign="start center">
-                <span>{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][0] : '' }}</span>
-                <span>{{ chartsLatestValues[chart]?.length ? chartsLatestValues[chart][1] : '' }}</span>
+                <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+                <span>{{ chartsLatestValues[chart] }}</span>
               </div>
               <canvas style="z-index: 99;" class="chart" [id]="chart">
               </canvas>

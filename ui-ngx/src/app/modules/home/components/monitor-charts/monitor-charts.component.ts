@@ -14,17 +14,18 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { interval, Observable, Subject, timer } from 'rxjs';
+import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import Chart from 'chart.js';
+import Chart, { ChartConfiguration } from 'chart.js';
 import { StatsChartType, StatsChartTypeTranslationMap } from '@shared/models/stats.model';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { retry, switchMap, take, takeUntil } from 'rxjs/operators';
-import { getColor } from '@shared/models/chart.model';
+import { retry, switchMap, takeUntil } from 'rxjs/operators';
+import { defaultChartJsParams, getColor } from '@shared/models/chart.model';
+import { KeyValue } from '@angular/common';
 
 export enum StatsType {
   DROPPED_MESSAGES = 'DROPPED_MESSAGES',
@@ -44,14 +45,13 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
 
   @Output() timewindowObject = new EventEmitter<Timewindow>();
 
-  timewindow: Timewindow;
-
   charts = {};
   chartsLatestValues = {};
+  timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
-  pollChartsData$: Observable<any>;
+  pollChartsData$: Observable<Array<KeyValue<string, any>>>;
+  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
 
-  private statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private stopPolling$ = new Subject();
 
   private destroy$ = new Subject();
@@ -61,11 +61,12 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
               private router: Router,
               private statsService: StatsService,
               private cd: ChangeDetectorRef) {
+    this.setTitles();
   }
 
   ngOnInit() {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.pollChartsData$ = timer(0, 10000).pipe(
+    this.pollChartsData$ = timer(0, 5000).pipe(
       switchMap(() => this.statsService.pollEntityTimeseriesMock()),
       retry(),
       takeUntil(this.stopPolling$)
@@ -103,7 +104,6 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
       this.charts[chart] = {} as Chart;
       const ctx = document.getElementById(chart) as HTMLCanvasElement;
       const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
-      const lastValue = data[chart].length ? data[chart][data[chart].length - 1].value : 0;
       const dataSet = {
         label,
         fill: true,
@@ -113,97 +113,22 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
         data: this.transformData(data[chart]),
         hover: true
       };
-      this.charts[chart] = new Chart(ctx, {
-        type: 'line',
-        data: {
-          datasets: [dataSet]
-        },
-        options: {
-          elements: {
-            point: {
-              pointStyle: 'circle',
-              radius: 0
-            }
-          },
-          animation: {
-            duration: 1000
-          },
-          layout: {
-            padding: {
-              left: 20,
-              right: 20,
-              top: 0,
-              bottom: 0
-            }
-          },
-          legend: {
-            display: false
-          },
-          title: {
-            display: false,
-            text: [label, lastValue],
-            lineHeight: 0,
-            padding: 0,
-            fontStyle: 'normal',
-            fontColor: '#000000',
-            fontSize: 12
-          },
-          scales: {
-            yAxes: [{
-              display: false,
-              type: 'linear',
-              gridLines: {
-                display: false
-              },
-              ticks: {
-                min: 0,
-                stepSize: Math.floor(dataSet.data.length)
-              }
-            }],
-            xAxes: [{
-              type: 'time',
-              gridLines: {
-                display: false
-              },
-              ticks: {
-                display: false,
-                fontSize: 8,
-                fontColor: '#000000',
-                fontFamily: 'sans serif',
-                autoSkip: true,
-                autoSkipPadding: (60 * 60 * 1000),
-                maxRotation: 0,
-                padding: -20,
-                labelOffset: 0
-              },
-              distribution: 'series',
-              bounds: 'ticks',
-              time: {
-                round: 'second',
-                unitStepSize: 5 * 60 * 1000,
-                unit: 'millisecond',
-                displayFormats: {
-                  millisecond: 'hh:mm'
-                }
-              }
-            }]
-          },
-          tooltips: {
-            mode: 'x-axis',
-            intersect: true,
-            axis: 'x'
-          }
-        }
-      });
+      const params = {...defaultChartJsParams(), ...{ data: {datasets: [dataSet]} }};
+      this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
       index++;
     }
-    this.setLatestValues();
     this.startPolling();
   }
 
-  setLatestValues() {
+  setTitles() {
     for (const key of Object.keys(this.charts)) {
-      this.chartsLatestValues[key] = this.charts[key].options.title.text;
+      this.chartsLatestValues[key] = key;
+    }
+  }
+
+  setLatestValues(data) {
+    for (const key of Object.keys(this.charts)) {
+      this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
     }
     this.cd.detectChanges();
   }
@@ -233,8 +158,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
             y: el.value
           };
         });
-        const lastValue = data[chart][data[chart].length - 1].value;
-        this.charts[chart].options.title.text[1] = lastValue;
+        // const lastValue = data[chart][data[chart].length - 1].value;
+        // this.charts[chart].options.title.text[1] = lastValue;
       }
       this.updateCharts();
       if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
@@ -260,9 +185,10 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
             y: el.value
           };
         })[0];
-        this.charts[chart].options.title.text[1] = value.y;
+        this.chartsLatestValues[chart] =
         this.charts[chart].data.datasets[0].data.shift();
         this.charts[chart].data.datasets[0].data.push(value);
+        this.setLatestValues(data);
         this.updateCharts();
       }
     });
@@ -276,6 +202,5 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     for (const chart in StatsChartType) {
       this.charts[chart].update();
     }
-    this.setLatestValues();
   }
 }
