@@ -13,16 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
-import lombok.Builder;
-import lombok.Data;
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+public class TsData implements Comparable<TsData> {
+
+    private final long ts;
+    private final long value;
+
+    public TsData(long ts, long value) {
+        super();
+        this.ts = ts;
+        this.value = value;
+    }
+
+    public long getTs() {
+        return ts;
+    }
+
+    public long getValue() {
+        return value;
+    }
+
+    @Override
+    public int compareTo(TsData o) {
+        return Long.compare(ts, o.ts);
+    }
+
 }

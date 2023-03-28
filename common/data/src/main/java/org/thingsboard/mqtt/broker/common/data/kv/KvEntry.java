@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
-import lombok.Builder;
-import lombok.Data;
+import java.io.Serializable;
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+public interface KvEntry extends Serializable {
+
+    String getKey();
+
+    DataType getDataType();
+
+    Long getLongValue();
+
+    String getValueAsString();
+
+//    Object getValue();
 }

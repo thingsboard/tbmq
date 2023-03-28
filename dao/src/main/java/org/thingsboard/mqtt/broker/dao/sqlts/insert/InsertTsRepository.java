@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.dao.sqlts.insert;
 
-import lombok.Builder;
-import lombok.Data;
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
+
+import java.util.List;
+
+public interface InsertTsRepository<T extends AbstractTsKvEntity> {
+
+    void saveOrUpdate(List<T> entities);
+
 }

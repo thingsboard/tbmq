@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
-import lombok.Builder;
-import lombok.Data;
+/**
+ * Represents time series KV data entry
+ *
+ * @author ashvayka
+ *
+ */
+public interface TsKvEntry extends KvEntry {
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+    long getTs();
+
 }

@@ -13,16 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.dao.model.sqlts;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+import javax.persistence.Entity;
+import javax.persistence.IdClass;
+import javax.persistence.Table;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+@Entity
+@Table(name = "ts_kv")
+@IdClass(TsKvCompositeKey.class)
+public final class TsKvEntity extends AbstractTsKvEntity {
+
+    public TsKvEntity() {
+    }
+
+    public TsKvEntity(Long longValueCount) {
+        if (!isAllNull(longValueCount)) {
+            this.longValue = longValueCount;
+        }
+    }
+
+    @Override
+    public boolean isNotEmpty() {
+        return longValue != null;
+    }
 }

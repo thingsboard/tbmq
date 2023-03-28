@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
+import com.datastax.oss.driver.api.core.uuid.Uuids;
+
+import java.util.UUID;
 
 public class ModelConstants {
 
@@ -27,7 +30,16 @@ public class ModelConstants {
     public static final String ID_PROPERTY = "id";
     public static final String CREATED_TIME_PROPERTY = "created_time";
     public static final String ADDITIONAL_INFO_PROPERTY = "additional_info";
+    public static final String ENTITY_ID_COLUMN = "entity_id";
+    public static final UUID NULL_UUID = Uuids.startOf(0);
 
+    /**
+     * Timeseries constants.
+     */
+    public static final String KEY_COLUMN = "key";
+    public static final String KEY_ID_COLUMN = "key_id";
+    public static final String TS_COLUMN = "ts";
+    public static final String LONG_VALUE_COLUMN = "long_v";
 
     /**
      * broker_user constants.
@@ -43,7 +55,6 @@ public class ModelConstants {
      * admin_settings constants.
      */
     public static final String ADMIN_SETTINGS_COLUMN_FAMILY_NAME = "admin_settings";
-    ;
     public static final String ADMIN_SETTINGS_KEY_PROPERTY = "key";
     public static final String ADMIN_SETTINGS_JSON_VALUE_PROPERTY = "json_value";
 

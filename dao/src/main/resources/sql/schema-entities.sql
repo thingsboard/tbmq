@@ -106,12 +106,72 @@ CREATE TABLE IF NOT EXISTS generic_client_session_ctx (
     qos2_publish_packet_ids varchar
 );
 
-CREATE TABLE IF NOT EXISTS application_shared_subscription (
-    id uuid NOT NULL CONSTRAINT application_shared_subscription_pkey PRIMARY KEY,
-    created_time bigint NOT NULL,
-    topic varchar NOT NULL,
-    partitions int NOT NULL,
-    name varchar(255),
-    search_text varchar(255),
-    CONSTRAINT application_shared_subscription_topic_unq_key UNIQUE (topic)
+CREATE TABLE IF NOT EXISTS application_shared_subscription
+(
+    id
+    uuid
+    NOT
+    NULL
+    CONSTRAINT
+    application_shared_subscription_pkey
+    PRIMARY
+    KEY,
+    created_time
+    bigint
+    NOT
+    NULL,
+    topic
+    varchar
+    NOT
+    NULL,
+    partitions
+    int
+    NOT
+    NULL,
+    name
+    varchar
+(
+    255
+),
+    search_text varchar
+(
+    255
+),
+    CONSTRAINT application_shared_subscription_topic_unq_key UNIQUE
+(
+    topic
+)
+    );
+
+CREATE TABLE IF NOT EXISTS ts_kv
+(
+    entity_id varchar
+(
+    255
+) NOT NULL,
+    key int NOT NULL,
+    ts bigint NOT NULL,
+    long_v bigint,
+    CONSTRAINT ts_kv_pkey PRIMARY KEY
+(
+    entity_id,
+    key,
+    ts
+)
+    ) PARTITION BY RANGE
+(
+    ts
 );
+
+CREATE TABLE IF NOT EXISTS ts_kv_dictionary
+(
+    key varchar
+(
+    255
+) NOT NULL,
+    key_id serial UNIQUE,
+    CONSTRAINT ts_key_id_pkey PRIMARY KEY
+(
+    key
+)
+    );

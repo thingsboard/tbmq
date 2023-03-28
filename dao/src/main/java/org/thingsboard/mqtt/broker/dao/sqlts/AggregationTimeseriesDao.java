@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.dao.sqlts;
 
-import lombok.Builder;
-import lombok.Data;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+import java.util.List;
+
+public interface AggregationTimeseriesDao {
+
+    ListenableFuture<List<TsKvEntry>> findAllAsync(String entityId, ReadTsKvQuery query);
 }

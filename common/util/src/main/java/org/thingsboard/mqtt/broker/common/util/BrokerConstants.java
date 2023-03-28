@@ -17,8 +17,11 @@ package org.thingsboard.mqtt.broker.common.util;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class BrokerConstants {
+
+    public static final List<String> HISTORICAL_KEYS = List.of("incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions");
 
     public static final byte[] LOCAL_ADR;
 

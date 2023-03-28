@@ -65,6 +65,10 @@ public abstract class DaoUtil {
         return object;
     }
 
+    public static <T> PageData<T> pageToPageData(Page<T> page) {
+        return new PageData<>(page.getContent(), page.getTotalPages(), page.getTotalElements(), page.hasNext());
+    }
+
     public static Pageable toPageable(PageLink pageLink) {
         return toPageable(pageLink, Collections.emptyMap());
     }

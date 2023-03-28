@@ -7,3 +7,5 @@ DROP TABLE IF EXISTS device_session_ctx;
 DROP TABLE IF EXISTS application_session_ctx;
 DROP TABLE IF EXISTS generic_client_session_ctx;
 DROP TABLE IF EXISTS application_shared_subscription;
+DROP TABLE IF EXISTS ts_kv;
+DROP TABLE IF EXISTS ts_kv_dictionary;

@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sql;
+package org.thingsboard.mqtt.broker.dao.sqlts.dictionary;
 
-import lombok.Builder;
-import lombok.Data;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary.TsKvDictionary;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary.TsKvDictionaryCompositeKey;
 
-@Data
-@Builder
-public class TbSqlQueueParams {
-    private final String queueName;
-    private final int batchSize;
-    private final long maxDelay;
-    private final boolean batchSortEnabled;
+import java.util.Optional;
+
+public interface TsKvDictionaryRepository extends JpaRepository<TsKvDictionary, TsKvDictionaryCompositeKey> {
+
+    Optional<TsKvDictionary> findByKeyId(int keyId);
+
 }
