@@ -27,8 +27,11 @@ import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 })
 export class MonitorClientCredentialsCardComponent implements OnInit {
 
-  @Input() isLoading$: Observable<boolean>;
-  @Input('data') data: ClientCredentialsInfo;
+  @Input()
+  isLoading$: Observable<boolean>;
+
+  @Input()
+  data: ClientCredentialsInfo;
 
   config = [{
     key: 'deviceCredentialsCount',

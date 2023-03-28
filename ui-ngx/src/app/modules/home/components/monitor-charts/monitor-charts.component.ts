@@ -15,7 +15,7 @@
 ///
 
 import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { interval, Observable, Subject } from 'rxjs';
+import { interval, Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import Chart from 'chart.js';
@@ -24,6 +24,7 @@ import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { retry, switchMap, take, takeUntil } from 'rxjs/operators';
+import { getColor } from '@shared/models/chart.model';
 
 export enum StatsType {
   DROPPED_MESSAGES = 'DROPPED_MESSAGES',
@@ -64,7 +65,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
 
   ngOnInit() {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.pollChartsData$ = interval(5000).pipe(
+    this.pollChartsData$ = timer(0, 10000).pipe(
       switchMap(() => this.statsService.pollEntityTimeseriesMock()),
       retry(),
       takeUntil(this.stopPolling$)
@@ -106,10 +107,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
       const dataSet = {
         label,
         fill: true,
-        backgroundColor: 'rgba(50,50,50,0.02)',
-        borderColor: this.getColor(index),
-        // hoverBackgroundColor: this.getColor(index),
-        // hoverBorderColor: this.getColor(index),
+        backgroundColor: 'transparent',
+        borderColor: getColor(index),
         borderWidth: 3,
         data: this.transformData(data[chart]),
         hover: true
@@ -278,10 +277,5 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
       this.charts[chart].update();
     }
     this.setLatestValues();
-  }
-
-  private getColor(index) {
-    const colors = ['#65655e', '#c6afb1', '#b0a3d4', '#7d80da', '#79addc'];
-    return colors[index];
   }
 }

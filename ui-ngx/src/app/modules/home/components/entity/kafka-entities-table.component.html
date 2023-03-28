@@ -20,13 +20,13 @@
     <div class="kafka-table-search">
       <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
         <div class="mat-toolbar-tools" fxLayoutGap="4px">
+          <span fxFlex></span>
           <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
                   [disabled]="isLoading$ | async" (click)="enterFilterMode()"
                   matTooltip="{{ translations.search | translate }}"
                   matTooltipPosition="above">
             <mat-icon>search</mat-icon>
           </button>
-          <span fxFlex></span>
           <button mat-mini-fab [disabled]="isLoading$ | async" color="primary"
                   [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
                   matTooltip="{{ actionDescriptor.name }}"
