@@ -19,7 +19,7 @@
   section.tb-timewindow {
     min-height: 32px;
     padding: 0 6px;
-    font-size: 12px !important;
+    font-size: 14px !important;
 
     span {
       overflow: hidden;
@@ -27,10 +27,6 @@
       white-space: nowrap;
       pointer-events: all;
       cursor: pointer;
-    }
-
-    .timezone-abbr {
-      font-weight: 500;
     }
   }
 }

@@ -45,7 +45,7 @@ import {
 import { ConfigService } from '@core/http/config.service';
 import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
-import { ConfigParams } from '@shared/models/stats.model';
+import { ConfigParams } from '@shared/models/config.model';
 
 @Injectable()
 export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<MqttClientCredentials>> {

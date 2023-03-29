@@ -18,10 +18,10 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { StatsChartType, TimeseriesData } from '@shared/models/stats.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { AggregationType } from '@shared/models/time/time.models';
+import { AggregationType, FixedWindow } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
+import { StatsChartType, TimeseriesData } from '@shared/models/chart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -55,13 +55,13 @@ export class StatsService {
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 
-  public getMonitoringGraphMock(startTime?: number, endTime?: number, config?: RequestConfig): Observable<any> {
+  public getMonitoringInitData(config?: RequestConfig): Observable<any> {
     const dataset: any = {};
     for (const chart in StatsChartType) {
       const data = [];
-      let ts = Date.now() - (60 * 1000);
+      let ts = Date.now() - (60 * 60 * 1000 * 10);
       for (let i = 0; i < 10; i++) {
-        ts = ts + (5 * 1000);
+        ts = ts + (60 * 60 * 1000);
         const value = Math.floor(Math.random() * 10) + 5;
         data.push({value, ts});
       }
@@ -70,16 +70,13 @@ export class StatsService {
     return of(dataset);
   }
 
-  public pollMonitoringGraphMock(config?: RequestConfig): Observable<any> {
+  public pollMonitoringLatestValue(config?: RequestConfig): Observable<any> {
     const dataset: any = {};
     for (const chart in StatsChartType) {
-      const randomValuesNumber = 1;
       const data = [];
-      const ts = Date.now() + (10 * 1000);
-      for (let i = 0; i < randomValuesNumber; i++) {
-        const value = Math.floor(Math.random() * 10) + 5;
-        data.push({value, ts});
-      }
+      const ts = Date.now() + (60 * 60 * 1000);
+      const value = Math.floor(Math.random() * 10) + 5;
+      data.push({value, ts});
       dataset[chart] = data;
     }
     return of(dataset);
@@ -87,12 +84,12 @@ export class StatsService {
 
   public getEntityTimeseriesMock(startTime?: number, endTime?: number, config?: RequestConfig): Observable<any> {
     const dataset: any = {};
-    for (let chart in StatsChartType) {
+    for (const chart in StatsChartType) {
       const data = [];
       let ts = Date.now() - (60 * 1000);
       for (let i = 0; i < 10; i++) {
         ts = ts + (5 * 1000);
-        let value = Math.floor(Math.random() * 10) + 5;
+        const value = Math.floor(Math.random() * 10) + 5;
         data.push({value, ts});
       }
       dataset[chart] = data;
@@ -102,12 +99,12 @@ export class StatsService {
 
   public pollEntityTimeseriesMock(config?: RequestConfig): Observable<any> {
     const dataset: any = {};
-    for (let chart in StatsChartType) {
+    for (const chart in StatsChartType) {
       const randomValuesNumber = 1;
       const data = [];
-      let ts = Date.now() + (10 * 1000);
+      const ts = Date.now() + (10 * 1000);
       for (let i = 0; i < randomValuesNumber; i++) {
-        let value = Math.floor(Math.random() * 10) + 5;
+        const value = Math.floor(Math.random() * 10) + 5;
         data.push({value, ts});
       }
       dataset[chart] = data;

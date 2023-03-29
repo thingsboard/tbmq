@@ -293,7 +293,10 @@
     }
   },
   "monitoring": {
-    "monitoring": "Monitoring"
+    "monitoring": "Monitoring",
+    "session": "Sessions",
+    "subscription": "Subscriptions",
+    "messages": "Messages"
   },
   "mqtt-client": {
     "client-id": "Client ID",

@@ -14,57 +14,6 @@
 /// limitations under the License.
 ///
 
-export interface TimeseriesData {
-  [key: string]: Array<TsValue>;
-}
-
-export interface TsValue {
-  ts: number;
-  value: string;
-  count?: number;
-}
-
-export enum StatsChartType {
-  INCOMING_MESSAGES = 'INCOMING_MESSAGES',
-  OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
-  DROPPED_MESSAGES = 'DROPPED_MESSAGES',
-  SESSIONS = 'SESSIONS',
-  SUBSCRIPTIONS = 'SUBSCRIPTIONS'
-}
-
-export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
-  [
-    [StatsChartType.INCOMING_MESSAGES, 'overview.incoming-messages'],
-    [StatsChartType.OUTGOING_MESSAGES, 'overview.outgoing-messages'],
-    [StatsChartType.DROPPED_MESSAGES, 'overview.dropped-messages'],
-    [StatsChartType.SESSIONS, 'overview.sessions'],
-    [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
-  ]
-);
-
-export interface ThreeCardsData {
-  title: string,
-  link: {
-    enabled: boolean,
-    href: string
-  },
-  docs: {
-    enabled: boolean,
-    href: string
-  },
-  actions: {
-    enabled: boolean,
-    items: Array<any>
-  },
-  items: Array<CardItem>
-}
-
-export interface CardItem {
-  key: string;
-  value: number | string;
-  label: string;
-}
-
 export interface BrokerConfig {
   tcpPort: number;
   tlsPort: number;

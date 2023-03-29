@@ -16,7 +16,6 @@
 
 import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
-import { StatsChartType, StatsChartTypeTranslationMap } from '@shared/models/stats.model';
 import { Observable, Subject, timer } from 'rxjs';
 import { KeyValue } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
@@ -25,7 +24,12 @@ import { Router } from '@angular/router';
 import { StatsService } from '@core/http/stats.service';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
 import Chart, { ChartConfiguration } from 'chart.js';
-import { getColor, monitoringChartJsParams } from '@shared/models/chart.model';
+import {
+  getColor,
+  monitoringChartJsParams, MonitoringChartType,
+  MonitoringChartTypeTranslationMap, StatsChartType,
+  StatsChartTypeTranslationMap
+} from '@shared/models/chart.model';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
@@ -41,11 +45,16 @@ export class MonitoringComponent extends PageComponent {
 
   charts = {};
   chartsLatestValues = {};
+
+  tempIndex = 1;
+
   timewindow: Timewindow;
+
   statsCharts = Object.values(StatsChartType);
-  pollChartsData$: Observable<Array<KeyValue<string, any>>>;
+  monitoringStatsCharts = Object.values(MonitoringChartType);
+
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
-  fixedWindowTimeMs: FixedWindow;
+  monitoringChartTypeTranslationMap = MonitoringChartTypeTranslationMap;
 
   private stopPolling$ = new Subject();
 
@@ -63,16 +72,10 @@ export class MonitoringComponent extends PageComponent {
 
   ngOnInit() {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
-    this.pollChartsData$ = timer(0, 5000).pipe(
-      switchMap(() => this.statsService.pollMonitoringGraphMock()),
-      retry(),
-      takeUntil(this.stopPolling$)
-    );
   }
 
   ngAfterViewInit(): void {
-    this.statsService.getMonitoringGraphMock().pipe(
+    this.statsService.getMonitoringInitData().pipe(
       takeUntil(this.stopPolling$)
     ).subscribe(
       data => {
@@ -97,20 +100,54 @@ export class MonitoringComponent extends PageComponent {
 
   initCharts(data) {
     let index = 0;
-    for (const chart in StatsChartType) {
+    for (const chart in MonitoringChartType) {
       this.charts[chart] = {} as Chart;
       const ctx = document.getElementById(chart + '1') as HTMLCanvasElement;
-      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
-      const dataSet = {
-        label,
+      const label = this.translate.instant(this.monitoringChartTypeTranslationMap.get(chart as MonitoringChartType));
+      const dataSetConfig = {
         fill: true,
         backgroundColor: 'transparent',
-        borderColor: getColor(index),
         borderWidth: 3,
-        data: this.transformData(data[chart]),
         hover: true
       };
-      const params = {...monitoringChartJsParams(index, label, this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs), ...{ data: {datasets: [dataSet]} }};
+      let dataSet = [{
+        ...dataSetConfig,
+        ...{
+          label,
+          borderColor: getColor(chart as StatsChartType),
+          data: this.prepareDataInChartFormat(data[chart]),
+        }
+      }];
+      if (chart === MonitoringChartType.OUTGOING_MESSAGES) {
+        dataSet = [];
+        dataSet.push(
+          {
+            ...dataSetConfig,
+            ...{
+              label: this.translate.instant('overview.outgoing-messages'),
+              borderColor: getColor(StatsChartType.OUTGOING_MESSAGES),
+              data: this.prepareDataInChartFormat(data[StatsChartType.OUTGOING_MESSAGES])
+            }
+          },
+          {
+            ...dataSetConfig,
+            ...{
+              label: this.translate.instant('overview.incoming-messages'),
+              borderColor: getColor(StatsChartType.INCOMING_MESSAGES),
+              data: this.prepareDataInChartFormat(data[StatsChartType.INCOMING_MESSAGES])
+            }
+          },
+          {
+            ...dataSetConfig,
+            ...{
+              label: this.translate.instant('overview.dropped-messages'),
+              borderColor: getColor(StatsChartType.DROPPED_MESSAGES),
+              data: this.prepareDataInChartFormat(data[StatsChartType.DROPPED_MESSAGES])
+            }
+          }
+        );
+      }
+      const params = {...monitoringChartJsParams(index, label, calculateFixedWindowTimeMs(this.timewindow)), ...{ data: {datasets: dataSet} }};
       this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
       index++;
     }
@@ -139,16 +176,15 @@ export class MonitoringComponent extends PageComponent {
     if (this.timewindow.selectedTab === TimewindowType.HISTORY) {
       this.stopPolling();
     }
-    const fixedWindowTimeMs: FixedWindow = calculateFixedWindowTimeMs(this.timewindow);
-    this.fetchData(fixedWindowTimeMs);
+    this.fetchData();
   }
 
-  private fetchData(fixedWindowTimeMs: FixedWindow) {
+  private fetchData() {
     this.stopPolling();
-    this.statsService.getMonitoringGraphMock(fixedWindowTimeMs.startTimeMs, fixedWindowTimeMs.endTimeMs).pipe(
+    this.statsService.getMonitoringInitData().pipe(
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
-      for (const chart in StatsChartType) {
+      for (const chart in MonitoringChartType) {
         this.charts[chart].data.datasets[0].data = data[chart].map(el => {
           return {
             x: el.ts,
@@ -163,7 +199,7 @@ export class MonitoringComponent extends PageComponent {
     });
   }
 
-  private transformData(data: Array<any>) {
+  private prepareDataInChartFormat(data: Array<any>) {
     if (data?.length) {
       return data.map(el => {
         return {x: el.ts, y: el.value};
@@ -172,18 +208,15 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private startPolling() {
-    this.pollChartsData$.subscribe(data => {
-      for (const chart in StatsChartType) {
-        const value = data[chart].map(el => {
-          return {
-            x: el.ts,
-            y: el.value
-          };
-        })[0];
-        this.charts[chart].data.datasets[0].data.shift();
-        this.charts[chart].data.datasets[0].data.push(value);
-        this.setLatestValues(data);
+    timer(0, 5000).pipe(
+      switchMap(() => this.statsService.pollMonitoringLatestValue()),
+      retry(),
+      takeUntil(this.stopPolling$)
+    ).subscribe(data => {
+      for (const chart in MonitoringChartType) {
+        this.pushShiftLatestValue(data, chart as MonitoringChartType);
         this.updateCharts();
+        this.tempIndex++;
       }
     });
   }
@@ -193,8 +226,35 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private updateCharts() {
-    for (const chart in StatsChartType) {
+    for (const chart in MonitoringChartType) {
       this.charts[chart].update();
     }
+  }
+
+  private pushShiftLatestValue(data: Array<any>, chartType: MonitoringChartType) {
+    switch (chartType) {
+      case MonitoringChartType.OUTGOING_MESSAGES:
+        this.charts[chartType].data.datasets[0].data.shift();
+        this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[StatsChartType.OUTGOING_MESSAGES]));
+        this.charts[chartType].data.datasets[1].data.shift();
+        this.charts[chartType].data.datasets[1].data.push(this.transformLatestValue(data[StatsChartType.INCOMING_MESSAGES]));
+        this.charts[chartType].data.datasets[2].data.shift();
+        this.charts[chartType].data.datasets[2].data.push(this.transformLatestValue(data[StatsChartType.DROPPED_MESSAGES]));
+        break;
+      case MonitoringChartType.SESSIONS:
+      case MonitoringChartType.SUBSCRIPTIONS:
+        this.charts[chartType].data.datasets[0].data.shift();
+        this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[chartType]));
+        break;
+    }
+  }
+
+  private transformLatestValue(chartData) {
+    return chartData.map(el => {
+      return {
+        x: el.ts + (60 * 60 * 1000 * this.tempIndex),
+        y: el.value
+      };
+    })[0];
   }
 }

@@ -14,11 +14,62 @@
 /// limitations under the License.
 ///
 
-const chartColors = ['#65655e', '#c6afb1', '#b0a3d4', '#7d80da', '#79addc'];
+import { FixedWindow } from '@shared/models/time/time.models';
 
-export function getColor(index: number): string {
-  return chartColors[index];
+export interface TimeseriesData {
+  [key: string]: Array<TsValue>;
 }
+
+export interface TsValue {
+  ts: number;
+  value: string;
+  count?: number;
+}
+
+export enum StatsChartType {
+  INCOMING_MESSAGES = 'INCOMING_MESSAGES',
+  OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
+  DROPPED_MESSAGES = 'DROPPED_MESSAGES',
+  SESSIONS = 'SESSIONS',
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS'
+}
+
+export enum MonitoringChartType {
+  OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
+  SESSIONS = 'SESSIONS',
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS'
+}
+
+export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
+  [
+    [StatsChartType.INCOMING_MESSAGES, 'overview.incoming-messages'],
+    [StatsChartType.OUTGOING_MESSAGES, 'overview.outgoing-messages'],
+    [StatsChartType.DROPPED_MESSAGES, 'overview.dropped-messages'],
+    [StatsChartType.SESSIONS, 'overview.sessions'],
+    [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
+  ]
+);
+export const MonitoringChartTypeTranslationMap = new Map<MonitoringChartType, string>(
+  [
+    [MonitoringChartType.OUTGOING_MESSAGES, 'monitoring.messages'],
+    [MonitoringChartType.SESSIONS, 'monitoring.session'],
+    [MonitoringChartType.SUBSCRIPTIONS, 'monitoring.subscription']
+  ]
+);
+
+export function getColor(type: StatsChartType): string {
+  return MonitoringChartColorMap.get(type);
+}
+
+export const MonitoringChartColorMap = new Map<StatsChartType, string>(
+  [
+    [StatsChartType.DROPPED_MESSAGES, '#f26430'],
+    [StatsChartType.INCOMING_MESSAGES, '#009B72'],
+    [StatsChartType.OUTGOING_MESSAGES, '#009DDC'],
+    [StatsChartType.SESSIONS, '#6761A8'],
+    [StatsChartType.SUBSCRIPTIONS, '#2a2d34']
+  ]
+);
 
 export function homeChartJsParams() {
   return {
@@ -101,7 +152,8 @@ export function homeChartJsParams() {
   };
 }
 
-export function monitoringChartJsParams(index: number, label: string, rangeMs: number = 60000) {
+export function monitoringChartJsParams(index: number, label: string, fixedWindowTimeMs: FixedWindow) {
+  const rangeMs = fixedWindowTimeMs?.endTimeMs - fixedWindowTimeMs?.startTimeMs || 60 * 1000;
   return {
     type: 'line',
     options: {
@@ -148,7 +200,7 @@ export function monitoringChartJsParams(index: number, label: string, rangeMs: n
           },
           time: {
             round: 'second',
-            unitStepSize: rangeMs / 100,
+            unitStepSize: rangeMs,
             unit: 'millisecond',
             displayFormats: {
               millisecond: 'hh:mm'

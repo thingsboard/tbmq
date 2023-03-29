@@ -26,7 +26,7 @@ import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dia
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { Router } from '@angular/router';
-import { BrokerConfig, ConfigParams } from '@shared/models/stats.model';
+import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map, take } from 'rxjs/operators';

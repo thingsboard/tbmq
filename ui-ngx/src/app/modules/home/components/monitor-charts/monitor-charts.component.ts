@@ -19,12 +19,11 @@ import { Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import Chart, { ChartConfiguration } from 'chart.js';
-import { StatsChartType, StatsChartTypeTranslationMap } from '@shared/models/stats.model';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
-import { homeChartJsParams, getColor } from '@shared/models/chart.model';
+import { homeChartJsParams, getColor, StatsChartTypeTranslationMap, StatsChartType } from '@shared/models/chart.model';
 import { KeyValue } from '@angular/common';
 
 @Component({
@@ -85,8 +84,8 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.router.navigateByUrl('');
   }
 
-  navigateToPage(type) {
-    this.router.navigateByUrl('');
+  navigateToPage(path) {
+    this.router.navigateByUrl(path);
   }
 
   initCharts(data) {
@@ -99,7 +98,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
         label,
         fill: true,
         backgroundColor: 'transparent',
-        borderColor: getColor(index),
+        borderColor: getColor(chart as StatsChartType),
         borderWidth: 3,
         data: this.transformData(data[chart]),
         hover: true

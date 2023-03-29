@@ -22,7 +22,7 @@ import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { DetailedClientSessionInfo } from '@shared/models/session.model';
 import { KafkaBroker } from '@shared/models/kafka.model';
-import { BrokerConfig } from '@shared/models/stats.model';
+import { BrokerConfig } from '@shared/models/config.model';
 
 @Injectable({
   providedIn: 'root'

@@ -19,14 +19,15 @@
   <div class="card">
     <div fxFlex fxLayout="column">
       <div class="card-table">
-        <div fxFlex fxLayout="row" fxLayoutAlign="center center">
-          <button mat-button disabled
+        <div fxFlex fxLayout="row" fxLayoutAlign="center center" style="padding-bottom: 8px">
+          <button mat-button
                   type="button"
+                  (click)="navigateToPage('monitoring')"
                   matTooltip="{{'monitoring.monitoring' | translate}}">
-            {{'monitoring.monitoring' | translate}}
+            {{'monitoring.monitoring' | translate}} &#8599;
           </button>
           <span fxFlex></span>
-          <section>
+          <!--<section>
             <tb-timewindow [(ngModel)]="timewindow"
                            (ngModelChange)="onTimewindowChange()"
                            direction="left"
@@ -34,7 +35,7 @@
                            aggregation="false"
                            timezone="false">
             </tb-timewindow>
-          </section>
+          </section>-->
         </div>
         <div fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
           <div *ngFor="let chart of statsCharts; let $index = index">

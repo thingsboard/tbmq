@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap } from '@shared/models/stats.model';
+import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap } from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';

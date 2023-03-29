@@ -15,35 +15,26 @@
     limitations under the License.
 
 -->
-<div>
-  <mat-card class="settings-card">
-    <mat-card-title>
-      <div fxLayout="row center">
-        <span class="mat-headline" translate>monitoring.monitoring</span>
-        <span fxFlex></span>
-        <tb-timewindow [(ngModel)]="timewindow"
-                       asButton
-                       (ngModelChange)="onTimewindowChange()"
-                       direction="left"
-                       tooltipPosition="left"
-                       aggregation="false"
-                       timezone="false">
-        </tb-timewindow>
+<mat-toolbar color="primary" class="details-toolbar">
+  <span fxFlex></span>
+  <tb-timewindow [(ngModel)]="timewindow"
+                 (ngModelChange)="onTimewindowChange()"
+                 direction="left"
+                 tooltipPosition="left"
+                 aggregation="false"
+                 timezone="false">
+  </tb-timewindow>
+</mat-toolbar>
+<div style="padding: 4px 8px 8px 8px">
+  <div fxFlex fxLayout="column" fxLayoutGap="8px">
+    <div *ngFor="let chart of monitoringStatsCharts" class="mat-padding mat-elevation-z3"
+    style="margin: 0 10px 0 10px; padding: 10px; background-color: #ffffff">
+      <div fxLayout="row" style="padding: 16px 8px 8px">
+        <span style="font-size: 20px; font-weight: 500">{{ monitoringChartTypeTranslationMap.get(chart) | translate }}</span>
       </div>
-    </mat-card-title>
-    <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-    </mat-progress-bar>
-    <mat-card-content>
-      <div fxFlex fxLayout="column" fxLayoutGap="16px">
-        <div *ngFor="let chart of statsCharts" class="mat-padding mat-elevation-z1">
-          <div fxLayout="row" fxLayoutGap="10px">
-            <span style="font-size: 20px; font-weight: 500">{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-          </div>
-          <div>
-            <canvas [id]="chart+'1'" width="500" height="100"></canvas>
-          </div>
-        </div>
+      <div>
+        <canvas [id]="chart+'1'" width="500" height="90"></canvas>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 </div>
