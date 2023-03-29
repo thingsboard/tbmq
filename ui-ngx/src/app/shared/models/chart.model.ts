@@ -63,11 +63,11 @@ export function getColor(type: StatsChartType): string {
 
 export const MonitoringChartColorMap = new Map<StatsChartType, string>(
   [
-    [StatsChartType.DROPPED_MESSAGES, '#f26430'],
-    [StatsChartType.INCOMING_MESSAGES, '#009B72'],
-    [StatsChartType.OUTGOING_MESSAGES, '#009DDC'],
-    [StatsChartType.SESSIONS, '#6761A8'],
-    [StatsChartType.SUBSCRIPTIONS, '#2a2d34']
+    [StatsChartType.DROPPED_MESSAGES, '#009B72'],
+    [StatsChartType.INCOMING_MESSAGES, '#008FA4'],
+    [StatsChartType.OUTGOING_MESSAGES, '#2F4858'],
+    [StatsChartType.SESSIONS, '#00968A'],
+    [StatsChartType.SUBSCRIPTIONS, '#0086BB']
   ]
 );
 
@@ -171,8 +171,9 @@ export function monitoringChartJsParams(index: number, label: string, fixedWindo
         position: 'bottom',
         align: 'start',
         labels: {
-          fontSize: 16,
-          boxWidth: 40
+          fontSize: 14,
+          boxWidth: 14,
+          usePointStyle: true
         }
       },
       title: {
@@ -209,9 +210,7 @@ export function monitoringChartJsParams(index: number, label: string, fixedWindo
         }]
       },
       tooltips: {
-        mode: 'x-axis',
-        intersect: true,
-        axis: 'x'
+        mode: 'x-axis'
       }
     }
   };

@@ -15,29 +15,34 @@
     limitations under the License.
 
 -->
-<div class="card-table">
-  <div fxFlex fxLayout="column" fxLayoutAlign="start start" fxLayoutGap="16px">
-    <div class="config-table" fxLayoutGap="8px">
-      <section>
-        <span>{{'version.current-version' | translate }}: </span>
-        <a target="_blank" href="">{{versionData.currentVersion}}</a>
-      </section>
-      <span *ngIf="!versionData.updateAvailable" [innerHTML]="'version.no-updates-available' | translate"></span>
-      <section *ngIf="versionData.updateAvailable">
-        <span  [innerHTML]="'version.updates-available' | translate"></span>
-        <a target="_blank" href="">{{versionData.latestVersion}}</a>
-      </section>
-      <section *ngIf="versionData.updateAvailable" fxFlex fxLayout="column">
-        <span [innerHTML]="'version.release-notes' | translate"></span>
-        <span>Minor updates and improvements.</span>
-      </section>
+<div class="card">
+  <div class="card-table" style="height: 100px">
+    <div fxFlex fxLayout="row" fxLayoutAlign="start">
+      <button mat-button disabled matTooltip="{{'version.version' | translate}}">
+        {{'version.version' | translate}}
+      </button>
     </div>
-    <button mat-raised-button color="primary"
-            type="button"
-            [disabled]="!versionData.updateAvailable"
-            (click)="viewDocumentation('update')"
-            matTooltip="{{'version.update' | translate}}">
-      {{'version.update' | translate}}
-    </button>
+    <div fxFlex fxLayout="column" style="padding: 0 16px 0 16px">
+      <div fxLayout="column">
+        <div  fxLayoutGap="8px">
+          <section>
+            <span>{{'version.current-version' | translate }}: </span>
+            <a target="_blank" href="">{{versionData.currentVersion}}</a>
+          </section>
+          <section *ngIf="!versionData.updateAvailable">
+            <span [innerHTML]="'version.no-updates-available' | translate"></span>
+          </section>
+          <section *ngIf="versionData.updateAvailable">
+            <span  [innerHTML]="'version.updates-available' | translate"></span>
+            <a target="_blank" href="">{{versionData.latestVersion}}</a>
+          </section>
+          <section *ngIf="versionData.updateAvailable" fxFlex fxLayout="column">
+            <span [innerHTML]="'version.release-notes' | translate"></span>
+            <span>Minor updates and improvements.</span>
+          </section>
+        </div>
+      </div>
+    </div>
+    <span fxFlex></span>
   </div>
 </div>

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 :host {
+  flex: 1;
+
   .tb-kafka-table {
     max-width: 100%;
     height: 180px;
@@ -33,5 +35,9 @@
       flex-wrap: nowrap;
       background-color: #f4f4f4;
     }
+  }
+
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
   }
 }

@@ -15,46 +15,49 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="row" fxLayoutAlign="start">
-  <button mat-button disabled
-          type="button"
-          (click)="viewDocumentation('metrics')"
-          matTooltip="{{'home.config' | translate}}">
-    {{'home.config' | translate}}
-  </button>
-  <span fxFlex></span>
-  <button mat-stroked-button color="primary"
-          type="button"
-          [disabled]="isLoading$ | async"
-          (click)="viewDocumentation('config')"
-          matTooltip="{{'home.config' | translate}}">
-    {{'home.view-docs' | translate}}
-  </button>
-</div>
-<div fxFlex fxLayout="column" class="config-card-container">
-  <div *ngFor="let item of overviewConfig | async | keyvalue">
-    <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
-      <div class="config-key">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
-      <div class="config-value">
-        <span>{{transformValue(item) | boolean }}</span>
-        <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
-          <mat-icon class="config-material-icon"
-                    ngxClipboard
-                    (cbOnSuccess)="onCopy()"
-                    [cbContent]="item.value"
-                    matTooltip="{{'config.copy-port' | translate}} {{item.value}}">
-            content_copy
-          </mat-icon>
-        </span>
-        <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
-                      || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
-                      && !item.value">
-                        <mat-icon class="config-material-icon-warning" color="accent" matTooltip="{{'config.warning' | translate}} {{item.key}}.">
-            warning
-          </mat-icon>
-        </span>
+<div #config fxFlex class="card">
+  <div class="card-table">
+    <div fxFlex fxLayout="row" fxLayoutAlign="start">
+      <button mat-button disabled
+              type="button"
+              (click)="viewDocumentation('metrics')"
+              matTooltip="{{'home.config' | translate}}">
+        {{'home.config' | translate}}
+      </button>
+      <span fxFlex></span>
+      <button mat-stroked-button color="primary"
+              type="button"
+              (click)="viewDocumentation('config')"
+              matTooltip="{{'home.config' | translate}}">
+        {{'home.view-docs' | translate}}
+      </button>
+    </div>
+    <div fxFlex fxLayout="column" class="config-card-container">
+      <div *ngFor="let item of overviewConfig | async | keyvalue">
+        <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
+          <div class="config-key">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
+          <div class="config-value">
+            <span>{{transformValue(item) | boolean }}</span>
+            <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
+              <mat-icon class="config-material-icon"
+                        ngxClipboard
+                        (cbOnSuccess)="onCopy()"
+                        [cbContent]="item.value"
+                        matTooltip="{{'config.copy-port' | translate}} {{item.value}}">
+                content_copy
+              </mat-icon>
+            </span>
+            <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
+                          || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
+                          && !item.value">
+                            <mat-icon class="config-material-icon-warning" color="accent" matTooltip="{{'config.warning' | translate}} {{item.key}}.">
+                warning
+              </mat-icon>
+            </span>
+          </div>
+        </div>
       </div>
+      <span fxFlex></span>
     </div>
   </div>
-  <span fxFlex></span>
 </div>

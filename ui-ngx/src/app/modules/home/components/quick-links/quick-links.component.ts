@@ -15,7 +15,7 @@
 ///
 
 import { Component, OnInit } from '@angular/core';
-import { MenuService } from "@core/services/menu.service";
+import { MenuService } from '@core/services/menu.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -28,7 +28,8 @@ export class QuickLinksComponent implements OnInit {
   quickLinks$ = this.menuService.quickLinks();
 
   constructor(private router: Router,
-              private menuService: MenuService) { }
+              private menuService: MenuService) {
+  }
 
   ngOnInit(): void {
   }

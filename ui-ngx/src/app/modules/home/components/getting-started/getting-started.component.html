@@ -15,58 +15,60 @@
     limitations under the License.
 
 -->
-<div #row1 class="home-column flex1">
-  <div class="card">
-    <div fxFlex fxLayout="row">
-      <div class="card-table">
-        <div fxFlex fxLayout="row" fxLayoutAlign="start">
-          <button disabled mat-button matTooltip="{{'getting-started.get-started' | translate}}">
-            {{'getting-started.get-started' | translate}}
-          </button>
-          <span fxFlex></span>
-        </div>
-        <div fxFlex fxLayout="row" fxLayoutAlign="start">
-          <mat-accordion class="example-headers-align">
-            <ng-container *ngFor="let step of steps | async; let index = index;">
-              <mat-expansion-panel [expanded]="index === 0">
-                <mat-expansion-panel-header (click)="expandedChange(step)">
-                  <mat-panel-title>
-                    <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
-                      <div class="step-expansion-header">
-                        <span class="step-icon"
-                              [ngClass]="{'step-done': stepDone(index),
-                                          'material-icons': stepDone(index),
-                                          'step-not-done' : stepNotDone(index),
-                                          'step-active' : stepActive(index)}">
-                          {{step.position}}
-                        </span>
-                        <span style="padding-left: 8px">
-                          {{step.title}}
-                        </span>
+<div class="card">
+  <div #row1 class="home-column flex1">
+    <div class="card">
+      <div fxFlex fxLayout="row">
+        <div class="card-table">
+          <div fxFlex fxLayout="row" fxLayoutAlign="start">
+            <button disabled mat-button matTooltip="{{'getting-started.get-started' | translate}}">
+              {{'getting-started.get-started' | translate}}
+            </button>
+            <span fxFlex></span>
+          </div>
+          <div fxFlex fxLayout="row" fxLayoutAlign="start">
+            <mat-accordion class="example-headers-align">
+              <ng-container *ngFor="let step of steps | async; let index = index;">
+                <mat-expansion-panel [expanded]="index === 0">
+                  <mat-expansion-panel-header (click)="expandedChange(step)">
+                    <mat-panel-title>
+                      <div fxFlex fxLayout="row" fxLayoutAlign="spave-evenly center">
+                        <div class="step-expansion-header">
+                          <span class="step-icon"
+                                [ngClass]="{'step-done': stepDone(index),
+                                            'material-icons': stepDone(index),
+                                            'step-not-done' : stepNotDone(index),
+                                            'step-active' : stepActive(index)}">
+                            {{step.position}}
+                          </span>
+                          <span style="padding-left: 8px">
+                            {{step.title}}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </mat-panel-title>
-                </mat-expansion-panel-header>
-                <div class="tb-markdown-view" style="max-width: 380px">
-                  <markdown [data]="data | async"></markdown>
-                </div>
-                <div fxFlex *ngIf="step.id==='client'"
-                     fxLayoutAlign="space-between start"
-                     fxLayout="row" fxLayoutGap="4px" style="margin: 0 0 16px">
-                  <button mat-raised-button color="primary"
-                          type="button"
-                          (click)="addClientCredentials()">
-                    {{'mqtt-client-credentials.add' | translate}}
-                  </button>
-                  <button mat-raised-button color="primary"
-                          type="button"
-                          (click)="navigate('client-credentials')">
-                    {{'getting-started.view-credentials' | translate}}
-                  </button>
-                </div>
-              </mat-expansion-panel>
-            </ng-container>
-          </mat-accordion>
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <div class="tb-markdown-view" style="max-width: 380px">
+                    <markdown [data]="data | async"></markdown>
+                  </div>
+                  <div fxFlex *ngIf="step.id==='client'"
+                       fxLayoutAlign="space-between start"
+                       fxLayout="row" fxLayoutGap="4px" style="margin: 0 0 16px">
+                    <button mat-raised-button color="primary"
+                            type="button"
+                            (click)="addClientCredentials()">
+                      {{'mqtt-client-credentials.add' | translate}}
+                    </button>
+                    <button mat-raised-button color="primary"
+                            type="button"
+                            (click)="navigate('client-credentials')">
+                      {{'getting-started.view-credentials' | translate}}
+                    </button>
+                  </div>
+                </mat-expansion-panel>
+              </ng-container>
+            </mat-accordion>
+          </div>
         </div>
       </div>
     </div>

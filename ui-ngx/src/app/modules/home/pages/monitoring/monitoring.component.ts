@@ -107,8 +107,10 @@ export class MonitoringComponent extends PageComponent {
       const dataSetConfig = {
         fill: true,
         backgroundColor: 'transparent',
+        hoverBackgroundColor: '#999999',
         borderWidth: 3,
-        hover: true
+        hover: true,
+        pointStyle: 'line'
       };
       let dataSet = [{
         ...dataSetConfig,

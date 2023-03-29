@@ -15,25 +15,35 @@
     limitations under the License.
 
 -->
-<div class="tb-kafka-table">
-  <table mat-table [dataSource]="dataSource" matSort>
-    <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>
-        {{ column.title | translate }}
-      </mat-header-cell>
-      <mat-cell *matCellDef="let entity; let row = index"
-                [ngStyle]="cellStyle(entity, column, row)">
-        <span [innerHTML]="cellContent(entity, column, row)"></span>
-      </mat-cell>
-    </ng-container>
-    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-<!--    <mat-paginator hidden *ngIf="displayPagination"
-                   [pageIndex]="pageLink.page"
-                   [length]="totalElements"
-                   [pageSize]="pageLink.pageSize"
-                   [pageSizeOptions]="pageSizeOptions"
-                   (page)="pageChanged($event)"
-                   showFirstLastButtons></mat-paginator>-->
-  </table>
+<div class="card">
+  <div fxFlex fxLayout="column">
+    <section>
+      <button mat-button disabled type="button"
+              matTooltip="{{'kafka.brokers' | translate}}">
+        {{'kafka.brokers' | translate}}
+      </button>
+    </section>
+    <div class="tb-kafka-table">
+      <table mat-table [dataSource]="dataSource" matSort>
+        <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>
+            {{ column.title | translate }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let entity; let row = index"
+                    [ngStyle]="cellStyle(entity, column, row)">
+            <span [innerHTML]="cellContent(entity, column, row)"></span>
+          </mat-cell>
+        </ng-container>
+        <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+        <!--    <mat-paginator hidden *ngIf="displayPagination"
+                           [pageIndex]="pageLink.page"
+                           [length]="totalElements"
+                           [pageSize]="pageLink.pageSize"
+                           [pageSizeOptions]="pageSizeOptions"
+                           (page)="pageChanged($event)"
+                           showFirstLastButtons></mat-paginator>-->
+      </table>
+    </div>
+  </div>
 </div>

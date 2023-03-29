@@ -29,7 +29,7 @@ import { Router } from '@angular/router';
 import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { AppState } from '@core/core.state';
 
 @Component({

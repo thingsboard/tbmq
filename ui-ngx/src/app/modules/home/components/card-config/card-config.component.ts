@@ -42,8 +42,6 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
   hasX509AuthCredentials: Observable<boolean>;
   overviewConfig: Observable<BrokerConfig>;
 
-  @Input() isLoading$: Observable<boolean>;
-
   constructor(protected store: Store<AppState>,
               private router: Router,
               private translate: TranslateService,

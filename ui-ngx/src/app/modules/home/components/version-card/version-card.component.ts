@@ -31,8 +31,6 @@ export interface VersionData {
 })
 export class VersionCardComponent implements OnInit {
 
-  @Input() isLoading$: Observable<boolean>;
-
   versionData: VersionData;
 
   constructor(private router: Router) {

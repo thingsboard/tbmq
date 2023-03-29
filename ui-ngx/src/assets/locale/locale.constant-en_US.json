@@ -572,8 +572,8 @@
   "version": {
     "version": "Version",
     "update": "Update",
-    "current-version": "Your version",
-    "no-updates-available": "You have latest version.<br><b>No updates available</b>.",
+    "current-version": "Your Thingsboard MQTT Broker version",
+    "no-updates-available": "You have latest version. No updates available.",
     "updates-available": "A new version of <b>Thingsboard MQTT Broker</b> is available - ",
     "release-notes": "<b>Release notes:</b>",
     "last-version": "Current version: {{currentVersion}}"
