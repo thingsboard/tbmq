@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 
 export enum EntityType {
   USER = 'USER',
@@ -38,6 +38,7 @@ export interface EntityTypeTranslation {
 
 export interface EntityTypeResource<T> {
   helpLinkId: string;
+
   helpLinkIdForEntity?(entity: T): string;
 }
 

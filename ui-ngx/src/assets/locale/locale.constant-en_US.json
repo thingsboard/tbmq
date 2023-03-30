@@ -307,7 +307,7 @@
   },
   "mqtt-client-credentials": {
     "add": "Add Client Credentials",
-    "add-client": "Add Client",
+    "add-client": "Add Credentials",
     "add-authorization-rules": "Add authorization rule",
     "add-authorization-rule-prompt": "Please add authorization rule",
     "authorization-rules-mapping": "Authorization rules mapping",

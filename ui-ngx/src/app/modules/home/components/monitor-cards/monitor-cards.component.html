@@ -49,19 +49,19 @@
           {{'mqtt-client-credentials.type-client-credentials' | translate}} &#8599;
         </button>
         <span fxFlex></span>
-        <button mat-raised-button color="primary"
-                type="button"
-                [disabled]="isLoading$ | async"
-                (click)="addClientCredentials()"
-                matTooltip="{{'mqtt-client-credentials.add' | translate}}">
-          {{'mqtt-client-credentials.add-client' | translate}}
-        </button>
         <button mat-stroked-button color="primary"
                 type="button"
                 [disabled]="isLoading$ | async"
                 (click)="viewDocumentation('client-credentials')"
                 matTooltip="{{'mqtt-client-credentials.client-credentials' | translate}}">
           {{'home.view-docs' | translate}}
+        </button>
+        <button mat-raised-button color="primary"
+                type="button"
+                [disabled]="isLoading$ | async"
+                (click)="addClientCredentials()"
+                matTooltip="{{'mqtt-client-credentials.add' | translate}}">
+          {{'mqtt-client-credentials.add-client' | translate}}
         </button>
       </div>
       <tb-monitor-client-credentials-card [data]="clientCredentialsValue"></tb-monitor-client-credentials-card>

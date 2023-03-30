@@ -15,41 +15,28 @@
     limitations under the License.
 
 -->
-<div #row1 class="home-column flex1">
-  <div class="card">
-    <div fxFlex fxLayout="column">
-      <div class="card-table">
-        <div fxFlex fxLayout="row" fxLayoutAlign="center center" style="padding-bottom: 8px">
-          <button mat-button
-                  type="button"
-                  (click)="navigateToPage('monitoring')"
-                  matTooltip="{{'monitoring.monitoring' | translate}}">
-            {{'monitoring.monitoring' | translate}} &#8599;
-          </button>
-          <span fxFlex></span>
-          <!--<section>
-            <tb-timewindow [(ngModel)]="timewindow"
-                           (ngModelChange)="onTimewindowChange()"
-                           direction="left"
-                           tooltipPosition="left"
-                           aggregation="false"
-                           timezone="false">
-            </tb-timewindow>
-          </section>-->
-        </div>
-        <div fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
-          <div *ngFor="let chart of statsCharts; let $index = index">
-            <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
-              <div fxFlex fxLayout="column" fxLayoutAlign="start center">
-                <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-                <span>{{ chartsLatestValues[chart] }}</span>
-              </div>
-              <canvas style="z-index: 99;" class="chart" [id]="chart">
-              </canvas>
-            </div>
+<div class="home-column flex1">
+  <div fxLayout="column" class="card card-table" fxLayoutGap="8px">
+    <section>
+      <button mat-button type="button"
+              style="text-decoration: underline"
+              (click)="navigateToPage('monitoring')"
+              matTooltip="{{'monitoring.monitoring' | translate}}">
+        {{'monitoring.monitoring' | translate}} &#8599;
+      </button>
+      <span fxFlex></span>
+    </section>
+    <section fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
+      <div *ngFor="let chart of statsCharts; let $index = index">
+        <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
+          <div fxFlex fxLayout="column" fxLayoutAlign="start center">
+            <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+            <span>{{ chartsLatestValues[chart] }}</span>
           </div>
+          <canvas class="chart" [id]="chart">
+          </canvas>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </div>
