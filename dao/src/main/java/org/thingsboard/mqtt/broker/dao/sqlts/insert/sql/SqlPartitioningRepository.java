@@ -15,10 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.sqlts.insert.sql;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -34,18 +34,17 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Repository
 @Slf4j
+@RequiredArgsConstructor
 public class SqlPartitioningRepository {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     private static final String SELECT_PARTITIONS_STMT = "SELECT tablename from pg_tables WHERE schemaname = 'public' and tablename like concat(?, '_%')";
-
     private static final int PSQL_VERSION_14 = 140000;
-    private volatile Integer currentServerVersion;
 
     private final Map<String, Map<Long, SqlPartition>> tablesPartitions = new ConcurrentHashMap<>();
     private final ReentrantLock partitionCreationLock = new ReentrantLock();
+    private final JdbcTemplate jdbcTemplate;
+
+    private volatile Integer currentServerVersion;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void save(SqlPartition partition) {

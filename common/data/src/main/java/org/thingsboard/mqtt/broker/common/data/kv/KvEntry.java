@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data.kv;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 public interface KvEntry extends Serializable {
 
@@ -23,9 +24,11 @@ public interface KvEntry extends Serializable {
 
     DataType getDataType();
 
-    Long getLongValue();
+    Optional<Long> getLongValue();
+
+    Optional<Double> getDoubleValue();
 
     String getValueAsString();
 
-//    Object getValue();
+    Object getValue();
 }

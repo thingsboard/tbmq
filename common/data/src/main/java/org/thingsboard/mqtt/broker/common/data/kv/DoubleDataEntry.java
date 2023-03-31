@@ -18,22 +18,22 @@ package org.thingsboard.mqtt.broker.common.data.kv;
 import java.util.Objects;
 import java.util.Optional;
 
-public class LongDataEntry extends BasicKvEntry {
+public class DoubleDataEntry extends BasicKvEntry {
 
-    private final Long value;
+    private final Double value;
 
-    public LongDataEntry(String key, Long value) {
+    public DoubleDataEntry(String key, Double value) {
         super(key);
         this.value = value;
     }
 
     @Override
     public DataType getDataType() {
-        return DataType.LONG;
+        return DataType.DOUBLE;
     }
 
     @Override
-    public Optional<Long> getLongValue() {
+    public Optional<Double> getDoubleValue() {
         return Optional.ofNullable(value);
     }
 
@@ -45,9 +45,9 @@ public class LongDataEntry extends BasicKvEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LongDataEntry)) return false;
+        if (!(o instanceof DoubleDataEntry)) return false;
         if (!super.equals(o)) return false;
-        LongDataEntry that = (LongDataEntry) o;
+        DoubleDataEntry that = (DoubleDataEntry) o;
         return Objects.equals(value, that.value);
     }
 
@@ -58,13 +58,13 @@ public class LongDataEntry extends BasicKvEntry {
 
     @Override
     public String toString() {
-        return "LongDataEntry{" +
+        return "DoubleDataEntry{" +
                 "value=" + value +
                 "} " + super.toString();
     }
 
     @Override
     public String getValueAsString() {
-        return Long.toString(value);
+        return Double.toString(value);
     }
 }

@@ -26,9 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
-import org.thingsboard.mqtt.broker.common.data.kv.DeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 
@@ -38,6 +38,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@SuppressWarnings("UnstableApiUsage")
 public class BaseTimeseriesService implements TimeseriesService {
 
     private final TimeseriesDao timeseriesDao;
@@ -77,11 +78,11 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
-    public ListenableFuture<List<Void>> remove(String entityId, List<DeleteTsKvQuery> deleteTsKvQueries) {
+    public ListenableFuture<List<Void>> remove(String entityId, List<TsKvQuery> deleteTsKvQueries) {
         validate(entityId);
         deleteTsKvQueries.forEach(BaseTimeseriesService::validate);
         List<ListenableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(deleteTsKvQueries.size());
-        for (DeleteTsKvQuery tsKvQuery : deleteTsKvQueries) {
+        for (TsKvQuery tsKvQuery : deleteTsKvQueries) {
             futures.add(Futures.transform(timeseriesDao.remove(entityId, tsKvQuery), v -> null, MoreExecutors.directExecutor()));
         }
         return Futures.allAsList(futures);
@@ -129,7 +130,7 @@ public class BaseTimeseriesService implements TimeseriesService {
         }
     }
 
-    private static void validate(DeleteTsKvQuery query) {
+    private static void validate(TsKvQuery query) {
         if (query == null) {
             throw new IncorrectParameterException("DeleteTsKvQuery can't be null");
         } else if (StringUtils.isBlank(query.getKey())) {

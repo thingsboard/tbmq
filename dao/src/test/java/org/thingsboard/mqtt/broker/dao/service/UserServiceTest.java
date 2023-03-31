@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 
 @DaoSqlTest
 public class UserServiceTest extends AbstractServiceTest {
+
     @Autowired
     private UserService userService;
 

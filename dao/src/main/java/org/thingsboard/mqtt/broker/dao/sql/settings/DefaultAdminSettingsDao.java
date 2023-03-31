@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.sql.settings;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +30,10 @@ import java.util.UUID;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultAdminSettingsDao extends AbstractDao<AdminSettingsEntity, AdminSettings> implements AdminSettingsDao {
 
-    @Autowired
-    private AdminSettingsRepository adminSettingsRepository;
+    private final AdminSettingsRepository adminSettingsRepository;
 
     @Override
     protected Class<AdminSettingsEntity> getEntityClass() {

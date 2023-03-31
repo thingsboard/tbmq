@@ -36,6 +36,11 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.TS_COLUMN;
 @MappedSuperclass
 public abstract class AbstractTsKvEntity implements ToData<TsKvEntry> {
 
+    protected static final String SUM = "SUM";
+    protected static final String AVG = "AVG";
+    protected static final String MIN = "MIN";
+    protected static final String MAX = "MAX";
+
     @Id
     @Column(name = ENTITY_ID_COLUMN)
     protected String entityId;

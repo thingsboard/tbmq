@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SubscriptionChangesManagerImpl implements SubscriptionChangesManager {
+
     private final ClientSubscriptionService clientSubscriptionService;
 
     @Override

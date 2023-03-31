@@ -17,9 +17,6 @@ package org.thingsboard.mqtt.broker.common.data.kv;
 
 /**
  * Represents time series KV data entry
- *
- * @author ashvayka
- *
  */
 public interface TsKvEntry extends KvEntry {
 

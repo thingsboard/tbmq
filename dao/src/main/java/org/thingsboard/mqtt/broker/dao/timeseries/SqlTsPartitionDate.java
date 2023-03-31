@@ -26,9 +26,10 @@ public enum SqlTsPartitionDate {
     DAYS("yyyy_MM_dd", ChronoUnit.DAYS), MONTHS("yyyy_MM", ChronoUnit.MONTHS), YEARS("yyyy", ChronoUnit.YEARS),
     INDEFINITE("indefinite", ChronoUnit.FOREVER);
 
+    public final static LocalDateTime EPOCH_START = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+
     private final String pattern;
     private final transient TemporalUnit truncateUnit;
-    public final static LocalDateTime EPOCH_START = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
 
     SqlTsPartitionDate(String pattern, TemporalUnit truncateUnit) {
         this.pattern = pattern;

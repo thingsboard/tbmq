@@ -18,9 +18,9 @@ package org.thingsboard.mqtt.broker.dao.sqlts.sql;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -48,13 +48,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao {
 
-    private final Map<Long, SqlPartition> partitions = new ConcurrentHashMap<>();
     private static final ReentrantLock partitionCreationLock = new ReentrantLock();
+    private final Map<Long, SqlPartition> partitions = new ConcurrentHashMap<>();
 
-    @Autowired
-    private SqlPartitioningRepository partitioningRepository;
+    private final SqlPartitioningRepository partitioningRepository;
 
     private SqlTsPartitionDate tsFormat;
 
@@ -82,7 +82,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         entity.setEntityId(entityId);
         entity.setTs(tsKvEntry.getTs());
         entity.setKey(keyId);
-        entity.setLongValue(tsKvEntry.getLongValue());
+        entity.setLongValue(tsKvEntry.getLongValue().orElse(null));
         log.trace("Saving entity: {}", entity);
         return Futures.transform(tsQueue.add(entity), v -> null, MoreExecutors.directExecutor());
     }

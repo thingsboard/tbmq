@@ -35,12 +35,12 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
-import org.thingsboard.mqtt.broker.common.data.kv.BaseDeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
-import org.thingsboard.mqtt.broker.common.data.kv.DeleteTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.BaseTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsData;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
@@ -63,10 +63,17 @@ public class TimeseriesController extends BaseController {
     @ResponseBody
     public DeferredResult<ResponseEntity> getLatestTimeseries(
             @PathVariable("entityId") String entityId,
-            @RequestParam(name = "keys", required = false) String keysStr) throws ThingsboardException {
+            @RequestParam(name = "keys", required = false) String keysStr,
+            @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
-            getLatestTimeseriesValuesCallback(result, entityId, keysStr);
+            ListenableFuture<List<TsKvEntry>> future;
+            if (StringUtils.isEmpty(keysStr)) {
+                future = timeseriesService.findAllLatest(entityId);
+            } else {
+                future = timeseriesService.findLatest(entityId, toKeysList(keysStr));
+            }
+            Futures.addCallback(future, getTsKvListCallback(result, useStrictDataTypes), MoreExecutors.directExecutor());
             return result;
         } catch (Exception e) {
             throw handleException(e);
@@ -84,7 +91,8 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "interval", defaultValue = "0") Long interval,
             @RequestParam(name = "limit", defaultValue = "100") Integer limit,
             @RequestParam(name = "agg", defaultValue = "NONE") String aggStr,
-            @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy) throws ThingsboardException {
+            @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy,
+            @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
@@ -93,7 +101,7 @@ public class TimeseriesController extends BaseController {
             List<ReadTsKvQuery> queries = toKeysList(keys).stream().map(key -> new BaseReadTsKvQuery(key, startTs, endTs, interval, limit, agg, orderBy))
                     .collect(Collectors.toList());
 
-            Futures.addCallback(timeseriesService.findAll(entityId, queries), getTsKvListCallback(result), MoreExecutors.directExecutor());
+            Futures.addCallback(timeseriesService.findAll(entityId, queries), getTsKvListCallback(result, useStrictDataTypes), MoreExecutors.directExecutor());
             return result;
         } catch (Exception e) {
             throw handleException(e);
@@ -139,9 +147,9 @@ public class TimeseriesController extends BaseController {
 
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
-        List<DeleteTsKvQuery> deleteTsKvQueries = new ArrayList<>();
+        List<TsKvQuery> deleteTsKvQueries = new ArrayList<>();
         for (String key : keys) {
-            deleteTsKvQueries.add(new BaseDeleteTsKvQuery(key, deleteFromTs, deleteToTs));
+            deleteTsKvQueries.add(new BaseTsKvQuery(key, deleteFromTs, deleteToTs));
         }
 
         ListenableFuture<List<Void>> future = timeseriesService.remove(entityId, deleteTsKvQueries);
@@ -159,23 +167,13 @@ public class TimeseriesController extends BaseController {
         return result;
     }
 
-    private void getLatestTimeseriesValuesCallback(DeferredResult<ResponseEntity> result, String entityId, String keys) {
-        ListenableFuture<List<TsKvEntry>> future;
-        if (StringUtils.isEmpty(keys)) {
-            future = timeseriesService.findAllLatest(entityId);
-        } else {
-            future = timeseriesService.findLatest(entityId, toKeysList(keys));
-        }
-        Futures.addCallback(future, getTsKvListCallback(result), MoreExecutors.directExecutor());
-    }
-
-    private FutureCallback<List<TsKvEntry>> getTsKvListCallback(final DeferredResult<ResponseEntity> response) {
+    private FutureCallback<List<TsKvEntry>> getTsKvListCallback(final DeferredResult<ResponseEntity> response, Boolean useStrictDataTypes) {
         return new FutureCallback<>() {
             @Override
             public void onSuccess(List<TsKvEntry> data) {
                 Map<String, List<TsData>> result = new LinkedHashMap<>();
                 for (TsKvEntry entry : data) {
-                    long value = entry.getLongValue();
+                    Object value = useStrictDataTypes ? entry.getValue() : entry.getValueAsString();
                     result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(new TsData(entry.getTs(), value));
                 }
                 response.setResult(new ResponseEntity<>(result, HttpStatus.OK));

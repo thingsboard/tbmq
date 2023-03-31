@@ -16,9 +16,9 @@
 package org.thingsboard.mqtt.broker.dao.timeseries;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.kv.DeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +33,7 @@ public interface TimeseriesService {
 
     ListenableFuture<Integer> save(String entityId, List<TsKvEntry> tsKvEntries);
 
-    ListenableFuture<List<Void>> remove(String entityId, List<DeleteTsKvQuery> queries);
+    ListenableFuture<List<Void>> remove(String entityId, List<TsKvQuery> queries);
 
     void cleanup(long systemTtl);
 }

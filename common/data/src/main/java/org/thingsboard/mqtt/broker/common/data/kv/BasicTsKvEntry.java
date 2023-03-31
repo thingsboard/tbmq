@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data.kv;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class BasicTsKvEntry implements TsKvEntry {
 
@@ -38,8 +39,18 @@ public class BasicTsKvEntry implements TsKvEntry {
     }
 
     @Override
-    public Long getLongValue() {
+    public Optional<Long> getLongValue() {
         return kv.getLongValue();
+    }
+
+    @Override
+    public Optional<Double> getDoubleValue() {
+        return kv.getDoubleValue();
+    }
+
+    @Override
+    public Object getValue() {
+        return kv.getValue();
     }
 
     @Override

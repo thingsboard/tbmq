@@ -17,8 +17,6 @@ package org.thingsboard.mqtt.broker.common.data.kv;
 
 public interface TsKvQuery {
 
-    int getId();
-
     String getKey();
 
     long getStartTs();

@@ -17,6 +17,6 @@ package org.thingsboard.mqtt.broker.common.data.kv;
 
 public enum DataType {
 
-    LONG
+    LONG, DOUBLE
 
 }

@@ -19,9 +19,9 @@ package org.thingsboard.mqtt.broker.common.data.kv;
 public class TsData implements Comparable<TsData> {
 
     private final long ts;
-    private final long value;
+    private final Object value;
 
-    public TsData(long ts, long value) {
+    public TsData(long ts, Object value) {
         super();
         this.ts = ts;
         this.value = value;
@@ -31,7 +31,7 @@ public class TsData implements Comparable<TsData> {
         return ts;
     }
 
-    public long getValue() {
+    public Object getValue() {
         return value;
     }
 

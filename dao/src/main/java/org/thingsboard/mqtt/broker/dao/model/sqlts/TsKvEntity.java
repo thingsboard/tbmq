@@ -38,6 +38,46 @@ public final class TsKvEntity extends AbstractTsKvEntity {
         }
     }
 
+//    public TsKvEntity(Long longValue, Double doubleValue, Long longCountValue, Long doubleCountValue, String aggType) {
+//        if (!isAllNull(longValue, doubleValue, longCountValue, doubleCountValue)) {
+//            switch (aggType) {
+//                case AVG:
+//                    double sum = 0.0;
+//                    if (longValue != null) {
+//                        sum += longValue;
+//                    }
+//                    if (doubleValue != null) {
+//                        sum += doubleValue;
+//                    }
+//                    long totalCount = longCountValue + doubleCountValue;
+//                    if (totalCount > 0) {
+//                        this.doubleValue = sum / (longCountValue + doubleCountValue);
+//                    } else {
+//                        this.doubleValue = 0.0;
+//                    }
+//                    this.aggValuesCount = totalCount;
+//                    break;
+//                case SUM:
+//                    if (doubleCountValue > 0) {
+//                        this.doubleValue = doubleValue + (longValue != null ? longValue.doubleValue() : 0.0);
+//                    } else {
+//                        this.longValue = longValue;
+//                    }
+//                    break;
+//                case MIN:
+//                case MAX:
+//                    if (longCountValue > 0 && doubleCountValue > 0) {
+//                        this.doubleValue = MAX.equals(aggType) ? Math.max(doubleValue, longValue.doubleValue()) : Math.min(doubleValue, longValue.doubleValue());
+//                    } else if (doubleCountValue > 0) {
+//                        this.doubleValue = doubleValue;
+//                    } else if (longCountValue > 0) {
+//                        this.longValue = longValue;
+//                    }
+//                    break;
+//            }
+//        }
+//    }
+
     @Override
     public boolean isNotEmpty() {
         return longValue != null;

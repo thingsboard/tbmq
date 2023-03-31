@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class DaoUtil {
+public class DaoUtil {
 
     private DaoUtil() {
     }

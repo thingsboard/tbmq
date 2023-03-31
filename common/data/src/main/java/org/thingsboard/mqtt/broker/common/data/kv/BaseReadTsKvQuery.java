@@ -48,7 +48,7 @@ public class BaseReadTsKvQuery extends BaseTsKvQuery implements ReadTsKvQuery {
     }
 
     public BaseReadTsKvQuery(ReadTsKvQuery query, long startTs, long endTs) {
-        super(query.getId(), query.getKey(), startTs, endTs);
+        super(query.getKey(), startTs, endTs);
         this.interval = query.getInterval();
         this.limit = query.getLimit();
         this.aggregation = query.getAggregation();
