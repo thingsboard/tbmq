@@ -37,8 +37,8 @@ metadata:
     name: tb-broker-config
 data:
   conf: |
-      # Memory for 59Gi pod (49Gi heap + 10Gi stack and etc)
-      export JAVA_OPTS="$JAVA_OPTS -Xmx49g -Xms49g -Xss384k -XX:+AlwaysPreTouch"
+      # Memory for 115Gi pod (49Gi heap + 10Gi stack and etc)
+      export JAVA_OPTS="$JAVA_OPTS -Xmx50g -Xms20g -Xss320k -XX:+AlwaysPreTouch"
 
       export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
       export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
@@ -46,6 +46,7 @@ data:
       export JAVA_OPTS="$JAVA_OPTS -XX:-UseBiasedLocking -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
       export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
       export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+      export JAVA_OPTS="$JAVA_OPTS -Dio.netty.maxDirectMemory=0"
       
       # JMX
       export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999"
