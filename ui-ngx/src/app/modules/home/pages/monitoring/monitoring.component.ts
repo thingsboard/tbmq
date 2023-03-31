@@ -26,8 +26,8 @@ import { retry, switchMap, takeUntil } from 'rxjs/operators';
 import Chart, { ChartConfiguration } from 'chart.js';
 import {
   getColor,
-  monitoringChartJsParams, MonitoringChartType,
-  MonitoringChartTypeTranslationMap, StatsChartType,
+  monitoringChartJsParams,
+  StatsChartType,
   StatsChartTypeTranslationMap
 } from '@shared/models/chart.model';
 import { PageComponent } from '@shared/components/page.component';
@@ -45,19 +45,12 @@ export class MonitoringComponent extends PageComponent {
 
   charts = {};
   chartsLatestValues = {};
-
-  tempIndex = 1;
-
+  mockDataTsCalculationIndex = 1;
   timewindow: Timewindow;
-
   statsCharts = Object.values(StatsChartType);
-  monitoringStatsCharts = Object.values(MonitoringChartType);
-
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
-  monitoringChartTypeTranslationMap = MonitoringChartTypeTranslationMap;
 
   private stopPolling$ = new Subject();
-
   private destroy$ = new Subject();
 
   constructor(protected store: Store<AppState>,
@@ -100,10 +93,10 @@ export class MonitoringComponent extends PageComponent {
 
   initCharts(data) {
     let index = 0;
-    for (const chart in MonitoringChartType) {
+    for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
       const ctx = document.getElementById(chart + '1') as HTMLCanvasElement;
-      const label = this.translate.instant(this.monitoringChartTypeTranslationMap.get(chart as MonitoringChartType));
+      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
       const dataSetConfig = {
         fill: true,
         backgroundColor: 'transparent',
@@ -112,7 +105,7 @@ export class MonitoringComponent extends PageComponent {
         hover: true,
         pointStyle: 'line'
       };
-      let dataSet = [{
+      const dataSet = [{
         ...dataSetConfig,
         ...{
           label,
@@ -120,35 +113,6 @@ export class MonitoringComponent extends PageComponent {
           data: this.prepareDataInChartFormat(data[chart]),
         }
       }];
-      if (chart === MonitoringChartType.OUTGOING_MESSAGES) {
-        dataSet = [];
-        dataSet.push(
-          {
-            ...dataSetConfig,
-            ...{
-              label: this.translate.instant('overview.outgoing-messages'),
-              borderColor: getColor(StatsChartType.OUTGOING_MESSAGES),
-              data: this.prepareDataInChartFormat(data[StatsChartType.OUTGOING_MESSAGES])
-            }
-          },
-          {
-            ...dataSetConfig,
-            ...{
-              label: this.translate.instant('overview.incoming-messages'),
-              borderColor: getColor(StatsChartType.INCOMING_MESSAGES),
-              data: this.prepareDataInChartFormat(data[StatsChartType.INCOMING_MESSAGES])
-            }
-          },
-          {
-            ...dataSetConfig,
-            ...{
-              label: this.translate.instant('overview.dropped-messages'),
-              borderColor: getColor(StatsChartType.DROPPED_MESSAGES),
-              data: this.prepareDataInChartFormat(data[StatsChartType.DROPPED_MESSAGES])
-            }
-          }
-        );
-      }
       const params = {...monitoringChartJsParams(index, label, calculateFixedWindowTimeMs(this.timewindow)), ...{ data: {datasets: dataSet} }};
       this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
       index++;
@@ -186,7 +150,7 @@ export class MonitoringComponent extends PageComponent {
     this.statsService.getMonitoringInitData().pipe(
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
-      for (const chart in MonitoringChartType) {
+      for (const chart in StatsChartType) {
         this.charts[chart].data.datasets[0].data = data[chart].map(el => {
           return {
             x: el.ts,
@@ -215,10 +179,10 @@ export class MonitoringComponent extends PageComponent {
       retry(),
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
-      for (const chart in MonitoringChartType) {
-        this.pushShiftLatestValue(data, chart as MonitoringChartType);
+      for (const chart in StatsChartType) {
+        this.pushShiftLatestValue(data, chart as StatsChartType);
         this.updateCharts();
-        this.tempIndex++;
+        this.mockDataTsCalculationIndex++;
       }
     });
   }
@@ -228,33 +192,20 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private updateCharts() {
-    for (const chart in MonitoringChartType) {
+    for (const chart in StatsChartType) {
       this.charts[chart].update();
     }
   }
 
-  private pushShiftLatestValue(data: Array<any>, chartType: MonitoringChartType) {
-    switch (chartType) {
-      case MonitoringChartType.OUTGOING_MESSAGES:
-        this.charts[chartType].data.datasets[0].data.shift();
-        this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[StatsChartType.OUTGOING_MESSAGES]));
-        this.charts[chartType].data.datasets[1].data.shift();
-        this.charts[chartType].data.datasets[1].data.push(this.transformLatestValue(data[StatsChartType.INCOMING_MESSAGES]));
-        this.charts[chartType].data.datasets[2].data.shift();
-        this.charts[chartType].data.datasets[2].data.push(this.transformLatestValue(data[StatsChartType.DROPPED_MESSAGES]));
-        break;
-      case MonitoringChartType.SESSIONS:
-      case MonitoringChartType.SUBSCRIPTIONS:
-        this.charts[chartType].data.datasets[0].data.shift();
-        this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[chartType]));
-        break;
-    }
+  private pushShiftLatestValue(data: Array<any>, chartType: StatsChartType) {
+    this.charts[chartType].data.datasets[0].data.shift();
+    this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[chartType]));
   }
 
   private transformLatestValue(chartData) {
     return chartData.map(el => {
       return {
-        x: el.ts + (60 * 60 * 1000 * this.tempIndex),
+        x: el.ts + (60 * 60 * 1000 * this.mockDataTsCalculationIndex),
         y: el.value
       };
     })[0];
