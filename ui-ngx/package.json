@@ -57,8 +57,10 @@
     "tooltipster": "^4.2.8",
     "zone.js": "~0.11.4",
     "@types/chart.js": "^2.9.32",
-    "chart.js": "^2.9.3",
+    "chart.js": "^3.4.1",
     "chartjs-plugin-annotation": "^0.5.7",
+    "chartjs-plugin-zoom": "2.0.0",
+    "chartjs-adapter-moment": "^1.0.1",
     "ng2-charts": "^2.2.3",
     "@mat-datetimepicker/core": "~6.0.2"
   },

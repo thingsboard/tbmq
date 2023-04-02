@@ -23,7 +23,6 @@ import { TimeService } from '@core/services/time.service';
 import { Router } from '@angular/router';
 import { StatsService } from '@core/http/stats.service';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
-import Chart, { ChartConfiguration } from 'chart.js';
 import {
   getColor,
   monitoringChartJsParams,
@@ -33,6 +32,11 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
+import Chart from 'chart.js/auto';
+import 'chartjs-adapter-moment';
+import Zoom from 'chartjs-plugin-zoom';
+
+Chart.register([Zoom]);
 
 @Component({
   selector: 'tb-mqtt-admin-credentials',
@@ -97,24 +101,23 @@ export class MonitoringComponent extends PageComponent {
       this.charts[chart] = {} as Chart;
       const ctx = document.getElementById(chart + '1') as HTMLCanvasElement;
       const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
-      const dataSetConfig = {
-        fill: true,
-        backgroundColor: 'transparent',
-        hoverBackgroundColor: '#999999',
-        borderWidth: 3,
-        hover: true,
-        pointStyle: 'line'
-      };
-      const dataSet = [{
-        ...dataSetConfig,
-        ...{
-          label,
-          borderColor: getColor(chart as StatsChartType),
-          data: this.prepareDataInChartFormat(data[chart]),
+      const datasets = {
+        data: {
+          datasets: [{
+            label,
+            fill: false,
+            backgroundColor: 'transparent',
+            hoverBackgroundColor: '#999999',
+            hover: true,
+            pointStyle: 'line',
+            borderColor: getColor(chart as StatsChartType),
+            data: this.prepareDataInChartFormat(data[chart])
+          }]
         }
-      }];
-      const params = {...monitoringChartJsParams(index, label, calculateFixedWindowTimeMs(this.timewindow)), ...{ data: {datasets: dataSet} }};
-      this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
+      };
+      const params = {...monitoringChartJsParams(index, label), ...datasets};
+      this.charts[chart] = new Chart(ctx, params);
+      ctx.addEventListener('dblclick', (evt) => this.charts[chart].resetZoom());
       index++;
     }
     this.startPolling();
@@ -180,6 +183,7 @@ export class MonitoringComponent extends PageComponent {
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
       for (const chart in StatsChartType) {
+        this.setLatestValues(data);
         this.pushShiftLatestValue(data, chart as StatsChartType);
         this.updateCharts();
         this.mockDataTsCalculationIndex++;

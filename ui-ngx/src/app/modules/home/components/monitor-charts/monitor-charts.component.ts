@@ -18,13 +18,13 @@ import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, O
 import { Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import Chart, { ChartConfiguration } from 'chart.js';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
 import { homeChartJsParams, getColor, StatsChartTypeTranslationMap, StatsChartType } from '@shared/models/chart.model';
 import { KeyValue } from '@angular/common';
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'tb-monitor-charts',
@@ -91,22 +91,22 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
   initCharts(data) {
     let index = 0;
     for (const chart in StatsChartType) {
-      this.charts[chart] = {} as Chart;
-      const ctx = document.getElementById(chart) as HTMLCanvasElement;
-      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
-      const dataSet = {
-        label,
-        fill: true,
-        backgroundColor: 'transparent',
-        borderColor: getColor(chart as StatsChartType),
-        borderWidth: 3,
-        data: this.transformData(data[chart]),
-        hover: true
-      };
-      const params = {...homeChartJsParams(), ...{ data: {datasets: [dataSet]} }};
-      this.charts[chart] = new Chart(ctx, params as ChartConfiguration);
-      index++;
-    }
+        this.charts[chart] = {} as Chart;
+        const ctx = document.getElementById(chart) as HTMLCanvasElement;
+        const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
+        const dataSet = {
+          label,
+          fill: true,
+          backgroundColor: 'transparent',
+          borderColor: getColor(chart as StatsChartType),
+          borderWidth: 3,
+          data: this.transformData(data[chart]),
+          hover: true
+        };
+        const params = {...homeChartJsParams(), ...{ data: {datasets: [dataSet]} }};
+        this.charts[chart] = new Chart(ctx, params);
+        index++;
+      }
     this.startPolling();
   }
 

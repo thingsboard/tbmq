@@ -29,9 +29,9 @@
   <div fxFlex fxLayout="column" fxLayoutGap="8px">
     <div *ngFor="let chart of statsCharts" class="mat-padding mat-elevation-z3"
          style="margin: 0 10px 0 10px; padding: 10px; background-color: #ffffff">
-      <div fxLayout="row"
-           style="padding: 16px 8px 8px">
-        <span style="font-size: 20px; font-weight: 500">{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+      <div fxLayout="row" class="chart-title" fxLayoutAlign="start center" fxLayoutGap="8px">
+        <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+        <span>{{ chartsLatestValues[chart] }}</span>
       </div>
       <div>
         <canvas [id]="chart+'1'" width="500" height="90"></canvas>

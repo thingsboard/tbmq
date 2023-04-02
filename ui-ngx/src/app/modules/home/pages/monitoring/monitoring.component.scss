@@ -57,6 +57,18 @@
     }
   }
 
+  .chart-title {
+    padding: 16px 8px 8px;
+
+    span:first-child {
+      color: (rgba(0,0,0,0.8));
+    }
+
+    span:nth-child(2) {
+      font-weight: 600;
+    }
+  }
+
   .chart-border-left {
     border-left: 1px solid #dcdcdc;
   }

@@ -69,18 +69,10 @@ export function homeChartJsParams() {
         }
       },
       animation: {
-        duration: 1000
+        duration: 500
       },
       layout: {
-        padding: {
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: 0
-        }
-      },
-      legend: {
-        display: false
+        padding: 20
       },
       title: {
         display: false,
@@ -92,202 +84,80 @@ export function homeChartJsParams() {
         fontSize: 12
       },
       scales: {
-        yAxes: [{
+        y: {
+          display: false
+        },
+        x: {
           display: false,
-          type: 'linear',
-          gridLines: {
-            display: false
-          },
-          ticks: {
-            min: 0
-          }
-        }],
-        xAxes: [{
-          type: 'time',
-          gridLines: {
-            display: false
-          },
-          ticks: {
-            display: false,
-            fontSize: 8,
-            fontColor: '#000000',
-            fontFamily: 'sans serif',
-            autoSkip: true,
-            autoSkipPadding: (60 * 60 * 1000),
-            maxRotation: 0,
-            padding: 0,
-            labelOffset: 0
-          },
-          distribution: 'series',
-          bounds: 'ticks',
-          time: {
-            round: 'second',
-            unitStepSize: 5 * 60 * 1000,
-            unit: 'millisecond',
-            displayFormats: {
-              millisecond: 'hh:mm'
-            }
-          }
-        }]
+          type: 'time'
+        },
       },
-      tooltips: {
-        mode: 'x-axis',
+      interaction: {
+        mode: 'nearest',
         intersect: true,
         axis: 'x'
+      },
+      tooltips: {
+        mode: 'nearest',
+        intersect: true,
+        axis: 'x'
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
       }
     }
   };
 }
 
-export function monitoringChartJsParams(index: number, label: string, fixedWindowTimeMs: FixedWindow) {
-  const rangeMs = fixedWindowTimeMs?.endTimeMs - fixedWindowTimeMs?.startTimeMs || 60 * 1000;
+export function monitoringChartJsParams(index: number, label: string) {
   return {
     type: 'line',
     options: {
-      elements: {
-        point: {
-          pointStyle: 'circle',
-          radius: 1
-        }
+      interaction: {
+        mode: 'index',
+        intersect: false
       },
+      stacked: false,
       animation: {
-        duration: 1000
-      },
-      legend: {
-        display: true,
-        position: 'bottom',
-        align: 'start',
-        labels: {
-          fontSize: 14,
-          boxWidth: 14,
-          usePointStyle: true
-        }
-      },
-      title: {
-        display: false,
-        position: 'bottom',
-        fontColor: 'rgba(0,0,0,0.87)',
-        fontSize: 20,
-        text: label
+        duration: 500
       },
       scales: {
-        yAxes: [{
-          display: true
-        }],
-        xAxes: [{
+        y: {
+          title: {
+            display: false,
+            text: label
+          }
+        },
+        x: {
           type: 'time',
           ticks: {
-            display: true,
-            // fontColor: getColor(index),
-            // fontFamily: 'sans serif',
-            // autoSkip: true,
-            // autoSkipPadding: (60 * 60 * 1000),
             maxRotation: 0,
-            // padding: 20,
-            // labelOffset: 0
+            padding: 10,
+            labelOffset: 0
           },
-          time: {
-            round: 'second',
-            unitStepSize: rangeMs,
-            unit: 'millisecond',
-            displayFormats: {
-              millisecond: 'hh:mm'
-            }
-          }
-        }]
+        },
       },
       tooltips: {
-        mode: 'x-axis'
+        mode: 'x'
       },
       plugins: {
         zoom: {
-          // Container for pan options
-          pan: {
-            // Boolean to enable panning
-            enabled: true,
-
-            // Panning directions. Remove the appropriate direction to disable
-            // Eg. 'y' would only allow panning in the y direction
-            // A function that is called as the user is panning and returns the
-            // available directions can also be used:
-            //   mode: function({ chart }) {
-            //     return 'xy';
-            //   },
-            mode: 'xy',
-
-            rangeMin: {
-              // Format of min pan range depends on scale type
-              x: null,
-              y: null
-            },
-            rangeMax: {
-              // Format of max pan range depends on scale type
-              x: null,
-              y: null
-            },
-
-            // On category scale, factor of pan velocity
-            speed: 20,
-
-            // Minimal pan distance required before actually applying pan
-            threshold: 10,
-
-            // Function called while the user is panning
-            onPan({chart}) { console.log(`I'm panning!!!`); },
-            // Function called once panning is completed
-            onPanComplete({chart}) { console.log(`I was panned!!!`); }
-          },
-
-          // Container for zoom options
           zoom: {
-            // Boolean to enable zooming
-            enabled: true,
-
-            // Enable drag-to-zoom behavior
-            drag: true,
-
-            // Drag-to-zoom effect can be customized
-            // drag: {
-            // 	 borderColor: 'rgba(225,225,225,0.3)'
-            // 	 borderWidth: 5,
-            // 	 backgroundColor: 'rgb(225,225,225)',
-            // 	 animationDuration: 0
-            // },
-
-            // Zooming directions. Remove the appropriate direction to disable
-            // Eg. 'y' would only allow zooming in the y direction
-            // A function that is called as the user is zooming and returns the
-            // available directions can also be used:
-            //   mode: function({ chart }) {
-            //     return 'xy';
-            //   },
-            mode: 'xy',
-
-            rangeMin: {
-              // Format of min zoom range depends on scale type
-              x: null,
-              y: null
+            drag: {
+              enabled: true
             },
-            rangeMax: {
-              // Format of max zoom range depends on scale type
-              x: null,
-              y: null
-            },
-
-            // Speed of zoom via mouse wheel
-            // (percentage of zoom on a wheel event)
-            speed: 0.1,
-
-            // Minimal zoom distance required before actually applying zoom
-            threshold: 2,
-
-            // On category scale, minimal zoom level before actually applying zoom
-            sensitivity: 3,
-
-            // Function called while the user is zooming
-            onZoom({chart}) { console.log(`I'm zooming!!!`); },
-            // Function called once zooming is completed
-            onZoomComplete({chart}) { console.log(`I was zoomed!!!`); }
+            overScaleMode: 'x',
+            mode: 'x'
+          }
+        },
+        legend: {
+          display: true,
+          position: 'bottom',
+          align: 'start',
+          labels: {
+            usePointStyle: true
           }
         }
       }
