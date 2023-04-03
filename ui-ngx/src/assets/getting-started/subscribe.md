@@ -1,5 +1,4 @@
-Let's create a subscription with an open source message broker 
-**Eclipse Mosquitto** (<a href='https://mosquitto.org/download' target="_blank">how to install?</a>).
+Let's create a subscription with an open source message broker <a href='https://mosquitto.org/download' target="_blank">**Eclipse Mosquitto**</a>.
 
 Paste this code in a new terminal tab:
 
