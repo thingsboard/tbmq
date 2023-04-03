@@ -46,11 +46,11 @@ export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
 
 export const MonitoringChartColorMap = new Map<StatsChartType, string>(
   [
-    [StatsChartType.DROPPED_MESSAGES, '#009B72'],
-    [StatsChartType.INCOMING_MESSAGES, '#008FA4'],
-    [StatsChartType.OUTGOING_MESSAGES, '#2F4858'],
-    [StatsChartType.SESSIONS, '#00968A'],
-    [StatsChartType.SUBSCRIPTIONS, '#0086BB']
+    [StatsChartType.INCOMING_MESSAGES, '#58519E'],
+    [StatsChartType.OUTGOING_MESSAGES, '#4A6EA8'],
+    [StatsChartType.DROPPED_MESSAGES, '#47848F'],
+    [StatsChartType.SESSIONS, '#4FA889'],
+    [StatsChartType.SUBSCRIPTIONS, '#499E55']
   ]
 );
 
