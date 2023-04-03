@@ -23,7 +23,6 @@
     .tb-entity-table-content {
       width: 100%;
       height: 100%;
-      background: #eee;
 
       .mat-toolbar-tools{
         min-height: auto;
@@ -79,16 +78,13 @@
 :host ::ng-deep {
   mat-header-row {
     height: 30px !important;
-    background-color: #eee;
   }
 
   mat-footer-row, mat-row {
     height: 26px !important;
-    background-color: #eee;
   }
 
   mat-toolbar.mat-table-toolbar {
-    background: #eee;
     padding: 0 24px;
     .mat-toolbar-tools {
       padding: 0;
@@ -96,10 +92,6 @@
         margin-right: -12px;
       }
     }
-  }
-
-  .mat-paginator {
-    background-color: #eee;
   }
 
   .mat-mini-fab {
@@ -119,5 +111,9 @@
 
   .mat-form-field {
     font-size: 16px;
+  }
+
+  .mat-drawer-container {
+    background-color: #fff;
   }
 }

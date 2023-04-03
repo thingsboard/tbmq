@@ -16,19 +16,16 @@
 
 -->
 <div class="home-column">
-  <mat-tab-group class="tabs-group-card" animationDuration="200ms">
-    <div class="dropdown"><p>Whatever you want</p></div>
-
-    <mat-tab [label]="label('topics')">
-      <div #kafka1 fxFlex class="card">
+  <mat-tab-group class="tabs-group-card" animationDuration="100ms">
+    <mat-tab [label]="'kafka.topics' | translate">
+      <div fxFlex class="card">
         <div fxFlex>
           <tb-kafka-topics-table></tb-kafka-topics-table>
         </div>
       </div>
     </mat-tab>
-
-    <mat-tab [label]="label('consumerGroups')">
-      <div #kafka2 fxFlex class="card">
+    <mat-tab [label]="'kafka.consumer-groups' | translate">
+      <div fxFlex class="card">
         <div fxFlex>
           <tb-kafka-consumers-table></tb-kafka-consumers-table>
         </div>
