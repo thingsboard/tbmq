@@ -16,16 +16,25 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.TbProperty;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 @Setter
 @Component
+@ConfigurationProperties(prefix = "queue.kafka")
+@Slf4j
 public class TbKafkaConsumerSettings {
+
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
@@ -47,8 +56,9 @@ public class TbKafkaConsumerSettings {
     @Value("${queue.kafka.default.consumer.fetch-max-bytes}")
     private int fetchMaxBytes;
 
+    private Map<String, List<TbProperty>> consumerPropertiesPerTopic = Collections.emptyMap();
 
-    public Properties toProps(String customProperties) {
+    public Properties toProps(String topic, String customProperties) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, partitionAssignmentStrategy);
@@ -60,6 +70,9 @@ public class TbKafkaConsumerSettings {
         if (customProperties != null) {
             QueueUtil.getConfigs(customProperties).forEach(props::put);
         }
+        consumerPropertiesPerTopic
+                .getOrDefault(topic, Collections.emptyList())
+                .forEach(kv -> props.put(kv.getKey(), kv.getValue()));
         return props;
     }
 

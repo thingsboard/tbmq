@@ -45,7 +45,6 @@ public class ClientSessionInfoFactory {
 
     public static ClientSessionInfo clientSessionToClientSessionInfo(ClientSession clientSession) {
         return ClientSessionInfo.builder()
-                .lastUpdateTime(System.currentTimeMillis())
                 .keepAlive(clientSession.getSessionInfo().getConnectionInfo().getKeepAlive())
                 .disconnectedAt(clientSession.getSessionInfo().getConnectionInfo().getDisconnectedAt())
                 .connectedAt(clientSession.getSessionInfo().getConnectionInfo().getConnectedAt())
@@ -128,10 +127,10 @@ public class ClientSessionInfoFactory {
     }
 
     public static ClientInfo getClientInfo(String clientId, ClientType clientType) {
-        return getClientInfo(clientId, clientType, "localhost");
+        return getClientInfo(clientId, clientType, BrokerConstants.LOCAL_ADR);
     }
 
-    public static ClientInfo getClientInfo(String clientId, ClientType clientType, String clientIpAdr) {
+    public static ClientInfo getClientInfo(String clientId, ClientType clientType, byte[] clientIpAdr) {
         return ClientInfo.builder()
                 .clientId(clientId)
                 .type(clientType)

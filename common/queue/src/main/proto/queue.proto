@@ -66,7 +66,7 @@ message TopicSubscriptionProto {
 message ClientInfoProto {
   string clientId = 1;
   string clientType = 2;
-  string clientIpAdr = 3;
+  bytes clientIpAdr = 3;
 }
 
 message ConnectionInfoProto {
@@ -86,7 +86,6 @@ message RetainedMsgProto {
 message ClientSessionInfoProto {
   bool connected = 1;
   SessionInfoProto sessionInfo = 2;
-  int64 lastUpdatedTime = 3;
 }
 
 // TODO: Create two inner objects (newSessionEvent and updateSessionEvent)

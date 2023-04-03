@@ -75,7 +75,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(topic, basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("basic-downlink-publish-consumer-" + consumerId);

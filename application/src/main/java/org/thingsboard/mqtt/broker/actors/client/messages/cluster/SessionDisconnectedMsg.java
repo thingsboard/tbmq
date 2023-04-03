@@ -29,9 +29,9 @@ import java.util.UUID;
 public class SessionDisconnectedMsg extends CallbackMsg implements SessionClusterManagementMsg {
 
     private final UUID sessionId;
-    private final Integer sessionExpiryInterval;
+    private final int sessionExpiryInterval;
 
-    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, Integer sessionExpiryInterval) {
+    public SessionDisconnectedMsg(ClientCallback callback, UUID sessionId, int sessionExpiryInterval) {
         super(callback);
         this.sessionId = sessionId;
         this.sessionExpiryInterval = sessionExpiryInterval;

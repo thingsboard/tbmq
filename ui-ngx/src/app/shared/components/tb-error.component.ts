@@ -20,7 +20,7 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 @Component({
   selector: 'tb-error',
   template: `
-  <div [@animation]="state" style="margin-top:0.5rem;font-size:.75rem">
+  <div [@animation]="state" style="margin-top:0; font-size:.75rem">
       <mat-error >
       {{message}}
     </mat-error>

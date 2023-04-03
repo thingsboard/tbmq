@@ -14,16 +14,16 @@
 /// limitations under the License.
 ///
 
-import {Component, Inject, OnInit} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {FormBuilder, FormGroup} from '@angular/forms';
-import {ActionNotificationShow} from '@core/notification/notification.actions';
-import {TranslateService} from '@ngx-translate/core';
-import {DialogComponent} from '@shared/components/dialog.component';
-import {Router} from '@angular/router';
-import {MqttClientCredentialsService} from '@core/http/mqtt-client-credentials.service';
+import { Component, Inject, OnInit } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { Router } from '@angular/router';
+import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 
 export interface ChangeMqttBasicPasswordDialogData {
   credentialsId: string;
@@ -64,20 +64,22 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
 
   onChangePassword(): void {
     if (this.changePassword.get('newPassword').value !== this.changePassword.get('newPassword2').value) {
-      this.store.dispatch(new ActionNotificationShow({ message: this.translate.instant('login.passwords-mismatch-error'),
-        type: 'error' }));
+      this.store.dispatch(new ActionNotificationShow({
+        message: this.translate.instant('login.passwords-mismatch-error'),
+        type: 'error'
+      }));
     } else {
       this.mqttClientCredentialsService.changePassword(
         this.changePassword.get('currentPassword').value,
         this.changePassword.get('newPassword').value,
         this.credentialsId).subscribe(
-          (credentials) => {
-            this.store.dispatch(new ActionNotificationShow({
-              message: this.translate.instant('mqtt-client-credentials.password-changed'),
-              type: 'success'
-            }));
+        (credentials) => {
+          this.store.dispatch(new ActionNotificationShow({
+            message: this.translate.instant('mqtt-client-credentials.password-changed'),
+            type: 'success'
+          }));
           this.dialogRef.close(credentials);
-      });
+        });
     }
   }
 }

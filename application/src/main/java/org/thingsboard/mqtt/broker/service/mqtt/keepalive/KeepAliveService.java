@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import java.util.UUID;
 
 public interface KeepAliveService {
+
     void registerSession(String clientId, UUID sessionId, int keepAliveSeconds) throws MqttException;
 
     void unregisterSession(UUID sessionId);

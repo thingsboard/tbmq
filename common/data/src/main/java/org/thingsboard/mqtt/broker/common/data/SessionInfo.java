@@ -33,7 +33,7 @@ public class SessionInfo {
     private final String serviceId;
     private final UUID sessionId;
     private final boolean cleanStart;
-    private final Integer sessionExpiryInterval;
+    private final int sessionExpiryInterval;
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;
 
@@ -50,6 +50,6 @@ public class SessionInfo {
     }
 
     public int safeGetSessionExpiryInterval() {
-        return sessionExpiryInterval == null ? 0 : sessionExpiryInterval;
+        return sessionExpiryInterval == -1 ? 0 : sessionExpiryInterval;
     }
 }

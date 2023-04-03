@@ -24,8 +24,8 @@ export enum MqttCredentialsType {
 
 export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'MQTT Basic'],
-    [MqttCredentialsType.SSL, 'SSL']
+    [MqttCredentialsType.MQTT_BASIC, 'Basic'],
+    [MqttCredentialsType.SSL, 'X.509 Certificate chain']
   ]
 );
 
@@ -38,7 +38,7 @@ export interface MqttClientCredentials extends BaseData {
 }
 
 export interface SslMqttCredentials extends SslAuthRulesMapping {
-  parentCertCommonName: string;
+  certCommonName: string;
 }
 
 export interface SslAuthRulesMapping {
@@ -57,8 +57,8 @@ export interface BasicMqttCredentials {
 }
 
 export interface AuthRules {
-  subAuthRulePatterns: Array<string>;
-  pubAuthRulePatterns: Array<string>;
+  subAuthRulePatterns: any
+  pubAuthRulePatterns: any;
 }
 
 export interface AuthRulesMapping extends AuthRules {

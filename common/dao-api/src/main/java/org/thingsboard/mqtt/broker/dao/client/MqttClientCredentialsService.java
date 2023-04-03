@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
+import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MqttClientCredentialsService {
+
     MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials);
 
     void deleteCredentials(UUID id);
@@ -34,4 +36,6 @@ public interface MqttClientCredentialsService {
     PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink);
 
     Optional<MqttClientCredentials> getCredentialsById(UUID id);
+
+    ClientCredentialsInfoDto getClientCredentialsInfo();
 }

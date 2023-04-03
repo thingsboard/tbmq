@@ -46,6 +46,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -106,7 +107,7 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg, null);
+        verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0);
         verify(disconnectService, never()).closeChannel(ctx);
     }
@@ -116,19 +117,19 @@ public class DisconnectServiceImplTest {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
-        verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg, null);
-        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, null);
+        verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg, -1);
+        verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, -1);
         verify(disconnectService, times(1)).closeChannel(ctx);
     }
 
     @Test
     public void testClearClientSession() {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
-        disconnectService.clearClientSession(clientActorState, disconnectMsg, null);
+        disconnectService.clearClientSession(clientActorState, disconnectMsg, -1);
 
         verify(queuedMqttMessages, times(1)).clear();
         verify(keepAliveService, times(1)).unregisterSession(any());
-        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), any());
+        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), eq(-1));
         verify(clientSessionCtxService, times(1)).unregisterSession(any());
     }
 

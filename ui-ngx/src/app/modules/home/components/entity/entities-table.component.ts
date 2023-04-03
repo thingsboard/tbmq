@@ -28,20 +28,20 @@ import {
   SimpleChanges,
   ViewChild
 } from '@angular/core';
-import {PageComponent} from '@shared/components/page.component';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {MAX_SAFE_PAGE_SIZE, PageLink} from '@shared/models/page/page-link';
-import {MatDialog} from '@angular/material/dialog';
-import {MatPaginator} from '@angular/material/paginator';
-import {MatSort} from '@angular/material/sort';
-import {EntitiesDataSource} from '@home/models/datasource/entity-datasource';
-import {catchError, debounceTime, distinctUntilChanged, map, tap} from 'rxjs/operators';
-import {Direction, SortOrder} from '@shared/models/page/sort-order';
-import {forkJoin, fromEvent, merge, Observable, of, Subscription} from 'rxjs';
-import {TranslateService} from '@ngx-translate/core';
-import {BaseData} from '@shared/models/base-data';
-import {ActivatedRoute, QueryParamsHandling, Router} from '@angular/router';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
+import { MatDialog } from '@angular/material/dialog';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
+import { catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { Direction, SortOrder } from '@shared/models/page/sort-order';
+import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { BaseData } from '@shared/models/base-data';
+import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
   CellActionDescriptor,
   CellActionDescriptorType,
@@ -52,13 +52,13 @@ import {
   GroupActionDescriptor,
   HeaderActionDescriptor
 } from '@home/models/entity/entities-table-config.models';
-import {EntityTypeTranslation} from '@shared/models/entity-type.models';
-import {DialogService} from '@core/services/dialog.service';
-import {AddEntityDialogComponent} from './add-entity-dialog.component';
-import {AddEntityDialogData, EntityAction} from '@home/models/entity/entity-component.models';
-import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
-import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
-import {isDefined, isEqual, isUndefined} from '@core/utils';
+import { EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { DialogService } from '@core/services/dialog.service';
+import { AddEntityDialogComponent } from './add-entity-dialog.component';
+import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
+import { isDefined, isEqual, isUndefined } from '@core/utils';
 
 @Component({
   selector: 'tb-entities-table',

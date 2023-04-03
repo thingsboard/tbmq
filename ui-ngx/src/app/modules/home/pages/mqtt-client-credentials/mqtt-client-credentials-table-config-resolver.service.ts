@@ -83,7 +83,6 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title', {count});
     this.config.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
 
-
     this.config.loadEntity = id => this.loadEntity(id);
     this.config.saveEntity = mqttClient => this.mqttClientCredentialsService.saveMqttClientCredentials(mqttClient);
     this.config.deleteEntity = id => this.deleteEntity(id);

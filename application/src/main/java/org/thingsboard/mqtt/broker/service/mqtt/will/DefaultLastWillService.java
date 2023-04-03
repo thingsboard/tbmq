@@ -85,7 +85,7 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void removeAndExecuteLastWillIfNeeded(UUID sessionId, boolean sendMsg,
-                                                 boolean newSessionCleanStart, Integer sessionExpiryInterval) {
+                                                 boolean newSessionCleanStart, int sessionExpiryInterval) {
         MsgWithSessionInfo lastWillMsgWithSessionInfo = lastWillMessages.get(sessionId);
         if (lastWillMsgWithSessionInfo == null) {
             if (log.isTraceEnabled()) {
@@ -120,7 +120,7 @@ public class DefaultLastWillService implements LastWillService {
         delayedLastWillFuturesMap.put(getClientId(lastWillMsgWithSessionInfo), futureTask);
     }
 
-    private int getWillDelay(MsgWithSessionInfo lastWillMsgWithSessionInfo, Integer sessionExpiryIntervalFromDisconnect) {
+    private int getWillDelay(MsgWithSessionInfo lastWillMsgWithSessionInfo, int sessionExpiryIntervalFromDisconnect) {
         SessionInfo sessionInfo = lastWillMsgWithSessionInfo.getSessionInfo();
         int sessionExpiryInterval = getSessionExpiryInterval(sessionExpiryIntervalFromDisconnect, sessionInfo);
 
@@ -136,8 +136,8 @@ public class DefaultLastWillService implements LastWillService {
         return 0;
     }
 
-    private int getSessionExpiryInterval(Integer sessionExpiryIntervalFromDisconnect, SessionInfo sessionInfo) {
-        return sessionExpiryIntervalFromDisconnect == null ? sessionInfo.safeGetSessionExpiryInterval() : sessionExpiryIntervalFromDisconnect;
+    private int getSessionExpiryInterval(int sessionExpiryIntervalFromDisconnect, SessionInfo sessionInfo) {
+        return sessionExpiryIntervalFromDisconnect == -1 ? sessionInfo.safeGetSessionExpiryInterval() : sessionExpiryIntervalFromDisconnect;
     }
 
     private void processLastWill(MsgWithSessionInfo lastWillMsgWithSessionInfo, UUID sessionId) {

@@ -22,8 +22,10 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -45,16 +47,25 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ClientSessionInfo> filteredByTextSearch = filterClientSessionInfos(allClientSessions, pageLink);
 
         List<ShortClientSessionInfoDto> data = filteredByTextSearch.stream()
-                .skip((long) pageLink.getPage() * pageLink.getPageSize())
-                .limit(pageLink.getPageSize())
                 .map(this::toShortSessionInfo)
                 .sorted(sorted(pageLink))
+                .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
         return new PageData<>(data,
                 filteredByTextSearch.size() / pageLink.getPageSize(),
                 filteredByTextSearch.size(),
                 pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < filteredByTextSearch.size());
+    }
+
+    @Override
+    public ClientSessionStatsInfoDto getClientSessionStatsInfo() {
+        var allClientSessions = clientSessionCache.getAllClientSessions();
+        int totalCount = allClientSessions.size();
+        long connectedCount = allClientSessions.values().stream().filter(ClientSessionInfo::isConnected).count();
+        long disconnectedCount = totalCount - connectedCount;
+        return new ClientSessionStatsInfoDto(connectedCount, disconnectedCount, totalCount);
     }
 
     private ShortClientSessionInfoDto toShortSessionInfo(ClientSessionInfo clientSessionInfo) {
@@ -68,7 +79,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .subscriptionsCount(clientSubscriptionCache.getClientSubscriptions(clientSessionInfo.getClientId()).size())
                 .connectedAt(clientSessionInfo.getConnectedAt())
                 .disconnectedAt(clientSessionInfo.getDisconnectedAt())
-                .clientIpAdr(clientSessionInfo.getClientIpAdr())
+                .clientIpAdr(BytesUtil.toHostAddress(clientSessionInfo.getClientIpAdr()))
+                .cleanStart(clientSessionInfo.isCleanStart())
                 .build();
     }
 
@@ -85,7 +97,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
 
     private boolean filter(PageLink pageLink, ClientSessionInfo clientSessionInfo) {
         if (pageLink.getTextSearch() != null) {
-            return clientSessionInfo.getClientId().contains(pageLink.getTextSearch());
+            return clientSessionInfo.getClientId().toLowerCase().contains(pageLink.getTextSearch().toLowerCase());
         }
         return true;
     }

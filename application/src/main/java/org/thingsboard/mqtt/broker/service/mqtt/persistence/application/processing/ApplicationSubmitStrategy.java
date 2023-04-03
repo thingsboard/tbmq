@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 public interface ApplicationSubmitStrategy {
+
     void init(List<PersistedMsg> orderedMessages);
 
     ConcurrentMap<Integer, PersistedMsg> getPendingMap();
@@ -28,4 +29,6 @@ public interface ApplicationSubmitStrategy {
     void process(Consumer<PersistedMsg> msgConsumer);
 
     void update(Map<Integer, PersistedMsg> reprocessMap);
+
+    String getClientId();
 }

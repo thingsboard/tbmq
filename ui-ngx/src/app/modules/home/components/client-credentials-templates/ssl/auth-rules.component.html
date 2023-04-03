@@ -15,35 +15,37 @@
     limitations under the License.
 
 -->
-<form style="min-width: 500px">
-  <mat-expansion-panel [expanded]="true">
+<form style="min-width: 500px; padding-top: 8px">
+  <mat-expansion-panel [expanded]="false">
     <mat-expansion-panel-header>
       <mat-panel-title>
-        <div class="tb-auth-rules-panel-group" translate>mqtt-client-credentials.authorization-rules-mapping</div>
+        <div translate>mqtt-client-credentials.authorization</div>
       </mat-panel-title>
       <mat-panel-description *ngIf="rulesMappingFormGroup.dirty && !rulesMappingFormGroup.get('authRulesMapping').value?.length">
         <mat-error translate>mqtt-client-credentials.add-authorization-rule-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>
-    <section>
-      <div fxLayout="column" class="tb-auth-rules-list" [formGroup]="rulesMappingFormGroup">
-        <div class="header" fxFlex fxLayout="row">
-          <span class="cell" fxFlex translate>mqtt-client-credentials.certificate-matcher-regex</span>
-          <span class="cell" fxFlex translate>mqtt-client-credentials.topic-rules</span>
-          <span fxFlex [fxShow]="!disabled" style="width: 40px; min-width: 40px;">&nbsp;</span>
-        </div>
-        <div class="body">
-          <div formArrayName="authRulesMapping" class="row"
-               *ngFor="let rulesControl of rulesFormArray().controls; let $index = index">
+    <div fxLayout="column" [formGroup]="rulesMappingFormGroup">
+      <section>
+        <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl' | translate"></div>
+        <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl-example' | translate"></div>
+      </section>
+      <div *ngFor="let rulesControl of rulesFormArray.controls; let $index = index" formArrayName="authRulesMapping">
+          <fieldset class="fields-group">
+            <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ ($index +  1) }}</legend>
             <div [formGroupName]="$index" fxFlex fxLayout="space-around">
-              <mat-form-field class="cell" style="padding-top: 16px; min-width: 180px">
-                <input matInput formControlName="certificateMatcherRegex">
-                <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').invalid">
-                  {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
-                </mat-error>
-              </mat-form-field>
               <div fxFlex fxLayout="column">
-                <mat-form-field class="cell">
+                <mat-form-field class="mat-block">
+                  <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
+                  <input matInput formControlName="certificateMatcherRegex" required>
+                  <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').hasError('required')">
+                    {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
+                  </mat-error>
+                  <mat-error *ngIf="rulesControl.get('certificateMatcherRegex').hasError('notUnique')">
+                    {{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}
+                  </mat-error>
+                </mat-form-field>
+                <mat-form-field>
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
                   <mat-chip-list #chipListPub>
                     <mat-chip *ngFor="let rule of pubRulesArray[$index]"
@@ -54,14 +56,14 @@
                       {{ rule }}
                       <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
                     </mat-chip>
-                    <input matInput type="text"
+                    <input matInput
                            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            matChipInputAddOnBlur
                            [matChipInputFor]="chipListPub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-list>
                 </mat-form-field>
-                <mat-form-field class="cell">
+                <mat-form-field>
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
                   <mat-chip-list #chipListSub>
                     <mat-chip *ngFor="let rule of subRulesArray[$index]"
@@ -80,7 +82,7 @@
                   </mat-chip-list>
                 </mat-form-field>
               </div>
-              <button mat-button mat-icon-button color="primary"
+              <button mat-button mat-icon-button color="warn"
                       [fxShow]="!disabled"
                       type="button"
                       style="width: 40px; min-width: 40px;"
@@ -91,18 +93,15 @@
               </button>
             </div>
             <mat-divider></mat-divider>
-          </div>
-          <button mat-button mat-raised-button color="primary"
-                  [fxShow]="!disabled"
-                  (click)="addRule()"
-                  type="button"
-                  matTooltip="{{ 'mqtt-client-credentials.add-authorization-rules' | translate }}"
-                  matTooltipPosition="above">
-            <mat-icon>add</mat-icon>
-            {{ 'action.add' | translate }}
-          </button>
+          </fieldset>
         </div>
-      </div>
-    </section>
+    </div>
+    <button mat-stroked-button color="primary"
+            [fxShow]="!disabled"
+            (click)="addRule()"
+            type="button">
+      <mat-icon>add</mat-icon>
+      {{ 'mqtt-client-credentials.add-authorization-rules' | translate }}
+    </button>
   </mat-expansion-panel>
 </form>

@@ -40,7 +40,9 @@ public class SqlDeviceMsgCleanUpDao implements DeviceMsgCleanUpDao {
 
     @Override
     public void cleanUpByTime(long ttl) {
-        log.trace("Cleaning up device publish messages for TTL {} seconds.", ttl);
+        if (log.isTraceEnabled()) {
+            log.trace("Cleaning up device publish messages for TTL {} seconds.", ttl);
+        }
         long earliestAcceptableTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
         int removed = deviceMsgRepository.removeAllByTimeLessThan(earliestAcceptableTime);
         log.info("Cleared {} publish messages older than {}.", removed, earliestAcceptableTime);
@@ -52,7 +54,9 @@ public class SqlDeviceMsgCleanUpDao implements DeviceMsgCleanUpDao {
             log.error("Only positive numbers are allowed.");
             return;
         }
-        log.trace("Cleaning up device publish messages to match max size {}.", maxPersistedMessages);
+        if (log.isTraceEnabled()) {
+            log.trace("Cleaning up device publish messages to match max size {}.", maxPersistedMessages);
+        }
 
         Page<DeviceSessionCtxEntity> deviceSessionCtxEntities;
         int pageCounter = 0;
@@ -62,11 +66,17 @@ public class SqlDeviceMsgCleanUpDao implements DeviceMsgCleanUpDao {
                 String clientId = deviceSessionCtxEntity.getClientId();
                 DevicePublishMsgEntity earliestPersistedMsg = deviceMsgRepository.findEntityByClientIdAfterOffset(clientId, maxPersistedMessages - 1);
                 if (earliestPersistedMsg == null) {
-                    log.trace("[{}] No messages to clean up.", clientId);
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] No messages to clean up.", clientId);
+                    }
                 } else {
-                    log.trace("[{}] Clearing messages with serial number less than {}.", clientId, earliestPersistedMsg.getSerialNumber());
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Clearing messages with serial number less than {}.", clientId, earliestPersistedMsg.getSerialNumber());
+                    }
                     int removed = deviceMsgRepository.removeAllByClientIdAndSerialNumberLessThan(clientId, earliestPersistedMsg.getSerialNumber());
-                    log.debug("[{}] Removed {} messages.", clientId, removed);
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Removed {} messages.", clientId, removed);
+                    }
                 }
             }
         } while (!deviceSessionCtxEntities.isLast());

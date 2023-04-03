@@ -27,6 +27,13 @@
   </div>
 </div>
 <div class="mat-padding" fxLayout="column">
+  <fieldset class="fields-group">
+    <legend class="group-title">
+      <mat-icon class="material-icons">info_outline</mat-icon>
+<!--      {{ 'shared-subscription.hint-application-shared-subscription-info' | translate }}-->
+    </legend>
+    <div class="tb-hint" [innerHTML]="'shared-subscription.hint-application-shared-subscription' | translate"></div>
+  </fieldset>
   <form [formGroup]="entityForm">
     <fieldset [disabled]="(isLoading$ | async) || !isEdit">
       <mat-form-field class="mat-block">
@@ -37,6 +44,14 @@
         </mat-error>
       </mat-form-field>
       <mat-form-field class="mat-block">
+        <mat-label translate>shared-subscription.topic-filter</mat-label>
+        <input matInput formControlName="topicFilter" required>
+        <mat-error *ngIf="entityForm.get('topicFilter').hasError('required')">
+          {{ 'shared-subscription.topic-filter-required' | translate }}
+        </mat-error>
+      </mat-form-field>
+      <div class="tb-hint" [innerHTML]="'shared-subscription.hint-topic-filter' | translate"></div>
+      <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.partitions</mat-label>
         <input matInput formControlName="partitions" required type="number" min="1" step="1">
         <mat-error *ngIf="entityForm.get('partitions').hasError('required')">
@@ -46,13 +61,8 @@
           {{ 'shared-subscription.partitions-min' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field class="mat-block">
-        <mat-label translate>shared-subscription.topic</mat-label>
-        <input matInput formControlName="topic" required>
-        <mat-error *ngIf="entityForm.get('topic').hasError('required')">
-          {{ 'shared-subscription.topic-required' | translate }}
-        </mat-error>
-      </mat-form-field>
+      <div class="tb-hint" [innerHTML]="'shared-subscription.hint-partitions' | translate"></div>
+      <div *ngIf="!entity?.name" class="tb-hint" [innerHTML]="'shared-subscription.hint-shared-subscription-notes' | translate"></div>
     </fieldset>
   </form>
 </div>

@@ -75,7 +75,7 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createConsumer(String topic, String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.properties(consumerSettings.toProps(topic, persistentDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("persistent-downlink-publish-consumer-" + consumerId);

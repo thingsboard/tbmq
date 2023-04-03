@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -165,7 +166,7 @@ public class ConnectServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         String clientId = "clientId";
         MqttConnectMsg msg = getMqttConnectMsg(sessionId, clientId);
-        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0, "localhost");
+        SessionInfo actualSessionInfo = connectService.getSessionInfo(msg, sessionId, clientId, ClientType.DEVICE, 0, BrokerConstants.LOCAL_ADR);
 
         SessionInfo expectedSessionInfo = ClientSessionInfoFactory.getSessionInfo(
                 sessionId,

@@ -33,13 +33,15 @@ public class ApplicationPackProcessingCtx {
     @Getter
     private final ConcurrentMap<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = new ConcurrentHashMap<>();
 
+    private final String clientId;
     private final ApplicationProcessorStats stats;
     private final long processingStartTimeNanos;
     private final CountDownLatch processingTimeoutLatch;
     @Getter
     private final ApplicationPubRelMsgCtx pubRelMsgCtx;
 
-    public ApplicationPackProcessingCtx() {
+    public ApplicationPackProcessingCtx(String clientId) {
+        this.clientId = clientId;
         this.stats = null;
         this.processingStartTimeNanos = System.nanoTime();
         this.processingTimeoutLatch = null;
@@ -47,17 +49,22 @@ public class ApplicationPackProcessingCtx {
     }
 
     public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, ApplicationPubRelMsgCtx pubRelMsgCtx, ApplicationProcessorStats stats) {
+        this.clientId = submitStrategy.getClientId();
         this.processingStartTimeNanos = System.nanoTime();
         this.stats = stats;
         this.pubRelMsgCtx = pubRelMsgCtx;
         for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
-                    log.debug("[{}] Adding Pub msg [{}] to be sent!", stats.getClientId(), persistedMsg.getPacketId());
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Adding Pub msg [{}] to be sent!", clientId, persistedMsg.getPacketId());
+                    }
                     publishPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPublishMsg) persistedMsg);
                     break;
                 case PUBREL:
-                    log.debug("[{}] Adding PubRel msg [{}] to be sent!", stats.getClientId(), persistedMsg.getPacketId());
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Adding PubRel msg [{}] to be sent!", clientId, persistedMsg.getPacketId());
+                    }
                     pubRelPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPubRelMsg) persistedMsg);
                     break;
                 default:
@@ -76,12 +83,16 @@ public class ApplicationPackProcessingCtx {
     public boolean onPubAck(Integer packetId) {
         PersistedPublishMsg msg = publishPendingMsgMap.remove(packetId);
         if (msg != null) {
-            log.debug("Found PUBLISH packet {} to process PubAck msg.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("Found PUBLISH packet {} to process PubAck msg.", packetId);
+            }
             stats.logPubAckLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
             processingTimeoutLatch.countDown();
             return true;
         } else {
-            log.debug("Couldn't find PUBLISH packet {} to process PubAck msg.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Couldn't find PUBLISH packet {} to process PubAck msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
+            }
         }
         return false;
     }
@@ -90,14 +101,18 @@ public class ApplicationPackProcessingCtx {
         // TODO: think what to do if PUBREC came after PackContext timeout
         PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
         if (msg != null) {
-            log.debug("Found PUBLISH packet {} to process PubRec msg.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("Found PUBLISH packet {} to process PubRec msg.", packetId);
+            }
             stats.logPubRecLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
 
             pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
             onPublishMsgSuccess(packetId);
             return true;
         } else {
-            log.debug("Couldn't find PUBLISH packet {} to process PubRec msg.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Couldn't find PUBLISH packet {} to process PubRec msg from {}.", clientId, packetId, publishPendingMsgMap.keySet());
+            }
         }
         return false;
     }
@@ -107,19 +122,25 @@ public class ApplicationPackProcessingCtx {
         if (msg != null) {
             processingTimeoutLatch.countDown();
         } else {
-            log.debug("Couldn't find PUBLISH packet {} to process PubRec msg successfully.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Couldn't find PUBLISH packet {} to process PubRec msg successfully from {}.", clientId, packetId, publishPendingMsgMap.keySet());
+            }
         }
     }
 
     public boolean onPubComp(Integer packetId) {
         PersistedPubRelMsg msg = pubRelPendingMsgMap.remove(packetId);
         if (msg != null) {
-            log.debug("Found PubRel packet {} to process PubComp msg.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("Found PubRel packet {} to process PubComp msg.", packetId);
+            }
             stats.logPubCompLatency(System.nanoTime() - processingStartTimeNanos, TimeUnit.NANOSECONDS);
             processingTimeoutLatch.countDown();
             return true;
         } else {
-            log.debug("Couldn't find packet {} to complete delivery.", packetId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Couldn't find packet {} to complete delivery from {}.", clientId, packetId, pubRelPendingMsgMap.keySet());
+            }
         }
         return false;
     }

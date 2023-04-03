@@ -54,6 +54,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   topicListFormGroup: FormGroup;
   mqttQoSTypes = mqttQoSTypes;
+  showShareName: boolean = false;
+  shareNameCounter: number = 0;
 
   private propagateChange = null;
 
@@ -67,8 +69,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   ngOnInit(): void {
     this.topicListFormGroup = this.fb.group({});
-    this.topicListFormGroup.addControl('subscriptions',
-      this.fb.array([]));
+    this.topicListFormGroup.addControl('subscriptions', this.fb.array([]));
   }
 
   subscriptionsFormArray(): FormArray {
@@ -99,6 +100,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (topics) {
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
+        if (topic.shareName?.length) this.shareNameCounter++;
         if (this.disabled) {
           topicControl.disable();
         }
@@ -111,14 +113,15 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     });
   }
 
-  public removeTopic(index: number) {
+  removeTopic(index: number) {
     (this.topicListFormGroup.get('subscriptions') as FormArray).removeAt(index);
   }
 
-  public addTopic() {
+  addTopic() {
     const subscriptionsFormArray = this.topicListFormGroup.get('subscriptions') as FormArray;
     subscriptionsFormArray.push(this.fb.group({
-      topic: [null, [Validators.required]],
+      topicFilter: [null, [Validators.required]],
+      shareName: [null],
       qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
     }));
   }
@@ -127,6 +130,13 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return control.value.length && this.topicListFormGroup.valid ? null : {
       topicFilters: {valid: false}
     };
+  }
+
+  toggleShowShareName($event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.showShareName = !this.showShareName;
   }
 
   private updateView(value: TopicSubscription[]) {

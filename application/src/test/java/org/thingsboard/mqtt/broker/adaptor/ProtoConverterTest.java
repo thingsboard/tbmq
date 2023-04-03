@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
@@ -45,21 +46,21 @@ public class ProtoConverterTest {
         Assert.assertFalse(sessionInfo.isPersistent());
         sessionInfo = newSessionInfo(false, 0);
         Assert.assertTrue(sessionInfo.isPersistent());
-        sessionInfo = newSessionInfo(true, null);
+        sessionInfo = newSessionInfo(true, -1);
         Assert.assertFalse(sessionInfo.isPersistent());
-        sessionInfo = newSessionInfo(false, null);
+        sessionInfo = newSessionInfo(false, -1);
         Assert.assertTrue(sessionInfo.isPersistent());
 
         sessionInfo = newSessionInfo(true, 0);
         Assert.assertTrue(sessionInfo.isCleanSession());
-        sessionInfo = newSessionInfo(true, null);
+        sessionInfo = newSessionInfo(true, -1);
         Assert.assertTrue(sessionInfo.isCleanSession());
         sessionInfo = newSessionInfo(true, 5);
         Assert.assertFalse(sessionInfo.isCleanSession());
 
         sessionInfo = newSessionInfo(false, 0);
         Assert.assertTrue(sessionInfo.isNotCleanSession());
-        sessionInfo = newSessionInfo(false, null);
+        sessionInfo = newSessionInfo(false, -1);
         Assert.assertTrue(sessionInfo.isNotCleanSession());
         sessionInfo = newSessionInfo(false, 5);
         Assert.assertFalse(sessionInfo.isNotCleanSession());
@@ -67,17 +68,17 @@ public class ProtoConverterTest {
 
     @Test
     public void givenSessionInfo_whenConvertToProtoAndBackWithSessionExpiryIntervalNull_thenOk() {
-        SessionInfo sessionInfoConverted = convertSessionInfo(null);
-        Assert.assertNull(sessionInfoConverted.getSessionExpiryInterval());
+        SessionInfo sessionInfoConverted = convertSessionInfo(-1);
+        Assert.assertEquals(-1, sessionInfoConverted.getSessionExpiryInterval());
     }
 
     @Test
     public void givenSessionInfo_whenConvertToProtoAndBackWithSessionExpiryIntervalNotNull_thenOk() {
         SessionInfo sessionInfoConverted = convertSessionInfo(5);
-        Assert.assertNotNull(sessionInfoConverted.getSessionExpiryInterval());
+        Assert.assertEquals(5, sessionInfoConverted.getSessionExpiryInterval());
     }
 
-    private static SessionInfo convertSessionInfo(Integer sessionExpiryInterval) {
+    private static SessionInfo convertSessionInfo(int sessionExpiryInterval) {
         SessionInfo sessionInfo = newSessionInfo(true, sessionExpiryInterval);
 
         QueueProtos.SessionInfoProto sessionInfoProto = ProtoConverter.convertToSessionInfoProto(sessionInfo);
@@ -87,7 +88,7 @@ public class ProtoConverterTest {
         return sessionInfoConverted;
     }
 
-    private static SessionInfo newSessionInfo(boolean cleanStart, Integer sessionExpiryInterval) {
+    private static SessionInfo newSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
         return SessionInfo.builder()
                 .serviceId("serviceId")
                 .sessionId(UUID.randomUUID())
@@ -96,7 +97,7 @@ public class ProtoConverterTest {
                 .clientInfo(ClientInfo.builder()
                         .clientId("clientId")
                         .type(ClientType.DEVICE)
-                        .clientIpAdr("localhost")
+                        .clientIpAdr(BrokerConstants.LOCAL_ADR)
                         .build())
                 .connectionInfo(ConnectionInfo.builder()
                         .connectedAt(10)

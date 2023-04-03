@@ -14,53 +14,13 @@
  * limitations under the License.
  */
 :host {
-  .tb-auth-rules-panel-group {
-    &.header-filters {
-      mat-expansion-panel {
-        margin-bottom: 15px;
-      }
-    }
+  mat-expansion-panel button {
+    margin-left: 0;
   }
-  .tb-auth-rules-list {
-    .header {
-      padding-right: 5px;
-      padding-bottom: 5px;
-      padding-left: 5px;
 
-      .cell {
-        padding-right: 5px;
-        padding-left: 5px;
-        font-size: 12px;
-        font-weight: 700;
-        color: rgba(0, 0, 0, .54);
-        white-space: nowrap;
-      }
+  section {
+    .tb-hint:first-child {
+      padding-bottom: 0;
     }
-    .body {
-      max-height: 300px;
-      padding-right: 5px;
-      padding-bottom: 20px;
-      padding-left: 5px;
-      overflow: auto;
-
-      .row {
-        padding-top: 5px;
-      }
-
-      .cell {
-        padding-right: 5px;
-        padding-left: 5px;
-      }
-
-      button {
-        margin-top: 8px;
-      }
-    }
-  }
-}
-
-:host ::ng-deep {
-  .mat-form-field-infix {
-    width: 100%;
   }
 }

@@ -14,10 +14,10 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {Authority} from '@shared/models/authority.enum';
-import {EntitiesTableComponent} from '@home/components/entity/entities-table.component';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { Authority } from '@shared/models/authority.enum';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import {
   MqttClientCredentialsTableConfigResolver
 } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials-table-config-resolver.service';
@@ -49,4 +49,5 @@ const routes: Routes = [
   ]
 })
 
-export class MqttClientCredentialsRoutingModule { }
+export class MqttClientCredentialsRoutingModule {
+}
