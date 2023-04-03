@@ -75,11 +75,11 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.columns.push(
       new DateEntityTableColumn<MqttClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
-        (entity) => defaultCellStyle(entity.name)),
-      new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
-        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
+        (entity) => entity.name),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
-        (entity) => credetialsTypeCell(this.translate.instant(credentialsTypeNames.get(entity.credentialsType))))
+        (entity) => this.translate.instant(credentialsTypeNames.get(entity.credentialsType))),
+      new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
+        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType))))
     );
 
     this.config.addActionDescriptors.push(

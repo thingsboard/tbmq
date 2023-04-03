@@ -205,8 +205,8 @@ export function defaultCellStyle(value: string | number): string {
   return '<span style="background: rgba(111, 116, 242, 0.07); border-radius: 16px; padding: 4px 8px;">' + value + '</span>';
 }
 
-export function credetialsTypeCell(value: MqttCredentialsType): string {
-  const color = value === MqttCredentialsType.MQTT_BASIC ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
+export function credetialsTypeCell(value: string): string {
+  const color = value === 'Basic' ? 'rgba(111,116,242,0.07)' : 'rgba(139,242,111,0.07)';
   return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;">${value}</span>`;
 }
 
