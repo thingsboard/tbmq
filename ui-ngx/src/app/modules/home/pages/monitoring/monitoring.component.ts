@@ -15,9 +15,8 @@
 ///
 
 import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
-import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
-import { Observable, Subject, timer } from 'rxjs';
-import { KeyValue } from '@angular/common';
+import { Timewindow, TimewindowType } from '@shared/models/time/time.models';
+import { Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { Router } from '@angular/router';
@@ -87,15 +86,12 @@ export class MonitoringComponent extends PageComponent {
     this.destroy$.complete();
   }
 
-  viewDocumentation(type) {
-    this.router.navigateByUrl('');
+  onTimewindowChange() {
+    this.timewindowObject.emit(this.timewindow);
+    this.getTimewindow();
   }
 
-  navigateToPage(type) {
-    this.router.navigateByUrl('');
-  }
-
-  initCharts(data) {
+  private initCharts(data) {
     let index = 0;
     for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
@@ -111,11 +107,11 @@ export class MonitoringComponent extends PageComponent {
             hover: true,
             pointStyle: 'line',
             borderColor: getColor(chart as StatsChartType),
-            data: this.prepareDataInChartFormat(data[chart])
+            data: data[chart]
           }]
         }
       };
-      const params = {...monitoringChartJsParams(index, label), ...datasets};
+      const params = {...monitoringChartJsParams(label), ...datasets};
       this.charts[chart] = new Chart(ctx, params);
       ctx.addEventListener('dblclick', (evt) => this.charts[chart].resetZoom());
       index++;
@@ -123,22 +119,10 @@ export class MonitoringComponent extends PageComponent {
     this.startPolling();
   }
 
-  setTitles() {
+  private setTitles() {
     for (const key of Object.keys(this.charts)) {
       this.chartsLatestValues[key] = key;
     }
-  }
-
-  setLatestValues(data) {
-    for (const key of Object.keys(this.charts)) {
-      this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
-    }
-    this.cd.detectChanges();
-  }
-
-  onTimewindowChange() {
-    this.timewindowObject.emit(this.timewindow);
-    this.getTimewindow();
   }
 
   private getTimewindow() {
@@ -154,26 +138,13 @@ export class MonitoringComponent extends PageComponent {
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
       for (const chart in StatsChartType) {
-        this.charts[chart].data.datasets[0].data = data[chart].map(el => {
-          return {
-            x: el.ts,
-            y: el.value
-          };
-        });
+        this.charts[chart].data.datasets[0].data = data[chart];
       }
       this.updateCharts();
       if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
         this.startPolling();
       }
     });
-  }
-
-  private prepareDataInChartFormat(data: Array<any>) {
-    if (data?.length) {
-      return data.map(el => {
-        return {x: el.ts, y: el.value};
-      });
-    }
   }
 
   private startPolling() {
@@ -191,6 +162,18 @@ export class MonitoringComponent extends PageComponent {
     });
   }
 
+  private setLatestValues(data) {
+    for (const key of Object.keys(this.charts)) {
+      this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
+    }
+    this.cd.detectChanges();
+  }
+
+  private pushShiftLatestValue(data: Array<any>, chartType: StatsChartType) {
+    this.charts[chartType].data.datasets[0].data.shift();
+    this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[chartType]));
+  }
+
   private stopPolling() {
     this.stopPolling$.next();
   }
@@ -201,16 +184,11 @@ export class MonitoringComponent extends PageComponent {
     }
   }
 
-  private pushShiftLatestValue(data: Array<any>, chartType: StatsChartType) {
-    this.charts[chartType].data.datasets[0].data.shift();
-    this.charts[chartType].data.datasets[0].data.push(this.transformLatestValue(data[chartType]));
-  }
-
   private transformLatestValue(chartData) {
     return chartData.map(el => {
       return {
-        x: el.ts + (60 * 60 * 1000 * this.mockDataTsCalculationIndex),
-        y: el.value
+        ts: el.ts + (60 * 60 * 500 * this.mockDataTsCalculationIndex),
+        value: el.value
       };
     })[0];
   }

@@ -106,12 +106,16 @@ export function homeChartJsParams() {
         legend: {
           display: false
         }
+      },
+      parsing: {
+        xAxisKey: 'ts',
+        yAxisKey: 'value'
       }
     }
   };
 }
 
-export function monitoringChartJsParams(index: number, label: string) {
+export function monitoringChartJsParams(label: string) {
   return {
     type: 'line',
     options: {
@@ -160,6 +164,10 @@ export function monitoringChartJsParams(index: number, label: string) {
             usePointStyle: true
           }
         }
+      },
+      parsing: {
+        xAxisKey: 'ts',
+        yAxisKey: 'value'
       }
     }
   };

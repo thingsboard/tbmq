@@ -80,15 +80,12 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.destroy$.complete();
   }
 
-  viewDocumentation(type) {
-    this.router.navigateByUrl('');
+  onTimewindowChange() {
+    this.timewindowObject.emit(this.timewindow);
+    this.getTimewindow();
   }
 
-  navigateToPage(path) {
-    this.router.navigateByUrl(path);
-  }
-
-  initCharts(data) {
+  private initCharts(data) {
     let index = 0;
     for (const chart in StatsChartType) {
         this.charts[chart] = {} as Chart;
@@ -100,7 +97,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
           backgroundColor: 'transparent',
           borderColor: getColor(chart as StatsChartType),
           borderWidth: 3,
-          data: this.transformData(data[chart]),
+          data: data[chart],
           hover: true
         };
         const params = {...homeChartJsParams(), ...{ data: {datasets: [dataSet]} }};
@@ -110,22 +107,17 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.startPolling();
   }
 
-  setTitles() {
+  private setTitles() {
     for (const key of Object.keys(this.charts)) {
       this.chartsLatestValues[key] = key;
     }
   }
 
-  setLatestValues(data) {
+  private setLatestValues(data) {
     for (const key of Object.keys(this.charts)) {
       this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
     }
     this.cd.detectChanges();
-  }
-
-  onTimewindowChange() {
-    this.timewindowObject.emit(this.timewindow);
-    this.getTimewindow();
   }
 
   private getTimewindow() {
@@ -142,12 +134,7 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
       for (const chart in StatsChartType) {
-        this.charts[chart].data.datasets[0].data = data[chart].map(el => {
-          return {
-            x: el.ts,
-            y: el.value
-          };
-        });
+        this.charts[chart].data.datasets[0].data = data[chart];
       }
       this.updateCharts();
       if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
@@ -156,26 +143,12 @@ export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit 
     });
   }
 
-  private transformData(data: Array<any>) {
-    if (data?.length) {
-      return data.map(el => {
-        return {x: el.ts, y: el.value};
-      });
-    }
-  }
-
   private startPolling() {
     this.pollChartsData$.subscribe(data => {
       for (const chart in StatsChartType) {
-        const value = data[chart].map(el => {
-          return {
-            x: el.ts,
-            y: el.value
-          };
-        })[0];
-        this.chartsLatestValues[chart] =
+        const latestValue = data[chart][0];
         this.charts[chart].data.datasets[0].data.shift();
-        this.charts[chart].data.datasets[0].data.push(value);
+        this.charts[chart].data.datasets[0].data.push(latestValue);
         this.setLatestValues(data);
         this.updateCharts();
       }
