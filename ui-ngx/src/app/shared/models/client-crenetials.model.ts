@@ -24,15 +24,15 @@ export enum MqttCredentialsType {
 
 export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'Basic'],
-    [MqttCredentialsType.SSL, 'X.509 Certificate chain']
+    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
+    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
   ]
 );
 
 export const credentialsWarningTranslations = new Map<MqttCredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'Basic Auth disabled'],
-    [MqttCredentialsType.SSL, 'X.509 Auth disabled']
+    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
+    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
   ]
 );
 

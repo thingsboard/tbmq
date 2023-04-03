@@ -368,7 +368,11 @@
     "hint-authorization-ssl-example": "Please consider the following examples:<ul><li>If the client certificate has CN <b>cn_example_1</b> - set <i>Client certificate CN matcher regex</i> to <code>cn_example_1</code> or <code>example_1</code> or <code>.*example.*</code>.<li>If <i>Publish authorization rule patterns</i> are set as <code>[pub_topic/one/.*, pub_topic/two/.*]</code> - client will be able to publish only </br>to the topics that starts with <b>pub_topic/one/</b> or <b>pub_topic/two/</b>.</li><li>If <i>Subscribe authorization rule patterns</i> is set to default value <code>[.*]</code> - client will be able to subscribe to <b>any topic</b>.</li><li>If <i>Publish/Subscribe authorization rules</i> has no rules (field is empty) - client will be <b>forbidden</b> to publish/subscribe to any topics.</li></ul>",
     "hint-authorization-basic": "Authorization rule patterns allows to control what topics clients can publish/subscribe to based on regular expression syntax:",
     "hint-regex-patterns": "<ul><li><b>Allow particular topic(s)</b> - rule <code>country/.*</code> will allow clients to publish/subscribe messages only to topics that start with <code>country/</code>.</li><li><b>Allow any topic</b> - rule <code>.*</code> (default) will allow clients to publish/subscribe messages to <b>any topic</b>.</li><li><b>Forbid all topics</b> - if the rule is <b><i>empty</i></b>, client is <b>forbidden</b> to publish/subscribe to.</li></ul>",
-    "rule": "Rule"
+    "rule": "Rule",
+    "type-basic": "Basic",
+    "type-ssl": "X.509 Certificate Chain",
+    "type-basic-auth": "Basic Auth is disabled",
+    "type-ssl-auth": "X.509 Certificate Chain Auth is disabled"
   },
   "mqtt-client-session": {
     "add": "Add session",

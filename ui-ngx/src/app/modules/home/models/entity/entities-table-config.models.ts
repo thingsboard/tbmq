@@ -29,7 +29,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
-import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
 import { ClientType } from '@shared/models/client.model';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
@@ -174,7 +173,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   dataSource: (dataLoadedFunction: (col?: number, row?: number) => void)
     => EntitiesDataSource<L> = (dataLoadedFunction: (col?: number, row?: number) => void) => {
     return new EntitiesDataSource(this.entitiesFetchFunction, this.entitySelectionEnabled, dataLoadedFunction);
-  };
+  }
   detailsReadonly: EntityBooleanFunction<T> = () => false;
   entitySelectionEnabled: EntityBooleanFunction<L> = () => true;
   deleteEnabled: EntityBooleanFunction<T | L> = () => true;
@@ -189,12 +188,9 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   onEntityAction: EntityActionFunction<T> = () => false;
   handleRowClick: EntityRowClickFunction<L> = () => false;
   entityTitle: EntityStringFunction<T> = () => '';
-  entityAdded: EntityVoidFunction<T> = () => {
-  };
-  entityUpdated: EntityVoidFunction<T> = () => {
-  };
-  entitiesDeleted: EntityIdsVoidFunction<T> = () => {
-  };
+  entityAdded: EntityVoidFunction<T> = () => {};
+  entityUpdated: EntityVoidFunction<T> = () => {};
+  entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
 }
 
 export function checkBoxCell(value: boolean): string {
@@ -217,5 +213,5 @@ export function clientTypeCell(value: ClientType): string {
 }
 
 export function clientTypeWarning(value: string) {
-  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: rgb(255,202,17)" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
+  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
 }
