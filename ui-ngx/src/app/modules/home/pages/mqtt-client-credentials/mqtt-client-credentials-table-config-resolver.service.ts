@@ -84,7 +84,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
     this.config.addActionDescriptors.push(
       {
-        name: this.translate.instant('mqtt-client-credentials.add'),
+        name: this.translate.instant('mqtt-client-credentials.add-client-credentials'),
         icon: 'add',
         isEnabled: () => true,
         onAction: ($event) => this.config.table.addEntity($event)

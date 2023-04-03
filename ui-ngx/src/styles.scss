@@ -1098,18 +1098,14 @@ mat-label {
   }
 
   .card {
-    padding: 8px;
-    background: #f4f4f4;
     display: flex;
-    flex-direction: row;
-    justify-content: start;
-    //flex-grow: 1;
     border-radius: 10px;
+    background: #f4f4f4;
+    padding: 8px;
 
     .title {
       font-size: 13px;
       font-weight: 500;
-      //margin-top: auto;
       color: #6c6c6c;
       cursor: pointer;
     }
@@ -1141,10 +1137,9 @@ mat-label {
   }
 
   .card-table {
-    flex: 1 0 0;
-    box-sizing: border-box;
-    flex-direction: column;
     display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
     justify-content: space-evenly;
   }
 

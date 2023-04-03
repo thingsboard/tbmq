@@ -16,29 +16,24 @@
 
 -->
 <div class="card">
-  <div class="card-table" style="height: 100px">
+  <div fxFlex fxLayout="column" fxLayoutGap="8px">
     <tb-card-title-button type="VERSION" [disabled]="true"></tb-card-title-button>
-    <div fxFlex fxLayout="column" style="padding: 0 16px 0 16px">
-      <div fxLayout="column">
-        <div fxLayoutGap="8px">
+    <div fxLayout="column" fxLayoutGap="4px" style="padding:0 0 24px 16px">
+      <section>
+        <span [innerHTML]="'version.current-version' | translate"></span>
+        <a target="_blank" href=""> {{versionData.currentVersion}}</a>
+      </section>
+      <ng-container [ngSwitch]="versionData.updateAvailable">
+        <ng-template [ngSwitchCase]="true">
           <section>
-            <span>{{'version.current-version' | translate }}: </span>
-            <a target="_blank" href="">{{versionData.currentVersion}}</a>
-          </section>
-          <section *ngIf="!versionData.updateAvailable">
-            <span [innerHTML]="'version.no-updates-available' | translate"></span>
-          </section>
-          <section *ngIf="versionData.updateAvailable">
             <span  [innerHTML]="'version.updates-available' | translate"></span>
-            <a target="_blank" href="">{{versionData.latestVersion}}</a>
+            <a target="_blank" href=""> v. {{versionData.latestVersion}}</a>
           </section>
-          <section *ngIf="versionData.updateAvailable" fxFlex fxLayout="column">
-            <span [innerHTML]="'version.release-notes' | translate"></span>
-            <span>Minor updates and improvements.</span>
-          </section>
-        </div>
-      </div>
+        </ng-template>
+        <ng-template [ngSwitchCase]="false">
+          <span [innerHTML]="'version.no-updates-available' | translate"></span>
+        </ng-template>
+      </ng-container>
     </div>
-    <span fxFlex></span>
   </div>
 </div>

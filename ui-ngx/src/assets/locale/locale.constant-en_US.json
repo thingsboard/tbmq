@@ -306,8 +306,8 @@
     "type-device": "Device"
   },
   "mqtt-client-credentials": {
-    "add": "Add Client Credentials",
-    "add-client": "Add Credentials",
+    "add-client-credentials": "Add Client Credentials",
+    "add-credentials": "Add Credentials",
     "add-authorization-rules": "Add authorization rule",
     "add-authorization-rule-prompt": "Please add authorization rule",
     "authorization-rules-mapping": "Authorization rules mapping",
@@ -572,11 +572,9 @@
   "version": {
     "version": "Version",
     "update": "Update",
-    "current-version": "Your Thingsboard MQTT Broker version",
+    "current-version": "Your <b>Thingsboard MQTT Broker</b> version is",
     "no-updates-available": "You have latest version. No updates available.",
-    "updates-available": "A new version of <b>Thingsboard MQTT Broker</b> is available - ",
-    "release-notes": "<b>Release notes:</b>",
-    "last-version": "Current version: {{currentVersion}}"
+    "updates-available": "<b>A new version is available!</b>"
   },
   "config": {
     "port-mqtt": "Port MQTT",

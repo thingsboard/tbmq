@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
+:host::ng-deep {
+
+  .mat-expansion-panel-body {
+    padding: 0 22px 16px;
+  }
 
   .step-expansion-header {
     flex: 1 1 0%;

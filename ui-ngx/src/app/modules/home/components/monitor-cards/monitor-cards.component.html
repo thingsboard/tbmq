@@ -15,8 +15,8 @@
     limitations under the License.
 
 -->
-<div #row2 fxFlex fxLayout="row" class="column">
-  <div #sessions fxFlex class="card">
+<div fxFlex fxLayout="row" class="column">
+  <div fxFlex class="card">
     <div class="card-table">
       <div fxFlex fxLayout="row" fxLayoutAlign="start">
         <tb-card-title-button type="SESSION"></tb-card-title-button>
@@ -32,7 +32,7 @@
       <tb-monitor-sessions-card [data]="sessionsValue"></tb-monitor-sessions-card>
     </div>
   </div>
-  <div #clientCredentials fxFlex class="card">
+  <div fxFlex class="card">
     <div class="card-table">
       <div fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
         <tb-card-title-button type="CLIENT_CREDENTIALS"></tb-card-title-button>
@@ -48,8 +48,8 @@
                 type="button"
                 [disabled]="isLoading$ | async"
                 (click)="addClientCredentials()"
-                matTooltip="{{'mqtt-client-credentials.add' | translate}}">
-          {{'mqtt-client-credentials.add-client' | translate}}
+                matTooltip="{{'mqtt-client-credentials.add-client-credentials' | translate}}">
+          {{'mqtt-client-credentials.add-credentials' | translate}}
         </button>
       </div>
       <tb-monitor-client-credentials-card [data]="clientCredentialsValue"></tb-monitor-client-credentials-card>

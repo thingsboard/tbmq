@@ -17,10 +17,8 @@
   flex: 1;
 
   .tb-kafka-table {
-    max-width: 100%;
-    height: 180px;
-    max-height: 180px;
     overflow: auto;
+    height: 164px;
 
     .mat-tab {
       overflow: auto;
@@ -34,6 +32,10 @@
     .mat-paginator-container {
       flex-wrap: nowrap;
       background-color: #f4f4f4;
+    }
+
+    .mat-cell, .mat-header-cell {
+      padding: 0 16px;
     }
   }
 

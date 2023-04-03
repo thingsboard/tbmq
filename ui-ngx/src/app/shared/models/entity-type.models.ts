@@ -66,7 +66,7 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         list: 'mqtt-client-credentials.list-of-client-credentials',
         nameStartsWith: 'mqtt-client-credentials.client-credentials-name-starts-with',
         details: 'mqtt-client-credentials.client-credentials-details',
-        add: 'mqtt-client-credentials.add',
+        add: 'mqtt-client-credentials.add-client-credentials',
         noEntities: 'mqtt-client-credentials.no-client-credentials-text',
         search: 'mqtt-client-credentials.search',
         selectedEntities: 'mqtt-client-credentials.selected-client-credentials'
