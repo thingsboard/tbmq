@@ -70,7 +70,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
 
     this.config.headerActionDescriptors.push({
       name: this.translate.instant('retained-message.clear-empty-retained-message-nodes'),
-      icon: 'remove',
+      icon: 'delete_forever',
       isMdiIcon: false,
       isEnabled: () => true,
       onAction: ($event) => {

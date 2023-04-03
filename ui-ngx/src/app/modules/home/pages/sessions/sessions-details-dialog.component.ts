@@ -50,7 +50,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entity: DetailedClientSessionInfo;
   entityForm: FormGroup;
   connectionStateColor = connectionStateColor;
-  warning: boolean;
+  showAppClientShouldBePersistentWarning: boolean;
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -69,9 +69,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
-    this.warning = this.entity.clientType === ClientType.DEVICE &&
-      (!this.entity.cleanStart || this.entity.sessionExpiryInterval === 0 ||
-        this.entity.sessionExpiryInterval > 0);
+    this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.DEVICE && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }
 

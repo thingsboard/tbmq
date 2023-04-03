@@ -1187,3 +1187,11 @@ mat-label {
   position: sticky;
   z-index: 10;
 }
+
+.tb-warning {
+  background: rgb(255, 244, 229);
+  border-radius: 4px;
+  padding: 16px;
+  margin: 0;
+  color: rgb(102, 60, 0);
+}

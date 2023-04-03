@@ -435,8 +435,7 @@
     "qos-at-least-once": "At least once",
     "qos-exactly-once": "Exactly once",
     "should-be-persistent": "Application client should be persistent.",
-    "should-be-persistent-mqtt-v3": "Set <b>Clean session = false</b>.",
-    "should-be-persistent-mqtt-v5": "Set <b>Session expiry interval > 0</b> OR <b>Session expiry interval = 0 and Clean start = false."
+    "should-be-persistent-tip": "For MQTT v.3 cleanSession = false. For MQTT v.5 sessionExpiryInterval > 0 OR (sessionExpiryInterval = 0 AND cleanStart = false)."
   },
   "shared-subscription": {
     "add": "Add Application Shared Subscription",

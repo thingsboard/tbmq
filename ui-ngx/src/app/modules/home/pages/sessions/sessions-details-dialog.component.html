@@ -54,11 +54,12 @@
     </button>
   </div>
   <div mat-dialog-content>
-    <div *ngIf="warning" fxLayoutAlign="start center" fxLayoutGap="8px"
-         style="background: rgb(255, 244, 229); border-radius: 4px; padding: 16px; margin: 0; color: rgb(102, 60, 0)">
+    <section *ngIf="showAppClientShouldBePersistentWarning" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="8px">
       <div style="width: 1.5em; height: 1.5em; display: inline-block; fill: currentColor; flex-shrink: 0; transition: fill 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeInherit css-1cw4hi4" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="ReportProblemOutlinedIcon"><path d="M12 5.99L19.53 19H4.47L12 5.99M12 2L1 21h22L12 2zm1 14h-2v2h2v-2zm0-6h-2v4h2v-4z"></path></svg></div>
-      <span>{{'mqtt-client-session.should-be-persistent' | translate}}</span>
-    </div>
+      <span [matTooltip]="'mqtt-client-session.should-be-persistent-tip' | translate" matTooltipPosition="right">
+        {{'mqtt-client-session.should-be-persistent' | translate}}
+      </span>
+    </section>
     <fieldset class="fields-group">
       <legend class="group-title">{{ 'mqtt-client-session.connection-info' | translate }}</legend>
       <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
