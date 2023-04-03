@@ -25,3 +25,4 @@ export * from './retained-message.model';
 export * from './time/time.models';
 export * from './kafka.model';
 export * from './chart.model';
+export * from './home-page.model';

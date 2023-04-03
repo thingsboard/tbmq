@@ -610,7 +610,7 @@
     "no-kafka-topic-text": "No Kafka topics found"
   },
   "getting-started": {
-    "get-started": "Get started",
+    "getting-started": "Getting started",
     "see-docs": "See Docs",
     "view-credentials": "View my Credentials",
     "subscribe": {

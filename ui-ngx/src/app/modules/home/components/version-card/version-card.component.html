@@ -17,14 +17,10 @@
 -->
 <div class="card">
   <div class="card-table" style="height: 100px">
-    <div fxFlex fxLayout="row" fxLayoutAlign="start">
-      <button mat-button disabled matTooltip="{{'version.version' | translate}}">
-        {{'version.version' | translate}}
-      </button>
-    </div>
+    <tb-card-title-button type="VERSION" [disabled]="true"></tb-card-title-button>
     <div fxFlex fxLayout="column" style="padding: 0 16px 0 16px">
       <div fxLayout="column">
-        <div  fxLayoutGap="8px">
+        <div fxLayoutGap="8px">
           <section>
             <span>{{'version.current-version' | translate }}: </span>
             <a target="_blank" href="">{{versionData.currentVersion}}</a>

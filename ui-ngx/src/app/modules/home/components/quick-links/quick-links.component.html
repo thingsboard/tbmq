@@ -17,11 +17,7 @@
 -->
 <div class="card">
   <div class="card-table">
-    <section>
-      <button disabled mat-button matTooltip="{{'home.quick-links' | translate}}">
-        {{'home.quick-links' | translate}}
-      </button>
-    </section>
+    <tb-card-title-button type="QUICK_LINKS" [disabled]="true"></tb-card-title-button>
     <section class="links">
       <div class="link" *ngFor="let section of quickLinks$ | async">
         <a mat-button (click)="navigate(section.path)">

@@ -15,24 +15,6 @@
     limitations under the License.
 
 -->
-<div #row4 class="home-column">
-  <mat-tab-group class="tabs-group-card" animationDuration="200ms">
-    <div class="dropdown"><p>Whatever you want</p></div>
-
-    <mat-tab [label]="label('topics')">
-      <div #kafka1 fxFlex class="card">
-        <div fxFlex>
-          <tb-kafka-topics-table></tb-kafka-topics-table>
-        </div>
-      </div>
-    </mat-tab>
-
-    <mat-tab [label]="label('consumerGroups')">
-      <div #kafka2 fxFlex class="card">
-        <div fxFlex>
-          <tb-kafka-consumers-table></tb-kafka-consumers-table>
-        </div>
-      </div>
-    </mat-tab>
-  </mat-tab-group>
-</div>
+<button mat-stroked-button [disabled]="disabled" (click)="navigate()" matTooltip="{{title?.tooltip | translate}}">
+  {{ title?.label | translate}} {{ disabled ? '' : '&#8599;' }}
+</button>

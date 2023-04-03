@@ -19,13 +19,7 @@
   <div #sessions fxFlex class="card">
     <div class="card-table">
       <div fxFlex fxLayout="row" fxLayoutAlign="start">
-        <button mat-button
-                type="button"
-                [disabled]="isLoading$ | async"
-                (click)="navigateToPage('sessions')"
-                matTooltip="{{'mqtt-client-session.sessions' | translate}}">
-          {{'mqtt-client-session.sessions' | translate}} &#8599;
-        </button>
+        <tb-card-title-button type="SESSION"></tb-card-title-button>
         <span fxFlex></span>
         <button mat-stroked-button color="primary"
                 type="button"
@@ -41,13 +35,7 @@
   <div #clientCredentials fxFlex class="card">
     <div class="card-table">
       <div fxFlex fxLayout="row" fxLayoutAlign="start" fxLayoutGap="4px">
-        <button mat-button
-                type="button"
-                [disabled]="isLoading$ | async"
-                (click)="navigateToPage('client-credentials')"
-                matTooltip="{{'mqtt-client-credentials.type-client-credentials' | translate}}">
-          {{'mqtt-client-credentials.type-client-credentials' | translate}} &#8599;
-        </button>
+        <tb-card-title-button type="CLIENT_CREDENTIALS"></tb-card-title-button>
         <span fxFlex></span>
         <button mat-stroked-button color="primary"
                 type="button"

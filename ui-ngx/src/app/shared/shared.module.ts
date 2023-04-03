@@ -85,6 +85,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { BooleanPipe } from '@shared/pipe/boolean.pipe';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 
 @NgModule({
   providers: [
@@ -116,6 +117,7 @@ import { markedOptionsFactory } from '@shared/components/markdown.factory';
     HighlightPipe,
     BooleanPipe,
     CopyButtonComponent,
+    CardTitleButtonComponent,
     TogglePasswordComponent,
     TimewindowComponent,
     TimewindowPanelComponent,
@@ -235,6 +237,7 @@ import { markedOptionsFactory } from '@shared/components/markdown.factory';
     HighlightPipe,
     TranslateModule,
     CopyButtonComponent,
+    CardTitleButtonComponent,
     TogglePasswordComponent,
     TimewindowComponent,
     TimewindowPanelComponent,

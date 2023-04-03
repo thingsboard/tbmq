@@ -18,12 +18,7 @@
 <div #config fxFlex class="card">
   <div class="card-table">
     <div fxFlex fxLayout="row" fxLayoutAlign="start">
-      <button mat-button disabled
-              type="button"
-              (click)="viewDocumentation('metrics')"
-              matTooltip="{{'home.config' | translate}}">
-        {{'home.config' | translate}}
-      </button>
+      <tb-card-title-button type="CONFIG" [disabled]="true"></tb-card-title-button>
       <span fxFlex></span>
       <button mat-stroked-button color="primary"
               type="button"
@@ -50,7 +45,7 @@
             <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
                           || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
                           && !item.value">
-                            <mat-icon class="config-material-icon-warning" color="accent" matTooltip="{{'config.warning' | translate}} {{item.key}}.">
+              <mat-icon class="config-material-icon-warning" color="accent" matTooltip="{{'config.warning' | translate}} {{item.key}}.">
                 warning
               </mat-icon>
             </span>

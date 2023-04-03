@@ -16,16 +16,11 @@
 
 -->
 <div class="card">
-  <div #row1 class="home-column flex1">
+  <div #row1 class="home-column">
     <div class="card">
       <div fxFlex fxLayout="row">
         <div class="card-table">
-          <div fxFlex fxLayout="row" fxLayoutAlign="start">
-            <button disabled mat-button matTooltip="{{'getting-started.get-started' | translate}}">
-              {{'getting-started.get-started' | translate}}
-            </button>
-            <span fxFlex></span>
-          </div>
+          <tb-card-title-button type="GETTING_STARTED" [disabled]="true"></tb-card-title-button>
           <div fxFlex fxLayout="row" fxLayoutAlign="start">
             <mat-accordion class="example-headers-align">
               <ng-container *ngFor="let step of steps | async; let index = index;">
