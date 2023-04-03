@@ -15,6 +15,8 @@
     limitations under the License.
 
 -->
-<button mat-stroked-button [disabled]="disabled" (click)="navigate()" matTooltip="{{title?.tooltip | translate}}">
-  {{ title?.label | translate}} {{ disabled ? '' : '&#8599;' }}
+<button mat-button (click)="navigate()" [disabled]="disabled"
+        matTooltip="{{title?.tooltip | translate}}">
+  {{ title?.label | translate}}
+  <mat-icon class="material-icons" *ngIf="!disabled">navigate_next</mat-icon>
 </button>

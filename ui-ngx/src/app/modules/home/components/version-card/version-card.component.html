@@ -21,13 +21,13 @@
     <div fxLayout="column" fxLayoutGap="4px" style="padding:0 0 24px 16px">
       <section>
         <span [innerHTML]="'version.current-version' | translate"></span>
-        <a target="_blank" href=""> {{versionData.currentVersion}}</a>
+        <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> {{versionData.currentVersion}}</a>
       </section>
       <ng-container [ngSwitch]="versionData.updateAvailable">
         <ng-template [ngSwitchCase]="true">
           <section>
             <span  [innerHTML]="'version.updates-available' | translate"></span>
-            <a target="_blank" href=""> v. {{versionData.latestVersion}}</a>
+            <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> v. {{versionData.latestVersion}}</a>
           </section>
         </ng-template>
         <ng-template [ngSwitchCase]="false">

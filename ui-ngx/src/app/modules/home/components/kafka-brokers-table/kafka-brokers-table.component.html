@@ -15,23 +15,21 @@
     limitations under the License.
 
 -->
-<div class="card">
-  <div fxFlex fxLayout="column" class="card">
-    <tb-card-title-button type="KAFKA_BROKERS" [disabled]="true"></tb-card-title-button>
-    <div class="tb-kafka-table">
-      <table mat-table [dataSource]="dataSource" matSort>
-        <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-          <mat-header-cell *matHeaderCellDef mat-sort-header>
-            {{ column.title | translate }}
-          </mat-header-cell>
-          <mat-cell *matCellDef="let entity; let row = index"
-                    [ngStyle]="cellStyle(entity, column, row)">
-            <span [innerHTML]="cellContent(entity, column, row)"></span>
-          </mat-cell>
-        </ng-container>
-        <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-      </table>
-    </div>
+<div fxFlex fxLayout="column" class="card" fxLayoutGap="16px">
+  <tb-card-title-button type="KAFKA_BROKERS" [disabled]="true"></tb-card-title-button>
+  <div class="tb-kafka-table">
+    <table mat-table [dataSource]="dataSource" matSort>
+      <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>
+          {{ column.title | translate }}
+        </mat-header-cell>
+        <mat-cell *matCellDef="let entity; let row = index"
+                  [ngStyle]="cellStyle(entity, column, row)">
+          <span [innerHTML]="cellContent(entity, column, row)"></span>
+        </mat-cell>
+      </ng-container>
+      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </table>
   </div>
 </div>
