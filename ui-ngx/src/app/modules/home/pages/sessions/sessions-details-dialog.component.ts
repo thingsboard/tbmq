@@ -69,7 +69,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
-    this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.DEVICE && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
+    this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }
 
