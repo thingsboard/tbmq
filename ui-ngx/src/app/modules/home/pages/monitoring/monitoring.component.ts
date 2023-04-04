@@ -109,7 +109,7 @@ export class MonitoringComponent extends PageComponent {
           }]
         }
       };
-      const params = {...monitoringChartJsParams(label), ...datasets};
+      const params = {...monitoringChartJsParams(), ...datasets};
       this.charts[chart] = new Chart(ctx, params);
       ctx.addEventListener('dblclick', (evt) => this.charts[chart].resetZoom());
       index++;

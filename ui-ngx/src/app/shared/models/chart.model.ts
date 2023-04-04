@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import { FixedWindow } from '@shared/models/time/time.models';
-
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -115,7 +113,7 @@ export function homeChartJsParams() {
   };
 }
 
-export function monitoringChartJsParams(label: string) {
+export function monitoringChartJsParams() {
   return {
     type: 'line',
     options: {
@@ -151,7 +149,9 @@ export function monitoringChartJsParams(label: string) {
             drag: {
               enabled: true
             },
-            overScaleMode: 'x',
+            wheel: {
+              enabled: true,
+            },
             mode: 'x'
           }
         },
