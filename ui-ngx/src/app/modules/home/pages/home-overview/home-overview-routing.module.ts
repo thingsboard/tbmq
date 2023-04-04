@@ -17,13 +17,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { StatsComponent } from '@home/pages/stats/stats.component';
+import { HomeOverviewComponent } from '@home/pages/home-overview/home-overview.component';
 import { AdminsTableConfigResolver } from '@home/pages/admins/admins-table-config-resolver.service';
 
 const routes: Routes = [
   {
     path: 'home',
-    component: StatsComponent,
+    component: HomeOverviewComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'home.home',
@@ -42,5 +42,5 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forChild(routes)], exports: [RouterModule]
 })
-export class StatsRoutingModule {
+export class HomeOverviewRoutingModule {
 }

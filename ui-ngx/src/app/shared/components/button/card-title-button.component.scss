@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 :host {
-  .mat-button{
+  .mat-button {
     border-radius: 4px;
     border:1px solid rgba(192, 192, 192, 0.6);
+
+    &:not(.mat-icon-button) {
+      mat-icon {
+        margin-right: 0;
+      }
+    }
   }
 
   .mat-button-disabled {

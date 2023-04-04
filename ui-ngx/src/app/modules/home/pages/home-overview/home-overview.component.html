@@ -15,13 +15,23 @@
     limitations under the License.
 
 -->
-<div class="cards">
-  <div fxFlex class="key-value" *ngFor="let item of config">
-    <div class="key">
-      {{ item.label | translate }}
+<div class="tb-home-overview">
+  <div fxLayout="column">
+    <div class="home-column">
+      <tb-home-charts></tb-home-charts>
+      <div class="home-column">
+        <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
+        <div class="column">
+          <tb-card-config></tb-card-config>
+          <tb-kafka-brokers-table></tb-kafka-brokers-table>
+        </div>
+      </div>
+      <tb-kafka-tables-tab-group></tb-kafka-tables-tab-group>
     </div>
-    <div class="value">
-      {{ data ? data[item.key] : 0 }}
-    </div>
+  </div>
+  <div fxLayout="column" fxLayoutGap="8px">
+    <tb-getting-started></tb-getting-started>
+    <tb-quick-links></tb-quick-links>
+    <tb-version-card></tb-version-card>
   </div>
 </div>

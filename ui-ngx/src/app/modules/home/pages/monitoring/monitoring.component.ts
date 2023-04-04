@@ -47,7 +47,6 @@ export class MonitoringComponent extends PageComponent {
   @Output() timewindowObject = new EventEmitter<Timewindow>();
 
   charts = {};
-  chartsLatestValues = {};
   mockDataTsCalculationIndex = 1;
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
@@ -63,7 +62,6 @@ export class MonitoringComponent extends PageComponent {
               private statsService: StatsService,
               private cd: ChangeDetectorRef) {
     super(store);
-    this.setTitles();
   }
 
   ngOnInit() {
@@ -119,12 +117,6 @@ export class MonitoringComponent extends PageComponent {
     this.startPolling();
   }
 
-  private setTitles() {
-    for (const key of Object.keys(this.charts)) {
-      this.chartsLatestValues[key] = key;
-    }
-  }
-
   private getTimewindow() {
     if (this.timewindow.selectedTab === TimewindowType.HISTORY) {
       this.stopPolling();
@@ -154,19 +146,11 @@ export class MonitoringComponent extends PageComponent {
       takeUntil(this.stopPolling$)
     ).subscribe(data => {
       for (const chart in StatsChartType) {
-        this.setLatestValues(data);
         this.pushShiftLatestValue(data, chart as StatsChartType);
         this.updateCharts();
         this.mockDataTsCalculationIndex++;
       }
     });
-  }
-
-  private setLatestValues(data) {
-    for (const key of Object.keys(this.charts)) {
-      this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
-    }
-    this.cd.detectChanges();
   }
 
   private pushShiftLatestValue(data: Array<any>, chartType: StatsChartType) {

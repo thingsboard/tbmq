@@ -27,11 +27,11 @@ import { KeyValue } from '@angular/common';
 import Chart from 'chart.js/auto';
 
 @Component({
-  selector: 'tb-monitor-charts',
-  templateUrl: './monitor-charts.component.html',
-  styleUrls: ['./monitor-charts.component.scss']
+  selector: 'tb-home-charts',
+  templateUrl: './home-charts.component.html',
+  styleUrls: ['./home-charts.component.scss']
 })
-export class MonitorChartsComponent implements OnInit, OnDestroy, AfterViewInit {
+export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @Output() timewindowObject = new EventEmitter<Timewindow>();
 

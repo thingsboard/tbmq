@@ -94,3 +94,31 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
     ]
   ]
 );
+
+export const SessionsHomeCardConfig = [{
+  key: 'connectedCount',
+  label: 'mqtt-client-session.connected',
+  value: 0
+}, {
+  key: 'disconnectedCount',
+  label: 'mqtt-client-session.disconnected',
+  value: 0
+}, {
+  key: 'totalCount',
+  label: 'home.total',
+  value: 0
+}];
+
+export const CredentialsHomeCardConfig = [{
+  key: 'deviceCredentialsCount',
+  label: 'mqtt-client-credentials.type-devices',
+  value: 0
+}, {
+  key: 'applicationCredentialsCount',
+  label: 'mqtt-client-credentials.type-applications',
+  value: 0
+}, {
+  key: 'totalCount',
+  label: 'home.total',
+  value: 0
+}];

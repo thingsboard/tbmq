@@ -130,8 +130,7 @@ export function monitoringChartJsParams(label: string) {
       scales: {
         y: {
           title: {
-            display: false,
-            text: label
+            display: false
           }
         },
         x: {

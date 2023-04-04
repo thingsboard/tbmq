@@ -176,6 +176,18 @@ export class MenuService {
         isMdiIcon: true
       },
       {
+        name: 'monitoring.monitoring',
+        path: '/monitoring',
+        icon: 'mdi:monitor-dashboard',
+        isMdiIcon: true
+      },
+      {
+        name: 'admin.outgoing-mail',
+        path: '/settings/outgoing-mail',
+        icon: 'mdi:email',
+        isMdiIcon: true
+      },
+      {
         name: 'home.rest-api',
         path: 'rest-api',
         icon: 'mdi:api',

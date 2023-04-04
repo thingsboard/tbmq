@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { forkJoin, interval, Observable, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { retry, switchMap, takeUntil } from 'rxjs/operators';
 import { StatsService } from '@core/http/stats.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -29,22 +29,25 @@ import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credenti
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
+import { CredentialsHomeCardConfig, SessionsHomeCardConfig } from '@shared/models/home-page.model';
 
 @Component({
-  selector: 'tb-monitor-cards',
-  templateUrl: './monitor-cards.component.html',
-  styleUrls: ['./monitor-cards.component.scss']
+  selector: 'tb-home-cards-sessions-credentials',
+  templateUrl: './home-cards-sessions-credentials.component.html'
 })
-export class MonitorCardsComponent implements OnInit, AfterViewInit, OnDestroy {
+export class HomeCardsSessionsCredentialsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Input()
   isLoading$: Observable<boolean>;
 
-  pollData$: Observable<any>;
+  private pollData$: Observable<any>;
   private stopPolling = new Subject();
 
-  sessionsValue: ClientSessionStatsInfo;
-  clientCredentialsValue: ClientCredentialsInfo;
+  clientSessionStatsInfo: ClientSessionStatsInfo;
+  clientCredentialsInfo: ClientCredentialsInfo;
+
+  sessionConfig = SessionsHomeCardConfig;
+  credentialsConfig = CredentialsHomeCardConfig;
 
   constructor(private statsService: StatsService,
               private dialog: MatDialog,
@@ -64,16 +67,29 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
+  ngAfterViewInit(): void {
+    this.startPolling();
+  }
+
   ngOnDestroy(): void {
     this.stopPolling.next();
   }
 
-  viewDocumentation(page: string) {
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
+  startPolling() {
+    this.pollData$.subscribe(data => {
+      this.clientSessionStatsInfo = data[0];
+      this.clientCredentialsInfo = data[1];
+      this.setConfig();
+    });
   }
 
-  navigateToPage(page: string) {
-    this.router.navigateByUrl(`/${page}`);
+  private setConfig() {
+    this.sessionConfig.map(el => {
+      el.value = this.clientSessionStatsInfo ? this.clientSessionStatsInfo[el.key] : 0;
+    });
+    this.sessionConfig.map(el => {
+      el.value = this.clientSessionStatsInfo ? this.clientSessionStatsInfo[el.key] : 0;
+    });
   }
 
   addClientCredentials() {
@@ -99,14 +115,11 @@ export class MonitorCardsComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  ngAfterViewInit(): void {
-    this.startPolling();
+  viewDocumentation(page: string) {
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  startPolling() {
-    this.pollData$.subscribe(data => {
-      this.sessionsValue = data[0];
-      this.clientCredentialsValue = data[1];
-    });
+  navigateToPage(page: string) {
+    this.router.navigateByUrl(`/${page}`);
   }
 }
