@@ -38,7 +38,7 @@ import Zoom from 'chartjs-plugin-zoom';
 Chart.register([Zoom]);
 
 @Component({
-  selector: 'tb-mqtt-admin-credentials',
+  selector: 'tb-monitoring',
   templateUrl: './monitoring.component.html',
   styleUrls: ['./monitoring.component.scss']
 })

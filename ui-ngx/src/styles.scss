@@ -1093,9 +1093,10 @@ mat-label {
 .tb-home-overview {
   display: flex;
   flex-direction: row;
+  background-color: #dcdcdc;
+  justify-content: space-evenly;
   padding: 8px;
   gap: 8px;
-  background-color: #dcdcdc;
 
   button {
     height: 40px;
@@ -1231,4 +1232,8 @@ mat-label {
   padding: 16px;
   margin: 0;
   color: rgb(102, 60, 0);
+}
+
+.tb-home-border-radius {
+  border-radius: 10px;
 }
