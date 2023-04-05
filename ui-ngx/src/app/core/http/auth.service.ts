@@ -39,6 +39,7 @@ import { isMobileApp } from '@core/utils';
 import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
 import { getCurrentAuthState, getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { ConfigService } from '@core/http/config.service';
+import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -189,10 +190,21 @@ export class AuthService {
   public gotoDefaultPlace(isAuthenticated: boolean) {
     if (!isMobileApp()) {
       const authState = getCurrentAuthState(this.store);
-      const url = this.defaultUrl(isAuthenticated, authState);
-      this.zone.run(() => {
-        this.router.navigateByUrl(url);
-      });
+      if (authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1) {
+        this.dialog.open(ChangePasswordDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          backdropClass: ['grey-background'],
+          data: {
+            changeDefaultPassword: true
+          }
+        });
+      } else {
+        const url = this.defaultUrl(isAuthenticated, authState);
+        this.zone.run(() => {
+          this.router.navigateByUrl(url);
+        });
+      }
     }
   }
 
@@ -205,7 +217,7 @@ export class AuthService {
           this.redirectUrl = null;
           result = this.router.parseUrl(redirectUrl);
         } else {
-          result = this.router.parseUrl('sessions');
+          result = this.router.parseUrl('home');
         }
       }
     } else {

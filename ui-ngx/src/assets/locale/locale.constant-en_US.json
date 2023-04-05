@@ -221,7 +221,8 @@
   "profile": {
     "profile": "Profile",
     "last-login-time": "Last Login",
-    "change-password": "Change Password",
+    "change-password": "Change password",
+    "change-default-password": "Change default password",
     "current-password": "Current password"
   },
   "user": {

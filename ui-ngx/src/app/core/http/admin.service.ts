@@ -21,6 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { User } from '@shared/models/user.model';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
+import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -36,7 +37,7 @@ export class AdminService {
 
   public saveAdmin(user: User, config?: RequestConfig): Observable<User> {
     if (!user.password) {
-      user.password = 'sysadmin';
+      user.password = DEFAULT_PASSWORD;
     }
     return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
   }

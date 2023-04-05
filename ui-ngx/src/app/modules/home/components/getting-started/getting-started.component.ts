@@ -106,10 +106,10 @@ export class GettingStartedComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.store.pipe(
       select(selectUserDetails),
-      map((user) => user.additionalInfo?.config)).pipe(
+      map((user) => user?.additionalInfo?.config)).pipe(
       map((data) => {
-        const portMqtt = data[ConfigParams.PORT_MQTT];
-        const basicAuth = data[ConfigParams.BASIC_AUTH];
+        const portMqtt = data ? data[ConfigParams.PORT_MQTT] : null;
+        const basicAuth = data ? data[ConfigParams.BASIC_AUTH] : null;
         this.steps = this.instructionsService.setSteps(basicAuth);
         // @ts-ignore
         window.mqttPort = portMqtt;
