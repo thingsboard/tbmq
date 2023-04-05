@@ -26,14 +26,14 @@ metadata:
 
 managedNodeGroups:
   - name: tb-mqtt-broker
-    instanceType: c6g.large
+    instanceType: c6g.metal
     desiredCapacity: 1
     maxSize: 1
     minSize: 0
     labels: { role: tb-mqtt-broker }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-    ami: ami-0efb98747f2e5aa49
+    ami: ami-06f8c9b973bbfca1d
     amiFamily: AmazonLinux2
     overrideBootstrapCommand: |
       #!/bin/bash
@@ -66,13 +66,29 @@ managedNodeGroups:
     preBootstrapCommands:
       - "sysctl -w fs.nr_open=4194304"
   - name: tb-perf-test
-    instanceType: c6g.large
-    desiredCapacity: 1
+    instanceType: c6g.metal
+    desiredCapacity: 0
     maxSize: 1
     minSize: 0
     labels: { role: tb-perf-test }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
+  - name: tb-kafka-ui
+    instanceType: m5.large
+    desiredCapacity: 1
+    maxSize: 1
+    minSize: 0
+    labels: { role: tb-kafka-ui }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
+#  - name: tb-test
+#    instanceType: c6g.large
+#    desiredCapacity: 1
+#    maxSize: 1
+#    minSize: 0
+#    labels: { role: tb-test }
+#    ssh:
+#      publicKeyPath: ~/.ssh/id_rsa_tests.pub
 
 # In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 # eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker

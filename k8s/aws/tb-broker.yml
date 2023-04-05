@@ -80,15 +80,15 @@ spec:
             - name: LISTENER_SSL_BIND_PORT
               value: "8883"
             - name: STATS_ENABLED
-              value: "false"
+              value: "true"
             - name: STATS_PRINT_INTERVAL_MS
-              value: "60000"
+              value: "10000"
             - name: METRICS_ENDPOINTS_EXPOSE
               value: "info"
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
             - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "2"
+              value: "4"
             - name: TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT
               value: "90000"
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_TYPE
@@ -96,7 +96,7 @@ spec:
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
               value: "0"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:10;replication.factor:1;max.message.bytes:8388608"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:4;replication.factor:1;max.message.bytes:8388608"
             - name: TB_KAFKA_DEFAULT_PRODUCER_RETRIES
               value: "5"
             - name: TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE
@@ -180,13 +180,15 @@ spec:
             - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
               value: "snappy"
             - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:16384;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728"
+              value: "max.poll.records:32768;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728;fetch.min.bytes:16384"
             - name: MQTT_KEEP_ALIVE_MONITORING_DELAY_MS
               value: "60000"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
               value: "max.poll.records:32768;fetch.max.bytes:134217728"
             - name: ACTORS_SYSTEM_THROUGHPUT
               value: "20"
+            - name: TB_PUBLISH_MSG_PARALLEL_PROCESSING
+              value: "false"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
