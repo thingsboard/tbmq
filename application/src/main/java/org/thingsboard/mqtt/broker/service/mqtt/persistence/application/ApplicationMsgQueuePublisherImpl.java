@@ -38,7 +38,6 @@ import javax.annotation.PreDestroy;
 @Service
 @RequiredArgsConstructor
 public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePublisher {
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
     private final ClientLogger clientLogger;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
@@ -47,6 +46,8 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @Value("${queue.application-persisted-msg.publisher-thread-max-delay}")
     private long maxDelay;
+
+    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
     @PostConstruct
     public void init() {

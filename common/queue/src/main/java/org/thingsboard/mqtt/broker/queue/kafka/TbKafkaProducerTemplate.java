@@ -30,11 +30,11 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueueProducer<T> {
@@ -103,9 +103,12 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
     }
 
     private List<Header> extractHeaders(T msg) {
-        return msg.getHeaders().getData().entrySet().stream()
-                .map(e -> new RecordHeader(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
+        var entries = msg.getHeaders().getData().entrySet();
+        List<Header> headers = new ArrayList<>(entries.size());
+        for (var entry : entries) {
+            headers.add(new RecordHeader(entry.getKey(), entry.getValue()));
+        }
+        return headers;
     }
 
     @Override

@@ -21,11 +21,15 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface RetransmissionService {
 
-    void sendPublishWithRetransmission(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+    void sendPublishWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+
+    void sendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 
     void onPubAckReceived(ClientSessionCtx ctx, int messageId);
 
     void onPubRecReceived(ClientSessionCtx ctx, MqttMessage pubRelMsg);
+
+    void onPubRecReceivedWithoutFlush(ClientSessionCtx ctx, MqttMessage pubRelMsg);
 
     void onPubCompReceived(ClientSessionCtx ctx, int messageId);
 

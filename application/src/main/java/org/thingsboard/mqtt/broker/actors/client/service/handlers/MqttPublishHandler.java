@@ -158,13 +158,19 @@ public class MqttPublishHandler {
     public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
         MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
         List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs().finish(msgId);
-        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code)));
+        for (var finishedMsgId : finishedMsgIds) {
+            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code));
+        }
+        ctx.getChannel().flush();
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
         MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
         List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs().finishAll(msgId);
-        finishedMsgIds.forEach(finishedMsgId -> ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code)));
+        for (var finishedMsgId : finishedMsgIds) {
+            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
+        }
+        ctx.getChannel().flush();
 
         AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
         if (isNotPersisted(awaitingPacketInfo)) {

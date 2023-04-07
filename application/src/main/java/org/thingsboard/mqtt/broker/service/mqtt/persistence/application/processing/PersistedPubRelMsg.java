@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 @Builder(toBuilder = true)
 @ToString
 public class PersistedPubRelMsg implements PersistedMsg {
+
     private final int packetId;
     private final long offset;
 

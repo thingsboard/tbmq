@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class ApplicationMsgAcknowledgeStrategyFactory {
+
     private final ApplicationAckStrategyConfiguration ackStrategyConfiguration;
 
     public ApplicationAckStrategy newInstance(String clientId) {
@@ -44,6 +45,7 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
     @RequiredArgsConstructor
     private static class SkipStrategy implements ApplicationAckStrategy {
+
         private final String clientId;
 
         @Override
@@ -51,7 +53,9 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
             Map<Integer, PersistedPublishMsg> publishPendingMsgMap = result.getPublishPendingMap();
             Map<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = result.getPubRelPendingMap();
             if (!publishPendingMsgMap.isEmpty() || !pubRelPendingMsgMap.isEmpty()) {
-                log.debug("[{}] Skip reprocess for {} PUBLISH and {} PUBREL timeout messages.", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Skip reprocess for {} PUBLISH and {} PUBREL timeout messages.", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap);
+                }
             }
             if (log.isTraceEnabled()) {
                 publishPendingMsgMap.forEach((packetId, msg) ->
@@ -69,6 +73,7 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
     @RequiredArgsConstructor
     private static class RetryStrategy implements ApplicationAckStrategy {
+
         private final String clientId;
         private final int maxRetries;
 
@@ -85,7 +90,9 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
                 log.debug("[{}] Skip reprocess due to max retries.", clientId);
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
-            log.debug("[{}] Going to reprocess {} PUBLISH and {} PUBREL messages", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap.size());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Going to reprocess {} PUBLISH and {} PUBREL messages", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap.size());
+            }
             if (log.isTraceEnabled()) {
                 publishPendingMsgMap.forEach((packetId, msg) ->
                         log.trace("[{}] Going to reprocess PUBLISH message: topic - {}, packetId - {}.",

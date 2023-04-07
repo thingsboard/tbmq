@@ -22,10 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,20 +35,23 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
 
     @Override
     public void init(List<PersistedMsg> orderedMessages) {
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Init pack {}", clientId, orderedMessages);
+        }
         this.orderedMessages = new ArrayList<>(orderedMessages);
     }
 
+    // note, changed from collecting to map by packet id
     @Override
-    public ConcurrentMap<Integer, PersistedMsg> getPendingMap() {
-        return orderedMessages.stream().collect(Collectors.toConcurrentMap(PersistedMsg::getPacketId, Function.identity()));
+    public List<PersistedMsg> getOrderedMessages() {
+        return orderedMessages;
     }
 
     @Override
     public void process(Consumer<PersistedMsg> msgConsumer) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] processing [{}] persisted messages.", clientId, orderedMessages.size());
+        for (PersistedMsg msg : orderedMessages) {
+            msgConsumer.accept(msg);
         }
-        orderedMessages.forEach(msgConsumer::accept);
     }
 
     @Override
