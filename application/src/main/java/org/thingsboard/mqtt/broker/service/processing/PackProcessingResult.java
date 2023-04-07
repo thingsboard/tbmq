@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class PackProcessingResult {
+
     @Getter
     private final Map<UUID, PublishMsgWithId> pendingMap;
     @Getter

@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 @RequiredArgsConstructor
 public class AckStrategyFactory {
+
     private final AckStrategyConfiguration ackStrategyConfiguration;
 
     public AckStrategy newInstance(String consumerId) {
@@ -44,12 +45,15 @@ public class AckStrategyFactory {
 
     @RequiredArgsConstructor
     private static class SkipStrategy implements AckStrategy {
+
         private final String consumerId;
 
         @Override
         public ProcessingDecision analyze(PackProcessingResult result) {
             if (!result.getPendingMap().isEmpty() || !result.getFailedMap().isEmpty()) {
-                log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", consumerId, result.getFailedMap().size(), result.getPendingMap().size());
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", consumerId, result.getFailedMap().size(), result.getPendingMap().size());
+                }
             }
             if (log.isTraceEnabled()) {
                 result.getFailedMap().forEach((packetId, msg) ->
@@ -67,6 +71,7 @@ public class AckStrategyFactory {
 
     @RequiredArgsConstructor
     private static class RetryStrategy implements AckStrategy {
+
         private final String consumerId;
         private final int maxRetries;
 
@@ -80,13 +85,17 @@ public class AckStrategyFactory {
                 return new ProcessingDecision(true, Collections.emptyMap());
             }
             if (maxRetries != 0 && ++retryCount > maxRetries) {
-                log.debug("[{}] Skip reprocess due to max retries.", consumerId);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Skip reprocess due to max retries.", consumerId);
+                }
                 return new ProcessingDecision(true, Collections.emptyMap());
             }
             ConcurrentMap<UUID, PublishMsgWithId> toReprocess = new ConcurrentHashMap<>();
             toReprocess.putAll(pendingMap);
             toReprocess.putAll(failedMap);
-            log.debug("[{}] Going to reprocess {} messages", consumerId, toReprocess);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Going to reprocess {} messages", consumerId, toReprocess);
+            }
             if (log.isTraceEnabled()) {
                 failedMap.forEach((packetId, msg) ->
                         log.trace("[{}] Going to reprocess failed message: id - {}, topic - {}.",

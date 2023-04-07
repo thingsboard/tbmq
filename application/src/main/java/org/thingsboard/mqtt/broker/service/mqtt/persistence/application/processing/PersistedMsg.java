@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 
 public interface PersistedMsg {
+
     long getPacketOffset();
 
     int getPacketId();

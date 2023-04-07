@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -38,6 +39,9 @@ public class ApplicationPubRelMsgCtx {
     }
 
     public List<PersistedPubRelMsg> toSortedPubRelMessagesToDeliver() {
+        if (CollectionUtils.isEmpty(pubRelMessagesToDeliver)) {
+            return null;
+        }
         return pubRelMessagesToDeliver.stream()
                 .sorted(Comparator.comparingLong(PersistedMsg::getPacketOffset))
                 .collect(Collectors.toList());

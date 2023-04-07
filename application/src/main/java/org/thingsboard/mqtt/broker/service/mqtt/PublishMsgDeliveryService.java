@@ -22,7 +22,11 @@ public interface PublishMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
 
-    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg);
+    void sendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
+
+    void sendPublishRetainedMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg);
 
     void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId);
+
+    void sendPubRelMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, int packetId);
 }

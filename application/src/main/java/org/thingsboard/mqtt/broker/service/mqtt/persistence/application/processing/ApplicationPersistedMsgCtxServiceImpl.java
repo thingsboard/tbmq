@@ -35,11 +35,14 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersistedMsgCtxService {
+
     private final ApplicationSessionCtxService sessionCtxService;
 
     @Override
     public ApplicationPersistedMsgCtx loadPersistedMsgCtx(String clientId) {
-        log.trace("[{}] Loading persisted messages context.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Loading persisted messages context.", clientId);
+        }
         ApplicationSessionCtx applicationSessionCtx = findApplicationSessionCtx(clientId);
         if (applicationSessionCtx == null) {
             return new ApplicationPersistedMsgCtx(Collections.emptyMap(), Collections.emptyMap());
@@ -60,9 +63,13 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
 
     @Override
     public void saveContext(String clientId, ApplicationPackProcessingCtx processingContext) {
-        log.trace("[{}] Executing save application session context.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Executing save application session context.", clientId);
+        }
         if (processingContext == null) {
-            log.debug("[{}] No pack processing context found.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No pack processing context found.", clientId);
+            }
             return;
         }
         Stream<PersistedPublishMsg> publishMsgStream = toPublishMsgStream(processingContext);
@@ -72,7 +79,9 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
         Collection<ApplicationMsgInfo> pubRelMsgInfos = toPubRelMsgInfos(pubRelMsgStream);
 
         ApplicationSessionCtx sessionCtx = buildApplicationSessionCtx(clientId, publishMsgInfos, pubRelMsgInfos);
-        log.trace("[{}] Saving application session context - {}.", clientId, sessionCtx);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Saving application session context - {}.", clientId, sessionCtx);
+        }
         sessionCtxService.saveApplicationSessionCtx(sessionCtx);
     }
 
@@ -119,11 +128,15 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
 
     @Override
     public void clearContext(String clientId) {
-        log.trace("[{}] Clearing application session context.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Clearing application session context.", clientId);
+        }
         try {
             sessionCtxService.deleteApplicationSessionCtx(clientId);
         } catch (EmptyResultDataAccessException noDataException) {
-            log.debug("[{}] No session for clientId.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No session for clientId.", clientId);
+            }
         } catch (Exception e) {
             log.warn("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
         }
