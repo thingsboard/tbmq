@@ -33,7 +33,7 @@ managedNodeGroups:
     labels: { role: tb-mqtt-broker }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-    ami: ami-06f8c9b973bbfca1d
+    ami: ami-0de6044cc8d220517
     amiFamily: AmazonLinux2
     overrideBootstrapCommand: |
       #!/bin/bash
@@ -67,8 +67,8 @@ managedNodeGroups:
       - "sysctl -w fs.nr_open=4194304"
   - name: tb-perf-test
     instanceType: c6g.metal
-    desiredCapacity: 0
-    maxSize: 1
+    desiredCapacity: 4
+    maxSize: 4
     minSize: 0
     labels: { role: tb-perf-test }
     ssh:
