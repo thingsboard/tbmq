@@ -210,7 +210,7 @@ public final class TbActorMailbox implements TbActorCtx {
                 highPriorityMsgs.forEach(msg -> msg.onTbActorStopped(selfId));
                 normalPriorityMsgs.forEach(msg -> msg.onTbActorStopped(selfId));
             } catch (Throwable t) {
-                log.warn("[{}] Failed to destroy actor: {}", selfId, t);
+                log.warn("[{}] Failed to destroy actor", selfId, t);
             }
         });
     }

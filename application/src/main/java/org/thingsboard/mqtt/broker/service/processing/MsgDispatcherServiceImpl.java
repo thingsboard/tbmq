@@ -92,10 +92,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Override
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Persisting publish msg [topic:[{}], qos:[{}]].",
-                    sessionInfo.getClientInfo().getClientId(), publishMsg.getTopicName(), publishMsg.getQosLevel());
-        }
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);

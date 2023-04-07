@@ -36,7 +36,6 @@ import javax.annotation.PreDestroy;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
     private final ClientLogger clientLogger;
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
@@ -44,6 +43,8 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     @Value("${queue.device-persisted-msg.publisher-thread-max-delay}")
     private long maxDelay;
+
+    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
     @PostConstruct
     public void init() {
@@ -64,7 +65,9 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
-                        log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                        if (log.isTraceEnabled()) {
+                            log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                        }
                         callback.onSuccess();
                     }
                     @Override

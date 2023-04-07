@@ -16,11 +16,13 @@
 package org.thingsboard.mqtt.broker.queue.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 
 public class KafkaTbQueueMsg implements TbQueueMsg {
+
     private final String key;
     private final TbQueueMsgHeaders headers;
     private final byte[] data;
@@ -30,9 +32,9 @@ public class KafkaTbQueueMsg implements TbQueueMsg {
     public KafkaTbQueueMsg(ConsumerRecord<String, byte[]> record) {
         this.key = record.key();
         TbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();
-        record.headers().forEach(header -> {
+        for (Header header : record.headers()) {
             headers.put(header.key(), header.value());
-        });
+        }
         this.headers = headers;
         this.data = record.value();
         this.partition = record.partition();
@@ -63,6 +65,5 @@ public class KafkaTbQueueMsg implements TbQueueMsg {
     public long getOffset() {
         return offset;
     }
-
 
 }
