@@ -228,6 +228,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     @Override
     public void processRemoveApplicationTopicRequest(String clientId, ClientCallback callback) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Processing REMOVE_APPLICATION_TOPIC_REQUEST_MSG processRemoveApplicationTopicRequest", clientId);
+        }
         if (StringUtils.isEmpty(clientId)) {
             callback.onFailure(new RuntimeException("Trying to remove APPLICATION topic for empty clientId"));
             return;

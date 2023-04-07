@@ -170,7 +170,9 @@ public class ConnectServiceImpl implements ConnectService {
 
         pushConnAckMsg(actorState, connectionAcceptedMsg);
 
-        log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] [{}] Client connected!", actorState.getClientId(), actorState.getCurrentSessionId());
+        }
 
         clientSessionCtxService.registerSession(sessionCtx);
 

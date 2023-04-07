@@ -67,7 +67,7 @@ public class MqttPublishHandler {
         int msgId = publishMsg.getPacketId();
 
         if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), msgId);
+            log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg);
         }
         boolean validateSuccess = validatePubMsg(ctx, publishMsg);
         if (!validateSuccess) {
@@ -81,6 +81,9 @@ public class MqttPublishHandler {
         }
 
         if (publishMsg.isRetained()) {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
+            }
             publishMsg = retainedMsgProcessor.process(publishMsg);
         }
 

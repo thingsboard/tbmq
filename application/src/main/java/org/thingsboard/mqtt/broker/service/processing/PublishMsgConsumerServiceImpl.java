@@ -61,7 +61,6 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
 
-
     @Override
     public void startConsuming() {
         for (int i = 0; i < consumersCount; i++) {

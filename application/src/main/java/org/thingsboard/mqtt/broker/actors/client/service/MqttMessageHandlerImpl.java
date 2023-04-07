@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @RequiredArgsConstructor
 // not thread safe for one Client
 public class MqttMessageHandlerImpl implements MqttMessageHandler {
+
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
 

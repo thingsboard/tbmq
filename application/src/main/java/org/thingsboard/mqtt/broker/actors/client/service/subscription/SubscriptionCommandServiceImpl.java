@@ -26,7 +26,9 @@ import java.util.Collection;
 @Service
 @AllArgsConstructor
 public class SubscriptionCommandServiceImpl implements SubscriptionCommandService {
+
     private final ClientSubscriptionService clientSubscriptionService;
+
     @Override
     public void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         if (log.isDebugEnabled()) {
