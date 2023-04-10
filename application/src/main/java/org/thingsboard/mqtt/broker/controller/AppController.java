@@ -124,4 +124,16 @@ public class AppController extends BaseController {
             throw handleException(e);
         }
     }
+
+    // TODO: 10.04.23 remove this!
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/alarm", method = RequestMethod.GET)
+    @ResponseBody
+    public void alarm() throws ThingsboardException {
+        try {
+            tbQueueAdmin.deleteAppTopics();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
 }
