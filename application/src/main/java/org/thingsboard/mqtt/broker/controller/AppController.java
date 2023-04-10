@@ -127,9 +127,9 @@ public class AppController extends BaseController {
 
     // TODO: 10.04.23 remove this!
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/alarm", method = RequestMethod.GET)
+    @RequestMapping(value = "/teeeest", method = RequestMethod.DELETE)
     @ResponseBody
-    public void alarm() throws ThingsboardException {
+    public void teeeeesst() throws ThingsboardException {
         try {
             tbQueueAdmin.deleteAppTopics();
         } catch (Exception e) {
