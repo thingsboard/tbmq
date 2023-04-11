@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap } from '@shared/models/config.model';
+import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap, SecurityParameterConfigMap } from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -35,6 +35,7 @@ import { formatBytes } from '@home/components/entity/kafka-table.component';
 })
 export class CardConfigComponent implements OnInit, AfterViewInit {
 
+  securityParameterConfigMap = SecurityParameterConfigMap;
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
 

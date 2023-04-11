@@ -45,7 +45,7 @@
             <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
                           || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
                           && !item.value">
-              <mat-icon class="config-material-icon-warning" matTooltip="{{'config.warning' | translate}} {{item.key}}">
+              <mat-icon class="config-material-icon-warning" matTooltip="{{'config.warning' | translate}} {{securityParameterConfigMap.get(item.key)}}">
                 warning
               </mat-icon>
             </span>

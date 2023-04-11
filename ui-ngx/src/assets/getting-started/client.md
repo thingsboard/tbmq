@@ -1,6 +1,6 @@
-Let's create MQTT Client with a simple <a href="https://thingsboard.io/docs/mqtt-broker/authentication" target="_blank">authentication</a> method based on ID and Password.
+To create an MQTT client with a simple <a href="https://thingsboard.io/docs/mqtt-broker/authentication" target="_blank">authentication</a> method based on ID and Password, please follow these steps:
 
-Please click on the button below and fill the following fields:
+Click on the button **Add Credentials** below and fill in the following fields:
 <table>
   <tbody>
       <tr>

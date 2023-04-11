@@ -48,3 +48,10 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.X509_CERT_CHAIN_AUTH, 'config.ssl-auth'],
   ]
 );
+
+export const SecurityParameterConfigMap = new Map<ConfigParams, string>(
+  [
+    [ConfigParams.BASIC_AUTH, 'SECURITY_MQTT_BASIC_ENABLED'],
+    [ConfigParams.X509_CERT_CHAIN_AUTH, 'SECURITY_MQTT_SSL_ENABLED']
+  ]
+);
