@@ -75,17 +75,17 @@ public class TbKafkaProducerTemplate<T extends TbQueueMsg> implements TbQueuePro
         if (StringUtils.isEmpty(defaultTopic)) {
             throw new RuntimeException("No default topic defined for producer.");
         }
-        send(defaultTopic, msg, callback);
+        send(defaultTopic, null, msg, callback);
     }
 
     @Override
-    public void send(String topic, T msg, TbQueueCallback callback) {
+    public void send(String topic, Integer partition, T msg, TbQueueCallback callback) {
         if (admin != null && topicConfigs != null && createTopicIfNotExists) {
             admin.createTopicIfNotExists(topic, topicConfigs);
         }
 
         long startTime = System.nanoTime();
-        ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, null, msg.getKey(), msg.getData(), extractHeaders(msg));
+        ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, partition, msg.getKey(), msg.getData(), extractHeaders(msg));
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
                 if (callback != null) {

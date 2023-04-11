@@ -317,6 +317,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         eventResponseSenderExecutor.execute(
                 () -> eventResponseProducer.send(
                         connectionRequestInfo.getResponseTopic(),
+                        null,
                         new TbProtoQueueMsg<>(clientId, response, headers),
                         new TbQueueCallback() {
                             @Override
