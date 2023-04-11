@@ -122,9 +122,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubAck(String clientId, int packetId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Acknowledged packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
@@ -163,9 +160,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
         String clientId = clientSessionCtx.getClientId();
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Received packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
@@ -205,9 +199,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubComp(String clientId, int packetId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Completed packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
