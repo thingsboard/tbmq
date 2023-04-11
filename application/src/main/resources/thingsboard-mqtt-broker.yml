@@ -368,7 +368,7 @@ mqtt:
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
     max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}" # in seconds, defaults to 10 minutes, for mqtt 5 clients
   topic:
-    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:6000}"
+    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}" # 0 means the limitation is disabled
   shared-subscriptions:
     processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}" # supported types: ROUND_ROBIN
   subscription-trie:
