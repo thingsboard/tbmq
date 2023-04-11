@@ -16,11 +16,13 @@
 package org.thingsboard.mqtt.broker.queue;
 
 public interface TbQueueProducer<T extends TbQueueMsg> {
+
     String getDefaultTopic();
 
     void send(T msg, TbQueueCallback callback);
 
-    void send(String topic, T msg, TbQueueCallback callback);
+    // TODO: 11.04.23 review Integer partition usage
+    void send(String topic, Integer partition, T msg, TbQueueCallback callback);
 
     void stop();
 }

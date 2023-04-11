@@ -53,7 +53,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
         QueueProtos.DisconnectClientCommandProto disconnectCommand =
                 ProtoConverter.createDisconnectClientCommandProto(sessionId, newSessionCleanStart);
         String topic = helper.getServiceTopic(serviceId);
-        clientDisconnectCommandProducer.send(topic, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
+        clientDisconnectCommandProducer.send(topic, null, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 if (log.isTraceEnabled()) {

@@ -56,6 +56,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 .producer(applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .maxDelay(maxDelay)
                 .statsManager(statsManager)
+                .partition(0)
                 .build();
         this.publisherQueue.init();
     }
