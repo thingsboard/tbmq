@@ -51,6 +51,7 @@ export class MonitoringComponent extends PageComponent {
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  latestValues = {};
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
@@ -93,12 +94,11 @@ export class MonitoringComponent extends PageComponent {
     let index = 0;
     for (const chart in StatsChartType) {
       this.charts[chart] = {} as Chart;
+      this.latestValues[chart] = data[chart][0].value;
       const ctx = document.getElementById(chart + '1') as HTMLCanvasElement;
-      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType));
       const datasets = {
         data: {
           datasets: [{
-            label,
             fill: false,
             backgroundColor: 'transparent',
             hoverBackgroundColor: '#999999',
@@ -147,6 +147,7 @@ export class MonitoringComponent extends PageComponent {
     ).subscribe(data => {
       for (const chart in StatsChartType) {
         this.pushShiftLatestValue(data, chart as StatsChartType);
+        this.updateLabel(data, chart as StatsChartType);
         this.updateCharts();
         this.mockDataTsCalculationIndex++;
       }
@@ -164,7 +165,7 @@ export class MonitoringComponent extends PageComponent {
 
   private updateCharts() {
     for (const chart in StatsChartType) {
-      this.charts[chart].update();
+      // this.charts[chart].update();
     }
   }
 
@@ -175,5 +176,10 @@ export class MonitoringComponent extends PageComponent {
         value: el.value
       };
     })[0];
+  }
+
+  private updateLabel(data: StatsChartType, chart: StatsChartType) {
+    this.latestValues[chart] = data[chart][0].value;
+    this.charts[chart].data.datasets[0].label = `${this.translate.instant(this.statChartTypeTranslationMap.get(chart as StatsChartType))} - ${this.latestValues[chart]}`;
   }
 }

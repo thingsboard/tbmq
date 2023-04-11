@@ -16,7 +16,7 @@
 
 -->
 <div fxFlex fxLayout="column" class="card" fxLayoutGap="16px">
-  <tb-card-title-button type="KAFKA_BROKERS" [disabled]="true"></tb-card-title-button>
+  <tb-card-title-button cardType="KAFKA_BROKERS" [disabled]="true"></tb-card-title-button>
   <div class="tb-kafka-table">
     <table mat-table [dataSource]="dataSource" matSort>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">

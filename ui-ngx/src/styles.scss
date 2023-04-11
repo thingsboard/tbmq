@@ -1092,11 +1092,9 @@ mat-label {
 
 .tb-home-overview {
   display: flex;
-  flex-direction: row;
   background-color: #dcdcdc;
-  justify-content: space-evenly;
-  padding: 8px;
-  gap: 8px;
+  padding: 4px;
+  gap: 4px;
 
   button {
     height: 40px;
@@ -1118,18 +1116,18 @@ mat-label {
 
   .column {
     display: flex;
-    gap: 8px;
+    gap: 4px;
   }
 
   .row {
     display: flex;
-    gap: 8px;
+    gap: 4px;
   }
 
   .home-column {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
   }
 
   .config-table {
@@ -1151,7 +1149,7 @@ mat-label {
   .cards {
     display: flex;
     justify-content: space-evenly;
-    gap: 8px;
+    gap: 4px;
     padding: 20px 0 15px 0;
 
     .key-value {

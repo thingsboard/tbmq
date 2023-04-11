@@ -31,7 +31,7 @@
         {{ 'mqtt-client-session.show-share-name' | translate }} ({{ shareNameCounter }})
       </mat-slide-toggle>
     </section>
-    <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start center"
+    <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="4px" fxLayoutAlign="start center"
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>

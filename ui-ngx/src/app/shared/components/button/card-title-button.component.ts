@@ -27,7 +27,7 @@ import { Router } from '@angular/router';
 export class CardTitleButtonComponent implements AfterViewInit {
 
   @Input()
-  type: HomePageTitleType;
+  cardType: HomePageTitleType;
 
   @Input()
   disabled = false;
@@ -42,7 +42,7 @@ export class CardTitleButtonComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.title = this.homePageTitleResources.get(this.type);
+    this.title = this.homePageTitleResources.get(this.cardType);
   }
 
   navigate() {

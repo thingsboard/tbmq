@@ -16,8 +16,8 @@
 
 -->
 <div class="home-column">
-  <div fxLayout="column" class="card" fxLayoutGap="8px">
-    <tb-card-title-button type="MONITORING"></tb-card-title-button>
+  <div fxLayout="column" class="card" fxLayoutGap="4px">
+    <tb-card-title-button cardType="MONITORING"></tb-card-title-button>
     <section fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
       <div *ngFor="let chart of statsCharts; let $index = index">
         <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">

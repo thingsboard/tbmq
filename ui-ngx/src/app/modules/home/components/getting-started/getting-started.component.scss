@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import '../../../../../scss/constants';
+
 :host::ng-deep {
+
+  .container {
+    border-radius: 10px;
+    background: #fff;
+    padding: 8px;
+  }
 
   .mat-expansion-panel-body {
     padding: 0 22px 16px;
@@ -93,10 +101,6 @@
     height: 24px;
     width: 24px;
     font-size: 20px;
-  }
-
-  ::ng-deep .mat-tab-label {
-    min-width: 100px !important;
   }
 
   .tb-markdown-view {
@@ -211,6 +215,22 @@
         }
       }
 
+    }
+  }
+
+  .dynamic-width {
+    width: 20vw;
+  }
+
+  @media screen and (min-width: 1500px) {
+    .dynamic-width {
+      width: 25vw;
+    }
+  }
+
+  @media screen and (min-width: 1800px) {
+    .dynamic-width {
+      width: 35vw;
     }
   }
 

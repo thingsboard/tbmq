@@ -18,8 +18,7 @@ import { AfterViewInit, ChangeDetectorRef, Component } from '@angular/core';
 
 @Component({
   selector: 'tb-home-overview',
-  templateUrl: './home-overview.component.html',
-  styleUrls: ['./home-overview.component.scss']
+  templateUrl: './home-overview.component.html'
 })
 export class HomeOverviewComponent implements AfterViewInit {
 
