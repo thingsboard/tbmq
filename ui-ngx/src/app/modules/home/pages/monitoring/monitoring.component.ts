@@ -165,7 +165,7 @@ export class MonitoringComponent extends PageComponent {
 
   private updateCharts() {
     for (const chart in StatsChartType) {
-      // this.charts[chart].update();
+      this.charts[chart].update();
     }
   }
 
