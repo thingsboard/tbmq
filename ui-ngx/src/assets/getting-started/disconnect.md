@@ -1,4 +1,4 @@
-When you are finished using the client, you can disconnect it by following these instructions::
+When you are finished using the client, you can disconnect it by following these instructions:
 
 1. Go to the [Sessions](/sessions) page.
 2. Find the client's session in the table.
