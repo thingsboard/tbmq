@@ -4,15 +4,15 @@ method based on ID and Password, please click on the button **Add Credentials** 
   <tbody>
       <tr>
           <td><b>Name</b></td>
-          <td>TB Demo Credentials</td>
+          <td>tb_mqtt_demo</td>
       </tr>
       <tr>
-          <td><b>Client ID</b></td>
-          <td>tb_demo</td>
+          <td><b>Username</b></td>
+          <td>tb_mqtt_demo</td>
       </tr>
       <tr>
           <td><b>Password</b></td>
-          <td>tb_demo</td>
+          <td>tb_mqtt_demo</td>
       </tr>
   </tbody>
 </table>

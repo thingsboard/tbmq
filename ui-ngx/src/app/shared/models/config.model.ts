@@ -26,12 +26,12 @@ export interface BrokerConfig {
 }
 
 export enum ConfigParams {
-  PORT_MQTT = 'tlsPort',
+  PORT_MQTT = 'tcpPort',
   TCP_LISTENER = 'tcpListenerEnabled',
   TCP_LISTENER_MAX_PAYLOAD_SIZE = 'tcpMaxPayloadSize',
   TLS_LISTENER = 'tlsListenerEnabled',
   TLS_LISTENER_MAX_PAYLOAD_SIZE = 'tlsMaxPayloadSize',
-  TLS_TCP_PORT = 'tcpPort',
+  TLS_TCP_PORT = 'tlsPort',
   BASIC_AUTH = 'basicAuthEnabled',
   X509_CERT_CHAIN_AUTH = 'x509AuthEnabled',
 }

@@ -14,9 +14,8 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Router } from '@angular/router';
 
 export interface VersionData {
   currentVersion: string;
@@ -33,7 +32,7 @@ export class VersionCardComponent implements OnInit {
 
   versionData: VersionData;
 
-  constructor(private router: Router) {
+  constructor() {
   }
 
   ngOnInit(): void {
@@ -47,13 +46,4 @@ export class VersionCardComponent implements OnInit {
       updateAvailable: false
     });
   }
-
-  viewDocumentation(type) {
-    this.router.navigateByUrl('');
-  }
-
-  navigateToPage(type) {
-    this.router.navigateByUrl('');
-  }
-
 }

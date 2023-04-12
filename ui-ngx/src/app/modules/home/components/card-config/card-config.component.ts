@@ -14,14 +14,13 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap, SecurityParameterConfigMap } from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
-import { Router } from '@angular/router';
 import { ConfigService } from '@core/http/config.service';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { PageLink } from '@shared/models/page/page-link';
@@ -44,7 +43,6 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
   overviewConfig: Observable<BrokerConfig>;
 
   constructor(protected store: Store<AppState>,
-              private router: Router,
               private translate: TranslateService,
               private configService: ConfigService,
               private mqttClientCredentialsService: MqttClientCredentialsService) { }
@@ -68,10 +66,6 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
     window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  navigateToPage(page: string) {
-    this.router.navigateByUrl(`/${page}`);
-  }
-
   ngAfterViewInit(): void {
     this.overviewConfig = this.configService.getBrokerConfig();
     this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(100)).subscribe(
@@ -87,5 +81,9 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
       return formatBytes(item.value);
     }
     return item.value;
+  }
+
+  noSorting() {
+    return 0;
   }
 }
