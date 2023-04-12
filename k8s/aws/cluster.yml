@@ -65,20 +65,28 @@ managedNodeGroups:
         --kubelet-extra-args "--node-labels=alpha.eksctl.io/cluster-name=thingsboard-mqtt-broker-cluster,alpha.eksctl.io/nodegroup-name=tb-mqtt-broker,alpha.eksctl.io/nodegroup-type=managed"
     preBootstrapCommands:
       - "sysctl -w fs.nr_open=4194304"
-  - name: tb-perf-test
+  - name: tb-perf-test-publishers
     instanceType: c6g.metal
-    desiredCapacity: 4
-    maxSize: 4
-    minSize: 0
-    labels: { role: tb-perf-test }
-    ssh:
-      publicKeyPath: ~/.ssh/id_rsa_tests.pub
-  - name: tb-kafka-ui
-    instanceType: m5.large
-    desiredCapacity: 1
+    desiredCapacity: 0
     maxSize: 1
     minSize: 0
-    labels: { role: tb-kafka-ui }
+    labels: { role: tb-perf-test-publishers }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
+  - name: tb-perf-test-subscribers
+    instanceType: c6g.metal
+    desiredCapacity: 0
+    maxSize: 1
+    minSize: 0
+    labels: { role: tb-perf-test-subscribers }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
+  - name: tb-additional
+    instanceType: m5.large
+    desiredCapacity: 0
+    maxSize: 1
+    minSize: 0
+    labels: { role: tb-additional }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
 #  - name: tb-test
