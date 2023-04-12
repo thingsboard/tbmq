@@ -25,6 +25,7 @@ import java.util.UUID;
 @Getter
 @RequiredArgsConstructor
 public class StopDeviceActorCommandMsg implements TbActorMsg {
+
     private final UUID commandUUID;
 
     @Override
