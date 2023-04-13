@@ -28,8 +28,6 @@ import java.util.List;
 
 public interface TsKvRepository extends JpaRepository<TsKvEntity, TsKvCompositeKey> {
 
-    // TODO: 31.03.23 fix all the methods
-
     /*
      * Using native query to avoid adding 'nulls first' or 'nulls last' (ignoring spring.jpa.properties.hibernate.order_by.default_null_ordering)
      * to the order so that index scan is done instead of full scan.

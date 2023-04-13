@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.model.sqlts;
 
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.DoubleDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
@@ -58,6 +59,8 @@ public abstract class AbstractTsKvEntity implements ToData<TsKvEntry> {
 
     @Transient
     protected String strKey;
+    @Transient
+    protected Double doubleValue;
 
     public abstract boolean isNotEmpty();
 
@@ -75,6 +78,8 @@ public abstract class AbstractTsKvEntity implements ToData<TsKvEntry> {
         KvEntry kvEntry = null;
         if (longValue != null) {
             kvEntry = new LongDataEntry(strKey, longValue);
+        } else if (doubleValue != null) {
+            kvEntry = new DoubleDataEntry(strKey, doubleValue);
         }
         return new BasicTsKvEntry(ts, kvEntry);
     }

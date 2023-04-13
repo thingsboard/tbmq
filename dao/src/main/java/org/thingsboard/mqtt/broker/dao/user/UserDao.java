@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
 public interface UserDao extends Dao<User> {
+
     User findByEmail(String email);
 
     PageData<User> findAll(PageLink pageLink);

@@ -33,6 +33,8 @@ public interface TimeseriesService {
 
     ListenableFuture<Integer> save(String entityId, List<TsKvEntry> tsKvEntries);
 
+    ListenableFuture<Integer> save(String entityId, TsKvEntry tsKvEntry);
+
     ListenableFuture<List<Void>> remove(String entityId, List<TsKvQuery> queries);
 
     void cleanup(long systemTtl);

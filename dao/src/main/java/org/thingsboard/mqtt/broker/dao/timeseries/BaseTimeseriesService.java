@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -49,7 +50,9 @@ public class BaseTimeseriesService implements TimeseriesService {
     @Override
     public ListenableFuture<List<TsKvEntry>> findAll(String entityId, List<ReadTsKvQuery> queries) {
         validate(entityId);
-        queries.forEach(this::validate);
+        for (ReadTsKvQuery query : queries) {
+            validate(query);
+        }
         return timeseriesDao.findAllAsync(entityId, queries);
     }
 
@@ -75,6 +78,11 @@ public class BaseTimeseriesService implements TimeseriesService {
             throw new IncorrectParameterException("Key value entries can't be null or empty");
         }
         return doSave(entityId, tsKvEntries);
+    }
+
+    @Override
+    public ListenableFuture<Integer> save(String entityId, TsKvEntry tsKvEntry) {
+        return save(entityId, Collections.singletonList(tsKvEntry));
     }
 
     @Override
