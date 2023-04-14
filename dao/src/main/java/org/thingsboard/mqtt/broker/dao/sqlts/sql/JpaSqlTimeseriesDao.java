@@ -40,6 +40,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,7 +60,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
 
     private SqlTsPartitionDate tsFormat;
 
-    @Value("${sql.postgres.ts_key_value_partitioning:MONTHS}")
+    @Value("${sql.ts_key_value_partitioning:MONTHS}")
     private String partitioning;
 
     @Override
@@ -88,34 +90,129 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
     }
 
     @Override
-    public void cleanup(long systemTtl) {
-        cleanupPartitions(systemTtl);
-        super.cleanup(systemTtl);
+    public void cleanUp(long systemTtl) {
+        cleanUpPartitions(systemTtl);
+        cleanUpData(systemTtl);
     }
 
-    private void cleanupPartitions(long systemTtl) {
+    public void cleanUpData(long systemTtl) {
+        log.info("Going to cleanup old timeseries data using ttl: {}s", systemTtl);
+        try {
+            Long deleted = tsKvRepository.cleanUp(getExpirationTime(systemTtl));
+            log.info("Total telemetry removed stats by TTL {}!", deleted);
+        } catch (Exception e) {
+            log.error("Failed to execute cleanup using ttl {}", systemTtl, e);
+        }
+    }
+
+    private long getExpirationTime(long ttl) {
+        return System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
+    }
+
+    private void cleanUpPartitions(long systemTtl) {
         log.info("Going to cleanup old timeseries data partitions using partition type: {} and ttl: {}s", partitioning, systemTtl);
+
+        long maxTtl = getMaxTtl(systemTtl);
+
+        LocalDateTime dateByTtlDate = getPartitionByTtlDate(maxTtl);
+        log.info("Date by max ttl {}", dateByTtlDate);
+        String partitionByTtlDate = getPartitionByDate(dateByTtlDate);
+        log.info("Partition by max ttl {}", partitionByTtlDate);
+
+        cleanupPartition(dateByTtlDate, partitionByTtlDate);
+    }
+
+    private void cleanupPartition(LocalDateTime dateByTtlDate, String partitionByTtlDate) {
+        int deleted = 0;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement stmt = connection.prepareStatement("call drop_partitions_by_max_ttl(?,?,?)")) {
-            stmt.setString(1, partitioning);
-            stmt.setLong(2, systemTtl);
-            stmt.setLong(3, 0);
-            stmt.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(1));
+             PreparedStatement stmt = connection.prepareStatement("SELECT tablename " +
+                     "FROM pg_tables " +
+                     "WHERE schemaname = 'public'" +
+                     "AND tablename like 'ts_kv_' || '%' " +
+                     "AND tablename != 'ts_kv_dictionary' " +
+                     "AND tablename != 'ts_kv_indefinite' " +
+                     "AND tablename != ?")) {
+            stmt.setString(1, partitionByTtlDate);
+            stmt.setQueryTimeout((int) TimeUnit.MINUTES.toSeconds(1));
             stmt.execute();
             printWarnings(stmt);
             try (ResultSet resultSet = stmt.getResultSet()) {
-                resultSet.next();
-                log.info("Total partitions removed by TTL: [{}]", resultSet.getLong(1));
+                while (resultSet.next()) {
+                    String tableName = resultSet.getString(1);
+                    if (tableName != null && checkNeedDropTable(dateByTtlDate, tableName)) {
+                        log.info("Dropping {} table", tableName);
+                        dropTable(tableName);
+                        deleted++;
+                    }
+                }
+                log.info("Cleanup {} partitions finished!", deleted);
             }
         } catch (SQLException e) {
-            log.error("SQLException occurred during TTL task execution ", e);
+            log.error("SQLException occurred during TTL cleanupPartition task execution", e);
         }
+    }
+
+    private boolean checkNeedDropTable(LocalDateTime date, String tableName) {
+        List<String> tableNameSplitList = Arrays.asList(tableName.split("_"));
+        //zero position is 'ts', first is 'kv' and after years, months, days
+        if (tableNameSplitList.size() > 2 && tableNameSplitList.get(0).equals("ts") && tableNameSplitList.get(1).equals("kv")) {
+            switch (partitioning) {
+                case "YEARS":
+                    return (tableNameSplitList.size() == 3 && date.getYear() > Integer.parseInt(tableNameSplitList.get(2)));
+                case "MONTHS":
+                    return (
+                            tableNameSplitList.size() == 4 && (date.getYear() > Integer.parseInt(tableNameSplitList.get(2))
+                                    || (date.getYear() == Integer.parseInt(tableNameSplitList.get(2))
+                                    && date.getMonth().getValue() > Integer.parseInt(tableNameSplitList.get(3)))
+                            ));
+                case "DAYS":
+                    return (
+                            tableNameSplitList.size() == 5 && (date.getYear() > Integer.parseInt(tableNameSplitList.get(2))
+                                    || (date.getYear() == Integer.parseInt(tableNameSplitList.get(2))
+                                    && date.getMonth().getValue() > Integer.parseInt(tableNameSplitList.get(3)))
+                                    || (date.getYear() == Integer.parseInt(tableNameSplitList.get(2))
+                                    && date.getMonth().getValue() == Integer.parseInt(tableNameSplitList.get(3))
+                                    && date.getDayOfMonth() > Integer.parseInt(tableNameSplitList.get(4)))
+                            ));
+            }
+        }
+        return false;
+    }
+
+    private void dropTable(String tableName) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(String.format("DROP TABLE IF EXISTS %s", tableName))) {
+            statement.execute();
+        } catch (SQLException e) {
+            log.error("SQLException occurred during drop table task execution", e);
+        }
+    }
+
+    private String getPartitionByDate(LocalDateTime date) {
+        String result = "";
+        switch (partitioning) {
+            case "DAYS":
+                result = "_" + ((date.getDayOfMonth() < 10) ? "0" + date.getDayOfMonth() : date.getDayOfMonth()) + result;
+            case "MONTHS":
+                result = "_" + ((date.getMonth().getValue() < 10) ? "0" + date.getMonth().getValue() : date.getMonth().getValue()) + result;
+            case "YEARS":
+                result = date.getYear() + result;
+        }
+        return "ts_kv_" + result;
+    }
+
+    private LocalDateTime getPartitionByTtlDate(long maxTtl) {
+        return Instant.ofEpochMilli(System.currentTimeMillis() - maxTtl).atZone(ZoneOffset.UTC).toLocalDateTime();
+    }
+
+    private long getMaxTtl(long systemTtl) {
+        return Math.max(systemTtl, 0L);
     }
 
     private void savePartitionIfNotExist(long ts) {
         if (!tsFormat.equals(SqlTsPartitionDate.INDEFINITE) && ts >= 0) {
             LocalDateTime time = LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneOffset.UTC);
-            LocalDateTime localDateTimeStart = tsFormat.trancateTo(time);
+            LocalDateTime localDateTimeStart = tsFormat.truncateTo(time);
             long partitionStartTs = toMills(localDateTimeStart);
             if (partitions.get(partitionStartTs) == null) {
                 LocalDateTime localDateTimeEnd = tsFormat.plusTo(localDateTimeStart);

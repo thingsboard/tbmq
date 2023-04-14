@@ -97,4 +97,8 @@ public interface TsKvRepository extends JpaRepository<TsKvEntity, TsKvCompositeK
                        @Param("startTs") long startTs,
                        @Param("endTs") long endTs);
 
+    @Transactional(timeout = 3600) // 1h in sec
+    @Query(value = "WITH deleted AS (DELETE FROM ts_kv WHERE (ts < :expirationTime) IS TRUE RETURNING *) SELECT count(*) FROM deleted",
+            nativeQuery = true)
+    Long cleanUp(@Param("expirationTime") long expirationTime);
 }

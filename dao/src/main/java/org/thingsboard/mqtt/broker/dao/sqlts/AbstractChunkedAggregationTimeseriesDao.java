@@ -17,9 +17,9 @@ package org.thingsboard.mqtt.broker.dao.sqlts;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.util.CollectionUtils;
@@ -39,16 +39,32 @@ import org.thingsboard.mqtt.broker.dao.sqlts.insert.InsertTsRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.ts.TsKvRepository;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesDao;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class AbstractChunkedAggregationTimeseriesDao extends AbstractSqlTimeseriesDao implements TimeseriesDao {
+@SuppressWarnings("UnstableApiUsage")
+public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstractSqlTimeseriesDao implements TimeseriesDao, AggregationTimeseriesDao {
+
+    @Value("${sql.ts.batch_size:1000}")
+    protected int tsBatchSize;
+
+    @Value("${sql.ts.batch_max_delay:100}")
+    protected long tsMaxDelay;
+
+    @Value("${sql.ts.batch_threads:4}")
+    protected int tsBatchThreads;
+
+    @Value("${sql.batch_sort:true}")
+    protected boolean batchSortEnabled;
 
     @Autowired
     protected TsKvRepository tsKvRepository;
@@ -116,7 +132,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends AbstractSq
                 return tsKvEntries.get(0);
             }
             return null;
-        }, MoreExecutors.directExecutor());
+        }, service);
     }
 
     @Override
@@ -147,6 +163,23 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends AbstractSq
             }
             return getTsKvEntriesFuture(Futures.allAsList(futures));
         }
+    }
+
+    protected ListenableFuture<List<TsKvEntry>> processFindAllAsync(String entityId, List<ReadTsKvQuery> queries) {
+        List<ListenableFuture<List<TsKvEntry>>> futures = queries
+                .stream()
+                .map(query -> findAllAsync(entityId, query))
+                .collect(Collectors.toList());
+        return Futures.transform(Futures.allAsList(futures), new com.google.common.base.Function<>() {
+            @Nullable
+            @Override
+            public List<TsKvEntry> apply(@Nullable List<List<TsKvEntry>> results) {
+                if (results == null || results.isEmpty()) {
+                    return null;
+                }
+                return results.stream().filter(Objects::nonNull).flatMap(List::stream).collect(Collectors.toList());
+            }
+        }, service);
     }
 
     private BaseReadTsKvQuery createQuery(String key) {

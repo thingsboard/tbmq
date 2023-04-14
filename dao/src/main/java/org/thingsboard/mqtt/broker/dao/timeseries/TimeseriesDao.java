@@ -30,7 +30,7 @@ public interface TimeseriesDao {
 
     ListenableFuture<Void> remove(String entityId, TsKvQuery query);
 
-    void cleanup(long systemTtl);
+    void cleanUp(long systemTtl);
 
     ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
 

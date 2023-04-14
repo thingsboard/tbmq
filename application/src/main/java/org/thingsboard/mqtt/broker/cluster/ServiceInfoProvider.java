@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.cluster;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 public interface ServiceInfoProvider {
+
     String getServiceId();
 
     QueueProtos.ServiceInfo getServiceInfo();

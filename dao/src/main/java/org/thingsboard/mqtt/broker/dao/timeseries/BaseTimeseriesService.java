@@ -98,7 +98,7 @@ public class BaseTimeseriesService implements TimeseriesService {
 
     @Override
     public void cleanup(long systemTtl) {
-        timeseriesDao.cleanup(systemTtl);
+        timeseriesDao.cleanUp(systemTtl);
     }
 
     private ListenableFuture<Integer> doSave(String entityId, List<TsKvEntry> tsKvEntries) {

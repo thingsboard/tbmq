@@ -44,7 +44,7 @@ public enum SqlTsPartitionDate {
         return truncateUnit;
     }
 
-    public LocalDateTime trancateTo(LocalDateTime time) {
+    public LocalDateTime truncateTo(LocalDateTime time) {
         switch (this) {
             case DAYS:
                 return time.truncatedTo(ChronoUnit.DAYS);
