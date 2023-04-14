@@ -48,7 +48,9 @@ public class PackProcessingContext {
         if (msg != null) {
             processingTimeoutLatch.countDown();
         } else {
-            log.debug("Couldn't find message {} to acknowledge success.", id);
+            if (log.isDebugEnabled()) {
+                log.debug("Couldn't find message {} to acknowledge success.", id);
+            }
         }
     }
 
@@ -58,7 +60,9 @@ public class PackProcessingContext {
             failedMap.put(id, msg);
             processingTimeoutLatch.countDown();
         } else {
-            log.debug("Couldn't find message {} to acknowledge failure.", id);
+            if (log.isDebugEnabled()) {
+                log.debug("Couldn't find message {} to acknowledge failure.", id);
+            }
         }
     }
 

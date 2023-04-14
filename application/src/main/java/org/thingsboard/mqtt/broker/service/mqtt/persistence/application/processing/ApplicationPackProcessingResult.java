@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ApplicationPackProcessingResult {
+
     @Getter
     private final Map<Integer, PersistedPublishMsg> publishPendingMap;
     @Getter

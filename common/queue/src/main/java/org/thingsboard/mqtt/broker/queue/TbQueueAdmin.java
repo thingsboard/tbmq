@@ -45,4 +45,6 @@ public interface TbQueueAdmin {
     List<String> getBrokerServiceIds();
 
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
+
+    void deleteAppTopics();
 }

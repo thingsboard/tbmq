@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 @Builder(toBuilder = true)
 @ToString
 public class PersistedPublishMsg implements PersistedMsg {
+
     @Getter
     private final PublishMsg publishMsg;
     private final long offset;

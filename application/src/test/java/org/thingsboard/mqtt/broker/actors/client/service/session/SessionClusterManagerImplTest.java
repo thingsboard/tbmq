@@ -94,7 +94,7 @@ public class SessionClusterManagerImplTest {
             }
 
             @Override
-            public void send(String topic, TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
+            public void send(String topic, Integer partition, TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
             }
 
             @Override

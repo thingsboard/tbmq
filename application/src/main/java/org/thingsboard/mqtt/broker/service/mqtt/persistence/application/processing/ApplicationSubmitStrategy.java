@@ -17,14 +17,13 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.process
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 public interface ApplicationSubmitStrategy {
 
     void init(List<PersistedMsg> orderedMessages);
 
-    ConcurrentMap<Integer, PersistedMsg> getPendingMap();
+    List<PersistedMsg> getOrderedMessages();
 
     void process(Consumer<PersistedMsg> msgConsumer);
 

@@ -93,9 +93,6 @@ public class ClientActor extends ContextAwareActor {
 
     @Override
     protected boolean doProcess(TbActorMsg msg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Received {} msg.", state.getClientId(), state.getCurrentSessionId(), msg.getMsgType());
-        }
         if (msg instanceof TimedMsg) {
             clientActorStats.logMsgQueueTime(System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
         }
@@ -209,6 +206,9 @@ public class ClientActor extends ContextAwareActor {
 
     private void processConnectionRequestMsg(ConnectionRequestMsg msg) {
         try {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Processing CONNECTION_REQUEST_MSG processConnectionRequestMsg {}", state.getClientId(), msg);
+            }
             sessionClusterManager.processConnectionRequest(msg.getSessionInfo(), msg.getRequestInfo());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
@@ -218,6 +218,9 @@ public class ClientActor extends ContextAwareActor {
 
     private void processSessionDisconnectedMsg(SessionDisconnectedMsg msg) {
         try {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Processing SESSION_DISCONNECTED_MSG processSessionDisconnectedMsg {}", state.getClientId(), msg);
+            }
             sessionClusterManager.processSessionDisconnected(state.getClientId(), msg);
             msg.getCallback().onSuccess();
         } catch (Exception e) {
@@ -227,6 +230,9 @@ public class ClientActor extends ContextAwareActor {
 
     private void processClearSessionMsg(ClearSessionMsg msg) {
         try {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Processing CLEAR_SESSION_MSG processClearSessionMsg {}", state.getClientId(), msg);
+            }
             sessionClusterManager.processClearSession(state.getClientId(), msg.getSessionId());
             msg.getCallback().onSuccess();
         } catch (Exception e) {
