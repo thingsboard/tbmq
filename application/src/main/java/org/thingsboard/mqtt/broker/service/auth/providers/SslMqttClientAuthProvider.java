@@ -76,7 +76,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Client SSL certification is disabled.");
+                log.debug("Client SSL certification is disabled.", e);
             }
             return null;
         }
