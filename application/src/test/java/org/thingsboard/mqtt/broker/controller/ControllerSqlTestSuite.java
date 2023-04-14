@@ -15,23 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import org.junit.ClassRule;
 import org.junit.extensions.cpsuite.ClasspathSuite;
 import org.junit.runner.RunWith;
-import org.thingsboard.mqtt.broker.dao.CustomSqlUnit;
-
-import java.util.Arrays;
 
 @RunWith(ClasspathSuite.class)
 @ClasspathSuite.ClassnameFilters({
         "org.thingsboard.mqtt.broker.controller.sql.*Test",
 })
 public class ControllerSqlTestSuite {
-
-    @ClassRule
-    public static CustomSqlUnit sqlUnit = new CustomSqlUnit(
-            Arrays.asList("sql/schema-entities-hsql.sql", "sql/system-data.sql"),
-            "sql/hsql/drop-all-tables.sql",
-            "sql-test.properties");
 
 }

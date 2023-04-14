@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
-import org.thingsboard.mqtt.broker.common.data.kv.DoubleDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
@@ -50,23 +49,20 @@ import static org.junit.Assert.assertNotNull;
 @DaoSqlTest
 public class TimeseriesServiceTest extends AbstractServiceTest {
 
-    static final int MAX_TIMEOUT = 30;
+    private static final int MAX_TIMEOUT = 30;
 
-    private static final String LONG_KEY = "longKey";
-    private static final String DOUBLE_KEY = "doubleKey";
+    private static final String LONG_KEY = "incomingMsgs";
 
     private static final long TS = 42L;
     private static final String DESC_ORDER = "DESC";
 
     KvEntry longKvEntry = new LongDataEntry(LONG_KEY, Long.MAX_VALUE);
-    KvEntry doubleKvEntry = new DoubleDataEntry(DOUBLE_KEY, Double.MAX_VALUE);
 
     @Autowired
     private TimeseriesService tsService;
 
     @Before
     public void before() {
-
     }
 
     @After
@@ -75,7 +71,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindAllLatest() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         saveEntries(entityId, TS - 2);
         saveEntries(entityId, TS - 1);
@@ -103,7 +99,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindLatest() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         saveEntries(entityId, TS - 2);
         saveEntries(entityId, TS - 1);
@@ -116,7 +112,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQueryAscOrder() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         saveEntries(entityId, TS - 3);
         saveEntries(entityId, TS - 2);
@@ -134,7 +130,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodEqualsOneMillisecondPeriod() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         saveEntries(entityId, TS - 1L);
         saveEntries(entityId, TS);
         saveEntries(entityId, TS + 1L);
@@ -148,7 +144,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodEqualsInterval() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         saveEntries(entityId, TS - 1L);
         for (long i = TS; i <= TS + 100L; i += 10L) {
             saveEntries(entityId, i);
@@ -164,7 +160,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodHaveTwoIntervalWithEqualsLength() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         saveEntries(entityId, TS - 1L);
         for (long i = TS; i <= TS + 100000L; i += 10000L) {
             saveEntries(entityId, i);
@@ -181,7 +177,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodHaveTwoInterval_whereSecondShorterThanFirst() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         saveEntries(entityId, TS - 1L);
         for (long i = TS; i <= TS + 80000L; i += 10000L) {
             saveEntries(entityId, i);
@@ -198,7 +194,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodHaveTwoIntervalWithEqualsLength_whereNotAllEntriesInRange() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         for (long i = TS - 1L; i <= TS + 100000L + 1L; i += 10000) {
             saveEntries(entityId, i);
         }
@@ -213,7 +209,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQuery_whenPeriodHaveTwoInterval_whereSecondShorterThanFirst_andNotAllEntriesInRange() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
         for (long i = TS - 1L; i <= TS + 100000L + 1L; i += 10000L) {
             saveEntries(entityId, i);
         }
@@ -228,7 +224,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindByQueryDescOrder() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         saveEntries(entityId, TS - 3);
         saveEntries(entityId, TS - 2);
@@ -246,7 +242,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testDeleteDeviceTsData() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         saveEntries(entityId, 10000);
         saveEntries(entityId, 20000);
@@ -266,17 +262,16 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindDeviceTsData() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
-        List<TsKvEntry> entries = new ArrayList<>();
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
-        entries.add(save(entityId, 5000, 100));
-        entries.add(save(entityId, 15000, 200));
+        save(entityId, 5000, 100);
+        save(entityId, 15000, 200);
 
-        entries.add(save(entityId, 25000, 300));
-        entries.add(save(entityId, 35000, 400));
+        save(entityId, 25000, 300);
+        save(entityId, 35000, 400);
 
-        entries.add(save(entityId, 45000, 500));
-        entries.add(save(entityId, 55000, 600));
+        save(entityId, 45000, 500);
+        save(entityId, 55000, 600);
 
         List<TsKvEntry> list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
                 60000, 20000, 3, Aggregation.NONE))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
@@ -357,7 +352,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveTs_RemoveTs_AndSaveTsAgain() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(10);
+        String entityId = RandomStringUtils.randomAlphabetic(20);
 
         save(entityId, 2000000L, 95);
         save(entityId, 4000000L, 100);
