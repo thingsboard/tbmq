@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
+import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
@@ -72,7 +73,7 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
-    public ListenableFuture<Integer> save(String entityId, List<TsKvEntry> tsKvEntries) {
+    public ListenableFuture<Void> save(String entityId, List<TsKvEntry> tsKvEntries) {
         validate(entityId);
         if (CollectionUtils.isEmpty(tsKvEntries)) {
             throw new IncorrectParameterException("Key value entries can't be null or empty");
@@ -81,7 +82,7 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
-    public ListenableFuture<Integer> save(String entityId, TsKvEntry tsKvEntry) {
+    public ListenableFuture<Void> save(String entityId, TsKvEntry tsKvEntry) {
         return save(entityId, Collections.singletonList(tsKvEntry));
     }
 
@@ -97,11 +98,15 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
-    public void cleanup(long systemTtl) {
-        timeseriesDao.cleanUp(systemTtl);
+    public CleanUpResult cleanUp(long systemTtl) {
+        if (systemTtl <= 0) {
+            log.info("System TTL should be greater than 0 to clean up the data!");
+            return CleanUpResult.newInstance();
+        }
+        return timeseriesDao.cleanUp(systemTtl);
     }
 
-    private ListenableFuture<Integer> doSave(String entityId, List<TsKvEntry> tsKvEntries) {
+    private ListenableFuture<Void> doSave(String entityId, List<TsKvEntry> tsKvEntries) {
         List<ListenableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(tsKvEntries.size());
         for (TsKvEntry tsKvEntry : tsKvEntries) {
             if (tsKvEntry == null) {

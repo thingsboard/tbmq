@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.timeseries;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
@@ -30,7 +31,7 @@ public interface TimeseriesDao {
 
     ListenableFuture<Void> remove(String entityId, TsKvQuery query);
 
-    void cleanUp(long systemTtl);
+    CleanUpResult cleanUp(long systemTtl);
 
     ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
 

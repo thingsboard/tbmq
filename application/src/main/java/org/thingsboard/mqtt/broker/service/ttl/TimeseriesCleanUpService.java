@@ -45,7 +45,7 @@ public class TimeseriesCleanUpService extends AbstractCleanUpService {
     public void cleanUp() {
         if (ttlTaskExecutionEnabled && isCurrentNodeShouldCleanUp()) {
             log.info("Starting timeseries clean up!");
-            timeseriesService.cleanup(systemTtl);
+            timeseriesService.cleanUp(systemTtl);
         }
     }
 

@@ -24,6 +24,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
 import org.thingsboard.mqtt.broker.dao.sqlts.AbstractChunkedAggregationTimeseriesDao;
@@ -85,44 +86,47 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         entity.setTs(tsKvEntry.getTs());
         entity.setKey(keyId);
         entity.setLongValue(tsKvEntry.getLongValue().orElse(null));
-        log.trace("Saving entity: {}", entity);
+        if (log.isTraceEnabled()) {
+            log.trace("Saving entity: {}", entity);
+        }
         return Futures.transform(tsQueue.add(entity), v -> null, MoreExecutors.directExecutor());
     }
 
     @Override
-    public void cleanUp(long systemTtl) {
-        cleanUpPartitions(systemTtl);
-        cleanUpData(systemTtl);
+    public CleanUpResult cleanUp(long systemTtl) {
+        int deletedPartitions = cleanUpPartitions(systemTtl);
+        long deletedRows = cleanUpData(systemTtl);
+        return new CleanUpResult(deletedPartitions, deletedRows);
     }
 
-    public void cleanUpData(long systemTtl) {
+    public long cleanUpData(long systemTtl) {
         log.info("Going to cleanup old timeseries data using ttl: {}s", systemTtl);
         try {
             Long deleted = tsKvRepository.cleanUp(getExpirationTime(systemTtl));
             log.info("Total telemetry removed stats by TTL {}!", deleted);
+            return deleted;
         } catch (Exception e) {
             log.error("Failed to execute cleanup using ttl {}", systemTtl, e);
         }
+        return 0;
     }
 
     private long getExpirationTime(long ttl) {
         return System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
     }
 
-    private void cleanUpPartitions(long systemTtl) {
+    private int cleanUpPartitions(long systemTtl) {
         log.info("Going to cleanup old timeseries data partitions using partition type: {} and ttl: {}s", partitioning, systemTtl);
 
-        long maxTtl = getMaxTtl(systemTtl);
-
-        LocalDateTime dateByTtlDate = getPartitionByTtlDate(maxTtl);
+        LocalDateTime dateByTtlDate = getPartitionByTtlDate(systemTtl);
         log.info("Date by max ttl {}", dateByTtlDate);
         String partitionByTtlDate = getPartitionByDate(dateByTtlDate);
         log.info("Partition by max ttl {}", partitionByTtlDate);
 
-        cleanupPartition(dateByTtlDate, partitionByTtlDate);
+        return cleanupPartition(dateByTtlDate, partitionByTtlDate);
     }
 
-    private void cleanupPartition(LocalDateTime dateByTtlDate, String partitionByTtlDate) {
+    private int cleanupPartition(LocalDateTime dateByTtlDate, String partitionByTtlDate) {
         int deleted = 0;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT tablename " +
@@ -150,6 +154,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         } catch (SQLException e) {
             log.error("SQLException occurred during TTL cleanupPartition task execution", e);
         }
+        return deleted;
     }
 
     private boolean checkNeedDropTable(LocalDateTime date, String tableName) {
@@ -201,12 +206,8 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         return "ts_kv_" + result;
     }
 
-    private LocalDateTime getPartitionByTtlDate(long maxTtl) {
-        return Instant.ofEpochMilli(System.currentTimeMillis() - maxTtl).atZone(ZoneOffset.UTC).toLocalDateTime();
-    }
-
-    private long getMaxTtl(long systemTtl) {
-        return Math.max(systemTtl, 0L);
+    private LocalDateTime getPartitionByTtlDate(long ttl) {
+        return Instant.ofEpochMilli(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl)).atZone(ZoneOffset.UTC).toLocalDateTime();
     }
 
     private void savePartitionIfNotExist(long ts) {
@@ -228,12 +229,18 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         if (!partitions.containsKey(sqlPartition.getStart())) {
             partitionCreationLock.lock();
             try {
-                log.trace("Saving partition: {}", sqlPartition);
+                if (log.isTraceEnabled()) {
+                    log.trace("Saving partition: {}", sqlPartition);
+                }
                 partitioningRepository.save(sqlPartition);
-                log.trace("Adding partition to Set: {}", sqlPartition);
+                if (log.isTraceEnabled()) {
+                    log.trace("Adding partition to Set: {}", sqlPartition);
+                }
                 partitions.put(sqlPartition.getStart(), sqlPartition);
             } catch (DataIntegrityViolationException ex) {
-                log.trace("Error occurred during partition save:", ex);
+                if (log.isTraceEnabled()) {
+                    log.trace("Error occurred during partition save:", ex);
+                }
                 if (ex.getCause() instanceof ConstraintViolationException) {
                     log.warn("Saving partition [{}] rejected. Timeseries data will save to the ts_kv_indefinite (DEFAULT) partition.", sqlPartition.getPartitionDate());
                     partitions.put(sqlPartition.getStart(), sqlPartition);
