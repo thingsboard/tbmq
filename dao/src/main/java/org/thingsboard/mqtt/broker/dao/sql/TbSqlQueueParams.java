@@ -24,4 +24,5 @@ public class TbSqlQueueParams {
     private final String queueName;
     private final int batchSize;
     private final long maxDelay;
+    private final boolean batchSortEnabled;
 }

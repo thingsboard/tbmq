@@ -52,15 +52,14 @@
         <lombok.version>1.18.18</lombok.version>
         <netty.version>4.1.75.Final</netty.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
-        <hsqldb.version>2.5.0</hsqldb.version>
         <dbunit.version>2.7.2</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
-        <postgresql.driver.version>42.2.20</postgresql.driver.version>
+        <postgresql.driver.version>42.5.0</postgresql.driver.version>
         <kafka.version>2.8.0</kafka.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
         <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
         <winsw.version>2.0.1</winsw.version>
-        <surfire.version>2.19.1</surfire.version>
+        <surefire.version>3.0.0-M6</surefire.version>
         <jar-plugin.version>3.0.2</jar-plugin.version>
         <freemarker.version>2.3.30</freemarker.version>
         <mail.version>1.6.2</mail.version>
@@ -565,7 +564,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M1</version>
+                    <version>${surefire.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -845,11 +844,6 @@
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hsqldb</groupId>
-                <artifactId>hsqldb</artifactId>
-                <version>${hsqldb.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${jaxb.version}</version>
@@ -874,10 +868,28 @@
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>jdbc</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
             </dependency>

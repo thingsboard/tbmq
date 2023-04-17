@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import java.util.Collection;
 
 public interface SubscriptionCommandService {
+
     void subscribe(String clientId, Collection<TopicSubscription> subscriptions);
 
     void unsubscribe(String clientId, Collection<String> subscriptions);

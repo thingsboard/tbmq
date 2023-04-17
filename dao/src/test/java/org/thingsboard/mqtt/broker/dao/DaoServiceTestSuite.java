@@ -15,12 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
-import org.junit.ClassRule;
 import org.junit.extensions.cpsuite.ClasspathSuite;
 import org.junit.extensions.cpsuite.ClasspathSuite.ClassnameFilters;
 import org.junit.runner.RunWith;
-
-import java.util.Arrays;
 
 @RunWith(ClasspathSuite.class)
 @ClassnameFilters({
@@ -31,17 +28,4 @@ import java.util.Arrays;
 })
 public class DaoServiceTestSuite {
 
-    @ClassRule
-    public static CustomSqlUnit sqlUnit = new CustomSqlUnit(
-            Arrays.asList("sql/schema-entities-hsql.sql", "sql/system-data.sql"),
-            "sql/hsql/drop-all-tables.sql",
-            "sql-test.properties"
-    );
-
-//    @ClassRule
-//    public static CustomSqlUnit sqlUnit = new CustomSqlUnit(
-//            Arrays.asList("sql/schema-entities.sql", "sql/system-data.sql"),
-//            "sql/psql/drop-all-tables.sql",
-//            "sql-test.properties"
-//    );
 }

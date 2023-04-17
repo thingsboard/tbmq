@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.sql;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public interface TbSqlQueue<E> {
+
     void init();
 
     void destroy();

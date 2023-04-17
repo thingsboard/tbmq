@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.util;
+package org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import javax.persistence.Transient;
+import java.io.Serializable;
 
-@Retention(RetentionPolicy.RUNTIME)
-@ConditionalOnProperty(prefix = "spring.jpa", value = "database-platform", havingValue = "org.hibernate.dialect.HSQLDialect")
-public @interface HsqlDao {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TsKvDictionaryCompositeKey implements Serializable {
+
+    @Transient
+    private static final long serialVersionUID = -4089175869616037523L;
+
+    private String key;
 }
