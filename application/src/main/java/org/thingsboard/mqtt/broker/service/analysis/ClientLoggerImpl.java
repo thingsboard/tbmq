@@ -27,12 +27,15 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class ClientLoggerImpl implements ClientLogger {
+
+    private final boolean isDebugEnabled = log.isDebugEnabled();
+
     @Value("${analysis.log.analyzed-client-ids:}")
     private Set<String> analyzedClientIds;
 
     @Override
     public void logEvent(String clientId, Class<?> eventLocation, String eventDescription) {
-        if (!log.isDebugEnabled() || CollectionUtils.isEmpty(analyzedClientIds) || !analyzedClientIds.contains(clientId)) {
+        if (!isDebugEnabled || CollectionUtils.isEmpty(analyzedClientIds) || !analyzedClientIds.contains(clientId)) {
             return;
         }
         log.debug("[{}][{}] {}", clientId, eventLocation.getSimpleName(), eventDescription);

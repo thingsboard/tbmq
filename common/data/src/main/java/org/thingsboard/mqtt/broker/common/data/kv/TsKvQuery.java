@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.dao.util.HsqlDao;
+public interface TsKvQuery {
 
-@Service
-@HsqlDao
-@Profile("install")
-public class HsqlEntityDatabaseSchemaService extends AbstractDatabaseSchemaService
-        implements DatabaseSchemaService {
-    protected HsqlEntityDatabaseSchemaService() {
-        super("schema-entities-hsql.sql");
-    }
+    String getKey();
+
+    long getStartTs();
+
+    long getEndTs();
+
 }
-

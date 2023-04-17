@@ -37,15 +37,13 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @RequiredArgsConstructor
 // not thread safe for one Client
 public class MqttMessageHandlerImpl implements MqttMessageHandler {
+
     private final MqttMessageHandlers messageHandlers;
     private final KeepAliveService keepAliveService;
 
     @Override
     public boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef) {
         MsgType msgType = msg.getMsgType();
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing {} msg.", clientSessionCtx.getClientId(), clientSessionCtx.getSessionId(), msgType);
-        }
         keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
         switch (msgType) {
             case MQTT_SUBSCRIBE_MSG:

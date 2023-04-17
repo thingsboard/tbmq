@@ -57,6 +57,9 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Processing SESSION_INIT_MSG onInit {}", state.getClientId(), sessionInitMsg);
+        }
         ClientSessionCtx sessionCtx = sessionInitMsg.getClientSessionCtx();
 
         if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {

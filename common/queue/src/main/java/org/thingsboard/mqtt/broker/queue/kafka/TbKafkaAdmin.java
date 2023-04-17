@@ -74,6 +74,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
+    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
+    private String clientSessionEventRespTopicPrefix;
 
     private final AdminClient client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
@@ -281,6 +283,21 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
+    public List<String> getBrokerServiceIds() {
+        try {
+            Set<String> topics = client.listTopics().names().get();
+            return topics
+                    .stream()
+                    .filter(topic -> topic.startsWith(clientSessionEventRespTopicPrefix))
+                    .map(topic -> topic.replace(clientSessionEventRespTopicPrefix + ".", ""))
+                    .collect(Collectors.toList());
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn("Failed to get broker names", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink) {
         try {
             List<KafkaConsumerGroup> kafkaConsumerGroups = client.listConsumerGroups().all().get()
@@ -329,6 +346,20 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaConsumerGroups.size());
         } catch (Exception e) {
             log.warn("Failed to get Kafka consumer groups", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteAppTopics() {
+        try {
+            Set<String> topics = client.listTopics().names().get();
+            List<String> appTopics = topics
+                    .stream()
+                    .filter(s -> s.startsWith("mqtt_broker_application_client_test_sub_client"))
+                    .collect(Collectors.toList());
+            client.deleteTopics(appTopics).all().get();
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }

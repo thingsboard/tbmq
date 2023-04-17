@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class DaoUtil {
+public class DaoUtil {
 
     private DaoUtil() {
     }
@@ -63,6 +63,10 @@ public abstract class DaoUtil {
             object = data.get().toData();
         }
         return object;
+    }
+
+    public static <T> PageData<T> pageToPageData(Page<T> page) {
+        return new PageData<>(page.getContent(), page.getTotalPages(), page.getTotalElements(), page.hasNext());
     }
 
     public static Pageable toPageable(PageLink pageLink) {

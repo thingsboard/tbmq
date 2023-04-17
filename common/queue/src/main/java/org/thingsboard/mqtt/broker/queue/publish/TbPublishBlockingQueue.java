@@ -36,29 +36,32 @@ public class TbPublishBlockingQueue<PROTO extends GeneratedMessageV3> implements
 
     private final BlockingQueue<QueuedPacket<PROTO>> queue = new LinkedBlockingQueue<>();
 
-    private ExecutorService executor;
-
     private final TbQueueProducer<TbProtoQueueMsg<PROTO>> producer;
     private final String queueName;
     private final long maxDelay;
     private final ProducerStatsManager statsManager;
+    private final Integer partition;
+
+    private ExecutorService executor;
 
     @Builder
-    public TbPublishBlockingQueue(TbQueueProducer<TbProtoQueueMsg<PROTO>> producer, String queueName, long maxDelay, ProducerStatsManager statsManager) {
+    public TbPublishBlockingQueue(TbQueueProducer<TbProtoQueueMsg<PROTO>> producer, String queueName, long maxDelay,
+                                  ProducerStatsManager statsManager, Integer partition) {
         this.producer = producer;
         this.queueName = queueName;
         this.maxDelay = maxDelay;
         this.statsManager = statsManager;
+        this.partition = partition;
     }
 
     @Override
     public void init() {
         statsManager.registerProducerQueue(queueName, queue);
         this.executor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("publish-queue-" + queueName.toLowerCase()));
-        executor.execute(() -> processElementsQueue(queueName));
+        executor.execute(() -> processElementsQueue(queueName, partition));
     }
 
-    private void processElementsQueue(String queueName) {
+    private void processElementsQueue(String queueName, Integer partition) {
         while (!Thread.interrupted()) {
             try {
                 QueuedPacket<PROTO> queuedElement = queue.poll(maxDelay, TimeUnit.MILLISECONDS);
@@ -70,7 +73,7 @@ public class TbPublishBlockingQueue<PROTO extends GeneratedMessageV3> implements
                 String topic = queuedElement.getTopic();
                 try {
                     if (topic != null) {
-                        producer.send(topic, queueMsg, callback);
+                        producer.send(topic, partition, queueMsg, callback);
                     } else {
                         producer.send(queueMsg, callback);
                     }

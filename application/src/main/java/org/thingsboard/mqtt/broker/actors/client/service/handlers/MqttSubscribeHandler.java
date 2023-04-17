@@ -203,7 +203,7 @@ public class MqttSubscribeHandler {
                                          List<TopicSubscription> newSubscriptions,
                                          Set<TopicSubscription> currentSubscriptions) {
         Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
-        retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishMsgToClient(ctx, retainedMsg));
+        retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
     }
 
     Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,

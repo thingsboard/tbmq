@@ -50,21 +50,18 @@ public class ApplicationPackProcessingCtx {
 
     public ApplicationPackProcessingCtx(ApplicationSubmitStrategy submitStrategy, ApplicationPubRelMsgCtx pubRelMsgCtx, ApplicationProcessorStats stats) {
         this.clientId = submitStrategy.getClientId();
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Init ApplicationPackProcessingCtx", clientId);
+        }
         this.processingStartTimeNanos = System.nanoTime();
         this.stats = stats;
         this.pubRelMsgCtx = pubRelMsgCtx;
-        for (PersistedMsg persistedMsg : submitStrategy.getPendingMap().values()) {
+        for (PersistedMsg persistedMsg : submitStrategy.getOrderedMessages()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Adding Pub msg [{}] to be sent!", clientId, persistedMsg.getPacketId());
-                    }
                     publishPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPublishMsg) persistedMsg);
                     break;
                 case PUBREL:
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Adding PubRel msg [{}] to be sent!", clientId, persistedMsg.getPacketId());
-                    }
                     pubRelPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPubRelMsg) persistedMsg);
                     break;
                 default:

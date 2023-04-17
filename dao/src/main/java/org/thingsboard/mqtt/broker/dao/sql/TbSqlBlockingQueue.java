@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +32,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,12 +40,13 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
 
     private final BlockingQueue<TbSqlQueueElement<E>> queue = new LinkedBlockingQueue<>();
 
-    private ExecutorService executor;
-
     private final int id;
     private final TbSqlQueueParams params;
     private final Consumer<List<E>> processingFunction;
     private final MessagesStats stats;
+    private final Comparator<E> batchUpdateComparator;
+
+    private ExecutorService executor;
 
     @Override
     public void init() {
@@ -67,9 +70,14 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
                 }
                 queue.drainTo(elements, batchSize - 1);
                 boolean fullPack = elements.size() == batchSize;
-                log.debug("[{}] Going to process {} elements.", queueName, elements.size());
-                List<E> elementsList = elements.stream().map(TbSqlQueueElement::getElement).collect(Collectors.toList());
-                processingFunction.accept(elementsList);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Going to process {} elements.", queueName, elements.size());
+                }
+                Stream<E> elementsStream = elements.stream().map(TbSqlQueueElement::getElement);
+                processingFunction.accept(
+                        (params.isBatchSortEnabled() ? elementsStream.sorted(batchUpdateComparator) : elementsStream)
+                                .collect(Collectors.toList())
+                );
                 elements.forEach(element -> element.getFuture().set(null));
                 stats.incrementSuccessful(elements.size());
                 if (!fullPack) {

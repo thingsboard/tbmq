@@ -33,13 +33,14 @@ import javax.annotation.PreDestroy;
 @Service
 @RequiredArgsConstructor
 public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
-    @Value("${queue.publish-msg.publisher-thread-max-delay}")
-    private long maxDelay;
-
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
 
     private final PublishMsgQueueFactory publishMsgQueueFactory;
     private final ProducerStatsManager statsManager;
+
+    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+
+    @Value("${queue.publish-msg.publisher-thread-max-delay}")
+    private long maxDelay;
 
     @PostConstruct
     public void init() {

@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -120,6 +121,29 @@ public class AppController extends BaseController {
     public HomePageConfigDto getBrokerConfig() throws ThingsboardException {
         try {
             return brokerHomePageConfig.getConfig();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/brokers", method = RequestMethod.GET)
+    @ResponseBody
+    public List<String> getBrokerServiceIds() throws ThingsboardException {
+        try {
+            return tbQueueAdmin.getBrokerServiceIds();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    // TODO: 10.04.23 remove this!
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/test", method = RequestMethod.DELETE)
+    @ResponseBody
+    public void deleteAllApplicationTopics() throws ThingsboardException {
+        try {
+            tbQueueAdmin.deleteAppTopics();
         } catch (Exception e) {
             throw handleException(e);
         }

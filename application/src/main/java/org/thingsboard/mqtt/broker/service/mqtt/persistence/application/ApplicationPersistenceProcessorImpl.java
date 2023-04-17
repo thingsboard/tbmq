@@ -66,7 +66,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -123,9 +122,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubAck(String clientId, int packetId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Acknowledged packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
@@ -164,9 +160,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
         String clientId = clientSessionCtx.getClientId();
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Received packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
@@ -206,9 +199,6 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void processPubComp(String clientId, int packetId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Completed packet {}", clientId, packetId);
-        }
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (log.isDebugEnabled()) {
@@ -339,7 +329,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                                     ApplicationPersistedMsgCtx persistedMsgCtx,
                                                     List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
         List<PersistedPubRelMsg> pubRelMessagesToDeliver = applicationPubRelMsgCtx.toSortedPubRelMessagesToDeliver();
-        List<PersistedPublishMsg> publishMessagesToDeliver = toSortedPublishMessagesToDeliver(
+        List<PersistedPublishMsg> publishMessagesToDeliver = toPublishMessagesToDeliver(
                 clientSessionCtx,
                 persistedMsgCtx,
                 publishProtoMessages
@@ -704,25 +694,23 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx,
                          String clientId, TopicSharedSubscription topicSharedSubscription) {
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Start sending the pack of messages from processing ctx: {}", clientId, submitStrategy.getOrderedMessages());
+        }
         submitStrategy.process(msg -> {
             switch (msg.getPacketType()) {
                 case PUBLISH:
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Sending Pub msg from processing ctx: {}", clientId, msg.getPacketId());
-                    }
                     PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
                     int minQoSValue = getMinQoSValue(topicSharedSubscription, publishMsg);
-                    publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
+                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
                     break;
                 case PUBREL:
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Sending PubRel from processing ctx: {}", clientId, msg.getPacketId());
-                    }
-                    publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, msg.getPacketId());
+                    publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
                     break;
             }
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to application client");
         });
+        clientSessionCtx.getChannel().flush();
     }
 
     private int getMinQoSValue(TopicSharedSubscription subscription, PublishMsg publishMsg) {
@@ -733,8 +721,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
                                                         List<PersistedPublishMsg> publishMessagesToDeliver) {
         List<PersistedMsg> messagesToDeliver = new ArrayList<>();
-        messagesToDeliver.addAll(pubRelMessagesToDeliver);
-        messagesToDeliver.addAll(publishMessagesToDeliver);
+        if (!CollectionUtils.isEmpty(pubRelMessagesToDeliver)) {
+            messagesToDeliver.addAll(pubRelMessagesToDeliver);
+        }
+        if (!CollectionUtils.isEmpty(publishMessagesToDeliver)) {
+            messagesToDeliver.addAll(publishMessagesToDeliver);
+        }
         return messagesToDeliver;
     }
 
@@ -746,19 +738,18 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         );
     }
 
-    private List<PersistedPublishMsg> toSortedPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
-                                                                       ApplicationPersistedMsgCtx persistedMsgCtx,
-                                                                       List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
-        return publishProtoMessages.stream()
-                .map(msg -> {
-                    Integer msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
-                    int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
-                    boolean isDup = msgPacketId != null;
-                    PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, isDup);
-                    return new PersistedPublishMsg(publishMsg, msg.getOffset());
-                })
-                .sorted(Comparator.comparingLong(PersistedPublishMsg::getPacketOffset))
-                .collect(Collectors.toList());
+    private List<PersistedPublishMsg> toPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
+                                                                 ApplicationPersistedMsgCtx persistedMsgCtx,
+                                                                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
+        List<PersistedPublishMsg> result = new ArrayList<>(publishProtoMessages.size());
+        for (TbProtoQueueMsg<PublishMsgProto> msg : publishProtoMessages) {
+            var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
+            int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
+            boolean isDup = msgPacketId != null;
+            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, isDup);
+            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
+        }
+        return result;
     }
 
     private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, boolean isDup) {

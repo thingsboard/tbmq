@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class ApplicationSubmitStrategyFactory {
+
     public ApplicationSubmitStrategy newInstance(String clientId) {
         return new BurstSubmitStrategy(clientId);
     }

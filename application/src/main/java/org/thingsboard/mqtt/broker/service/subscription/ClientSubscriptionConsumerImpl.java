@@ -92,7 +92,9 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                         encounteredDummyClient = true;
                     } else if (clientSubscriptions.isEmpty()) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        log.debug("[{}] Encountered empty ClientSubscriptions.", clientId);
+                        if (log.isDebugEnabled()) {
+                            log.debug("[{}] Encountered empty ClientSubscriptions.", clientId);
+                        }
                         allSubscriptions.remove(clientId);
                     } else {
                         allSubscriptions.put(clientId, clientSubscriptions);
@@ -147,7 +149,9 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            if (log.isTraceEnabled()) {
+                                log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            }
                         }
                     }
                 }
