@@ -9,6 +9,7 @@
 
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao" level="INFO"/>
 
     <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>
 

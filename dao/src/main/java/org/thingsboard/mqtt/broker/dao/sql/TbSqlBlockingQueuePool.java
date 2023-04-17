@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -32,6 +33,7 @@ import static org.thingsboard.mqtt.broker.common.stats.StubMessagesStats.STUB_ME
 @RequiredArgsConstructor
 @Builder
 public class TbSqlBlockingQueuePool<E> implements TbSqlQueue<E> {
+
     private final CopyOnWriteArrayList<TbSqlBlockingQueue<E>> queues = new CopyOnWriteArrayList<>();
 
     private final TbSqlQueueParams params;
@@ -39,11 +41,12 @@ public class TbSqlBlockingQueuePool<E> implements TbSqlQueue<E> {
     private final Function<E, Integer> queueIndexHashFunction;
     private final Consumer<List<E>> processingFunction;
     private final SqlQueueStatsManager statsManager;
+    private final Comparator<E> batchUpdateComparator;
 
     public void init() {
         for (int i = 0; i < maxThreads; i++) {
             MessagesStats queueStats = statsManager != null ? statsManager.createSqlQueueStats(params.getQueueName(), i) : STUB_MESSAGE_STATS;
-            TbSqlBlockingQueue<E> queue = new TbSqlBlockingQueue<>(i, params, processingFunction, queueStats);
+            TbSqlBlockingQueue<E> queue = new TbSqlBlockingQueue<>(i, params, processingFunction, queueStats, batchUpdateComparator);
             queues.add(queue);
             queue.init();
         }

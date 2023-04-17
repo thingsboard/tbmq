@@ -23,10 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,7 +43,11 @@ public class BurstSubmitStrategy implements SubmitStrategy {
 
     @Override
     public ConcurrentMap<UUID, PublishMsgWithId> getPendingMap() {
-        return orderedMsgList.stream().collect(Collectors.toConcurrentMap(PublishMsgWithId::getId, Function.identity()));
+        ConcurrentMap<UUID, PublishMsgWithId> pendingMap = new ConcurrentHashMap<>(orderedMsgList.size());
+        for (PublishMsgWithId msg : orderedMsgList) {
+            pendingMap.put(msg.getId(), msg);
+        }
+        return pendingMap;
     }
 
     @Override

@@ -74,6 +74,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
+    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
+    private String clientSessionEventRespTopicPrefix;
 
     private final AdminClient client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
@@ -276,6 +278,21 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaTopics.size());
         } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<String> getBrokerServiceIds() {
+        try {
+            Set<String> topics = client.listTopics().names().get();
+            return topics
+                    .stream()
+                    .filter(topic -> topic.startsWith(clientSessionEventRespTopicPrefix))
+                    .map(topic -> topic.replace(clientSessionEventRespTopicPrefix + ".", ""))
+                    .collect(Collectors.toList());
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn("Failed to get broker names", e);
             throw new RuntimeException(e);
         }
     }
