@@ -19,11 +19,24 @@ import { Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
-import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
+import {
+  calculateFixedWindowTimeMs,
+  FixedWindow,
+  RealtimeWindowType,
+  Timewindow,
+  TimewindowType
+} from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import { homeChartJsParams, getColor, StatsChartTypeTranslationMap, StatsChartType } from '@shared/models/chart.model';
+import {
+  homeChartJsParams,
+  getColor,
+  StatsChartTypeTranslationMap,
+  StatsChartType,
+  TimeseriesData
+} from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
+import { DEFAULT_HOME_CHART_INTERVAL, POLLING_INTERVAL } from "@shared/models/home-page.model";
 
 @Component({
   selector: 'tb-home-charts',
@@ -34,7 +47,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   charts = {};
   chartsLatestValues = {};
-  timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
   pollChartsData$: Observable<Array<any>>;
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
@@ -43,33 +55,26 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private destroy$ = new Subject();
 
+  private fixedWindowTimeMs: FixedWindow = {
+    endTimeMs: Date.now(),
+    startTimeMs: Date.now() - DEFAULT_HOME_CHART_INTERVAL
+  };
+
   constructor(private translate: TranslateService,
               private timeService: TimeService,
               private router: Router,
               private statsService: StatsService,
               private cd: ChangeDetectorRef) {
-    this.setTitles();
   }
 
   ngOnInit() {
-    this.timewindow = this.timeService.defaultTimewindow();
-    this.pollChartsData$ = timer(0, 10000).pipe(
-      switchMap(() => this.statsService.pollEntityTimeseriesMock()),
-      retry(),
-      shareReplay(),
-      takeUntil(this.stopPolling$)
-    );
+    this.setTitles();
   }
 
   ngAfterViewInit(): void {
-    const fixedWindowTimeMs: FixedWindow = calculateFixedWindowTimeMs(this.timewindow);
-    this.statsService.getEntityTimeseriesMock().pipe(
-      takeUntil(this.stopPolling$)
-    ).subscribe(
-      data => {
-        this.initCharts(data);
-      }
-    );
+    this.statsService.getEntityTimeseries('artem',  this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs)
+      .pipe(takeUntil(this.stopPolling$))
+      .subscribe(data => this.initCharts(data));
   }
 
   ngOnDestroy() {
@@ -78,12 +83,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.destroy$.complete();
   }
 
-  onTimewindowChange() {
-    this.getTimewindow();
-  }
-
   private initCharts(data) {
-    let index = 0;
     for (const chart in StatsChartType) {
         this.charts[chart] = {} as Chart;
         const ctx = document.getElementById(chart) as HTMLCanvasElement;
@@ -99,7 +99,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         };
         const params = {...homeChartJsParams(), ...{ data: {datasets: [dataSet]} }};
         this.charts[chart] = new Chart(ctx, params);
-        index++;
       }
     this.startPolling();
   }
@@ -110,55 +109,46 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private setLatestValues(data) {
-    for (const key of Object.keys(this.charts)) {
-      this.chartsLatestValues[key] = data[key].length ? data[key][0]?.value : null;
-    }
-    this.cd.detectChanges();
-  }
-
-  private getTimewindow() {
-    if (this.timewindow.selectedTab === TimewindowType.HISTORY) {
-      this.stopPolling();
-    }
-    const fixedWindowTimeMs: FixedWindow = calculateFixedWindowTimeMs(this.timewindow);
-    this.fetchData(fixedWindowTimeMs);
-  }
-
-  private fetchData(fixedWindowTimeMs: FixedWindow) {
-    this.stopPolling();
-    this.statsService.getEntityTimeseriesMock(fixedWindowTimeMs.startTimeMs, fixedWindowTimeMs.endTimeMs).pipe(
-      takeUntil(this.stopPolling$)
-    ).subscribe(data => {
-      for (const chart in StatsChartType) {
-        this.charts[chart].data.datasets[0].data = data[chart];
-      }
-      this.updateCharts();
-      if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
-        this.startPolling();
-      }
-    });
-  }
-
   private startPolling() {
-    this.pollChartsData$.subscribe(data => {
-      for (const chart in StatsChartType) {
-        const latestValue = data[chart][0];
-        this.charts[chart].data.datasets[0].data.shift();
-        this.charts[chart].data.datasets[0].data.push(latestValue);
-        this.setLatestValues(data);
-        this.updateCharts();
+    timer(0, POLLING_INTERVAL).pipe(
+      switchMap(() => this.statsService.getLatestTimeseries('artem')),
+      retry(),
+      takeUntil(this.stopPolling$),
+      shareReplay()
+    ).subscribe(data => {
+      for (const chartType in StatsChartType) {
+        this.pushShiftLatestValue(chartType, data);
+        this.setLatestValues(chartType, data);
+        this.updateScales(chartType);
+        this.updateChart(chartType);
       }
     });
+  }
+
+  private pushShiftLatestValue(chartType: string, data: TimeseriesData) {
+    const latestValue = data[chartType][0];
+    if (this.charts[chartType].data.datasets[0].data && latestValue.ts > this.charts[chartType].data.datasets[0].data[this.charts[chartType].data.datasets[0].data.length-1]?.ts) {
+      // this.charts[chartType].data.datasets[0].data = this.charts[chartType].data.datasets[0].data.filter(el => el.ts > this.fixedWindowTimeMs.startTimeMs);
+      this.charts[chartType].data.datasets[0].data.unshift(latestValue);
+    }
+  }
+
+  private setLatestValues(chartType, data) {
+    this.chartsLatestValues[chartType] = data[chartType].length ? data[chartType][0]?.value : 0;
   }
 
   private stopPolling() {
     this.stopPolling$.next();
   }
 
-  private updateCharts() {
-    for (const chart in StatsChartType) {
-      this.charts[chart].update();
-    }
+  private updateChart(chartType) {
+    this.charts[chartType].update();
+  }
+
+  private updateScales(chartType: string) {
+    this.fixedWindowTimeMs.startTimeMs += POLLING_INTERVAL;
+    this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
+    this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
+    this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
   }
 }

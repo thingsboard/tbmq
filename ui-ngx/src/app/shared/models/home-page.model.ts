@@ -14,6 +14,9 @@
 /// limitations under the License.
 ///
 
+export const POLLING_INTERVAL = 10000;
+export const DEFAULT_HOME_CHART_INTERVAL = POLLING_INTERVAL * 30;
+
 export enum HomePageTitleType {
   MONITORING = 'MONITORING',
   SESSION = 'SESSION',
