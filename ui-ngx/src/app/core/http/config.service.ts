@@ -36,4 +36,8 @@ export class ConfigService {
     return this.http.get<BrokerConfig>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
   }
 
+  public getBrokerServiceIds(config?: RequestConfig): Observable<Array<string>> {
+    return this.http.get<Array<string>>(`/api/app/brokers`, defaultHttpOptionsFromConfig(config));
+  }
+
 }

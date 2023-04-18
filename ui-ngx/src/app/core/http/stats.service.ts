@@ -31,11 +31,12 @@ export class StatsService {
   constructor(private http: HttpClient) {
   }
 
-  public getEntityTimeseries(keys: Array<string>, startTs: number, endTs: number,
+  public getEntityTimeseries(entityId: string, startTs: number, endTs: number,
+                             keys: Array<string> = ["incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions"],
                              limit: number = 100, agg: AggregationType = AggregationType.NONE, interval?: number,
                              orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false,
                              config?: RequestConfig): Observable<TimeseriesData> {
-    let url = `/api/plugins/telemetry/values/timeseries?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
+    let url = `/api/timeseries/${entityId}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;
     }
@@ -51,7 +52,15 @@ export class StatsService {
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
+    return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
+  }
 
+  public getLatestTimeseries(entityId: string, keys: Array<string> = ["incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions"],
+                             useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
+    let url = `/api/timeseries/${entityId}/latest?keys=${keys.join(',')}`;
+    if (isDefinedAndNotNull(useStrictDataTypes)) {
+      url += `&useStrictDataTypes=${useStrictDataTypes}`;
+    }
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 

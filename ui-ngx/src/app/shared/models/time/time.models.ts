@@ -933,7 +933,7 @@ export function calculateFixedWindowTimeMs(timewindow: Timewindow): FixedWindow 
   const currentTime = Date.now();
   let startTimeMs: number = 0;
   let endTimeMs: number = 0;
-  if (isDefined(timewindow.history)) {
+  if (timewindow.selectedTab === TimewindowType.HISTORY) {
     if (timewindow.history?.historyType === HistoryWindowType.LAST_INTERVAL) {
       startTimeMs = currentTime - timewindow.history.timewindowMs;
       endTimeMs = currentTime;
@@ -945,12 +945,12 @@ export function calculateFixedWindowTimeMs(timewindow: Timewindow): FixedWindow 
       startTimeMs = timewindow.history.fixedTimewindow.startTimeMs;
       endTimeMs = timewindow.history.fixedTimewindow.endTimeMs;
     }
-  } else if (isDefined(timewindow.realtime)) {
-    if (timewindow.realtime.realtimeType === RealtimeWindowType.LAST_INTERVAL) {
+  } else if (timewindow.selectedTab === TimewindowType.REALTIME) {
+    if (timewindow.realtime.realtimeType === RealtimeWindowType.INTERVAL) {
       const startEndTime = calculateIntervalStartEndTime(timewindow.realtime.quickInterval);
       startTimeMs = startEndTime[0];
       endTimeMs = startEndTime[1];
-    } else if (timewindow.realtime.realtimeType === RealtimeWindowType.INTERVAL) {
+    } else if (timewindow.realtime.realtimeType === RealtimeWindowType.LAST_INTERVAL) {
       startTimeMs = currentTime - timewindow.realtime.timewindowMs;
       endTimeMs = currentTime;
     }

@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import { FixedWindow } from "@shared/models/time/time.models";
+
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -25,34 +27,34 @@ export interface TsValue {
 }
 
 export enum StatsChartType {
-  INCOMING_MESSAGES = 'INCOMING_MESSAGES',
-  OUTGOING_MESSAGES = 'OUTGOING_MESSAGES',
-  DROPPED_MESSAGES = 'DROPPED_MESSAGES',
-  SESSIONS = 'SESSIONS',
-  SUBSCRIPTIONS = 'SUBSCRIPTIONS'
+  incomingMsgs = 'incomingMsgs',
+  outgoingMsgs = 'outgoingMsgs',
+  droppedMsgs = 'droppedMsgs',
+  sessions = 'sessions',
+  subscriptions = 'subscriptions'
 }
 
-export const StatsChartTypeTranslationMap = new Map<StatsChartType, string>(
+export const StatsChartTypeTranslationMap = new Map<string, string>(
   [
-    [StatsChartType.INCOMING_MESSAGES, 'overview.incoming-messages'],
-    [StatsChartType.OUTGOING_MESSAGES, 'overview.outgoing-messages'],
-    [StatsChartType.DROPPED_MESSAGES, 'overview.dropped-messages'],
-    [StatsChartType.SESSIONS, 'overview.sessions'],
-    [StatsChartType.SUBSCRIPTIONS, 'overview.subscriptions'],
+    [StatsChartType.incomingMsgs, 'overview.incoming-messages'],
+    [StatsChartType.outgoingMsgs, 'overview.outgoing-messages'],
+    [StatsChartType.droppedMsgs, 'overview.dropped-messages'],
+    [StatsChartType.sessions, 'overview.sessions'],
+    [StatsChartType.subscriptions, 'overview.subscriptions'],
   ]
 );
 
-export const MonitoringChartColorMap = new Map<StatsChartType, string>(
+export const MonitoringChartColorMap = new Map<string, string>(
   [
-    [StatsChartType.INCOMING_MESSAGES, '#58519E'],
-    [StatsChartType.OUTGOING_MESSAGES, '#4A6EA8'],
-    [StatsChartType.DROPPED_MESSAGES, '#47848F'],
-    [StatsChartType.SESSIONS, '#4FA889'],
-    [StatsChartType.SUBSCRIPTIONS, '#499E55']
+    [StatsChartType.incomingMsgs, '#58519E'],
+    [StatsChartType.outgoingMsgs, '#4A6EA8'],
+    [StatsChartType.droppedMsgs, '#47848F'],
+    [StatsChartType.sessions, '#4FA889'],
+    [StatsChartType.subscriptions, '#499E55']
   ]
 );
 
-export function getColor(type: StatsChartType): string {
+export function getColor(type: string): string {
   return MonitoringChartColorMap.get(type);
 }
 
@@ -133,6 +135,8 @@ export function monitoringChartJsParams() {
         },
         x: {
           type: 'time',
+          min: Date.now() - 360000,
+          max: Date.now(),
           ticks: {
             maxRotation: 0,
             padding: 10,
@@ -150,7 +154,7 @@ export function monitoringChartJsParams() {
               enabled: true
             },
             wheel: {
-              enabled: true,
+              enabled: false,
             },
             mode: 'x'
           }

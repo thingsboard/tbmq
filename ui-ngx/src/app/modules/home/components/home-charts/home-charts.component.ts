@@ -14,16 +14,15 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subject, timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { retry, switchMap, takeUntil } from 'rxjs/operators';
+import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import { homeChartJsParams, getColor, StatsChartTypeTranslationMap, StatsChartType } from '@shared/models/chart.model';
-import { KeyValue } from '@angular/common';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -33,13 +32,11 @@ import Chart from 'chart.js/auto';
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  @Output() timewindowObject = new EventEmitter<Timewindow>();
-
   charts = {};
   chartsLatestValues = {};
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
-  pollChartsData$: Observable<Array<KeyValue<string, any>>>;
+  pollChartsData$: Observable<Array<any>>;
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
 
   private stopPolling$ = new Subject();
@@ -56,9 +53,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.timewindow = this.timeService.defaultTimewindow();
-    this.pollChartsData$ = timer(0, 5000).pipe(
+    this.pollChartsData$ = timer(0, 10000).pipe(
       switchMap(() => this.statsService.pollEntityTimeseriesMock()),
       retry(),
+      shareReplay(),
       takeUntil(this.stopPolling$)
     );
   }
@@ -81,7 +79,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onTimewindowChange() {
-    this.timewindowObject.emit(this.timewindow);
     this.getTimewindow();
   }
 
@@ -95,7 +92,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
           label,
           fill: true,
           backgroundColor: 'transparent',
-          borderColor: getColor(chart as StatsChartType),
+          borderColor: getColor(chart),
           borderWidth: 3,
           data: data[chart],
           hover: true

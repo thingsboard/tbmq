@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
-import { retry, switchMap, takeUntil } from 'rxjs/operators';
+import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
@@ -54,6 +54,7 @@ export class HomeCardsSessionsCredentialsComponent implements OnInit, AfterViewI
         this.mqttClientCredentialsService.getClientCredentialsStatsInfo()
       )),
       retry(),
+      shareReplay(),
       takeUntil(this.stopPolling)
     );
   }
