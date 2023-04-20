@@ -25,6 +25,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -171,8 +172,15 @@ public class TimeseriesController extends BaseController {
         return new FutureCallback<>() {
             @Override
             public void onSuccess(List<TsKvEntry> data) {
+                if (CollectionUtils.isEmpty(data)) {
+                    response.setResult(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                    return;
+                }
                 Map<String, List<TsData>> result = new LinkedHashMap<>();
                 for (TsKvEntry entry : data) {
+                    if (entry == null) {
+                        continue;
+                    }
                     Object value = useStrictDataTypes ? entry.getValue() : entry.getValueAsString();
                     result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(new TsData(entry.getTs(), value));
                 }

@@ -32,15 +32,20 @@ import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService {
+
+    public static final long MAX_VALUE = 1_000_000_000L;
 
     // TODO: remove all cachedThreadPool
     private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
@@ -75,6 +80,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
         PublishMsgConsumerStats stats = statsManager.createPublishMsgConsumerStats(consumerId);
+        final AtomicLong counter = new AtomicLong(0);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
@@ -85,8 +91,12 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
                     AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
-                    List<PublishMsgWithId> messagesWithId = toPubMsgWithIdList(msgs);
-                    submitStrategy.init(messagesWithId);
+                    long packId = counter.incrementAndGet();
+                    if (packId == MAX_VALUE) {
+                        counter.set(0);
+                    }
+                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgs, packId);
+                    submitStrategy.init(pendingMsgMap);
 
                     long packProcessingStart = System.nanoTime();
                     while (!stopped) {
@@ -132,12 +142,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         });
     }
 
-    private List<PublishMsgWithId> toPubMsgWithIdList(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
-        List<PublishMsgWithId> messagesWithId = new ArrayList<>(msgs.size());
+    private ConcurrentMap<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
+        ConcurrentMap<UUID, PublishMsgWithId> publishMsgPendingMap = new ConcurrentHashMap<>(msgs.size());
+        int i = 0;
         for (var msg : msgs) {
-            messagesWithId.add(new PublishMsgWithId(UUID.randomUUID(), msg.getValue()));
+            UUID id = new UUID(packId, i++);
+            publishMsgPendingMap.put(id, new PublishMsgWithId(id, msg.getValue()));
         }
-        return messagesWithId;
+        return publishMsgPendingMap;
     }
 
 

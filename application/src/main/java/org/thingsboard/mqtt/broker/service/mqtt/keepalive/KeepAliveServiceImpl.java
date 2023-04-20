@@ -88,9 +88,6 @@ public class KeepAliveServiceImpl implements KeepAliveService {
 
     @Override
     public void acknowledgeControlPacket(UUID sessionId) throws MqttException {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Acknowledging control packet for session", sessionId);
-        }
         KeepAliveInfo keepAliveInfo = keepAliveInfoMap.get(sessionId);
         if (keepAliveInfo == null) {
             log.warn("[{}] Cannot find keepAliveInfo", sessionId);

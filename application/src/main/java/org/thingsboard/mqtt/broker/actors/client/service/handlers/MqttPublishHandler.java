@@ -62,11 +62,13 @@ public class MqttPublishHandler {
     private final ClientLogger clientLogger;
     private final RetainedMsgProcessor retainedMsgProcessor;
 
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
         PublishMsg publishMsg = msg.getPublishMsg();
         int msgId = publishMsg.getPacketId();
 
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg);
         }
         boolean validateSuccess = validatePubMsg(ctx, publishMsg);
@@ -81,7 +83,7 @@ public class MqttPublishHandler {
         }
 
         if (publishMsg.isRetained()) {
-            if (log.isTraceEnabled()) {
+            if (isTraceEnabled) {
                 log.trace("[{}] Processing retain msg {}", ctx.getClientId(), publishMsg);
             }
             publishMsg = retainedMsgProcessor.process(publishMsg);
@@ -142,7 +144,7 @@ public class MqttPublishHandler {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
-                if (log.isTraceEnabled()) {
+                if (isTraceEnabled) {
                     log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
                 }
                 sendPubResponseEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
@@ -193,11 +195,11 @@ public class MqttPublishHandler {
         if (awaitingPacketInfo == null) {
             ctx.getAwaitingPubRelPacketsCtx().await(clientId, msgId);
         } else if (!awaitingPacketInfo.isPersisted()) {
-            if (log.isTraceEnabled()) {
+            if (isTraceEnabled) {
                 log.trace("[{}][{}] Message {} is awaiting to be persisted.", clientId, sessionId, msgId);
             }
         } else {
-            if (log.isTraceEnabled()) {
+            if (isTraceEnabled) {
                 log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
             }
             sendPubResponseEventToActor(actorRef, sessionId, msgId, MqttQoS.EXACTLY_ONCE);
