@@ -30,10 +30,10 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -142,8 +142,8 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         });
     }
 
-    private ConcurrentMap<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
-        ConcurrentMap<UUID, PublishMsgWithId> publishMsgPendingMap = new ConcurrentHashMap<>(msgs.size());
+    private Map<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
+        Map<UUID, PublishMsgWithId> publishMsgPendingMap = new LinkedHashMap<>(msgs.size());
         int i = 0;
         for (var msg : msgs) {
             UUID id = new UUID(packId, i++);

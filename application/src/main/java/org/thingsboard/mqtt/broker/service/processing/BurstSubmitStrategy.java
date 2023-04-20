@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,10 +36,10 @@ public class BurstSubmitStrategy implements SubmitStrategy {
     private final String consumerId;
     private final boolean processInParallel;
 
-    private ConcurrentMap<UUID, PublishMsgWithId> publishMsgMap;
+    private Map<UUID, PublishMsgWithId> publishMsgMap;
 
     @Override
-    public void init(ConcurrentMap<UUID, PublishMsgWithId> messagesMap) {
+    public void init(Map<UUID, PublishMsgWithId> messagesMap) {
         publishMsgMap = messagesMap;
     }
 
@@ -65,7 +66,7 @@ public class BurstSubmitStrategy implements SubmitStrategy {
 
     @Override
     public void update(Map<UUID, PublishMsgWithId> reprocessMap) {
-        ConcurrentMap<UUID, PublishMsgWithId> newPublishMsgMap = new ConcurrentHashMap<>(reprocessMap.size());
+        Map<UUID, PublishMsgWithId> newPublishMsgMap = new LinkedHashMap<>(reprocessMap.size());
         for (PublishMsgWithId msg : publishMsgMap.values()) {
             if (reprocessMap.containsKey(msg.getId())) {
                 newPublishMsgMap.put(msg.getId(), msg);

@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 public interface SubmitStrategy {
 
-    void init(ConcurrentMap<UUID, PublishMsgWithId> messagesMap);
+    void init(Map<UUID, PublishMsgWithId> messagesMap);
 
     ConcurrentMap<UUID, PublishMsgWithId> getPendingMap();
 
