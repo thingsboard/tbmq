@@ -16,12 +16,12 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
 import { AggregationType } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
-import { StatsChartType, TimeseriesData } from '@shared/models/chart.model';
+import { TimeseriesData } from '@shared/models/chart.model';
 
 export const chartKeys = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
 
@@ -63,62 +63,5 @@ export class StatsService {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getMonitoringInitData(config?: RequestConfig): Observable<any> {
-    const dataset: any = {};
-    for (const chart in StatsChartType) {
-      const data = [];
-      let ts = Date.now() - (60 * 60 * 1000 * 10);
-      for (let i = 0; i < 10; i++) {
-        ts = ts + (60 * 60 * 1000);
-        const value = Math.floor(Math.random() * 10) + 5;
-        data.push({value, ts});
-      }
-      dataset[chart] = data;
-    }
-    return of(dataset);
-  }
-
-  public pollMonitoringLatestValue(config?: RequestConfig): Observable<any> {
-    const dataset: any = {};
-    for (const chart in StatsChartType) {
-      const data = [];
-      const ts = Date.now() + (60 * 60 * 1000);
-      const value = Math.floor(Math.random() * 10) + 5;
-      data.push({value, ts});
-      dataset[chart] = data;
-    }
-    return of(dataset);
-  }
-
-  public getEntityTimeseriesMock(startTime?: number, endTime?: number, config?: RequestConfig): Observable<any> {
-    const dataset: any = {};
-    for (const chart in StatsChartType) {
-      const data = [];
-      let ts = Date.now() - (60 * 1000);
-      for (let i = 0; i < 10; i++) {
-        ts = ts + (5 * 1000);
-        const value = Math.floor(Math.random() * 10) + 5;
-        data.push({value, ts});
-      }
-      dataset[chart] = data;
-    }
-    return of(dataset);
-  }
-
-  public pollEntityTimeseriesMock(config?: RequestConfig): Observable<any> {
-    const dataset: any = {};
-    for (const chart in StatsChartType) {
-      const randomValuesNumber = 1;
-      const data = [];
-      const ts = Date.now() + (10 * 1000);
-      for (let i = 0; i < randomValuesNumber; i++) {
-        const value = Math.floor(Math.random() * 10) + 5;
-        data.push({value, ts});
-      }
-      dataset[chart] = data;
-    }
-    return of(dataset);
   }
 }
