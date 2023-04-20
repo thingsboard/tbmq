@@ -72,7 +72,7 @@ spec:
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "true"
             - name: TB_KAFKA_SERVERS
-              value: "PUT_YOUR_BROKERS_HERE"
+              value: "kafka-headless:9092"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT
@@ -88,7 +88,7 @@ spec:
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
             - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "6"
+              value: "12"
             - name: TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT
               value: "90000"
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_TYPE
@@ -96,9 +96,9 @@ spec:
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
               value: "0"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:6;replication.factor:1;max.message.bytes:8388608"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:12;replication.factor:1"
             - name: TB_KAFKA_DEFAULT_PRODUCER_RETRIES
-              value: "5"
+              value: "1"
             - name: TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE
               value: "65536"
             - name: TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS
@@ -134,7 +134,7 @@ spec:
             - name: TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:5;replication.factor:1"
             - name: TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:10485760000;replication.factor:1;max.message.bytes:8388608"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:10485760000;replication.factor:1"
             - name: ANALYSIS_LOG_CLIENT_IDS
               value: ""
             - name: TCP_NETTY_LEAK_DETECTOR_LVL
@@ -185,16 +185,18 @@ spec:
               value: "60000"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
               value: "max.poll.records:16384;fetch.max.bytes:134217728;fetch.min.bytes:1024"
+            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
+              value: "batch.size:131072"
             - name: ACTORS_SYSTEM_THROUGHPUT
               value: "5"
             - name: TB_PUBLISH_MSG_PARALLEL_PROCESSING
               value: "false"
             - name: ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE
-              value: "20"
+              value: "30"
             - name: TCP_NETTY_BOSS_GROUP_THREADS
               value: "3"
             - name: TCP_NETTY_WORKER_GROUP_THREADS
-              value: "30"
+              value: "40"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config

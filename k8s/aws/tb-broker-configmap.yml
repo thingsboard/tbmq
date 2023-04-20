@@ -24,7 +24,7 @@ metadata:
 data:
     SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
     SPRING_DRIVER_CLASS_NAME: "org.postgresql.Driver"
-    SPRING_DATASOURCE_URL: "jdbc:postgresql://PUT_YOUR_RDS_HERE:5432/thingsboard_mqtt_broker"
+    SPRING_DATASOURCE_URL: "jdbc:postgresql://tb-broker.c4vlkpug5bi9.eu-west-1.rds.amazonaws.com:5432/thingsboard_mqtt_broker"
     SPRING_DATASOURCE_USERNAME: "postgres"
     SPRING_DATASOURCE_PASSWORD: "postgres"
 ---
@@ -38,7 +38,7 @@ metadata:
 data:
   conf: |
       # Memory for 115Gi pod (49Gi heap + 10Gi stack and etc)
-      export JAVA_OPTS="$JAVA_OPTS -Xmx50g -Xms20g -Xss320k -XX:+AlwaysPreTouch"
+      export JAVA_OPTS="$JAVA_OPTS -Xmx50g -Xms50g -Xss320k -XX:+AlwaysPreTouch"
 
       export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
       export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
