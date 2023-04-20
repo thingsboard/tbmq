@@ -96,7 +96,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         try {
             subscriptionTrie.clearEmptyNodes();
         } catch (SubscriptionTrieClearException e) {
-            log.error("Failed to clear empty nodes. Reason - {}.", e.getMessage());
+            log.error("Failed to clear empty nodes.", e);
         }
     }
 }

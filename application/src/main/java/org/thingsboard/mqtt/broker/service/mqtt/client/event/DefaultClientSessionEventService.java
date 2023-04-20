@@ -236,7 +236,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     private void processingEventResponseError(Throwable e) {
         if (stopped) {
             if (log.isDebugEnabled()) {
-                log.debug("Ignoring error {} because service is stopped.", e.getMessage());
+                log.debug("Ignoring error because service is stopped.", e);
             }
             return;
         }

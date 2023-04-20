@@ -102,7 +102,7 @@ public class DefaultMailService implements MailService {
             try {
                 this.sendResetPasswordEmail(passwordResetLink, email);
             } catch (ThingsboardException e) {
-                log.error("Error occurred: {} ", e.getMessage());
+                log.error("Error occurred: ", e);
             }
         });
     }

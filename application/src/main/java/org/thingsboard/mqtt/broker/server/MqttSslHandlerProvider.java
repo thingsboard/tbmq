@@ -88,7 +88,7 @@ public class MqttSslHandlerProvider {
             sslContext.init(km, tm, null);
             return sslContext;
         } catch (Exception e) {
-            log.error("Unable to set up SSL context. Reason: " + e.getMessage(), e);
+            log.error("Unable to set up SSL context.", e);
             throw new RuntimeException("Failed to get SSL context", e);
         }
     }

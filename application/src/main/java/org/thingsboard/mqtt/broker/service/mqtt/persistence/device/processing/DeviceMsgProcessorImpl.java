@@ -129,7 +129,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                 deviceMsgService.save(devicePublishMessages, ctx.detectMsgDuplication());
                 ctx.onSuccess();
             } catch (DuplicateKeyException e) {
-                log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());
+                log.warn("[{}] Duplicate serial number detected, will save with rewrite", consumerId, e);
                 ctx.disableMsgDuplicationDetection();
             } catch (Exception e) {
                 log.warn("[{}] Failed to save device messages", consumerId, e);
