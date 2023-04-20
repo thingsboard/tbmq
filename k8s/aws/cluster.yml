@@ -31,45 +31,49 @@ managedNodeGroups:
     maxSize: 1
     minSize: 0
     labels: { role: tb-mqtt-broker }
+    volumeType: gp3
+    volumeSize: 10
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-    ami: ami-0de6044cc8d220517
-    amiFamily: AmazonLinux2
-    overrideBootstrapCommand: |
-      #!/bin/bash
-      /etc/eks/bootstrap.sh thingsboard-mqtt-broker-cluster \
-        --container-runtime dockerd \
-        --use-max-pods true \
-        --docker-config-json '{
-        "bridge":"none",
-        "log-driver":"json-file",
-        "log-opts":{
-          "max-size":"10m",
-          "max-file":"10"
-        },
-        "live-restore":true,
-        "max-concurrent-downloads":10,
-        "default-ulimits":{
-          "memlock":{
-            "Hard":-1,
-            "Name":"memlock",
-            "Soft":-1
-          },
-          "nofile":{
-            "Hard":4194304,
-            "Name":"nofile",
-            "Soft":4194304
-          }
-        }
-      }' \
-        --kubelet-extra-args "--node-labels=alpha.eksctl.io/cluster-name=thingsboard-mqtt-broker-cluster,alpha.eksctl.io/nodegroup-name=tb-mqtt-broker,alpha.eksctl.io/nodegroup-type=managed"
-    preBootstrapCommands:
-      - "sysctl -w fs.nr_open=4194304"
+  #    ami: ami-0de6044cc8d220517
+  #    amiFamily: AmazonLinux2
+  #    overrideBootstrapCommand: |
+  #      #!/bin/bash
+  #      /etc/eks/bootstrap.sh thingsboard-mqtt-broker-cluster \
+  #        --container-runtime dockerd \
+  #        --use-max-pods true \
+  #        --docker-config-json '{
+  #        "bridge":"none",
+  #        "log-driver":"json-file",
+  #        "log-opts":{
+  #          "max-size":"10m",
+  #          "max-file":"10"
+  #        },
+  #        "live-restore":true,
+  #        "max-concurrent-downloads":10,
+  #        "default-ulimits":{
+  #          "memlock":{
+  #            "Hard":-1,
+  #            "Name":"memlock",
+  #            "Soft":-1
+  #          },
+  #          "nofile":{
+  #            "Hard":4194304,
+  #            "Name":"nofile",
+  #            "Soft":4194304
+  #          }
+  #        }
+  #      }' \
+  #        --kubelet-extra-args "--node-labels=alpha.eksctl.io/cluster-name=thingsboard-mqtt-broker-cluster,alpha.eksctl.io/nodegroup-name=tb-mqtt-broker,alpha.eksctl.io/nodegroup-type=managed"
+  #    preBootstrapCommands:
+  #      - "sysctl -w fs.nr_open=4194304"
   - name: tb-perf-test-publishers
     instanceType: c6g.metal
     desiredCapacity: 0
     maxSize: 1
     minSize: 0
+    volumeType: gp3
+    volumeSize: 10
     labels: { role: tb-perf-test-publishers }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
@@ -78,6 +82,8 @@ managedNodeGroups:
     desiredCapacity: 0
     maxSize: 1
     minSize: 0
+    volumeType: gp3
+    volumeSize: 10
     labels: { role: tb-perf-test-subscribers }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
@@ -86,7 +92,19 @@ managedNodeGroups:
     desiredCapacity: 0
     maxSize: 1
     minSize: 0
+    volumeType: gp3
+    volumeSize: 10
     labels: { role: tb-additional }
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa_tests.pub
+  - name: tb-kafka-n
+    instanceType: m6a.large
+    desiredCapacity: 3
+    maxSize: 3
+    minSize: 0
+    volumeType: gp3
+    volumeSize: 10
+    labels: { role: tb-kafka }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
 #  - name: tb-test
