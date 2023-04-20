@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import { FixedWindow } from "@shared/models/time/time.models";
-
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -69,7 +67,7 @@ export function homeChartJsParams() {
         }
       },
       animation: {
-        duration: 500
+        duration: 0
       },
       layout: {
         padding: 20
@@ -125,7 +123,7 @@ export function monitoringChartJsParams() {
       },
       stacked: false,
       animation: {
-        duration: 500
+        duration: 0
       },
       scales: {
         y: {

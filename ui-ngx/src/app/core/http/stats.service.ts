@@ -19,9 +19,11 @@ import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
-import { AggregationType, FixedWindow } from '@shared/models/time/time.models';
+import { AggregationType } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
 import { StatsChartType, TimeseriesData } from '@shared/models/chart.model';
+
+export const chartKeys = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
 
 @Injectable({
   providedIn: 'root'
@@ -31,8 +33,7 @@ export class StatsService {
   constructor(private http: HttpClient) {
   }
 
-  public getEntityTimeseries(entityId: string, startTs: number, endTs: number,
-                             keys: Array<string> = ["incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions"],
+  public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeys,
                              limit: number = 100, agg: AggregationType = AggregationType.NONE, interval?: number,
                              orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false,
                              config?: RequestConfig): Observable<TimeseriesData> {
@@ -55,7 +56,7 @@ export class StatsService {
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
 
-  public getLatestTimeseries(entityId: string, keys: Array<string> = ["incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions"],
+  public getLatestTimeseries(entityId: string, keys: Array<string> = chartKeys,
                              useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
     let url = `/api/timeseries/${entityId}/latest?keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {

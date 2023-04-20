@@ -23,9 +23,9 @@
         <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
           <div fxFlex fxLayout="column" fxLayoutAlign="start center">
             <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-            <span>{{ chartsLatestValues[chart] }}</span>
+            <span>{{ latestValues[chart] }}</span>
           </div>
-          <canvas class="chart" [id]="chart">
+          <canvas class="chart" [id]="chart+chartIdSuf">
           </canvas>
         </div>
       </div>

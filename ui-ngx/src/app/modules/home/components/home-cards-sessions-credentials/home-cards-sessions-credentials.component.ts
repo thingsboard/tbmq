@@ -14,49 +14,32 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import { MatDialog } from '@angular/material/dialog';
 import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
-import { CredentialsHomeCardConfig, SessionsHomeCardConfig } from '@shared/models/home-page.model';
+import { CredentialsHomeCardConfig, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',
   templateUrl: './home-cards-sessions-credentials.component.html'
 })
-export class HomeCardsSessionsCredentialsComponent implements OnInit, AfterViewInit, OnDestroy {
+export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 
-  @Input()
-  isLoading$: Observable<boolean>;
+  @Input() isLoading$: Observable<boolean>;
 
-  private pollData$: Observable<any>;
-  private stopPolling = new Subject();
-
-  clientSessionStatsInfo: ClientSessionStatsInfo;
-  clientCredentialsInfo: ClientCredentialsInfo;
-
+  sessionsLatest: ClientSessionStatsInfo;
+  credentialsLatest: ClientCredentialsInfo;
   sessionConfig = SessionsHomeCardConfig;
   credentialsConfig = CredentialsHomeCardConfig;
 
-  constructor(private dialog: MatDialog,
-              private mqttClientCredentialsService: MqttClientCredentialsService,
-              private mqttClientSessionService: MqttClientSessionService) {
-  }
+  private stopPolling$ = new Subject();
 
-  ngOnInit(): void {
-    this.pollData$ = timer(0, 10000).pipe(
-      switchMap(() => forkJoin(
-        this.mqttClientSessionService.getClientSessionsStats(),
-        this.mqttClientCredentialsService.getClientCredentialsStatsInfo()
-      )),
-      retry(),
-      shareReplay(),
-      takeUntil(this.stopPolling)
-    );
+  constructor(private mqttClientCredentialsService: MqttClientCredentialsService,
+              private mqttClientSessionService: MqttClientSessionService) {
   }
 
   ngAfterViewInit(): void {
@@ -64,24 +47,17 @@ export class HomeCardsSessionsCredentialsComponent implements OnInit, AfterViewI
   }
 
   ngOnDestroy(): void {
-    this.stopPolling.next();
+    this.stopPolling$.next();
   }
 
   startPolling() {
-    this.pollData$.subscribe(data => {
-      this.clientSessionStatsInfo = data[0];
-      this.clientCredentialsInfo = data[1];
-      this.setConfig();
-    });
-  }
-
-  private setConfig() {
-    this.sessionConfig.map(el => {
-      el.value = this.clientSessionStatsInfo ? this.clientSessionStatsInfo[el.key] : 0;
-    });
-    this.sessionConfig.map(el => {
-      el.value = this.clientSessionStatsInfo ? this.clientSessionStatsInfo[el.key] : 0;
-    });
+    timer(0, POLLING_INTERVAL)
+      .pipe(
+        switchMap(() => forkJoin([this.mqttClientSessionService.getClientSessionsStats(), this.mqttClientCredentialsService.getClientCredentialsStatsInfo()])),
+        retry(),
+        takeUntil(this.stopPolling$),
+        shareReplay())
+      .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);
   }
 
   viewDocumentation(page: string) {
