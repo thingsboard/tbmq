@@ -106,7 +106,11 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     }
 
     private List<ValueWithTopicFilter<T>> wrapValuesWithTopicFilter(String topicFilter, Collection<T> values) {
-        return values.stream().map(value -> new ValueWithTopicFilter<>(value, topicFilter)).collect(Collectors.toList());
+        List<ValueWithTopicFilter<T>> result = new ArrayList<>(values.size());
+        for (T value : values) {
+            result.add(new ValueWithTopicFilter<>(value, topicFilter));
+        }
+        return result;
     }
 
     @Override
