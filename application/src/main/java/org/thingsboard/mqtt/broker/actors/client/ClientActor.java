@@ -94,7 +94,7 @@ public class ClientActor extends ContextAwareActor {
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         if (msg instanceof TimedMsg) {
-            clientActorStats.logMsgQueueTime(System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
+            clientActorStats.logMsgQueueTime(((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
         }
         clientLogger.logEvent(state.getClientId(), this.getClass(), "Received msg - " + msg.getMsgType());
 

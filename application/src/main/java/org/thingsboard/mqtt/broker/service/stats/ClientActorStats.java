@@ -21,9 +21,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public interface ClientActorStats {
+
     void logMsgProcessingTime(String msgType, long amount, TimeUnit unit);
 
-    void logMsgQueueTime(long amount, TimeUnit unit);
+    void logMsgQueueTime(long createdTimeNanos, TimeUnit unit);
 
     Map<String, ResettableTimer> getTimers();
 
