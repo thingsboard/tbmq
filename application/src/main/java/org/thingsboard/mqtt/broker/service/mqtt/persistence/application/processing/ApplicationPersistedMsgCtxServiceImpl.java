@@ -138,7 +138,7 @@ public class ApplicationPersistedMsgCtxServiceImpl implements ApplicationPersist
                 log.debug("[{}] No session for clientId.", clientId);
             }
         } catch (Exception e) {
-            log.warn("[{}] Failed to clear application session context. Reason - {}.", clientId, e.getMessage());
+            log.warn("[{}] Failed to clear application session context.", clientId, e);
         }
     }
 }

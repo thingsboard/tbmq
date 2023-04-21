@@ -353,7 +353,9 @@ public class ProtoConverter {
 
     private static UserProperties createUserProperties(List<QueueProtos.UserPropertyProto> userPropertiesList) {
         UserProperties userProperties = new UserProperties();
-        userPropertiesList.forEach(userPropertyProto -> userProperties.add(userPropertyProto.getKey(), userPropertyProto.getValue()));
+        for (QueueProtos.UserPropertyProto userPropertyProto : userPropertiesList) {
+            userProperties.add(userPropertyProto.getKey(), userPropertyProto.getValue());
+        }
         return userProperties;
     }
 }

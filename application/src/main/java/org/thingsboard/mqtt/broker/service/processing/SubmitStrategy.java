@@ -15,14 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 public interface SubmitStrategy {
-    void init(List<PublishMsgWithId> messages);
+
+    void init(Map<UUID, PublishMsgWithId> messagesMap);
 
     ConcurrentMap<UUID, PublishMsgWithId> getPendingMap();
 

@@ -19,7 +19,6 @@ import com.google.protobuf.GeneratedMessageV3;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -27,9 +26,7 @@ import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TbPublishBlockingQueue<PROTO extends GeneratedMessageV3> implements TbPublishQueue<PROTO> {
@@ -57,40 +54,40 @@ public class TbPublishBlockingQueue<PROTO extends GeneratedMessageV3> implements
     @Override
     public void init() {
         statsManager.registerProducerQueue(queueName, queue);
-        this.executor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("publish-queue-" + queueName.toLowerCase()));
-        executor.execute(() -> processElementsQueue(queueName, partition));
+//        this.executor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("publish-queue-" + queueName.toLowerCase()));
+//        executor.execute(() -> processElementsQueue(queueName, partition));
     }
 
-    private void processElementsQueue(String queueName, Integer partition) {
-        while (!Thread.interrupted()) {
-            try {
-                QueuedPacket<PROTO> queuedElement = queue.poll(maxDelay, TimeUnit.MILLISECONDS);
-                if (queuedElement == null) {
-                    continue;
-                }
-                TbQueueCallback callback = queuedElement.getCallback();
-                TbProtoQueueMsg<PROTO> queueMsg = queuedElement.getQueueMsg();
-                String topic = queuedElement.getTopic();
-                try {
-                    if (topic != null) {
-                        producer.send(topic, partition, queueMsg, callback);
-                    } else {
-                        producer.send(queueMsg, callback);
-                    }
-                } catch (Exception e) {
-                    log.error("[{}] Failed to send msg to the queue", queueName, e);
-                    callback.onFailure(e);
-                }
-            } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    log.info("[{}] Queue polling was interrupted.", queueName);
-                    break;
-                } else {
-                    log.error("[{}] Failed to process msg.", queueName, e);
-                }
-            }
-        }
-    }
+//    private void processElementsQueue(String queueName, Integer partition) {
+//        while (!Thread.interrupted()) {
+//            try {
+//                QueuedPacket<PROTO> queuedElement = queue.poll(maxDelay, TimeUnit.MILLISECONDS);
+//                if (queuedElement == null) {
+//                    continue;
+//                }
+//                TbQueueCallback callback = queuedElement.getCallback();
+//                TbProtoQueueMsg<PROTO> queueMsg = queuedElement.getQueueMsg();
+//                String topic = queuedElement.getTopic();
+//                try {
+//                    if (topic != null) {
+//                        producer.send(topic, partition, queueMsg, callback);
+//                    } else {
+//                        producer.send(queueMsg, callback);
+//                    }
+//                } catch (Exception e) {
+//                    log.error("[{}] Failed to send msg to the queue", queueName, e);
+//                    callback.onFailure(e);
+//                }
+//            } catch (Exception e) {
+//                if (e instanceof InterruptedException) {
+//                    log.info("[{}] Queue polling was interrupted.", queueName);
+//                    break;
+//                } else {
+//                    log.error("[{}] Failed to process msg.", queueName, e);
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public void add(TbProtoQueueMsg<PROTO> queueMsg, TbQueueCallback callback) {
@@ -99,7 +96,16 @@ public class TbPublishBlockingQueue<PROTO extends GeneratedMessageV3> implements
 
     @Override
     public void add(TbProtoQueueMsg<PROTO> queueMsg, TbQueueCallback callback, String topic) {
-        queue.add(new QueuedPacket<>(queueMsg, callback, topic));
+        try {
+            if (topic != null) {
+                producer.send(topic, partition, queueMsg, callback);
+            } else {
+                producer.send(queueMsg, callback);
+            }
+        } catch (Exception e) {
+            log.error("[{}] Failed to send msg to the queue", queueName, e);
+            callback.onFailure(e);
+        }
     }
 
     @Override

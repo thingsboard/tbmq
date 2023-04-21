@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQueueConsumerTemplate<ConsumerRecord<String, byte[]>, T> {
+
     private static final long DEFAULT_CLOSE_TIMEOUT = 3000;
 
     private final TbQueueAdmin admin;
@@ -136,8 +137,10 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
         if (records.isEmpty()) {
             return Collections.emptyList();
         } else {
-            List<ConsumerRecord<String, byte[]>> recordList = new ArrayList<>(256);
-            records.forEach(recordList::add);
+            List<ConsumerRecord<String, byte[]>> recordList = new ArrayList<>(512);
+            for (var record : records) {
+                recordList.add(record);
+            }
             return recordList;
         }
     }

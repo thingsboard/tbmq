@@ -44,6 +44,8 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private final ServiceInfoProvider serviceInfoProvider;
     private final ProducerStatsManager statsManager;
 
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+
     @Value("${queue.application-persisted-msg.publisher-thread-max-delay}")
     private long maxDelay;
 
@@ -70,7 +72,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
-                        if (log.isTraceEnabled()) {
+                        if (isTraceEnabled) {
                             log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
                         }
                         callback.onSuccess();
@@ -92,7 +94,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        if (log.isTraceEnabled()) {
+                        if (isTraceEnabled) {
                             log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
                         }
                         callback.onSuccess();

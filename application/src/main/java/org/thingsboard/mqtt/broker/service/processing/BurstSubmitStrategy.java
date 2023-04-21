@@ -19,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,26 +36,22 @@ public class BurstSubmitStrategy implements SubmitStrategy {
     private final String consumerId;
     private final boolean processInParallel;
 
-    private List<PublishMsgWithId> orderedMsgList;
+    private Map<UUID, PublishMsgWithId> publishMsgMap;
 
     @Override
-    public void init(List<PublishMsgWithId> messages) {
-        this.orderedMsgList = new ArrayList<>(messages);
+    public void init(Map<UUID, PublishMsgWithId> messagesMap) {
+        publishMsgMap = messagesMap;
     }
 
     @Override
     public ConcurrentMap<UUID, PublishMsgWithId> getPendingMap() {
-        ConcurrentMap<UUID, PublishMsgWithId> pendingMap = new ConcurrentHashMap<>(orderedMsgList.size());
-        for (PublishMsgWithId msg : orderedMsgList) {
-            pendingMap.put(msg.getId(), msg);
-        }
-        return pendingMap;
+        return new ConcurrentHashMap<>(publishMsgMap);
     }
 
     @Override
     public void process(Consumer<PublishMsgWithId> msgConsumer) {
         if (log.isDebugEnabled()) {
-            log.debug("Consumer [{}] processing [{}] messages.", consumerId, orderedMsgList.size());
+            log.debug("Consumer [{}] processing [{}] messages.", consumerId, publishMsgMap.size());
         }
         if (processInParallel) {
             Map<String, List<PublishMsgWithId>> msgsByClientMap = collectToMapByClientId();
@@ -62,24 +60,24 @@ public class BurstSubmitStrategy implements SubmitStrategy {
                     .parallelStream()
                     .forEach(clientMsgList -> processMessages(msgConsumer, clientMsgList));
         } else {
-            processMessages(msgConsumer, orderedMsgList);
+            processMessages(msgConsumer, publishMsgMap.values());
         }
     }
 
     @Override
     public void update(Map<UUID, PublishMsgWithId> reprocessMap) {
-        List<PublishMsgWithId> newOrderedMsgList = new ArrayList<>(reprocessMap.size());
-        for (PublishMsgWithId msg : orderedMsgList) {
+        Map<UUID, PublishMsgWithId> newPublishMsgMap = new LinkedHashMap<>(reprocessMap.size());
+        for (PublishMsgWithId msg : publishMsgMap.values()) {
             if (reprocessMap.containsKey(msg.getId())) {
-                newOrderedMsgList.add(msg);
+                newPublishMsgMap.put(msg.getId(), msg);
             }
         }
-        orderedMsgList = newOrderedMsgList;
+        publishMsgMap = newPublishMsgMap;
     }
 
     private Map<String, List<PublishMsgWithId>> collectToMapByClientId() {
         Map<String, List<PublishMsgWithId>> map = new HashMap<>();
-        for (var msg : orderedMsgList) {
+        for (var msg : publishMsgMap.values()) {
             var clientId = getClientId(msg);
             map.computeIfAbsent(clientId, id -> new ArrayList<>()).add(msg);
         }
@@ -90,7 +88,7 @@ public class BurstSubmitStrategy implements SubmitStrategy {
         return msg.getPublishMsgProto().getSessionInfo().getClientInfo().getClientId();
     }
 
-    private void processMessages(Consumer<PublishMsgWithId> msgConsumer, List<PublishMsgWithId> msgList) {
+    private void processMessages(Consumer<PublishMsgWithId> msgConsumer, Collection<PublishMsgWithId> msgList) {
         for (var msg : msgList) {
             msgConsumer.accept(msg);
         }

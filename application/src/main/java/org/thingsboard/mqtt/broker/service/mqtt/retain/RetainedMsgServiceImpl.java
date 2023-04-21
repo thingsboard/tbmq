@@ -63,7 +63,9 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
 
     @Override
     public void clearEmptyTopicNodes() throws RetainMsgTrieClearException {
-        log.trace("Executing clearEmptyTopicNodes");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing clearEmptyTopicNodes");
+        }
         retainMsgTrie.clearEmptyNodes();
     }
 
@@ -73,7 +75,7 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
         try {
             retainMsgTrie.clearEmptyNodes();
         } catch (RetainMsgTrieClearException e) {
-            log.error("Failed to clear empty nodes. Reason - {}.", e.getMessage());
+            log.error("Failed to clear empty nodes.", e);
         }
     }
 }

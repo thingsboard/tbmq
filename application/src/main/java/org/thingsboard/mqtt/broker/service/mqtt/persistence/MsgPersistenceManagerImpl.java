@@ -72,25 +72,28 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (!CollectionUtils.isEmpty(deviceSubscriptions)) {
-            deviceSubscriptions.forEach(deviceSubscription ->
-                    deviceMsgQueuePublisher.sendMsg(
-                            getClientIdFromSubscription(deviceSubscription),
-                            createReceiverPublishMsg(deviceSubscription, publishMsgProto),
-                            callbackWrapper));
+            for (Subscription deviceSubscription : deviceSubscriptions) {
+                deviceMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(deviceSubscription),
+                        createReceiverPublishMsg(deviceSubscription, publishMsgProto),
+                        callbackWrapper);
+            }
         }
         if (!CollectionUtils.isEmpty(applicationSubscriptions)) {
-            applicationSubscriptions.forEach(applicationSubscription ->
-                    applicationMsgQueuePublisher.sendMsg(
-                            getClientIdFromSubscription(applicationSubscription),
-                            createReceiverPublishMsg(applicationSubscription, publishMsgProto),
-                            callbackWrapper));
+            for (Subscription applicationSubscription : applicationSubscriptions) {
+                applicationMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(applicationSubscription),
+                        createReceiverPublishMsg(applicationSubscription, publishMsgProto),
+                        callbackWrapper);
+            }
         }
         if (!CollectionUtils.isEmpty(sharedTopics)) {
-            sharedTopics.forEach(sharedTopic ->
-                    applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                            sharedTopic,
-                            createReceiverPublishMsg(publishMsgProto),
-                            callbackWrapper));
+            for (String sharedTopic : sharedTopics) {
+                applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                        sharedTopic,
+                        createReceiverPublishMsg(publishMsgProto),
+                        callbackWrapper);
+            }
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");

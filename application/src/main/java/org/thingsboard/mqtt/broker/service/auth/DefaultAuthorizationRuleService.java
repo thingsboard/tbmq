@@ -88,11 +88,18 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
 
     @Override
     public boolean isPubAuthorized(String clientId, String topic, List<AuthRulePatterns> authRulePatterns) {
-        ConcurrentMap<String, Boolean> topicAuthMap = publishAuthMap.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
-        return topicAuthMap.computeIfAbsent(topic, s -> {
-            Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
-            return isAuthorized(topic, pubPatterns);
-        });
+        ConcurrentMap<String, Boolean> topicAuthMap = publishAuthMap.get(clientId);
+        if (topicAuthMap == null) {
+            topicAuthMap = publishAuthMap.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
+        }
+        Boolean isAuthorized = topicAuthMap.get(topic);
+        if (isAuthorized == null) {
+            return topicAuthMap.computeIfAbsent(topic, s -> {
+                Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
+                return isAuthorized(topic, pubPatterns);
+            });
+        }
+        return isAuthorized;
     }
 
     @Override

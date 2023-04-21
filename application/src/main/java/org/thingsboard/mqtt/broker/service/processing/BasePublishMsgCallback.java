@@ -23,14 +23,12 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class BasePublishMsgCallback implements PublishMsgCallback {
+
     private final UUID id;
     private final PackProcessingContext ctx;
 
     @Override
     public void onSuccess() {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] ON SUCCESS", id);
-        }
         ctx.onSuccess(id);
     }
 

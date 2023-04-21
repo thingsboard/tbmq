@@ -136,15 +136,17 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         long notPersistentMsgProcessingStartTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            applicationSubscriptions = initArrayList();
-            deviceSubscriptions = initArrayList();
+            int commonSubsSize = msgSubscriptions.getCommonSubscriptions().size();
+            applicationSubscriptions = initArrayList(commonSubsSize);
+            deviceSubscriptions = initArrayList(commonSubsSize);
             processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto,
                     applicationSubscriptions, deviceSubscriptions);
         }
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getTargetDeviceSharedSubscriptions())) {
-            applicationSubscriptions = initSubscriptionListIfNull(applicationSubscriptions);
-            deviceSubscriptions = initSubscriptionListIfNull(deviceSubscriptions);
+            int targetDeviceSharedSubsSize = msgSubscriptions.getTargetDeviceSharedSubscriptions().size();
+            applicationSubscriptions = initSubscriptionListIfNull(applicationSubscriptions, targetDeviceSharedSubsSize);
+            deviceSubscriptions = initSubscriptionListIfNull(deviceSubscriptions, targetDeviceSharedSubsSize);
             processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto,
                     applicationSubscriptions, deviceSubscriptions);
         }
@@ -198,12 +200,12 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
     }
 
-    private List<Subscription> initSubscriptionListIfNull(List<Subscription> subscriptions) {
-        return subscriptions == null ? initArrayList() : subscriptions;
+    private List<Subscription> initSubscriptionListIfNull(List<Subscription> subscriptions, int size) {
+        return subscriptions == null ? initArrayList(size) : subscriptions;
     }
 
-    private List<Subscription> initArrayList() {
-        return processSubscriptionsInParallel ? Collections.synchronizedList(new ArrayList<>()) : new ArrayList<>();
+    private List<Subscription> initArrayList(int size) {
+        return processSubscriptionsInParallel ? Collections.synchronizedList(new ArrayList<>(size)) : new ArrayList<>(size);
     }
 
     private Set<TopicSharedSubscription> initTopicSharedSubscriptionSetIfNull(Set<TopicSharedSubscription> topicSharedSubscriptions) {

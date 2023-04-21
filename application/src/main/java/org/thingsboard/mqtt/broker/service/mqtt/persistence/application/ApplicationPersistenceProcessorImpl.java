@@ -603,7 +603,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             }
             return consumer;
         } catch (Exception e) {
-            log.error("[{}] Failed to init application client consumer. Reason: {}", clientId, e.getMessage());
+            log.error("[{}] Failed to init application client consumer.", clientId, e);
             consumer.unsubscribeAndClose();
             throw e;
         }
