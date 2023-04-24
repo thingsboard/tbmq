@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -55,7 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MqttPublishHandler {
 
