@@ -199,6 +199,8 @@ spec:
               value: "3"
             - name: TCP_NETTY_WORKER_GROUP_THREADS
               value: "40"
+            - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
+              value: "10000"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
