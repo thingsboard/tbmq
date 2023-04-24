@@ -21,7 +21,14 @@ import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import { getColor, homeChartJsParams, StatsChartType, StatsChartTypeTranslationMap, TimeseriesData } from '@shared/models/chart.model';
+import {
+  getColor,
+  homeChartJsParams,
+  StatsChartType,
+  StatsChartTypeTranslationMap,
+  TimeseriesData,
+  TsValue
+} from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
 import { DEFAULT_HOME_CHART_INTERVAL, POLLING_INTERVAL } from '@shared/models/home-page.model';
 
@@ -93,7 +100,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params);
       this.latestValues[chartType] = chartType;
-      this.updateScales(chartType);
+      this.updateXScale(chartType);
     }
   }
 
@@ -109,8 +116,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         for (const chartType in StatsChartType) {
           this.pushLatestValue(chartType, data);
           this.updateChartView(data, chartType);
-          this.updateScales(chartType);
-          this.updateChart(chartType);
         }
       });
   }
@@ -120,34 +125,38 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
   }
 
-  private pushLatestValue(chartType: string, data: TimeseriesData) {
-    if (data[chartType].length) {
-      const latestValue = data[chartType][0];
+  private pushLatestValue(chartType: string, latestData: TimeseriesData) {
+    if (latestData[chartType].length) {
+      const latestValue = latestData[chartType][0];
       latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
+      this.addStartChartValue(chartType, latestValue);
       this.charts[chartType].data.datasets[0].data.unshift(latestValue);
     }
   }
 
   private updateChartView(data: TimeseriesData, chartType) {
-    this.updateScales(chartType);
+    this.updateXScale(chartType);
     this.updateLabel(data, chartType);
     this.updateChart(chartType);
   }
 
-  private stopPolling() {
-    this.stopPolling$.next();
-  }
-
-  private updateChart(chartType) {
-    this.charts[chartType].update();
+  private updateXScale(chartType: string) {
+    this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
+    this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
   }
 
   private updateLabel(data: TimeseriesData, chartType: string) {
     this.latestValues[chartType] = data[chartType][0].value;
   }
 
-  private updateScales(chartType: string) {
-    this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
-    this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
+  private updateChart(chartType) {
+    this.charts[chartType].update();
+  }
+
+  private addStartChartValue(chartType: string, latestValue: TsValue) {
+    const data = this.charts[chartType].data.datasets[0].data;
+    if (!data.length) {
+      data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
+    }
   }
 }

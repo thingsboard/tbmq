@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import moment from 'moment/moment';
+
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -70,7 +72,12 @@ export function homeChartJsParams() {
         duration: 0
       },
       layout: {
-        padding: 20
+        padding: {
+          right: 20,
+          left: 20,
+          bottom: 10,
+          top: 10
+        }
       },
       title: {
         display: false,
@@ -86,16 +93,11 @@ export function homeChartJsParams() {
           display: false
         },
         x: {
-          display: false,
-          type: 'time'
-        },
+          type: 'time',
+          display: false
+        }
       },
       interaction: {
-        mode: 'nearest',
-        intersect: true,
-        axis: 'x'
-      },
-      tooltips: {
         mode: 'nearest',
         intersect: true,
         axis: 'x'
@@ -103,6 +105,9 @@ export function homeChartJsParams() {
       plugins: {
         legend: {
           display: false
+        },
+        tooltip: {
+          enabled: false
         }
       },
       parsing: {
@@ -118,32 +123,37 @@ export function monitoringChartJsParams() {
     type: 'line',
     options: {
       interaction: {
-        mode: 'index',
-        intersect: false
+        mode: 'nearest',
+        intersect: false,
+        axis: 'x'
+      },
+      layout: {
+        padding: {
+          right: 20,
+          left: 20
+        }
       },
       stacked: false,
-      animation: {
-        duration: 0
-      },
+      animation: false,
       scales: {
         y: {
+          min: 0,
+          suggestedMax: 1,
           title: {
             display: false
           }
         },
         x: {
           type: 'time',
-          min: Date.now() - 360000,
-          max: Date.now(),
+          time: {
+            unit: 'hour'
+          },
           ticks: {
             maxRotation: 0,
-            padding: 10,
+            padding: 0,
             labelOffset: 0
-          },
-        },
-      },
-      tooltips: {
-        mode: 'x'
+          }
+        }
       },
       plugins: {
         zoom: {
