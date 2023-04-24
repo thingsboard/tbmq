@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.Persis
 @Service
 @RequiredArgsConstructor
 public class DownLinkProxyImpl implements DownLinkProxy {
+
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkQueuePublisher queuePublisher;
     private final BasicDownLinkProcessor basicDownLinkProcessor;

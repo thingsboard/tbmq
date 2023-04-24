@@ -19,12 +19,13 @@ import com.google.protobuf.GeneratedMessageV3;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-public interface TbPublishQueue<PROTO extends GeneratedMessageV3> {
+public interface TbPublishService<PROTO extends GeneratedMessageV3> {
+
     void init();
 
     void destroy();
 
-    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback);
+    void send(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback);
 
-    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback, String topic);
+    void send(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback, String topic);
 }

@@ -108,7 +108,6 @@ listener:
 
 queue:
   publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
@@ -122,7 +121,6 @@ queue:
     # It is recommended to count the impact of this parameter before setting it on production.
     msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
-    publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
     ack-strategy:
@@ -130,7 +128,6 @@ queue:
       # For RETRY_ALL only
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   device-persisted-msg:
-    publisher-thread-max-delay: "${TB_DEVICE_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
@@ -161,11 +158,9 @@ queue:
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persistent-downlink-publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   basic-downlink-publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   application-removed-event:

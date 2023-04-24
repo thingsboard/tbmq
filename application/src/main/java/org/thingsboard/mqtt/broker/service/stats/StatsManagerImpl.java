@@ -47,7 +47,6 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +70,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final Map<String, List<String>> sharedSubscriptionCompoundClientIds = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueConsumers = new ConcurrentHashMap<>();
-    private final List<Gauge> managedProducerQueues = new CopyOnWriteArrayList<>();
+    private final StatsFactory statsFactory;
+
     private ClientSubscriptionConsumerStats managedClientSubscriptionConsumerStats;
     private RetainedMsgConsumerStats retainedMsgConsumerStats;
     private ClientActorStats clientActorStats;
@@ -79,7 +79,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Value("${stats.application-processor.enabled}")
     private Boolean applicationProcessorStatsEnabled;
 
-    private final StatsFactory statsFactory;
     private TimerStats timerStats;
 
     @PostConstruct
@@ -327,12 +326,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerProducerQueue(String queueName, Queue<?> queue) {
-        statsFactory.createGauge(StatsType.PENDING_PRODUCER_MESSAGES.getPrintName(), queue, Queue::size, "queueName", queueName);
-        managedProducerQueues.add(new Gauge(queueName, queue::size));
-    }
-
-    @Override
     public SubscriptionTimerStats getSubscriptionTimerStats() {
         return timerStats;
     }
@@ -426,12 +419,6 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
         log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
-
-        StringBuilder producerGaugeLogBuilder = new StringBuilder();
-        for (Gauge gauge : managedProducerQueues) {
-            producerGaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
-        }
-        log.info("Producer Gauges Stats: {}", producerGaugeLogBuilder.toString());
 
         StringBuilder clientActorLogBuilder = new StringBuilder();
         clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")

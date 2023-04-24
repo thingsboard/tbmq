@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -25,8 +24,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
@@ -42,32 +40,26 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private final ClientLogger clientLogger;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final ProducerStatsManager statsManager;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
-    @Value("${queue.application-persisted-msg.publisher-thread-max-delay}")
-    private long maxDelay;
-
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
     @PostConstruct
     public void init() {
-        this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
                 .queueName("applicationMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
-                .maxDelay(maxDelay)
-                .statsManager(statsManager)
                 .partition(0)
                 .build();
-        this.publisherQueue.init();
+        this.publisher.init();
     }
     
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
         String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
-        publisherQueue.add(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
+        publisher.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -90,7 +82,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @Override
     public void sendMsgToSharedTopic(String sharedTopic, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        publisherQueue.add(new TbProtoQueueMsg<>(msgProto),
+        publisher.send(new TbProtoQueueMsg<>(msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -112,6 +104,6 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @PreDestroy
     public void destroy() {
-        publisherQueue.destroy();
+        publisher.destroy();
     }
 }

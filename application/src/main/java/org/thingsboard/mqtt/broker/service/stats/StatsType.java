@@ -30,7 +30,6 @@ public enum StatsType {
     RETAIN_MSG_TRIE_NODES("retainMsgTrieNodes"),
     ACTIVE_APP_PROCESSORS("activeAppProcessors"),
     ACTIVE_SHARED_APP_PROCESSORS("activeSharedAppProcessors"),
-    PENDING_PRODUCER_MESSAGES("pendingProducerMessages"),
     APP_PROCESSOR("appProcessor"),
     DEVICE_PROCESSOR("deviceProcessor"),
     RUNNING_ACTORS("runningActors"),
