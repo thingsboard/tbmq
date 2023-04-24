@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -31,6 +33,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
@@ -45,8 +48,14 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
+    @Value("${mqtt.handler.app_msg_callback_threads:0}")
+    private int threadsCount;
+
+    private ExecutorService callbackProcessor;
+
     @PostConstruct
     public void init() {
+        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "app-msg-callback-processor");
         this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
                 .queueName("applicationMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
@@ -54,7 +63,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 .build();
         this.publisher.init();
     }
-    
+
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
@@ -63,18 +72,22 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
-                        if (isTraceEnabled) {
-                            log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
-                        }
-                        callback.onSuccess();
+                        callbackProcessor.submit(() -> {
+                            clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in APPLICATION Queue");
+                            if (isTraceEnabled) {
+                                log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                            }
+                            callback.onSuccess();
+                        });
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
-                                clientId, msgProto.getTopicName(), t);
-                        callback.onFailure(t);
+                        callbackProcessor.submit(() -> {
+                            log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
+                                    clientId, msgProto.getTopicName(), t);
+                            callback.onFailure(t);
+                        });
                     }
                 },
                 clientQueueTopic);
@@ -86,17 +99,21 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        if (isTraceEnabled) {
-                            log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
-                        }
-                        callback.onSuccess();
+                        callbackProcessor.submit(() -> {
+                            if (isTraceEnabled) {
+                                log.trace("[{}] Successfully sent publish msg to the shared topic queue. Partition: {}", sharedTopic, metadata.getMetadata().partition());
+                            }
+                            callback.onSuccess();
+                        });
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the shared topic queue.",
-                                sharedTopic, t);
-                        callback.onFailure(t);
+                        callbackProcessor.submit(() -> {
+                            log.error("[{}] Failed to send publish msg to the shared topic queue.",
+                                    sharedTopic, t);
+                            callback.onFailure(t);
+                        });
                     }
                 },
                 MqttApplicationClientUtil.getKafkaTopic(sharedTopic));
@@ -105,5 +122,8 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     @PreDestroy
     public void destroy() {
         publisher.destroy();
+        if (callbackProcessor != null) {
+            callbackProcessor.shutdownNow();
+        }
     }
 }

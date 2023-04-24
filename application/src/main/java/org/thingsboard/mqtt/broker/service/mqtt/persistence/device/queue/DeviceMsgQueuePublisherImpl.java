@@ -17,7 +17,9 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -29,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
@@ -40,8 +43,14 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
+    @Value("${mqtt.handler.device_msg_callback_threads:0}")
+    private int threadsCount;
+
+    private ExecutorService callbackProcessor;
+
     @PostConstruct
     public void init() {
+        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-msg-callback-processor");
         this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
                 .queueName("deviceMsg")
                 .producer(devicePersistenceMsgQueueFactory.createProducer())
@@ -56,18 +65,22 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
-                        if (log.isTraceEnabled()) {
-                            log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
-                        }
-                        callback.onSuccess();
+                        callbackProcessor.submit(() -> {
+                            clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
+                            if (log.isTraceEnabled()) {
+                                log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                            }
+                            callback.onSuccess();
+                        });
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
-                                clientId, msgProto.getTopicName(), t);
-                        callback.onFailure(t);
+                        callbackProcessor.submit(() -> {
+                            log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
+                                    clientId, msgProto.getTopicName(), t);
+                            callback.onFailure(t);
+                        });
                     }
                 });
     }
@@ -75,5 +88,8 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     @PreDestroy
     public void destroy() {
         publisher.destroy();
+        if (callbackProcessor != null) {
+            callbackProcessor.shutdownNow();
+        }
     }
 }

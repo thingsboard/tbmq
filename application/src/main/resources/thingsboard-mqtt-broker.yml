@@ -435,6 +435,11 @@ mqtt:
   rate-limits:
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+  handler:
+    publish_msg_callback_threads: "${MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS:2}"
+    device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
+    app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
+
 db:
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 
@@ -500,7 +505,6 @@ swagger:
     title: "${SWAGGER_LICENSE_TITLE:}"
     url: "${SWAGGER_LICENSE_URL:}"
   version: "${SWAGGER_VERSION:2.0}"
-
 
 analysis:
   log:

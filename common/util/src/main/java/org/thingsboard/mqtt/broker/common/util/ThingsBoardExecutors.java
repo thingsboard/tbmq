@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.util;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
 public class ThingsBoardExecutors {
@@ -46,5 +47,16 @@ public class ThingsBoardExecutors {
 
     public static ExecutorService newWorkStealingPool(int parallelism, Class clazz) {
         return newWorkStealingPool(parallelism, clazz.getSimpleName());
+    }
+
+    public static ExecutorService initExecutorService(int threadsCount, String serviceName) {
+        if (threadsCount <= 0) {
+            threadsCount = Math.max(1, Runtime.getRuntime().availableProcessors());
+        }
+        if (threadsCount == 1) {
+            return Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(serviceName));
+        } else {
+            return Executors.newFixedThreadPool(threadsCount, ThingsBoardThreadFactory.forName(serviceName));
+        }
     }
 }

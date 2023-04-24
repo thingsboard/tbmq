@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
@@ -46,8 +48,11 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 @Service
 @AllArgsConstructor
@@ -63,6 +68,16 @@ public class MqttPublishHandler {
     private final RetainedMsgProcessor retainedMsgProcessor;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
+
+    @Value("${mqtt.handler.publish_msg_callback_threads:0}")
+    private int threadsCount;
+
+    private ExecutorService callbackProcessor;
+
+    @PostConstruct
+    public void init() {
+        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-callback-processor");
+    }
 
     public void process(ClientSessionCtx ctx, MqttPublishMsg msg, TbActorRef actorRef) throws MqttException {
         PublishMsg publishMsg = msg.getPublishMsg();
@@ -143,19 +158,23 @@ public class MqttPublishHandler {
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
-                clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
-                if (isTraceEnabled) {
-                    log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
-                }
-                sendPubResponseEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
+                callbackProcessor.submit(() -> {
+                    clientLogger.logEvent(ctx.getClientId(), this.getClass(), "PUBLISH acknowledged");
+                    if (isTraceEnabled) {
+                        log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
+                    }
+                    sendPubResponseEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
+                });
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                clientMqttActorManager.disconnect(ctx.getClientId(), new MqttDisconnectMsg(
-                        ctx.getSessionId(),
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg")));
+                callbackProcessor.submit(() -> {
+                    log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
+                    clientMqttActorManager.disconnect(ctx.getClientId(), new MqttDisconnectMsg(
+                            ctx.getSessionId(),
+                            new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg")));
+                });
             }
         });
     }
@@ -238,4 +257,10 @@ public class MqttPublishHandler {
         }
     }
 
+    @PreDestroy
+    public void destroy() {
+        if (callbackProcessor != null) {
+            callbackProcessor.shutdownNow();
+        }
+    }
 }
