@@ -41,9 +41,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class SubscriptionPersistenceServiceImpl implements SubscriptionPersistenceService {
 
-    @Value("${queue.client-subscriptions.acknowledge-wait-timeout-ms}")
-    private long ackTimeoutMs;
-
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsProducer;
     private final ServiceInfoProvider serviceInfoProvider;
 
@@ -51,6 +48,9 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
         this.clientSubscriptionsProducer = clientSubscriptionsQueueFactory.createProducer();
         this.serviceInfoProvider = serviceInfoProvider;
     }
+
+    @Value("${queue.client-subscriptions.acknowledge-wait-timeout-ms}")
+    private long ackTimeoutMs;
 
     @Override
     public void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, BasicCallback callback) {
