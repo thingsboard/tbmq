@@ -17,14 +17,12 @@ package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
-import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -35,31 +33,25 @@ import javax.annotation.PreDestroy;
 public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
 
     private final PublishMsgQueueFactory publishMsgQueueFactory;
-    private final ProducerStatsManager statsManager;
 
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
-
-    @Value("${queue.publish-msg.publisher-thread-max-delay}")
-    private long maxDelay;
+    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
     @PostConstruct
     public void init() {
-        this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
                 .queueName("publishMsg")
                 .producer(publishMsgQueueFactory.createProducer())
-                .maxDelay(maxDelay)
-                .statsManager(statsManager)
                 .build();
-        this.publisherQueue.init();
+        this.publisher.init();
     }
 
     @Override
     public void sendMsg(QueueProtos.PublishMsgProto msgProto, TbQueueCallback callback) {
-        publisherQueue.add(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto), callback);
+        publisher.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto), callback);
     }
 
     @PreDestroy
     public void destroy() {
-        publisherQueue.destroy();
+        publisher.destroy();
     }
 }

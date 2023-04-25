@@ -17,14 +17,11 @@ package org.thingsboard.mqtt.broker.queue.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Consumer;
 
 @Slf4j
 public class QueueUtil {
@@ -53,22 +50,4 @@ public class QueueUtil {
         });
     }
 
-    public static TbQueueCallback createQueueCallback(Consumer<TbQueueMsgMetadata> onSuccess,
-                                                      Consumer<Throwable> onFailure) {
-        return new TbQueueCallback() {
-            @Override
-            public void onSuccess(TbQueueMsgMetadata metadata) {
-                if (onSuccess != null) {
-                    onSuccess.accept(metadata);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                if (onFailure != null) {
-                    onFailure.accept(t);
-                }
-            }
-        };
-    }
 }

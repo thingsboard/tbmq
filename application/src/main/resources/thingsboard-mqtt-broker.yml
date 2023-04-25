@@ -108,7 +108,6 @@ listener:
 
 queue:
   publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
@@ -122,7 +121,6 @@ queue:
     # It is recommended to count the impact of this parameter before setting it on production.
     msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
-    publisher-thread-max-delay: "${TB_APP_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
     ack-strategy:
@@ -130,7 +128,6 @@ queue:
       # For RETRY_ALL only
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
   device-persisted-msg:
-    publisher-thread-max-delay: "${TB_DEVICE_PERSISTED_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
@@ -161,11 +158,9 @@ queue:
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persistent-downlink-publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   basic-downlink-publish-msg:
-    publisher-thread-max-delay: "${TB_PUBLISH_MSG_PUBLISHER_THREAD_MAX_DELAY:50}"
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   application-removed-event:
@@ -440,6 +435,11 @@ mqtt:
   rate-limits:
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+  handler:
+    publish_msg_callback_threads: "${MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS:2}"
+    device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
+    app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
+
 db:
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 
@@ -457,7 +457,7 @@ caffeine:
       maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
     mqttClientCredentials:
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
-      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
     basicCredentialsPassword:
       timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}" # it is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
       maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
@@ -505,7 +505,6 @@ swagger:
     title: "${SWAGGER_LICENSE_TITLE:}"
     url: "${SWAGGER_LICENSE_URL:}"
   version: "${SWAGGER_VERSION:2.0}"
-
 
 analysis:
   log:

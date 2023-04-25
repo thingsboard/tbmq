@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -185,11 +184,6 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     public Timer createSendTimer(String clientId) {
         return (amount, unit) -> {
         };
-    }
-
-    @Override
-    public void registerProducerQueue(String queueName, Queue<?> queue) {
-
     }
 
     @Override

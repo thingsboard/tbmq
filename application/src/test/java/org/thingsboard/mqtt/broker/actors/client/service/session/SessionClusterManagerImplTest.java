@@ -127,7 +127,7 @@ public class SessionClusterManagerImplTest {
 
         verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any(), eq(true));
         verify(clientSessionService, times(1)).clearClientSession(any(), any());
-        verify(clientSubscriptionService, times(2)).clearSubscriptionsAndPersist(any(), any());
+        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
         verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
     }
 
@@ -176,7 +176,7 @@ public class SessionClusterManagerImplTest {
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
         verify(disconnectClientCommandService, times(1)).disconnectSession(any(), any(), any(), eq(true));
-        verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
+        verify(clientSessionService, times(2)).saveClientSession(any(), any(), any());
         verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
     }
 

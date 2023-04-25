@@ -350,20 +350,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
-    @Override
-    public void deleteAppTopics() {
-        try {
-            Set<String> topics = client.listTopics().names().get();
-            List<String> appTopics = topics
-                    .stream()
-                    .filter(s -> s.startsWith("mqtt_broker_application_client_test_sub_client"))
-                    .collect(Collectors.toList());
-            client.deleteTopics(appTopics).all().get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private KafkaConsumerGroupState getKafkaConsumerGroupState(ConsumerGroupListing consumerGroupListing) {
         ConsumerGroupState consumerGroupState = consumerGroupListing.state().orElse(ConsumerGroupState.UNKNOWN);
         return KafkaConsumerGroupState.toState(consumerGroupState.toString());

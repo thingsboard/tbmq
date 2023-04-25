@@ -44,7 +44,8 @@ public class DefaultClientActorStats implements ClientActorStats {
     }
 
     @Override
-    public void logMsgQueueTime(long amount, TimeUnit unit) {
+    public void logMsgQueueTime(long createdTimeNanos, TimeUnit unit) {
+        long amount = System.nanoTime() - createdTimeNanos;
         queueTimer.logTime(amount, unit);
     }
 

@@ -38,8 +38,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 @Service
 public class ClientSessionPersistenceServiceImpl implements ClientSessionPersistenceService {
-    @Value("${queue.client-session.acknowledge-wait-timeout-ms}")
-    private long ackTimeoutMs;
 
     private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -48,6 +46,9 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
         this.clientSessionProducer = clientSessionQueueFactory.createProducer();
         this.serviceInfoProvider = serviceInfoProvider;
     }
+
+    @Value("${queue.client-session.acknowledge-wait-timeout-ms}")
+    private long ackTimeoutMs;
 
     @Override
     public void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback) {
