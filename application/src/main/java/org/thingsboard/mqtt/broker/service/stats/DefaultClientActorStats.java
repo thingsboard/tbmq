@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 
@@ -44,8 +46,8 @@ public class DefaultClientActorStats implements ClientActorStats {
     }
 
     @Override
-    public void logMsgQueueTime(long createdTimeNanos, TimeUnit unit) {
-        long amount = System.nanoTime() - createdTimeNanos;
+    public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
+        long amount = System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos();
         queueTimer.logTime(amount, unit);
     }
 

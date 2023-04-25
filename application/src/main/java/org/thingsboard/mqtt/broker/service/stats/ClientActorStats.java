@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
 import java.util.Map;
@@ -24,7 +25,7 @@ public interface ClientActorStats {
 
     void logMsgProcessingTime(String msgType, long amount, TimeUnit unit);
 
-    void logMsgQueueTime(long createdTimeNanos, TimeUnit unit);
+    void logMsgQueueTime(TbActorMsg msg, TimeUnit unit);
 
     Map<String, ResettableTimer> getTimers();
 
