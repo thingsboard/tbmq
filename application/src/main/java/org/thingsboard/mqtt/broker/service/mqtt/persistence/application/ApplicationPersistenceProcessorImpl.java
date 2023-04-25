@@ -720,7 +720,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
                                                         List<PersistedPublishMsg> publishMessagesToDeliver) {
-        List<PersistedMsg> messagesToDeliver = new ArrayList<>();
+        List<PersistedMsg> messagesToDeliver = new ArrayList<>(publishMessagesToDeliver.size());
         if (!CollectionUtils.isEmpty(pubRelMessagesToDeliver)) {
             messagesToDeliver.addAll(pubRelMessagesToDeliver);
         }
