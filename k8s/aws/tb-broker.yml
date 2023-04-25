@@ -207,6 +207,8 @@ spec:
               value: "1"
             - name: MQTT_HANDLER_APP_MSG_CALLBACK_THREADS
               value: "2"
+            - name: MQTT_CONNECT_THREADS
+              value: "8"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
