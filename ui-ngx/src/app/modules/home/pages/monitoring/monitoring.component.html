@@ -27,8 +27,8 @@
 </mat-toolbar>
 <div class="mat-padding">
   <div fxFlex fxLayout="column" fxLayoutGap="4px">
-    <div *ngFor="let chart of statsCharts" class="mat-padding mat-elevation-z3"
-         style="margin: 0 10px 0 10px; padding: 10px; background-color: #ffffff">
+    <div class="mat-padding mat-elevation-z3" style="margin: 0 10px 0 10px; padding: 10px; background-color: #ffffff; text-align: center"
+         *ngFor="let chart of statsCharts">
       <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
       <div>
         <canvas [id]="chart+chartIdSuf" width="500" height="90"></canvas>

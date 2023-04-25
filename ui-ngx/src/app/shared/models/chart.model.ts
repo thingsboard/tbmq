@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import moment from 'moment/moment';
-
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -44,18 +42,22 @@ export const StatsChartTypeTranslationMap = new Map<string, string>(
   ]
 );
 
-export const MonitoringChartColorMap = new Map<string, string>(
+export const MonitoringChartColorMap = new Map<string, string[]>(
   [
-    [StatsChartType.incomingMsgs, '#58519E'],
-    [StatsChartType.outgoingMsgs, '#4A6EA8'],
-    [StatsChartType.droppedMsgs, '#47848F'],
-    [StatsChartType.sessions, '#4FA889'],
-    [StatsChartType.subscriptions, '#499E55']
+    [StatsChartType.incomingMsgs, ['#58519E', '#260638', '#A356D1', '#AAA081', '#D1A656']],
+    [StatsChartType.outgoingMsgs, ['#4A6EA8', '#393842', '#604BDB', '#4A6EA8', '#B39B7C']],
+    [StatsChartType.droppedMsgs, ['#47848F', '#4E73C2', '#1860F5', '#47848F', '#9C8175']],
+    [StatsChartType.sessions, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
+    [StatsChartType.subscriptions, ['#499E55', '#303836', '#4BD1A9', '#AA799F', '#BE4BD1']]
   ]
 );
 
-export function getColor(type: string): string {
-  return MonitoringChartColorMap.get(type);
+export function getColor(type: string, index: number): string {
+  try {
+    return MonitoringChartColorMap.get(type)[index];
+  } catch {
+    return MonitoringChartColorMap.get(type)[index - 5];
+  }
 }
 
 export function homeChartJsParams() {
@@ -119,13 +121,124 @@ export function homeChartJsParams() {
 }
 
 export function monitoringChartJsParams() {
+  const footer = (tooltipItems) => {
+    let sum = 0;
+
+    tooltipItems.forEach(function(tooltipItem) {
+      sum += tooltipItem.parsed.y;
+    });
+    return 'Sum: ' + sum;
+  };
+  const getOrCreateTooltip = (chart) => {
+    let tooltipEl = chart.canvas.parentNode.querySelector('div');
+
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+      tooltipEl.style.borderRadius = '3px';
+      tooltipEl.style.color = 'white';
+      tooltipEl.style.opacity = 1;
+      tooltipEl.style.pointerEvents = 'none';
+      tooltipEl.style.position = 'absolute';
+      tooltipEl.style.transform = 'translate(-50%, 0)';
+      tooltipEl.style.transition = 'all .1s ease';
+
+      const table = document.createElement('table');
+      table.style.margin = '0px';
+
+      tooltipEl.appendChild(table);
+      chart.canvas.parentNode.appendChild(tooltipEl);
+    }
+
+    return tooltipEl;
+  };
+  const externalTooltipHandler = (context) => {
+    // Tooltip Element
+    const {chart, tooltip} = context;
+    const tooltipEl = getOrCreateTooltip(chart);
+
+    // Hide if no tooltip
+    if (tooltip.opacity === 0) {
+      tooltipEl.style.opacity = 0;
+      return;
+    }
+
+    // Set Text
+    if (tooltip.body) {
+      const titleLines = tooltip.title || [];
+      const bodyLines = tooltip.body.map(b => b.lines);
+
+      const tableHead = document.createElement('thead');
+
+      titleLines.forEach(title => {
+        const tr = document.createElement('tr');
+        tr.style.borderWidth = '0';
+
+        const th = document.createElement('th');
+        th.style.borderWidth = '0';
+        const text = document.createTextNode(title);
+
+        th.appendChild(text);
+        tr.appendChild(th);
+        tableHead.appendChild(tr);
+      });
+
+      const tableBody = document.createElement('tbody');
+      bodyLines.forEach((body, i) => {
+        const colors = tooltip.labelColors[i];
+
+        const span = document.createElement('span');
+        span.style.background = colors.backgroundColor;
+        span.style.borderColor = colors.borderColor;
+        span.style.borderWidth = '2px';
+        span.style.marginRight = '10px';
+        span.style.height = '10px';
+        span.style.width = '10px';
+        span.style.display = 'inline-block';
+
+        const tr = document.createElement('tr');
+        tr.style.backgroundColor = 'inherit';
+        tr.style.borderWidth = '0';
+
+        const td = document.createElement('td');
+        td.style.borderWidth = '0';
+
+        const text = document.createTextNode(body);
+
+        td.appendChild(span);
+        td.appendChild(text);
+        tr.appendChild(td);
+        tableBody.appendChild(tr);
+      });
+
+      const tableRoot = tooltipEl.querySelector('table');
+
+      // Remove old children
+      while (tableRoot.firstChild) {
+        tableRoot.firstChild.remove();
+      }
+
+      // Add new children
+      tableRoot.appendChild(tableHead);
+      tableRoot.appendChild(tableBody);
+    }
+
+    const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
+
+    // Display, position, and set styles for font
+    tooltipEl.style.opacity = 1;
+    tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+    tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+    tooltipEl.style.font = tooltip.options.bodyFont.string;
+    tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+  };
+
   return {
     type: 'line',
     options: {
       interaction: {
-        mode: 'nearest',
-        intersect: false,
-        axis: 'x'
+        mode: 'index',
+        intersect: false
       },
       layout: {
         padding: {
@@ -146,7 +259,7 @@ export function monitoringChartJsParams() {
         x: {
           type: 'time',
           time: {
-            unit: 'hour'
+            unit: 'minute'
           },
           ticks: {
             maxRotation: 0,
@@ -171,9 +284,24 @@ export function monitoringChartJsParams() {
           display: true,
           position: 'bottom',
           align: 'start',
+          fullSize: true,
           labels: {
-            usePointStyle: true
+            usePointStyle: true,
+            pointStyle: 'line',
+            padding: 20,
+            font: {
+              weight: 500,
+              size: 12
+            }
           }
+        },
+        tooltip: {
+          enabled: true,
+          position: 'nearest',
+          // external: externalTooltipHandler,
+          // callbacks: {
+          //   footer,
+          // }
         }
       },
       parsing: {
@@ -183,3 +311,5 @@ export function monitoringChartJsParams() {
     }
   };
 }
+
+export const TOTAL_KEY = 'total';

@@ -87,15 +87,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
       const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
-      const label = this.translate.instant(this.statChartTypeTranslationMap.get(chartType as StatsChartType));
       const dataSet = {
-        label,
-        fill: true,
-        backgroundColor: 'transparent',
-        borderColor: getColor(chartType),
-        borderWidth: 3,
         data: data[chartType],
-        hover: true
+        borderColor: getColor(chartType, 0),
+        borderWidth: 3
       };
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params);

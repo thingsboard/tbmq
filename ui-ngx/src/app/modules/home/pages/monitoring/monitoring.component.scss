@@ -33,43 +33,6 @@
   }
 
   .mat-toolbar {
-    height: 42px;
-  }
-}
-
-:host::ng-deep {
-  .chart-container {
-
-    border-right: 1px solid #dcdcdc;
-
-    span {
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    span:first-child {
-      font-size: 12px;
-      font-weight: 400;
-    }
-
-    .chart {
-      background-color: transparent;
-    }
-  }
-
-  .chart-title {
-    padding: 16px 8px 8px;
-
-    span:first-child {
-      color: (rgba(0,0,0,0.8));
-    }
-
-    span:nth-child(2) {
-      font-weight: 600;
-    }
-  }
-
-  .chart-border-left {
-    border-left: 1px solid #dcdcdc;
+    height: 50px;
   }
 }
