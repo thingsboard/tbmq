@@ -362,6 +362,8 @@ security:
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
 mqtt:
+  connect:
+    threads: "${MQTT_CONNECT_THREADS:4}"
   # enable/disable processing of found subscriptions in parallel for published messages.
   # Helpful when the "PUBLISH" message should be delivered to lots of subscribers.
   # It is recommended to count the impact of this parameter before setting it on production.
