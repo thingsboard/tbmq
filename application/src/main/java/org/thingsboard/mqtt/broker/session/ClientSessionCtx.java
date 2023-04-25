@@ -21,6 +21,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -53,8 +54,10 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile SessionInfo sessionInfo;
     @Getter
-    @Setter
     private volatile List<AuthRulePatterns> authRulePatterns;
+    @Getter
+    @Setter
+    private volatile boolean authRulePatternsEmpty;
     @Getter
     @Setter
     private volatile ClientType clientType;
@@ -81,6 +84,11 @@ public class ClientSessionCtx implements SessionContext {
     public String getClientId() {
         return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
                 sessionInfo.getClientInfo().getClientId() : null;
+    }
+
+    public void setAuthRulePatterns(List<AuthRulePatterns> authRulePatterns) {
+        this.authRulePatterns = authRulePatterns;
+        this.authRulePatternsEmpty = CollectionUtils.isEmpty(authRulePatterns);
     }
 
     public void closeChannel() {

@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
@@ -246,7 +245,7 @@ public class MqttPublishHandler {
     }
 
     void validateClientAccess(ClientSessionCtx ctx, String topic) {
-        if (CollectionUtils.isEmpty(ctx.getAuthRulePatterns())) {
+        if (ctx.isAuthRulePatternsEmpty()) {
             return;
         }
         boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(ctx.getClientId(), topic, ctx.getAuthRulePatterns());
