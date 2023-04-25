@@ -64,4 +64,9 @@ export class StatsService {
     }
     return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
   }
+
+  public saveTelemetry(entityId: string, data, config?: RequestConfig): Observable<TimeseriesData> {
+    const url = `/api/timeseries/${entityId}/save`;
+    return this.http.post<TimeseriesData>(url, data, defaultHttpOptionsFromConfig(config));
+  }
 }

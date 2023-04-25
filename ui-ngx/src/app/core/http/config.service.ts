@@ -16,12 +16,8 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
-import { DetailedClientSessionInfo } from '@shared/models/session.model';
-import { KafkaBroker } from '@shared/models/kafka.model';
 import { BrokerConfig } from '@shared/models/config.model';
 
 @Injectable({

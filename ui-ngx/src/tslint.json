@@ -14,6 +14,9 @@
       "kebab-case"
     ],
     "forin": false,
-    "max-line-length": false
+    "max-line-length": false,
+    "prefer-for-of": false,
+    "no-string-literal": false,
+    "only-arrow-functions": false
   }
 }
