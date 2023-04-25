@@ -49,10 +49,10 @@ spec:
           resources:
             limits:
               cpu: 63
-              memory: 115Gi
+              memory: 116Gi
             requests:
               cpu: 63
-              memory: 115Gi
+              memory: 116Gi
           ports:
             - containerPort: 8083
               name: http
@@ -201,6 +201,12 @@ spec:
               value: "40"
             - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
               value: "10000"
+            - name: MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS
+              value: "4"
+            - name: MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS
+              value: "1"
+            - name: MQTT_HANDLER_APP_MSG_CALLBACK_THREADS
+              value: "2"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
