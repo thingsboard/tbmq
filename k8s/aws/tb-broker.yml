@@ -116,23 +116,23 @@ spec:
             - name: TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
               value: "0"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:40;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:30;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:10;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:5;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:10485760000;replication.factor:1"
             - name: ANALYSIS_LOG_CLIENT_IDS
@@ -194,11 +194,11 @@ spec:
             - name: TB_PUBLISH_MSG_PARALLEL_PROCESSING
               value: "false"
             - name: ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE
-              value: "40"
+              value: "30"
             - name: TCP_NETTY_BOSS_GROUP_THREADS
               value: "3"
             - name: TCP_NETTY_WORKER_GROUP_THREADS
-              value: "40"
+              value: "30"
             - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
               value: "10000"
             - name: MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS
@@ -208,7 +208,7 @@ spec:
             - name: MQTT_HANDLER_APP_MSG_CALLBACK_THREADS
               value: "2"
             - name: MQTT_CONNECT_THREADS
-              value: "8"
+              value: "4"
             - name: TB_PUBLISH_MSG_THREADS_COUNT
               value: "9"
             - name: TB_APP_PERSISTED_MSG_THREADS_COUNT
