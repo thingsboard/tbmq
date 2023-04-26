@@ -227,8 +227,10 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private updateXScale(chartType: string) {
-    this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
-    this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
+    if (this.isNotZoomedOrPanned(chartType)) {
+      this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
+      this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
+    }
     if (this.inHourRange()) {
       this.charts[chartType].options.scales.x.time.unit = 'minute';
     } else if (this.inDayRange()) {
@@ -246,6 +248,10 @@ export class MonitoringComponent extends PageComponent {
   private inDayRange(): boolean {
     const hourMs = 1000 * 60 * 60;
     return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs < 24;
+  }
+
+  private isNotZoomedOrPanned(chartType) {
+    return !this.charts[chartType].isZoomedOrPanned();
   }
 
   private addStartChartValue(chartType: string, latestValue: TsValue, index: number) {
