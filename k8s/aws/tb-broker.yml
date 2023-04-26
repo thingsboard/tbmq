@@ -71,8 +71,6 @@ spec:
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "true"
-            - name: TB_KAFKA_SERVERS
-              value: "kafka-headless:9092"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT
@@ -85,18 +83,11 @@ spec:
               value: "10000"
             - name: METRICS_ENDPOINTS_EXPOSE
               value: "info"
+            # Kafka
+            - name: TB_KAFKA_SERVERS
+              value: "kafka-headless:9092"
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
-            - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "9"
-            - name: TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT
-              value: "90000"
-            - name: TB_PUBLISH_MSG_ACK_STRATEGY_TYPE
-              value: "RETRY_ALL"
-            - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
-              value: "0"
-            - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:18;replication.factor:1"
             - name: TB_KAFKA_DEFAULT_PRODUCER_RETRIES
               value: "1"
             - name: TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE
@@ -107,14 +98,18 @@ spec:
               value: "16384"
             - name: TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS
               value: "30000"
-            - name: TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "0"
-            - name: TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT
-              value: "0"
-            - name: TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT
-              value: "2"
-            - name: TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "0"
+            - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
+              value: "lz4"
+            - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
+              value: "max.poll.records:16384;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728;fetch.min.bytes:1024"
+            - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG
+              value: "linger.ms:10"
+            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
+              value: "max.poll.records:16384;fetch.max.bytes:134217728;fetch.min.bytes:1024"
+            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
+              value: "batch.size:131072"
+            - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:18;replication.factor:1"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
@@ -167,6 +162,22 @@ spec:
               value: "10000"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY
               value: "20"
+            - name: TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
+              value: "0"
+            - name: TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT
+              value: "0"
+            - name: TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT
+              value: "2"
+            - name: TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
+              value: "0"
+            - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
+              value: "9"
+            - name: TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT
+              value: "90000"
+            - name: TB_PUBLISH_MSG_ACK_STRATEGY_TYPE
+              value: "RETRY_ALL"
+            - name: TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES
+              value: "0"
             - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
               value: "90000"
             - name: TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE
@@ -177,30 +188,21 @@ spec:
               value: "0"
             - name: MQTT_RETRANSMISSION_ENABLED
               value: "false"
-            - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
-              value: "lz4"
-            - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:16384;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728;fetch.min.bytes:1024"
-            - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG
-              value: "linger.ms:10"
             - name: MQTT_KEEP_ALIVE_MONITORING_DELAY_MS
               value: "60000"
-            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:16384;fetch.max.bytes:134217728;fetch.min.bytes:1024"
-            - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
-              value: "batch.size:131072"
             - name: ACTORS_SYSTEM_THROUGHPUT
               value: "5"
             - name: TB_PUBLISH_MSG_PARALLEL_PROCESSING
               value: "false"
+            - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
+              value: "10000"
+            # Threads count
             - name: ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE
               value: "30"
             - name: TCP_NETTY_BOSS_GROUP_THREADS
               value: "3"
             - name: TCP_NETTY_WORKER_GROUP_THREADS
               value: "30"
-            - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
-              value: "10000"
             - name: MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS
               value: "4"
             - name: MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS
