@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -47,17 +47,6 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
     public static final long MAX_VALUE = 1_000_000_000L;
 
-    // TODO: remove all cachedThreadPool
-    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
-    private volatile boolean stopped = false;
-
-    @Value("${queue.publish-msg.consumers-count}")
-    private int consumersCount;
-    @Value("${queue.publish-msg.poll-interval}")
-    private long pollDuration;
-    @Value("${queue.publish-msg.pack-processing-timeout}")
-    private long packProcessingTimeout;
-
     private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers = new ArrayList<>();
     private final MsgDispatcherService msgDispatcherService;
     private final PublishMsgQueueFactory publishMsgQueueFactory;
@@ -65,6 +54,23 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final SubmitStrategyFactory submitStrategyFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+
+    private volatile boolean stopped = false;
+    private ExecutorService consumersExecutor;
+
+    @Value("${queue.publish-msg.threads-count}")
+    private int threadsCount;
+    @Value("${queue.publish-msg.consumers-count}")
+    private int consumersCount;
+    @Value("${queue.publish-msg.poll-interval}")
+    private long pollDuration;
+    @Value("${queue.publish-msg.pack-processing-timeout}")
+    private long packProcessingTimeout;
+
+    @PostConstruct
+    public void init() {
+        consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-msg-consumer");
+    }
 
     @Override
     public void startConsuming() {
@@ -157,6 +163,8 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     public void destroy() {
         stopped = true;
         publishMsgConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
-        consumersExecutor.shutdownNow();
+        if (consumersExecutor != null) {
+            consumersExecutor.shutdownNow();
+        }
     }
 }
