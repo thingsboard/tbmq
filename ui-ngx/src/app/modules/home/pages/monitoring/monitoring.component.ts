@@ -21,14 +21,14 @@ import {
   Timewindow,
   TimewindowType
 } from '@shared/models/time/time.models';
-import { forkJoin, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
-import { mergeMap, retry, share, switchMap, takeUntil } from 'rxjs/operators';
+import { retry, share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   getColor,
-  monitoringChartJsParams,
+  monitoringChartJsParams, ONLY_TOTAL_KEYS,
   StatsChartType,
   StatsChartTypeTranslationMap,
   TimeseriesData, TOTAL_KEY, TsValue
@@ -40,7 +40,7 @@ import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import Zoom from 'chartjs-plugin-zoom';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
-import { ConfigService } from '@core/http/config.service';
+import { ActivatedRoute } from '@angular/router';
 
 Chart.register([Zoom]);
 
@@ -52,50 +52,41 @@ Chart.register([Zoom]);
 export class MonitoringComponent extends PageComponent {
 
   chartIdSuf = 'monitoring';
-
   charts = {};
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
-  latestValues = {};
+
+  private fixedWindowTimeMs: FixedWindow;
+  private brokerIds: string[];
+  private latestValues = {};
+  private $getLatestTimeseries: Observable<TimeseriesData[]>;
+  private $getEntityTimeseries: Observable<TimeseriesData[]>;
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
-  private fixedWindowTimeMs: FixedWindow;
-  private brokerIds: Array<string> = ['artem', 'artem2', 'artem3', TOTAL_KEY];
-
-  private getLatestTimeseries = this.configService.getBrokerServiceIds().pipe(
-    mergeMap((ids) => {
-      const $tasks = [];
-      for (const id of this.brokerIds) {
-        $tasks.push(this.statsService.getLatestTimeseries(id));
-      }
-      return forkJoin($tasks);
-    })
-  );
-
-  private $getEntityTimeseries = this.configService.getBrokerServiceIds().pipe(
-    mergeMap((ids) => {
-      const $tasks = [];
-      for (const id of this.brokerIds) {
-        $tasks.push(this.statsService.getEntityTimeseries(id, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs));
-      }
-      return forkJoin($tasks);
-    })
-  );
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private timeService: TimeService,
-              private configService: ConfigService,
-              private statsService: StatsService) {
+              private statsService: StatsService,
+              private route: ActivatedRoute) {
     super(store);
+    this.timewindow = this.timeService.defaultTimewindow();
+    this.calculateFixedWindowTimeMs();
     // this.generateRandomData();
   }
 
   ngOnInit() {
-    this.timewindow = this.timeService.defaultTimewindow();
-    this.calculateFixedWindowTimeMs();
+    this.brokerIds = this.route.snapshot.data.brokerIds;
+    const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
+    const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
+    for (const brokerId of this.brokerIds) {
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs));
+      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId));
+    }
+    this.$getEntityTimeseries = forkJoin($getEntityTimeseriesTasks);
+    this.$getLatestTimeseries = forkJoin($getLatestTimeseriesTasks);
   }
 
   ngOnDestroy() {
@@ -130,7 +121,11 @@ export class MonitoringComponent extends PageComponent {
               const brokerId = this.brokerIds[i];
               this.latestValues[brokerId] = {};
               this.latestValues[brokerId][chartType] = 0;
-              this.charts[chartType].data.datasets[i].data = data[i][chartType];
+              if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+                this.charts[chartType].data.datasets[i].data = data[i][chartType];
+              } else {
+                this.charts[chartType].data.datasets[0].data = data[0][chartType];
+              }
               this.updateChartView(data as TimeseriesData[], chartType);
             }
           }
@@ -154,14 +149,25 @@ export class MonitoringComponent extends PageComponent {
         const brokerId = this.brokerIds[i];
         this.latestValues[brokerId] = {};
         this.latestValues[brokerId][chartType] = 0;
-
-        datasets.data.datasets.push({
-          data: data[i][chartType],
-          borderColor: getColor(chartType, i),
-          backgroundColor: getColor(chartType, i),
-          hidden: brokerId === TOTAL_KEY,
-          pointStyle: 'line',
-        });
+        if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+          datasets.data.datasets.push({
+            data: data[i][chartType],
+            borderColor: getColor(chartType, i),
+            backgroundColor: getColor(chartType, i),
+            hidden: brokerId !== TOTAL_KEY,
+            pointStyle: 'line',
+          });
+        } else {
+          if (brokerId === TOTAL_KEY) {
+            datasets.data.datasets.push({
+              data: data[i][chartType],
+              borderColor: getColor(chartType, i),
+              backgroundColor: getColor(chartType, i),
+              hidden: brokerId !== TOTAL_KEY,
+              pointStyle: 'line',
+            });
+          }
+        }
       }
       const params = {...monitoringChartJsParams(), ...datasets};
       this.charts[chartType] = new Chart(ctx, params);
@@ -177,7 +183,7 @@ export class MonitoringComponent extends PageComponent {
   private startPolling() {
     timer(0, POLLING_INTERVAL)
     .pipe(
-      switchMap(() => this.getLatestTimeseries),
+      switchMap(() => this.$getLatestTimeseries),
       retry(),
       takeUntil(this.stopPolling$),
       share()
@@ -200,8 +206,13 @@ export class MonitoringComponent extends PageComponent {
       if (data[i][chartType].length) {
         const latestValue = data[i][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-        this.addStartChartValue(chartType, latestValue);
-        this.charts[chartType].data.datasets[i].data.unshift(latestValue);
+        if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+          this.addStartChartValue(chartType, latestValue, i);
+          this.charts[chartType].data.datasets[i].data.unshift(latestValue);
+        } else {
+          this.addStartChartValue(chartType, latestValue, 0);
+          this.charts[chartType].data.datasets[0].data.unshift(latestValue);
+        }
       }
     }
   }
@@ -223,8 +234,13 @@ export class MonitoringComponent extends PageComponent {
   private updateLabel(data: TimeseriesData[], chartType: string) {
     for (let i = 0; i < this.brokerIds.length; i++) {
       const brokerId = this.brokerIds[i];
-      this.latestValues[brokerId][chartType] = data[i][chartType][0].value;
-      this.charts[chartType].data.datasets[i].label = `${this.brokerIds[i]}: ${this.latestValues[this.brokerIds[i]][chartType]}`;
+      if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+        this.latestValues[brokerId][chartType] = data[i][chartType][0].value;
+        this.charts[chartType].data.datasets[i].label = `${this.brokerIds[i]}: ${this.latestValues[this.brokerIds[i]][chartType]}`;
+      } else {
+        this.latestValues[brokerId][chartType] = data[0][chartType][0].value;
+        this.charts[chartType].data.datasets[0].label = `${this.brokerIds[0]}: ${this.latestValues[this.brokerIds[0]][chartType]}`;
+      }
     }
   }
 
@@ -250,8 +266,8 @@ export class MonitoringComponent extends PageComponent {
     return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs < 24;
   }
 
-  private addStartChartValue(chartType: string, latestValue: TsValue) {
-    const data = this.charts[chartType].data.datasets[0].data;
+  private addStartChartValue(chartType: string, latestValue: TsValue, index: number) {
+    const data = this.charts[chartType].data.datasets[index].data;
     if (!data.length) {
       data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
     }
@@ -263,9 +279,7 @@ export class MonitoringComponent extends PageComponent {
           const data = {
             incomingMsgs: Math.floor(Math.random() * 100),
             outgoingMsgs: Math.floor(Math.random() * 100),
-            droppedMsgs: Math.floor(Math.random() * 100),
-            sessions: Math.floor(Math.random() * 100),
-            subscriptions: Math.floor(Math.random() * 100)
+            droppedMsgs: Math.floor(Math.random() * 100)
           };
           return this.statsService.saveTelemetry('artem', data);
         })).subscribe();
@@ -274,9 +288,7 @@ export class MonitoringComponent extends PageComponent {
         const data = {
           incomingMsgs: Math.floor(Math.random() * 100),
           outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100),
-          sessions: Math.floor(Math.random() * 100),
-          subscriptions: Math.floor(Math.random() * 100)
+          droppedMsgs: Math.floor(Math.random() * 100)
         };
         return this.statsService.saveTelemetry('artem2', data);
       })).subscribe();
@@ -285,20 +297,18 @@ export class MonitoringComponent extends PageComponent {
         const data = {
           incomingMsgs: Math.floor(Math.random() * 100),
           outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100),
-          sessions: Math.floor(Math.random() * 100),
-          subscriptions: Math.floor(Math.random() * 100)
+          droppedMsgs: Math.floor(Math.random() * 100)
         };
         return this.statsService.saveTelemetry('artem3', data);
       })).subscribe();
     timer(0, POLLING_INTERVAL * 6)
       .pipe(switchMap(() => {
         const data = {
-          incomingMsgs: Math.floor(Math.random() * 100),
-          outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100),
-          sessions: Math.floor(Math.random() * 100),
-          subscriptions: Math.floor(Math.random() * 100)
+          incomingMsgs: Math.floor(Math.random() * 300),
+          outgoingMsgs: Math.floor(Math.random() * 300),
+          droppedMsgs: Math.floor(Math.random() * 300),
+          sessions: Math.floor(Math.random() * 300),
+          subscriptions: Math.floor(Math.random() * 300)
         };
         return this.statsService.saveTelemetry(TOTAL_KEY, data);
       })).subscribe();

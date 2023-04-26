@@ -26,7 +26,7 @@ import {
   homeChartJsParams,
   StatsChartType,
   StatsChartTypeTranslationMap,
-  TimeseriesData,
+  TimeseriesData, TOTAL_KEY,
   TsValue
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
@@ -40,7 +40,6 @@ import { DEFAULT_HOME_CHART_INTERVAL, POLLING_INTERVAL } from '@shared/models/ho
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   chartIdSuf = 'home';
-
   charts = {};
   latestValues = {};
   statsCharts = Object.values(StatsChartType);
@@ -75,7 +74,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private fetchEntityTimeseries() {
-    this.statsService.getEntityTimeseries('artem', this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs)
+    this.statsService.getEntityTimeseries(TOTAL_KEY, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
         this.initCharts(data);
@@ -102,7 +101,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private startPolling() {
     timer(0, POLLING_INTERVAL)
       .pipe(
-        switchMap(() => this.statsService.getLatestTimeseries('artem')),
+        switchMap(() => this.statsService.getLatestTimeseries(TOTAL_KEY)),
         retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
