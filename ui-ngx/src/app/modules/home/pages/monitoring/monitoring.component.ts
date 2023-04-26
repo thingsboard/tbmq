@@ -74,7 +74,7 @@ export class MonitoringComponent extends PageComponent {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
-    // this.generateRandomData();
+    this.generateRandomData();
   }
 
   ngOnInit() {
@@ -118,14 +118,12 @@ export class MonitoringComponent extends PageComponent {
         } else {
           for (const chartType in StatsChartType) {
             for (let i = 0; i < this.brokerIds.length; i++) {
+              let index = 0;
               const brokerId = this.brokerIds[i];
               this.latestValues[brokerId] = {};
               this.latestValues[brokerId][chartType] = 0;
-              if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-                this.charts[chartType].data.datasets[i].data = data[i][chartType];
-              } else {
-                this.charts[chartType].data.datasets[0].data = data[0][chartType];
-              }
+              if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
+              this.charts[chartType].data.datasets[index].data = data[index][chartType];
               this.updateChartView(data as TimeseriesData[], chartType);
             }
           }
@@ -146,28 +144,18 @@ export class MonitoringComponent extends PageComponent {
         }
       };
       for (let i = 0; i < this.brokerIds.length; i++) {
+        let index = i;
         const brokerId = this.brokerIds[i];
         this.latestValues[brokerId] = {};
         this.latestValues[brokerId][chartType] = 0;
-        if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-          datasets.data.datasets.push({
-            data: data[i][chartType],
-            borderColor: getColor(chartType, i),
-            backgroundColor: getColor(chartType, i),
-            hidden: brokerId !== TOTAL_KEY,
-            pointStyle: 'line',
-          });
-        } else {
-          if (brokerId === TOTAL_KEY) {
-            datasets.data.datasets.push({
-              data: data[i][chartType],
-              borderColor: getColor(chartType, i),
-              backgroundColor: getColor(chartType, i),
-              hidden: brokerId !== TOTAL_KEY,
-              pointStyle: 'line',
-            });
-          }
-        }
+        if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
+        datasets.data.datasets.push({
+          data: data[index][chartType],
+          borderColor: getColor(chartType, index),
+          backgroundColor: getColor(chartType, index),
+          hidden: brokerId !== TOTAL_KEY,
+          pointStyle: 'line',
+        });
       }
       const params = {...monitoringChartJsParams(), ...datasets};
       this.charts[chartType] = new Chart(ctx, params);
@@ -203,16 +191,13 @@ export class MonitoringComponent extends PageComponent {
 
   private pushLatestValue(data: TimeseriesData[], chartType: string) {
     for (let i = 0; i < this.brokerIds.length; i++) {
-      if (data[i][chartType].length) {
-        const latestValue = data[i][chartType][0];
+      let index = i;
+      if (data[index][chartType].length) {
+        if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
+        const latestValue = data[index][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-        if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-          this.addStartChartValue(chartType, latestValue, i);
-          this.charts[chartType].data.datasets[i].data.unshift(latestValue);
-        } else {
-          this.addStartChartValue(chartType, latestValue, 0);
-          this.charts[chartType].data.datasets[0].data.unshift(latestValue);
-        }
+        this.addStartChartValue(chartType, latestValue, index);
+        this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
     }
   }
@@ -233,14 +218,11 @@ export class MonitoringComponent extends PageComponent {
 
   private updateLabel(data: TimeseriesData[], chartType: string) {
     for (let i = 0; i < this.brokerIds.length; i++) {
+      let index = i;
       const brokerId = this.brokerIds[i];
-      if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-        this.latestValues[brokerId][chartType] = data[i][chartType][0].value;
-        this.charts[chartType].data.datasets[i].label = `${this.brokerIds[i]}: ${this.latestValues[this.brokerIds[i]][chartType]}`;
-      } else {
-        this.latestValues[brokerId][chartType] = data[0][chartType][0].value;
-        this.charts[chartType].data.datasets[0].label = `${this.brokerIds[0]}: ${this.latestValues[this.brokerIds[0]][chartType]}`;
-      }
+      if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
+      this.latestValues[brokerId][chartType] = data[index][chartType][0].value;
+      this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}: ${this.latestValues[this.brokerIds[index]][chartType]}`;
     }
   }
 
@@ -304,11 +286,11 @@ export class MonitoringComponent extends PageComponent {
     timer(0, POLLING_INTERVAL * 6)
       .pipe(switchMap(() => {
         const data = {
-          incomingMsgs: Math.floor(Math.random() * 300),
-          outgoingMsgs: Math.floor(Math.random() * 300),
-          droppedMsgs: Math.floor(Math.random() * 300),
-          sessions: Math.floor(Math.random() * 300),
-          subscriptions: Math.floor(Math.random() * 300)
+          incomingMsgs: Math.floor(Math.random() * 100),
+          outgoingMsgs: Math.floor(Math.random() * 100),
+          droppedMsgs: Math.floor(Math.random() * 100),
+          sessions: Math.floor(Math.random() * 100),
+          subscriptions: Math.floor(Math.random() * 100)
         };
         return this.statsService.saveTelemetry(TOTAL_KEY, data);
       })).subscribe();
