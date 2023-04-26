@@ -48,11 +48,11 @@ spec:
           image: dlandiak2110/tb-mqtt-broker:1.0.0-SNAPSHOT
           resources:
             limits:
-              cpu: 63
-              memory: 116Gi
+              cpu: 62
+              memory: 115Gi
             requests:
-              cpu: 63
-              memory: 116Gi
+              cpu: 62
+              memory: 115Gi
           ports:
             - containerPort: 8083
               name: http
@@ -209,6 +209,18 @@ spec:
               value: "2"
             - name: MQTT_CONNECT_THREADS
               value: "8"
+            - name: TB_PUBLISH_MSG_THREADS_COUNT
+              value: "9"
+            - name: TB_APP_PERSISTED_MSG_THREADS_COUNT
+              value: "30"
+            - name: TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS
+              value: "4"
+            - name: ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE
+              value: "1"
+            - name: ACTORS_RULE_MAIL_THREAD_POOL_SIZE
+              value: "1"
+            - name: ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE
+              value: "1"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
