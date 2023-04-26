@@ -110,6 +110,7 @@ queue:
   publish-msg:
     # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
+    threads-count: "${TB_PUBLISH_MSG_THREADS_COUNT:2}"
     poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT:10000}"
     ack-strategy:
@@ -121,6 +122,7 @@ queue:
     # It is recommended to count the impact of this parameter before setting it on production.
     msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
+    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:2}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
     ack-strategy:

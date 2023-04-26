@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -74,7 +74,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -105,19 +104,21 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ClientLogger clientLogger;
     private final ApplicationTopicService applicationTopicService;
 
-    private final ExecutorService persistedMsgsConsumerExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("application-persisted-msg-consumers"));
-
+    @Value("${queue.application-persisted-msg.threads-count}")
+    private int threadsCount;
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
 
     private volatile boolean stopped = false;
+    private ExecutorService persistedMsgsConsumerExecutor;
 
     @PostConstruct
     public void init() {
         statsManager.registerActiveApplicationProcessorsStats(processingFutures);
         statsManager.registerActiveSharedApplicationProcessorsStats(sharedSubscriptionsProcessingJobs);
+        persistedMsgsConsumerExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "application-persisted-msg-consumers");
     }
 
     @Override
@@ -791,6 +792,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private void shutdownExecutor() {
+        if (persistedMsgsConsumerExecutor == null) {
+            return;
+        }
         persistedMsgsConsumerExecutor.shutdown();
         try {
             boolean terminationSuccessful = persistedMsgsConsumerExecutor.awaitTermination(3, TimeUnit.SECONDS);
