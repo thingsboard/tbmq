@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 2
+  replicas: 4
   podManagementPolicy: "Parallel"
   selector:
     matchLabels:
@@ -48,10 +48,10 @@ spec:
           image: dlandiak2110/tb-mqtt-broker:1.0.0-SNAPSHOT
           resources:
             limits:
-              cpu: 62
+              cpu: 61
               memory: 115Gi
             requests:
-              cpu: 62
+              cpu: 61
               memory: 115Gi
           ports:
             - containerPort: 8083
@@ -109,7 +109,7 @@ spec:
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
               value: "batch.size:131072"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:18;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:36;replication.factor:1"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
@@ -121,7 +121,7 @@ spec:
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:30;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:24;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
@@ -143,13 +143,13 @@ spec:
             - name: SSL_NETTY_SHUTDOWN_TIMEOUT
               value: "10"
             - name: TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS
-              value: "5000"
+              value: "10000"
             - name: TB_CLIENT_SUBSCRIPTIONS_ACK_WAIT_TIMEOUT_MS
-              value: "5000"
+              value: "10000"
             - name: TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS
-              value: "60000"
+              value: "90000"
             - name: ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS
-              value: "5000"
+              value: "10000"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS
               value: "0"
             - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE
