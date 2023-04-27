@@ -32,6 +32,10 @@ export enum StatsChartType {
   subscriptions = 'subscriptions'
 }
 
+export const TOTAL_KEY = 'total';
+
+export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
+
 export const StatsChartTypeTranslationMap = new Map<string, string>(
   [
     [StatsChartType.incomingMsgs, 'overview.incoming-messages'],
@@ -124,6 +128,8 @@ export function monitoringChartJsParams() {
   return {
     type: 'line',
     options: {
+      maintainAspectRatio: false,
+      responsive: true,
       interaction: {
         mode: 'index',
         intersect: false
@@ -199,10 +205,6 @@ export function monitoringChartJsParams() {
     }
   };
 }
-
-export const TOTAL_KEY = 'total';
-
-export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
 
 export const footer = (tooltipItems) => {
   let sum = 0;

@@ -27,11 +27,23 @@
 </mat-toolbar>
 <div class="mat-padding">
   <div fxFlex fxLayout="column" fxLayoutGap="4px">
-    <div class="mat-padding mat-elevation-z3" style="margin: 0 10px 0 10px; padding: 10px; background-color: #fff; text-align: center"
+    <div [id]="chart+'container'" class="mat-padding mat-elevation-z3"
+         style="margin: 0 10px 0 10px; padding: 10px; background-color: #fff;"
          *ngFor="let chart of statsCharts">
-      <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+      <div fxFlex fxLayoutAlign="space-between center">
+        <span fxFlex></span>
+        <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+        <span fxFlex></span>
+        <button type="button"
+                mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                (click)="onFullScreen(chart)"
+                matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                matTooltipPosition="above">
+          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+        </button>
+      </div>
       <div>
-        <canvas [id]="chart+chartIdSuf" width="500" height="90"></canvas>
+        <canvas [id]="chart+chartIdSuf" width="500" height="200"></canvas>
       </div>
     </div>
   </div>

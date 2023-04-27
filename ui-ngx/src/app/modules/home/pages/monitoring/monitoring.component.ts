@@ -56,7 +56,9 @@ export class MonitoringComponent extends PageComponent {
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  isFullscreen = false;
 
+  private chartHeight: number;
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
   private latestValues = {};
@@ -74,7 +76,7 @@ export class MonitoringComponent extends PageComponent {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
-    this.generateRandomData();
+    // this.generateRandomData();
   }
 
   ngOnInit() {
@@ -118,12 +120,14 @@ export class MonitoringComponent extends PageComponent {
         } else {
           for (const chartType in StatsChartType) {
             for (let i = 0; i < this.brokerIds.length; i++) {
-              let index = 0;
               const brokerId = this.brokerIds[i];
               this.latestValues[brokerId] = {};
               this.latestValues[brokerId][chartType] = 0;
-              if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
-              this.charts[chartType].data.datasets[index].data = data[index][chartType];
+              if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+                this.charts[chartType].data.datasets[i].data = data[i][chartType];
+              } else {
+                this.charts[chartType].data.datasets[0].data = data[0][chartType];
+              }
               this.updateChartView(data as TimeseriesData[], chartType);
             }
           }
@@ -135,27 +139,30 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private initCharts(data: TimeseriesData[]) {
+    const getDataset = (dataset, chartType, i, brokerId) => {
+      return {
+        data: dataset[i][chartType],
+        borderColor: getColor(chartType, i),
+        backgroundColor: getColor(chartType, i),
+        hidden: brokerId !== TOTAL_KEY,
+        pointStyle: 'line'
+      };
+    };
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
       const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
-      const datasets = {
-        data: {
-          datasets: []
-        }
-      };
+      const datasets = {data: {datasets: []}};
       for (let i = 0; i < this.brokerIds.length; i++) {
-        let index = i;
         const brokerId = this.brokerIds[i];
         this.latestValues[brokerId] = {};
         this.latestValues[brokerId][chartType] = 0;
-        if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
-        datasets.data.datasets.push({
-          data: data[index][chartType],
-          borderColor: getColor(chartType, index),
-          backgroundColor: getColor(chartType, index),
-          hidden: brokerId !== TOTAL_KEY,
-          pointStyle: 'line',
-        });
+        if (ONLY_TOTAL_KEYS.includes(chartType)) {
+          if (brokerId === TOTAL_KEY) {
+            datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
+          }
+        } else {
+          datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
+        }
       }
       const params = {...monitoringChartJsParams(), ...datasets};
       this.charts[chartType] = new Chart(ctx, params);
@@ -222,7 +229,7 @@ export class MonitoringComponent extends PageComponent {
       const brokerId = this.brokerIds[i];
       if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
       this.latestValues[brokerId][chartType] = data[index][chartType][0].value;
-      this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}: ${this.latestValues[this.brokerIds[index]][chartType]}`;
+      this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}`;
     }
   }
 
@@ -300,5 +307,21 @@ export class MonitoringComponent extends PageComponent {
         };
         return this.statsService.saveTelemetry(TOTAL_KEY, data);
       })).subscribe();
+  }
+
+  onFullScreen(chartType) {
+    this.isFullscreen = !this.isFullscreen;
+    const chartContainer = document.getElementById(chartType + 'container');
+    const chart = document.getElementById(chartType + this.chartIdSuf);
+    if (this.isFullscreen) {
+      this.chartHeight = chart.offsetHeight;
+      chartContainer.requestFullscreen();
+      // @ts-ignore
+      chart.parentNode.style.height = '100%';
+    } else {
+      document.exitFullscreen();
+      // @ts-ignore
+      chart.parentNode.style.height = this.chartHeight + 'px';
+    }
   }
 }
