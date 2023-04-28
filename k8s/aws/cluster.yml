@@ -25,7 +25,7 @@ metadata:
   version: "1.23"
 
 managedNodeGroups:
-  - name: tb-mqtt-broker
+  - name: tb-mqtt-broker-n
     instanceType: c6g.metal
     desiredCapacity: 1
     maxSize: 1
@@ -35,39 +35,30 @@ managedNodeGroups:
     volumeSize: 10
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-  #    ami: ami-0de6044cc8d220517
-  #    amiFamily: AmazonLinux2
-  #    overrideBootstrapCommand: |
-  #      #!/bin/bash
-  #      /etc/eks/bootstrap.sh thingsboard-mqtt-broker-cluster \
-  #        --container-runtime dockerd \
-  #        --use-max-pods true \
-  #        --docker-config-json '{
-  #        "bridge":"none",
-  #        "log-driver":"json-file",
-  #        "log-opts":{
-  #          "max-size":"10m",
-  #          "max-file":"10"
-  #        },
-  #        "live-restore":true,
-  #        "max-concurrent-downloads":10,
-  #        "default-ulimits":{
-  #          "memlock":{
-  #            "Hard":-1,
-  #            "Name":"memlock",
-  #            "Soft":-1
-  #          },
-  #          "nofile":{
-  #            "Hard":4194304,
-  #            "Name":"nofile",
-  #            "Soft":4194304
-  #          }
-  #        }
-  #      }' \
-  #        --kubelet-extra-args "--node-labels=alpha.eksctl.io/cluster-name=thingsboard-mqtt-broker-cluster,alpha.eksctl.io/nodegroup-name=tb-mqtt-broker,alpha.eksctl.io/nodegroup-type=managed"
-  #    preBootstrapCommands:
-  #      - "sysctl -w fs.nr_open=4194304"
-  - name: tb-perf-test-publishers
+    preBootstrapCommands:
+      - echo 'Starting custom preBootstrapCommands'
+      - echo 'fs.nr_open = 16777216' | sudo tee -a /etc/sysctl.conf
+      - echo 'fs.file-max = 16777216' | sudo tee -a /etc/sysctl.conf
+      - echo Reloading sysctl
+      - sudo sysctl -p
+      - echo Setting limits
+      - echo '*                soft    nofile          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo '*                hard    nofile          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo 'root             soft    nofile          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo 'root             hard    nofile          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo '*                soft    nproc          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo '*                hard    nproc          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo 'root             soft    nproc          16777216' | sudo tee -a /etc/security/limits.conf
+      - echo 'root             hard    nproc          16777216' | sudo tee -a /etc/security/limits.conf
+      - sudo sysctl -p
+      - echo 'Patching Docker /etc/docker/daemon.json for Kubernetes 1.23 on dockerd'
+      - cp /etc/docker/daemon.json /tmp/docker-original.json
+      - echo '{"default-ulimits":{"nofile":{"Name":"nofile","Soft":16777216,"Hard":16777216}}}' > /tmp/docker-patch.json
+      - jq -s '.[0] * .[1]' /tmp/docker-original.json /tmp/docker-patch.json | sudo tee /etc/docker/daemon.json
+      - echo 'Restarting Docker'
+      - sudo systemctl daemon-reload
+      - sudo systemctl restart docker.service
+  - name: tb-perf-test-publishers-n
     instanceType: c6g.metal
     desiredCapacity: 0
     maxSize: 1
@@ -77,7 +68,7 @@ managedNodeGroups:
     labels: { role: tb-perf-test-publishers }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-  - name: tb-perf-test-subscribers
+  - name: tb-perf-test-subscribers-n
     instanceType: c6g.metal
     desiredCapacity: 0
     maxSize: 1
@@ -87,7 +78,7 @@ managedNodeGroups:
     labels: { role: tb-perf-test-subscribers }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-  - name: tb-additional
+  - name: tb-additional-n
     instanceType: m5.large
     desiredCapacity: 0
     maxSize: 1
@@ -107,14 +98,6 @@ managedNodeGroups:
     labels: { role: tb-kafka }
     ssh:
       publicKeyPath: ~/.ssh/id_rsa_tests.pub
-#  - name: tb-test
-#    instanceType: c6g.large
-#    desiredCapacity: 1
-#    maxSize: 1
-#    minSize: 0
-#    labels: { role: tb-test }
-#    ssh:
-#      publicKeyPath: ~/.ssh/id_rsa_tests.pub
 
 # In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 # eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
