@@ -26,11 +26,10 @@
   </tb-timewindow>
 </mat-toolbar>
 <div class="mat-padding">
-  <div fxFlex fxLayout="column" fxLayoutGap="4px">
-    <div [id]="chart+'container'" class="mat-padding mat-elevation-z3"
-         style="margin: 0 10px 0 10px; padding: 10px; background-color: #fff;"
-         *ngFor="let chart of statsCharts">
-      <div fxFlex fxLayoutAlign="space-between center">
+  <div fxFlex fxLayout="column" fxLayoutGap="16px">
+    <div [id]="chart+'container'" class="mat-padding mat-elevation-z3 chart-container" *ngFor="let chart of statsCharts">
+      <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      <section fxFlex fxLayoutAlign="space-between center">
         <span fxFlex></span>
         <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
         <span fxFlex></span>
@@ -41,10 +40,11 @@
                 matTooltipPosition="above">
           <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
         </button>
-      </div>
-      <div>
-        <canvas [id]="chart+chartIdSuf" width="500" height="200"></canvas>
-      </div>
+      </section>
+      <section>
+        <canvas [id]="chart+chartIdSuf" [height]="chartHeight"></canvas>
+      </section>
+      <mat-divider [fxShow]="isFullscreen"></mat-divider>
     </div>
   </div>
 </div>

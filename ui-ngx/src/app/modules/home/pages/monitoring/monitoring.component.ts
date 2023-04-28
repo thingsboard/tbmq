@@ -57,8 +57,8 @@ export class MonitoringComponent extends PageComponent {
   statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   isFullscreen = false;
+  chartHeight = 300;
 
-  private chartHeight: number;
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
   private latestValues = {};
@@ -107,6 +107,29 @@ export class MonitoringComponent extends PageComponent {
     this.fetchEntityTimeseries();
   }
 
+  onFullScreen(chartType) {
+    this.isFullscreen = !this.isFullscreen;
+    const updateHtmlElementStyle = (element: any, key: string, value: string) => element.style[key] = value;
+    const chart = document.getElementById(chartType + this.chartIdSuf);
+    const chartContainer = document.getElementById(chartType + 'container');
+    chartContainer.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        this.isFullscreen = !this.isFullscreen;
+        updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
+        updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
+      }
+    });
+    if (this.isFullscreen) {
+      chartContainer.requestFullscreen();
+      updateHtmlElementStyle(chart.parentNode, 'height', '90%');
+      updateHtmlElementStyle(chartContainer, 'padding-top', '5%');
+    } else {
+      document.exitFullscreen();
+      updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
+      updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
+    }
+  }
+
   private calculateFixedWindowTimeMs() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
   }
@@ -145,7 +168,8 @@ export class MonitoringComponent extends PageComponent {
         borderColor: getColor(chartType, i),
         backgroundColor: getColor(chartType, i),
         hidden: brokerId !== TOTAL_KEY,
-        pointStyle: 'line'
+        pointStyle: 'line',
+        pointBorderWidth: 0
       };
     };
     for (const chartType in StatsChartType) {
@@ -307,21 +331,5 @@ export class MonitoringComponent extends PageComponent {
         };
         return this.statsService.saveTelemetry(TOTAL_KEY, data);
       })).subscribe();
-  }
-
-  onFullScreen(chartType) {
-    this.isFullscreen = !this.isFullscreen;
-    const chartContainer = document.getElementById(chartType + 'container');
-    const chart = document.getElementById(chartType + this.chartIdSuf);
-    if (this.isFullscreen) {
-      this.chartHeight = chart.offsetHeight;
-      chartContainer.requestFullscreen();
-      // @ts-ignore
-      chart.parentNode.style.height = '100%';
-    } else {
-      document.exitFullscreen();
-      // @ts-ignore
-      chart.parentNode.style.height = this.chartHeight + 'px';
-    }
   }
 }

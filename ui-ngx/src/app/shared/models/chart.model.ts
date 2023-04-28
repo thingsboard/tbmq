@@ -32,7 +32,7 @@ export enum StatsChartType {
   subscriptions = 'subscriptions'
 }
 
-export const TOTAL_KEY = 'total';
+export const TOTAL_KEY = 'Total';
 
 export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
 
@@ -68,14 +68,16 @@ export function homeChartJsParams() {
   return {
     type: 'line',
     options: {
+      animation: false,
       elements: {
         point: {
           pointStyle: 'circle',
           radius: 0
         }
       },
-      animation: {
-        duration: 0
+      interaction: {
+        mode: 'index',
+        intersect: false
       },
       layout: {
         padding: {
@@ -103,17 +105,13 @@ export function homeChartJsParams() {
           display: false
         }
       },
-      interaction: {
-        mode: 'nearest',
-        intersect: true,
-        axis: 'x'
-      },
       plugins: {
         legend: {
           display: false
         },
         tooltip: {
-          enabled: false
+          enabled: true,
+          position: 'nearest'
         }
       },
       parsing: {
@@ -128,6 +126,7 @@ export function monitoringChartJsParams() {
   return {
     type: 'line',
     options: {
+      animation: false,
       maintainAspectRatio: false,
       responsive: true,
       interaction: {
@@ -141,7 +140,6 @@ export function monitoringChartJsParams() {
         }
       },
       stacked: false,
-      animation: false,
       scales: {
         y: {
           min: 0,

@@ -16,6 +16,10 @@
 @import "../../../../../scss/constants";
 
 :host {
+  .chart-container {
+    background-color: #fff;
+  }
+
   .mat-button:disabled {
     color: rgba(0,0,0,0.87);
   }
@@ -33,6 +37,6 @@
   }
 
   .mat-toolbar {
-    height: 50px;
+    height: 42px;
   }
 }

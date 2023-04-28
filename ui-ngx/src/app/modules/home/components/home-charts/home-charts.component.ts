@@ -89,7 +89,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       const dataSet = {
         data: data[chartType],
         borderColor: getColor(chartType, 0),
-        borderWidth: 3
+        backgroundColor: getColor(chartType, 0),
+        label: TOTAL_KEY
       };
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params);

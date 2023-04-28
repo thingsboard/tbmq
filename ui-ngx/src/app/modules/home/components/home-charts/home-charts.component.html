@@ -16,14 +16,13 @@
 
 -->
 <div class="home-column">
-  <div fxLayout="column" class="card" fxLayoutGap="4px">
+  <div fxLayout="column" class="card" fxLayoutGap="24px" style="padding-bottom: 16px">
     <tb-card-title-button cardType="MONITORING"></tb-card-title-button>
-    <section fxFlex fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="10px">
+    <section fxFlex fxLayoutAlign="center center">
       <div *ngFor="let chart of statsCharts; let $index = index">
         <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
-          <div fxFlex fxLayout="column" fxLayoutAlign="start center">
+          <div fxFlex fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="8px">
             <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-            <span>{{ latestValues[chart] }}</span>
           </div>
           <canvas class="chart" [id]="chart+chartIdSuf">
           </canvas>

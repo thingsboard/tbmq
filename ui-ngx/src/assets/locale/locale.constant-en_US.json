@@ -181,6 +181,10 @@
   "dialog": {
     "close": "Close dialog"
   },
+  "fullscreen": {
+    "exit": "Exit",
+    "expand": "Expand"
+  },
   "help": {
     "goto-help-page": "Go to help page"
   },
