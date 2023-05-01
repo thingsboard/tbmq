@@ -21,7 +21,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(ClasspathSuite.class)
 @ClassnameFilters({
-        "org.thingsboard.mqtt.broker.dao.service.TimeseriesServiceTest"
+        "org.thingsboard.mqtt.broker.dao.service.*ServiceTest",
+        "org.thingsboard.mqtt.broker.dao.client.device.*ServiceTest",
+        "org.thingsboard.mqtt.broker.dao.data.*Test",
+        "org.thingsboard.mqtt.broker.dao.util.protocol.*Test"
 })
 public class DaoServiceTestSuite {
 
