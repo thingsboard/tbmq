@@ -71,7 +71,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
-        if (!CollectionUtils.isEmpty(deviceSubscriptions)) {
+        if (deviceSubscriptions != null) {
             for (Subscription deviceSubscription : deviceSubscriptions) {
                 deviceMsgQueuePublisher.sendMsg(
                         getClientIdFromSubscription(deviceSubscription),
@@ -79,15 +79,23 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                         callbackWrapper);
             }
         }
-        if (!CollectionUtils.isEmpty(applicationSubscriptions)) {
-            for (Subscription applicationSubscription : applicationSubscriptions) {
+        if (applicationSubscriptions != null) {
+            if (applicationSubscriptions.size() == 1) {
+                Subscription applicationSubscription = applicationSubscriptions.get(0);
                 applicationMsgQueuePublisher.sendMsg(
                         getClientIdFromSubscription(applicationSubscription),
                         createReceiverPublishMsg(applicationSubscription, publishMsgProto),
                         callbackWrapper);
+            } else {
+                for (Subscription applicationSubscription : applicationSubscriptions) {
+                    applicationMsgQueuePublisher.sendMsg(
+                            getClientIdFromSubscription(applicationSubscription),
+                            createReceiverPublishMsg(applicationSubscription, publishMsgProto),
+                            callbackWrapper);
+                }
             }
         }
-        if (!CollectionUtils.isEmpty(sharedTopics)) {
+        if (sharedTopics != null) {
             for (String sharedTopic : sharedTopics) {
                 applicationMsgQueuePublisher.sendMsgToSharedTopic(
                         sharedTopic,

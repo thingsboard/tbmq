@@ -30,9 +30,10 @@ public class MqttPubAckHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
     private final RetransmissionService retransmissionService;
+    private final boolean isTraceEnabled = log.isTraceEnabled();
 
     public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         }
         if (ctx.getSessionInfo().isPersistent()) {

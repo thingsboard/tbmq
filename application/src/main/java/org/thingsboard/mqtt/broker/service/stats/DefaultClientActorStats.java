@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
@@ -40,8 +41,10 @@ public class DefaultClientActorStats implements ClientActorStats {
     }
 
     @Override
-    public void logMsgProcessingTime(String msgType, long amount, TimeUnit unit) {
-        timers.computeIfAbsent(msgType, s -> new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", MSG_TYPE_TAG, msgType)))
+    public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
+        String msgTypeStr = msgType.toString();
+        long amount = System.nanoTime() - startTime;
+        timers.computeIfAbsent(msgTypeStr, s -> new ResettableTimer(statsFactory.createTimer(statsKey + ".processing.time", MSG_TYPE_TAG, msgTypeStr)))
                 .logTime(amount, unit);
     }
 

@@ -177,7 +177,7 @@ public class ClientActor extends ContextAwareActor {
             }
             return success;
         } finally {
-            clientActorStats.logMsgProcessingTime(msg.getMsgType().toString(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+            clientActorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
             clientLogger.logEvent(state.getClientId(), this.getClass(), "Finished msg processing - " + msg.getMsgType());
         }
     }

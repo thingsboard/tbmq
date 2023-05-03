@@ -19,6 +19,6 @@ import java.util.concurrent.TimeUnit;
 
 public interface RetainedMsgTimerStats {
 
-    void logRetainedMsgLookup(long amount, TimeUnit unit);
+    void logRetainedMsgLookup(long startTime, TimeUnit unit);
 
 }

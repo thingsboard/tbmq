@@ -124,16 +124,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private void processPersistentSubscriptions(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
-        long persistentMessagesProcessingStartTime = System.nanoTime();
+        long startTime = System.nanoTime();
         msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
-        publishMsgProcessingTimerStats.logPersistentMessagesProcessing(System.nanoTime() - persistentMessagesProcessingStartTime, TimeUnit.NANOSECONDS);
+        publishMsgProcessingTimerStats.logPersistentMessagesProcessing(startTime, TimeUnit.NANOSECONDS);
     }
 
     PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
                                                                              PublishMsgProto publishMsgProto) {
         List<Subscription> applicationSubscriptions = null;
         List<Subscription> deviceSubscriptions = null;
-        long notPersistentMsgProcessingStartTime = System.nanoTime();
+        long startTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
             int commonSubsSize = msgSubscriptions.getCommonSubscriptions().size();
@@ -152,7 +152,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
 
         if (publishMsgProcessingTimerStats != null) {
-            publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(System.nanoTime() - notPersistentMsgProcessingStartTime, TimeUnit.NANOSECONDS);
+            publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(startTime, TimeUnit.NANOSECONDS);
         }
         return new PersistentMsgSubscriptions(
                 deviceSubscriptions,
@@ -215,22 +215,20 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
         List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
-        if (CollectionUtils.isEmpty(clientSubscriptions)) {
+        int clientSubscriptionsSize = clientSubscriptions.size();
+        if (clientSubscriptionsSize == 0) {
             return null;
         }
 
         Set<TopicSharedSubscription> topicSharedSubscriptions = null;
-        List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>();
+        List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
 
-        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
-            var topicFilter = clientSubscription.getTopicFilter();
-            var shareName = clientSubscription.getValue().getShareName();
-
-            if (!StringUtils.isEmpty(shareName)) {
-                topicSharedSubscriptions = initTopicSharedSubscriptionSetIfNull(topicSharedSubscriptions);
-                topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
-            } else {
-                commonClientSubscriptions.add(clientSubscription);
+        if (clientSubscriptionsSize == 1) {
+            ValueWithTopicFilter<ClientSubscription> clientSubscription = clientSubscriptions.get(0);
+            topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+        } else {
+            for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
+                topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
             }
         }
 
@@ -241,6 +239,21 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
                 getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
         );
+    }
+
+    private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,
+                                                         List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions,
+                                                         Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        var topicFilter = clientSubscription.getTopicFilter();
+        var shareName = clientSubscription.getValue().getShareName();
+
+        if (!StringUtils.isEmpty(shareName)) {
+            topicSharedSubscriptions = initTopicSharedSubscriptionSetIfNull(topicSharedSubscriptions);
+            topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
+        } else {
+            commonClientSubscriptions.add(clientSubscription);
+        }
+        return topicSharedSubscriptions;
     }
 
     private List<Subscription> getTargetDeviceSharedSubscriptions(SharedSubscriptions sharedSubscriptions, int qos) {
@@ -263,14 +276,14 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private List<Subscription> collectCommonSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
 
-        if (CollectionUtils.isEmpty(clientSubscriptionWithTopicFilterList)) {
+        if (clientSubscriptionWithTopicFilterList.size() == 0) {
             return null;
         }
 
         long startTime = System.nanoTime();
         List<Subscription> msgSubscriptions = collectSubscriptions(clientSubscriptionWithTopicFilterList, senderClientId);
         if (publishMsgProcessingTimerStats != null) {
-            publishMsgProcessingTimerStats.logClientSessionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+            publishMsgProcessingTimerStats.logClientSessionsLookup(startTime, TimeUnit.NANOSECONDS);
         }
         return msgSubscriptions;
     }
@@ -366,6 +379,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+        if (clientSubscriptionWithTopicFilterList.size() == 1) {
+            var clientSubsWithTopicFilter = clientSubscriptionWithTopicFilterList.get(0);
+            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
+            if (noLocalOptionMet) {
+                return null;
+            }
+            return clientSubscriptionWithTopicFilterList;
+        }
+
         Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {

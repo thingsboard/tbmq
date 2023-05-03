@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public interface ClientActorStats {
 
-    void logMsgProcessingTime(String msgType, long amount, TimeUnit unit);
+    void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit);
 
     void logMsgQueueTime(TbActorMsg msg, TimeUnit unit);
 

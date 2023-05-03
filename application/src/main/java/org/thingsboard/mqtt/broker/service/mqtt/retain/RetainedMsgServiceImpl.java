@@ -57,7 +57,7 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
     public List<RetainedMsg> getRetainedMessages(String topicFilter) {
         long startTime = System.nanoTime();
         List<RetainedMsg> retainedMsg = retainMsgTrie.get(topicFilter);
-        retainedMsgTimerStats.logRetainedMsgLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        retainedMsgTimerStats.logRetainedMsgLookup(startTime, TimeUnit.NANOSECONDS);
         return retainedMsg;
     }
 
