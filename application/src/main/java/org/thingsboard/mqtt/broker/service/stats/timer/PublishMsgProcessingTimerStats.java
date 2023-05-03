@@ -18,9 +18,10 @@ package org.thingsboard.mqtt.broker.service.stats.timer;
 import java.util.concurrent.TimeUnit;
 
 public interface PublishMsgProcessingTimerStats {
-    void logClientSessionsLookup(long amount, TimeUnit unit);
 
-    void logNotPersistentMessagesProcessing(long amount, TimeUnit unit);
+    void logClientSessionsLookup(long startTime, TimeUnit unit);
 
-    void logPersistentMessagesProcessing(long amount, TimeUnit unit);
+    void logNotPersistentMessagesProcessing(long startTime, TimeUnit unit);
+
+    void logPersistentMessagesProcessing(long startTime, TimeUnit unit);
 }

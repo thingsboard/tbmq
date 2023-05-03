@@ -95,6 +95,9 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
         Boolean isAuthorized = topicAuthMap.get(topic);
         if (isAuthorized == null) {
             return topicAuthMap.computeIfAbsent(topic, s -> {
+                if (CollectionUtils.isEmpty(authRulePatterns)) {
+                    return true;
+                }
                 Stream<List<Pattern>> pubPatterns = authRulePatterns.stream().map(AuthRulePatterns::getPubPatterns);
                 return isAuthorized(topic, pubPatterns);
             });

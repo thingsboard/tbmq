@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.stats.timer;
 import java.util.concurrent.TimeUnit;
 
 public interface DeliveryTimerStats {
-    void logDelivery(long amount, TimeUnit unit);
+    void logDelivery(long startTime, TimeUnit unit);
 }

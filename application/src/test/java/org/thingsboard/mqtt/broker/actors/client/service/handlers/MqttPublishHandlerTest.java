@@ -120,6 +120,8 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void testProcess() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
+
         PublishMsg publishMsg = getPublishMsg(1, 2);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
@@ -134,6 +136,8 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void testProcessRetainMsg() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
+
         PublishMsg publishMsg = getPublishMsg(1, 2, true);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);

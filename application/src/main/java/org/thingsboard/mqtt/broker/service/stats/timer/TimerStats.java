@@ -53,32 +53,42 @@ public class TimerStats implements SubscriptionTimerStats, PublishMsgProcessingT
     }
 
     @Override
-    public void logSubscriptionsLookup(long amount, TimeUnit unit) {
+    public void logSubscriptionsLookup(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         subscriptionLookupTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logClientSessionsLookup(long amount, TimeUnit unit) {
+    public void logClientSessionsLookup(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         clientSessionsLookupTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logNotPersistentMessagesProcessing(long amount, TimeUnit unit) {
+    public void logNotPersistentMessagesProcessing(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         notPersistentMessagesProcessingTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logPersistentMessagesProcessing(long amount, TimeUnit unit) {
+    public void logPersistentMessagesProcessing(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         persistentMessagesProcessingTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logDelivery(long amount, TimeUnit unit) {
+    public void logDelivery(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         deliveryTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logRetainedMsgLookup(long amount, TimeUnit unit) {
+    public void logRetainedMsgLookup(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         retainedMsgLookupTimer.logTime(amount, unit);
+    }
+
+    private long getAmount(long startTime) {
+        return System.nanoTime() - startTime;
     }
 }

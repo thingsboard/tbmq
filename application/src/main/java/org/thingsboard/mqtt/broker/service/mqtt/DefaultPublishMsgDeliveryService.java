@@ -107,7 +107,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
-        deliveryTimerStats.logDelivery(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {
