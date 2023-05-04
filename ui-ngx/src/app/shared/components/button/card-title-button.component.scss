@@ -13,20 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  .mat-button {
-    border-radius: 4px;
-    border:1px solid rgba(192, 192, 192, 0.6);
+@import '../../../../scss/constants';
 
-    &:not(.mat-icon-button) {
-      mat-icon {
-        margin-right: 0;
-      }
+:host {
+  height: 40px;
+
+  .tb-title-link {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.25px;
+    color: rgba(0, 0, 0, 0.54);
+    position: relative;
+    border-bottom: none;
+    cursor: pointer;
+    &:hover, &:focus {
+      border-bottom: none;
+      color: inherit;
     }
   }
 
-  .mat-button-disabled {
-    border:1px solid transparent;
-    color: rgba(0,0,0,0.87) !important;
+  .tb-title-link-disabled {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.25px;
+    color: rgba(0, 0, 0, 0.54);
+    position: relative;
+    border-bottom: none;
+    cursor: default;
   }
 }

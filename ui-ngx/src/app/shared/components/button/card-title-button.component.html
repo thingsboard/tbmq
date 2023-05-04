@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<button mat-button (click)="navigate()" [disabled]="disabled" matTooltip="{{title?.tooltip | translate}}">
+<a [ngClass]="!disabled ? 'tb-title-link' : 'tb-title-link-disabled'" (click)="navigate()">
   {{ title?.label | translate}}
-  <mat-icon style="font-size: 20px; line-height: 22px" class="material-icons" *ngIf="!disabled">navigate_next</mat-icon>
-</button>
+  <mat-icon style="line-height: 24px; transform: rotate(315deg); font-size: 14px; color: inherit" *ngIf="!disabled">arrow_forward</mat-icon>
+</a>

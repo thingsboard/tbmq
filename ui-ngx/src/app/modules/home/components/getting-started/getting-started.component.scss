@@ -218,19 +218,39 @@
     }
   }
 
-  .dynamic-width {
-    width: 20vw;
+  @media screen and (max-width: 1279px) {
+    .dynamic-width {
+      width: 100%;
+    }
   }
 
-  @media screen and (min-width: 1500px) {
+  @media screen and (min-width: 1280px) {
     .dynamic-width {
-      width: 25vw;
+      width: 50%;
+    }
+  }
+
+  @media screen and (min-width: 1600px) {
+    .dynamic-width {
+      width: 60%;
+    }
+  }
+
+  @media screen and (min-width: 1700px) {
+    .dynamic-width {
+      width: 70%;
     }
   }
 
   @media screen and (min-width: 1800px) {
     .dynamic-width {
-      width: 35vw;
+      width: 90%;
+    }
+  }
+
+  @media screen and (min-width: 1900px) {
+    .dynamic-width {
+      width: 100%;
     }
   }
 
