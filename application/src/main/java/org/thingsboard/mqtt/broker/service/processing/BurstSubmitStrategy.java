@@ -85,7 +85,7 @@ public class BurstSubmitStrategy implements SubmitStrategy {
     }
 
     private String getClientId(PublishMsgWithId msg) {
-        return msg.getPublishMsgProto().getSessionInfo().getClientInfo().getClientId();
+        return msg.getPublishMsgProto().getClientId();
     }
 
     private void processMessages(Consumer<PublishMsgWithId> msgConsumer, Collection<PublishMsgWithId> msgList) {

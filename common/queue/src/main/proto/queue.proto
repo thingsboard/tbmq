@@ -30,7 +30,7 @@ message SessionInfoProto {
 }
 
 message PublishMsgProto {
-  SessionInfoProto sessionInfo = 1;
+  string clientId = 1;
   int32 packetId = 2;
   bytes payload = 3;
   bool retain = 4;

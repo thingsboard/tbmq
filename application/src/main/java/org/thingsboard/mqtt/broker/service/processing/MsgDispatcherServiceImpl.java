@@ -165,6 +165,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                                       List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
         boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
         if (nonPersistentByPubQos) {
+            if (subscriptions.size() == 1) {
+                Subscription subscription = subscriptions.get(0);
+                deliver(publishMsgProto, subscription);
+                return;
+            }
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
@@ -175,6 +180,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 }
             }
         } else {
+            if (subscriptions.size() == 1) {
+                Subscription subscription = subscriptions.get(0);
+                processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions);
+                return;
+            }
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
