@@ -60,7 +60,7 @@ managedNodeGroups:
       - sudo systemctl daemon-reload
       - sudo systemctl restart docker.service
   - name: tb-perf-test-publishers
-    instanceType: c6g.metal
+    instanceType: c6g.12xlarge
     desiredCapacity: 0
     maxSize: 1
     minSize: 0
@@ -71,7 +71,7 @@ managedNodeGroups:
       allow: true
       publicKeyName: 'dlandiak'
   - name: tb-perf-test-subscribers
-    instanceType: c6g.metal
+    instanceType: c6g.8xlarge
     desiredCapacity: 0
     maxSize: 1
     minSize: 0

@@ -101,15 +101,17 @@ spec:
             - name: TB_KAFKA_DEFAULT_COMPRESSION_TYPE
               value: "lz4"
             - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:16384;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728;fetch.min.bytes:1024"
+              value: "max.poll.records:4096;max.partition.fetch.bytes:16777216;fetch.max.bytes:134217728;fetch.min.bytes:1024"
             - name: TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG
-              value: "linger.ms:10"
+              value: "linger.ms:10;batch.size:16384;max.in.flight.requests.per.connection:15;buffer.memory:67108864"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
-              value: "max.poll.records:16384;fetch.max.bytes:134217728;fetch.min.bytes:1024"
+              value: "max.poll.records:4096;fetch.max.bytes:134217728;fetch.min.bytes:1024"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
-              value: "batch.size:131072"
+              value: "linger.ms:15;batch.size:16384;max.in.flight.requests.per.connection:15;buffer.memory:67108864"
+            - name: TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS
+              value: "4096"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:48;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:72;replication.factor:1"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
@@ -171,7 +173,7 @@ spec:
             - name: TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT
               value: "0"
             - name: TB_PUBLISH_MSG_CONSUMERS_COUNT
-              value: "6"
+              value: "9"
             - name: TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT
               value: "90000"
             - name: TB_PUBLISH_MSG_ACK_STRATEGY_TYPE
@@ -198,23 +200,23 @@ spec:
               value: "10000"
             # Threads count
             - name: ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE
-              value: "30"
+              value: "25"
             - name: TCP_NETTY_BOSS_GROUP_THREADS
               value: "3"
             - name: TCP_NETTY_WORKER_GROUP_THREADS
-              value: "30"
+              value: "25"
             - name: MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS
-              value: "4"
+              value: "6"
             - name: MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS
               value: "1"
             - name: MQTT_HANDLER_APP_MSG_CALLBACK_THREADS
-              value: "2"
+              value: "6"
             - name: MQTT_CONNECT_THREADS
               value: "4"
             - name: TB_PUBLISH_MSG_THREADS_COUNT
-              value: "6"
+              value: "9"
             - name: TB_APP_PERSISTED_MSG_THREADS_COUNT
-              value: "30"
+              value: "20"
             - name: TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS
               value: "4"
             - name: ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE
