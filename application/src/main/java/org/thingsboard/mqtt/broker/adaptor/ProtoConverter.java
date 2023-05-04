@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 public class ProtoConverter {
 
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        QueueProtos.SessionInfoProto sessionInfoProto = convertToSessionInfoProto(sessionInfo);
         UserProperties userProperties = getUserProperties(publishMsg.getProperties());
         List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         return QueueProtos.PublishMsgProto.newBuilder()
@@ -55,7 +54,7 @@ public class ProtoConverter {
                 .setRetain(publishMsg.isRetained())
                 .setPayload(ByteString.copyFrom(publishMsg.getPayload()))
                 .addAllUserProperties(userPropertyProtos)
-                .setSessionInfo(sessionInfoProto)
+                .setClientId(sessionInfo.getClientInfo().getClientId())
                 .build();
     }
 
@@ -88,7 +87,7 @@ public class ProtoConverter {
     }
 
     public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
-        return publishMsgProto != null ? publishMsgProto.getSessionInfo().getClientInfo().getClientId() : null;
+        return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 
     public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
