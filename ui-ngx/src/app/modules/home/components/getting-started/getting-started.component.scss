@@ -17,10 +17,12 @@
 
 :host::ng-deep {
 
-  .container {
+  .tb-get-started-container {
     border-radius: 10px;
     background: #fff;
-    padding: 8px;
+    padding: 10px;
+    flex: 1;
+    overflow: auto;
   }
 
   .mat-expansion-panel-body {
@@ -218,40 +220,139 @@
     }
   }
 
-  @media screen and (max-width: 1279px) {
-    .dynamic-width {
-      width: 100%;
-    }
+}
+
+:host ::ng-deep {
+
+  .tb-get-started .mat-vertical-stepper-header {
+    border-radius: 12px;
+    padding: 12px;
+    height: auto;
   }
 
-  @media screen and (min-width: 1280px) {
-    .dynamic-width {
-      width: 50%;
-    }
+  .tb-get-started .mat-vertical-stepper-header[aria-selected="true"] {
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
   }
 
-  @media screen and (min-width: 1600px) {
-    .dynamic-width {
-      width: 60%;
-    }
+  .tb-get-started .mat-vertical-content-container {
+    margin-left: 0;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
   }
 
-  @media screen and (min-width: 1700px) {
-    .dynamic-width {
-      width: 70%;
-    }
+  .tb-get-started .mat-stepper-vertical-line::before {
+    content: none;
   }
 
-  @media screen and (min-width: 1800px) {
-    .dynamic-width {
-      width: 90%;
-    }
+  .tb-get-started .mat-step-label {
+    width: 100%;
+    white-space: inherit;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: rgba(0, 0, 0, 0.76);
   }
 
-  @media screen and (min-width: 1900px) {
-    .dynamic-width {
-      width: 100%;
-    }
+  .tb-get-started .mat-step-label.mat-step-label-selected {
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    color: rgba(0, 0, 0, 0.87);
   }
 
+  .tb-get-started .mat-vertical-content {
+    p, li {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 20px;
+      letter-spacing: 0.2px;
+      color: rgba(0, 0, 0, 0.54);
+      em {
+        font-style: normal;
+        font-weight: 500;
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+    ul {
+      padding-inline-start: 20px;
+    }
+    .tb-bordered-content {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      padding: 16px;
+      p {
+        margin-top: 16px;
+        margin-bottom: 8px;
+      }
+    }
+    .tb-markdown-view {
+        .code-wrapper {
+          overflow: auto;
+          padding: 0;
+          pre[class*=language-] {
+            margin: 0;
+            padding: 9px 38px 9px 16px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 6px;
+            border: none;
+          }
+          code[class*="language-"], pre[class*="language-"] {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-weight: 400;
+            font-size: 12px;
+            line-height: 16px;
+            letter-spacing: 0.25px;
+            color: rgba(0, 0, 0, 0.38);
+            overflow: hidden;
+            white-space: break-spaces;
+            word-break: break-all;
+            & * {
+              color: rgba(0, 0, 0, 0.38);
+              cursor: inherit;
+              background: transparent;
+            }
+          }
+        }
+    }
+  }
+  //
+  //@media screen and (max-width: 1279px) {
+  //  .code-wrapper {
+  //    width: 100vw;
+  //  }
+  //}
+  //@media screen and (min-width: 1280px) {
+  //  .code-wrapper {
+  //    width: 50vw;
+  //  }
+  //}
+  //@media screen and (min-width: 1600px) {
+  //  .code-wrapper {
+  //    width: 60vw;
+  //  }
+  //}
+  //@media screen and (min-width: 1700px) {
+  //  .code-wrapper {
+  //    width: 70vw;
+  //  }
+  //}
+  //@media screen and (min-width: 1800px) {
+  //  .code-wrapper {
+  //    width: 90vw;
+  //  }
+  //}
+  //@media screen and (min-width: 1900px) {
+  //  .code-wrapper {
+  //    width: 100vw;
+  //  }
+  //}
 }

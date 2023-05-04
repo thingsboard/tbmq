@@ -21,12 +21,15 @@
   .tb-title-link {
     font-style: normal;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 12px;
     line-height: 20px;
     letter-spacing: 0.25px;
     color: rgba(0, 0, 0, 0.54);
     position: relative;
     border-bottom: none;
+  }
+
+  .tb-title-link-hover {
     cursor: pointer;
     &:hover, &:focus {
       border-bottom: none;
@@ -35,14 +38,6 @@
   }
 
   .tb-title-link-disabled {
-    font-style: normal;
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.25px;
-    color: rgba(0, 0, 0, 0.54);
-    position: relative;
-    border-bottom: none;
     cursor: default;
   }
 }

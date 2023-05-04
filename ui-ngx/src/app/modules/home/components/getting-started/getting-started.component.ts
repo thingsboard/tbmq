@@ -40,6 +40,7 @@ import { AppState } from '@core/core.state';
 export class GettingStartedComponent implements AfterViewInit {
 
   steps: Observable<Array<any>> = of([]);
+  stepsData: Array<any> = [];
   data: Observable<string>;
   configParams: BrokerConfig;
   expandedStep = 1;
@@ -57,23 +58,6 @@ export class GettingStartedComponent implements AfterViewInit {
 
   getStep(id: string): Observable<string> {
     return this.instructionsService.getGetStartedInstruction(id);
-  }
-
-  stepActive(index): boolean {
-    return index + 1 === this.expandedStep;
-  }
-
-  stepDone(index): boolean {
-    return this.expandedStep > index + 1;
-  }
-
-  stepNotDone(index): boolean {
-    return this.expandedStep < index + 1;
-  }
-
-  expandedChange(step: any) {
-    this.expandedStep = step?.position;
-    this.data = this.getStep(step.id);
   }
 
   navigate(path: string) {
@@ -111,6 +95,9 @@ export class GettingStartedComponent implements AfterViewInit {
         const portMqtt = data ? data[ConfigParams.PORT_MQTT] : null;
         const basicAuth = data ? data[ConfigParams.BASIC_AUTH] : null;
         this.steps = this.instructionsService.setSteps(basicAuth);
+        this.steps.subscribe((res) => {
+          this.stepsData = res;
+        });
         // @ts-ignore
         window.mqttPort = portMqtt;
         this.configParams = {} as BrokerConfig;
@@ -120,5 +107,10 @@ export class GettingStartedComponent implements AfterViewInit {
         return data;
       }
     )).subscribe();
+  }
+
+  updateSelectedIndex(event) {
+    this.expandedStep = event?.selectedIndex;
+    this.data = this.getStep(this.stepsData[event.selectedIndex].id);
   }
 }
