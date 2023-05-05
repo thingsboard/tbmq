@@ -203,7 +203,6 @@ export class MonitoringComponent extends PageComponent {
     timer(0, POLLING_INTERVAL)
     .pipe(
       switchMap(() => this.$getLatestTimeseries),
-      retry(),
       takeUntil(this.stopPolling$),
       share()
     ).subscribe(data => {

@@ -67,7 +67,7 @@ export function markedOptionsFactory(): MarkedOptions {
 function wrapCopyCode(id: number, content: string, code: string): string {
   return '<div class="code-wrapper">' + content + '<span id="copyCodeId' + id + '" style="display: none;">' + code + '</span>' +
     '<button id="copyCodeBtn' + id + '" onClick="markdownCopyCode(' + id + ')" ' +
-    'class="clipboard-btn"><img src="https://clipboardjs.com/assets/images/clippy.svg" alt="Copy to clipboard">' +
+    'class="clipboard-btn"><mat-icon class="material-icons" style="font-size: 16px">content_copy</mat-icon>' +
     '</button></div>';
 }
 
@@ -81,7 +81,7 @@ function wrapCopyCode(id: number, content: string, code: string): string {
         if (!copyBtn.hasClass('tooltipstered')) {
           copyBtn.tooltipster(
             {
-              content: 'Copied!',
+              content: 'Copied',
               theme: 'tooltipster-shadow',
               delay: 0,
               trigger: 'custom',

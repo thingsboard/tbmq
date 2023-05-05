@@ -54,7 +54,6 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
     timer(0, POLLING_INTERVAL)
       .pipe(
         switchMap(() => forkJoin([this.mqttClientSessionService.getClientSessionsStats(), this.mqttClientCredentialsService.getClientCredentialsStatsInfo()])),
-        retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);

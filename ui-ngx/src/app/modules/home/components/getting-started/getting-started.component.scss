@@ -22,7 +22,6 @@
     background: #fff;
     padding: 10px;
     flex: 1;
-    overflow: auto;
   }
 
   .mat-expansion-panel-body {
@@ -179,20 +178,18 @@
           border: 0;
           outline: none;
           position: absolute;
-          top: 5px;
-          right: 5px;
-          background: #fff;
-          box-shadow: 0 1px 8px 0 rgba(0,0,0,0.2), 0 3px 4px 0 rgba(0,0,0,0.14), 0 3px 3px -2px rgba(0,0,0,0.12);
+          top: 0;
+          right: 0;
+          background: transparent;
+          color: #1f8b4d;
           border-radius: 5px;
-          opacity: 0;
-          transition: opacity .3s;
-          padding: 3px 6px;
+          //padding: 3px 6px;
           line-height: 16px;
           img {
             width: 18px;
           }
           &:hover {
-            background: #f9f9f9;
+            color: #000000;
           }
           &:active {
             background-color: #ececec;
@@ -295,7 +292,6 @@
     }
     .tb-markdown-view {
         .code-wrapper {
-          overflow: auto;
           padding: 0;
           pre[class*=language-] {
             margin: 0;

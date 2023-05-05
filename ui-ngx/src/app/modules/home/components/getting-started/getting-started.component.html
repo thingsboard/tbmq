@@ -19,10 +19,7 @@
   <tb-card-title-button cardType="GETTING_STARTED" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="updateSelectedIndex($event)">
     <ng-container *ngFor="let step of steps | async; let index = index;">
-      <ng-template matStepperIcon="edit">
-        {{ index + 1 }}
-      </ng-template>
-      <mat-step [completed]="index + 1 > expandedStep">
+      <mat-step [completed]="false">
         <ng-template matStepLabel>
           <div style="width: 100%;" fxLayout="row" fxLayoutAlign="space-between center">
             <div>{{step.title | translate}}</div>

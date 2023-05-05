@@ -103,7 +103,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     timer(0, POLLING_INTERVAL)
       .pipe(
         switchMap(() => this.statsService.getLatestTimeseries(TOTAL_KEY)),
-        retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => {

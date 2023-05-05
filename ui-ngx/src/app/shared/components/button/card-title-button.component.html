@@ -18,4 +18,5 @@
 <a class="tb-title-link" [ngClass]="!disabled ? 'tb-title-link-hover' : 'tb-title-link-disabled'" (click)="navigate()">
   {{ title?.label | translate}}
   <mat-icon style="line-height: 22px; transform: rotate(315deg); font-size: 14px; color: inherit" *ngIf="!disabled">arrow_forward</mat-icon>
+  <mat-icon style="line-height: 22px; transform: rotate(315deg); font-size: 14px; color: transparent" *ngIf="disabled">arrow_forward</mat-icon>
 </a>
