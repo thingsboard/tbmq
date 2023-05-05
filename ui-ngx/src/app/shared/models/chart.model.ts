@@ -84,7 +84,7 @@ export function homeChartJsParams() {
           right: 20,
           left: 20,
           bottom: 10,
-          top: 10
+          top: 20
         }
       },
       title: {

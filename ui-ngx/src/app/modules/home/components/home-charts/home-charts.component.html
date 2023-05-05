@@ -16,7 +16,7 @@
 
 -->
 <div class="home-column">
-  <div fxLayout="column" class="card" fxLayoutGap="24px" style="padding-bottom: 16px">
+  <div fxLayout="column" class="card" fxLayoutGap="4px" style="padding-bottom: 16px">
     <tb-card-title-button cardType="MONITORING"></tb-card-title-button>
     <section fxFlex fxLayoutAlign="center center">
       <div *ngFor="let chart of statsCharts; let $index = index">
@@ -24,7 +24,7 @@
           <div fxFlex fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="8px">
             <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
           </div>
-          <canvas class="chart" [id]="chart+chartIdSuf">
+          <canvas class="chart" height="100" width="150" [id]="chart+chartIdSuf">
           </canvas>
         </div>
       </div>
