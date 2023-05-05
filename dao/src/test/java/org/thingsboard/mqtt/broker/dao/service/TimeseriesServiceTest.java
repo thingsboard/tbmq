@@ -61,14 +61,6 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
     @Autowired
     private TimeseriesService tsService;
 
-    @Before
-    public void before() {
-    }
-
-    @After
-    public void after() {
-    }
-
     @Test
     public void testFindAllLatest() throws Exception {
         String entityId = RandomStringUtils.randomAlphabetic(20);
@@ -126,6 +118,24 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         Assert.assertEquals(toTsEntry(TS - 3, longKvEntry), entries.get(0));
         Assert.assertEquals(toTsEntry(TS - 2, longKvEntry), entries.get(1));
         Assert.assertEquals(toTsEntry(TS - 1, longKvEntry), entries.get(2));
+    }
+
+    @Test
+    public void testFindByQueryDescOrder() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+
+        saveEntries(entityId, TS - 3);
+        saveEntries(entityId, TS - 2);
+        saveEntries(entityId, TS - 1);
+
+        List<ReadTsKvQuery> queries = new ArrayList<>();
+        queries.add(new BaseReadTsKvQuery(LONG_KEY, TS - 3, TS, 0, 1000, Aggregation.NONE, "DESC"));
+
+        List<TsKvEntry> entries = tsService.findAll(entityId, queries).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertEquals(3, entries.size());
+        Assert.assertEquals(toTsEntry(TS - 1, longKvEntry), entries.get(0));
+        Assert.assertEquals(toTsEntry(TS - 2, longKvEntry), entries.get(1));
+        Assert.assertEquals(toTsEntry(TS - 3, longKvEntry), entries.get(2));
     }
 
     @Test
@@ -220,24 +230,6 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         Assert.assertEquals(2, entries.size());
         Assert.assertEquals(toTsEntry(TS + 25000, new LongDataEntry(LONG_KEY, 5L)), entries.get(0));
         Assert.assertEquals(toTsEntry(TS + 65000, new LongDataEntry(LONG_KEY, 3L)), entries.get(1));
-    }
-
-    @Test
-    public void testFindByQueryDescOrder() throws Exception {
-        String entityId = RandomStringUtils.randomAlphabetic(20);
-
-        saveEntries(entityId, TS - 3);
-        saveEntries(entityId, TS - 2);
-        saveEntries(entityId, TS - 1);
-
-        List<ReadTsKvQuery> queries = new ArrayList<>();
-        queries.add(new BaseReadTsKvQuery(LONG_KEY, TS - 3, TS, 0, 1000, Aggregation.NONE, "DESC"));
-
-        List<TsKvEntry> entries = tsService.findAll(entityId, queries).get(MAX_TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertEquals(3, entries.size());
-        Assert.assertEquals(toTsEntry(TS - 1, longKvEntry), entries.get(0));
-        Assert.assertEquals(toTsEntry(TS - 2, longKvEntry), entries.get(1));
-        Assert.assertEquals(toTsEntry(TS - 3, longKvEntry), entries.get(2));
     }
 
     @Test
@@ -375,10 +367,9 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(3, list.size());
     }
 
-    private TsKvEntry save(String entityId, long ts, long value) throws Exception {
+    private void save(String entityId, long ts, long value) throws Exception {
         TsKvEntry entry = new BasicTsKvEntry(ts, new LongDataEntry(LONG_KEY, value));
         tsService.save(entityId, entry).get(MAX_TIMEOUT, TimeUnit.SECONDS);
-        return entry;
     }
 
     private void saveEntries(String entityId, long ts) throws ExecutionException, InterruptedException, TimeoutException {
