@@ -25,8 +25,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 
 @Slf4j
 public class JpaSqlTimeseriesDaoTest {
@@ -52,7 +50,7 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2024, 11, 5).atStartOfDay();
         expectedPartition = "ts_kv_2024";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         // Test partitioning by MONTHS
         jpaSqlTimeseriesDao.setPartitioning("MONTHS");
@@ -60,12 +58,12 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2022, 1, 4).atStartOfDay();
         expectedPartition = "ts_kv_2022_01";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 12, 1).atStartOfDay();
         expectedPartition = "ts_kv_2022_12";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         // Test partitioning by DAYS
         jpaSqlTimeseriesDao.setPartitioning("DAYS");
@@ -73,12 +71,12 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2023, 2, 4).atStartOfDay();
         expectedPartition = "ts_kv_2023_02_04";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2023, 12, 1).atStartOfDay();
         expectedPartition = "ts_kv_2023_12_01";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
     }
 
     @Test
@@ -163,17 +161,17 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2023, 1, 5).atStartOfDay();
         expectedPartition = "ts_kv_2023";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 1, 4).atStartOfDay();
         expectedPartition = "ts_kv_2022";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 12, 1).atStartOfDay();
         expectedPartition = "ts_kv_2022";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
     }
 
 
@@ -189,22 +187,22 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2023, 12, 5).atStartOfDay();
         expectedPartition = "ts_kv_2023_12";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 9, 4).atStartOfDay();
         expectedPartition = "ts_kv_2022_09";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2023, 1, 1).atStartOfDay();
         expectedPartition = "ts_kv_2023_01";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 1, 12).atStartOfDay();
         expectedPartition = "ts_kv_2022_01";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
     }
 
     @Test
@@ -219,27 +217,27 @@ public class JpaSqlTimeseriesDaoTest {
         date = LocalDate.of(2023, 12, 5).atStartOfDay();
         expectedPartition = "ts_kv_2023_12_05";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 3, 4).atStartOfDay();
         expectedPartition = "ts_kv_2022_03_04";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 1, 23).atStartOfDay();
         expectedPartition = "ts_kv_2022_01_23";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2022, 1, 31).atStartOfDay();
         expectedPartition = "ts_kv_2022_01_31";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
 
         date = LocalDate.of(2024, 2, 29).atStartOfDay();
         expectedPartition = "ts_kv_2024_02_29";
         actualPartition = jpaSqlTimeseriesDao.getPartitionByDate(date);
-        assertEquals(expectedPartition, actualPartition);
+        assertThat(actualPartition).isEqualTo(expectedPartition);
     }
 
 }

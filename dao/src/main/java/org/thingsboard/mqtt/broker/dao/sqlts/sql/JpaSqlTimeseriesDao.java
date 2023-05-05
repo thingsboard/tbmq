@@ -60,7 +60,6 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
 
     private final SqlPartitioningRepository partitioningRepository;
 
-    @Setter
     private SqlTsPartitionDate tsFormat;
 
     @Value("${sql.ts_key_value_partitioning:MONTHS}")

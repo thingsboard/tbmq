@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = TimeseriesDaysIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = TimeseriesYearsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "sql.ts_key_value_partitioning=YEARS"
 })
@@ -53,8 +53,8 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final long SYSTEM_TTL_YEARS = 2628000 * 12; // 1 year in seconds
-    private static final long SYSTEM_TTL_YEARS_MILLI = SYSTEM_TTL_YEARS * 1000; // 1 year in millis
+    private static final long TTL_1_YEAR_SEC = 2628000 * 12;
+    private static final long TTL_1_YEAR_MS = TTL_1_YEAR_SEC * 1000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -92,18 +92,18 @@ public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegratio
 
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_YEARS);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_YEAR_SEC);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(0, cleanUpResult.getDeletedRows());
     }
 
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForYears_thenRemovedPartitionsAndRows() throws Throwable {
-        long ts1 = System.currentTimeMillis() - SYSTEM_TTL_YEARS_MILLI;
-        long ts2 = System.currentTimeMillis() - SYSTEM_TTL_YEARS_MILLI * 2;
-        long ts3 = System.currentTimeMillis() - SYSTEM_TTL_YEARS_MILLI * 3;
-        long ts4 = System.currentTimeMillis() - SYSTEM_TTL_YEARS_MILLI * 4;
-        long ts5 = System.currentTimeMillis() - SYSTEM_TTL_YEARS_MILLI * 5;
+        long ts1 = System.currentTimeMillis() - TTL_1_YEAR_MS;
+        long ts2 = System.currentTimeMillis() - TTL_1_YEAR_MS * 2;
+        long ts3 = System.currentTimeMillis() - TTL_1_YEAR_MS * 3;
+        long ts4 = System.currentTimeMillis() - TTL_1_YEAR_MS * 4;
+        long ts5 = System.currentTimeMillis() - TTL_1_YEAR_MS * 5;
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -116,7 +116,7 @@ public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegratio
 
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_YEARS * 2);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_YEAR_SEC * 2);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
 

@@ -53,8 +53,8 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final int SYSTEM_TTL_DAYS = 604800; // 7 days in seconds
-    private static final int SYSTEM_TTL_DAYS_MILLI = 86400000; // 1 day in millis
+    private static final int TTL_7_DAYS_SEC = 604800;
+    private static final int TTL_1_DAY_MS = 86400000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -93,19 +93,19 @@ public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegration
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_DAYS);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_7_DAYS_SEC);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(0, cleanUpResult.getDeletedRows());
     }
 
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForDays_thenRemovedPartitionsAndRows() throws Throwable {
-        long ts1 = System.currentTimeMillis() - 10 * SYSTEM_TTL_DAYS_MILLI;
-        long ts2 = System.currentTimeMillis() - 9 * SYSTEM_TTL_DAYS_MILLI;
-        long ts3 = System.currentTimeMillis() - 8 * SYSTEM_TTL_DAYS_MILLI;
-        long ts4 = System.currentTimeMillis() - 7 * SYSTEM_TTL_DAYS_MILLI - 30000;
-        long ts5 = System.currentTimeMillis() - 7 * SYSTEM_TTL_DAYS_MILLI - 20000;
-        long ts6 = System.currentTimeMillis() - 7 * SYSTEM_TTL_DAYS_MILLI - 10000;
+        long ts1 = System.currentTimeMillis() - 10 * TTL_1_DAY_MS;
+        long ts2 = System.currentTimeMillis() - 9 * TTL_1_DAY_MS;
+        long ts3 = System.currentTimeMillis() - 8 * TTL_1_DAY_MS;
+        long ts4 = System.currentTimeMillis() - 7 * TTL_1_DAY_MS - 30000;
+        long ts5 = System.currentTimeMillis() - 7 * TTL_1_DAY_MS - 20000;
+        long ts6 = System.currentTimeMillis() - 7 * TTL_1_DAY_MS - 10000;
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -118,19 +118,19 @@ public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegration
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_DAYS);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_7_DAYS_SEC);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(3, cleanUpResult.getDeletedRows());
     }
 
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForDay_thenRemovedPartitionsAndRows() throws Throwable {
-        long ts1 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI * 2;
-        long ts2 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI * 3;
-        long ts3 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI * 4;
-        long ts4 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI - 30000;
-        long ts5 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI - 20000;
-        long ts6 = System.currentTimeMillis() - SYSTEM_TTL_DAYS_MILLI - 10000;
+        long ts1 = System.currentTimeMillis() - TTL_1_DAY_MS * 2;
+        long ts2 = System.currentTimeMillis() - TTL_1_DAY_MS * 3;
+        long ts3 = System.currentTimeMillis() - TTL_1_DAY_MS * 4;
+        long ts4 = System.currentTimeMillis() - TTL_1_DAY_MS - 30000;
+        long ts5 = System.currentTimeMillis() - TTL_1_DAY_MS - 20000;
+        long ts6 = System.currentTimeMillis() - TTL_1_DAY_MS - 10000;
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -143,7 +143,7 @@ public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegration
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_DAYS / 7);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_7_DAYS_SEC / 7);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(3, cleanUpResult.getDeletedRows());
     }

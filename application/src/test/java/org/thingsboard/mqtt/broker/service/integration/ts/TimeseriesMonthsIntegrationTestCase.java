@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = TimeseriesDaysIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = TimeseriesMonthsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "sql.ts_key_value_partitioning=MONTHS"
 })
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final long SYSTEM_TTL_MONTHS = 2628000; // 1 month in seconds
+    private static final long TTL_1_MONTH = 2628000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -88,7 +88,7 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_MONTHS);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH);
         Assert.assertEquals(4, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(0, cleanUpResult.getDeletedRows());
     }
@@ -117,11 +117,11 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_MONTHS * 2);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH * 2);
         Assert.assertEquals(4, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
 
-        cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL_MONTHS);
+        cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH);
         Assert.assertEquals(1, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(0, cleanUpResult.getDeletedRows());
     }
