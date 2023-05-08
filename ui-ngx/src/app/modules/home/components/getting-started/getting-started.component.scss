@@ -18,6 +18,8 @@
 :host::ng-deep {
 
   .tb-get-started-container {
+    height: 600px;
+    overflow: auto;
     border-radius: 10px;
     background: #fff;
     padding: 10px;
@@ -268,6 +270,7 @@
       line-height: 20px;
       letter-spacing: 0.2px;
       color: rgba(0, 0, 0, 0.54);
+      text-align: justify;
       em {
         font-style: normal;
         font-weight: 500;
@@ -291,7 +294,7 @@
       }
     }
     .tb-markdown-view {
-        .code-wrapper {
+      .code-wrapper {
           padding: 0;
           pre[class*=language-] {
             margin: 0;
@@ -320,35 +323,4 @@
         }
     }
   }
-  //
-  //@media screen and (max-width: 1279px) {
-  //  .code-wrapper {
-  //    width: 100vw;
-  //  }
-  //}
-  //@media screen and (min-width: 1280px) {
-  //  .code-wrapper {
-  //    width: 50vw;
-  //  }
-  //}
-  //@media screen and (min-width: 1600px) {
-  //  .code-wrapper {
-  //    width: 60vw;
-  //  }
-  //}
-  //@media screen and (min-width: 1700px) {
-  //  .code-wrapper {
-  //    width: 70vw;
-  //  }
-  //}
-  //@media screen and (min-width: 1800px) {
-  //  .code-wrapper {
-  //    width: 90vw;
-  //  }
-  //}
-  //@media screen and (min-width: 1900px) {
-  //  .code-wrapper {
-  //    width: 100vw;
-  //  }
-  //}
 }

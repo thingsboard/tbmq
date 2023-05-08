@@ -1096,22 +1096,11 @@ mat-label {
   padding: 10px;
   gap: 10px;
 
-  button {
-    height: 40px;
-  }
-
   .card {
     display: flex;
     border-radius: 10px;
     background: #fff;
-    padding: 8px;
-
-    .title {
-      font-size: 13px;
-      font-weight: 500;
-      color: #6c6c6c;
-      cursor: pointer;
-    }
+    padding: 10px;
   }
 
   .row {
@@ -1125,15 +1114,6 @@ mat-label {
     gap: 10px;
   }
 
-  .config-table {
-    display: flex;
-    flex-direction: column;
-    font-size: 14px;
-    color: rgba(0,0,0,0.87);
-    justify-content: center;
-    align-items: stretch;
-  }
-
   .card-table {
     display: flex;
     flex: 1 1 auto;
@@ -1145,7 +1125,7 @@ mat-label {
     display: flex;
     justify-content: space-evenly;
     gap: 10px;
-    padding: 20px 0 15px 0;
+    padding: 20px 0 6px 0;
 
     .key-value {
       display: flex;
@@ -1211,20 +1191,6 @@ mat-label {
     font-size: 20px;
     font-weight: 800;
   }
-}
-
-.mat-paginator-sticky {
-  bottom: 0px;
-  position: sticky;
-  z-index: 10;
-}
-
-.tb-warning {
-  background: rgb(255, 244, 229);
-  border-radius: 4px;
-  padding: 16px;
-  margin: 0;
-  color: rgb(102, 60, 0);
 }
 
 .tb-home-border-radius {

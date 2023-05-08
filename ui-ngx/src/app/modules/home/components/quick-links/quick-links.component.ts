@@ -17,6 +17,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { Router } from '@angular/router';
+import { HomePageTitleType } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-quick-links',
@@ -26,6 +27,7 @@ import { Router } from '@angular/router';
 export class QuickLinksComponent implements OnInit {
 
   quickLinks$ = this.menuService.quickLinks();
+  cardType = HomePageTitleType.QUICK_LINKS;
 
   constructor(private router: Router,
               private menuService: MenuService) {

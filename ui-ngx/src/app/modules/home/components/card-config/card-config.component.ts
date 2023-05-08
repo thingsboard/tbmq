@@ -26,6 +26,7 @@ import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials
 import { PageLink } from '@shared/models/page/page-link';
 import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
 import { formatBytes } from '@home/components/entity/kafka-table.component';
+import { HomePageTitleType } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-card-config',
@@ -34,10 +35,11 @@ import { formatBytes } from '@home/components/entity/kafka-table.component';
 })
 export class CardConfigComponent implements OnInit, AfterViewInit {
 
+  cardType = HomePageTitleType.CONFIG;
   securityParameterConfigMap = SecurityParameterConfigMap;
   configParamsTranslationMap = ConfigParamsTranslationMap;
-  configParams = ConfigParams;
 
+  configParams = ConfigParams;
   hasBasicCredentials: Observable<boolean>;
   hasX509AuthCredentials: Observable<boolean>;
   overviewConfig: Observable<BrokerConfig>;

@@ -30,7 +30,7 @@ import {
   TsValue
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
-import { DEFAULT_HOME_CHART_INTERVAL, POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { DEFAULT_HOME_CHART_INTERVAL, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-home-charts',
@@ -39,12 +39,13 @@ import { DEFAULT_HOME_CHART_INTERVAL, POLLING_INTERVAL } from '@shared/models/ho
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
+  cardType = HomePageTitleType.MONITORING;
   chartIdSuf = 'home';
   charts = {};
   latestValues = {};
   statsCharts = Object.values(StatsChartType);
-  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
 
+  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
   private fixedWindowTimeMs: FixedWindow;

@@ -117,4 +117,10 @@
     background-color: #fff;
     border-radius: 20px;
   }
+
+  .mat-paginator-sticky {
+    bottom: 0;
+    position: sticky;
+    z-index: 10;
+  }
 }

@@ -21,7 +21,7 @@ import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
-import { CredentialsHomeCardConfig, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
+import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',
@@ -31,6 +31,7 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
 
   @Input() isLoading$: Observable<boolean>;
 
+  cardType = HomePageTitleType.CLIENT_CREDENTIALS;
   sessionsLatest: ClientSessionStatsInfo;
   credentialsLatest: ClientCredentialsInfo;
   sessionConfig = SessionsHomeCardConfig;

@@ -15,8 +15,8 @@
     limitations under the License.
 
 -->
-<div class="tb-get-started-container" style="height: 600px; overflow: auto">
-  <tb-card-title-button cardType="GETTING_STARTED" [disabled]="true"></tb-card-title-button>
+<div class="tb-get-started-container">
+  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="updateSelectedIndex($event)">
     <ng-container *ngFor="let step of steps | async; let index = index;">
       <mat-step [completed]="false">
@@ -28,14 +28,14 @@
         <div class="tb-markdown-view">
           <markdown [data]="data | async"></markdown>
         </div>
-        <div *ngIf="step.id === 'client'" style="margin-top: 16px" fxLayoutGap="24px">
+        <section fxFlex fxLayout="row" fxLayoutAlign="space-evenly" *ngIf="step.id === 'client'">
           <button mat-raised-button color="primary" type="button" (click)="addClientCredentials()">
             {{'mqtt-client-credentials.add-credentials' | translate}}
           </button>
           <button mat-stroked-button color="primary" type="button" (click)="navigate('client-credentials')">
             {{'getting-started.view-credentials' | translate}}
           </button>
-        </div>
+        </section>
       </mat-step>
     </ng-container>
   </mat-vertical-stepper>

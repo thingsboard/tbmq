@@ -31,6 +31,7 @@ import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { AppState } from '@core/core.state';
+import { HomePageTitleType } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-getting-started',
@@ -39,6 +40,7 @@ import { AppState } from '@core/core.state';
 })
 export class GettingStartedComponent implements AfterViewInit {
 
+  cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);
   stepsData: Array<any> = [];
   data: Observable<string>;

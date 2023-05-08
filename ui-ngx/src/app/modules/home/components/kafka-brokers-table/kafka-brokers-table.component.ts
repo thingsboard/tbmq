@@ -20,6 +20,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaBroker } from '@shared/models/kafka.model';
 import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
+import { HomePageTitleType } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-kafka-brokers-table',
@@ -28,6 +29,7 @@ import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-
 })
 export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker> {
 
+  cardType = HomePageTitleType.KAFKA_BROKERS;
   fetchEntities$ = () => this.kafkaService.getKafkaBrokers(this.pageLink);
 
   constructor(private kafkaService: KafkaService,

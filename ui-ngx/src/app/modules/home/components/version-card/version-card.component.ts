@@ -16,6 +16,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { HomePageTitleType } from '@shared/models/home-page.model';
 
 export interface VersionData {
   currentVersion: string;
@@ -30,6 +31,7 @@ export interface VersionData {
 })
 export class VersionCardComponent implements OnInit {
 
+  cardType = HomePageTitleType.VERSION;
   versionData: VersionData;
 
   constructor() {
