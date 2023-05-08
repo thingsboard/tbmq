@@ -17,21 +17,21 @@
 -->
 <div fxLayout="row" class="tb-home-overview" fxLayout.lt-lg="column">
   <div fxLayout="column">
-    <div class="home-column">
-      <tb-home-charts class="mat-elevation-z3 tb-home-border-radius"></tb-home-charts>
-      <div class="home-column">
+    <div fxLayout="column" fxLayoutGap="10px" class="tb-home-card-column">
+      <tb-home-charts class="mat-elevation-z3 tb-home-card-border"></tb-home-charts>
+      <div fxLayout="column" fxLayoutGap="10px">
         <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-        <div class="row">
-          <tb-card-config class="mat-elevation-z3 tb-home-border-radius"></tb-card-config>
-          <tb-kafka-brokers-table class="mat-elevation-z3 tb-home-border-radius"></tb-kafka-brokers-table>
+        <div fxLayout="row" fxLayoutGap="10px">
+          <tb-card-config class="mat-elevation-z3 tb-home-card-border"></tb-card-config>
+          <tb-kafka-brokers-table class="mat-elevation-z3 tb-home-card-border"></tb-kafka-brokers-table>
         </div>
       </div>
-      <tb-kafka-tables-tab-group class="mat-elevation-z3 tb-home-border-radius"></tb-kafka-tables-tab-group>
+      <tb-kafka-tables-tab-group class="mat-elevation-z3 tb-home-card-border"></tb-kafka-tables-tab-group>
     </div>
   </div>
   <div fxLayout="column" fxLayoutGap="10px">
-    <tb-getting-started class="mat-elevation-z3 tb-home-border-radius"></tb-getting-started>
-    <tb-quick-links class="mat-elevation-z3 tb-home-border-radius"></tb-quick-links>
-    <tb-version-card class="mat-elevation-z3 tb-home-border-radius"></tb-version-card>
+    <tb-getting-started class="mat-elevation-z3 tb-home-card-border"></tb-getting-started>
+    <tb-quick-links class="mat-elevation-z3 tb-home-card-border"></tb-quick-links>
+    <tb-version-card class="mat-elevation-z3 tb-home-card-border"></tb-version-card>
   </div>
 </div>

@@ -15,21 +15,15 @@
     limitations under the License.
 
 -->
-<div class="home-column">
-  <mat-tab-group class="tabs-group-card" animationDuration="100ms">
-    <mat-tab [label]="'kafka.topics' | translate">
-      <div fxFlex class="card">
-        <div fxFlex>
-          <tb-kafka-topics-table></tb-kafka-topics-table>
-        </div>
-      </div>
-    </mat-tab>
-    <mat-tab [label]="'kafka.consumer-groups' | translate">
-      <div fxFlex class="card">
-        <div fxFlex>
-          <tb-kafka-consumers-table></tb-kafka-consumers-table>
-        </div>
-      </div>
-    </mat-tab>
-  </mat-tab-group>
-</div>
+<mat-tab-group class="tb-home-card-border" style="background-color: #fff" animationDuration="100ms">
+  <mat-tab [label]="'kafka.topics' | translate">
+    <div class="tb-home-card-container">
+      <tb-kafka-topics-table></tb-kafka-topics-table>
+    </div>
+  </mat-tab>
+  <mat-tab [label]="'kafka.consumer-groups' | translate">
+    <div class="tb-home-card-container">
+      <tb-kafka-consumers-table></tb-kafka-consumers-table>
+    </div>
+  </mat-tab>
+</mat-tab-group>

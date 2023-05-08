@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div class="tb-get-started-container">
+<div class="tb-get-started-container tb-home-card-border">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="updateSelectedIndex($event)">
     <ng-container *ngFor="let step of steps | async; let index = index;">

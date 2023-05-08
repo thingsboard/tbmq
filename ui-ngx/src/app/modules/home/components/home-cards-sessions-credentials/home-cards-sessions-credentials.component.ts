@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
-import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
+import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
@@ -25,13 +25,15 @@ import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, Session
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',
-  templateUrl: './home-cards-sessions-credentials.component.html'
+  templateUrl: './home-cards-sessions-credentials.component.html',
+  styleUrls: ['home-cards-sessions-credentials.component.scss']
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 
   @Input() isLoading$: Observable<boolean>;
 
-  cardType = HomePageTitleType.CLIENT_CREDENTIALS;
+  cardTypeCredentials = HomePageTitleType.CLIENT_CREDENTIALS;
+  cardTypeSession = HomePageTitleType.SESSION;
   sessionsLatest: ClientSessionStatsInfo;
   credentialsLatest: ClientCredentialsInfo;
   sessionConfig = SessionsHomeCardConfig;

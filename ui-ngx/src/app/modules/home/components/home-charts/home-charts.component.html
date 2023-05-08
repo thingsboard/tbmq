@@ -15,19 +15,17 @@
     limitations under the License.
 
 -->
-<div class="home-column">
-  <div fxLayout="column" class="card" fxLayoutGap="4px" style="padding-bottom: 16px">
-    <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
-    <section fxFlex fxLayoutAlign="center center">
-      <div *ngFor="let chart of statsCharts; let $index = index">
-        <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
-          <div fxFlex fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="8px">
-            <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-          </div>
-          <canvas class="chart" height="100" width="150" [id]="chart+chartIdSuf">
-          </canvas>
+<div fxLayout="column" class="tb-home-card-container" fxLayoutGap="4px" style="padding-bottom: 16px">
+  <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
+  <section fxFlex fxLayoutAlign="center center">
+    <div *ngFor="let chart of statsCharts; let $index = index">
+      <div class="chart-container" [ngClass]="{'chart-border-left': $index === 0}">
+        <div fxFlex fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="8px">
+          <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
         </div>
+        <canvas class="chart" height="100" width="150" [id]="chart+chartIdSuf">
+        </canvas>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </div>
