@@ -1099,16 +1099,17 @@ mat-label {
   .tb-home-card-container {
     display: flex;
     padding: 10px;
+    border-radius: 10px;
+    background-color: #fff;
   }
 
   .tb-home-card-table {
+    display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    justify-content: space-evenly;
-  }
-
-  .tb-home-card-border {
+    padding: 10px;
     border-radius: 10px;
     background-color: #fff;
+    justify-content: space-evenly;
   }
 }

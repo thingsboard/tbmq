@@ -18,6 +18,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'tb-kafka-tables-tab-group',
-  templateUrl: './kafka-tables-tab-group.component.html'
+  templateUrl: './kafka-tables-tab-group.component.html',
+  styleUrls: ['./kafka-tables-tab-group.component.scss']
 })
 export class KafkaTablesTabGroupComponent {}
