@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -29,20 +29,17 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelper;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsumer {
-    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("persistent-downlink-publish-msg-consumer"));
-
-    private volatile boolean stopped = false;
 
     private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>>> consumers = new ArrayList<>();
 
@@ -57,6 +54,16 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private int consumersCount;
     @Value("${queue.persistent-downlink-publish-msg.poll-interval}")
     private long pollDuration;
+    @Value("${queue.persistent-downlink-publish-msg.threads-count}")
+    private int threadsCount;
+
+    private volatile boolean stopped = false;
+    private ExecutorService consumersExecutor;
+
+    @PostConstruct
+    public void init() {
+        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "persistent-downlink-publish-msg-consumer");
+    }
 
     @Override
     public void startConsuming() {
@@ -105,7 +112,9 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         stopped = true;
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         deleteUniqueConsumerGroup();
-        consumersExecutor.shutdownNow();
+        if (consumersExecutor != null) {
+            consumersExecutor.shutdownNow();
+        }
     }
 
     private void deleteUniqueConsumerGroup() {
