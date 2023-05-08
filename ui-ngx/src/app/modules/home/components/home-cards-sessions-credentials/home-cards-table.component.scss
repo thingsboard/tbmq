@@ -17,6 +17,7 @@
 :host {
   .cards {
     display: flex;
+    flex: 1 1 0;
     justify-content: space-evenly;
     gap: 10px;
     padding: 20px 0 6px 0;

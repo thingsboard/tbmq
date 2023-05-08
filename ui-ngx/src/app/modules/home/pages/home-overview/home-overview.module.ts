@@ -30,6 +30,7 @@ import { HomeCardsSessionsCredentialsComponent } from '@home/components/home-car
 import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables-tab-group/kafka-tables-tab-group.component';
 import { GettingStartedComponent } from '@home/components/getting-started/getting-started.component';
 import { KafkaEntitiesTableComponent } from '@home/components/entity/kafka-entities-table.component';
+import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-credentials/home-cards-table.component';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { KafkaEntitiesTableComponent } from '@home/components/entity/kafka-entit
     QuickLinksComponent,
     VersionCardComponent,
     HomeCardsSessionsCredentialsComponent,
+    HomeCardsTableComponent,
     CardConfigComponent,
     KafkaTopicsTableComponent,
     KafkaBrokersTableComponent,

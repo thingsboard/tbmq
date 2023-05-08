@@ -25,8 +25,7 @@ import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, Session
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',
-  templateUrl: './home-cards-sessions-credentials.component.html',
-  styleUrls: ['home-cards-sessions-credentials.component.scss']
+  templateUrl: './home-cards-sessions-credentials.component.html'
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 
@@ -56,13 +55,13 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
   startPolling() {
     timer(0, POLLING_INTERVAL)
       .pipe(
-        switchMap(() => forkJoin([this.mqttClientSessionService.getClientSessionsStats(), this.mqttClientCredentialsService.getClientCredentialsStatsInfo()])),
+        switchMap(() =>
+          forkJoin([
+            this.mqttClientSessionService.getClientSessionsStats(),
+            this.mqttClientCredentialsService.getClientCredentialsStatsInfo()
+          ])),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);
-  }
-
-  viewDocumentation(page: string) {
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 }
