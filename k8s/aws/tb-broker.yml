@@ -225,6 +225,8 @@ spec:
               value: "1"
             - name: ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE
               value: "1"
+            - name: TB_DEVICE_PERSISTED_MSG_THREADS_COUNT
+              value: "1"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
