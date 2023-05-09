@@ -93,7 +93,7 @@ managedNodeGroups:
       allow: true
       publicKeyName: 'dlandiak'
   - name: tb-kafka
-    instanceType: m6a.xlarge
+    instanceType: m6a.2xlarge
     desiredCapacity: 0
     maxSize: 6
     minSize: 0
