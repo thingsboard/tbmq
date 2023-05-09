@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 8
+  replicas: 16
   podManagementPolicy: "Parallel"
   selector:
     matchLabels:
@@ -111,7 +111,7 @@ spec:
             - name: TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS
               value: "4096"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:72;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:107374182400;partitions:144;replication.factor:1"
             - name: TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES
@@ -123,7 +123,7 @@ spec:
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES
               value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES
-              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:24;replication.factor:1"
+              value: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1"
             - name: TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES
               value: "segment.bytes:26214400;partitions:1;replication.factor:1"
             - name: TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES
@@ -191,7 +191,7 @@ spec:
             - name: MQTT_RETRANSMISSION_ENABLED
               value: "false"
             - name: MQTT_KEEP_ALIVE_MONITORING_DELAY_MS
-              value: "120000"
+              value: "240000"
             - name: ACTORS_SYSTEM_THROUGHPUT
               value: "5"
             - name: TB_PUBLISH_MSG_PARALLEL_PROCESSING
