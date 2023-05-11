@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.integration.ts;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,8 +33,11 @@ import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.PostgreSqlInitializer;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
+import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -43,57 +45,41 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = TimeseriesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = TimeseriesYearsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-//        "sql.ttl.ts.ts_key_value_ttl=604800", // 7 days in seconds
-        "sql.ts_key_value_partitioning=DAYS"
+        "sql.ts_key_value_partitioning=YEARS"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class TimeseriesIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final int SYSTEM_TTL = 604800; // 7 days in seconds
+    private static final long TTL_1_YEAR_SEC = 2628000 * 12;
+    private static final long TTL_1_YEAR_MS = TTL_1_YEAR_SEC * 1000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
     @Autowired
     private TimeseriesService timeseriesService;
 
+    @Autowired
+    protected DataSource dataSource;
+
     @Before
-    public void init() throws Exception {
-    }
-
-    @After
-    public void clear() {
-    }
-
-    @Test
-    public void givenSavedRecordsOlderThanMaxPartitionByTTL_whenExecuteCleanUp_thenRemovedPartitions() throws Throwable {
-        long ts1 = LocalDate.of(2022, 12, 1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts2 = LocalDate.of(2023, 1, 10).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts3 = LocalDate.of(2023, 2, 5).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-
-        String entityId = RandomStringUtils.randomAlphabetic(10);
-        List<TsKvEntry> kvEntries = List.of(
-                new BasicTsKvEntry(ts1, KV),
-                new BasicTsKvEntry(ts2, KV),
-                new BasicTsKvEntry(ts3, KV)
-        );
-        timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
-
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL);
-        Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
-        Assert.assertEquals(0, cleanUpResult.getDeletedRows());
+    public void dropTsKvPartitions() {
+        try {
+            PostgreSqlInitializer.dropTsKvPartitions(dataSource.getConnection());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
-    public void givenSavedRecords_whenExecuteCleanUp_thenRemovedPartitionsAndRows() throws Throwable {
-        long ts1 = System.currentTimeMillis() - 10 * 86400000;
-        long ts2 = System.currentTimeMillis() - 9 * 86400000;
-        long ts3 = System.currentTimeMillis() - 8 * 86400000;
-        long ts4 = System.currentTimeMillis() - 7 * 86400000 - 30000;
-        long ts5 = System.currentTimeMillis() - 7 * 86400000 - 20000;
-        long ts6 = System.currentTimeMillis() - 7 * 86400000 - 10000;
+    public void givenSavedRecordsOlderThanMaxPartitionByTTL_whenExecuteCleanUpForYears_thenRemovedPartitions() throws Throwable {
+        long ts1 = LocalDate.now().minusYears(2).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts2 = LocalDate.now().minusYears(2).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts3 = LocalDate.now().minusYears(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts4 = LocalDate.now().minusYears(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts5 = LocalDate.now().minusYears(4).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -101,14 +87,39 @@ public class TimeseriesIntegrationTestCase extends AbstractPubSubIntegrationTest
                 new BasicTsKvEntry(ts2, KV),
                 new BasicTsKvEntry(ts3, KV),
                 new BasicTsKvEntry(ts4, KV),
-                new BasicTsKvEntry(ts5, KV),
-                new BasicTsKvEntry(ts6, KV)
+                new BasicTsKvEntry(ts5, KV)
         );
+
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(SYSTEM_TTL);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_YEAR_SEC);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
-        Assert.assertEquals(3, cleanUpResult.getDeletedRows());
+        Assert.assertEquals(0, cleanUpResult.getDeletedRows());
+    }
+
+    @Test
+    public void givenSavedRecords_whenExecuteCleanUpForYears_thenRemovedPartitionsAndRows() throws Throwable {
+        long ts1 = System.currentTimeMillis() - TTL_1_YEAR_MS;
+        long ts2 = System.currentTimeMillis() - TTL_1_YEAR_MS * 2;
+        long ts3 = System.currentTimeMillis() - TTL_1_YEAR_MS * 3;
+        long ts4 = System.currentTimeMillis() - TTL_1_YEAR_MS * 4;
+        long ts5 = System.currentTimeMillis() - TTL_1_YEAR_MS * 5;
+
+        String entityId = RandomStringUtils.randomAlphabetic(10);
+        List<TsKvEntry> kvEntries = List.of(
+                new BasicTsKvEntry(ts1, KV),
+                new BasicTsKvEntry(ts2, KV),
+                new BasicTsKvEntry(ts3, KV),
+                new BasicTsKvEntry(ts4, KV),
+                new BasicTsKvEntry(ts5, KV)
+        );
+
+        timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
+
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_YEAR_SEC * 2);
+        Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
+        Assert.assertEquals(1, cleanUpResult.getDeletedRows());
+
     }
 
 }

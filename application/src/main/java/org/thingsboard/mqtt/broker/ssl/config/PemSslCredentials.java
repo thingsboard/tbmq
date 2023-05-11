@@ -137,11 +137,9 @@ public class PemSslCredentials extends AbstractSslCredentials {
         }
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null);
-        if (trustsOnly) {
-            List<Certificate> unique = certificates.stream().distinct().collect(Collectors.toList());
-            for (int i = 0; i < unique.size(); i++) {
-                keyStore.setCertificateEntry("root-" + i, unique.get(i));
-            }
+        List<Certificate> unique = certificates.stream().distinct().collect(Collectors.toList());
+        for (int i = 0; i < unique.size(); i++) {
+            keyStore.setCertificateEntry("root-" + i, unique.get(i));
         }
         if (privateKey != null) {
             CertificateFactory factory = CertificateFactory.getInstance("X.509");

@@ -132,6 +132,7 @@ queue:
   device-persisted-msg:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
+    threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:2}"
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
     ack-strategy:
       type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}" # SKIP_ALL, RETRY_ALL
@@ -161,9 +162,11 @@ queue:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persistent-downlink-publish-msg:
     consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    threads-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_THREADS_COUNT:1}"
     poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   basic-downlink-publish-msg:
     consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
+    threads-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_THREADS_COUNT:1}"
     poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
   application-removed-event:
     poll-interval: "${TB_APPLICATION_REMOVED_EVENT_POLL_INTERVAL:100}"

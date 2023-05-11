@@ -58,7 +58,8 @@ import static org.junit.Assert.assertTrue;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppSharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
+        "security.mqtt.basic.enabled=true",
+        "queue.application-persisted-msg.threads-count=5"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)

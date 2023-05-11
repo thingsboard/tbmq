@@ -59,4 +59,27 @@ public class PostgreSqlInitializer {
             throw new RuntimeException("Unable to clean up the Postgres database. Reason: " + e.getMessage(), e);
         }
     }
+
+    public static void dropTsKvPartitions(Connection conn) {
+        log.info("clean up TsKv partitions DB...");
+        try {
+            String dropAllTsKvPartitionsTablesSql = "DO $$DECLARE\n" +
+                    "    table_name text;\n" +
+                    "BEGIN\n" +
+                    "    FOR table_name IN \n" +
+                    "        SELECT tablename            \n" +
+                    "        FROM pg_tables\n" +
+                    "        WHERE schemaname = 'public'\n" +
+                    "          AND tablename like 'ts_kv_' || '%'\n" +
+                    "          AND tablename != 'ts_kv_dictionary'\n" +
+                    "          AND tablename != 'ts_kv_indefinite' \n" +
+                    "    LOOP\n" +
+                    "        EXECUTE format('DROP TABLE IF EXISTS %I CASCADE', table_name);\n" +
+                    "    END LOOP;\n" +
+                    "END$$;";
+            conn.createStatement().execute(dropAllTsKvPartitionsTablesSql);
+        } catch (SQLException e) {
+            throw new RuntimeException("Unable to clean up ts_kv partitions the Postgres database. Reason: " + e.getMessage(), e);
+        }
+    }
 }
