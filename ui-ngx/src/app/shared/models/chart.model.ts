@@ -200,7 +200,75 @@ export function monitoringChartJsParams() {
         xAxisKey: 'ts',
         yAxisKey: 'value'
       }
-    }
+    },
+    plugins: [
+      {
+        id: 'corsair',
+        afterInit: (chart) => {
+          chart.corsair = {
+            x: 0,
+            y: 0
+          };
+        },
+        afterEvent: (chart, evt) => {
+          const {
+            chartArea: {
+              top,
+              bottom
+            }
+          } = chart;
+          const {
+            event: {
+              x,
+              y
+            }
+          } = evt;
+          if (y < top || y > bottom) {
+            chart.corsair = {
+              x,
+              y,
+              draw: false
+            };
+            chart.draw();
+            return;
+          }
+          chart.corsair = {
+            x,
+            y,
+            draw: true
+          };
+          chart.draw();
+        },
+        afterDatasetsDraw: (chart, _, opts) => {
+          const {
+            ctx,
+            chartArea: {
+              top,
+              bottom
+            }
+          } = chart;
+          const {
+            x,
+            draw
+          } = chart.corsair;
+
+          if (!draw) {
+            return;
+          }
+
+          ctx.lineWidth = opts.width || 0;
+          ctx.setLineDash(opts.dash || []);
+          ctx.strokeStyle = '#960000';
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(x, bottom);
+          ctx.lineTo(x, top);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    ]
   };
 }
 
