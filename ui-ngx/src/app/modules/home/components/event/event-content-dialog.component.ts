@@ -28,8 +28,8 @@ import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
 import { base64toString, isLiteralObject } from '@core/utils';
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { TranslateService } from "@ngx-translate/core";
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface EventContentDialogData {
   content: string;
@@ -101,7 +101,8 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
           } else {
             content$ = of(decodedData);
           }
-        } catch (e) {}
+        } catch (e) {
+        }
       }
     }
     if (!content$) {

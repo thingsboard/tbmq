@@ -16,13 +16,16 @@
 @import '../../../../scss/constants';
 
 :host {
-  height: 40px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
 
   .tb-title-link {
     font-style: normal;
     font-weight: 500;
     font-size: 12px;
-    line-height: 20px;
+    line-height: 16px;
     letter-spacing: 0.25px;
     color: rgba(0, 0, 0, 0.54);
     position: relative;

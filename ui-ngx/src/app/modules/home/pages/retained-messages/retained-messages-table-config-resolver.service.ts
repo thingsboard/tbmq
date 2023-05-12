@@ -118,7 +118,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
         name: this.translate.instant('retained-message.show-user-properties'),
         mdiIcon: 'mdi:code-brackets',
         isEnabled: (entity) => isNotNullOrUndefined(entity.userProperties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties?.props[0]), 'retained-message.show-user-properties')
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
       },
       {
         name: this.translate.instant('retained-message.delete'),

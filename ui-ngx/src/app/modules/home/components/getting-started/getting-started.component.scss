@@ -21,7 +21,7 @@
     height: 600px;
     overflow: auto;
     background: #fff;
-    padding: 10px;
+    padding: 12px;
     border-radius: 10px;
     flex: 1;
   }
@@ -118,7 +118,7 @@
         line-height: normal;
         font-weight: 500;
         margin-bottom: 30px;
-        padding-bottom: 10px;
+        padding-bottom: 8px;
         border-bottom: 1px solid #ccc;
       }
 
@@ -130,7 +130,7 @@
       }
 
       p+p {
-        margin-top: 10px;
+        margin-top: 8px;
       }
 
       table {

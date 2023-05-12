@@ -226,7 +226,7 @@ export class MonitoringComponent extends PageComponent {
         if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
         const latestValue = data[index][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-        this.addStartChartValue(chartType, latestValue, index);
+        // this.addStartChartValue(chartType, latestValue, index);
         this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
     }
