@@ -16,10 +16,12 @@
 @import '../../../../../scss/constants';
 
 :host::ng-deep {
+  display: flex;
+  flex: 3;
 
   .tb-get-started-container {
-    height: 600px;
-    overflow: auto;
+    //height: 600px;
+    //overflow: auto;
     background: #fff;
     padding: 12px;
     border-radius: 10px;

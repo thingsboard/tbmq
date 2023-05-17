@@ -15,25 +15,25 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container" style="height: 172px">
-  <div fxFlex fxLayout="column">
-    <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-    <div class="version-card-container">
-      <section>
-        <span [innerHTML]="'version.current-version' | translate"></span>
-        <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> {{versionData.currentVersion}}</a>
-      </section>
-      <ng-container [ngSwitch]="versionData.updateAvailable">
-        <ng-template [ngSwitchCase]="true">
-          <section>
-            <span  [innerHTML]="'version.updates-available' | translate"></span>
-            <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> v. {{versionData.latestVersion}}</a>
-          </section>
-        </ng-template>
-        <ng-template [ngSwitchCase]="false">
-          <span [innerHTML]="'version.no-updates-available' | translate"></span>
-        </ng-template>
-      </ng-container>
-    </div>
+<div fxFlex class="tb-home-card-container" fxLayout="column">
+  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+  <span fxFlex></span>
+  <div class="version-card-container">
+    <section>
+      <span [innerHTML]="'version.current-version' | translate"></span>
+      <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> {{versionData.currentVersion}}</a>
+    </section>
+    <ng-container [ngSwitch]="versionData.updateAvailable">
+      <ng-template [ngSwitchCase]="true">
+        <section>
+          <span  [innerHTML]="'version.updates-available' | translate"></span>
+          <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> v. {{versionData.latestVersion}}</a>
+        </section>
+      </ng-template>
+      <ng-template [ngSwitchCase]="false">
+        <span [innerHTML]="'version.no-updates-available' | translate"></span>
+      </ng-template>
+    </ng-container>
   </div>
+  <span fxFlex></span>
 </div>

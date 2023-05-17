@@ -28,11 +28,11 @@
         <div class="tb-markdown-view">
           <markdown [data]="data | async"></markdown>
         </div>
-        <section fxFlex fxLayout="row" fxLayoutAlign="space-evenly" *ngIf="step.id === 'client'">
-          <button mat-raised-button color="primary" type="button" (click)="addClientCredentials()">
+        <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client'">
+          <button mat-stroked-button type="button" (click)="addClientCredentials()">
             {{'mqtt-client-credentials.add-credentials' | translate}}
           </button>
-          <button mat-stroked-button color="primary" type="button" (click)="navigate('client-credentials')">
+          <button mat-stroked-button type="button" (click)="navigate('client-credentials')">
             {{'getting-started.view-credentials' | translate}}
           </button>
         </section>
