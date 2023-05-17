@@ -22,15 +22,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -52,22 +55,17 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled=true)
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @Order(SecurityProperties.BASIC_AUTH_ORDER)
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-    public static final String JWT_TOKEN_HEADER_PARAM = "X-Authorization";
+public class SecurityConfiguration {
 
+    public static final String JWT_TOKEN_HEADER_PARAM = "X-Authorization";
+    public static final String JWT_TOKEN_HEADER_PARAM_V2 = "Authorization";
     public static final String FORM_BASED_LOGIN_ENTRY_POINT = "/api/auth/login";
     public static final String TOKEN_REFRESH_ENTRY_POINT = "/api/auth/token";
     protected static final String[] NON_TOKEN_BASED_AUTH_ENTRY_POINTS = new String[]{"/index.html", "/static/**", "/api/noauth/**"};
     public static final String WEBJARS_ENTRY_POINT = "/webjars/**";
     public static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/api/**";
-
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
 
     @Autowired
     private ThingsboardErrorResponseHandler restAccessDeniedHandler;
@@ -86,31 +84,35 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private JwtAuthenticationProvider jwtAuthenticationProvider;
     @Autowired
     private RefreshTokenAuthenticationProvider refreshTokenAuthenticationProvider;
-
-
     @Autowired
     private TokenExtractor tokenExtractor;
 
     @Bean
-    protected BCryptPasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
-    }
+    @Autowired
+    @Lazy
+    private AuthenticationManager authenticationManager;
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Bean
+    public AuthenticationManager authenticationManager(ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
+        DefaultAuthenticationEventPublisher eventPublisher = objectPostProcessor
+                .postProcess(new DefaultAuthenticationEventPublisher());
+        var auth = new AuthenticationManagerBuilder(objectPostProcessor);
+        auth.authenticationEventPublisher(eventPublisher);
         auth.authenticationProvider(restAuthenticationProvider);
         auth.authenticationProvider(jwtAuthenticationProvider);
         auth.authenticationProvider(refreshTokenAuthenticationProvider);
+        return auth.build();
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.headers().cacheControl().and().frameOptions().disable()
                 .and()
                 .cors()
@@ -136,6 +138,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(buildRefreshTokenProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
         ;
+        return http.build();
     }
 
     @Bean

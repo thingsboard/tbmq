@@ -498,15 +498,21 @@ spring.mvc.cors:
       #Set whether credentials are supported. When not set, credentials are not supported.
       allow-credentials: "true"
 
+# The default timeout for asynchronous requests in milliseconds
+spring.mvc.async.request-timeout: "${SPRING_MVC_ASYNC_REQUEST_TIMEOUT:30000}"
+
+# For endpoints matching in Swagger
+spring.mvc.pathmatch.matching-strategy: "ANT_PATH_MATCHER"
+
 swagger:
-  api_path_regex: "${SWAGGER_API_PATH_REGEX:/api.*}"
-  security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api.*}"
+  api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
+  security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
   non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
   title: "${SWAGGER_TITLE:ThingsBoard MQTT Broker REST API}"
   description: "${SWAGGER_DESCRIPTION:}"
   contact:
     name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
-    url: "${SWAGGER_CONTACT_URL:http://thingsboard.io}"
+    url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:
     title: "${SWAGGER_LICENSE_TITLE:}"

@@ -36,54 +36,51 @@
         <pkg.implementationTitle>${project.name}</pkg.implementationTitle>
         <pkg.unixLogFolder>/var/log/${pkg.name}</pkg.unixLogFolder>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
-        <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
-        <spring.version>5.2.16.RELEASE</spring.version>
-        <spring-security.version>5.4.7</spring-security.version>
-        <junit.version>4.12</junit.version>
+        <spring-boot.version>2.5.7</spring-boot.version>
+        <spring.version>5.3.26</spring.version>
+        <spring-security.version>5.7.7</spring-security.version>
+        <jupiter.version>5.7.2
+        </jupiter.version> <!-- keep the same version as spring-boot-starter-test depend on jupiter-->
         <slf4j.version>1.7.32</slf4j.version>
         <gson.version>2.9.0</gson.version>
         <logback.version>1.2.10</logback.version>
         <mockito.version>1.9.5</mockito.version>
-        <cassandra.version>4.10.0</cassandra.version>
         <metrics.version>4.0.5</metrics.version>
-        <guava.version>30.0-jre</guava.version>
+        <guava.version>31.1-jre</guava.version>
         <curator.version>4.2.0</curator.version>
         <protobuf.version>3.17.2</protobuf.version>
         <grpc.version>1.42.1</grpc.version>
-        <lombok.version>1.18.18</lombok.version>
-        <netty.version>4.1.75.Final</netty.version>
-        <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
+        <lombok.version>1.18.26</lombok.version>
+        <netty.version>4.1.91.Final</netty.version>
+        <os-maven-plugin.version>1.7.0</os-maven-plugin.version>
         <dbunit.version>2.7.2</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
         <postgresql.driver.version>42.5.0</postgresql.driver.version>
         <kafka.version>3.4.0</kafka.version>
         <testcontainers.version>1.17.3</testcontainers.version>
-        <os-maven-plugin.version>1.5.0</os-maven-plugin.version>
         <winsw.version>2.0.1</winsw.version>
-        <surefire.version>3.0.0-M6</surefire.version>
-        <jar-plugin.version>3.0.2</jar-plugin.version>
+        <surefire.version>3.0.0-M9</surefire.version>
+        <jar-plugin.version>3.3.0</jar-plugin.version>
         <freemarker.version>2.3.30</freemarker.version>
         <mail.version>1.6.2</mail.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <snakeyaml.version>1.27</snakeyaml.version>
+        <snakeyaml.version>1.28</snakeyaml.version>
         <javax-annotation.version>1.3.2</javax-annotation.version>
         <paho-client.version>1.2.5</paho-client.version>
-        <thingsboard.version>3.4.0</thingsboard.version>
+        <thingsboard.version>3.5.0</thingsboard.version>
         <concurrentunit.version>0.4.0</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <commons-lang3.version>3.4</commons-lang3.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.13.4</jackson.version>
         <awaitility.version>4.1.0</awaitility.version>
         <caffeine.version>2.6.1</caffeine.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jjwt.version>0.7.0</jjwt.version>
-        <bouncycastle.version>1.67</bouncycastle.version>
+        <bouncycastle.version>1.69</bouncycastle.version>
         <bucket4j.version>4.1.1</bucket4j.version>
-        <springfox-swagger.version>2.6.1</springfox-swagger.version>
-        <springfox-swagger-ui-rfc6570.version>1.0.0</springfox-swagger-ui-rfc6570.version>
-        <micrometer.version>1.8.3</micrometer.version>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <springfox-swagger.version>3.0.4</springfox-swagger.version>
+        <swagger-annotations.version>1.6.3</swagger-annotations.version>
+        <micrometer.version>1.9.0</micrometer.version>
     </properties>
 
     <modules>
@@ -511,16 +508,15 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.8.1</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <release>17</release>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -530,7 +526,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.0.2</version>
+                    <version>3.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -929,6 +925,24 @@
                 <artifactId>takari-cpsuite</artifactId>
                 <version>${takari-cpsuite.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -961,14 +975,9 @@
                 <version>${spring.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger2</artifactId>
+                <groupId>org.thingsboard</groupId>
+                <artifactId>springfox-boot-starter</artifactId>
                 <version>${springfox-swagger.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.springfox.ui</groupId>
-                <artifactId>springfox-swagger-ui-rfc6570</artifactId>
-                <version>${springfox-swagger-ui-rfc6570.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
@@ -1021,11 +1030,6 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.datastax.oss</groupId>
-                <artifactId>java-driver-core</artifactId>
-                <version>${cassandra.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -1111,12 +1115,6 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
                 <version>${spring.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

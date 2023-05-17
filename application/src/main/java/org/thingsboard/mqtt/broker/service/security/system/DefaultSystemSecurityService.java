@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.security.system;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
@@ -38,7 +39,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
     private final BCryptPasswordEncoder encoder;
     private final AdminSettingsService adminSettingsService;
 
-    public DefaultSystemSecurityService(UserService userService, BCryptPasswordEncoder encoder, AdminSettingsService adminSettingsService) {
+    public DefaultSystemSecurityService(UserService userService, @Lazy BCryptPasswordEncoder encoder, AdminSettingsService adminSettingsService) {
         this.userService = userService;
         this.encoder = encoder;
         this.adminSettingsService = adminSettingsService;
