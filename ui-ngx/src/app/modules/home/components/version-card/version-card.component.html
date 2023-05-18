@@ -15,9 +15,8 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container" fxLayout="column">
+<div fxFlex class="tb-home-card-container" fxLayout="column" fxLayoutGap="20px">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <span fxFlex></span>
   <div class="version-card-container">
     <section>
       <span [innerHTML]="'version.current-version' | translate"></span>
@@ -35,5 +34,4 @@
       </ng-template>
     </ng-container>
   </div>
-  <span fxFlex></span>
 </div>

@@ -17,7 +17,7 @@
 
 :host::ng-deep {
   display: flex;
-  flex: 3;
+  flex: 4;
 
   .tb-get-started-container {
     //height: 600px;
@@ -178,11 +178,11 @@
         position: relative;
         button.clipboard-btn {
           cursor: pointer;
-          margin: 0;
+          margin: 2px;
           border: 0;
           outline: none;
           position: absolute;
-          top: 0;
+          top: 5px;
           right: 0;
           background: transparent;
           color: #1f8b4d;

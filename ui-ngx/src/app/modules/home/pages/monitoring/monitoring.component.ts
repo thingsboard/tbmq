@@ -76,7 +76,7 @@ export class MonitoringComponent extends PageComponent {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
-    // this.generateRandomData();
+    this.generateRandomData();
   }
 
   ngOnInit() {
@@ -163,12 +163,17 @@ export class MonitoringComponent extends PageComponent {
 
   private initCharts(data: TimeseriesData[]) {
     const getDataset = (dataset, chartType, i, brokerId) => {
+      const color = getColor(chartType, i);
       return {
         data: dataset[i][chartType],
-        borderColor: getColor(chartType, i),
-        backgroundColor: getColor(chartType, i),
+        pointStyle: 'circle',
         hidden: brokerId !== TOTAL_KEY,
-        pointStyle: 'line',
+        borderColor: color,
+        backgroundColor: color,
+        pointHoverBackgroundColor: color,
+        pointBorderColor: 'rgba(0, 0, 0, 0)',
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointHoverBorderColor: color,
         pointBorderWidth: 0
       };
     };
@@ -226,7 +231,7 @@ export class MonitoringComponent extends PageComponent {
         if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
         const latestValue = data[index][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-        // this.addStartChartValue(chartType, latestValue, index);
+        this.addStartChartValue(chartType, latestValue, index);
         this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
     }
@@ -299,26 +304,8 @@ export class MonitoringComponent extends PageComponent {
             outgoingMsgs: Math.floor(Math.random() * 100),
             droppedMsgs: Math.floor(Math.random() * 100)
           };
-          return this.statsService.saveTelemetry('artem', data);
+          return this.statsService.saveTelemetry('thingsboard190', data);
         })).subscribe();
-    timer(0, POLLING_INTERVAL * 6)
-      .pipe(switchMap(() => {
-        const data = {
-          incomingMsgs: Math.floor(Math.random() * 100),
-          outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100)
-        };
-        return this.statsService.saveTelemetry('artem2', data);
-      })).subscribe();
-    timer(0, POLLING_INTERVAL * 6)
-      .pipe(switchMap(() => {
-        const data = {
-          incomingMsgs: Math.floor(Math.random() * 100),
-          outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100)
-        };
-        return this.statsService.saveTelemetry('artem3', data);
-      })).subscribe();
     timer(0, POLLING_INTERVAL * 6)
       .pipe(switchMap(() => {
         const data = {

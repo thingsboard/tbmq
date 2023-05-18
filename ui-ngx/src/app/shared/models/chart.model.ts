@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import {Tooltip} from "chart.js";
+
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
 }
@@ -65,9 +67,17 @@ export function getColor(type: string, index: number): string {
 }
 
 export function homeChartJsParams() {
+  // @ts-ignore
+  Tooltip.positioners.myCustomPositioner = function(elements, eventPosition) {
+    return {
+      x: eventPosition.x,
+      y: eventPosition.y
+    };
+  };
   return {
     type: 'line',
     options: {
+      responsive: true,
       animation: false,
       elements: {
         point: {
@@ -111,18 +121,93 @@ export function homeChartJsParams() {
         },
         tooltip: {
           enabled: true,
-          position: 'nearest'
+          position: 'myCustomPositioner'
         }
       },
       parsing: {
         xAxisKey: 'ts',
         yAxisKey: 'value'
       }
-    }
+    },
+    plugins: [
+      {
+        id: 'corsair',
+        afterInit: (chart) => {
+          chart.corsair = {
+            x: 0,
+            y: 0
+          };
+        },
+        afterEvent: (chart, evt) => {
+          const {
+            chartArea: {
+              top,
+              bottom
+            }
+          } = chart;
+          const {
+            event: {
+              x,
+              y
+            }
+          } = evt;
+          if (y < top || y > bottom) {
+            chart.corsair = {
+              x,
+              y,
+              draw: false
+            };
+            chart.draw();
+            return;
+          }
+          chart.corsair = {
+            x,
+            y,
+            draw: true
+          };
+          chart.draw();
+        },
+        afterDatasetsDraw: (chart, _, opts) => {
+          const {
+            ctx,
+            chartArea: {
+              top,
+              bottom
+            }
+          } = chart;
+          const {
+            x,
+            draw
+          } = chart.corsair;
+
+          if (!draw) {
+            return;
+          }
+
+          ctx.lineWidth = opts.width || 0;
+          ctx.setLineDash(opts.dash || []);
+          ctx.strokeStyle = '#960000';
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(x, bottom);
+          ctx.lineTo(x, top);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    ]
   };
 }
 
 export function monitoringChartJsParams() {
+  // @ts-ignore
+  Tooltip.positioners.myCustomPositioner = function(elements, eventPosition) {
+    return {
+      x: eventPosition.x,
+      y: eventPosition.y
+    };
+  };
   return {
     type: 'line',
     options: {
@@ -188,12 +273,12 @@ export function monitoringChartJsParams() {
           }
         },
         tooltip: {
-          enabled: true,
-          position: 'nearest',
-          // external: externalTooltipHandler,
-          // callbacks: {
-          //   footer,
-          // }
+          enabled: false,
+          position: 'myCustomPositioner',
+          external: externalTooltipHandler,
+          callbacks: {
+            footer,
+          }
         }
       },
       parsing: {
@@ -341,8 +426,8 @@ export const externalTooltipHandler = (context) => {
       const colors = tooltip.labelColors[i];
 
       const span = document.createElement('span');
-      span.style.background = colors.backgroundColor;
-      span.style.borderColor = colors.borderColor;
+      span.style.background = tooltip.dataPoints[0]?.dataset.backgroundColor;
+      span.style.borderColor = tooltip.dataPoints[0]?.dataset.backgroundColor;
       span.style.borderWidth = '2px';
       span.style.marginRight = '10px';
       span.style.height = '10px';
@@ -380,6 +465,7 @@ export const externalTooltipHandler = (context) => {
 
   // Display, position, and set styles for font
   tooltipEl.style.opacity = 1;
+  tooltipEl.style.borderRadius = 10;
   tooltipEl.style.left = positionX + tooltip.caretX + 'px';
   tooltipEl.style.top = positionY + tooltip.caretY + 'px';
   tooltipEl.style.font = tooltip.options.bodyFont.string;

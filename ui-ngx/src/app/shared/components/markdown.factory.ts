@@ -66,7 +66,7 @@ export function markedOptionsFactory(): MarkedOptions {
 
 function wrapCopyCode(id: number, content: string, code: string): string {
   return '<div class="code-wrapper">' + content + '<span id="copyCodeId' + id + '" style="display: none;">' + code + '</span>' +
-    '<button id="copyCodeBtn' + id + '" onClick="markdownCopyCode(' + id + ')" ' +
+    '<button title="Copy code" id="copyCodeBtn' + id + '" onClick="markdownCopyCode(' + id + ')" ' +
     'class="clipboard-btn"><mat-icon class="material-icons" style="font-size: 16px">content_copy</mat-icon>' +
     '</button></div>';
 }

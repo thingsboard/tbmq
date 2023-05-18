@@ -15,33 +15,22 @@
  */
 :host {
   overflow-x: auto;
-
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
-  }
 }
 
 :host::ng-deep {
   .chart-container {
-
-    border-right: 1px solid #dcdcdc;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding-top: 6px;
 
     span {
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    span:first-child {
       font-size: 12px;
       font-weight: 400;
     }
 
     .chart {
-      background-color: transparent;
+      border-radius: 10px;
+      background-color: #fcfcfc;
     }
-  }
-
-  .chart-border-left {
-    border-left: 1px solid #dcdcdc;
   }
 }

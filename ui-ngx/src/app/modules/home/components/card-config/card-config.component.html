@@ -29,8 +29,8 @@
   <div fxFlex fxLayout="column" class="config-card-container">
     <div *ngFor="let item of overviewConfig | async | keyvalue : noSorting">
       <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
-        <div class="config-key">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
-        <div class="config-value">
+        <div fxFlex="70" class="config-key">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
+        <div fxFlex="30" class="config-value">
           <span>{{transformValue(item) | boolean }}</span>
           <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
             <mat-icon class="config-material-icon"
@@ -44,7 +44,7 @@
           <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
                         || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
                         && !item.value">
-            <mat-icon class="config-material-icon-warning" matTooltip="{{'config.warning' | translate}} {{securityParameterConfigMap.get(item.key)}}">
+            <mat-icon class="config-material-icon-warning" matTooltipPosition="right" matTooltipHideDelay="5000" matTooltip="{{'config.warning' | translate}} {{securityParameterConfigMap.get(item.key)}}">
               warning
             </mat-icon>
           </span>

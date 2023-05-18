@@ -44,6 +44,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   charts = {};
   latestValues = {};
   statsCharts = Object.values(StatsChartType);
+  width = 150;
 
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private stopPolling$ = new Subject();
@@ -57,11 +58,16 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.calculateFixedWindowTimeMs();
+    this.setChartSize();
   }
 
   private calculateFixedWindowTimeMs() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timeService.defaultTimewindow());
     this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - DEFAULT_HOME_CHART_INTERVAL;
+  }
+
+  private setChartSize() {
+    this.width = $('tb-home-charts').width() * 0.16;
   }
 
   ngAfterViewInit(): void {
@@ -87,11 +93,16 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
       const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
+      const color = getColor(chartType, 0);
       const dataSet = {
         data: data[chartType],
-        borderColor: getColor(chartType, 0),
-        backgroundColor: getColor(chartType, 0),
-        label: TOTAL_KEY
+        borderColor: color,
+        backgroundColor: color,
+        label: TOTAL_KEY,
+        pointBorderColor: color,
+        pointBackgroundColor: color,
+        pointHoverBackgroundColor: color,
+        pointHoverBorderColor: color
       };
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params);
