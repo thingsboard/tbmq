@@ -122,7 +122,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private String getClientIdFromSubscription(Subscription subscription) {
-        return subscription.getClientSession().getClientId();
+        return subscription.getClientSessionInfo().getClientId();
     }
 
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
