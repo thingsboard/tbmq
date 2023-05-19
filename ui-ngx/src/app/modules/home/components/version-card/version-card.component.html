@@ -15,9 +15,9 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container" fxLayout="column" fxLayoutGap="20px">
+<div fxFlex class="tb-home-card-container">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <div class="version-card-container">
+  <section class="version-card-container">
     <section>
       <span [innerHTML]="'version.current-version' | translate"></span>
       <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> {{versionData.currentVersion}}</a>
@@ -33,5 +33,5 @@
         <span [innerHTML]="'version.no-updates-available' | translate"></span>
       </ng-template>
     </ng-container>
-  </div>
+  </section>
 </div>

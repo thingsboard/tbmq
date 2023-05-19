@@ -15,20 +15,22 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="row" fxLayoutAlign="start">
-  <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
-  <span fxFlex></span>
-  <button mat-stroked-button color="primary"
-          type="button"
-          [disabled]="isLoading$ | async"
-          (click)="viewDocumentation(docsLink)"
-          matTooltip="{{docsTooltip | translate}}">
-    {{'home.view-docs' | translate}}
-  </button>
-</div>
-<div class="cards">
-  <div fxFlex class="key-value" *ngFor="let item of config">
-    <div class="key">{{ item.label | translate }}</div>
-    <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>
-  </div>
+<div fxFlex class="tb-home-card-container">
+  <section fxLayout="row">
+    <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
+    <span fxFlex></span>
+    <button mat-stroked-button color="primary"
+            type="button"
+            [disabled]="isLoading$ | async"
+            (click)="viewDocumentation(docsLink)"
+            matTooltip="{{docsTooltip | translate}}">
+      {{'home.view-docs' | translate}}
+    </button>
+  </section>
+  <section class="cards">
+    <div fxFlex class="key-value" *ngFor="let item of config">
+      <div class="key">{{ item.label | translate }}</div>
+      <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>
+    </div>
+  </section>
 </div>

@@ -15,9 +15,9 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="column" class="tb-home-card-container" fxLayoutGap="16px">
+<div fxFlex class="tb-home-card-container">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <div class="tb-kafka-table">
+  <section class="tb-kafka-table">
     <table mat-table [dataSource]="dataSource" matSort>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
         <mat-header-cell *matHeaderCellDef mat-sort-header>
@@ -31,5 +31,5 @@
       <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </table>
-  </div>
+  </section>
 </div>

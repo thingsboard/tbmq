@@ -15,12 +15,14 @@
  */
 
 :host {
+  display: flex;
+  flex: 1 1 0;
+
   .cards {
     display: flex;
     flex: 1 1 0;
     justify-content: space-evenly;
     gap: 10px;
-    padding: 10px 0 6px 0;
 
     .key-value {
       display: flex;
