@@ -24,7 +24,7 @@ import {
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { StatsService } from '@core/http/stats.service';
+import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
 import { retry, share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   getColor,
@@ -84,8 +84,9 @@ export class MonitoringComponent extends PageComponent {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs));
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId));
+      const keys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys));
+      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, keys));
     }
     this.$getEntityTimeseries = forkJoin($getEntityTimeseriesTasks);
     this.$getLatestTimeseries = forkJoin($getLatestTimeseriesTasks);
@@ -227,7 +228,7 @@ export class MonitoringComponent extends PageComponent {
   private pushLatestValue(data: TimeseriesData[], chartType: string) {
     for (let i = 0; i < this.brokerIds.length; i++) {
       let index = i;
-      if (data[index][chartType].length) {
+      if (data[index][chartType]?.length) {
         if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
         const latestValue = data[index][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;

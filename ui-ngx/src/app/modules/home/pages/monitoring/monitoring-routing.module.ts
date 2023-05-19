@@ -38,8 +38,7 @@ export class BrokerIdsResolver implements Resolve<string[]> {
         } else {
           ids = ids.concat(TOTAL_KEY, brokerIds);
         }
-        // return of(ids);
-        return of([TOTAL_KEY]);
+        return of(ids);
       })
     );
   }
