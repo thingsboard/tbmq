@@ -123,4 +123,8 @@
     position: sticky;
     z-index: 10;
   }
+
+  .mat-drawer-content {
+    overflow: hidden;
+  }
 }

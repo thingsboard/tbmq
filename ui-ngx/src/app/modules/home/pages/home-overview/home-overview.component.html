@@ -16,20 +16,18 @@
 
 -->
 <div fxLayout="row" class="tb-home-overview" fxLayout.lt-lg="column" fxFlex>
-  <div fxLayout="column" fxFlex="70">
-    <div fxLayout="column" fxLayoutGap="12px" class="tb-home-card-column">
-      <tb-home-charts class="tb-home-card-border"></tb-home-charts>
-      <div fxLayout="column" fxLayoutGap="12px">
-        <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-        <div fxLayout="row" fxLayoutGap="12px">
-          <tb-card-config class="tb-home-card-border"></tb-card-config>
-          <tb-kafka-brokers-table class="tb-home-card-border"></tb-kafka-brokers-table>
-        </div>
+  <div fxLayout="column" fxFlex="70" fxLayoutGap="12px">
+    <tb-home-charts class="tb-home-card-border"></tb-home-charts>
+    <div fxLayout="column" fxLayoutGap="12px">
+      <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
+      <div fxLayout="row" fxLayoutGap="12px">
+        <tb-card-config class="tb-home-card-border"></tb-card-config>
+        <tb-kafka-brokers-table class="tb-home-card-border"></tb-kafka-brokers-table>
       </div>
-      <tb-kafka-tables-tab-group fxFlex="40" class="tb-home-card-border"></tb-kafka-tables-tab-group>
     </div>
+    <tb-kafka-tables-tab-group class="tb-home-card-border"></tb-kafka-tables-tab-group>
   </div>
-  <div fxLayout="column" fxLayoutGap="12px" fxFlex="30">
+  <div fxLayout="column" fxFlex="30" fxLayoutGap="12px">
     <tb-getting-started class="tb-home-card-border"></tb-getting-started>
     <tb-quick-links class="tb-home-card-border"></tb-quick-links>
     <tb-version-card class="tb-home-card-border"></tb-version-card>

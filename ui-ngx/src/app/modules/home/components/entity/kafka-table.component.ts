@@ -50,7 +50,7 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
   displayPagination = true;
   // translations: EntityTypeTranslation;
 
-  defaultPageSize = 10;
+  defaultPageSize = 5;
   pageSizeOptions;
   pageLink: PageLink;
 
