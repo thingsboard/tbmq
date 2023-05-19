@@ -23,9 +23,9 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
@@ -65,14 +65,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             throw new DataValidationException("MQTT Client credentials type should be specified");
         }
         switch (mqttClientCredentials.getCredentialsType()) {
-            case MQTT_BASIC:
-                preprocessBasicMqttCredentials(mqttClientCredentials);
-                break;
-            case SSL:
-                preprocessSslMqttCredentials(mqttClientCredentials);
-                break;
-            default:
-                throw new DataValidationException("Unknown credentials type!");
+            case MQTT_BASIC -> preprocessBasicMqttCredentials(mqttClientCredentials);
+            case SSL -> preprocessSslMqttCredentials(mqttClientCredentials);
+            default -> throw new DataValidationException("Unknown credentials type!");
         }
         if (mqttClientCredentials.getClientType() == null) {
             mqttClientCredentials.setClientType(ClientType.DEVICE);

@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.dao.settings;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
@@ -98,7 +98,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                     if (StringUtils.isEmpty(adminSettings.getKey())) {
                         throw new DataValidationException("Admin Settings key should be specified!");
                     }
-                    if (StringUtils.isEmpty(adminSettings.getJsonValue())) {
+                    if (adminSettings.getJsonValue() == null) {
                         throw new DataValidationException("Admin Settings json should be specified!");
                     }
                 }

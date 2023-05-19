@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.queue.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
