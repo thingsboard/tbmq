@@ -45,7 +45,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: dlandiak2110/tb-mqtt-broker:1.0.0-openjdk-17
+          image: dlandiak2110/tb-mqtt-broker:1.0.0-SNAPSHOT
           resources:
             limits:
               cpu: 61
