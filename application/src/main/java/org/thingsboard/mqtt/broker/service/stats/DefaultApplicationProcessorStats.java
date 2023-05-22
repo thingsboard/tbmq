@@ -113,18 +113,25 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
     }
 
     @Override
-    public void logPubAckLatency(long amount, TimeUnit unit) {
+    public void logPubAckLatency(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         pubAckLatencyTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logPubRecLatency(long amount, TimeUnit unit) {
+    public void logPubRecLatency(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         pubRecLatencyTimer.logTime(amount, unit);
     }
 
     @Override
-    public void logPubCompLatency(long amount, TimeUnit unit) {
+    public void logPubCompLatency(long startTime, TimeUnit unit) {
+        long amount = getAmount(startTime);
         pubCompLatencyTimer.logTime(amount, unit);
+    }
+
+    private long getAmount(long startTime) {
+        return System.nanoTime() - startTime;
     }
 
     @Override

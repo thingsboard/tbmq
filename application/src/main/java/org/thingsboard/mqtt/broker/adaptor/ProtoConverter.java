@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +61,11 @@ public class ProtoConverter {
 
     private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {
         if (userProperties != null) {
-            return userProperties.value().stream().map(ProtoConverter::buildUserPropertyProto).collect(Collectors.toList());
+            List<QueueProtos.UserPropertyProto> result = new ArrayList<>(userProperties.value().size());
+            for (MqttProperties.StringPair stringPair : userProperties.value()) {
+                result.add(buildUserPropertyProto(stringPair));
+            }
+            return result;
         }
         return Collections.emptyList();
     }
