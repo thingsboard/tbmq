@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM dlandiak2110/openjdk17:bullseye-slim
+FROM thingsboard/openjdk17:bullseye-slim
 
 
 COPY start-tb-mqtt-broker.sh ${pkg.name}.deb /tmp/
