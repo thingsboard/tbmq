@@ -95,14 +95,16 @@ public class ProtoConverter {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 
-    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
+    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto, int packetId,
+                                                 int qos, boolean isDup) {
         return PublishMsg.builder()
-                .packetId(publishMsgProto.getPacketId())
                 .topicName(publishMsgProto.getTopicName())
-                .qosLevel(publishMsgProto.getQos())
                 .isRetained(publishMsgProto.getRetain())
                 .payload(publishMsgProto.getPayload().toByteArray())
                 .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
+                .packetId(packetId)
+                .qosLevel(qos)
+                .isDup(isDup)
                 .build();
     }
 

@@ -272,7 +272,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                     applicationPubRelMsgCtx,
                                     clientSessionCtx,
                                     persistedMsgCtx,
-                                    publishProtoMessages);
+                                    publishProtoMessages,
+                                    subscription);
                             submitStrategy.init(messagesToDeliver);
 
                             if (isDebugEnabled) {
@@ -286,7 +287,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                 int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                                 cachePackProcessingCtx(clientId, subscription, ctx);
 
-                                process(submitStrategy, clientSessionCtx, clientId, subscription);
+                                process(submitStrategy, clientSessionCtx, clientId);
 
                                 if (isJobActive(job)) {
                                     ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -330,12 +331,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private List<PersistedMsg> getMessagesToDeliver(ApplicationPubRelMsgCtx applicationPubRelMsgCtx,
                                                     ClientSessionCtx clientSessionCtx,
                                                     ApplicationPersistedMsgCtx persistedMsgCtx,
-                                                    List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
+                                                    List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
+                                                    TopicSharedSubscription subscription) {
         List<PersistedPubRelMsg> pubRelMessagesToDeliver = applicationPubRelMsgCtx.toSortedPubRelMessagesToDeliver();
         List<PersistedPublishMsg> publishMessagesToDeliver = toPublishMessagesToDeliver(
                 clientSessionCtx,
                 persistedMsgCtx,
-                publishProtoMessages
+                publishProtoMessages,
+                subscription
         );
 
         return collectMessagesToDeliver(pubRelMessagesToDeliver, publishMessagesToDeliver);
@@ -654,7 +657,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         applicationPubRelMsgCtx,
                         clientSessionCtx,
                         persistedMsgCtx,
-                        publishProtoMessages);
+                        publishProtoMessages,
+                        null);
                 submitStrategy.init(messagesToDeliver);
 
                 applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
@@ -664,7 +668,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     packProcessingCtxMap.put(clientId, ctx);
 
-                    process(submitStrategy, clientSessionCtx, clientId, null);
+                    process(submitStrategy, clientSessionCtx, clientId);
 
                     if (isClientConnected(sessionId, clientState)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -695,8 +699,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx,
-                         String clientId, TopicSharedSubscription topicSharedSubscription) {
+    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx, String clientId) {
         if (isDebugEnabled) {
             log.debug("[{}] Start sending the pack of messages from processing ctx: {}", clientId, submitStrategy.getOrderedMessages());
         }
@@ -704,8 +707,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             switch (msg.getPacketType()) {
                 case PUBLISH:
                     PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                    int minQoSValue = getMinQoSValue(topicSharedSubscription, publishMsg);
-                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
+                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg);
                     break;
                 case PUBREL:
                     publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
@@ -716,9 +718,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientSessionCtx.getChannel().flush();
     }
 
-    private int getMinQoSValue(TopicSharedSubscription subscription, PublishMsg publishMsg) {
-        return subscription == null ? publishMsg.getQosLevel() :
-                Math.min(subscription.getQos(), publishMsg.getQosLevel());
+    private int getMinQoSValue(TopicSharedSubscription subscription, int publishMsgQos) {
+        return subscription == null ? publishMsgQos : Math.min(subscription.getQos(), publishMsgQos);
     }
 
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
@@ -743,23 +744,22 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private List<PersistedPublishMsg> toPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
                                                                  ApplicationPersistedMsgCtx persistedMsgCtx,
-                                                                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
+                                                                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
+                                                                 TopicSharedSubscription subscription) {
         List<PersistedPublishMsg> result = new ArrayList<>(publishProtoMessages.size());
         for (TbProtoQueueMsg<PublishMsgProto> msg : publishProtoMessages) {
             var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
             boolean isDup = msgPacketId != null;
-            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, isDup);
+            int minQoSValue = getMinQoSValue(subscription, msg.getValue().getQos());
+            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, minQoSValue, isDup);
             result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
         }
         return result;
     }
 
-    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, boolean isDup) {
-        return ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
-                .packetId(packetId)
-                .isDup(isDup)
-                .build();
+    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, int qos, boolean isDup) {
+        return ProtoConverter.convertToPublishMsg(persistedMsgProto, packetId, qos, isDup);
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
