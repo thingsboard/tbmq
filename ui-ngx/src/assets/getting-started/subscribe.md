@@ -1,4 +1,4 @@
-Let's create a subscription using the open-source message broker, <a href='https://mosquitto.org/download' target="_blank">**Eclipse Mosquitto**</a>.
+Let's create a subscription using a simple MQTT client <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target="_blank">**mosquitto_sub**</a>.
 
 To do this, paste the following code into a new terminal tab:
 
