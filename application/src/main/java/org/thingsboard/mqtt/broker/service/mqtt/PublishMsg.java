@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +32,7 @@ public class PublishMsg {
     private final int packetId;
     private final String topicName;
     private final byte[] payload;
+    private final ByteBuf byteBuf;
     private final int qosLevel;
     private final boolean isRetained;
     private final boolean isDup;
@@ -39,6 +42,7 @@ public class PublishMsg {
         this.packetId = packetId;
         this.topicName = topicName;
         this.payload = payload;
+        this.byteBuf = Unpooled.wrappedBuffer(payload);
         this.qosLevel = qosLevel;
         this.isRetained = isRetained;
         this.isDup = isDup;

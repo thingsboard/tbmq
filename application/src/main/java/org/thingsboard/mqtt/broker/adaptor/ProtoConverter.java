@@ -48,15 +48,17 @@ public class ProtoConverter {
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
         UserProperties userProperties = getUserProperties(publishMsg.getProperties());
         List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
-        return QueueProtos.PublishMsgProto.newBuilder()
+        QueueProtos.PublishMsgProto proto = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
-                .setPayload(ByteString.copyFrom(publishMsg.getPayload()))
+                .setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()))
                 .addAllUserProperties(userPropertyProtos)
                 .setClientId(sessionInfo.getClientInfo().getClientId())
                 .build();
+        publishMsg.getByteBuf().release();
+        return proto;
     }
 
     private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {

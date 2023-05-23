@@ -162,14 +162,14 @@ public class NettyMqttConverter {
     }
 
     private static PublishMsg extractPublishMsg(MqttPublishMessage mqttPublishMessage) {
-        byte[] payloadBytes = toBytes(mqttPublishMessage.payload());
+        ByteBuf byteBuf = mqttPublishMessage.payload().retain();
         return PublishMsg.builder()
                 .packetId(mqttPublishMessage.variableHeader().packetId())
                 .topicName(mqttPublishMessage.variableHeader().topicName())
                 .qosLevel(mqttPublishMessage.fixedHeader().qosLevel().value())
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())
                 .isDup(mqttPublishMessage.fixedHeader().isDup())
-                .payload(payloadBytes)
+                .byteBuf(byteBuf)
                 .properties(mqttPublishMessage.variableHeader().properties())
                 .build();
     }
