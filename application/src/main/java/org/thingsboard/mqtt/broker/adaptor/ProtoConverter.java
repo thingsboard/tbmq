@@ -48,17 +48,20 @@ public class ProtoConverter {
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
         UserProperties userProperties = getUserProperties(publishMsg.getProperties());
         List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
-        QueueProtos.PublishMsgProto proto = QueueProtos.PublishMsgProto.newBuilder()
+        QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
-                .setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()))
                 .addAllUserProperties(userPropertyProtos)
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .build();
-        publishMsg.getByteBuf().release();
-        return proto;
+                .setClientId(sessionInfo.getClientInfo().getClientId());
+        if (publishMsg.getByteBuf() != null) {
+            builder.setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()));
+            publishMsg.getByteBuf().release();
+        } else {
+            builder.setPayload(ByteString.copyFrom(publishMsg.getPayload()));
+        }
+        return builder.build();
     }
 
     private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {

@@ -185,7 +185,7 @@ public class NettyMqttConverter {
                 .build();
     }
 
-    private static byte[] toBytes(ByteBuf inbound) {
+    public static byte[] toBytes(ByteBuf inbound) {
         byte[] bytes = new byte[inbound.readableBytes()];
         int readerIndex = inbound.readerIndex();
         inbound.getBytes(readerIndex, bytes);
