@@ -124,7 +124,7 @@ export function homeChartJsParams() {
           type: 'time',
           display: true,
           time: {
-            round: 'minute',
+            round: 'second',
             tooltipFormat: 'HH:mm:ss',
             displayFormats: {
               minute: 'HH:mm'
@@ -138,7 +138,7 @@ export function homeChartJsParams() {
               enabled: true
             },
             font: {
-              size: 9
+              size: 8
             }
           },
           grid: {
@@ -296,12 +296,24 @@ export function monitoringChartJsParams() {
         x: {
           type: 'time',
           time: {
-            unit: 'minute'
+            round: 'second',
+            displayFormats: {
+              minute: 'HH:mm'
+            }
           },
           ticks: {
             maxRotation: 0,
-            padding: 0,
-            labelOffset: 0
+            padding: 5,
+            labelOffset: 0,
+            source: 'auto',
+            autoSkip: true,
+            font: {
+              size: 9
+            }
+          },
+          grid: {
+            display: true,
+            drawTicks: false
           }
         }
       },
