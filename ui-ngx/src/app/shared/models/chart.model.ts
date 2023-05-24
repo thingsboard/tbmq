@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {Tooltip} from "chart.js";
+import { Tooltip } from 'chart.js';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -34,7 +34,7 @@ export enum StatsChartType {
   subscriptions = 'subscriptions'
 }
 
-export const TOTAL_KEY = 'Total';
+export const TOTAL_KEY = 'total';
 
 export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
 
@@ -44,7 +44,17 @@ export const StatsChartTypeTranslationMap = new Map<string, string>(
     [StatsChartType.outgoingMsgs, 'overview.outgoing-messages'],
     [StatsChartType.droppedMsgs, 'overview.dropped-messages'],
     [StatsChartType.sessions, 'overview.sessions'],
-    [StatsChartType.subscriptions, 'overview.subscriptions'],
+    [StatsChartType.subscriptions, 'overview.subscriptions']
+  ]
+);
+
+export const ChartTooltipTranslationMap = new Map<string, string>(
+  [
+    [StatsChartType.incomingMsgs, 'overview.incoming-messages-tooltip'],
+    [StatsChartType.outgoingMsgs, 'overview.outgoing-messages-tooltip'],
+    [StatsChartType.droppedMsgs, 'overview.dropped-messages-tooltip'],
+    [StatsChartType.sessions, 'overview.sessions-tooltip'],
+    [StatsChartType.subscriptions, 'overview.subscriptions-tooltip']
   ]
 );
 
@@ -91,10 +101,10 @@ export function homeChartJsParams() {
       },
       layout: {
         padding: {
-          right: 20,
-          left: 20,
+          right: 10,
+          left: 10,
           bottom: 10,
-          top: 20
+          top: 10
         }
       },
       title: {
@@ -112,7 +122,25 @@ export function homeChartJsParams() {
         },
         x: {
           type: 'time',
-          display: false
+          display: true,
+          offsetAfterAutoskip: false,
+          time: {
+            displayFormats: {
+              minute: 'HH:mm'
+            }
+          },
+          ticks: {
+            major: {
+              enabled: false
+            },
+            font: {
+              size: 9
+            }
+          },
+          grid: {
+            display: true,
+            drawTicks: false
+          }
         }
       },
       plugins: {
@@ -122,7 +150,8 @@ export function homeChartJsParams() {
         tooltip: {
           enabled: true,
           position: 'myCustomPositioner'
-        }
+        },
+        emptyChart: {}
       },
       parsing: {
         xAxisKey: 'ts',
@@ -188,12 +217,39 @@ export function homeChartJsParams() {
           ctx.setLineDash(opts.dash || []);
           ctx.strokeStyle = '#960000';
 
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(x, bottom);
-          ctx.lineTo(x, top);
-          ctx.stroke();
-          ctx.restore();
+          const {datasets} = chart.data;
+          let hasData = false;
+          for (let i = 0; i < datasets.length; i += 1) {
+            const dataset = datasets[i];
+            hasData = dataset.data.length > 0;
+          }
+          if (hasData) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, bottom);
+            ctx.lineTo(x, top);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      },
+      {
+        id: 'emptyChart',
+        afterDraw(chart, args, options) {
+          const {datasets} = chart.data;
+          let hasData = false;
+          for (let i = 0; i < datasets.length; i += 1) {
+            const dataset = datasets[i];
+            hasData = dataset.data.length > 0;
+          }
+          if (!hasData) {
+            const {chartArea: {left, top, right, bottom}, ctx} = chart;
+            const centerX = (left + right) / 2;
+            const centerY = (top + bottom) / 2;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('No data is available', centerX, centerY);
+          }
         }
       }
     ]
@@ -279,7 +335,8 @@ export function monitoringChartJsParams() {
           callbacks: {
             footer,
           }
-        }
+        },
+        emptyChart: {}
       },
       parsing: {
         xAxisKey: 'ts',
@@ -340,17 +397,43 @@ export function monitoringChartJsParams() {
           if (!draw) {
             return;
           }
+          const {datasets} = chart.data;
+          let hasData = false;
+          for (let i = 0; i < datasets.length; i += 1) {
+            const dataset = datasets[i];
+            hasData = dataset.data.length > 0;
+          }
+          if (hasData) {
+            ctx.lineWidth = opts.width || 0;
+            ctx.setLineDash(opts.dash || []);
+            ctx.strokeStyle = '#960000';
 
-          ctx.lineWidth = opts.width || 0;
-          ctx.setLineDash(opts.dash || []);
-          ctx.strokeStyle = '#960000';
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(x, bottom);
-          ctx.lineTo(x, top);
-          ctx.stroke();
-          ctx.restore();
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, bottom);
+            ctx.lineTo(x, top);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      },
+      {
+        id: 'emptyChart',
+        afterDraw(chart, args, options) {
+          const {datasets} = chart.data;
+          let hasData = false;
+          for (let i = 0; i < datasets.length; i += 1) {
+            const dataset = datasets[i];
+            hasData = dataset.data.length > 0;
+          }
+          if (!hasData) {
+            const {chartArea: {left, top, right, bottom}, ctx} = chart;
+            const centerX = (left + right) / 2;
+            const centerY = (top + bottom) / 2;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('No data is available', centerX, centerY);
+          }
         }
       }
     ]

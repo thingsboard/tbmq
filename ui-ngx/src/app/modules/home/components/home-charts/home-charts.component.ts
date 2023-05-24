@@ -22,6 +22,7 @@ import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/tim
 import { TimeService } from '@core/services/time.service';
 import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  ChartTooltipTranslationMap,
   getColor,
   homeChartJsParams,
   StatsChartType,
@@ -44,12 +45,14 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   charts = {};
   latestValues = {};
   statsCharts = Object.values(StatsChartType);
-  width = 150;
+  width = 100;
 
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
   private fixedWindowTimeMs: FixedWindow;
+
+  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
 
   constructor(private translate: TranslateService,
               private timeService: TimeService,
@@ -67,7 +70,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setChartSize() {
-    this.width = $('tb-home-charts').width() * 0.16;
+    this.width = $('tb-home-charts').width() * 0.14;
   }
 
   ngAfterViewInit(): void {
@@ -162,7 +165,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private addStartChartValue(chartType: string, latestValue: TsValue) {
     const data = this.charts[chartType].data.datasets[0].data;
     if (!data.length) {
-      data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
+      // data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
     }
   }
 }

@@ -362,7 +362,7 @@
     "username": "Username",
     "user-name-required": "User Name is required.",
     "hint-allow-self-signed-certificates": "hint-allow-self-signed-certificates",
-    "hint-client-type-application": "Use 'Application' type for clients that usually subscribe to topics with high message rates and with the requirement to persist messages when the</br>client is offline i.e. <b>applications like Thingsboard, AWS IoT Core</b> etc.",
+    "hint-client-type-application": "Use 'Application' type for clients that usually subscribe to topics with high message rates and with the requirement to persist messages when the</br>client is offline, i.e. <b>IoT applications</b>.",
     "hint-client-type-device": "Use 'Device' type for clients that usually publish a lot of messages, but subscribe to a few topics with low message rate, i.e. <b>IoT devices</b>.",
     "hint-client-type-read-more": "<a href='' target='_blank'>Read more</a>.",
     "hint-credentials-type-basic": "<b>'Basic'</b> is a one-way authentication method based on different combinations of <b>Client ID, Username and/or Password</b>:<ul><li><b>Client ID</b> - will check if connecting client has specified clientId;</li></br><li><b>Username</b> - will check if connecting client has specified username;</li></br><li><b>Client ID and username</b>- will check if connecting client has both specified clientId and username;</li></br><li><b>Username and password</b> - will check if connecting client has both specified username and password;</li></br><li><b>Client ID and password</b> - will check if connecting client has both specified clientId and password;</li></br><li><b>Client ID, username and password</b> - will check if connecting client has specified clientId, username and password</li></br></ul>",
@@ -515,6 +515,11 @@
     "dropped-messages": "Dropped messages",
     "sessions": "Sessions",
     "subscriptions": "Subscriptions",
+    "incoming-messages-tooltip": "Messages published by MQTT clients to the broker.",
+    "outgoing-messages-tooltip": "Messages that the broker delivers to subscribing clients.",
+    "dropped-messages-tooltip": "Messages that the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations on the broker.",
+    "sessions-tooltip": "Sessions",
+    "subscriptions-tooltip": "Subscriptions",
     "topics": "Topics"
   },
   "timeinterval": {
@@ -595,7 +600,7 @@
     "ssl-auth": "X.509 Certificate Auth",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
-    "warning": "You have existing Client Credentials with disabled config parameter"
+    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/'>read docs</a>."
   },
   "kafka": {
     "address": "Address",

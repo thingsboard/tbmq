@@ -27,6 +27,7 @@ import { TimeService } from '@core/services/time.service';
 import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
 import { retry, share, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  ChartTooltipTranslationMap,
   getColor,
   monitoringChartJsParams, ONLY_TOTAL_KEYS,
   StatsChartType,
@@ -67,6 +68,8 @@ export class MonitoringComponent extends PageComponent {
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
+
+  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -166,6 +169,7 @@ export class MonitoringComponent extends PageComponent {
     const getDataset = (dataset, chartType, i, brokerId) => {
       const color = getColor(chartType, i);
       return {
+        label: this.brokerIds[i],
         data: dataset[i][chartType],
         pointStyle: 'circle',
         hidden: brokerId !== TOTAL_KEY,
@@ -258,7 +262,7 @@ export class MonitoringComponent extends PageComponent {
       const brokerId = this.brokerIds[i];
       if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
       this.latestValues[brokerId][chartType] = data[index][chartType][0].value;
-      this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}`;
+      // this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}`;
     }
   }
 
@@ -293,7 +297,7 @@ export class MonitoringComponent extends PageComponent {
   private addStartChartValue(chartType: string, latestValue: TsValue, index: number) {
     const data = this.charts[chartType].data.datasets[index].data;
     if (!data.length) {
-      data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
+      // data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
     }
   }
 
@@ -305,7 +309,7 @@ export class MonitoringComponent extends PageComponent {
             outgoingMsgs: Math.floor(Math.random() * 100),
             droppedMsgs: Math.floor(Math.random() * 100)
           };
-          return this.statsService.saveTelemetry('thingsboard190', data);
+          return this.statsService.saveTelemetry('artem', data);
         })).subscribe();
     timer(0, POLLING_INTERVAL * 6)
       .pipe(switchMap(() => {

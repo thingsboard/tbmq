@@ -20,8 +20,13 @@
   <section fxFlex fxLayoutAlign="space-between">
     <div *ngFor="let chart of statsCharts; let $index = index">
       <div class="chart-container">
-        <div fxFlex fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="8px">
-          <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+        <div fxFlex fxLayout="column" fxLayoutAlign="center center">
+          <section>
+            <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+            <mat-icon [matTooltip]="chartTooltip(chart)" style="font-size: 16px; margin-left: 4px; height: 16px; width: 16px">
+              help
+            </mat-icon>
+          </section>
           <canvas class="chart" [width]="width" [id]="chart+chartIdSuf"></canvas>
         </div>
       </div>

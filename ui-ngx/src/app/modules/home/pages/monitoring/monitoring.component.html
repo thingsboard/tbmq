@@ -33,6 +33,10 @@
         <span fxFlex></span>
         <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
         <span fxFlex></span>
+<!--        style="font-size: 20px; margin-left: 4px; height: 20px; width: 20px"-->
+        <mat-icon [matTooltip]="chartTooltip(chart)" class="material-icons">
+          help
+        </mat-icon>
         <button type="button"
                 mat-icon-button class="tb-fullscreen-button tb-mat-40"
                 (click)="onFullScreen(chart)"
