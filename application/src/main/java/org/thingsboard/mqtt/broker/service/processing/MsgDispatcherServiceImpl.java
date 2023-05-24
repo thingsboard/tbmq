@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -63,6 +64,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.INCOMING_MSGS;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -77,6 +81,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final PublishMsgQueuePublisher publishMsgQueuePublisher;
     private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -94,6 +99,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
         producerStats.incrementTotal();
+        tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
         publishMsgQueuePublisher.sendMsg(publishMsgProto, callback);
     }
@@ -106,6 +112,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
         if (msgSubscriptions == null) {
+            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
             callback.onSuccess();
             return;
         }

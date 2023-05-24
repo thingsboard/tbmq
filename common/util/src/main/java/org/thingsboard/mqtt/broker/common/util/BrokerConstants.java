@@ -21,7 +21,17 @@ import java.util.List;
 
 public class BrokerConstants {
 
-    public static final List<String> HISTORICAL_KEYS = List.of("incomingMsgs", "outgoingMsgs", "droppedMsgs", "sessions", "subscriptions");
+    public static final String TOTAL_MSGS = "total";
+    public static final String INCOMING_MSGS = "incomingMsgs";
+    public static final String OUTGOING_MSGS = "outgoingMsgs";
+    public static final String DROPPED_MSGS = "droppedMsgs";
+    public static final String SESSIONS = "sessions";
+    public static final String SUBSCRIPTIONS = "subscriptions";
+
+    public static final List<String> HISTORICAL_KEYS_STATS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS);
+
+    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS);
+
 
     public static final byte[] LOCAL_ADR;
 
