@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HistoricalDataTotalKafkaSettings;
@@ -58,6 +59,11 @@ public class KafkaHistoricalDataQueueFactory implements HistoricalDataQueueFacto
     @PostConstruct
     public void init() {
         this.topicConfigs = QueueUtil.getConfigs(historicalDataTotalKafkaSettings.getTopicProperties());
+        String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
+        if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
+            log.warn("Application persistent message topic must have only 1 partition.");
+        }
+        topicConfigs.put(QueueConstants.PARTITIONS, "1");
     }
 
     @Override
@@ -78,7 +84,7 @@ public class KafkaHistoricalDataQueueFactory implements HistoricalDataQueueFacto
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId("historical-data-total-" + serviceId + "-consumer");
-        consumerBuilder.groupId("historical-data-total-" + serviceId + "-consumer-group");
+        consumerBuilder.groupId("historical-data-total-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ToUsageStatsMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

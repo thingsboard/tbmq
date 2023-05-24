@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +31,7 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -46,37 +49,38 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SESSIONS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SUBSCRIPTIONS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.TOTAL_MSGS;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class HistoricalStatsTotalConsumer {
 
-    private final ExecutorService consumerExecutorSubscriptionAndSession = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-session-subscription-total-consumer"));
-    private final ExecutorService consumerExecutorStatsTotal = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-data-stats-total-consumer"));
+    private ExecutorService consumerExecutorSubscriptionAndSession;
+    private ExecutorService consumerExecutorStatsTotal;
     private final HistoricalDataQueueFactory historicalDataQueueFactory;
     private final HistoricalStatsTotalHelper helper;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
-    private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
 
     private volatile boolean stopped = false;
 
-    @Value("${report.enabled:true}")
+    @Value("${historical-data-report.enabled:true}")
     private boolean enabled;
 
-    @Value("${report.interval}")
+    @Value("${historical-data-report.interval}")
     private int interval;
 
     @Value("${queue.historical-data-total.poll-interval}")
     private long pollDuration;
 
     private TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> consumer;
+    @Setter
     private Map<String, TsMsgTotalPair> totalMessageCounter;
 
     @PostConstruct
@@ -84,10 +88,12 @@ public class HistoricalStatsTotalConsumer {
         if (!enabled) return;
 
         initConsumer();
+        initExecutors();
+        initTotalMessageMap();
         consumerExecutorStatsTotal.execute(this::processHistoricalDataStatsTotal);
     }
 
-    @Scheduled(cron = "0 0/${report.interval} * * * *", zone = "${report.zone}")
+    @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
             consumerExecutorSubscriptionAndSession.execute(this::processSessionAndSubscriptionStatsTotal);
@@ -131,18 +137,29 @@ public class HistoricalStatsTotalConsumer {
         entries.add(new BasicTsKvEntry(System.currentTimeMillis(),
                 new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
 
-        timeseriesService.save(TOTAL_MSGS, entries);
+        ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
+        DonAsynchron.withCallback(savedTsFuture, unused -> {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Successfully save timeseries entries {}", ENTITY_ID_TOTAL, entries);
+            }
+        }, throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries));
     }
 
     private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) throws ExecutionException, InterruptedException {
         String key = msg.getValue().getUsageStats().getKey();
         TsMsgTotalPair pair = calculatePairUsingProvidedMsg(msg);
-        timeseriesService.save(TOTAL_MSGS, new BasicTsKvEntry(pair.getTs(),
-                new LongDataEntry(key, pair.getTotalMsgCounter())));
+        TsKvEntry tsKvEntry = new BasicTsKvEntry(pair.getTs(), new LongDataEntry(key, pair.getTotalMsgCounter()));
+
+        ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, tsKvEntry);
+        DonAsynchron.withCallback(savedTsFuture, unused -> {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Successfully save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue());
+            }
+        }, throwable -> log.error("[{}] Failed to save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue()));
     }
 
     protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
-        TsMsgTotalPair pair = initAndGetTotalMessageCounterPair(msg);
+        TsMsgTotalPair pair = getTotalMessageCounterPair(msg);
         if (pair.getTs() < msg.getValue().getTs()) {
             pair.setTs(msg.getValue().getTs());
             pair.setTotalMsgCounter(msg.getValue().getUsageStats().getValue());
@@ -153,8 +170,7 @@ public class HistoricalStatsTotalConsumer {
     }
 
 
-    protected TsMsgTotalPair initAndGetTotalMessageCounterPair(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
-        initTotalMessageMap();
+    protected TsMsgTotalPair getTotalMessageCounterPair(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
         TsMsgTotalPair msgTotalPair = totalMessageCounter.get(key);
         if (msgTotalPair.isEmpty()) {
@@ -169,9 +185,9 @@ public class HistoricalStatsTotalConsumer {
     }
 
     @SneakyThrows
-    protected TsKvEntry findLatestTimeseriesForInterval(String key, long msgTs) {
+    private TsKvEntry findLatestTimeseriesForInterval(String key, long msgTs) {
         long intervalInMillis = 60000L * interval;
-        List<TsKvEntry> latestTs = timeseriesService.findLatest(TOTAL_MSGS, List.of(key)).get();
+        List<TsKvEntry> latestTs = timeseriesService.findLatest(ENTITY_ID_TOTAL, List.of(key)).get();
 
         if (!latestTs.isEmpty()) {
             TsKvEntry latest = latestTs.get(0);
@@ -202,10 +218,16 @@ public class HistoricalStatsTotalConsumer {
         this.consumer.subscribe();
     }
 
+    private void initExecutors() {
+        consumerExecutorSubscriptionAndSession = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-session-subscription-total-consumer"));
+        consumerExecutorStatsTotal = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("historical-data-stats-total-consumer"));
+    }
+
     @PreDestroy
     public void destroy() {
         stopped = true;
         consumerExecutorStatsTotal.shutdownNow();
+        consumerExecutorSubscriptionAndSession.shutdown();
         if (consumer != null) {
             consumer.unsubscribeAndClose();
         }

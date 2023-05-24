@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.ToUsageStatsMsgProto;
@@ -34,11 +37,16 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 
 import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.time.ZoneOffset.UTC;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
 
 @Component
@@ -46,10 +54,10 @@ import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL
 @RequiredArgsConstructor
 public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClient {
 
-    @Value("${report.enabled:true}")
+    @Value("${historical-data-report.enabled:true}")
     private boolean enabled;
 
-    @Value("${report.interval:5}")
+    @Value("${historical-data-report.interval:5}")
     private long interval;
 
     private final HistoricalDataQueueFactory historicalDataQueueFactory;
@@ -74,15 +82,15 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
     }
 
-    @Scheduled(cron = "0 0/${report.interval} * * * *", zone = "${report.zone}")
+    @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
-            reportStats(System.currentTimeMillis());
+            reportStats(getStartOfCurrentMinute());
         }
     }
 
     private void reportStats(long ts) {
-        CopyOnWriteArrayList<ToUsageStatsMsgProto> report = new CopyOnWriteArrayList<>();
+        List<ToUsageStatsMsgProto> report = new ArrayList<>();
 
         for (String key : HISTORICAL_KEYS_STATS) {
             long value = stats.get(key).get();
@@ -99,9 +107,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             stats.get(key).set(0);
         }
 
+        List<ListenableFuture<Void>> futures = new ArrayList<>();
         report.forEach(statsMsg -> {
-                    timeseriesService.save(statsMsg.getServiceId(), new BasicTsKvEntry(
-                            statsMsg.getTs(), new LongDataEntry(statsMsg.getUsageStats().getKey(), statsMsg.getUsageStats().getValue())));
+                    futures.add(timeseriesService.save(statsMsg.getServiceId(), new BasicTsKvEntry(
+                            statsMsg.getTs(), new LongDataEntry(statsMsg.getUsageStats().getKey(), statsMsg.getUsageStats().getValue()))));
 
                     historicalStatsProducer.send(helper.getTopic(), null, new TbProtoQueueMsg<>(statsMsg), new TbQueueCallback() {
                         @Override
@@ -120,7 +129,14 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         );
 
         if (!report.isEmpty()) {
-            log.debug("Reporting data usage statistics {}", report.size());
+            if (log.isDebugEnabled()) {
+                log.debug("Reporting data usage statistics {}", report.size());
+            }
+            DonAsynchron.withCallback(Futures.allAsList(futures), unused -> {
+                if (log.isTraceEnabled()) {
+                    log.trace("[{}] Successfully save timeseries for stats report client", ENTITY_ID_TOTAL);
+                }
+            }, throwable -> log.error("[{}] Failed to save timeseries", ENTITY_ID_TOTAL));
         }
     }
 
@@ -138,6 +154,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             log.error(message);
             throw new RuntimeException(message);
         }
+    }
+
+    private long getStartOfCurrentMinute() {
+        return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
 }

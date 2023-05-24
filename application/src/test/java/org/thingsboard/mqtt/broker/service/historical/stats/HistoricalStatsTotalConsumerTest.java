@@ -39,6 +39,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.INCOMING_MSGS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
 
@@ -60,6 +61,7 @@ public class HistoricalStatsTotalConsumerTest {
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
                 null, null, null, null, null, timeseriesService
         ));
+        historicalStatsTotalConsumer.setTotalMessageCounter(initAndGetTotalMessageMap());
     }
 
 
@@ -283,6 +285,14 @@ public class HistoricalStatsTotalConsumerTest {
                 .build();
 
         return new TbProtoQueueMsg<>(statsMsg);
+    }
+
+    private Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> initAndGetTotalMessageMap() {
+        Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> totalMessageCounter = new HashMap<>();
+        for (String key : HISTORICAL_KEYS_STATS) {
+            totalMessageCounter.put(key, new HistoricalStatsTotalConsumer.TsMsgTotalPair());
+        }
+        return totalMessageCounter;
     }
 
 }
