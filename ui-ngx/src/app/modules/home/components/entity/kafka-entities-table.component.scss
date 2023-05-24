@@ -19,38 +19,6 @@
   width: 100%;
   height: 100%;
 
-  .tb-entity-table {
-    .tb-entity-table-content {
-      width: 100%;
-      height: 100%;
-
-      .mat-toolbar-tools{
-        min-height: auto;
-      }
-
-      .title-container{
-        overflow: hidden;
-      }
-
-      .tb-entity-table-title {
-        padding-right: 20px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .table-container {
-        overflow: auto;
-      }
-
-      .tb-entity-table-info{
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-    }
-  }
-
   @media #{$mat-xs} {
     .mat-toolbar {
       height: auto;
@@ -71,13 +39,13 @@
   }
 }
 
-:host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {
-  opacity: 1 !important;
-}
-
 :host ::ng-deep {
   mat-header-row {
     height: 30px !important;
+  }
+
+  .mat-row, .mat-header-row {
+    cursor: unset;
   }
 
   mat-footer-row, mat-row {
@@ -125,6 +93,10 @@
   }
 
   .mat-drawer-content {
-    overflow: hidden;
+    overflow: auto;
   }
+}
+
+:host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {
+  opacity: 1 !important;
 }
