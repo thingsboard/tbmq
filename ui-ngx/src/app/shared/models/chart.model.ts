@@ -123,15 +123,19 @@ export function homeChartJsParams() {
         x: {
           type: 'time',
           display: true,
-          offsetAfterAutoskip: false,
           time: {
+            round: 'minute',
+            tooltipFormat: 'HH:mm:ss',
             displayFormats: {
               minute: 'HH:mm'
             }
           },
           ticks: {
+            source: 'auto',
+            autoSkip: true,
+            maxRotation: 0,
             major: {
-              enabled: false
+              enabled: true
             },
             font: {
               size: 9
