@@ -21,7 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
 import { AggregationType } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
-import { TimeseriesData, TOTAL_KEY } from '@shared/models/chart.model';
+import { TimeseriesData } from '@shared/models/chart.model';
 
 export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
 export const chartKeysBroker = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs'];
@@ -63,7 +63,11 @@ export class StatsService {
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
-    return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
+    return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig({
+      ignoreLoading: true,
+      ignoreErrors: true,
+      resendRequest: false
+    }));
   }
 
   public saveTelemetry(entityId: string, data, config?: RequestConfig): Observable<TimeseriesData> {
