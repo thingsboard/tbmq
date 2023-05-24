@@ -41,6 +41,8 @@ import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.ENTITY_ID_TOTAL;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SESSIONS;
@@ -128,14 +131,18 @@ public class HistoricalStatsTotalConsumer {
     }
 
     private void processSessionAndSubscriptionStatsTotal() {
+        long ts = getStartOfCurrentMinute();
         long clientSessionCount = clientSessionService.getClientSessionsCount();
         long clientSubscriptionCount = clientSubscriptionService.getClientSubscriptionsCount();
-
         List<TsKvEntry> entries = new ArrayList<>();
-        entries.add(new BasicTsKvEntry(System.currentTimeMillis(),
-                new LongDataEntry(SESSIONS, clientSessionCount)));
-        entries.add(new BasicTsKvEntry(System.currentTimeMillis(),
-                new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
+        if (clientSessionCount != 0) {
+            entries.add(new BasicTsKvEntry(ts,
+                    new LongDataEntry(SESSIONS, clientSessionCount)));
+        }
+        if (clientSubscriptionCount != 0) {
+            entries.add(new BasicTsKvEntry(ts,
+                    new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
+        }
 
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
         DonAsynchron.withCallback(savedTsFuture, unused -> {
@@ -231,6 +238,10 @@ public class HistoricalStatsTotalConsumer {
         if (consumer != null) {
             consumer.unsubscribeAndClose();
         }
+    }
+
+    private long getStartOfCurrentMinute() {
+        return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
     @Data
