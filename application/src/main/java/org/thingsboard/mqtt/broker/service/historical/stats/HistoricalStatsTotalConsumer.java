@@ -144,6 +144,8 @@ public class HistoricalStatsTotalConsumer {
                     new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
         }
 
+        if (entries.isEmpty()) return;
+
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
         DonAsynchron.withCallback(savedTsFuture, unused -> {
             if (log.isTraceEnabled()) {
