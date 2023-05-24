@@ -44,6 +44,8 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
   hasX509AuthCredentials: Observable<boolean>;
   overviewConfig: Observable<BrokerConfig>;
 
+  tooltipContent = (type) => `<span>${this.translate.instant('config.warning', {type: this.translate.instant(type)})}</span>`;
+
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,

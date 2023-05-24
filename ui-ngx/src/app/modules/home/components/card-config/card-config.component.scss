@@ -50,7 +50,27 @@
     line-height: 9px;
   }
 
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
+  .tooltip-text {
+    visibility: hidden;
+    position: absolute;
+    z-index: 2;
+    width: 200px;
+    color: #1e1e1e;
+    font-size: 12px;
+    background-color: rgb(255, 244, 229);
+    border-radius: 10px;
+    padding: 10px 15px 10px 15px;
+    top: -8px;
+    left: 120%;
+  }
+
+  .hover-text:hover .tooltip-text {
+    visibility: visible;
+  }
+
+  .hover-text {
+    position: relative;
+    display: inline-block;
+    text-align: left;
   }
 }

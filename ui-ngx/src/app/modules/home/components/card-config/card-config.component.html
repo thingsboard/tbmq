@@ -44,9 +44,10 @@
           <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
                         || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
                         && !item.value">
-            <mat-icon class="config-material-icon-warning" matTooltipPosition="right" matTooltipHideDelay="5000" matTooltip="{{'config.warning' | translate}} {{securityParameterConfigMap.get(item.key)}}">
-              warning
-            </mat-icon>
+            <section class="hover-text">
+              <mat-icon class="config-material-icon-warning">warning</mat-icon>
+              <span class="tooltip-text" [innerHTML]="tooltipContent(configParamsTranslationMap.get(item.key))"></span>
+            </section>
           </span>
         </div>
       </div>
