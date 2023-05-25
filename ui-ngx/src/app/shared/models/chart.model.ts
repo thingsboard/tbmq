@@ -139,7 +139,10 @@ export function homeChartJsParams() {
             },
             font: {
               size: 8
-            }
+            },
+            callback(val, index) {
+              return (index === 0 || index === 4) ? val : ''; // Show only first tick label
+            },
           },
           grid: {
             display: true,
@@ -309,7 +312,10 @@ export function monitoringChartJsParams() {
             autoSkip: true,
             font: {
               size: 9
-            }
+            },
+            callback(val, index) {
+              return index % 2 === 0 ? val : ''; // Hide every 2nd tick label
+            },
           },
           grid: {
             display: true,
