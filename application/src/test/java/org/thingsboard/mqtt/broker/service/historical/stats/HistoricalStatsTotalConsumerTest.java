@@ -39,8 +39,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.INCOMING_MSGS;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
 
 
@@ -61,9 +61,8 @@ public class HistoricalStatsTotalConsumerTest {
         historicalStatsTotalConsumer = spy(new HistoricalStatsTotalConsumer(
                 null, null, null, null, null, timeseriesService
         ));
-        historicalStatsTotalConsumer.setTotalMessageCounter(initAndGetTotalMessageMap());
+        historicalStatsTotalConsumer.setTotalStatsMap(initAndGetTotalMessageMap());
     }
-
 
     @Test
     public void givenStatsMsg_whenReceiveIncomingMessage_thenCalculateTsTotalStatsForIncomingMsgs() {
@@ -137,13 +136,13 @@ public class HistoricalStatsTotalConsumerTest {
         var futuresEntry = Futures.immediateFuture(entries);
         when(timeseriesService.findLatest(any(), any())).thenReturn(futuresEntry);
 
-        int nextTsMsg = 100;
+        int nextMsgTs = 100;
 
         var msg1 = buildMessage(INCOMING_MSGS, 5);
         var msg2 = buildMessage(INCOMING_MSGS, 10);
         var msg3 = buildMessage(INCOMING_MSGS, 25);
-        var msg4 = buildMessageWithDifferentTs(INCOMING_MSGS, 10, nextTsMsg);
-        var msg5 = buildMessageWithDifferentTs(INCOMING_MSGS, 13, nextTsMsg);
+        var msg4 = buildMessageWithDifferentTs(INCOMING_MSGS, 10, nextMsgTs);
+        var msg5 = buildMessageWithDifferentTs(INCOMING_MSGS, 13, nextMsgTs);
 
         List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
@@ -289,7 +288,7 @@ public class HistoricalStatsTotalConsumerTest {
 
     private Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> initAndGetTotalMessageMap() {
         Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> totalMessageCounter = new HashMap<>();
-        for (String key : HISTORICAL_KEYS_STATS) {
+        for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             totalMessageCounter.put(key, new HistoricalStatsTotalConsumer.TsMsgTotalPair());
         }
         return totalMessageCounter;

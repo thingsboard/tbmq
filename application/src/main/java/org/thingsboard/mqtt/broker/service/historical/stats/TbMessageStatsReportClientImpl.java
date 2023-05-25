@@ -46,8 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.time.ZoneOffset.UTC;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.ENTITY_ID_TOTAL;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.HISTORICAL_KEYS_STATS;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 
 @Component
 @Slf4j
@@ -77,7 +76,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         serviceId = serviceInfoProvider.getServiceId();
         historicalStatsProducer = historicalDataQueueFactory.createProducer(serviceId);
         stats = new ConcurrentHashMap<>();
-        for (String key : HISTORICAL_KEYS_STATS) {
+        for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             stats.put(key, new AtomicLong(0));
         }
     }
@@ -92,7 +91,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void reportStats(long ts) {
         List<ToUsageStatsMsgProto> report = new ArrayList<>();
 
-        for (String key : HISTORICAL_KEYS_STATS) {
+        for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             long value = stats.get(key).get();
             if (value == 0) continue;
 
@@ -134,9 +133,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             }
             DonAsynchron.withCallback(Futures.allAsList(futures), unused -> {
                 if (log.isTraceEnabled()) {
-                    log.trace("[{}] Successfully save timeseries for stats report client", ENTITY_ID_TOTAL);
+                    log.trace("[{}] Successfully saved timeseries for stats report client", serviceId);
                 }
-            }, throwable -> log.error("[{}] Failed to save timeseries", ENTITY_ID_TOTAL));
+            }, throwable -> log.error("[{}] Failed to save timeseries", serviceId, throwable));
         }
     }
 

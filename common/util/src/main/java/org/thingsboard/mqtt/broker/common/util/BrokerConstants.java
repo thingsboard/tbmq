@@ -28,10 +28,9 @@ public class BrokerConstants {
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
 
-    public static final List<String> HISTORICAL_KEYS_STATS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS);
+    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS);
 
     public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS);
-
 
     public static final byte[] LOCAL_ADR;
 

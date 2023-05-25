@@ -61,7 +61,7 @@ public class KafkaHistoricalDataQueueFactory implements HistoricalDataQueueFacto
         this.topicConfigs = QueueUtil.getConfigs(historicalDataTotalKafkaSettings.getTopicProperties());
         String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
         if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
-            log.warn("Application persistent message topic must have only 1 partition.");
+            log.warn("Historical data topic must have only 1 partition.");
         }
         topicConfigs.put(QueueConstants.PARTITIONS, "1");
     }
