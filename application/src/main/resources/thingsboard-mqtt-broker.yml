@@ -483,9 +483,9 @@ stats:
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
 
 historical-data-report:
-  enabled: "${REPORT_ENABLED:true}"
-  interval: "${REPORT_INTERVAL:5}" #time in minutes (1-60) to process historical data statistics
-  zone: "${REPORT_ZONE:UTC}"
+  enabled: "${HISTORICAL_DATA_REPORT_ENABLED:true}"
+  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:5}" #time in minutes (1-60) to process historical data statistics
+  zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
 management:
   endpoints:
