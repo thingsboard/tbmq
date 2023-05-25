@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
@@ -81,6 +82,8 @@ public class MsgDispatcherServiceImplTest {
     SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
     @MockBean
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    @MockBean
+    TbMessageStatsReportClient tbMessageStatsReportClient;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
