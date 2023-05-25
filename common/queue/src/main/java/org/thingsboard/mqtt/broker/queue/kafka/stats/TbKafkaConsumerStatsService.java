@@ -26,7 +26,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;

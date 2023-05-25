@@ -39,17 +39,17 @@ public class StubApplicationProcessorStats implements ApplicationProcessorStats 
     }
 
     @Override
-    public void logPubAckLatency(long amount, TimeUnit unit) {
+    public void logPubAckLatency(long startTime, TimeUnit unit) {
 
     }
 
     @Override
-    public void logPubRecLatency(long amount, TimeUnit unit) {
+    public void logPubRecLatency(long startTime, TimeUnit unit) {
 
     }
 
     @Override
-    public void logPubCompLatency(long amount, TimeUnit unit) {
+    public void logPubCompLatency(long startTime, TimeUnit unit) {
 
     }
 

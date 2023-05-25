@@ -18,8 +18,6 @@ package org.thingsboard.mqtt.broker.dao.sqlts.sql;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.thingsboard.mqtt.broker.dao.sqlts.insert.sql.SqlPartitioningRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,8 +31,7 @@ public class JpaSqlTimeseriesDaoTest {
 
     @Before
     public void setUp() {
-        SqlPartitioningRepository partitioningRepository = Mockito.mock(SqlPartitioningRepository.class);
-        jpaSqlTimeseriesDao = new JpaSqlTimeseriesDao(partitioningRepository);
+        jpaSqlTimeseriesDao = new JpaSqlTimeseriesDao(null);
     }
 
     @Test

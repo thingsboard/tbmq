@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import lombok.Getter;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 
 @Getter
 public class DisconnectReason {

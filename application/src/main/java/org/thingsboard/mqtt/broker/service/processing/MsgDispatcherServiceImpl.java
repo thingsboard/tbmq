@@ -20,13 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -200,7 +201,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private void processSubscription(Subscription subscription, PublishMsgProto publishMsgProto,
                                      List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
         if (isPersistentBySubInfo(subscription)) {
-            if (ClientType.APPLICATION == subscription.getClientSession().getClientType()) {
+            if (ClientType.APPLICATION == subscription.getClientSessionInfo().getType()) {
                 applicationSubscriptions.add(subscription);
             } else {
                 deviceSubscriptions.add(subscription);
@@ -323,7 +324,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
         return subscriptions
                 .stream()
-                .filter(subscription -> subscription.getClientSession().isConnected())
+                .filter(subscription -> subscription.getClientSessionInfo().isConnected())
                 .findAny()
                 .orElse(null);
     }
@@ -338,13 +339,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         );
     }
 
-    private ClientSession createDummyClientSession(SharedSubscription sharedSubscription) {
-        return new ClientSession(false,
-                SessionInfo.builder()
-                        .clientInfo(ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey()))
-                        .cleanStart(false)
-                        .sessionExpiryInterval(1000)
-                        .build());
+    private ClientSessionInfo createDummyClientSession(SharedSubscription sharedSubscription) {
+        ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey());
+        return ClientSessionInfo.builder()
+                .connected(false)
+                .clientId(clientInfo.getClientId())
+                .type(clientInfo.getType())
+                .clientIpAdr(clientInfo.getClientIpAdr())
+                .cleanStart(false)
+                .sessionExpiryInterval(1000)
+                .build();
     }
 
     List<Subscription> collectSubscriptions(
@@ -372,8 +376,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
         String clientId = clientSubscription.getValue().getClientId();
-        ClientSession clientSession = clientSessionCache.getClientSession(clientId);
-        if (clientSession == null) {
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
+        if (clientSessionInfo == null) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Client session not found for existent client subscription.", clientId);
             }
@@ -382,7 +386,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return new Subscription(
                 clientSubscription.getTopicFilter(),
                 clientSubscription.getValue().getQosValue(),
-                clientSession,
+                clientSessionInfo,
                 clientSubscription.getValue().getShareName(),
                 clientSubscription.getValue().getOptions());
     }
@@ -434,17 +438,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {
-        return getSessionInfo(subscription).isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
+        return subscription.getClientSessionInfo().isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
     private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
-        var targetServiceId = getSessionInfo(subscription).getServiceId();
-        var clientId = getSessionInfo(subscription).getClientInfo().getClientId();
+        var targetServiceId = subscription.getClientSessionInfo().getServiceId();
+        var clientId = subscription.getClientSessionInfo().getClientId();
         downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
-    }
-
-    private SessionInfo getSessionInfo(Subscription subscription) {
-        return subscription.getClientSession().getSessionInfo();
     }
 
     private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {

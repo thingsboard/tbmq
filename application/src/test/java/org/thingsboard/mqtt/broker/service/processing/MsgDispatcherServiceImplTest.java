@@ -23,10 +23,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
@@ -84,11 +82,11 @@ public class MsgDispatcherServiceImplTest {
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
-    ClientSession clientSession;
+    ClientSessionInfo clientSessionInfo;
 
     @Before
     public void setUp() {
-        clientSession = mock(ClientSession.class);
+        clientSessionInfo = mock(ClientSessionInfo.class);
     }
 
     @Test
@@ -163,21 +161,21 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testFindAnyConnectedSubscription() {
         List<Subscription> subscriptions = List.of(
-                new Subscription("topic1", 1, new ClientSession(false, null)),
-                new Subscription("topic2", 0, new ClientSession(false, null)),
-                new Subscription("topic3", 2, new ClientSession(false, null)),
-                new Subscription("topic4", 0, new ClientSession(false, null)),
-                new Subscription("topic5", 1, new ClientSession(false, null))
+                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
         );
         Subscription subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
         assertNull(subscription);
 
         subscriptions = List.of(
-                new Subscription("topic1", 1, new ClientSession(false, null)),
-                new Subscription("topic2", 0, new ClientSession(false, null)),
-                new Subscription("topic3", 2, new ClientSession(true, null)),
-                new Subscription("topic4", 0, new ClientSession(false, null)),
-                new Subscription("topic5", 1, new ClientSession(false, null))
+                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(true).build()),
+                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
         );
         subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
         assertEquals("topic3", subscription.getTopicFilter());
@@ -185,20 +183,20 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testGetAllSubscriptionsForPubMsg() {
-        ClientSession clientSession1 = mock(ClientSession.class);
-        ClientSession clientSession2 = mock(ClientSession.class);
-        ClientSession clientSession3 = mock(ClientSession.class);
-        ClientSession clientSession4 = mock(ClientSession.class);
+        ClientSessionInfo clientSessionInfo1 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo2 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo3 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo4 = mock(ClientSessionInfo.class);
 
-        mockClientSessionGetClientId(clientSession1, "clientId1");
-        mockClientSessionGetClientId(clientSession2, "clientId2");
-        mockClientSessionGetClientId(clientSession3, "clientId3");
-        mockClientSessionGetClientId(clientSession4, "clientId4");
+        mockClientSessionGetClientId(clientSessionInfo1, "clientId1");
+        mockClientSessionGetClientId(clientSessionInfo2, "clientId2");
+        mockClientSessionGetClientId(clientSessionInfo3, "clientId3");
+        mockClientSessionGetClientId(clientSessionInfo4, "clientId4");
 
-        mockClientSessionCacheGetClientSession("clientId1", clientSession1);
-        mockClientSessionCacheGetClientSession("clientId2", clientSession2);
-        mockClientSessionCacheGetClientSession("clientId3", clientSession3);
-        mockClientSessionCacheGetClientSession("clientId4", clientSession4);
+        mockClientSessionCacheGetClientSession("clientId1", clientSessionInfo1);
+        mockClientSessionCacheGetClientSession("clientId2", clientSessionInfo2);
+        mockClientSessionCacheGetClientSession("clientId3", clientSessionInfo3);
+        mockClientSessionCacheGetClientSession("clientId4", clientSessionInfo4);
 
         var topic = "topic/test";
         QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
@@ -213,8 +211,8 @@ public class MsgDispatcherServiceImplTest {
         )).thenReturn(
                 new SharedSubscriptions(
                         Set.of(
-                                new Subscription("topic/+", 1, clientSession1, "g1", SubscriptionOptions.newInstance()),
-                                new Subscription("topic/+", 1, clientSession2, "g1", SubscriptionOptions.newInstance())
+                                new Subscription("topic/+", 1, clientSessionInfo1, "g1", SubscriptionOptions.newInstance()),
+                                new Subscription("topic/+", 1, clientSessionInfo2, "g1", SubscriptionOptions.newInstance())
                         ),
                         Set.of()
                 )
@@ -261,45 +259,34 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testProcessBasicAndCollectPersistentSubscriptions() {
-        ClientSession clientSession1 = mock(ClientSession.class);
-        ClientSession clientSession2 = mock(ClientSession.class);
-        ClientSession clientSession3 = mock(ClientSession.class);
-        ClientSession clientSession4 = mock(ClientSession.class);
-        ClientSession clientSession5 = mock(ClientSession.class);
+        ClientSessionInfo clientSessionInfo1 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo2 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo3 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo4 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo5 = mock(ClientSessionInfo.class);
 
-        SessionInfo sessionInfo1 = mock(SessionInfo.class);
-        SessionInfo sessionInfo2 = mock(SessionInfo.class);
-        SessionInfo sessionInfo5 = mock(SessionInfo.class);
+        when(clientSessionInfo1.isPersistent()).thenReturn(true);
+        when(clientSessionInfo2.isPersistent()).thenReturn(true);
+        when(clientSessionInfo5.isPersistent()).thenReturn(false);
 
-        when(clientSession1.getSessionInfo()).thenReturn(sessionInfo1);
-        when(clientSession2.getSessionInfo()).thenReturn(sessionInfo2);
-        when(clientSession5.getSessionInfo()).thenReturn(sessionInfo5);
+        when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo5.getType()).thenReturn(ClientType.DEVICE);
 
-        ClientInfo clientInfo5 = mock(ClientInfo.class);
-        when(sessionInfo5.getClientInfo()).thenReturn(clientInfo5);
-
-        when(sessionInfo1.isPersistent()).thenReturn(true);
-        when(sessionInfo2.isPersistent()).thenReturn(true);
-        when(sessionInfo5.isPersistent()).thenReturn(false);
-
-        when(clientSession1.getClientType()).thenReturn(ClientType.APPLICATION);
-        when(clientSession2.getClientType()).thenReturn(ClientType.APPLICATION);
-        when(clientSession5.getClientType()).thenReturn(ClientType.DEVICE);
-
-        mockClientSessionGetClientId(clientSession1, "clientId1");
-        mockClientSessionGetClientId(clientSession2, "clientId2");
+        mockClientSessionGetClientId(clientSessionInfo1, "clientId1");
+        mockClientSessionGetClientId(clientSessionInfo2, "clientId2");
 
         MsgSubscriptions msgSubscriptions = new MsgSubscriptions(
                 List.of(
-                        new Subscription("test/topic/1", 1, clientSession1),
-                        new Subscription("test/+/1", 2, clientSession2)
+                        new Subscription("test/topic/1", 1, clientSessionInfo1),
+                        new Subscription("test/+/1", 2, clientSessionInfo2)
                 ),
                 Set.of(
-                        new Subscription("#", 2, clientSession3),
-                        new Subscription("test/#", 0, clientSession4)
+                        new Subscription("#", 2, clientSessionInfo3),
+                        new Subscription("test/#", 0, clientSessionInfo4)
                 ),
                 List.of(
-                        new Subscription("test/topic/#", 1, clientSession5)
+                        new Subscription("test/topic/#", 1, clientSessionInfo5)
                 )
         );
         QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
@@ -320,20 +307,20 @@ public class MsgDispatcherServiceImplTest {
 
     private List<String> getClientIds(Stream<Subscription> msgSubscriptions) {
         return msgSubscriptions
-                .map(subscription -> subscription.getClientSession().getClientId())
+                .map(subscription -> subscription.getClientSessionInfo().getClientId())
                 .collect(Collectors.toList());
     }
 
-    private void mockClientSessionCacheGetClientSession(String clientId, ClientSession clientSession) {
-        when(clientSessionCache.getClientSession(clientId)).thenReturn(clientSession);
+    private void mockClientSessionCacheGetClientSession(String clientId, ClientSessionInfo clientSessionInfo) {
+        when(clientSessionCache.getClientSessionInfo(clientId)).thenReturn(clientSessionInfo);
     }
 
-    private void mockClientSessionGetClientId(ClientSession clientSession, String clientId) {
-        when(clientSession.getClientId()).thenReturn(clientId);
+    private void mockClientSessionGetClientId(ClientSessionInfo clientSessionInfo, String clientId) {
+        when(clientSessionInfo.getClientId()).thenReturn(clientId);
     }
 
     private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(TOPIC, mqttQoSValue, clientSession, shareName, SubscriptionOptions.newInstance());
+        return new Subscription(TOPIC, mqttQoSValue, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {

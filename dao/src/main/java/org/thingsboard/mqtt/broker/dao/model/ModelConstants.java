@@ -15,10 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
-import com.datastax.oss.driver.api.core.uuid.Uuids;
-
-import java.util.UUID;
-
 public class ModelConstants {
 
     private ModelConstants() {
@@ -31,7 +27,6 @@ public class ModelConstants {
     public static final String CREATED_TIME_PROPERTY = "created_time";
     public static final String ADDITIONAL_INFO_PROPERTY = "additional_info";
     public static final String ENTITY_ID_COLUMN = "entity_id";
-    public static final UUID NULL_UUID = Uuids.startOf(0);
 
     /**
      * Timeseries constants.
