@@ -182,6 +182,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         clearSubscriptions(clientId);
     }
 
+    @Override
+    public int getClientSubscriptionsCount() {
+        return clientSubscriptionsMap.size();
+    }
+
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {

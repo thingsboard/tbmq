@@ -32,4 +32,6 @@ public interface ClientSessionService extends ClientSessionCache {
     void saveClientSession(String clientId, ClientSession clientSession, BasicCallback callback);
 
     void clearClientSession(String clientId, BasicCallback callback);
+
+    int getClientSessionsCount();
 }
