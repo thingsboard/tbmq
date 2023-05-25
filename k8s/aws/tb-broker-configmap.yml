@@ -37,7 +37,7 @@ metadata:
     name: tb-broker-config
 data:
   conf: |
-      export JAVA_OPTS="$JAVA_OPTS -Xmx140g -Xms140g -Xss320k -XX:+AlwaysPreTouch"
+      export JAVA_OPTS="$JAVA_OPTS -Xmx150g -Xms150g -Xss320k -XX:+AlwaysPreTouch"
 
       export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
       export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
