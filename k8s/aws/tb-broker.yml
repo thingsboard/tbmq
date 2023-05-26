@@ -107,7 +107,7 @@ spec:
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG
               value: "max.poll.records:4096;fetch.max.bytes:134217728;fetch.min.bytes:1024"
             - name: TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG
-              value: "linger.ms:25;batch.size:16384;max.in.flight.requests.per.connection:20;buffer.memory:134217728"
+              value: "linger.ms:20;batch.size:16384;max.in.flight.requests.per.connection:20;buffer.memory:134217728"
             - name: TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS
               value: "4096"
             - name: TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES
