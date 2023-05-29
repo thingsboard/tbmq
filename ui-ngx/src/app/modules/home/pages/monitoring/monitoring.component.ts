@@ -79,7 +79,7 @@ export class MonitoringComponent extends PageComponent {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
-    this.generateRandomData();
+    // this.generateRandomData();
   }
 
   ngOnInit() {
