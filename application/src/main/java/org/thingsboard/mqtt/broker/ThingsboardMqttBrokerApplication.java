@@ -22,7 +22,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.Arrays;
 
@@ -30,7 +29,6 @@ import java.util.Arrays;
 @SpringBootConfiguration
 @EnableAsync
 @EnableConfigurationProperties
-@EnableSwagger2
 @EnableScheduling
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 public class ThingsboardMqttBrokerApplication {

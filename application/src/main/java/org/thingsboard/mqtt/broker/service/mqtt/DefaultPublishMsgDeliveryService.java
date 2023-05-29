@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -30,6 +31,8 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
+
 @Slf4j
 @Service
 public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryService {
@@ -37,13 +40,16 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final MqttMessageGenerator mqttMessageGenerator;
     private final RetransmissionService retransmissionService;
     private final DeliveryTimerStats deliveryTimerStats;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
                                             RetransmissionService retransmissionService,
-                                            StatsManager statsManager) {
+                                            StatsManager statsManager,
+                                            TbMessageStatsReportClient tbMessageStatsReportClient) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.retransmissionService = retransmissionService;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
+        this.tbMessageStatsReportClient = tbMessageStatsReportClient;
     }
 
     @Override
@@ -52,6 +58,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
         }
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
+        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
@@ -61,6 +68,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             log.trace("[{}] Sending Pub msg to client without flushing {}", sessionCtx.getClientId(), pubMsg);
         }
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
+        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
     }
 
@@ -107,7 +115,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
-        deliveryTimerStats.logDelivery(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {

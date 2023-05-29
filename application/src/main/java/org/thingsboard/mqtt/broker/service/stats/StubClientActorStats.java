@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 
 import java.util.Collections;
@@ -28,11 +30,11 @@ public class StubClientActorStats implements ClientActorStats {
     }
 
     @Override
-    public void logMsgProcessingTime(String msgType, long amount, TimeUnit unit) {
+    public void logMsgProcessingTime(MsgType msgType, long startTime, TimeUnit unit) {
     }
 
     @Override
-    public void logMsgQueueTime(long amount, TimeUnit unit) {
+    public void logMsgQueueTime(TbActorMsg msg, TimeUnit unit) {
 
     }
 

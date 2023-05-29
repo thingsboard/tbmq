@@ -18,9 +18,9 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
@@ -180,6 +180,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             log.trace("[{}] Clearing all subscriptions internally.", clientId);
         }
         clearSubscriptions(clientId);
+    }
+
+    @Override
+    public int getClientSubscriptionsCount() {
+        return clientSubscriptionsMap.size();
     }
 
     private void clearSubscriptions(String clientId) {

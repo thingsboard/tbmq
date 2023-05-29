@@ -41,4 +41,6 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
     void clearSubscriptionsAndPersist(String clientId, BasicCallback callback);
 
     void clearSubscriptionsInternally(String clientId);
+
+    int getClientSubscriptionsCount();
 }

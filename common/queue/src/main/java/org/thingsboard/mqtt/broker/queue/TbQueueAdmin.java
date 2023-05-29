@@ -46,5 +46,4 @@ public interface TbQueueAdmin {
 
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
 
-    void deleteAppTopics();
 }

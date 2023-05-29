@@ -94,7 +94,7 @@ public class ClientActor extends ContextAwareActor {
     @Override
     protected boolean doProcess(TbActorMsg msg) {
         if (msg instanceof TimedMsg) {
-            clientActorStats.logMsgQueueTime(System.nanoTime() - ((TimedMsg) msg).getMsgCreatedTimeNanos(), TimeUnit.NANOSECONDS);
+            clientActorStats.logMsgQueueTime(msg, TimeUnit.NANOSECONDS);
         }
         clientLogger.logEvent(state.getClientId(), this.getClass(), "Received msg - " + msg.getMsgType());
 
@@ -177,7 +177,7 @@ public class ClientActor extends ContextAwareActor {
             }
             return success;
         } finally {
-            clientActorStats.logMsgProcessingTime(msg.getMsgType().toString(), System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+            clientActorStats.logMsgProcessingTime(msg.getMsgType(), startTime, TimeUnit.NANOSECONDS);
             clientLogger.logEvent(state.getClientId(), this.getClass(), "Finished msg processing - " + msg.getMsgType());
         }
     }

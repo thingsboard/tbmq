@@ -57,13 +57,15 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
     public List<RetainedMsg> getRetainedMessages(String topicFilter) {
         long startTime = System.nanoTime();
         List<RetainedMsg> retainedMsg = retainMsgTrie.get(topicFilter);
-        retainedMsgTimerStats.logRetainedMsgLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        retainedMsgTimerStats.logRetainedMsgLookup(startTime, TimeUnit.NANOSECONDS);
         return retainedMsg;
     }
 
     @Override
     public void clearEmptyTopicNodes() throws RetainMsgTrieClearException {
-        log.trace("Executing clearEmptyTopicNodes");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing clearEmptyTopicNodes");
+        }
         retainMsgTrie.clearEmptyNodes();
     }
 
@@ -73,7 +75,7 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
         try {
             retainMsgTrie.clearEmptyNodes();
         } catch (RetainMsgTrieClearException e) {
-            log.error("Failed to clear empty nodes. Reason - {}.", e.getMessage());
+            log.error("Failed to clear empty nodes.", e);
         }
     }
 }

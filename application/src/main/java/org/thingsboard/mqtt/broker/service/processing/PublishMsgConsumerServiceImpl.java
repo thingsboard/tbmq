@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -28,13 +28,16 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 @Service
@@ -42,16 +45,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService {
 
-    // TODO: remove all cachedThreadPool
-    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("publish-msg-consumer"));
-    private volatile boolean stopped = false;
-
-    @Value("${queue.publish-msg.consumers-count}")
-    private int consumersCount;
-    @Value("${queue.publish-msg.poll-interval}")
-    private long pollDuration;
-    @Value("${queue.publish-msg.pack-processing-timeout}")
-    private long packProcessingTimeout;
+    public static final long MAX_VALUE = 1_000_000_000L;
 
     private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> publishMsgConsumers = new ArrayList<>();
     private final MsgDispatcherService msgDispatcherService;
@@ -60,6 +54,23 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final SubmitStrategyFactory submitStrategyFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+
+    private volatile boolean stopped = false;
+    private ExecutorService consumersExecutor;
+
+    @Value("${queue.publish-msg.threads-count}")
+    private int threadsCount;
+    @Value("${queue.publish-msg.consumers-count}")
+    private int consumersCount;
+    @Value("${queue.publish-msg.poll-interval}")
+    private long pollDuration;
+    @Value("${queue.publish-msg.pack-processing-timeout}")
+    private long packProcessingTimeout;
+
+    @PostConstruct
+    public void init() {
+        consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-msg-consumer");
+    }
 
     @Override
     public void startConsuming() {
@@ -75,6 +86,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
         PublishMsgConsumerStats stats = statsManager.createPublishMsgConsumerStats(consumerId);
+        final AtomicLong counter = new AtomicLong(0);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
@@ -85,8 +97,12 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
 
                     AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
-                    List<PublishMsgWithId> messagesWithId = toPubMsgWithIdList(msgs);
-                    submitStrategy.init(messagesWithId);
+                    long packId = counter.incrementAndGet();
+                    if (packId == MAX_VALUE) {
+                        counter.set(0);
+                    }
+                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgs, packId);
+                    submitStrategy.init(pendingMsgMap);
 
                     long packProcessingStart = System.nanoTime();
                     while (!stopped) {
@@ -132,12 +148,14 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         });
     }
 
-    private List<PublishMsgWithId> toPubMsgWithIdList(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
-        List<PublishMsgWithId> messagesWithId = new ArrayList<>(msgs.size());
+    private Map<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
+        Map<UUID, PublishMsgWithId> publishMsgPendingMap = new LinkedHashMap<>(msgs.size());
+        int i = 0;
         for (var msg : msgs) {
-            messagesWithId.add(new PublishMsgWithId(UUID.randomUUID(), msg.getValue()));
+            UUID id = new UUID(packId, i++);
+            publishMsgPendingMap.put(id, new PublishMsgWithId(id, msg.getValue()));
         }
-        return messagesWithId;
+        return publishMsgPendingMap;
     }
 
 
@@ -145,6 +163,8 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     public void destroy() {
         stopped = true;
         publishMsgConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
-        consumersExecutor.shutdownNow();
+        if (consumersExecutor != null) {
+            consumersExecutor.shutdownNow();
+        }
     }
 }

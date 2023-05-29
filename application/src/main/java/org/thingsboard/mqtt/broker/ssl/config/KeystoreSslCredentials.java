@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.util.Enumeration;
+import java.util.Iterator;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -46,6 +49,18 @@ public class KeystoreSslCredentials extends AbstractSslCredentials {
         KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         try (InputStream tsFileInputStream = ResourceUtils.getInputStream(this, this.storeFile)) {
             keyStore.load(tsFileInputStream, StringUtils.isEmpty(this.storePassword) ? new char[0] : this.storePassword.toCharArray());
+        }
+        Enumeration<String> aliases = keyStore.aliases();
+        int idx = 0;
+        for (Iterator<String> it = aliases.asIterator(); it.hasNext(); ) {
+            Certificate[] certificates = keyStore.getCertificateChain(it.next());
+            if (certificates == null) {
+                continue;
+            }
+            for (Certificate certificate : certificates) {
+                keyStore.setCertificateEntry("root-" + idx, certificate);
+                idx++;
+            }
         }
         return keyStore;
     }

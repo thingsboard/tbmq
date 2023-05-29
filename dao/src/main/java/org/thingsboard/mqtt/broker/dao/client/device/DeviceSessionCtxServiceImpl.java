@@ -19,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.Collection;
@@ -34,26 +34,34 @@ public class DeviceSessionCtxServiceImpl implements DeviceSessionCtxService {
 
     @Override
     public void saveDeviceSessionContexts(Collection<DeviceSessionCtx> deviceSessionContexts) {
-        log.trace("Executing saveDeviceSessionContexts [{}]", deviceSessionContexts);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveDeviceSessionContexts [{}]", deviceSessionContexts);
+        }
         deviceSessionContexts.forEach(this::validate);
         deviceSessionCtxDao.save(deviceSessionContexts);
     }
 
     @Override
     public Collection<DeviceSessionCtx> findAllContexts(Collection<String> clientIds) {
-        log.trace("Executing findAllContexts [{}]", clientIds);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findAllContexts [{}]", clientIds);
+        }
         return deviceSessionCtxDao.findAll(clientIds);
     }
 
     @Override
     public void removeDeviceSessionContext(String clientId) {
-        log.trace("Executing removeDeviceSessionContext [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing removeDeviceSessionContext [{}]", clientId);
+        }
         try {
             deviceSessionCtxDao.removeById(clientId);
         } catch (EmptyResultDataAccessException noDataException) {
-            log.debug("[{}] No session for clientId.", clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No session for clientId.", clientId);
+            }
         } catch (Exception e) {
-            log.warn("[{}] Failed to remove device session context. Reason - {}.", clientId, e.getMessage());
+            log.warn("[{}] Failed to remove device session context.", clientId, e);
         }
     }
 

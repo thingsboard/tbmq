@@ -30,7 +30,7 @@ message SessionInfoProto {
 }
 
 message PublishMsgProto {
-  SessionInfoProto sessionInfo = 1;
+  string clientId = 1;
   int32 packetId = 2;
   bytes payload = 3;
   bool retain = 4;
@@ -125,6 +125,17 @@ message DevicePublishMsgProto {
 message ClientPublishMsgProto {
   string clientId = 1;
   PublishMsgProto publishMsg = 2;
+}
+
+message UsageStatsKVProto {
+  string key = 1;
+  int64 value = 2;
+}
+
+message ToUsageStatsMsgProto {
+  string serviceId = 1;
+  int64 ts = 2;
+  UsageStatsKVProto usageStats = 3;
 }
 
 /**

@@ -31,27 +31,34 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgServiceImpl implements DeviceMsgService {
-    @Value("${mqtt.persistent-session.device.persisted-messages.limit:1000}")
-    private int messagesLimit;
 
     private final DeviceMsgDao deviceMsgDao;
     private final DbConnectionChecker dbConnectionChecker;
 
+    @Value("${mqtt.persistent-session.device.persisted-messages.limit:1000}")
+    private int messagesLimit;
+
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
-        log.debug("Saving {} device publish messages, failOnConflict - {}.", devicePublishMessages.size(), failOnConflict);
+        if (log.isTraceEnabled()) {
+            log.trace("Saving {} device publish messages, failOnConflict - {}.", devicePublishMessages.size(), failOnConflict);
+        }
         deviceMsgDao.save(devicePublishMessages, failOnConflict);
     }
 
     @Override
     public List<DevicePublishMsg> findPersistedMessages(String clientId) {
-        log.trace("[{}] Loading persisted messages.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Loading persisted messages.", clientId);
+        }
         return deviceMsgDao.findPersistedMessages(clientId, messagesLimit);
     }
 
     @Override
     public List<DevicePublishMsg> findPersistedMessages(String clientId, long fromSerialNumber, long toSerialNumber) {
-        log.trace("[{}] Loading persisted messages, fromSerialNumber - {}, toSerialNumber - {}.", clientId, fromSerialNumber, toSerialNumber);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Loading persisted messages, fromSerialNumber - {}, toSerialNumber - {}.", clientId, fromSerialNumber, toSerialNumber);
+        }
         if (fromSerialNumber < 0 || toSerialNumber < 0 || fromSerialNumber > toSerialNumber) {
             throw new RuntimeException("Not valid 'from' and 'to' serial number values");
         }
@@ -63,31 +70,41 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     @Override
     public void removePersistedMessages(String clientId) {
-        log.debug("[{}] Removing persisted messages.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Removing persisted messages.", clientId);
+        }
         try {
             deviceMsgDao.removePersistedMessages(clientId);
         } catch (Exception e) {
-            log.warn("[{}] Failed to remove persisted messages. Reason - {}.", clientId, e.getMessage());
+            log.warn("[{}] Failed to remove persisted messages.", clientId, e);
         }
     }
 
     @Override
     public ListenableFuture<Void> tryRemovePersistedMessage(String clientId, int packetId) {
         if (!dbConnectionChecker.isDbConnected()) {
-            log.trace("[{}] Ignoring remove persisted message request, no DB connection, packetId - {}", clientId, packetId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Ignoring remove persisted message request, no DB connection, packetId - {}", clientId, packetId);
+            }
             return Futures.immediateFuture(null);
         }
-        log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Removing persisted message with packetId {}.", clientId, packetId);
+        }
         return deviceMsgDao.removePersistedMessage(clientId, packetId);
     }
 
     @Override
     public ListenableFuture<Void> tryUpdatePacketReceived(String clientId, int packetId) {
         if (!dbConnectionChecker.isDbConnected()) {
-            log.trace("[{}] Ignoring update packet request, no DB connection, packetId - {}", clientId, packetId);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Ignoring update packet request, no DB connection, packetId - {}", clientId, packetId);
+            }
             return Futures.immediateFuture(null);
         }
-        log.trace("[{}] Updating packet type to PUBREL for packetId {}.", clientId, packetId);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Updating packet type to PUBREL for packetId {}.", clientId, packetId);
+        }
         return deviceMsgDao.updatePacketType(clientId, packetId, PersistedPacketType.PUBREL);
     }
 }

@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 @Slf4j
@@ -30,6 +31,10 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
 
     @Override
     public PublishMsg process(PublishMsg publishMsg) {
+        if (publishMsg.getByteBuf() != null && publishMsg.getPayload() == null) {
+            byte[] payload = NettyMqttConverter.toBytes(publishMsg.getByteBuf());
+            publishMsg = publishMsg.toBuilder().payload(payload).build();
+        }
         return processRetainedMsg(publishMsg);
     }
 

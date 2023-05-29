@@ -19,18 +19,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.queue.publish.TbPublishBlockingQueue;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
+import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
@@ -39,48 +40,56 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     private final ClientLogger clientLogger;
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
-    private final ProducerStatsManager statsManager;
 
-    @Value("${queue.device-persisted-msg.publisher-thread-max-delay}")
-    private long maxDelay;
+    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
-    private TbPublishBlockingQueue<QueueProtos.PublishMsgProto> publisherQueue;
+    @Value("${mqtt.handler.device_msg_callback_threads:0}")
+    private int threadsCount;
+
+    private ExecutorService callbackProcessor;
 
     @PostConstruct
     public void init() {
-        this.publisherQueue = TbPublishBlockingQueue.<QueueProtos.PublishMsgProto>builder()
+        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-msg-callback-processor");
+        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
                 .queueName("deviceMsg")
                 .producer(devicePersistenceMsgQueueFactory.createProducer())
-                .maxDelay(maxDelay)
-                .statsManager(statsManager)
                 .build();
-        this.publisherQueue.init();
+        this.publisher.init();
     }
 
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Sending msg in DEVICE Queue");
-        publisherQueue.add(new TbProtoQueueMsg<>(clientId, msgProto),
+        publisher.send(new TbProtoQueueMsg<>(clientId, msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
-                        if (log.isTraceEnabled()) {
-                            log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
-                        }
-                        callback.onSuccess();
+                        callbackProcessor.submit(() -> {
+                            clientLogger.logEvent(clientId, this.getClass(), "Sent msg in DEVICE Queue");
+                            if (log.isTraceEnabled()) {
+                                log.trace("[{}] Successfully sent publish msg to the queue.", clientId);
+                            }
+                            callback.onSuccess();
+                        });
                     }
+
                     @Override
                     public void onFailure(Throwable t) {
-                        log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
-                                clientId, msgProto.getTopicName(), t);
-                        callback.onFailure(t);
+                        callbackProcessor.submit(() -> {
+                            log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
+                                    clientId, msgProto.getTopicName(), t);
+                            callback.onFailure(t);
+                        });
                     }
                 });
     }
 
     @PreDestroy
     public void destroy() {
-        publisherQueue.destroy();
+        publisher.destroy();
+        if (callbackProcessor != null) {
+            callbackProcessor.shutdownNow();
+        }
     }
 }

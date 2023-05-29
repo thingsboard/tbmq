@@ -18,5 +18,5 @@ package org.thingsboard.mqtt.broker.service.stats.timer;
 import java.util.concurrent.TimeUnit;
 
 public interface SubscriptionTimerStats {
-    void logSubscriptionsLookup(long amount, TimeUnit unit);
+    void logSubscriptionsLookup(long startTime, TimeUnit unit);
 }

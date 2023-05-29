@@ -45,10 +45,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
+
     private final AtomicInteger size;
     private final AtomicLong nodesCount;
     private final Node<T> root = new Node<>();
-
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Setter
@@ -106,12 +106,18 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     }
 
     private List<ValueWithTopicFilter<T>> wrapValuesWithTopicFilter(String topicFilter, Collection<T> values) {
-        return values.stream().map(value -> new ValueWithTopicFilter<>(value, topicFilter)).collect(Collectors.toList());
+        List<ValueWithTopicFilter<T>> result = new ArrayList<>(values.size());
+        for (T value : values) {
+            result.add(new ValueWithTopicFilter<>(value, topicFilter));
+        }
+        return result;
     }
 
     @Override
     public void put(String topicFilter, T val) {
-        log.trace("Executing put [{}] [{}]", topicFilter, val);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing put [{}] [{}]", topicFilter, val);
+        }
         if (topicFilter == null || val == null) {
             throw new IllegalArgumentException("Topic filter or value cannot be null");
         }
@@ -147,7 +153,9 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     @Override
     public boolean delete(String topicFilter, Predicate<T> deletionFilter) {
-        log.trace("Executing delete [{}]", topicFilter);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing delete [{}]", topicFilter);
+        }
         if (topicFilter == null || deletionFilter == null) {
             throw new IllegalArgumentException("Topic filter or deletionFilter cannot be null");
         }
@@ -171,7 +179,9 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
 
     @Override
     public void clearEmptyNodes() throws SubscriptionTrieClearException {
-        log.trace("Executing clearEmptyNodes");
+        if (log.isTraceEnabled()) {
+            log.trace("Executing clearEmptyNodes");
+        }
         acquireClearTrieLock();
         long nodesBefore = nodesCount.get();
         long clearStartTime = System.currentTimeMillis();
@@ -179,13 +189,13 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
             clearEmptyChildren(root);
             long nodesAfter = nodesCount.get();
             long clearEndTime = System.currentTimeMillis();
-            log.debug("Clearing trie took {} ms, cleared {} nodes.",
-                    clearEndTime - clearStartTime, nodesBefore - nodesAfter);
+            if (log.isDebugEnabled()) {
+                log.debug("Clearing trie took {} ms, cleared {} nodes.",
+                        clearEndTime - clearStartTime, nodesBefore - nodesAfter);
+            }
         } catch (Exception e) {
             long nodesAfter = nodesCount.get();
-            log.error("Failed on clearing empty nodes. Managed to clear {} nodes. Reason - {}.",
-                    nodesBefore - nodesAfter, e.getMessage());
-            log.debug("Detailed error:", e);
+            log.error("Failed on clearing empty nodes. Managed to clear {} nodes.", nodesBefore - nodesAfter, e);
         } finally {
             lock.writeLock().unlock();
         }

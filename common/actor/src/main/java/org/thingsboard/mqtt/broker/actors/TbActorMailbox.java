@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 @Slf4j
 @Data
 public final class TbActorMailbox implements TbActorCtx {
+
     private static final boolean HIGH_PRIORITY = true;
     private static final boolean NORMAL_PRIORITY = false;
 
@@ -49,6 +50,9 @@ public final class TbActorMailbox implements TbActorCtx {
     private final AtomicBoolean busy = new AtomicBoolean(FREE);
     private final AtomicBoolean ready = new AtomicBoolean(NOT_READY);
     private final AtomicBoolean destroyInProgress = new AtomicBoolean();
+
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+    private final boolean isDebugEnabled = log.isDebugEnabled();
 
     public void initActor() {
         dispatcher.getExecutor().execute(() -> tryInit(1));
@@ -110,17 +114,17 @@ public final class TbActorMailbox implements TbActorCtx {
                 if (busy.compareAndSet(FREE, BUSY)) {
                     dispatcher.getExecutor().execute(this::processMailbox);
                 } else {
-                    if (log.isTraceEnabled()) {
+                    if (isTraceEnabled) {
                         log.trace("[{}] MessageBox is busy, new msg: {}", selfId, newMsg);
                     }
                 }
             } else {
-                if (log.isTraceEnabled()) {
+                if (isTraceEnabled) {
                     log.trace("[{}] MessageBox is empty, new msg: {}", selfId, newMsg);
                 }
             }
         } else {
-            if (log.isTraceEnabled()) {
+            if (isTraceEnabled) {
                 log.trace("[{}] MessageBox is not ready, new msg: {}", selfId, newMsg);
             }
         }
@@ -135,12 +139,12 @@ public final class TbActorMailbox implements TbActorCtx {
             }
             if (msg != null) {
                 try {
-                    if (log.isDebugEnabled()) {
+                    if (isDebugEnabled) {
                         log.debug("[{}] Going to process message: {}", selfId, msg);
                     }
                     actor.process(msg);
                 } catch (Throwable t) {
-                    if (log.isDebugEnabled()) {
+                    if (isDebugEnabled) {
                         log.debug("[{}] Failed to process message: {}", selfId, msg, t);
                     }
                     ProcessFailureStrategy strategy = actor.onProcessFailure(t);

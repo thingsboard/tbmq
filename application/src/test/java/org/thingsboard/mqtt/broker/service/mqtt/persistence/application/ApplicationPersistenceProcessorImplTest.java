@@ -50,7 +50,8 @@ import java.util.stream.Collectors;
 @ContextConfiguration(classes = ApplicationPersistenceProcessorImpl.class)
 @TestPropertySource(properties = {
         "queue.application-persisted-msg.poll-interval=100",
-        "queue.application-persisted-msg.pack-processing-timeout=2000"
+        "queue.application-persisted-msg.pack-processing-timeout=2000",
+        "queue.application-persisted-msg.threads-count=1"
 })
 @Slf4j
 public class ApplicationPersistenceProcessorImplTest {

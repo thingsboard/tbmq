@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.publish;
+package org.thingsboard.mqtt.broker.service.security.auth.rest;
 
-import com.google.protobuf.GeneratedMessageV3;
-import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import lombok.Data;
 
-public interface TbPublishQueue<PROTO extends GeneratedMessageV3> {
-    void init();
+@Data
+public class LoginResponse {
 
-    void destroy();
+    private String token;
+    private String refreshToken;
 
-    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback);
-
-    void add(TbProtoQueueMsg<PROTO> msg, TbQueueCallback callback, String topic);
 }

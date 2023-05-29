@@ -24,7 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentialsConfig;
 
@@ -83,23 +83,38 @@ public class MqttSslHandlerProvider {
             TrustManager[] tm = {x509wrapped};
             if (StringUtils.isEmpty(sslProtocol)) {
                 sslProtocol = "TLS";
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("sslProtocol is set to {}", sslProtocol);
+                }
             }
             SSLContext sslContext = SSLContext.getInstance(sslProtocol);
             sslContext.init(km, tm, null);
             return sslContext;
         } catch (Exception e) {
-            log.error("Unable to set up SSL context. Reason: " + e.getMessage(), e);
+            log.error("Unable to set up SSL context.", e);
             throw new RuntimeException("Failed to get SSL context", e);
         }
     }
 
-    private TrustManager getX509TrustManager(TrustManagerFactory tmf) throws Exception {
+    private TrustManager getX509TrustManager(TrustManagerFactory tmf) {
         X509TrustManager x509Tm = null;
+        if (tmf.getTrustManagers().length == 0) {
+            if (log.isDebugEnabled()) {
+                log.debug("TrustManagers of TrustManagerFactory is empty!");
+            }
+        }
         for (TrustManager tm : tmf.getTrustManagers()) {
             if (tm instanceof X509TrustManager) {
                 x509Tm = (X509TrustManager) tm;
+                if (log.isDebugEnabled()) {
+                    log.debug("Found X509TrustManager {}", x509Tm);
+                }
                 break;
             }
+        }
+        if (x509Tm == null && log.isDebugEnabled()) {
+            log.debug("X509TrustManager was not found!");
         }
         return new ThingsboardMqttX509TrustManager(x509Tm);
     }

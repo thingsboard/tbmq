@@ -21,22 +21,32 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.common.data.kv.*;
+import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
+import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.BaseTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.TsData;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
@@ -107,22 +117,6 @@ public class TimeseriesController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{entityId}/delete", method = RequestMethod.DELETE)
-    @ResponseBody
-    public DeferredResult<ResponseEntity> deleteEntityTimeseries(
-            @PathVariable("entityId") String entityId,
-            @RequestParam(name = "keys") String keysStr,
-            @RequestParam(name = "deleteAllDataForKeys", defaultValue = "false") boolean deleteAllDataForKeys,
-            @RequestParam(name = "startTs", required = false) Long startTs,
-            @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
-        try {
-            return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
-        } catch (Exception e) {
-            throw handleException(e);
-        }
-    }
-
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{entityId}/save", method = RequestMethod.POST)
     @ResponseBody
     public DeferredResult<ResponseEntity> saveEntityTelemetry(
@@ -173,6 +167,22 @@ public class TimeseriesController extends BaseController {
         return result;
     }
 
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{entityId}/delete", method = RequestMethod.DELETE)
+    @ResponseBody
+    public DeferredResult<ResponseEntity> deleteEntityTimeseries(
+            @PathVariable("entityId") String entityId,
+            @RequestParam(name = "keys") String keysStr,
+            @RequestParam(name = "deleteAllDataForKeys", defaultValue = "false") boolean deleteAllDataForKeys,
+            @RequestParam(name = "startTs", required = false) Long startTs,
+            @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
+        try {
+            return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
     private DeferredResult<ResponseEntity> deleteTimeseries(String entityId, String keysStr, boolean deleteAllDataForKeys,
                                                             Long startTs, Long endTs) throws ThingsboardException {
         List<String> keys = toKeysList(keysStr);
@@ -220,8 +230,15 @@ public class TimeseriesController extends BaseController {
         return new FutureCallback<>() {
             @Override
             public void onSuccess(List<TsKvEntry> data) {
+                if (CollectionUtils.isEmpty(data)) {
+                    response.setResult(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                    return;
+                }
                 Map<String, List<TsData>> result = new LinkedHashMap<>();
                 for (TsKvEntry entry : data) {
+                    if (entry == null) {
+                        continue;
+                    }
                     Object value = useStrictDataTypes ? entry.getValue() : entry.getValueAsString();
                     result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(new TsData(entry.getTs(), value));
                 }

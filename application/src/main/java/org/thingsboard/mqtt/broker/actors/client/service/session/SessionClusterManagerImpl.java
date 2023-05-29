@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
@@ -32,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -122,7 +122,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
 
         if (currentClientSessionPresentAndConnected(currentClientSession)) {
-            disconnectCurrentSession(currentClientSession, currentClientSessionId, sessionInfo);
+            boolean sessionRemoved = disconnectCurrentSession(currentClientSession, currentClientSessionId, sessionInfo);
+            if (sessionRemoved) {
+                currentClientSession = null;
+            }
         }
 
         PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentClientSession);
@@ -189,7 +192,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     log.debug("[{}] Client session is already disconnected.", clientId);
                 }
             } else {
-                finishDisconnect(clientSession, false, msg.getSessionExpiryInterval());
+                finishDisconnect(clientSession, msg.getSessionExpiryInterval());
             }
         }
     }
@@ -248,25 +251,19 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         applicationTopicService.deleteTopic(clientId, CallbackUtil.createCallback(callback::onSuccess, callback::onFailure));
     }
 
-    private void finishDisconnect(ClientSession clientSession, boolean forceClearSession, int sessionExpiryInterval) {
+    private boolean finishDisconnect(ClientSession clientSession, int sessionExpiryInterval) {
         SessionInfo sessionInfo = clientSession.getSessionInfo();
         String clientId = sessionInfo.getClientInfo().getClientId();
         if (log.isTraceEnabled()) {
-            log.trace("[{}] Finishing client session disconnection.", clientId);
-        }
-        if (forceClearSession) {
-            if (sessionInfo.isPersistent()) {
-                clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
-            }
-            clearSessionAndSubscriptions(clientId);
-            return;
+            log.trace("[{}] Finishing client session disconnection [{}].", clientId, sessionInfo);
         }
         if (sessionInfo.isPersistent()) {
             ClientSession disconnectedClientSession = markSessionDisconnected(clientSession, sessionExpiryInterval);
             saveClientSession(clientId, disconnectedClientSession);
-            return;
+            return false;
         }
         clearSessionAndSubscriptions(clientId);
+        return true;
     }
 
     private ClientSession markSessionDisconnected(ClientSession clientSession, int sessionExpiryInterval) {
@@ -388,7 +385,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         clientSessionService.clearClientSession(clientId, null);
     }
 
-    private void disconnectCurrentSession(ClientSession currentClientSession, UUID currentClientSessionId, SessionInfo sessionInfo) {
+    private boolean disconnectCurrentSession(ClientSession currentClientSession, UUID currentClientSessionId, SessionInfo sessionInfo) {
         String clientId = sessionInfo.getClientInfo().getClientId();
         String currentSessionServiceId = currentClientSession.getSessionInfo().getServiceId();
         if (log.isTraceEnabled()) {
@@ -396,7 +393,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     clientId, currentSessionServiceId, currentClientSessionId);
         }
         disconnectCurrentSession(currentSessionServiceId, clientId, currentClientSessionId, sessionInfo.isCleanStart());
-        finishDisconnect(currentClientSession, true, -1);
+        return finishDisconnect(currentClientSession, -1);
     }
 
     private UUID getCurrentClientSessionIdIfPresent(ClientSession currentlyConnectedSession) {

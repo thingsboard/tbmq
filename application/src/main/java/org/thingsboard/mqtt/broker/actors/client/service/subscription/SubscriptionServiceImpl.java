@@ -78,7 +78,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
         long startTime = System.nanoTime();
         List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
-        subscriptionTimerStats.logSubscriptionsLookup(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        subscriptionTimerStats.logSubscriptionsLookup(startTime, TimeUnit.NANOSECONDS);
         return subscriptions;
     }
 
@@ -96,7 +96,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         try {
             subscriptionTrie.clearEmptyNodes();
         } catch (SubscriptionTrieClearException e) {
-            log.error("Failed to clear empty nodes. Reason - {}.", e.getMessage());
+            log.error("Failed to clear empty nodes.", e);
         }
     }
 }

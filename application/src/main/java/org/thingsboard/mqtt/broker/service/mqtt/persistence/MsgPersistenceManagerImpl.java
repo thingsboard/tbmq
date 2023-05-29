@@ -71,26 +71,37 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
-        if (!CollectionUtils.isEmpty(deviceSubscriptions)) {
-            deviceSubscriptions.forEach(deviceSubscription ->
-                    deviceMsgQueuePublisher.sendMsg(
-                            getClientIdFromSubscription(deviceSubscription),
-                            createReceiverPublishMsg(deviceSubscription, publishMsgProto),
-                            callbackWrapper));
+        if (deviceSubscriptions != null) {
+            for (Subscription deviceSubscription : deviceSubscriptions) {
+                deviceMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(deviceSubscription),
+                        createReceiverPublishMsg(deviceSubscription, publishMsgProto),
+                        callbackWrapper);
+            }
         }
-        if (!CollectionUtils.isEmpty(applicationSubscriptions)) {
-            applicationSubscriptions.forEach(applicationSubscription ->
+        if (applicationSubscriptions != null) {
+            if (applicationSubscriptions.size() == 1) {
+                Subscription applicationSubscription = applicationSubscriptions.get(0);
+                applicationMsgQueuePublisher.sendMsg(
+                        getClientIdFromSubscription(applicationSubscription),
+                        createReceiverPublishMsg(applicationSubscription, publishMsgProto),
+                        callbackWrapper);
+            } else {
+                for (Subscription applicationSubscription : applicationSubscriptions) {
                     applicationMsgQueuePublisher.sendMsg(
                             getClientIdFromSubscription(applicationSubscription),
                             createReceiverPublishMsg(applicationSubscription, publishMsgProto),
-                            callbackWrapper));
+                            callbackWrapper);
+                }
+            }
         }
-        if (!CollectionUtils.isEmpty(sharedTopics)) {
-            sharedTopics.forEach(sharedTopic ->
-                    applicationMsgQueuePublisher.sendMsgToSharedTopic(
-                            sharedTopic,
-                            createReceiverPublishMsg(publishMsgProto),
-                            callbackWrapper));
+        if (sharedTopics != null) {
+            for (String sharedTopic : sharedTopics) {
+                applicationMsgQueuePublisher.sendMsgToSharedTopic(
+                        sharedTopic,
+                        createReceiverPublishMsg(publishMsgProto),
+                        callbackWrapper);
+            }
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
@@ -111,7 +122,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private String getClientIdFromSubscription(Subscription subscription) {
-        return subscription.getClientSession().getClientId();
+        return subscription.getClientSessionInfo().getClientId();
     }
 
     private int getCallbackCount(List<Subscription> deviceSubscriptions,

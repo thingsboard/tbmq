@@ -185,7 +185,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-        Thread.sleep(50);
+        Thread.sleep(100);
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 

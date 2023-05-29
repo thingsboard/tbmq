@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
-import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.extern.slf4j.Slf4j;
@@ -52,9 +51,9 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
         setSearchText(entity);
         log.debug("Saving entity {}", entity);
         if (entity.getId() == null) {
-            UUID uuid = Uuids.timeBased();
+            UUID uuid = UUID.randomUUID();
             entity.setId(uuid);
-            entity.setCreatedTime(Uuids.unixTimestamp(uuid));
+            entity.setCreatedTime(System.currentTimeMillis());
         }
         entity = getCrudRepository().save(entity);
         return DaoUtil.getData(entity);

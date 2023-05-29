@@ -72,7 +72,7 @@ public class SharedSubscriptionProcessorImpl implements SharedSubscriptionProces
     Subscription getOneSubscription(Iterator<Subscription> iterator) {
         while (true) {
             Subscription next = iterator.next();
-            if (next.getClientSession().isConnected()) {
+            if (next.getClientSessionInfo().isConnected()) {
                 return next;
             }
         }

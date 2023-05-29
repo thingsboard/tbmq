@@ -27,7 +27,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
@@ -38,8 +37,9 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -55,10 +55,10 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
@@ -66,9 +66,6 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEP
 @RequiredArgsConstructor
 @Slf4j
 public class ConnectServiceImpl implements ConnectService {
-
-    private final ExecutorService connectHandlerExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
-            ThingsBoardThreadFactory.forName("connect-handler-executor"));
 
     private final ClientMqttActorManager clientMqttActorManager;
     private final MqttMessageGenerator mqttMessageGenerator;
@@ -80,11 +77,20 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandlerImpl messageHandler;
 
+    private ExecutorService connectHandlerExecutor;
+
+    @Value("${mqtt.connect.threads:4}")
+    private int threadsCount;
     @Setter
     @Value("${mqtt.keep-alive.max-keep-alive:600}")
     private int maxServerKeepAlive;
     @Value("${mqtt.client-session-expiry.max-expiry-interval:604800}")
     private int maxExpiryInterval;
+
+    @PostConstruct
+    public void init() {
+        this.connectHandlerExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "connect-handler-executor");
+    }
 
     @Override
     public void startConnection(ClientActorStateInfo actorState, MqttConnectMsg msg) throws MqttException {
@@ -273,6 +279,8 @@ public class ConnectServiceImpl implements ConnectService {
         if (log.isDebugEnabled()) {
             log.debug("Shutting down executors");
         }
-        connectHandlerExecutor.shutdownNow();
+        if (connectHandlerExecutor != null) {
+            connectHandlerExecutor.shutdownNow();
+        }
     }
 }

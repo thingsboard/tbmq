@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -30,17 +30,17 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.De
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
-    private final ExecutorService consumersExecutor = Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName("device-persisted-msg-consumer"));
+
     private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
@@ -52,8 +52,16 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private int consumersCount;
     @Value("${queue.device-persisted-msg.poll-interval}")
     private long pollDuration;
+    @Value("${queue.device-persisted-msg.threads-count}")
+    private int threadsCount;
 
     private volatile boolean stopped = false;
+    private ExecutorService consumersExecutor;
+
+    @PostConstruct
+    public void init() {
+        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-persisted-msg-consumer");
+    }
 
     @Override
     public void startConsuming() {
@@ -105,7 +113,9 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     public void destroy() {
         stopped = true;
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
-        consumersExecutor.shutdownNow();
+        if (consumersExecutor != null) {
+            consumersExecutor.shutdownNow();
+        }
     }
 
 }

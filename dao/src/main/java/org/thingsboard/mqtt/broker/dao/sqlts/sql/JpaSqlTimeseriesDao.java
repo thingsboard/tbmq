@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,6 +63,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
     private SqlTsPartitionDate tsFormat;
 
     @Value("${sql.ts_key_value_partitioning:MONTHS}")
+    @Setter
     private String partitioning;
 
     @Override
@@ -157,7 +159,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         return deleted;
     }
 
-    private boolean checkNeedDropTable(LocalDateTime date, String tableName) {
+    protected boolean checkNeedDropTable(LocalDateTime date, String tableName) {
         List<String> tableNameSplitList = Arrays.asList(tableName.split("_"));
         //zero position is 'ts', first is 'kv' and after years, months, days
         if (tableNameSplitList.size() > 2 && tableNameSplitList.get(0).equals("ts") && tableNameSplitList.get(1).equals("kv")) {
@@ -193,7 +195,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
         }
     }
 
-    private String getPartitionByDate(LocalDateTime date) {
+    protected String getPartitionByDate(LocalDateTime date) {
         String result = "";
         switch (partitioning) {
             case "DAYS":

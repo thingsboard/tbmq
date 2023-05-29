@@ -21,7 +21,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
@@ -84,17 +84,17 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     @Override
     public void deliverMessages(List<DevicePublishMsg> devicePublishMessages) {
         for (DevicePublishMsg devicePublishMsg : devicePublishMessages) {
-            ClientSession clientSession = clientSessionCache.getClientSession(devicePublishMsg.getClientId());
-            if (clientSession == null) {
+            ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(devicePublishMsg.getClientId());
+            if (clientSessionInfo == null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("[{}] Client session not found for persisted msg.", devicePublishMsg.getClientId());
+                    log.debug("[{}] Client session is not found for persisted messages.", devicePublishMsg.getClientId());
                 }
-            } else if (!clientSession.isConnected()) {
+            } else if (!clientSessionInfo.isConnected()) {
                 if (log.isTraceEnabled()) {
                     log.trace("[{}] Client session is disconnected.", devicePublishMsg.getClientId());
                 }
             } else {
-                String targetServiceId = clientSession.getSessionInfo().getServiceId();
+                String targetServiceId = clientSessionInfo.getServiceId();
                 if (messageWasPersisted(devicePublishMsg)) {
                     downLinkProxy.sendPersistentMsg(
                             targetServiceId,
@@ -129,7 +129,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                 deviceMsgService.save(devicePublishMessages, ctx.detectMsgDuplication());
                 ctx.onSuccess();
             } catch (DuplicateKeyException e) {
-                log.warn("[{}] Duplicate serial number detected, will save with rewrite, detailed error - {}", consumerId, e.getMessage());
+                log.warn("[{}] Duplicate serial number detected, will save with rewrite", consumerId, e);
                 ctx.disableMsgDuplicationDetection();
             } catch (Exception e) {
                 log.warn("[{}] Failed to save device messages", consumerId, e);
