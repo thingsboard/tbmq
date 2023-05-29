@@ -20,15 +20,14 @@ import { TranslateService } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
-import { retry, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
+import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
   getColor,
   homeChartJsParams,
   StatsChartType,
   StatsChartTypeTranslationMap,
-  TimeseriesData, TOTAL_KEY,
-  TsValue
+  TimeseriesData, TOTAL_KEY
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
 import { DEFAULT_HOME_CHART_INTERVAL, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
@@ -89,16 +88,20 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe(data => {
         this.initCharts(data);
         this.startPolling();
-      });
+      },
+        () => {
+          this.initCharts();
+        }
+      );
   }
 
-  private initCharts(data) {
+  private initCharts(data = null) {
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
       const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
       const color = getColor(chartType, 0);
       const dataSet = {
-        data: data[chartType],
+        data: data ? data[chartType] : null,
         borderColor: color,
         backgroundColor: color,
         label: TOTAL_KEY,
@@ -138,7 +141,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (latestData[chartType].length) {
       const latestValue = latestData[chartType][0];
       latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-      this.addStartChartValue(chartType, latestValue);
       this.charts[chartType].data.datasets[0].data.unshift(latestValue);
     }
   }
@@ -162,10 +164,4 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.charts[chartType].update();
   }
 
-  private addStartChartValue(chartType: string, latestValue: TsValue) {
-    const data = this.charts[chartType].data.datasets[0].data;
-    if (!data.length) {
-      // data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
-    }
-  }
 }

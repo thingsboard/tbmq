@@ -25,14 +25,14 @@ import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
-import { retry, share, switchMap, takeUntil } from 'rxjs/operators';
+import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
   getColor,
   monitoringChartJsParams, ONLY_TOTAL_KEYS,
   StatsChartType,
   StatsChartTypeTranslationMap,
-  TimeseriesData, TOTAL_KEY, TsValue
+  TimeseriesData, TOTAL_KEY
 } from '@shared/models/chart.model';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
@@ -79,7 +79,6 @@ export class MonitoringComponent extends PageComponent {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
-    // this.generateRandomData();
   }
 
   ngOnInit() {
@@ -162,7 +161,10 @@ export class MonitoringComponent extends PageComponent {
         if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
           this.startPolling();
         }
-      });
+      },
+        () => {
+          this.initCharts(null);
+        });
   }
 
   private initCharts(data: TimeseriesData[]) {
@@ -170,7 +172,7 @@ export class MonitoringComponent extends PageComponent {
       const color = getColor(chartType, i);
       return {
         label: this.brokerIds[i],
-        data: dataset[i][chartType],
+        data: dataset ? dataset[i][chartType] : null,
         pointStyle: 'circle',
         hidden: brokerId !== TOTAL_KEY,
         borderColor: color,
@@ -236,7 +238,6 @@ export class MonitoringComponent extends PageComponent {
         if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
         const latestValue = data[index][chartType][0];
         latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
-        this.addStartChartValue(chartType, latestValue, index);
         this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
     }
@@ -294,33 +295,4 @@ export class MonitoringComponent extends PageComponent {
     return !this.charts[chartType].isZoomedOrPanned();
   }
 
-  private addStartChartValue(chartType: string, latestValue: TsValue, index: number) {
-    const data = this.charts[chartType].data.datasets[index].data;
-    if (!data.length) {
-      // data.push({ value: latestValue.value, ts: this.fixedWindowTimeMs.startTimeMs });
-    }
-  }
-
-  private generateRandomData() {
-    timer(0, POLLING_INTERVAL * 6)
-      .pipe(switchMap(() => {
-          const data = {
-            incomingMsgs: Math.floor(Math.random() * 100),
-            outgoingMsgs: Math.floor(Math.random() * 100),
-            droppedMsgs: Math.floor(Math.random() * 100)
-          };
-          return this.statsService.saveTelemetry('artem', data);
-        })).subscribe();
-    timer(0, POLLING_INTERVAL * 6)
-      .pipe(switchMap(() => {
-        const data = {
-          incomingMsgs: Math.floor(Math.random() * 100),
-          outgoingMsgs: Math.floor(Math.random() * 100),
-          droppedMsgs: Math.floor(Math.random() * 100),
-          sessions: Math.floor(Math.random() * 100),
-          subscriptions: Math.floor(Math.random() * 100)
-        };
-        return this.statsService.saveTelemetry(TOTAL_KEY, data);
-      })).subscribe();
-  }
 }

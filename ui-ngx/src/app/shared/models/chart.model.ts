@@ -146,7 +146,8 @@ export function homeChartJsParams() {
           },
           grid: {
             display: true,
-            drawTicks: false
+            drawTicks: false,
+            offset: true
           }
         }
       },
@@ -255,7 +256,7 @@ export function homeChartJsParams() {
             const centerY = (top + bottom) / 2;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('No data is available', centerX, centerY);
+            ctx.fillText('', centerX, centerY);
           }
         }
       }
@@ -281,19 +282,20 @@ export function monitoringChartJsParams() {
         mode: 'index',
         intersect: false
       },
-      layout: {
-        padding: {
-          right: 20,
-          left: 20
-        }
-      },
       stacked: false,
       scales: {
         y: {
           min: 0,
-          suggestedMax: 1,
+          suggestedMax: 5,
           title: {
             display: false
+          },
+          ticks: {
+            callback(label, index) {
+              if (Math.floor(label) === label) {
+                return label;
+              }
+            }
           }
         },
         x: {
@@ -306,7 +308,6 @@ export function monitoringChartJsParams() {
           },
           ticks: {
             maxRotation: 0,
-            padding: 5,
             labelOffset: 0,
             source: 'auto',
             autoSkip: true,
@@ -319,7 +320,8 @@ export function monitoringChartJsParams() {
           },
           grid: {
             display: true,
-            drawTicks: false
+            drawTicks: false,
+            offset: true
           }
         }
       },
@@ -454,7 +456,7 @@ export function monitoringChartJsParams() {
             const centerY = (top + bottom) / 2;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('No data is available', centerX, centerY);
+            ctx.fillText('', centerX, centerY);
           }
         }
       }

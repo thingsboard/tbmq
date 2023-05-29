@@ -54,7 +54,11 @@ export class StatsService {
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
-    return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig(config));
+    return this.http.get<TimeseriesData>(url, defaultHttpOptionsFromConfig({
+      ignoreLoading: true,
+      ignoreErrors: true,
+      resendRequest: false
+    }));
   }
 
   public getLatestTimeseries(entityId: string, keys: Array<string> = chartKeysTotal,
