@@ -201,6 +201,8 @@ spec:
               value: "10000"
             - name: "TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION"
               value: "false"
+            - name: HISTORICAL_DATA_REPORT_ENABLED
+              value: "false"
             # Threads count
             - name: ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE
               value: "25"
