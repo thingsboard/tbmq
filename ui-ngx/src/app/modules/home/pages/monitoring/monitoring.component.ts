@@ -162,8 +162,30 @@ export class MonitoringComponent extends PageComponent {
           this.startPolling();
         }
       },
-        () => {
-          this.initCharts(null);
+        (error) => {
+          console.error('fetchEntityTimeseries error', error);
+          if (initCharts) {
+            this.initCharts(null);
+          } else {
+            for (const chartType in StatsChartType) {
+              for (let i = 0; i < this.brokerIds.length; i++) {
+                const brokerId = this.brokerIds[i];
+                this.latestValues[brokerId] = {};
+                this.latestValues[brokerId][chartType] = 0;
+                if (!ONLY_TOTAL_KEYS.includes(chartType)) {
+                  this.charts[chartType].data.datasets[i].data = null;
+                } else {
+                  this.charts[chartType].data.datasets[0].data = null;
+                }
+                this.updateXScale(chartType);
+                // this.updateLabel(data, chartType);
+                this.updateChart(chartType);
+              }
+            }
+          }
+          if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
+            this.startPolling();
+          }
         });
   }
 
@@ -262,8 +284,7 @@ export class MonitoringComponent extends PageComponent {
       let index = i;
       const brokerId = this.brokerIds[i];
       if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
-      this.latestValues[brokerId][chartType] = data[index][chartType][0].value;
-      // this.charts[chartType].data.datasets[index].label = `${this.brokerIds[index]}`;
+      this.latestValues[brokerId][chartType] = data[index][chartType]?.length ? data[index][chartType][0].value : null;
     }
   }
 
