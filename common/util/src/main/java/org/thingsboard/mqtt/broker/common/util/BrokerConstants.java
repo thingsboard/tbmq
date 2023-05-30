@@ -63,9 +63,9 @@ public class BrokerConstants {
 
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
 
-    public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-publish-group-";
-    public static final String PERSISTENT_DOWNLINK_CG_PREFIX = "persistent-downlink-publish-group-";
-    public static final String CLIENT_SESSION_CG_PREFIX = "client-session-group-";
-    public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-group-";
-    public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-group-";
+    public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-msg-consumer-group-";
+    public static final String PERSISTED_DOWNLINK_CG_PREFIX = "persisted-downlink-msg-consumer-group-";
+    public static final String CLIENT_SESSION_CG_PREFIX = "client-session-consumer-group-";
+    public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-consumer-group-";
+    public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-consumer-group-";
 }

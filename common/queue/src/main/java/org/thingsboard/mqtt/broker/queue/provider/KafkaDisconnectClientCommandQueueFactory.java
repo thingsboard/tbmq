@@ -77,8 +77,8 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
         consumerBuilder.properties(consumerSettings.toProps(topic, disconnectClientCommandSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("disconnect-client-command-" + serviceId + "-consumer");
-        consumerBuilder.groupId("disconnect-client-command-" + serviceId + "-consumer-group");
+        consumerBuilder.clientId("disconnect-client-command-consumer-" + serviceId);
+        consumerBuilder.groupId("disconnect-client-command-consumer-group-" + serviceId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

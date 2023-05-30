@@ -425,7 +425,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     private boolean isConsumerGroupToDelete(String consumerGroupId) {
         return consumerGroupId.startsWith(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX) ||
-                consumerGroupId.startsWith(BrokerConstants.PERSISTENT_DOWNLINK_CG_PREFIX) ||
+                consumerGroupId.startsWith(BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX) ||
                 consumerGroupId.startsWith(BrokerConstants.CLIENT_SESSION_CG_PREFIX) ||
                 consumerGroupId.startsWith(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX) ||
                 consumerGroupId.startsWith(BrokerConstants.RETAINED_MSG_CG_PREFIX);
