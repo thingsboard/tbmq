@@ -197,7 +197,7 @@ queue:
         batch-size: "${TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE:16384}"
         linger-ms: "${TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS:5}"
         buffer-memory: "${TB_KAFKA_DEFAULT_PRODUCER_BUFFER_MEMORY:33554432}"
-        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}" # none or gzip
+        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}" # none, gzip, snappy, lz4, zstd
     admin:
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
     consumer-stats:
