@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class SubmitStrategyFactory {
 
-    @Value("${queue.publish-msg.msg-parallel-processing:false}")
+    @Value("${queue.msg-all.msg-parallel-processing:false}")
     private boolean processInParallel;
 
     public SubmitStrategy newInstance(String consumerId) {

@@ -70,7 +70,7 @@ public class KafkaHistoricalDataQueueFactory implements HistoricalDataQueueFacto
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(historicalDataTotalKafkaSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("historical-data-total-producer-" + serviceId);
+        producerBuilder.clientId("historical-data-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -83,8 +83,8 @@ public class KafkaHistoricalDataQueueFactory implements HistoricalDataQueueFacto
         consumerBuilder.properties(consumerSettings.toProps(topic, historicalDataTotalKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("historical-data-total-" + serviceId + "-consumer");
-        consumerBuilder.groupId("historical-data-total-consumer-group");
+        consumerBuilder.clientId("historical-data-consumer-" + serviceId);
+        consumerBuilder.groupId("historical-data-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ToUsageStatsMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

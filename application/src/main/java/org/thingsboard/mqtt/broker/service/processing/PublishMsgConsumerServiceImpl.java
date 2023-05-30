@@ -58,18 +58,18 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private volatile boolean stopped = false;
     private ExecutorService consumersExecutor;
 
-    @Value("${queue.publish-msg.threads-count}")
+    @Value("${queue.msg-all.threads-count}")
     private int threadsCount;
-    @Value("${queue.publish-msg.consumers-count}")
+    @Value("${queue.msg-all.consumers-count}")
     private int consumersCount;
-    @Value("${queue.publish-msg.poll-interval}")
+    @Value("${queue.msg-all.poll-interval}")
     private long pollDuration;
-    @Value("${queue.publish-msg.pack-processing-timeout}")
+    @Value("${queue.msg-all.pack-processing-timeout}")
     private long packProcessingTimeout;
 
     @PostConstruct
     public void init() {
-        consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "publish-msg-consumer");
+        consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "msg-all-consumer");
     }
 
     @Override

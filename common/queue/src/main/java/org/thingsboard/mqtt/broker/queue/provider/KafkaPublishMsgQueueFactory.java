@@ -62,7 +62,7 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(publishMsgSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("publish-msg-producer");
+        producerBuilder.clientId("msg-all-producer");
         producerBuilder.defaultTopic(publishMsgSettings.getTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
@@ -76,8 +76,8 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
         consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getTopic(), publishMsgSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(publishMsgSettings.getTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("publish-msg-consumer-" + id);
-        consumerBuilder.groupId("publish-msg-consumer-group");
+        consumerBuilder.clientId("msg-all-consumer-" + id);
+        consumerBuilder.groupId("msg-all-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

@@ -50,6 +50,10 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @Value("${mqtt.handler.app_msg_callback_threads:0}")
     private int threadsCount;
+    @Value("${queue.application-persisted-msg.client-id-validation:true}")
+    private boolean validateClientId;
+    @Value("${queue.application-persisted-msg.shared-topic-validation:true}")
+    private boolean validateSharedTopicFilter;
 
     private ExecutorService callbackProcessor;
 
@@ -67,7 +71,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     @Override
     public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
-        String clientQueueTopic = MqttApplicationClientUtil.getTopic(clientId);
+        String clientQueueTopic = MqttApplicationClientUtil.getAppTopic(clientId, validateClientId);
         publisher.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
                 new TbQueueCallback() {
                     @Override
@@ -116,7 +120,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                         });
                     }
                 },
-                MqttApplicationClientUtil.getKafkaTopic(sharedTopic));
+                MqttApplicationClientUtil.getSharedAppTopic(sharedTopic, validateSharedTopicFilter));
     }
 
     @PreDestroy
