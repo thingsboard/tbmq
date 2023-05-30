@@ -14,16 +14,19 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
+import { NgModule } from '@angular/core';
 
-import {MODULES_MAP} from '@shared/public-api';
-import {modulesMap} from '../../common/modules-map';
-import {MqttClientCredentialsModule} from './mqtt-client-credentials/mqtt-client-credentials.module';
-import {ProfileModule} from './profile/profile.module';
-import {MailServerModule} from "@home/pages/mail-server/mail-server.module";
-import {SessionsModule} from "@home/pages/sessions/sessions.module";
-import {AdminsModule} from "@home/pages/admins/admins.module";
-import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared-subscriptions.module";
+import { MODULES_MAP } from '@shared/public-api';
+import { modulesMap } from '../../common/modules-map';
+import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
+import { ProfileModule } from './profile/profile.module';
+import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
+import { SessionsModule } from '@home/pages/sessions/sessions.module';
+import { AdminsModule } from '@home/pages/admins/admins.module';
+import { SharedSubscriptionsModule } from '@home/pages/shared-subscriptions/shared-subscriptions.module';
+import { HomeOverviewModule } from '@home/pages/home-overview/home-overview.module';
+import { RetainedMessagesModule } from '@home/pages/retained-messages/retained-messages.module';
+import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 
 @NgModule({
   exports: [
@@ -32,7 +35,10 @@ import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared
     MqttClientCredentialsModule,
     SessionsModule,
     AdminsModule,
-    SharedSubscriptionsModule
+    SharedSubscriptionsModule,
+    HomeOverviewModule,
+    RetainedMessagesModule,
+    MonitoringModule
   ],
   providers: [
     {
@@ -41,4 +47,5 @@ import {SharedSubscriptionsModule} from "@home/pages/shared-subscriptions/shared
     }
   ]
 })
-export class HomePagesModule { }
+export class HomePagesModule {
+}

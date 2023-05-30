@@ -138,7 +138,7 @@ public class MsgPersistenceManagerImplTest {
     }
 
     private Subscription createSubscription(String topicFilter, int qos, String clientId, ClientType type) {
-        return new Subscription(topicFilter, qos, ClientSessionInfoFactory.getClientSession(true, getSessionInfo(clientId, type)));
+        return Subscription.newInstance(topicFilter, qos, ClientSessionInfoFactory.getClientSession(true, getSessionInfo(clientId, type)));
     }
 
     private SessionInfo getSessionInfo(String clientId, ClientType clientType) {

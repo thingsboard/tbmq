@@ -25,12 +25,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -123,7 +123,7 @@ public class MqttSubscribeHandler {
                 topicValidationService.validateTopicFilter(topic);
                 validateSharedSubscription(subscription);
             } catch (DataValidationException e) {
-                log.warn("[{}][{}] Not valid topic, reason - {}", ctx.getClientId(), ctx.getSessionId(), e);
+                log.warn("[{}][{}] Not valid topic", ctx.getClientId(), ctx.getSessionId(), e);
                 codes.add(MqttReasonCodeResolver.failure());
                 continue;
             }

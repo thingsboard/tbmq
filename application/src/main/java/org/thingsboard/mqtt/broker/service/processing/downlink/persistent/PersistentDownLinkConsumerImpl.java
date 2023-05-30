@@ -50,11 +50,11 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private final TbQueueAdmin queueAdmin;
 
     // TODO: don't push msg to kafka if it's the same serviceId
-    @Value("${queue.persistent-downlink-publish-msg.consumers-count}")
+    @Value("${queue.persisted-downlink-msg.consumers-count}")
     private int consumersCount;
-    @Value("${queue.persistent-downlink-publish-msg.poll-interval}")
+    @Value("${queue.persisted-downlink-msg.poll-interval}")
     private long pollDuration;
-    @Value("${queue.persistent-downlink-publish-msg.threads-count}")
+    @Value("${queue.persisted-downlink-msg.threads-count}")
     private int threadsCount;
 
     private volatile boolean stopped = false;
@@ -62,7 +62,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
 
     @PostConstruct
     public void init() {
-        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "persistent-downlink-publish-msg-consumer");
+        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "persisted-downlink-msg-consumer");
     }
 
     @Override

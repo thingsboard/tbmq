@@ -14,45 +14,48 @@
 /// limitations under the License.
 ///
 
-import {Injectable, NgZone} from '@angular/core';
-import {JwtHelperService} from '@auth0/angular-jwt';
-import {HttpClient} from '@angular/common/http';
+import { Injectable, NgZone } from '@angular/core';
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { HttpClient } from '@angular/common/http';
 
-import {Observable, of, ReplaySubject, throwError} from 'rxjs';
-import {catchError, mergeMap, tap} from 'rxjs/operators';
+import { Observable, of, ReplaySubject, throwError } from 'rxjs';
+import { catchError, mergeMap, tap } from 'rxjs/operators';
 
-import {LoginRequest, LoginResponse, PublicLoginRequest} from '@shared/models/login.models';
-import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig} from '../http/http-utils';
-import {AdminService} from './admin.service';
-import {Store} from '@ngrx/store';
-import {AppState} from '../core.state';
-import {Authority} from '@shared/models/authority.enum';
-import {ActionSettingsChangeLanguage} from '@app/core/settings/settings.actions';
-import {AuthPayload, AuthState} from '@core/auth/auth.models';
-import {TranslateService} from '@ngx-translate/core';
-import {AuthUser, User} from '@shared/models/user.model';
-import {UtilsService} from '@core/services/utils.service';
-import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {AlertDialogComponent} from '@shared/components/dialog/alert-dialog.component';
-import {isMobileApp} from '@core/utils';
-import {ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated} from "@core/auth/auth.actions";
-import {getCurrentAuthState, getCurrentAuthUser} from "@core/auth/auth.selectors";
+import { LoginRequest, LoginResponse, PublicLoginRequest } from '@shared/models/login.models';
+import { ActivatedRoute, Router, UrlTree } from '@angular/router';
+import { defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
+import { AdminService } from './admin.service';
+import { Store } from '@ngrx/store';
+import { AppState } from '../core.state';
+import { Authority } from '@shared/models/authority.enum';
+import { ActionSettingsChangeLanguage } from '@app/core/settings/settings.actions';
+import { AuthPayload, AuthState } from '@core/auth/auth.models';
+import { TranslateService } from '@ngx-translate/core';
+import { AuthUser, User } from '@shared/models/user.model';
+import { UtilsService } from '@core/services/utils.service';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
+import { isMobileApp } from '@core/utils';
+import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
+import { getCurrentAuthState, getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { ConfigService } from '@core/http/config.service';
+import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class AuthService {
 
   constructor(private store: Store<AppState>,
-    private http: HttpClient,
-    private adminService: AdminService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private zone: NgZone,
-    private utils: UtilsService,
-    private translate: TranslateService,
-    private dialog: MatDialog) {
+              private http: HttpClient,
+              private adminService: AdminService,
+              private router: Router,
+              private route: ActivatedRoute,
+              private zone: NgZone,
+              private utils: UtilsService,
+              private translate: TranslateService,
+              private configService: ConfigService,
+              private dialog: MatDialog) {
   }
 
   redirectUrl: string;
@@ -187,10 +190,21 @@ export class AuthService {
   public gotoDefaultPlace(isAuthenticated: boolean) {
     if (!isMobileApp()) {
       const authState = getCurrentAuthState(this.store);
-      const url = this.defaultUrl(isAuthenticated, authState);
-      this.zone.run(() => {
-        this.router.navigateByUrl(url);
-      });
+      if (authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1) {
+        this.dialog.open(ChangePasswordDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          backdropClass: ['grey-background'],
+          data: {
+            changeDefaultPassword: true
+          }
+        });
+      } else {
+        const url = this.defaultUrl(isAuthenticated, authState);
+        this.zone.run(() => {
+          this.router.navigateByUrl(url);
+        });
+      }
     }
   }
 
@@ -203,7 +217,7 @@ export class AuthService {
           this.redirectUrl = null;
           result = this.router.parseUrl(redirectUrl);
         } else {
-          result = this.router.parseUrl('sessions');
+          result = this.router.parseUrl('home');
         }
       }
     } else {
@@ -295,17 +309,24 @@ export class AuthService {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
     this.validateJwtToken(doTokenRefresh).subscribe(
       () => {
-        let authPayload = {} as AuthPayload;
+        const authPayload = {} as AuthPayload;
         const jwtToken = AuthService._storeGet('jwt_token');
         authPayload.authUser = this.jwtHelper.decodeToken(jwtToken);
         if (authPayload.authUser && authPayload.authUser.scopes && authPayload.authUser.scopes.length) {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
         }
         if (authPayload.authUser.userId) {
-          this.getUser().subscribe(
+          let configValue = {};
+          this.configService.getBrokerConfig().pipe(
+            mergeMap((config) => {
+              configValue = config;
+              return this.getUser();
+            })
+          ).subscribe(
             (user) => {
               authPayload.userDetails = user;
               let userLang;
+              authPayload.userDetails.additionalInfo.config = configValue;
               if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
                 userLang = authPayload.userDetails.additionalInfo.lang;
               } else {
@@ -346,38 +367,38 @@ export class AuthService {
   public refreshJwtToken(loadUserElseStoreJwtToken = true): Observable<LoginResponse> {
     let response: Observable<LoginResponse> = this.refreshTokenSubject;
     if (this.refreshTokenSubject === null) {
-        this.refreshTokenSubject = new ReplaySubject<LoginResponse>(1);
-        response = this.refreshTokenSubject;
-        const refreshToken = AuthService._storeGet('refresh_token');
-        const refreshTokenValid = AuthService.isTokenValid('refresh_token');
-        this.setUserFromJwtToken(null, null, false);
-        if (!refreshTokenValid) {
-          this.translate.get('access.refresh-token-expired').subscribe(
-            (translation) => {
-              this.refreshTokenSubject.error(new Error(translation));
-              this.refreshTokenSubject = null;
-            }
-          );
-        } else {
-          const refreshTokenRequest = {
-            refreshToken
-          };
-          const refreshObservable = this.http.post<LoginResponse>('/api/auth/token', refreshTokenRequest, defaultHttpOptions());
-          refreshObservable.subscribe((loginResponse: LoginResponse) => {
-            if (loadUserElseStoreJwtToken) {
-              this.setUserFromJwtToken(loginResponse.token, loginResponse.refreshToken, false);
-            } else {
-              this.updateAndValidateTokens(loginResponse.token, loginResponse.refreshToken, true);
-            }
-            this.refreshTokenSubject.next(loginResponse);
-            this.refreshTokenSubject.complete();
+      this.refreshTokenSubject = new ReplaySubject<LoginResponse>(1);
+      response = this.refreshTokenSubject;
+      const refreshToken = AuthService._storeGet('refresh_token');
+      const refreshTokenValid = AuthService.isTokenValid('refresh_token');
+      this.setUserFromJwtToken(null, null, false);
+      if (!refreshTokenValid) {
+        this.translate.get('access.refresh-token-expired').subscribe(
+          (translation) => {
+            this.refreshTokenSubject.error(new Error(translation));
             this.refreshTokenSubject = null;
-          }, () => {
-            this.clearJwtToken();
-            this.refreshTokenSubject.error(new Error(this.translate.instant('access.refresh-token-failed')));
-            this.refreshTokenSubject = null;
-          });
-        }
+          }
+        );
+      } else {
+        const refreshTokenRequest = {
+          refreshToken
+        };
+        const refreshObservable = this.http.post<LoginResponse>('/api/auth/token', refreshTokenRequest, defaultHttpOptions());
+        refreshObservable.subscribe((loginResponse: LoginResponse) => {
+          if (loadUserElseStoreJwtToken) {
+            this.setUserFromJwtToken(loginResponse.token, loginResponse.refreshToken, false);
+          } else {
+            this.updateAndValidateTokens(loginResponse.token, loginResponse.refreshToken, true);
+          }
+          this.refreshTokenSubject.next(loginResponse);
+          this.refreshTokenSubject.complete();
+          this.refreshTokenSubject = null;
+        }, () => {
+          this.clearJwtToken();
+          this.refreshTokenSubject.error(new Error(this.translate.instant('access.refresh-token-failed')));
+          this.refreshTokenSubject = null;
+        });
+      }
     }
     return response;
   }

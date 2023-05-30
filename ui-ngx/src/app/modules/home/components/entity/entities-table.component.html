@@ -78,7 +78,7 @@
                 </ng-template>
               </ng-template>
             </div>
-            <button mat-icon-button [disabled]="isLoading$ | async"
+            <button mat-mini-fab [disabled]="isLoading$ | async" class="mat-elevation-z4" color="primary"
                     [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
                     matTooltip="{{ actionDescriptor.name }}"
                     matTooltipPosition="above"
@@ -108,7 +108,7 @@
                     matTooltipPosition="above">
               <mat-icon>search</mat-icon>
             </button>
-            <mat-form-field fxFlex appearance="standard">
+            <mat-form-field fxFlex>
               <mat-label>&nbsp;</mat-label>
               <input #searchInput matInput
                      [(ngModel)]="pageLink.textSearch"
@@ -218,14 +218,14 @@
                                                                     maxWidth: (cellActionDescriptors.length * 40) + 'px',
                                                                     width: (cellActionDescriptors.length * 40) + 'px' }">
                 <div fxHide fxShow.gt-md fxFlex fxLayout="row" fxLayoutAlign="end">
-                  <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
-                          *ngFor="let actionDescriptor of cellActionDescriptors"
-                          matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}"
-                          matTooltipPosition="above"
-                          (click)="actionDescriptor.onAction($event, entity)">
-                    <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
-                      {{actionDescriptor.icon}}</mat-icon>
-                  </button>
+                  <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
+                       matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+                    <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                            (click)="actionDescriptor.onAction($event, entity)">
+                      <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
+                        {{actionDescriptor.icon}}</mat-icon>
+                    </button>
+                  </div>
                 </div>
                 <div fxHide fxShow.lt-lg *ngIf="cellActionDescriptors.length">
                   <button mat-icon-button

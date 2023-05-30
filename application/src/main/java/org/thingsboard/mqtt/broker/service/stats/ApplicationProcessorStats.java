@@ -24,16 +24,17 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public interface ApplicationProcessorStats {
+
     String getClientId();
 
     // TODO: separate log from all 'admin' operations
     void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
 
-    void logPubAckLatency(long amount, TimeUnit unit);
+    void logPubAckLatency(long startTime, TimeUnit unit);
 
-    void logPubRecLatency(long amount, TimeUnit unit);
+    void logPubRecLatency(long startTime, TimeUnit unit);
 
-    void logPubCompLatency(long amount, TimeUnit unit);
+    void logPubCompLatency(long startTime, TimeUnit unit);
 
     List<StatsCounter> getStatsCounters();
 

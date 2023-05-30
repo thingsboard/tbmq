@@ -1,0 +1,28 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-home-card-container">
+  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+  <section class="links">
+    <div class="link" *ngFor="let section of quickLinks$ | async">
+      <a mat-button (click)="navigate(section.path)">
+        <mat-icon color="primary" [svgIcon]="section.icon"></mat-icon>
+        <span>{{section.name | translate}}</span>
+      </a>
+    </div>
+  </section>
+</div>

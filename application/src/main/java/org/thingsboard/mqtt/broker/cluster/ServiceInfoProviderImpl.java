@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.cluster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import javax.annotation.PostConstruct;

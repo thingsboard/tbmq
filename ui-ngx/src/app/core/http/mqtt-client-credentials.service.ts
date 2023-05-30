@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {PageLink} from '@shared/models/page/page-link';
-import {PageData} from '@shared/models/page/page-data';
-import {MqttClientCredentials} from '@shared/models/client-crenetials.model';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { ClientCredentialsInfo, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +29,8 @@ export class MqttClientCredentialsService {
 
   constructor(
     private http: HttpClient
-  ) { }
+  ) {
+  }
 
   public saveMqttClientCredentials(mqttClientCredentials: MqttClientCredentials, config?: RequestConfig): Observable<MqttClientCredentials> {
     return this.http.post<MqttClientCredentials>('/api/mqtt/client/credentials', mqttClientCredentials, defaultHttpOptionsFromConfig(config));
@@ -50,5 +51,9 @@ export class MqttClientCredentialsService {
 
   public changePassword(currentPassword: string, newPassword: string, credentialsId: string) {
     return this.http.post(`/api/mqtt/client/credentials/${credentialsId}`, {currentPassword, newPassword});
+  }
+
+  public getClientCredentialsStatsInfo(config?: RequestConfig): Observable<ClientCredentialsInfo> {
+    return this.http.get<ClientCredentialsInfo>(`/api/mqtt/client/credentials/info`, defaultHttpOptionsFromConfig(config));
   }
 }

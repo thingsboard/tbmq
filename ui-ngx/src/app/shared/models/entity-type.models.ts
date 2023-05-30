@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 
 export enum EntityType {
   USER = 'USER',
   MQTT_CLIENT_CREDENTIALS = 'MQTT_CLIENT_CREDENTIALS',
   MQTT_SESSION = 'MQTT_SESSION',
-  SHARED_SUBSCRIPTION = 'SHARED_SUBSCRIPTION'
+  SHARED_SUBSCRIPTION = 'SHARED_SUBSCRIPTION',
+  RETAINED_MESSAGE = 'RETAINED_MESSAGE'
 }
 
 export interface EntityTypeTranslation {
@@ -37,6 +38,7 @@ export interface EntityTypeTranslation {
 
 export interface EntityTypeResource<T> {
   helpLinkId: string;
+
   helpLinkIdForEntity?(entity: T): string;
 }
 
@@ -64,7 +66,7 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         list: 'mqtt-client-credentials.list-of-client-credentials',
         nameStartsWith: 'mqtt-client-credentials.client-credentials-name-starts-with',
         details: 'mqtt-client-credentials.client-credentials-details',
-        add: 'mqtt-client-credentials.add',
+        add: 'mqtt-client-credentials.add-client-credentials',
         noEntities: 'mqtt-client-credentials.no-client-credentials-text',
         search: 'mqtt-client-credentials.search',
         selectedEntities: 'mqtt-client-credentials.selected-client-credentials'
@@ -97,6 +99,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         search: 'shared-subscription.search',
         selectedEntities: 'shared-subscription.selected-shared-subscriptions'
       }
+    ],
+    [
+      EntityType.RETAINED_MESSAGE,
+      {
+        type: 'retained-message.type-retained-message',
+        typePlural: 'retained-message.type-retained-messages',
+        list: 'retained-message.list-of-retained-messages',
+        nameStartsWith: 'retained-message.retained-message-name-starts-with',
+        details: 'retained-message.details',
+        add: 'retained-message.add',
+        noEntities: 'retained-message.no-retained-messages-text',
+        search: 'retained-message.search',
+        selectedEntities: 'retained-message.selected-retained-messages'
+      }
     ]
   ]
 );
@@ -125,6 +141,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.SHARED_SUBSCRIPTION,
       {
         helpLinkId: 'sharedSubscriptions'
+      }
+    ],
+    [
+      EntityType.RETAINED_MESSAGE,
+      {
+        helpLinkId: 'retainedMessages'
       }
     ]
   ]

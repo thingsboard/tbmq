@@ -21,3 +21,4 @@ export * from './notification.service';
 export * from './title.service';
 export * from './utils.service';
 export * from './window.service';
+export * from './time.service';

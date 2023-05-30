@@ -1,0 +1,319 @@
+/**
+ * Copyright © 2016-2023 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import '../../../../../scss/constants';
+
+:host::ng-deep {
+  display: flex;
+  flex: 4;
+
+  .mat-expansion-panel-body {
+    padding: 0 22px 16px;
+  }
+
+  .step-expansion-header {
+    flex: 1 1 0%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+
+    .step-icon {
+      text-align: center;
+      background-color: #1f8b4d;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      height: 24px;
+      width: 24px;
+      line-height: 1.6em;
+    }
+
+    .step-active {
+      color: #fff;
+      content: inherit;
+    }
+
+    .step-done {
+      color: #fff;
+      line-height: 0.9em;
+    }
+
+    .step-done:before {
+      content: 'check';
+      font-size: 20px;
+      padding-left: 2px;
+    }
+
+    .step-not-done {
+      background-color: transparent;
+      border: 1px solid #6c6c6c;
+      color: #6c6c6c;
+      content: inherit;
+    }
+  }
+
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
+  }
+
+  .mat-expansion-panel button {
+    margin-left: 0;
+  }
+
+  a {
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .code-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 20px 8px 20px 8px;
+    max-width: 400px;
+    overflow-x: scroll;
+    white-space: nowrap;
+  }
+
+  .config-material-icon {
+    color: #0a5b25;
+    cursor: pointer;
+    line-height: 2em;
+    height: 24px;
+    width: 24px;
+    font-size: 20px;
+  }
+
+  .tb-markdown-view {
+    display: block;
+    ::ng-deep {
+      h1 {
+        font-size: 32px;
+        padding-right: 60px;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        line-height: normal;
+        font-weight: 500;
+        margin-bottom: 30px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ccc;
+      }
+
+      p {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.25em;
+        margin: 0;
+      }
+
+      p+p {
+        margin-top: 8px;
+      }
+
+      table {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-spacing: 0;
+        margin-top: 30px;
+        margin-bottom: 30px;
+      }
+
+      thead {
+        background-color: #555;
+        color: #fff;
+      }
+
+      th, td {
+        font-size: .85em;
+        padding: 8px;
+        margin: 0;
+        text-align: left;
+      }
+
+      td[align=center], th[align=center] {
+        text-align: center;
+      }
+
+      td[align=right], th[align=right] {
+        text-align: right;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f7f7f7;
+      }
+
+      code:not([class*=language-]) {
+        background: #f5f5f5;
+        border-radius: 2px;
+        color: #dd4a68;
+        padding: 2px 4px;
+      }
+
+      div.code-wrapper {
+        position: relative;
+        button.clipboard-btn {
+          cursor: pointer;
+          margin: 2px;
+          border: 0;
+          outline: none;
+          position: absolute;
+          top: 5px;
+          right: 0;
+          background: transparent;
+          color: #1f8b4d;
+          border-radius: 5px;
+          //padding: 3px 6px;
+          line-height: 16px;
+          img {
+            width: 18px;
+          }
+          &:hover {
+            color: #000000;
+          }
+          &:active {
+            background-color: #ececec;
+            box-shadow: inset 1px -1px 4px 0px rgba(0,0,0,0.4);
+          }
+        }
+        &:hover {
+          button.clipboard-btn {
+            opacity: .85;
+          }
+        }
+      }
+
+      th, td {
+        div.code-wrapper {
+          display: inline-block;
+          button.clipboard-btn {
+            top: -5px;
+            right: -30px;
+            padding: 0 3px;
+          }
+        }
+      }
+
+    }
+  }
+
+}
+
+:host ::ng-deep {
+
+  .tb-get-started .mat-vertical-stepper-header {
+    border-radius: 12px;
+    padding: 12px;
+    height: auto;
+  }
+
+  .tb-get-started .mat-vertical-stepper-header[aria-selected="true"] {
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .tb-get-started .mat-vertical-content-container {
+    margin-left: 0;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .tb-get-started .mat-stepper-vertical-line::before {
+    content: none;
+  }
+
+  .tb-get-started .mat-step-label {
+    width: 100%;
+    white-space: inherit;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 20px;
+    color: rgba(0, 0, 0, 0.76);
+  }
+
+  .tb-get-started .mat-step-label.mat-step-label-selected {
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 24px;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  .tb-get-started .mat-vertical-content {
+    p, li {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 20px;
+      letter-spacing: 0.2px;
+      color: rgba(0, 0, 0, 0.54);
+      text-align: justify;
+      em {
+        font-style: normal;
+        font-weight: 500;
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+    ul {
+      padding-inline-start: 20px;
+    }
+    .tb-bordered-content {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      padding: 16px;
+      p {
+        margin-top: 16px;
+        margin-bottom: 8px;
+      }
+    }
+    .tb-markdown-view {
+      .code-wrapper {
+          padding: 0;
+          pre[class*=language-] {
+            margin: 0;
+            padding: 9px 38px 9px 16px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 6px;
+            border: none;
+          }
+          code[class*="language-"], pre[class*="language-"] {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-weight: 400;
+            font-size: 12px;
+            line-height: 16px;
+            letter-spacing: 0.25px;
+            color: rgba(0, 0, 0, 0.38);
+            overflow: hidden;
+            white-space: break-spaces;
+            word-break: break-all;
+            & * {
+              color: rgba(0, 0, 0, 0.38);
+              cursor: inherit;
+              background: transparent;
+            }
+          }
+        }
+    }
+  }
+}

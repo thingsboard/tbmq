@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -47,20 +48,29 @@ public class ProtoConverter {
     public static QueueProtos.PublishMsgProto convertToPublishProtoMessage(SessionInfo sessionInfo, PublishMsg publishMsg) {
         UserProperties userProperties = getUserProperties(publishMsg.getProperties());
         List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
-        return QueueProtos.PublishMsgProto.newBuilder()
+        QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
-                .setPayload(ByteString.copyFrom(publishMsg.getPayload()))
                 .addAllUserProperties(userPropertyProtos)
-                .setClientId(sessionInfo.getClientInfo().getClientId())
-                .build();
+                .setClientId(sessionInfo.getClientInfo().getClientId());
+        if (publishMsg.getByteBuf() != null) {
+            builder.setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()));
+            publishMsg.getByteBuf().release();
+        } else {
+            builder.setPayload(ByteString.copyFrom(publishMsg.getPayload()));
+        }
+        return builder.build();
     }
 
     private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {
         if (userProperties != null) {
-            return userProperties.value().stream().map(ProtoConverter::buildUserPropertyProto).collect(Collectors.toList());
+            List<QueueProtos.UserPropertyProto> result = new ArrayList<>(userProperties.value().size());
+            for (MqttProperties.StringPair stringPair : userProperties.value()) {
+                result.add(buildUserPropertyProto(stringPair));
+            }
+            return result;
         }
         return Collections.emptyList();
     }
@@ -90,14 +100,16 @@ public class ProtoConverter {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 
-    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
+    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto publishMsgProto, int packetId,
+                                                 int qos, boolean isDup) {
         return PublishMsg.builder()
-                .packetId(publishMsgProto.getPacketId())
                 .topicName(publishMsgProto.getTopicName())
-                .qosLevel(publishMsgProto.getQos())
                 .isRetained(publishMsgProto.getRetain())
                 .payload(publishMsgProto.getPayload().toByteArray())
                 .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
+                .packetId(packetId)
+                .qosLevel(qos)
+                .isDup(isDup)
                 .build();
     }
 

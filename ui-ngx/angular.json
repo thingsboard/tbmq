@@ -27,6 +27,26 @@
               "src/thingsboard-mqtt-broker.ico",
               "src/assets",
               {
+                "glob": "worker-html.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-css.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-json.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
+                "glob": "worker-javascript.js",
+                "input": "./node_modules/ace-builds/src-noconflict/",
+                "output": "/"
+              },
+              {
                 "glob": "**/*",
                 "input": "node_modules/material-design-icons/iconfont/",
                 "output": "assets/fonts"
@@ -34,7 +54,10 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/jquery.terminal/css/jquery.terminal.min.css"
+              "node_modules/jquery.terminal/css/jquery.terminal.min.css",
+              "node_modules/prismjs/themes/prism.css",
+              "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
+              "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
@@ -54,6 +77,7 @@
             "allowedCommonJsDependencies": [
               "hammerjs",
               "react",
+              "react-ace",
               "@material-ui/icons/Add",
               "@material-ui/icons/Clear",
               "prop-types",
@@ -64,7 +88,11 @@
               "moment-timezone",
               "lodash",
               "jquery",
-              "jquery.terminal"
+              "jquery.terminal",
+              "moment",
+              "chart.js",
+              "js-beautify",
+              "tooltipster"
             ]
           },
           "configurations": {

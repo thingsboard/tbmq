@@ -16,7 +16,7 @@
 
 -->
 <mat-sidenav-container>
-  <mat-sidenav #sidenav class="tb-site-sidenav mat-elevation-z2"
+  <mat-sidenav #sidenav class="tb-site-sidenav mat-elevation-z1"
                [disableClose]="sidenavOpened"
                (click)="sidenavClicked()"
                [mode]="sidenavMode"
@@ -34,7 +34,7 @@
     </mat-toolbar>
   </mat-sidenav>
   <mat-sidenav-content>
-    <div fxLayout="column" role="main" style="height: 100%;">
+    <div fxLayout="column" role="main" style="height: 100%; background-color: #dcdcdc">
       <mat-toolbar fxLayout="row" color="primary" class="mat-elevation-z1 tb-primary-toolbar">
         <button mat-icon-button id="main"
                 [ngClass]="{'tb-invisible': displaySearchMode()}"

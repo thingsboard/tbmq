@@ -739,6 +739,11 @@ mat-label {
     //max-height: 64px;
     padding: 0 16px;
     //margin: 0;
+
+    .mat-mini-fab {
+      color: rgba(0, 0, 0, 0.87);
+      background-color: transparent !important;
+    }
   }
 
   .mat-icon {
@@ -925,6 +930,10 @@ mat-label {
     }
   }
 
+  .grey-background {
+    background-color: #eee;
+  }
+
   .tb-absolute-fill {
     position: absolute;
     top: 0;
@@ -1078,5 +1087,21 @@ mat-label {
 
   .hint {
     margin-bottom: 10px;
+  }
+}
+
+.tb-home-overview {
+  display: flex;
+  background-color: #dcdcdc;
+  padding: 12px 12px 0 12px;
+  gap: 12px;
+
+  .tb-home-card-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    background-color: #fff;
   }
 }

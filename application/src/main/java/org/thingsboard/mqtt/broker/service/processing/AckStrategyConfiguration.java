@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "queue.publish-msg.ack-strategy")
+@ConfigurationProperties(prefix = "queue.msg-all.ack-strategy")
 @Data
 public class AckStrategyConfiguration {
     private AckStrategyType type;

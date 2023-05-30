@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {PageLink} from '@shared/models/page/page-link';
-import {PageData} from '@shared/models/page/page-data';
-import {DetailedClientSessionInfo} from '@shared/models/session.model';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { ClientSessionStatsInfo, DetailedClientSessionInfo } from '@shared/models/session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -50,4 +50,7 @@ export class MqttClientSessionService {
     return this.http.delete(`/api/client-session/disconnect?clientId=${clientId}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
 
+  public getClientSessionsStats(config?: RequestConfig): Observable<ClientSessionStatsInfo> {
+    return this.http.get<ClientSessionStatsInfo>(`/api/client-session/info`, defaultHttpOptionsFromConfig(config));
+  }
 }

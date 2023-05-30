@@ -105,21 +105,21 @@ public class SharedSubscriptionProcessorImplTest {
 
         Iterator<Subscription> iterator = Iterables.cycle(subscriptions).iterator();
         Subscription subscription = subscriptionProcessor.getOneSubscription(iterator);
-        Assert.assertEquals(sessionId3, subscription.getClientSession().getSessionInfo().getSessionId());
+        Assert.assertEquals(sessionId3, subscription.getClientSessionInfo().getSessionId());
     }
 
     private List<Subscription> getSubscriptions(ClientSession clientSession1, ClientSession clientSession2, ClientSession clientSession3) {
         return List.of(
-                new Subscription("topic1", 1, clientSession1),
-                new Subscription("topic2", 2, clientSession2),
-                new Subscription("topic3", 0, clientSession3)
+                Subscription.newInstance("topic1", 1, clientSession1),
+                Subscription.newInstance("topic2", 2, clientSession2),
+                Subscription.newInstance("topic3", 0, clientSession3)
         );
     }
 
     private List<Subscription> getSubscriptions(SessionInfo expectedSessionInfo1, SessionInfo expectedSessionInfo2) {
         return List.of(
-                new Subscription("topic1", 1, new ClientSession(true, expectedSessionInfo1)),
-                new Subscription("topic2", 2, new ClientSession(true, expectedSessionInfo2))
+                Subscription.newInstance("topic1", 1, new ClientSession(true, expectedSessionInfo1)),
+                Subscription.newInstance("topic2", 2, new ClientSession(true, expectedSessionInfo2))
         );
     }
 

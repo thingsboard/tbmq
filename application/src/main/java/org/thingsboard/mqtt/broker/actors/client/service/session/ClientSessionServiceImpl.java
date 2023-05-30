@@ -125,6 +125,11 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         return new HashMap<>(allClientSessionsMap);
     }
 
+    @Override
+    public int getClientSessionsCount() {
+        return clientSessionMap.size();
+    }
+
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
             if (log.isTraceEnabled()) {

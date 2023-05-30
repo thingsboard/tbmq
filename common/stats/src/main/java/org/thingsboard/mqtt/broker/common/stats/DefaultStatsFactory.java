@@ -18,10 +18,10 @@ package org.thingsboard.mqtt.broker.common.stats;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,9 +33,10 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.SUCCES
 import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TOTAL_MSGS;
 
 @Service
+@RequiredArgsConstructor
 public class DefaultStatsFactory implements StatsFactory {
-    @Autowired
-    private MeterRegistry meterRegistry;
+
+    private final MeterRegistry meterRegistry;
 
     @Value("${metrics.timer.percentiles:0.5}")
     private String timerPercentilesStr;

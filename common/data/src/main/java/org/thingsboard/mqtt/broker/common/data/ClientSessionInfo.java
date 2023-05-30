@@ -42,4 +42,19 @@ public class ClientSessionInfo {
     private final long disconnectedAt;
     private final int keepAlive;
 
+    public boolean isPersistent() {
+        return safeGetSessionExpiryInterval() > 0 || isNotCleanSession();
+    }
+
+    public boolean isCleanSession() { // The equivalent for cleanSession=true in the CONNECT packet of MQTTv3
+        return cleanStart && safeGetSessionExpiryInterval() == 0;
+    }
+
+    public boolean isNotCleanSession() { // The equivalent for cleanSession=false in the CONNECT packet of MQTTv3
+        return !cleanStart && safeGetSessionExpiryInterval() == 0;
+    }
+
+    public int safeGetSessionExpiryInterval() {
+        return sessionExpiryInterval == -1 ? 0 : sessionExpiryInterval;
+    }
 }

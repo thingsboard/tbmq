@@ -18,16 +18,17 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { PageLink } from "@shared/models/page/page-link";
-import { PageData } from "@shared/models/page/page-data";
-import { SharedSubscription } from "@shared/models/shared-subscription.model";
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { SharedSubscription } from '@shared/models/shared-subscription.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SharedSubscriptionService {
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+  }
 
   public getSharedSubscriptionById(sharedSubscriptionId: string, config?: RequestConfig): Observable<SharedSubscription> {
     return this.http.get<SharedSubscription>(`/api/app/shared/subs/${sharedSubscriptionId}`, defaultHttpOptionsFromConfig(config));

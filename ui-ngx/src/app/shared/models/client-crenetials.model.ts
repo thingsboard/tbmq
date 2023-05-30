@@ -24,8 +24,15 @@ export enum MqttCredentialsType {
 
 export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'Basic'],
-    [MqttCredentialsType.SSL, 'X.509 Certificate chain']
+    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
+    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
+  ]
+);
+
+export const credentialsWarningTranslations = new Map<MqttCredentialsType, string>(
+  [
+    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
+    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
   ]
 );
 
@@ -57,7 +64,7 @@ export interface BasicMqttCredentials {
 }
 
 export interface AuthRules {
-  subAuthRulePatterns: any
+  subAuthRulePatterns: any;
   pubAuthRulePatterns: any;
 }
 
@@ -68,4 +75,10 @@ export interface AuthRulesMapping extends AuthRules {
 export enum AuthRulePatternsType {
   SUBSCRIBE = 'SUBSCRIBE',
   PUBLISH = 'PUBLISH'
+}
+
+export interface ClientCredentialsInfo {
+  deviceCredentialsCount: number;
+  applicationCredentialsCount: number;
+  totalCount: number;
 }

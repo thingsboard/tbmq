@@ -15,30 +15,33 @@
 ///
 
 import {
-  checkBoxCell,
+  CellActionDescriptor,
+  checkBoxCell, clientTypeCell,
   DateEntityTableColumn,
   EntityTableColumn,
-  EntityTableConfig
+  EntityTableConfig, GroupActionDescriptor, defaultCellStyle
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import {
   SessionsDetailsDialogComponent,
   SessionsDetailsDialogData
-} from "@home/pages/sessions/sessions-details-dialog.component";
+} from '@home/pages/sessions/sessions-details-dialog.component';
 import {
+  ConnectionState,
   connectionStateColor,
   connectionStateTranslationMap,
   DetailedClientSessionInfo
-} from "@shared/models/session.model";
-import { clientTypeTranslationMap } from "@shared/models/client.model";
-import { HelpLinks } from "@shared/models/constants";
-import { Direction } from "@shared/models/page/sort-order";
+} from '@shared/models/session.model';
+import { clientTypeTranslationMap } from '@shared/models/client.model';
+import { HelpLinks } from '@shared/models/constants';
+import { Direction } from '@shared/models/page/sort-order';
+import { DialogService } from '@core/services/dialog.service';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -46,6 +49,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
+              private dialogService: DialogService,
               public entityId: string = null) {
     super();
     this.loadDataOnInit = true;
@@ -59,7 +63,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
-    this.defaultSortOrder = { property: 'connectionState', direction: Direction.ASC };
+    this.defaultSortOrder = {property: 'connectionState', direction: Direction.ASC};
+    /*this.groupActionDescriptors = this.configureGroupActions();
+    this.cellActionDescriptors = this.configureCellActions();*/
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
@@ -74,23 +80,34 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       }
     );*/
 
+
     this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
-        (entity) => this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)),
+        (entity) => {
+          return '<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:' +
+            connectionStateColor.get(entity.connectionState) +
+            '"></span>' +
+            '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600">' +
+            this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)) +
+            '</span>';
+        },
         (entity) => ({color: connectionStateColor.get(entity.connectionState)})
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '30%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
-        (entity) => this.translate.instant(clientTypeTranslationMap.get(entity.clientType))
-      ),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
-          entity => checkBoxCell(entity?.cleanStart)
-      ),
+        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
+        (entity) => defaultCellStyle(entity.clientId),
+        () => ({'font-weight': 500})),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
+        (entity) => defaultCellStyle(entity.clientIpAdr)),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
+        (entity) => defaultCellStyle(entity.subscriptionsCount)),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
+        (entity) => defaultCellStyle(entity.nodeId)),
       new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe,  '120px')
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '120px'),
+      new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
+        entity => checkBoxCell(entity?.cleanStart))
     );
   }
 
@@ -108,9 +125,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            session: session
+            session
           }
-        }).afterClosed().subscribe(() =>{
+        }).afterClosed().subscribe(() => {
           this.table.updateData();
         });
       }
@@ -118,8 +135,113 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     return false;
   }
 
+  configureGroupActions(): Array<GroupActionDescriptor<DetailedClientSessionInfo>> {
+    const actions: Array<GroupActionDescriptor<DetailedClientSessionInfo>> = [];
+    actions.push(
+      {
+        name: this.translate.instant('mqtt-client-session.disconnect-client-sessions'),
+        icon: 'portable_wifi_off',
+        isEnabled: true,
+        onAction: ($event, entities) => this.disconnectClientSessions($event, entities.map((entity) => entity))
+      }
+    );
+    return actions;
+  }
+
+  configureCellActions(): Array<CellActionDescriptor<DetailedClientSessionInfo>> {
+    const actions: Array<CellActionDescriptor<DetailedClientSessionInfo>> = [];
+    actions.push(
+      {
+        name: this.translate.instant('mqtt-client-session.disconnect-client-sessions'),
+        icon: 'portable_wifi_off',
+        isEnabled: (entity) => (entity.connectionState === ConnectionState.CONNECTED),
+        onAction: ($event, entity) => this.disconnectClientSession($event, entity)
+      },
+      {
+        name: this.translate.instant('mqtt-client-session.remove-session'),
+        mdiIcon: 'mdi:trash-can-outline',
+        isEnabled: (entity) => (entity.connectionState === ConnectionState.DISCONNECTED),
+        onAction: ($event, entity) => this.removeClientSession($event, entity)
+      }
+    );
+    return actions;
+  }
+
+  disconnectClientSessions($event: Event, sessions: Array<DetailedClientSessionInfo>) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialogService.confirm(
+      this.translate.instant('mqtt-client-session.disconnect-client-sessions-title', {count: sessions.length}),
+      this.translate.instant('mqtt-client-session.disconnect-client-sessions-text'),
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((res) => {
+        if (res) {
+          const tasks: Observable<any>[] = [];
+          sessions.forEach(
+            (session) => {
+              tasks.push(this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId));
+            }
+          );
+          forkJoin(tasks).subscribe(
+            () => {
+              this.table.updateData();
+            }
+          );
+        }
+      }
+    );
+  }
+
+  disconnectClientSession($event: Event, session: DetailedClientSessionInfo) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    const title = this.translate.instant('mqtt-client-session.disconnect-client-session-title', {clientId: session.clientId});
+    const content = this.translate.instant('mqtt-client-session.disconnect-client-session-text');
+    this.dialogService.confirm(
+      title,
+      content,
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((res) => {
+        if (res) {
+          this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId).subscribe(
+            () => {
+              this.table.updateData();
+            }
+          );
+        }
+      }
+    );
+  }
+
+  removeClientSession($event: Event, session: DetailedClientSessionInfo) {
+    const title = this.translate.instant('mqtt-client-session.remove-session-title', {clientId: session.clientId});
+    const content = this.translate.instant('mqtt-client-session.remove-session-text');
+    this.dialogService.confirm(
+      title,
+      content,
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((res) => {
+        if (res) {
+          this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId).subscribe(
+            () => {
+              this.table.updateData();
+            }
+          );
+        }
+      }
+    );
+  }
+
   private gotoHelpPage(): void {
-    let helpUrl = HelpLinks.linksMap['sessions'];
+    const helpUrl = HelpLinks.linksMap.sessions;
     if (helpUrl) {
       window.open(helpUrl, '_blank');
     }

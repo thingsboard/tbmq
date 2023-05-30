@@ -24,17 +24,20 @@ import { SessionsRoutingModule } from "@home/pages/sessions/sessions-routing.mod
 import { SubscriptionsComponent } from "@home/components/session-subscriptions/subscriptions.component";
 
 @NgModule({
-  declarations: [
-    SessionsTableComponent,
-    SessionsDetailsDialogComponent,
-    SubscriptionsComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    SessionsRoutingModule
-  ]
+    declarations: [
+        SessionsTableComponent,
+        SessionsDetailsDialogComponent,
+        SubscriptionsComponent
+    ],
+    exports: [
+        SessionsDetailsDialogComponent
+    ],
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SessionsRoutingModule
+    ]
 })
 
 export class SessionsModule { }

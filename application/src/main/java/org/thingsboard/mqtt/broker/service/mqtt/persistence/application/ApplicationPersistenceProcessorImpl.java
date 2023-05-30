@@ -112,6 +112,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
+    @Value("${queue.application-persisted-msg.shared-topic-validation:true}")
+    private boolean validateSharedTopicFilter;
 
     private volatile boolean stopped = false;
     private ExecutorService persistedMsgsConsumerExecutor;
@@ -272,7 +274,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                     applicationPubRelMsgCtx,
                                     clientSessionCtx,
                                     persistedMsgCtx,
-                                    publishProtoMessages);
+                                    publishProtoMessages,
+                                    subscription);
                             submitStrategy.init(messagesToDeliver);
 
                             if (isDebugEnabled) {
@@ -286,7 +289,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                 int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                                 cachePackProcessingCtx(clientId, subscription, ctx);
 
-                                process(submitStrategy, clientSessionCtx, clientId, subscription);
+                                process(submitStrategy, clientSessionCtx, clientId);
 
                                 if (isJobActive(job)) {
                                     ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -330,12 +333,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private List<PersistedMsg> getMessagesToDeliver(ApplicationPubRelMsgCtx applicationPubRelMsgCtx,
                                                     ClientSessionCtx clientSessionCtx,
                                                     ApplicationPersistedMsgCtx persistedMsgCtx,
-                                                    List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
+                                                    List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
+                                                    TopicSharedSubscription subscription) {
         List<PersistedPubRelMsg> pubRelMessagesToDeliver = applicationPubRelMsgCtx.toSortedPubRelMessagesToDeliver();
         List<PersistedPublishMsg> publishMessagesToDeliver = toPublishMessagesToDeliver(
                 clientSessionCtx,
                 persistedMsgCtx,
-                publishProtoMessages
+                publishProtoMessages,
+                subscription
         );
 
         return collectMessagesToDeliver(pubRelMessagesToDeliver, publishMessagesToDeliver);
@@ -396,11 +401,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
+        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopic(), validateSharedTopicFilter);
+        String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
+        String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
                 .createConsumerForSharedTopic(
-                        MqttApplicationClientUtil.getKafkaTopic(subscription.getTopic()),
-                        MqttApplicationClientUtil.getConsumerGroup(subscription),
-                        getSharedConsumerId(clientId));
+                        sharedAppTopic,
+                        sharedAppConsumerGroup,
+                        sharedConsumerId);
         consumer.subscribe();
         return consumer;
     }
@@ -416,12 +424,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        applicationTopicService.createTopic(clientId);
+        String clientTopic = applicationTopicService.createTopic(clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         if (log.isDebugEnabled()) {
             log.debug("[{}] Starting persisted messages processing.", clientId);
         }
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId, clientTopic);
         Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
             try {
                 processPersistedMessages(consumer, clientState);
@@ -582,7 +590,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void clearPersistedMsgs(String clientId) {
         clientLogger.logEvent(clientId, this.getClass(), "Clearing persisted messages");
-        String applicationConsumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
+        String applicationConsumerGroup = MqttApplicationClientUtil.getAppConsumerGroup(clientId);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
         }
@@ -594,8 +602,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         persistedMsgCtxMap.remove(clientId);
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = createConsumer(clientId);
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId, String clientTopic) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = createConsumer(clientId, clientTopic);
         try {
             consumer.assignPartition(0);
 
@@ -612,11 +620,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String clientId) {
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String clientId, String clientTopic) {
         return applicationPersistenceMsgQueueFactory
                 .createConsumer(
-                        MqttApplicationClientUtil.getTopic(clientId),
-                        MqttApplicationClientUtil.getConsumerGroup(clientId),
+                        clientTopic,
+                        MqttApplicationClientUtil.getAppConsumerGroup(clientId),
                         getConsumerId(clientId));
     }
 
@@ -654,7 +662,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                         applicationPubRelMsgCtx,
                         clientSessionCtx,
                         persistedMsgCtx,
-                        publishProtoMessages);
+                        publishProtoMessages,
+                        null);
                 submitStrategy.init(messagesToDeliver);
 
                 applicationPubRelMsgCtx = new ApplicationPubRelMsgCtx(Sets.newConcurrentHashSet());
@@ -664,7 +673,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     packProcessingCtxMap.put(clientId, ctx);
 
-                    process(submitStrategy, clientSessionCtx, clientId, null);
+                    process(submitStrategy, clientSessionCtx, clientId);
 
                     if (isClientConnected(sessionId, clientState)) {
                         ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
@@ -695,8 +704,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx,
-                         String clientId, TopicSharedSubscription topicSharedSubscription) {
+    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx, String clientId) {
         if (isDebugEnabled) {
             log.debug("[{}] Start sending the pack of messages from processing ctx: {}", clientId, submitStrategy.getOrderedMessages());
         }
@@ -704,8 +712,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             switch (msg.getPacketType()) {
                 case PUBLISH:
                     PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                    int minQoSValue = getMinQoSValue(topicSharedSubscription, publishMsg);
-                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg.toBuilder().qosLevel(minQoSValue).build());
+                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg);
                     break;
                 case PUBREL:
                     publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
@@ -716,9 +723,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientSessionCtx.getChannel().flush();
     }
 
-    private int getMinQoSValue(TopicSharedSubscription subscription, PublishMsg publishMsg) {
-        return subscription == null ? publishMsg.getQosLevel() :
-                Math.min(subscription.getQos(), publishMsg.getQosLevel());
+    private int getMinQoSValue(TopicSharedSubscription subscription, int publishMsgQos) {
+        return subscription == null ? publishMsgQos : Math.min(subscription.getQos(), publishMsgQos);
     }
 
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
@@ -743,23 +749,22 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     private List<PersistedPublishMsg> toPublishMessagesToDeliver(ClientSessionCtx clientSessionCtx,
                                                                  ApplicationPersistedMsgCtx persistedMsgCtx,
-                                                                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages) {
+                                                                 List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
+                                                                 TopicSharedSubscription subscription) {
         List<PersistedPublishMsg> result = new ArrayList<>(publishProtoMessages.size());
         for (TbProtoQueueMsg<PublishMsgProto> msg : publishProtoMessages) {
             var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
             boolean isDup = msgPacketId != null;
-            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, isDup);
+            int minQoSValue = getMinQoSValue(subscription, msg.getValue().getQos());
+            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, minQoSValue, isDup);
             result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
         }
         return result;
     }
 
-    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, boolean isDup) {
-        return ProtoConverter.convertToPublishMsg(persistedMsgProto).toBuilder()
-                .packetId(packetId)
-                .isDup(isDup)
-                .build();
+    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, int qos, boolean isDup) {
+        return ProtoConverter.convertToPublishMsg(persistedMsgProto, packetId, qos, isDup);
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {

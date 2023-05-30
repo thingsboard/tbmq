@@ -20,7 +20,7 @@ import {AppState} from '../core.state';
 import {selectAuth, selectIsAuthenticated} from '../auth/auth.selectors';
 import {take} from 'rxjs/operators';
 import {MenuSection} from '@core/services/menu.models';
-import {BehaviorSubject, Observable, Subject} from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import {Authority} from '@shared/models/authority.enum';
 import {guid} from '@core/utils';
 import {AuthState} from '@core/auth/auth.models';
@@ -63,6 +63,22 @@ export class MenuService {
     sections.push(
       {
         id: guid(),
+        name: 'home.home',
+        type: 'link',
+        path: '/home',
+        icon: 'mdi:view-dashboard-outline',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
+        name: 'monitoring.monitoring',
+        type: 'link',
+        path: '/monitoring',
+        icon: 'mdi:monitor-dashboard',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
         name: 'user.users',
         type: 'link',
         path: '/users',
@@ -95,6 +111,14 @@ export class MenuService {
       },
       {
         id: guid(),
+        name: 'retained-message.retained-messages',
+        type: 'link',
+        path: '/retained-messages',
+        icon: 'mdi:archive-outline',
+        isMdiIcon: true
+      },
+      {
+        id: guid(),
         name: 'admin.system-settings',
         type: 'toggle',
         path: '/settings',
@@ -117,6 +141,59 @@ export class MenuService {
 
   public menuSections(): Observable<Array<MenuSection>> {
     return this.menuSections$;
+  }
+
+  public quickLinks(): Observable<Array<any>> {
+    return of([
+      {
+        name: 'mqtt-client-credentials.credentials',
+        path: '/client-credentials',
+        icon: 'mdi:shield-lock',
+        isMdiIcon: true
+      },
+      {
+        name: 'mqtt-client-session.sessions',
+        path: '/sessions',
+        icon: 'mdi:book-multiple',
+        isMdiIcon: true
+      },
+      {
+        name: 'shared-subscription.shared-subscriptions',
+        path: '/shared-subscriptions',
+        icon: 'mdi:monitor-share',
+        isMdiIcon: true
+      },
+      {
+        name: 'retained-message.retained-messages',
+        path: '/retained-messages',
+        icon: 'mdi:archive-outline',
+        isMdiIcon: true
+      },
+      {
+        name: 'user.users',
+        path: '/users',
+        icon: 'mdi:account-multiple-outline',
+        isMdiIcon: true
+      },
+      {
+        name: 'monitoring.monitoring',
+        path: '/monitoring',
+        icon: 'mdi:monitor-dashboard',
+        isMdiIcon: true
+      },
+      {
+        name: 'admin.outgoing-mail',
+        path: '/settings/outgoing-mail',
+        icon: 'mdi:email',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.rest-api',
+        path: 'rest-api',
+        icon: 'mdi:api',
+        isMdiIcon: true
+      }
+    ]);
   }
 
 }
