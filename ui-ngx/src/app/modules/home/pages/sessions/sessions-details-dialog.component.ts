@@ -15,16 +15,19 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from "@shared/models/session.model";
-import { DialogComponent } from "@shared/components/dialog.component";
-import { AppState } from "@core/core.state";
-import { Store } from "@ngrx/store";
-import { Router } from "@angular/router";
-import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
-import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
-import { MqttClientSessionService } from "@core/http/mqtt-client-session.service";
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { TranslateService } from "@ngx-translate/core";
+import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from '@shared/models/session.model';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
+import { Router } from '@angular/router';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { appearance } from '@shared/models/constants';
+import { ClientType } from '@shared/models/client.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -33,15 +36,21 @@ export interface SessionsDetailsDialogData {
 @Component({
   selector: 'tb-sessions-details-dialog',
   templateUrl: './sessions-details-dialog.component.html',
-  styleUrls: ['./sessions-details-dialog.component.scss']
+  styleUrls: ['./sessions-details-dialog.component.scss'],
+  providers: [
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: appearance
+    }
+  ]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
 
   entity: DetailedClientSessionInfo;
   entityForm: FormGroup;
-  sessionDetailsForm: FormGroup;
   connectionStateColor = connectionStateColor;
+  showAppClientShouldBePersistentWarning: boolean;
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -60,6 +69,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
+    this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }
 
@@ -96,7 +106,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   onEntityAction($event, action): void {
     switch (action) {
       case ('save'):
-        this.onSave()
+        this.onSave();
         break;
       case ('remove'):
         this.onRemove();
@@ -116,7 +126,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       {
         message: this.translate.instant('mqtt-client-session.session-id-copied-message'),
         type: 'success',
-        duration: 750,
+        duration: 2000,
         verticalPosition: 'bottom',
         horizontalPosition: 'right'
       }));
@@ -147,19 +157,19 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private updateFormsValues(entity: DetailedClientSessionInfo): void {
-    this.entityForm.patchValue({clientId: entity.clientId} );
-    this.entityForm.patchValue({clientType: entity.clientType} );
-    this.entityForm.patchValue({clientIpAdr: entity.clientIpAdr} );
-    this.entityForm.patchValue({nodeId: entity.nodeId} );
-    this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds} );
-    this.entityForm.patchValue({sessionExpiryInterval: entity.sessionExpiryInterval} );
-    this.entityForm.patchValue({sessionEndTs: entity.sessionEndTs} );
-    this.entityForm.patchValue({connectedAt: entity.connectedAt} );
+    this.entityForm.patchValue({clientId: entity.clientId});
+    this.entityForm.patchValue({clientType: entity.clientType});
+    this.entityForm.patchValue({clientIpAdr: entity.clientIpAdr});
+    this.entityForm.patchValue({nodeId: entity.nodeId});
+    this.entityForm.patchValue({keepAliveSeconds: entity.keepAliveSeconds});
+    this.entityForm.patchValue({sessionExpiryInterval: entity.sessionExpiryInterval});
+    this.entityForm.patchValue({sessionEndTs: entity.sessionEndTs});
+    this.entityForm.patchValue({connectedAt: entity.connectedAt});
     this.entityForm.patchValue({connectionState: entity.connectionState});
-    this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt} );
-    this.entityForm.patchValue({subscriptions: entity.subscriptions} );
-    this.entityForm.patchValue({cleanStart: entity.cleanStart} );
-    this.entityForm.patchValue({subscriptionsCount: entity.subscriptions.length} );
+    this.entityForm.patchValue({disconnectedAt: entity.disconnectedAt});
+    this.entityForm.patchValue({subscriptions: entity.subscriptions});
+    this.entityForm.patchValue({cleanStart: entity.cleanStart});
+    this.entityForm.patchValue({subscriptionsCount: entity.subscriptions.length});
   }
 
   private closeDialog(): void {

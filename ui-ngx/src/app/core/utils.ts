@@ -17,7 +17,7 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
-import { NULL_UUID } from "@shared/models/constants";
+import { NULL_UUID } from '@shared/models/constants';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -189,6 +189,12 @@ export function base64toObj(b64Encoded: string): any {
   return JSON.parse(json);
 }
 
+export function base64toString(b64Encoded: string): string {
+  return decodeURIComponent(atob(b64Encoded).split('').map((c) => {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
+
 const scrollRegex = /(auto|scroll)/;
 
 function parentNodes(node: Node, nodes: Node[]): Node[] {
@@ -285,7 +291,9 @@ export function deepClone<T>(target: T, ignoreFields?: string[]): T {
   }
   if (target instanceof Array) {
     const cp = [] as any[];
-    (target as any[]).forEach((v) => { cp.push(v); });
+    (target as any[]).forEach((v) => {
+      cp.push(v);
+    });
     return cp.map((n: any) => deepClone<any>(n)) as any;
   }
   if (typeof target === 'object' && target !== {}) {
@@ -314,6 +322,7 @@ export function guid(): string {
       .toString(16)
       .substring(1);
   }
+
   return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
     s4() + '-' + s4() + s4() + s4();
 }
@@ -410,7 +419,7 @@ export function generateSecret(length?: number): string {
 }
 
 export function validateEntityId(entityId: string): boolean {
-    return isDefinedAndNotNull(entityId) && entityId !== NULL_UUID;
+  return isDefinedAndNotNull(entityId) && entityId !== NULL_UUID;
 }
 
 export function isMobileApp(): boolean {
@@ -422,7 +431,7 @@ const alphanumericCharactersLength = alphanumericCharacters.length;
 
 export function randomAlphanumeric(length: number): string {
   let result = '';
-  for ( let i = 0; i < length; i++ ) {
+  for (let i = 0; i < length; i++) {
     result += alphanumericCharacters.charAt(Math.floor(Math.random() * alphanumericCharactersLength));
   }
   return result;

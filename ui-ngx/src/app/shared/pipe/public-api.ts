@@ -17,3 +17,4 @@
 export * from './highlight.pipe';
 export * from './milliseconds-to-time-string.pipe';
 export * from './nospace.pipe';
+export * from './boolean.pipe';

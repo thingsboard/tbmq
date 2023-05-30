@@ -14,7 +14,8 @@
 /// limitations under the License.
 ///
 
-import {InjectionToken} from '@angular/core';
+import { InjectionToken } from '@angular/core';
+import { MatFormFieldDefaultOptions } from "@angular/material/form-field";
 
 export const Constants = {
   serverErrorCode: {
@@ -71,3 +72,44 @@ export const customTranslationsPrefix = 'custom.';
 export const MODULES_MAP = new InjectionToken<{[key: string]: any}>('ModulesMap');
 
 export const NULL_UUID = '13814000-1dd2-11b2-8080-808080808080';
+
+export const appearance: MatFormFieldDefaultOptions = {
+  appearance: 'fill'
+};
+
+export interface ContentTypeData {
+  name: string;
+  code: string;
+}
+
+export enum ContentType {
+  JSON = 'JSON',
+  TEXT = 'TEXT',
+  BINARY = 'BINARY'
+}
+
+export const contentTypesMap = new Map<ContentType, ContentTypeData>(
+  [
+    [
+      ContentType.JSON,
+      {
+        name: 'content-type.json',
+        code: 'json'
+      }
+    ],
+    [
+      ContentType.TEXT,
+      {
+        name: 'content-type.text',
+        code: 'text'
+      }
+    ],
+    [
+      ContentType.BINARY,
+      {
+        name: 'content-type.binary',
+        code: 'text'
+      }
+    ]
+  ]
+);

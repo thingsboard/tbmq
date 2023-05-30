@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {ClientInfo, ClientType} from '@shared/models/client.model';
-import {BaseData} from '@shared/models/base-data';
+import { ClientInfo, ClientType } from '@shared/models/client.model';
+import { BaseData } from '@shared/models/base-data';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -75,6 +75,14 @@ export const mqttQoSTypes = [
   }
 ];
 
+export const QoSTranslationMap = new Map<number, string>(
+  [
+    [0, 'mqtt-client-session.qos-at-most-once'],
+    [1, 'mqtt-client-session.qos-at-least-once'],
+    [2, 'mqtt-client-session.qos-exactly-once']
+  ]
+);
+
 export enum ConnectionState {
   CONNECTED = 'CONNECTED',
   DISCONNECTED = 'DISCONNECTED'
@@ -93,3 +101,9 @@ export const connectionStateTranslationMap = new Map<ConnectionState, string>(
     [ConnectionState.DISCONNECTED, 'mqtt-client-session.disconnected']
   ]
 );
+
+export interface ClientSessionStatsInfo {
+  connectedCount: number;
+  disconnectedCount: number;
+  totalCount: number;
+}

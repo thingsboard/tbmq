@@ -15,7 +15,7 @@
 ///
 
 
-import {MarkedOptions, MarkedRenderer} from 'ngx-markdown';
+import { MarkedOptions, MarkedRenderer } from 'ngx-markdown';
 
 export function markedOptionsFactory(): MarkedOptions {
   const renderer = new MarkedRenderer();
@@ -27,6 +27,11 @@ export function markedOptionsFactory(): MarkedOptions {
 
   renderer.code = (code: string, language: string | undefined, isEscaped: boolean) => {
     if (code.endsWith(copyCodeBlock)) {
+      if (code.includes('{:hostname}')) {
+        code = code.replace('{:hostname}', window.location.hostname);
+        // @ts-ignore
+        code = code.replace('{:port}', window.mqttPort);
+      }
       code = code.substring(0, code.length - copyCodeBlock.length);
       const content = renderer2.code(code, language, isEscaped);
       id++;
@@ -39,7 +44,7 @@ export function markedOptionsFactory(): MarkedOptions {
   renderer.tablecell = (content: string, flags: {
     header: boolean;
     align: 'center' | 'left' | 'right' | null;
-    }) => {
+  }) => {
     if (content.endsWith(copyCodeBlock)) {
       content = content.substring(0, content.length - copyCodeBlock.length);
       id++;
@@ -61,7 +66,40 @@ export function markedOptionsFactory(): MarkedOptions {
 
 function wrapCopyCode(id: number, content: string, code: string): string {
   return '<div class="code-wrapper">' + content + '<span id="copyCodeId' + id + '" style="display: none;">' + code + '</span>' +
-  '<button id="copyCodeBtn' + id + '" onClick="markdownCopyCode(' + id + ')" ' +
-  'class="clipboard-btn"><img src="https://clipboardjs.com/assets/images/clippy.svg" alt="Copy to clipboard">' +
-  '</button></div>';
+    '<button title="Copy code" id="copyCodeBtn' + id + '" onClick="markdownCopyCode(' + id + ')" ' +
+    'class="clipboard-btn"><mat-icon class="material-icons" style="font-size: 16px">content_copy</mat-icon>' +
+    '</button></div>';
 }
+
+(window as any).markdownCopyCode = (id: number) => {
+  const text = $('#copyCodeId' + id).text();
+  navigator.clipboard.writeText(text).then(() => {
+    // @ts-ignore
+    import('tooltipster').then(
+      () => {
+        const copyBtn = $('#copyCodeBtn' + id);
+        if (!copyBtn.hasClass('tooltipstered')) {
+          copyBtn.tooltipster(
+            {
+              content: 'Copied',
+              theme: 'tooltipster-shadow',
+              delay: 0,
+              trigger: 'custom',
+              triggerClose: {
+                click: true,
+                tap: true,
+                scroll: true,
+                mouseleave: true
+              },
+              side: 'bottom',
+              distance: 12,
+              trackOrigin: true
+            }
+          );
+        }
+        const tooltip = copyBtn.tooltipster('instance');
+        tooltip.open();
+      }
+    );
+  });
+};

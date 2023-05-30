@@ -14,23 +14,22 @@
 /// limitations under the License.
 ///
 
-import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {NgModule} from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NgModule } from '@angular/core';
 
-import {AppRoutingModule} from './app-routing.module';
-import {CoreModule} from '@core/core.module';
-import {LoginModule} from '@modules/login/login.module';
-import {HomeModule} from '@home/home.module';
+import { AppRoutingModule } from './app-routing.module';
+import { CoreModule } from '@core/core.module';
+import { LoginModule } from '@modules/login/login.module';
+import { HomeModule } from '@home/home.module';
 
-import {AppComponent} from './app.component';
-import {RouterModule, Routes} from '@angular/router';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldDefaultOptions } from "@angular/material/form-field";
+import { AppComponent } from './app.component';
+import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
     path: '**',
-    redirectTo: 'sessions'
+    redirectTo: 'home'
   }
 ];
 
@@ -39,11 +38,8 @@ const routes: Routes = [
     RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class PageNotFoundRoutingModule { }
-
-const appearance: MatFormFieldDefaultOptions = {
-  appearance: 'fill'
-};
+export class PageNotFoundRoutingModule {
+}
 
 @NgModule({
   declarations: [
@@ -58,12 +54,7 @@ const appearance: MatFormFieldDefaultOptions = {
     HomeModule,
     PageNotFoundRoutingModule
   ],
-  providers: [
-    {
-      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-      useValue: appearance
-    }
-  ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

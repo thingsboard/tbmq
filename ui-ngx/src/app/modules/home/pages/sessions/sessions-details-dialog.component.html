@@ -54,6 +54,10 @@
     </button>
   </div>
   <div mat-dialog-content>
+    <section *ngIf="showAppClientShouldBePersistentWarning" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">
+      <span>{{'mqtt-client-session.should-be-persistent' | translate}}</span>
+      <mat-icon class="material-icons" [matTooltip]="'mqtt-client-session.should-be-persistent-tip' | translate" matTooltipPosition="right">info</mat-icon>
+    </section>
     <fieldset class="fields-group">
       <legend class="group-title">{{ 'mqtt-client-session.connection-info' | translate }}</legend>
       <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">

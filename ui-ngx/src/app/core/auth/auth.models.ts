@@ -29,3 +29,5 @@ export interface AuthState extends AuthPayload {
   isAuthenticated: boolean;
   isUserLoaded: boolean;
 }
+
+export const DEFAULT_PASSWORD = 'sysadmin';

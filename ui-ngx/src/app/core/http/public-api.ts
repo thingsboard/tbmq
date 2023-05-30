@@ -19,3 +19,8 @@ export * from './mqtt-client-credentials.service';
 export * from './mqtt-client-session.service';
 export * from './admin.service';
 export * from './auth.service';
+export * from './stats.service';
+export * from './retained-msg.service';
+export * from './instructions.service';
+export * from './config.service';
+export * from './kafka.service';

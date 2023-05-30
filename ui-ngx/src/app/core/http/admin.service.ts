@@ -14,20 +14,22 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {User} from '@shared/models/user.model';
-import {PageLink} from "@shared/models/page/page-link";
-import {PageData} from "@shared/models/page/page-data";
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { User } from '@shared/models/user.model';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+  }
 
   public getAdmin(userId: string, config?: RequestConfig): Observable<User> {
     return this.http.get<User>(`/api/admin/user/${userId}`, defaultHttpOptionsFromConfig(config));
@@ -35,7 +37,7 @@ export class AdminService {
 
   public saveAdmin(user: User, config?: RequestConfig): Observable<User> {
     if (!user.password) {
-      user.password = 'sysadmin';
+      user.password = DEFAULT_PASSWORD;
     }
     return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
   }
