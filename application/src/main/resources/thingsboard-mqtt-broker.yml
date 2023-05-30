@@ -279,8 +279,8 @@ queue:
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
 #      tbmq.msg.all:
-      #        - key: max.poll.records
-      #          value: "${TB_KAFKA_MSG_ALL_MAX_POLL_RECORDS:8192}"
+#        - key: max.poll.records
+#          value: "${TB_KAFKA_MSG_ALL_MAX_POLL_RECORDS:8192}"
       tbmq.msg.app.test_client:
         - key: max.poll.records
           value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
