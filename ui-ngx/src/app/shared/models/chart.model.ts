@@ -278,12 +278,8 @@ export function monitoringChartJsParams() {
           }
         },
         tooltip: {
-          enabled: false,
-          position: 'myCustomPositioner',
-          external: externalTooltipHandler,
-          callbacks: {
-            footer,
-          }
+          enabled: true,
+          position: 'myCustomPositioner'
         },
         emptyChart: {}
       },

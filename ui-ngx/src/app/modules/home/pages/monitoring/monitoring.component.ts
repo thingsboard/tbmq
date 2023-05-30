@@ -195,8 +195,8 @@ export class MonitoringComponent extends PageComponent {
         borderColor: color,
         backgroundColor: color,
         pointHoverBackgroundColor: color,
-        pointBorderColor: 'rgba(0, 0, 0, 0)',
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointBorderColor: color,
+        pointBackgroundColor: color,
         pointHoverBorderColor: color,
         pointBorderWidth: 0
       };
