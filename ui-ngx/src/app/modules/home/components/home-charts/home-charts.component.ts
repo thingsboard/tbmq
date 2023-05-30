@@ -138,7 +138,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private pushLatestValue(chartType: string, latestData: TimeseriesData) {
-    if (latestData[chartType].length) {
+    if (latestData[chartType]?.length) {
       const latestValue = latestData[chartType][0];
       latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
       this.charts[chartType].data.datasets[0].data.unshift(latestValue);
@@ -157,7 +157,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private updateLabel(data: TimeseriesData, chartType: string) {
-    this.latestValues[chartType] = data[chartType][0].value;
+    this.latestValues[chartType] = data[chartType]?.length ? data[chartType][0].value : null;
   }
 
   private updateChart(chartType) {
