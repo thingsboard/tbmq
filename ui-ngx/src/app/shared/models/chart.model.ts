@@ -103,7 +103,7 @@ export function homeChartJsParams() {
         padding: {
           right: 10,
           left: 10,
-          bottom: 10,
+          bottom: 5,
           top: 10
         }
       },
@@ -118,7 +118,9 @@ export function homeChartJsParams() {
       },
       scales: {
         y: {
-          display: false
+          display: false,
+          min: 0,
+          suggestedMax: 1
         },
         x: {
           type: 'time',
@@ -134,14 +136,11 @@ export function homeChartJsParams() {
             source: 'auto',
             autoSkip: true,
             maxRotation: 0,
-            major: {
-              enabled: true
-            },
             font: {
               size: 8
             },
             callback(val, index) {
-              return (index === 0 || index === 4) ? val : ''; // Show only first tick label
+              return (index === 0 || index === 8) ? val : ''; // Show only first tick label
             },
           },
           grid: {
@@ -212,7 +211,7 @@ export function monitoringChartJsParams() {
       scales: {
         y: {
           min: 0,
-          suggestedMax: 5,
+          suggestedMax: 1,
           title: {
             display: false
           },

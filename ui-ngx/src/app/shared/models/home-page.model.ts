@@ -15,7 +15,7 @@
 ///
 
 export const POLLING_INTERVAL = 1000 * 60; // 1 min
-export const DEFAULT_HOME_CHART_INTERVAL = 1000 * 60 * 10; // 10 min
+export const HOME_CHARTS_DURATION = 1000 * 60 * 10; // 10 min
 
 export enum HomePageTitleType {
   MONITORING = 'MONITORING',

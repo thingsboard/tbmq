@@ -30,7 +30,7 @@ import {
   TimeseriesData, TOTAL_KEY
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
-import { DEFAULT_HOME_CHART_INTERVAL, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-home-charts',
@@ -65,7 +65,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private calculateFixedWindowTimeMs() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timeService.defaultTimewindow());
-    this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - DEFAULT_HOME_CHART_INTERVAL;
+    this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - HOME_CHARTS_DURATION;
   }
 
   private setChartSize() {
@@ -140,7 +140,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private pushLatestValue(chartType: string, latestData: TimeseriesData) {
     if (latestData[chartType]?.length) {
       const latestValue = latestData[chartType][0];
-      latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
       this.charts[chartType].data.datasets[0].data.unshift(latestValue);
     }
   }

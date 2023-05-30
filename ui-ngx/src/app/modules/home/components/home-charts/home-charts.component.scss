@@ -32,5 +32,18 @@
       border-radius: 10px;
       background-color: #fcfcfc;
     }
+
+    mat-icon {
+      font-size: 14px;
+      height: 14px;
+      width: 14px;
+      padding-left: 4px;
+      color: #727272;
+      cursor: default;
+    }
+
+    mat-icon:hover {
+      color: #000;
+    }
   }
 }

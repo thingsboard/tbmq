@@ -42,10 +42,10 @@ export class InstructionsService {
         id: 'publish',
         title: 'Publish message'
       },
-      // {
-      //   id: 'disconnect',
-      //   title: 'Disconnect client'
-      // }
+      {
+        id: 'disconnect',
+        title: 'Disconnect client'
+      }
     ];
     if (basicAuthEnabled) {
       steps.unshift({

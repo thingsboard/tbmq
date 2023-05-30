@@ -62,7 +62,6 @@ export class MonitoringComponent extends PageComponent {
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
-  private latestValues = {};
   private $getLatestTimeseries: Observable<TimeseriesData[]>;
   private $getEntityTimeseries: Observable<TimeseriesData[]>;
 
@@ -147,8 +146,6 @@ export class MonitoringComponent extends PageComponent {
           for (const chartType in StatsChartType) {
             for (let i = 0; i < this.brokerIds.length; i++) {
               const brokerId = this.brokerIds[i];
-              this.latestValues[brokerId] = {};
-              this.latestValues[brokerId][chartType] = 0;
               if (!ONLY_TOTAL_KEYS.includes(chartType)) {
                 this.charts[chartType].data.datasets[i].data = data[i][chartType];
               } else {
@@ -170,8 +167,6 @@ export class MonitoringComponent extends PageComponent {
             for (const chartType in StatsChartType) {
               for (let i = 0; i < this.brokerIds.length; i++) {
                 const brokerId = this.brokerIds[i];
-                this.latestValues[brokerId] = {};
-                this.latestValues[brokerId][chartType] = 0;
                 if (!ONLY_TOTAL_KEYS.includes(chartType)) {
                   this.charts[chartType].data.datasets[i].data = null;
                 } else {
@@ -212,8 +207,6 @@ export class MonitoringComponent extends PageComponent {
       const datasets = {data: {datasets: []}};
       for (let i = 0; i < this.brokerIds.length; i++) {
         const brokerId = this.brokerIds[i];
-        this.latestValues[brokerId] = {};
-        this.latestValues[brokerId][chartType] = 0;
         if (ONLY_TOTAL_KEYS.includes(chartType)) {
           if (brokerId === TOTAL_KEY) {
             datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
@@ -259,7 +252,6 @@ export class MonitoringComponent extends PageComponent {
       if (data[index][chartType]?.length) {
         if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
         const latestValue = data[index][chartType][0];
-        latestValue.ts = this.fixedWindowTimeMs.endTimeMs;
         this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
     }
@@ -284,7 +276,6 @@ export class MonitoringComponent extends PageComponent {
       let index = i;
       const brokerId = this.brokerIds[i];
       if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
-      this.latestValues[brokerId][chartType] = data[index][chartType]?.length ? data[index][chartType][0].value : null;
     }
   }
 
