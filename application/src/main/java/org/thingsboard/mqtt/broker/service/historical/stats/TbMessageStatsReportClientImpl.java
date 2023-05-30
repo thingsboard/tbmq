@@ -93,7 +93,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             long value = stats.get(key).get();
-            if (value == 0) continue;
 
             UsageStatsKVProto.Builder statsItem = UsageStatsKVProto.newBuilder()
                     .setKey(key)

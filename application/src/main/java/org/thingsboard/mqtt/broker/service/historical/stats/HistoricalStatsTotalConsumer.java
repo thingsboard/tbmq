@@ -136,16 +136,10 @@ public class HistoricalStatsTotalConsumer {
         long clientSessionCount = clientSessionService.getClientSessionsCount();
         long clientSubscriptionCount = clientSubscriptionService.getClientSubscriptionsCount();
         List<TsKvEntry> entries = new ArrayList<>();
-        if (clientSessionCount != 0) {
-            entries.add(new BasicTsKvEntry(ts,
-                    new LongDataEntry(SESSIONS, clientSessionCount)));
-        }
-        if (clientSubscriptionCount != 0) {
-            entries.add(new BasicTsKvEntry(ts,
-                    new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
-        }
-
-        if (entries.isEmpty()) return;
+        entries.add(new BasicTsKvEntry(ts,
+                new LongDataEntry(SESSIONS, clientSessionCount)));
+        entries.add(new BasicTsKvEntry(ts,
+                new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
 
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
         DonAsynchron.withCallback(savedTsFuture, unused -> {
@@ -262,7 +256,7 @@ public class HistoricalStatsTotalConsumer {
         }
 
         private boolean isEmpty() {
-            return ts == 0 && totalMsgCounter == 0;
+            return ts == 0;
         }
     }
 }
