@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
 
 @Slf4j
@@ -113,6 +114,9 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
+            if (!mqttPubMsg.fixedHeader().isRetain()) {
+                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+            }
             throw e;
         }
         deliveryTimerStats.logDelivery(startTime, TimeUnit.NANOSECONDS);
