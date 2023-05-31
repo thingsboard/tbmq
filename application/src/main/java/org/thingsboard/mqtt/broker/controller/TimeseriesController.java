@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -55,7 +56,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -117,24 +117,25 @@ public class TimeseriesController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @ApiOperation(value = "Save entity timeseries", hidden = true)
     @RequestMapping(value = "/{entityId}/save", method = RequestMethod.POST)
     @ResponseBody
-    public DeferredResult<ResponseEntity> saveEntityTelemetry(
+    public DeferredResult<ResponseEntity> saveEntityTimeseries(
             @PathVariable("entityId") String entityId,
             @RequestBody String requestBody) throws ThingsboardException {
         try {
-            return saveTelemetry(entityId, requestBody);
+            return saveTimeseries(entityId, requestBody);
         } catch (Exception e) {
             throw handleException(e);
         }
     }
 
-    private DeferredResult<ResponseEntity> saveTelemetry(String entityId, String requestBody) throws ThingsboardException {
+    private DeferredResult<ResponseEntity> saveTimeseries(String entityId, String requestBody) {
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
         Map<Long, List<KvEntry>> telemetryRequest;
         JsonElement telemetryJson;
         try {
-            telemetryJson = new JsonParser().parse(requestBody);
+            telemetryJson = JsonParser.parseString(requestBody);
         } catch (Exception e) {
             return getImmediateDeferredResult("Unable to parse timeseries payload: Invalid JSON body!");
         }
