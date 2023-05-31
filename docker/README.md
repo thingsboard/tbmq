@@ -30,19 +30,20 @@ Execute the following command to start services:
 $ ./scripts/docker-start-services.sh
 `
 
-After a while when all services will be successfully started you can make requests to `http://{your-host-ip}:8083` in you browser (for ex. `http://localhost:8083`) 
-and connect using MQTT protocol on 1883 port (for ex. `http://localhost:1883`).
+After a while when all services will be successfully started you can make requests to `http://{your-host-ip}:8083` in
+you browser (e.g. [http://localhost:8083](http://localhost:8083))
+and connect using MQTT protocol on 1883 port.
 
 In case of any issues you can examine service logs for errors.
 For example to see ThingsBoard Mqtt Broker logs execute the following command:
 
 `
-$ docker-compose logs -f tb-mqtt-broker-1
+$ docker compose logs -f tb-mqtt-broker-1
 `
 
-Or use `docker-compose ps` to see the state of all the containers.
-Use `docker-compose logs --f` to inspect the logs of all running services.
-See [docker-compose logs](https://docs.docker.com/compose/reference/logs/) command reference for details.
+Or use `docker compose ps` to see the state of all the containers.
+Use `docker compose logs --f` to inspect the logs of all running services.
+See [docker compose logs](https://docs.docker.com/compose/reference/logs/) command reference for details.
 
 Execute the following command to stop services:
 
