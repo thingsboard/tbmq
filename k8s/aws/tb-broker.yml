@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: tb-broker
@@ -36,9 +36,11 @@ spec:
             name: tb-broker-config
             items:
               - key: conf
-                path:  thingsboard-mqtt-broker.conf
+                path: thingsboard-mqtt-broker.conf
               - key: logback
-                path:  logback.xml
+                path: logback.xml
+      nodeSelector:
+        role: tbmq
       containers:
         - name: server
           imagePullPolicy: Always
@@ -55,8 +57,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SECURITY_MQTT_BASIC_ENABLED
+              value: "false"
+            - name: SECURITY_MQTT_SSL_ENABLED
+              value: "false"
             - name: TB_KAFKA_SERVERS
-              value: "b-1.tb-broker-cluster.a6b99i.c17.kafka.us-east-1.amazonaws.com:9092,b-2.tb-broker-cluster.a6b99i.c17.kafka.us-east-1.amazonaws.com:9092"
+              value: "PUT_YOUR_KAFKA_SERVERS_HERE"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT
@@ -77,12 +83,22 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: tb-broker-config
-          livenessProbe:
-            httpGet:
-              path: /actuator
-              port: http
-            initialDelaySeconds: 300
+          readinessProbe:
+            tcpSocket:
+              port: 1883
             timeoutSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 5
+          livenessProbe:
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 1883
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 10
       restartPolicy: Always
 ---
 apiVersion: v1

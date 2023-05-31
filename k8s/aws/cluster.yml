@@ -22,12 +22,15 @@ availabilityZones: [us-east-1a,us-east-1b,us-east-1c]
 metadata:
   name: thingsboard-mqtt-broker-cluster
   region: us-east-1
-  version: "1.21"
+  version: "1.23"
 
 managedNodeGroups:
-  - name: main-node-group
-    instanceType: m5.large
-    desiredCapacity: 1
-    maxSize: 1
+  - name: tb-mqtt-broker
+    instanceType: m6a.large
+    desiredCapacity: 2
+    maxSize: 2
     minSize: 1
-    labels: { type: node }
+    labels: { role: tbmq }
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak' # Note, use your own public key name here
