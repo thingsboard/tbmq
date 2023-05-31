@@ -488,7 +488,7 @@ stats:
 
 historical-data-report:
   enabled: "${HISTORICAL_DATA_REPORT_ENABLED:true}"
-  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:5}" # time in minutes (1-60) to collect historical data statistics. Used in cron expression
+  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}" # time in minutes (1-60) to collect historical data statistics. Used in cron expression
   zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
 management:
