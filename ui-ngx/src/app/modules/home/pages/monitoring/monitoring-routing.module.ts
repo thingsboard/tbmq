@@ -32,12 +32,8 @@ export class BrokerIdsResolver implements Resolve<string[]> {
   resolve(): Observable<string[]> | string[] {
     return this.configService.getBrokerServiceIds().pipe(
       mergeMap((brokerIds) => {
-        let ids = [];
-        if (brokerIds.length !== 1) {
-          ids.push(TOTAL_KEY);
-        } else {
-          ids = ids.concat(TOTAL_KEY, brokerIds);
-        }
+        let ids = [TOTAL_KEY];
+        ids = brokerIds.length <= 1 ? ids : ids.concat(brokerIds);
         return of(ids);
       })
     );

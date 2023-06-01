@@ -42,7 +42,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   cardType = HomePageTitleType.MONITORING;
   chartIdSuf = 'home';
   charts = {};
-  latestValues = {};
   statsCharts = Object.values(StatsChartType);
   width = 100;
 
@@ -69,7 +68,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setChartSize() {
-    this.width = $('tb-home-charts').width() * 0.14;
+    this.width = $(window).width() * 0.11;
   }
 
   ngAfterViewInit(): void {
@@ -112,7 +111,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       };
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params);
-      this.latestValues[chartType] = chartType;
       this.updateXScale(chartType);
     }
   }
@@ -127,7 +125,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.addPollingIntervalToTimewindow();
         for (const chartType in StatsChartType) {
           this.pushLatestValue(chartType, data);
-          this.updateChartView(data, chartType);
+          this.updateChartView(chartType);
         }
       });
   }
@@ -144,19 +142,14 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private updateChartView(data: TimeseriesData, chartType) {
+  private updateChartView(chartType) {
     this.updateXScale(chartType);
-    this.updateLabel(data, chartType);
     this.updateChart(chartType);
   }
 
   private updateXScale(chartType: string) {
     this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
     this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
-  }
-
-  private updateLabel(data: TimeseriesData, chartType: string) {
-    this.latestValues[chartType] = data[chartType]?.length ? data[chartType][0].value : null;
   }
 
   private updateChart(chartType) {

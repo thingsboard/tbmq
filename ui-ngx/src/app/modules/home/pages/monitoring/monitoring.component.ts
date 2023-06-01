@@ -21,11 +21,11 @@ import {
   Timewindow,
   TimewindowType
 } from '@shared/models/time/time.models';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, of, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
-import { share, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, retry, share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
   getColor,
@@ -86,7 +86,11 @@ export class MonitoringComponent extends PageComponent {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
       const keys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys));
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys).pipe(
+        catchError(err => {
+          return of({incomingMsgs: [], outgoingMsgs: [], droppedMsgs: []});
+        })
+      ));
       $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, keys));
     }
     this.$getEntityTimeseries = forkJoin($getEntityTimeseriesTasks);
@@ -151,37 +155,14 @@ export class MonitoringComponent extends PageComponent {
               } else {
                 this.charts[chartType].data.datasets[0].data = data[0][chartType];
               }
-              this.updateChartView(data as TimeseriesData[], chartType);
+              this.updateChartView(chartType);
             }
           }
         }
         if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
           this.startPolling();
         }
-      },
-        (error) => {
-          console.error('fetchEntityTimeseries error', error);
-          if (initCharts) {
-            this.initCharts(null);
-          } else {
-            for (const chartType in StatsChartType) {
-              for (let i = 0; i < this.brokerIds.length; i++) {
-                const brokerId = this.brokerIds[i];
-                if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-                  this.charts[chartType].data.datasets[i].data = null;
-                } else {
-                  this.charts[chartType].data.datasets[0].data = null;
-                }
-                this.updateXScale(chartType);
-                // this.updateLabel(data, chartType);
-                this.updateChart(chartType);
-              }
-            }
-          }
-          if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
-            this.startPolling();
-          }
-        });
+      });
   }
 
   private initCharts(data: TimeseriesData[]) {
@@ -195,8 +176,8 @@ export class MonitoringComponent extends PageComponent {
         borderColor: color,
         backgroundColor: color,
         pointHoverBackgroundColor: color,
-        pointBorderColor: color,
-        pointBackgroundColor: color,
+        pointBorderColor: 'rgba(0,0,0,0)',
+        pointBackgroundColor: 'rgba(0,0,0,0)',
         pointHoverBorderColor: color,
         pointBorderWidth: 0
       };
@@ -236,7 +217,7 @@ export class MonitoringComponent extends PageComponent {
       this.addPollingIntervalToTimewindow();
       for (const chartType in StatsChartType) {
         this.pushLatestValue(data as TimeseriesData[], chartType);
-        this.updateChartView(data as TimeseriesData[], chartType);
+        this.updateChartView(chartType);
       }
     });
   }
@@ -257,9 +238,8 @@ export class MonitoringComponent extends PageComponent {
     }
   }
 
-  private updateChartView(data: TimeseriesData[], chartType: string) {
+  private updateChartView(chartType: string) {
     this.updateXScale(chartType);
-    this.updateLabel(data, chartType);
     this.updateChart(chartType);
   }
 
@@ -269,14 +249,6 @@ export class MonitoringComponent extends PageComponent {
 
   private updateChart(chartType: string) {
     this.charts[chartType].update();
-  }
-
-  private updateLabel(data: TimeseriesData[], chartType: string) {
-    for (let i = 0; i < this.brokerIds.length; i++) {
-      let index = i;
-      const brokerId = this.brokerIds[i];
-      if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
-    }
   }
 
   private updateXScale(chartType: string) {
