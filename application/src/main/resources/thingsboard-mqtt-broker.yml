@@ -388,7 +388,7 @@ mqtt:
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   retransmission:
-    enabled: "${MQTT_RETRANSMISSION_ENABLED:true}"
+    enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"
     # if set to 0 - uses the number of processors available to the JVM multiplied by 2.
     scheduler-pool-size: "${MQTT_RETRANSMISSION_SCHEDULER_POOL_SIZE:0}"
     initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}" # initial delay for the msg retransmission in seconds
