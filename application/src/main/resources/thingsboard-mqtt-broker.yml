@@ -533,7 +533,12 @@ swagger:
   license:
     title: "${SWAGGER_LICENSE_TITLE:}"
     url: "${SWAGGER_LICENSE_URL:}"
-  version: "${SWAGGER_VERSION:2.0}"
+  version: "${SWAGGER_VERSION:}"
+
+# Application info
+app:
+  # Application version
+  version: "@project.version@"
 
 analysis:
   log:

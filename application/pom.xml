@@ -267,6 +267,17 @@
         <resources>
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>thingsboard-mqtt-broker.yml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>thingsboard-mqtt-broker.yml</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>
