@@ -112,6 +112,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
+    @Value("${queue.application-persisted-msg.shared-topic-validation:true}")
+    private boolean validateSharedTopicFilter;
 
     private volatile boolean stopped = false;
     private ExecutorService persistedMsgsConsumerExecutor;
@@ -399,11 +401,14 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
+        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopic(), validateSharedTopicFilter);
+        String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
+        String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
                 .createConsumerForSharedTopic(
-                        MqttApplicationClientUtil.getKafkaTopic(subscription.getTopic()),
-                        MqttApplicationClientUtil.getConsumerGroup(subscription),
-                        getSharedConsumerId(clientId));
+                        sharedAppTopic,
+                        sharedAppConsumerGroup,
+                        sharedConsumerId);
         consumer.subscribe();
         return consumer;
     }
@@ -419,12 +424,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo clientState) {
         String clientId = clientState.getClientId();
-        applicationTopicService.createTopic(clientId);
+        String clientTopic = applicationTopicService.createTopic(clientId);
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing persisted messages");
         if (log.isDebugEnabled()) {
             log.debug("[{}] Starting persisted messages processing.", clientId);
         }
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId);
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = initConsumer(clientId, clientTopic);
         Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
             try {
                 processPersistedMessages(consumer, clientState);
@@ -585,7 +590,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void clearPersistedMsgs(String clientId) {
         clientLogger.logEvent(clientId, this.getClass(), "Clearing persisted messages");
-        String applicationConsumerGroup = MqttApplicationClientUtil.getConsumerGroup(clientId);
+        String applicationConsumerGroup = MqttApplicationClientUtil.getAppConsumerGroup(clientId);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
         }
@@ -597,8 +602,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         persistedMsgCtxMap.remove(clientId);
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId) {
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = createConsumer(clientId);
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initConsumer(String clientId, String clientTopic) {
+        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = createConsumer(clientId, clientTopic);
         try {
             consumer.assignPartition(0);
 
@@ -615,11 +620,11 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         }
     }
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String clientId) {
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String clientId, String clientTopic) {
         return applicationPersistenceMsgQueueFactory
                 .createConsumer(
-                        MqttApplicationClientUtil.getTopic(clientId),
-                        MqttApplicationClientUtil.getConsumerGroup(clientId),
+                        clientTopic,
+                        MqttApplicationClientUtil.getAppConsumerGroup(clientId),
                         getConsumerId(clientId));
     }
 

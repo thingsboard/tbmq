@@ -15,33 +15,88 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Slf4j
 public class MqttApplicationClientUtil {
+
+    public static final String ALPHANUMERIC_REGEX = "^[a-zA-Z0-9]+$";
+    public static final Pattern ALPHANUMERIC_PATTERN = Pattern.compile(ALPHANUMERIC_REGEX);
+    public static final String SHARED_APP_TOPIC_REGEX = "^[a-zA-Z0-9/+#]+$";
+    public static final Pattern SHARED_APP_TOPIC_PATTERN = Pattern.compile(SHARED_APP_TOPIC_REGEX);
+    public static final Pattern SLASH_PATTERN = Pattern.compile("/");
+    public static final Pattern SINGLE_LVL_WILDCARD_PATTERN = Pattern.compile("\\+");
+    public static final Pattern MULTI_LVL_WILDCARD_PATTERN = Pattern.compile("#");
+    private static final HashFunction HASH_FUNCTION = Hashing.sha256();
 
     private static final String SINGLE_LVL_WILDCARD_ABBREV = "slw";
     private static final String MULTI_LVL_WILDCARD_ABBREV = "mlw";
-    private static final String TOPIC_PREFIX = "mqtt_broker_application_client_";
-    private static final String CONSUMER_GROUP_PREFIX = "application-persisted-msg-group-";
-    private static final String SHARED_CONSUMER_GROUP_PREFIX = "application-shared-msg-group-";
+    private static final String APP_CLIENT_TOPIC_PREFIX = "tbmq.msg.app.";
+    private static final String APP_SHARED_TOPIC_PREFIX = APP_CLIENT_TOPIC_PREFIX + "shared.";
+    private static final String CONSUMER_GROUP_PREFIX = "application-persisted-msg-consumer-group-";
+    private static final String SHARED_CONSUMER_GROUP_PREFIX = "application-shared-msg-consumer-group-";
 
-    public static String getTopic(String clientId) {
-        return TOPIC_PREFIX + clientId;
+    public static String getAppTopic(String clientId, boolean validateClientId) {
+        if (validateClientId) {
+            Matcher matcher = ALPHANUMERIC_PATTERN.matcher(clientId);
+            if (matcher.matches()) {
+                return constructAppTopic(clientId);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Using hash func for client id conversion: {}", clientId);
+                }
+                String clientIdHash = HASH_FUNCTION.hashString(clientId, StandardCharsets.UTF_8).toString();
+                return constructAppTopic(clientIdHash);
+            }
+        }
+        return constructAppTopic(clientId);
     }
 
-    public static String getConsumerGroup(String clientId) {
+    private static String constructAppTopic(String clientId) {
+        return APP_CLIENT_TOPIC_PREFIX + clientId;
+    }
+
+    public static String getAppConsumerGroup(String clientId) {
         return CONSUMER_GROUP_PREFIX + clientId;
     }
 
-    // Note, replacing single and multi levels mqtt wildcards since Kafka does not support such chars for topic name
-    public static String getKafkaTopic(String topic) {
-        return topic
-                .replaceAll("/", ".")
-                .replaceAll("\\+", SINGLE_LVL_WILDCARD_ABBREV)
-                .replaceAll("#", MULTI_LVL_WILDCARD_ABBREV);
+    // Note, replacing slashes, single and multi levels mqtt wildcards since Kafka does not support such chars for topic name.
+    // Or using hash func if other special chars are present
+    public static String getSharedAppTopic(String topicFilter, boolean validateTopicFilter) {
+        if (validateTopicFilter) {
+            Matcher matcher = SHARED_APP_TOPIC_PATTERN.matcher(topicFilter);
+            if (matcher.matches()) {
+                return getReplacedSharedAppTopicFilter(topicFilter);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Using hash func for topic filter conversion: {}", topicFilter);
+                }
+                String topicFilterHash = HASH_FUNCTION.hashString(topicFilter, StandardCharsets.UTF_8).toString();
+                return constructAppSharedTopic(topicFilterHash);
+            }
+        }
+        return getReplacedSharedAppTopicFilter(topicFilter);
     }
 
-    public static String getConsumerGroup(TopicSharedSubscription subscription) {
-        return SHARED_CONSUMER_GROUP_PREFIX + subscription.getShareName() + "-" + getKafkaTopic(subscription.getTopic());
+    static String getReplacedSharedAppTopicFilter(String topicFilter) {
+        String s1 = SLASH_PATTERN.matcher(topicFilter).replaceAll(".");
+        String s2 = SINGLE_LVL_WILDCARD_PATTERN.matcher(s1).replaceAll(SINGLE_LVL_WILDCARD_ABBREV);
+        String s3 = MULTI_LVL_WILDCARD_PATTERN.matcher(s2).replaceFirst(MULTI_LVL_WILDCARD_ABBREV);
+        return constructAppSharedTopic(s3);
+    }
+
+    private static String constructAppSharedTopic(String topicFilter) {
+        return APP_SHARED_TOPIC_PREFIX + topicFilter;
+    }
+
+    public static String getSharedAppConsumerGroup(TopicSharedSubscription subscription, String sharedAppTopic) {
+        return SHARED_CONSUMER_GROUP_PREFIX + subscription.getShareName() + "-" + sharedAppTopic;
     }
 }

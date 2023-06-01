@@ -18,8 +18,8 @@
 
 set -e
 
-docker-compose -f docker-compose.yml up -d postgres
+docker compose -f docker-compose.yml up -d postgres
 
-docker-compose -f docker-compose.yml run --no-deps --rm -e INSTALL_TB=true tb-mqtt-broker-1
+docker compose -f docker-compose.yml run --no-deps --rm -e INSTALL_TB=true tb-mqtt-broker-1
 
 

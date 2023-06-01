@@ -49,11 +49,11 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
     private final BasicDownLinkProcessor processor;
     private final TbQueueAdmin queueAdmin;
 
-    @Value("${queue.basic-downlink-publish-msg.consumers-count}")
+    @Value("${queue.basic-downlink-msg.consumers-count}")
     private int consumersCount;
-    @Value("${queue.basic-downlink-publish-msg.poll-interval}")
+    @Value("${queue.basic-downlink-msg.poll-interval}")
     private long pollDuration;
-    @Value("${queue.basic-downlink-publish-msg.threads-count}")
+    @Value("${queue.basic-downlink-msg.threads-count}")
     private int threadsCount;
 
     private volatile boolean stopped = false;
@@ -61,7 +61,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
 
     @PostConstruct
     public void init() {
-        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "basic-downlink-publish-msg-consumer");
+        this.consumersExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "basic-downlink-msg-consumer");
     }
 
     @Override

@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "queue.kafka.publish-msg")
+@ConfigurationProperties(prefix = "queue.kafka.msg-all")
 public class PublishMsgKafkaSettings {
     private String topic;
     private String topicProperties;

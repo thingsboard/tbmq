@@ -107,20 +107,20 @@ listener:
       shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
 
 queue:
-  publish-msg:
-    # Number of parallel consumers for 'publish-msg' topic. Should not be more than the number of partitions in topic.
-    consumers-count: "${TB_PUBLISH_MSG_CONSUMERS_COUNT:2}"
-    threads-count: "${TB_PUBLISH_MSG_THREADS_COUNT:2}"
-    poll-interval: "${TB_PUBLISH_MSG_POLL_INTERVAL:100}"
-    pack-processing-timeout: "${TB_PUBLISH_MSG_PACK_PROCESSING_TIMEOUT:10000}"
+  msg-all:
+    # Number of parallel consumers for 'msg-all' topic. Should not be more than the number of partitions in topic.
+    consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:2}"
+    threads-count: "${TB_MSG_ALL_THREADS_COUNT:2}"
+    poll-interval: "${TB_MSG_ALL_POLL_INTERVAL:100}"
+    pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:10000}"
     ack-strategy:
-      type: "${TB_PUBLISH_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
+      type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
-      retries: "${TB_PUBLISH_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
+      retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
     # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
     # Helpful when the same client publishes lots of messages in a short amount of time.
     # It is recommended to count the impact of this parameter before setting it on production.
-    msg-parallel-processing: "${TB_PUBLISH_MSG_PARALLEL_PROCESSING:false}"
+    msg-parallel-processing: "${TB_MSG_ALL_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
     threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:2}"
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
@@ -129,6 +129,10 @@ queue:
       type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
       # For RETRY_ALL only
       retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
+    # enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
+    client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
+    # enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
+    shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
   device-persisted-msg:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
@@ -160,21 +164,21 @@ queue:
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
-  persistent-downlink-publish-msg:
-    consumers-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
-    threads-count: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_THREADS_COUNT:1}"
-    poll-interval: "${TB_PERSISTENT_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
-  basic-downlink-publish-msg:
-    consumers-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_CONSUMERS_COUNT:1}"
-    threads-count: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_THREADS_COUNT:1}"
-    poll-interval: "${TB_BASIC_DOWNLINK_PUBLISH_MSG_POLL_INTERVAL:100}"
+  persisted-downlink-msg:
+    consumers-count: "${TB_PERSISTED_DOWNLINK_MSG_CONSUMERS_COUNT:1}"
+    threads-count: "${TB_PERSISTED_DOWNLINK_MSG_THREADS_COUNT:1}"
+    poll-interval: "${TB_PERSISTED_DOWNLINK_MSG_POLL_INTERVAL:100}"
+  basic-downlink-msg:
+    consumers-count: "${TB_BASIC_DOWNLINK_MSG_CONSUMERS_COUNT:1}"
+    threads-count: "${TB_BASIC_DOWNLINK_MSG_THREADS_COUNT:1}"
+    poll-interval: "${TB_BASIC_DOWNLINK_MSG_POLL_INTERVAL:100}"
   application-removed-event:
     poll-interval: "${TB_APPLICATION_REMOVED_EVENT_POLL_INTERVAL:100}"
     processing:
       cron: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_CRON:0 0 3 * * *}"
       zone: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_ZONE:UTC}"
   historical-data-total:
-      poll-interval: "${TB_HISTORICAL_DATA_TOTAL_POLL_INTERVAL:100}"
+    poll-interval: "${TB_HISTORICAL_DATA_TOTAL_POLL_INTERVAL:100}"
 
   kafka:
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
@@ -193,7 +197,7 @@ queue:
         batch-size: "${TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE:16384}"
         linger-ms: "${TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS:5}"
         buffer-memory: "${TB_KAFKA_DEFAULT_PRODUCER_BUFFER_MEMORY:33554432}"
-        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}" # none or gzip
+        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}" # none, gzip, snappy, lz4, zstd
     admin:
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
     consumer-stats:
@@ -204,11 +208,11 @@ queue:
     home-page:
       consumer-config: "${TB_KAFKA_HOME_PAGE_CONSUMER_CONFIG:}"
       kafka-response-timeout-ms: "${TB_KAFKA_HOME_PAGE_RESPONSE_TIMEOUT_MS:1000}"
-    publish-msg:
-      topic: "${TB_KAFKA_PUBLISH_MSG_TOPIC:publish_msg}"
-      topic-properties: "${TB_KAFKA_PUBLISH_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      additional-producer-config: "${TB_KAFKA_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    msg-all:
+      topic: "${TB_KAFKA_MSG_ALL_TOPIC:tbmq.msg.all}"
+      topic-properties: "${TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
+      additional-consumer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG:}"
+      additional-producer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_PRODUCER_CONFIG:}"
     application-persisted-msg:
       # Configure retention policy according to the persistence requirements for APPLICATION clients
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
@@ -218,66 +222,66 @@ queue:
         topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
         additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
     device-persisted-msg:
-      topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:device_persisted_msg}"
+      topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:tbmq.msg.persisted}"
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     retained-msg:
-      topic: "${TB_KAFKA_RETAINED_MSG_TOPIC:retained_msg}"
+      topic: "${TB_KAFKA_RETAINED_MSG_TOPIC:tbmq.msg.retained}"
       topic-properties: "${TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session:
-      topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:client_session}"
+      topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:tbmq.client.session}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-subscriptions:
-      topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:client_subscriptions}"
+      topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:tbmq.client.subscriptions}"
       topic-properties: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session-event:
-      topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:client_session_event}"
+      topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1024}"
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event-response:
-      topic-prefix: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PREFIX:client_session_event_response}"
+      topic-prefix: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PREFIX:tbmq.client.session.event.response}"
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_PRODUCER_CONFIG:}"
     disconnect-client-command:
-      topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:disconnect_client_command}"
+      topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:tbmq.client.disconnect}"
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_PRODUCER_CONFIG:}"
-    basic-downlink-publish-msg:
-      topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:basic_downlink_publish_msg}"
-      topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      additional-producer-config: "${TB_KAFKA_BASIC_DOWNLINK_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG:batch.size:32768}"
-    persistent-downlink-publish-msg:
-      topic-prefix: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_TOPIC_PREFIX:persistent_downlink_publish_msg}"
-      topic-properties: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      additional-producer-config: "${TB_KAFKA_PERSISTENT_DOWNLINK_PUBLISH_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    basic-downlink-msg:
+      topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.basic}"
+      topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      additional-consumer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      additional-producer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:batch.size:32768}"
+    persisted-downlink-msg:
+      topic-prefix: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.persisted}"
+      topic-properties: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      additional-consumer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      additional-producer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     application-removed-event:
-      topic: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC:application_removed_event}"
+      topic: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC:tbmq.sys.app.removed}"
       topic-properties: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     historical-data-total:
-      topic: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC:historical_data_total}"
+      topic: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC:tbmq.sys.historical.data}"
       topic-properties: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
       additional-consumer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_CONSUMER_CONFIG:}"
       additional-producer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_PRODUCER_CONFIG:}"
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
-      publish_msg:
-        - key: max.poll.records
-          value: "${TB_KAFKA_PUBLISH_MSG_MAX_POLL_RECORDS:8192}"
-      mqtt_broker_application_client_test_client:
+#      tbmq.msg.all:
+#        - key: max.poll.records
+#          value: "${TB_KAFKA_MSG_ALL_MAX_POLL_RECORDS:8192}"
+      tbmq.msg.app.test_client:
         - key: max.poll.records
           value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
 
@@ -302,9 +306,9 @@ actors:
     wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
   rule:
     # Specify thread pool size for mail sender executor service
-    mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:40}"
+    mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:2}"
     # Specify thread pool size for password reset emails
-    mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:10}"
+    mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:2}"
 
 database:
   ts_max_intervals: "${DATABASE_TS_MAX_INTERVALS:700}" # Max number of DB queries generated by single API call to fetch telemetry records
@@ -450,7 +454,7 @@ mqtt:
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
   handler:
-    publish_msg_callback_threads: "${MQTT_HANDLER_PUBLISH_MSG_CALLBACK_THREADS:2}"
+    all_msg_callback_threads: "${MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS:2}"
     device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
     app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
 
@@ -484,7 +488,7 @@ stats:
 
 historical-data-report:
   enabled: "${HISTORICAL_DATA_REPORT_ENABLED:true}"
-  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:5}" #time in minutes (1-60) to process historical data statistics
+  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}" # time in minutes (1-60) to collect historical data statistics. Used in cron expression
   zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
 management:

@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 
 public interface ApplicationTopicService {
 
-    void createTopic(String clientId);
+    String createTopic(String clientId);
 
     void createSharedTopic(ApplicationSharedSubscription subscription);
 

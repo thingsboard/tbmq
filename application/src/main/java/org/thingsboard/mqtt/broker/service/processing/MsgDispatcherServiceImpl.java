@@ -29,10 +29,10 @@ import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -113,6 +113,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
         MsgSubscriptions msgSubscriptions = getAllSubscriptionsForPubMsg(publishMsgProto, senderClientId);
         if (msgSubscriptions == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] No subscriptions found for publish message!", publishMsgProto.getTopicName());
+            }
             tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
             callback.onSuccess();
             return;
@@ -414,6 +417,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
             boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
             if (noLocalOptionMet) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] No local option is met for sender client!", senderClientId);
+                }
+                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
                 continue;
             }
 

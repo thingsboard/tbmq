@@ -66,7 +66,7 @@ public class KafkaApplicationRemovedEventQueueFactory implements ApplicationRemo
         consumerBuilder.topic(kafkaSettings.getTopic());
         consumerBuilder.topicConfigs(QueueUtil.getConfigs(kafkaSettings.getTopicProperties()));
         consumerBuilder.clientId("application-removed-event-consumer-" + serviceId);
-        consumerBuilder.groupId("application-removed-event-group");
+        consumerBuilder.groupId("application-removed-event-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ApplicationRemovedEventProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
