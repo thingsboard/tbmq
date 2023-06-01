@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = QoSVerificationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
+        "mqtt.retransmission.enabled=true",
         "mqtt.retransmission.initial-delay=1",
         "mqtt.retransmission.period=1"
 })
