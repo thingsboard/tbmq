@@ -525,14 +525,14 @@ swagger:
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
   non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
   title: "${SWAGGER_TITLE:ThingsBoard MQTT Broker REST API}"
-  description: "${SWAGGER_DESCRIPTION:}"
+  description: "${SWAGGER_DESCRIPTION:ThingsBoard MQTT Broker open-source REST API documentation}"
   contact:
     name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:
-    title: "${SWAGGER_LICENSE_TITLE:}"
-    url: "${SWAGGER_LICENSE_URL:}"
+    title: "${SWAGGER_LICENSE_TITLE:Apache License Version 2.0}"
+    url: "${SWAGGER_LICENSE_URL:https://github.com/thingsboard/thingsboard-mqtt-broker/blob/main/LICENSE}"
   version: "${SWAGGER_VERSION:}"
 
 # Application info
