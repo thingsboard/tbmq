@@ -86,11 +86,7 @@ export class MonitoringComponent extends PageComponent {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
       const keys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys).pipe(
-        catchError(err => {
-          return of({incomingMsgs: [], outgoingMsgs: [], droppedMsgs: []});
-        })
-      ));
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys));
       $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, keys));
     }
     this.$getEntityTimeseries = forkJoin($getEntityTimeseriesTasks);
