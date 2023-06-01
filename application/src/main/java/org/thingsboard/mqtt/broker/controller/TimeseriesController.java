@@ -53,6 +53,7 @@ import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -232,7 +233,7 @@ public class TimeseriesController extends BaseController {
             @Override
             public void onSuccess(List<TsKvEntry> data) {
                 if (CollectionUtils.isEmpty(data)) {
-                    response.setResult(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                    response.setResult(new ResponseEntity<>(Collections.emptyMap(), HttpStatus.OK));
                     return;
                 }
                 Map<String, List<TsData>> result = new LinkedHashMap<>();
