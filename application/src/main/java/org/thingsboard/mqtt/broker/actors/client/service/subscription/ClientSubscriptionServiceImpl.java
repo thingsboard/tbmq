@@ -184,7 +184,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public int getClientSubscriptionsCount() {
-        return clientSubscriptionsMap.size();
+        return clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
     }
 
     private void clearSubscriptions(String clientId) {
