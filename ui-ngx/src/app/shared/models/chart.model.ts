@@ -190,6 +190,13 @@ export function homeChartJsParams() {
 }
 
 export function monitoringChartJsParams() {
+  // @ts-ignore
+  Tooltip.positioners.myCustomPositioner = function(elements, eventPosition) {
+    return {
+      x: eventPosition.x,
+      y: eventPosition.y
+    };
+  };
   return {
     type: 'line',
     options: {
@@ -272,7 +279,8 @@ export function monitoringChartJsParams() {
         },
         tooltip: {
           enabled: false,
-          external: externalTooltipHandler
+          external: externalTooltipHandler,
+          position: 'myCustomPositioner'
         },
         emptyChart: {}
       },
@@ -487,9 +495,15 @@ export const externalTooltipHandler = (context) => {
   // Display, position, and set styles for font
   tooltipEl.style.opacity = 1;
   tooltipEl.style.borderRadius = 10;
-  tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+  if (tooltip.caretX < 200) {
+    tooltipEl.style.left = positionX + tooltip.caretX + 100 + 'px';
+  } else {
+    tooltipEl.style.left = positionX + tooltip.caretX - 100 + 'px';
+  }
   tooltipEl.style.top = positionY + tooltip.caretY + 'px';
   tooltipEl.style.width = '200px';
   tooltipEl.style.font = tooltip.options.bodyFont.string;
   tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+  console.log('positionX', positionX);
+  console.log('tooltip.caretX', tooltip.caretX);
 };
