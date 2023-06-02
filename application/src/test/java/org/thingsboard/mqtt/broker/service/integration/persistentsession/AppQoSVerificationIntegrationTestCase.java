@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.service.integration.AbstractQoSVerificationIn
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppQoSVerificationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
+        "mqtt.retransmission.enabled=true",
         "mqtt.retransmission.initial-delay=1",
         "mqtt.retransmission.period=1",
         "security.mqtt.basic.enabled=true"

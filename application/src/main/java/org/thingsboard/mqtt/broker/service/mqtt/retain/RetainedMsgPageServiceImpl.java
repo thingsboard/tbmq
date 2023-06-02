@@ -40,10 +40,10 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
         List<RetainedMsg> filteredByTextSearch = filterRetainedMessages(retainedMessages, pageLink);
 
         List<RetainedMsgDto> data = filteredByTextSearch.stream()
-                .skip((long) pageLink.getPage() * pageLink.getPageSize())
-                .limit(pageLink.getPageSize())
                 .map(this::toRetainedMsgDto)
                 .sorted(sorted(pageLink))
+                .skip((long) pageLink.getPage() * pageLink.getPageSize())
+                .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
         return new PageData<>(data,

@@ -133,8 +133,16 @@
                                                 <directory>src/main/resources</directory>
                                                 <excludes>
                                                     <exclude>logback.xml</exclude>
+                                                    <exclude>${pkg.name}.yml</exclude>
                                                 </excludes>
                                                 <filtering>false</filtering>
+                                            </resource>
+                                            <resource>
+                                                <directory>src/main/resources</directory>
+                                                <includes>
+                                                    <include>${pkg.name}.yml</include>
+                                                </includes>
+                                                <filtering>true</filtering>
                                             </resource>
                                         </resources>
                                     </configuration>
@@ -209,8 +217,16 @@
                                                 <directory>src/main/resources</directory>
                                                 <excludes>
                                                     <exclude>logback.xml</exclude>
+                                                    <exclude>${pkg.name}.yml</exclude>
                                                 </excludes>
                                                 <filtering>false</filtering>
+                                            </resource>
+                                            <resource>
+                                                <directory>src/main/resources</directory>
+                                                <includes>
+                                                    <include>${pkg.name}.yml</include>
+                                                </includes>
+                                                <filtering>true</filtering>
                                             </resource>
                                             <resource>
                                                 <directory>src/main/conf</directory>
@@ -410,6 +426,7 @@
                                 <execution>
                                     <goals>
                                         <goal>repackage</goal>
+                                        <goal>build-info</goal>
                                     </goals>
                                 </execution>
                             </executions>
