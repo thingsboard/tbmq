@@ -63,7 +63,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
-    this.defaultSortOrder = {property: 'connectionState', direction: Direction.ASC};
+    this.defaultSortOrder = {property: 'connectedAt', direction: Direction.DESC};
     /*this.groupActionDescriptors = this.configureGroupActions();
     this.cellActionDescriptors = this.configureCellActions();*/
 
@@ -82,6 +82,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
 
     this.columns.push(
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
         (entity) => {
           return '<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:' +
@@ -104,7 +105,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => defaultCellStyle(entity.subscriptionsCount)),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
         (entity) => defaultCellStyle(entity.nodeId)),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '120px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

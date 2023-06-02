@@ -422,7 +422,7 @@
     "session-expiry-interval": "Session Expiry Interval (seconds)",
     "session-end": "Session End",
     "session-id-copied-message": "Session ID has been copied to clipboard",
-    "search": "Search sessions",
+    "search": "Search sessions by client ID",
     "selected-sessions": "{ count, plural, 1 {1 session} other {# sessions} } selected",
     "subscriptions": "Subscriptions",
     "subscriptions-count": "Subscriptions",
