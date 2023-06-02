@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -124,6 +125,25 @@ public class ClientSubscriptionServiceImplTest {
 
         getAndVerifyClientSubscriptionsForClient("clientId1", 0);
         verify(subscriptionPersistenceService, times(1)).persistClientSubscriptionsAsync(any(), eq(Collections.emptySet()), any());
+    }
+
+    @Test
+    public void givenClientTopicSubscriptions_whenSubscribeAndGetClientSubscriptionsCount_thenReturnExpectedSum() {
+        clientSubscriptionService.subscribeAndPersist(
+                "clientId3",
+                Sets.newHashSet(
+                        getTopicSubscription("topic123"),
+                        getTopicSubscription("topic321")));
+
+        clientSubscriptionService.subscribeAndPersist(
+                "clientId4",
+                Sets.newHashSet(
+                        getTopicSubscription("topic123"),
+                        getTopicSubscription("topic321"),
+                        getTopicSubscription("topic12345")));
+
+        int clientSubscriptionsCount = clientSubscriptionService.getClientSubscriptionsCount();
+        assertThat(clientSubscriptionsCount).isEqualTo(7);
     }
 
     private Set<TopicSubscription> getAndVerifyClientSubscriptionsForClient(String clientId, int expected) {

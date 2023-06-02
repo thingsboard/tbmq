@@ -101,6 +101,8 @@ public class SwaggerConfiguration {
     private String licenseUrl;
     @Value("${swagger.version}")
     private String version;
+    @Value("${app.version:unknown}")
+    private String appVersion;
 
     @Bean
     public Docket thingsboardMqttBrokerApi() {
@@ -225,13 +227,17 @@ public class SwaggerConfiguration {
     }
 
     private ApiInfo apiInfo() {
+        String apiVersion = version;
+        if (StringUtils.isEmpty(apiVersion)) {
+            apiVersion = appVersion;
+        }
         return new ApiInfoBuilder()
                 .title(title)
                 .description(description)
                 .contact(new Contact(contactName, contactUrl, contactEmail))
                 .license(licenseTitle)
                 .licenseUrl(licenseUrl)
-                .version(version)
+                .version(apiVersion)
                 .build();
     }
 

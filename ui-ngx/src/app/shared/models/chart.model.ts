@@ -60,8 +60,8 @@ export const ChartTooltipTranslationMap = new Map<string, string>(
 
 export const MonitoringChartColorMap = new Map<string, string[]>(
   [
-    [StatsChartType.incomingMsgs, ['#58519E', '#260638', '#A356D1', '#AAA081', '#D1A656']],
-    [StatsChartType.outgoingMsgs, ['#4A6EA8', '#393842', '#604BDB', '#4A6EA8', '#B39B7C']],
+    [StatsChartType.incomingMsgs, ['#58519E', '#4FA889', '#A356D1', '#AAA081', '#D1A656']],
+    [StatsChartType.outgoingMsgs, ['#4A6EA8', '#BE4BD1', '#604BDB', '#4A6EA8', '#B39B7C']],
     [StatsChartType.droppedMsgs, ['#47848F', '#4E73C2', '#1860F5', '#47848F', '#9C8175']],
     [StatsChartType.sessions, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
     [StatsChartType.subscriptions, ['#499E55', '#303836', '#4BD1A9', '#AA799F', '#BE4BD1']]
@@ -103,8 +103,8 @@ export function homeChartJsParams() {
         padding: {
           right: 10,
           left: 10,
-          bottom: 5,
-          top: 10
+          bottom: 0,
+          top: 0
         }
       },
       title: {
@@ -278,8 +278,12 @@ export function monitoringChartJsParams() {
           }
         },
         tooltip: {
-          enabled: true,
-          position: 'myCustomPositioner'
+          enabled: false,
+          position: 'myCustomPositioner',
+          external: externalTooltipHandler,
+          callbacks: {
+            footer,
+          }
         },
         emptyChart: {}
       },

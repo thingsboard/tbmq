@@ -15,12 +15,12 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { RetainedMessage } from "@shared/models/retained-message.model";
+import { RetainedMessage } from '@shared/models/retained-message.model';
 
 @Component({
   selector: 'tb-mqtt-retained-messages',

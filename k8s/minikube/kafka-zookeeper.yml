@@ -25,7 +25,7 @@ data:
     set -ex;
     mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR";
     echo $HOSTNAME| rev | cut -d "-" -f1 | rev > "$ZOO_DATA_DIR/myid"
-    /apache-zookeeper-3.5.7-bin/bin/zkServer.sh start-foreground /conf/zoo.cfg
+    zkServer.sh start-foreground /conf/zoo.cfg
   zoo.cfg: |+
     dataDir=/data
     dataLogDir=/datalog
@@ -64,7 +64,7 @@ spec:
       containers:
         - name: zookeeper
           imagePullPolicy: Always
-          image: zookeeper:3.5.7
+          image: zookeeper:3.8
           ports:
             - containerPort: 2181
               name: client
@@ -194,7 +194,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: wurstmeister/kafka:2.13-2.7.0
+          image: wurstmeister/kafka:2.13-2.8.1
           ports:
             - containerPort: 9092
               name: tb-kafka-port

@@ -338,7 +338,7 @@ public class ProtoConverter {
 
     private static List<QueueProtos.UserPropertyProto> getUserPropertyProtos(RetainedMsg retainedMsg) {
         MqttProperties properties = retainedMsg.getProperties();
-        if (properties != null && !properties.isEmpty()) {
+        if (properties != null) {
             UserProperties userProperties = getUserProperties(properties);
             return toUserPropertyProtos(userProperties);
         }

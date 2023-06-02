@@ -96,7 +96,7 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForMonths_thenRemovedPartitionsAndRows() throws Throwable {
         long ts1 = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts2 = LocalDate.now().minusMonths(1).minusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts2 = LocalDate.now().minusMonths(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
         long ts3 = LocalDate.now().minusMonths(2).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
         long ts4 = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
         long ts5 = LocalDate.now().minusMonths(4).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
