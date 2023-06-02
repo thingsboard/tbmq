@@ -34,7 +34,7 @@
   <div mat-dialog-actions fxLayout="row" fxLayoutAlign="start center">
     <button mat-raised-button
             ngxClipboard
-            (cbOnSuccess)="onSessionIdCopied()"
+            (cbOnSuccess)="onContentCopied()"
             [cbContent]="entity?.sessionId">
       <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
       <span translate>mqtt-client-session.copy-session-id</span>
@@ -79,9 +79,7 @@
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client-session.connected-at</mat-label>
               <input matInput fxHide formControlName="connectedAt" readonly>
-              <span>
-                {{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}
-              </span>
+              <span>{{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}</span>
             </mat-form-field>
             <mat-form-field *ngIf="!isConnected()" class="mat-block">
               <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
@@ -104,7 +102,7 @@
           <mat-form-field *ngIf="!isConnected()" class="mat-block hint">
             <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
             <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
-            {{ entity?.sessionExpiryInterval }}
+            <span>{{ entity?.sessionExpiryInterval }}</span>
             <mat-hint translate>mqtt-client-session.hint-session-expiry-interval</mat-hint>
           </mat-form-field>
         </div>
@@ -119,7 +117,7 @@
             <mat-form-field *ngIf="!isConnected() && entity?.sessionEndTs > -1" class="mat-block hint">
               <mat-label translate>mqtt-client-session.session-end</mat-label>
               <input matInput fxHide formControlName="sessionEndTs" readonly>
-              {{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}
+              <span>{{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}</span>
               <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
             </mat-form-field>
         </div>
@@ -132,19 +130,33 @@
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client.client-id</mat-label>
               <input matInput formControlName="clientId" readonly>
+              <button mat-icon-button
+                      aria-label="Copy client ID"
+                      matSuffix
+                      ngxClipboard
+                      [cbContent]="entity?.clientId"
+                      (cbOnSuccess)="onContentCopied()">
+                <mat-icon style="font-size: 20px">content_copy</mat-icon>
+              </button>
             </mat-form-field>
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client.client-type</mat-label>
               <input fxHide matInput formControlName="clientType" readonly>
-              <span>
-                {{ entityForm.get('clientType')?.value | titlecase }}
-              </span>
+              <span>{{ entityForm.get('clientType')?.value | titlecase }}</span>
             </mat-form-field>
         </div>
         <div fxFlex>
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client-session.client-ip</mat-label>
               <input matInput formControlName="clientIpAdr" readonly>
+              <button mat-icon-button
+                      aria-label="Copy Client IP"
+                      matSuffix
+                      ngxClipboard
+                      [cbContent]="entity?.clientIpAdr"
+                      (cbOnSuccess)="onContentCopied()">
+                <mat-icon style="font-size: 20px">content_copy</mat-icon>
+              </button>
             </mat-form-field>
         </div>
       </div>

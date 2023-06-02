@@ -54,8 +54,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   topicListFormGroup: FormGroup;
   mqttQoSTypes = mqttQoSTypes;
-  showShareName: boolean = false;
-  shareNameCounter: number = 0;
+  showShareName = false;
+  shareNameCounter = 0;
 
   private propagateChange = null;
 
@@ -136,7 +136,9 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if ($event) {
       $event.stopPropagation();
     }
-    this.showShareName = !this.showShareName;
+    setTimeout(() => {
+      this.showShareName = !this.showShareName;
+    }, 0);
   }
 
   private updateView(value: TopicSubscription[]) {

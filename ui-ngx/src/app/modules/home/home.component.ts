@@ -40,15 +40,13 @@ const screenfull = _screenfull as _screenfull.Screenfull;
 })
 export class HomeComponent extends PageComponent implements AfterViewInit, OnInit {
 
-  authState: AuthState = getCurrentAuthState(this.store);
-
   activeComponent: any;
   searchableComponent: ISearchableComponent;
 
   sidenavMode: 'over' | 'push' | 'side' = 'side';
   sidenavOpened = true;
 
-  logo = 'assets/logo_title_white.svg';
+  logo = 'assets/mqtt_logo_white.svg';
 
   @ViewChild('sidenav')
   sidenav: MatSidenav;
