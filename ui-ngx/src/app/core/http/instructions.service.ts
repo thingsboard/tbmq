@@ -44,13 +44,13 @@ export class InstructionsService {
       },
       {
         id: 'disconnect',
-        title: 'Disconnect client'
+        title: 'View session'
       }
     ];
     if (basicAuthEnabled) {
       steps.unshift({
         id: 'client',
-        title: 'Create client'
+        title: 'Create credentials'
       });
     }
     // @ts-ignore
