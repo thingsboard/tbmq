@@ -199,7 +199,7 @@ spec:
               value: "false"
             - name: CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE
               value: "10000"
-            - name: "TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION"
+            - name: TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION
               value: "false"
             - name: HISTORICAL_DATA_REPORT_ENABLED
               value: "false"
