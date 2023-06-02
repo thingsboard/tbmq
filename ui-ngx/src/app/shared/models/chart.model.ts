@@ -504,6 +504,4 @@ export const externalTooltipHandler = (context) => {
   tooltipEl.style.width = '200px';
   tooltipEl.style.font = tooltip.options.bodyFont.string;
   tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
-  console.log('positionX', positionX);
-  console.log('tooltip.caretX', tooltip.caretX);
 };
