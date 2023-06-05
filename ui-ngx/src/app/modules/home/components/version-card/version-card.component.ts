@@ -15,14 +15,9 @@
 ///
 
 import { Component, OnInit } from '@angular/core';
-import { Observable, of } from 'rxjs';
 import { HomePageTitleType } from '@shared/models/home-page.model';
-
-export interface VersionData {
-  currentVersion: string;
-  latestVersion: string;
-  updateAvailable: boolean;
-}
+import { SystemVersionInfo } from '@shared/models/config.model';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-version-card',
@@ -32,20 +27,13 @@ export interface VersionData {
 export class VersionCardComponent implements OnInit {
 
   cardType = HomePageTitleType.VERSION;
-  versionData: VersionData;
+  versionData: SystemVersionInfo;
+  updateAvailable = false;
 
-  constructor() {
+  constructor(private configService: ConfigService ) {
   }
 
   ngOnInit(): void {
-    this.getData().subscribe(versionData => this.versionData = versionData);
-  }
-
-  getData(): Observable<VersionData> {
-    return of({
-      currentVersion: '1.0',
-      latestVersion: '1.1',
-      updateAvailable: false
-    });
+    this.configService.getSystemVersionInfo().subscribe(data => this.versionData = data);
   }
 }
