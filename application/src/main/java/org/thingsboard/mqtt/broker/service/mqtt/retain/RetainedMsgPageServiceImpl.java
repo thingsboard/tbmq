@@ -69,7 +69,7 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
 
     private boolean filter(PageLink pageLink, RetainedMsg retainedMsg) {
         if (pageLink.getTextSearch() != null) {
-            return retainedMsg.getTopic().contains(pageLink.getTextSearch());
+            return retainedMsg.getTopic().toLowerCase().contains(pageLink.getTextSearch().toLowerCase());
         }
         return true;
     }

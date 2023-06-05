@@ -495,7 +495,7 @@
     "no-retained-messages-matching": "No retained messages matching '{{entity}}' were found.",
     "topic-required": "Topic is required",
     "details": "Retained Message Details",
-    "search": "Search retained messages",
+    "search": "Search retained messages by topic",
     "selected-retained-messages": "{ count, plural, 1 {1 retained message} other {# retained messages} } selected",
     "type-retained-message": "Retained message",
     "type-retained-messages": "Retained messages",
