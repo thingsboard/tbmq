@@ -171,7 +171,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       {
         message: this.translate.instant('action.on-copied'),
         type: 'success',
-        duration: 2000,
+        duration: 500,
         verticalPosition: 'bottom',
         horizontalPosition: 'right'
       })
