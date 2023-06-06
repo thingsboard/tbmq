@@ -47,7 +47,7 @@ GP3 provides 3000 IOPs and 125 MB/s throughput for each persistent volume with n
 is enough to gain the
 desired performance needs. GP2 configured for the same characteristics will probably cost more.
 
-We recommend to search for the official doc on how to install gp3 inside your cluster. However, here are some helpful
+We recommend searching for the official doc on how to install gp3 inside your cluster. However, here are some helpful
 links and steps you can do to achieve this.
 Follow each step carefully in order to not face any issues.
 Review the following [doc](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md) to learn
