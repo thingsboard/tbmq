@@ -28,8 +28,8 @@ managedNodeGroups:
   - name: tb-mqtt-broker
     instanceType: m6g.metal
     desiredCapacity: 1
-    maxSize: 1
-    minSize: 0
+    maxSize: 25
+    minSize: 1
     labels: { role: tb-mqtt-broker }
     volumeType: gp3
     volumeSize: 10
@@ -94,9 +94,9 @@ managedNodeGroups:
       publicKeyName: 'dlandiak'
   - name: tb-kafka
     instanceType: m6a.2xlarge
-    desiredCapacity: 0
-    maxSize: 6
-    minSize: 0
+    desiredCapacity: 3
+    maxSize: 9
+    minSize: 1
     volumeType: gp3
     volumeSize: 10
     labels: { role: tb-kafka }
@@ -106,4 +106,4 @@ managedNodeGroups:
 
 # In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 # eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
-# eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-perf-test
+# eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-kafka
