@@ -27,9 +27,9 @@ metadata:
 managedNodeGroups:
   - name: tb-mqtt-broker
     instanceType: m6g.metal
-    desiredCapacity: 1
+    desiredCapacity: 0
     maxSize: 25
-    minSize: 1
+    minSize: 0
     labels: { role: tb-mqtt-broker }
     volumeType: gp3
     volumeSize: 10
@@ -94,9 +94,9 @@ managedNodeGroups:
       publicKeyName: 'dlandiak'
   - name: tb-kafka
     instanceType: m6a.2xlarge
-    desiredCapacity: 3
+    desiredCapacity: 0
     maxSize: 9
-    minSize: 1
+    minSize: 0
     volumeType: gp3
     volumeSize: 10
     labels: { role: tb-kafka }
