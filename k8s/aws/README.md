@@ -58,8 +58,6 @@ helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-d
 helm repo update
 ```
 
-{: .copy-code}
-
 ```bash
 eksctl utils associate-iam-oidc-provider --cluster=thingsboard-mqtt-broker-cluster --approve
 
@@ -76,8 +74,6 @@ aws cloudformation describe-stacks \
   --output text
 ```
 
-{: .copy-code}
-
 Install the latest release of the driver.
 
 ```bash
@@ -86,15 +82,11 @@ helm upgrade --install aws-ebs-csi-driver \
     aws-ebs-csi-driver/aws-ebs-csi-driver
 ```
 
-{: .copy-code}
-
 Create storage class gp3 and make it default:
 
 ```bash
 cat > gp3-def-sc.yaml
 ```
-
-{: .copy-code}
 
 ```yaml
 kind: StorageClass
@@ -110,13 +102,9 @@ parameters:
   type: gp3
 ```
 
-{: .copy-code}
-
 ```bash
 kubectl apply -f gp3-def-sc.yaml
 ```
-
-{: .copy-code}
 
 Make gp2 storage class non-default
 
@@ -124,15 +112,11 @@ Make gp2 storage class non-default
 kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 ```
 
-{: .copy-code}
-
 Or delete legacy gp2 storage class
 
 ```bash
 kubectl delete storageclass gp2
 ```
-
-{: .copy-code}
 
 Check the storage class available
 
@@ -142,8 +126,6 @@ kubectl get sc
 # gp2             kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  46m
 # gp3 (default)   ebs.csi.aws.com         Delete          WaitForFirstConsumer   true                   14s
 ```
-
-{: .copy-code}
 
 #### Kafka
 
@@ -160,15 +142,11 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 ```
 
-{: .copy-code}
-
 Before the Kafka installation, we need to create custom Storage Class for Kafka with modified disk type and throughput.
 
 ```bash
 cat > kafka-sc.yaml
 ```
-
-{: .copy-code}
 
 ```yaml
 kind: StorageClass
@@ -185,21 +163,15 @@ parameters:
   throughput: "150"
 ```
 
-{: .copy-code}
-
 ```bash
 kubectl apply -f kafka-sc.yaml
 ```
-
-{: .copy-code}
 
 To install Bitnami Kafka execute the following command:
 
 ```bash
 helm install kafka -f kafka/values-kafka.yaml bitnami/kafka --version 21.4.4
 ```
-
-{: .copy-code}
 
 #### Helpful commands
 
@@ -209,8 +181,6 @@ Create cluster:
 eksctl create cluster -f cluster.yml
 ```
 
-{: .copy-code}
-
 Update kube-proxy, coredns and aws-node addons:
 
 ```bash
@@ -219,8 +189,6 @@ eksctl utils update-kube-proxy --approve --cluster thingsboard-mqtt-broker-clust
 eksctl utils update-aws-node --approve --cluster thingsboard-mqtt-broker-cluster
 ```
 
-{: .copy-code}
-
 Create node group (see [eksctl docs](https://eksctl.io/usage/managing-nodegroups/#include-and-exclude-rules) for more
 details):
 
@@ -228,25 +196,20 @@ details):
 eksctl create nodegroup --config-file=cluster.yml
 ```
 
-{: .copy-code}
-
 In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
 
 ```bash
 eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
 ```
-{: .copy-code}
 
 Delete node group:
 
 ```bash
 eksctl delete nodegroup --cluster=thingsboard-mqtt-broker-cluster --name=tb-mqtt-broker
 ```
-{: .copy-code}
 
 Delete cluster:
 
 ```bash
 eksctl delete cluster -r eu-west-1 -n thingsboard-mqtt-broker-cluster -w
 ```
-{: .copy-code}
