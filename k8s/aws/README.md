@@ -20,6 +20,7 @@ That helped us to tune the MQTT broker pods configuration. See `tb-mqtt-broker` 
 in `managedNodeGroups`.
 
 **Untracked connections**
+
 After the creation of the EKS cluster, we recommend making an additional step in the configuration of created security
 groups
 if you plan to conduct the test on a large scale. You shall make the connections **untracked** inside the AWS EKS.
@@ -34,7 +35,8 @@ To do that:
 3. Find the auto-created SG with a similar description - "EKS created security group applied to ENI that is attached to
    EKS Control Plane master nodes, as well as any managed workloads."
 4. Click on "Edit inbound rules" and add a new rule similar to the one shown in the screenshot below.
-   ![image](/images/sg.png)
+
+<img src="./images/sg.png?raw=true" width="100" height="100">
 
 **General Purpose (GP3) storage**
 
@@ -106,19 +108,19 @@ parameters:
 kubectl apply -f gp3-def-sc.yaml
 ```
 
-Make gp2 storage class non-default
+Make gp2 storage class non-default:
 
 ```bash
 kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 ```
 
-Or delete legacy gp2 storage class
+Or delete legacy gp2 storage class:
 
 ```bash
 kubectl delete storageclass gp2
 ```
 
-Check the storage class available
+Check the storage class available:
 
 ```bash
 kubectl get sc
@@ -196,7 +198,7 @@ details):
 eksctl create nodegroup --config-file=cluster.yml
 ```
 
-In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the following commands:
+In order to scale the node groups from current capacity (desiredCapacity: 1) to X execute the following commands:
 
 ```bash
 eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
