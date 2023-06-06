@@ -235,7 +235,6 @@ In order to scale the node groups from 1 (desiredCapacity: 1) to X execute the f
 ```bash
 eksctl scale nodegroup --cluster=thingsboard-mqtt-broker-cluster --nodes=X tb-mqtt-broker
 ```
-
 {: .copy-code}
 
 Delete node group:
@@ -243,7 +242,6 @@ Delete node group:
 ```bash
 eksctl delete nodegroup --cluster=thingsboard-mqtt-broker-cluster --name=tb-mqtt-broker
 ```
-
 {: .copy-code}
 
 Delete cluster:
@@ -251,5 +249,4 @@ Delete cluster:
 ```bash
 eksctl delete cluster -r eu-west-1 -n thingsboard-mqtt-broker-cluster -w
 ```
-
 {: .copy-code}
