@@ -133,20 +133,19 @@ export function homeChartJsParams() {
             }
           },
           ticks: {
-            source: 'auto',
             autoSkip: true,
             maxRotation: 0,
             font: {
               size: 8
             },
             callback(val, index) {
-              return (index === 0 || index === 8) ? val : ''; // Show only first tick label
+              return (index === 0) ? val : ''; // Show only first tick label
             },
           },
           grid: {
             display: true,
             drawTicks: false,
-            offset: true
+            offset: false
           }
         }
       },
@@ -246,7 +245,7 @@ export function monitoringChartJsParams() {
           grid: {
             display: true,
             drawTicks: false,
-            offset: true
+            offset: false
           }
         }
       },
