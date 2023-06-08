@@ -19,14 +19,12 @@
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="version-card-container">
     <section>
-      <span [innerHTML]="'version.current-version' | translate"></span>
-      <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> 1.0</a>
+      {{versionData.name}} v. <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker">{{versionData.version}}</a>
     </section>
     <ng-container [ngSwitch]="updateAvailable">
       <ng-template [ngSwitchCase]="true">
         <section>
           <span  [innerHTML]="'version.updates-available' | translate"></span>
-          <a target="_blank" href="https://github.com/thingsboard/thingsboard-mqtt-broker"> v. {{versionData.artifact}}</a>
         </section>
       </ng-template>
       <ng-template [ngSwitchCase]="false">

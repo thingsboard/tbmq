@@ -585,9 +585,8 @@
   "version": {
     "version": "Version",
     "update": "Update",
-    "current-version": "Your <b>Thingsboard MQTT Broker</b> version is",
     "no-updates-available": "You have latest version. No updates available.",
-    "updates-available": "<b>A new version is available!</b>"
+    "updates-available": "A new version is available!"
   },
   "config": {
     "port-mqtt": "Port MQTT",

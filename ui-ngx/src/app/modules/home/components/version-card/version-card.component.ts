@@ -34,6 +34,8 @@ export class VersionCardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.configService.getSystemVersionInfo().subscribe(data => this.versionData = data);
+    this.configService.getSystemVersionInfo().subscribe(data => {
+      this.versionData = data;
+    });
   }
 }
