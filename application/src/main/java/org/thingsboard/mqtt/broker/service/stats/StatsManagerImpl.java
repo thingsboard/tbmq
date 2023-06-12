@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "true")
 public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQueueStatsManager, ProducerStatsManager, ConsumerStatsManager {
+
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
     private final List<Gauge> gauges = new CopyOnWriteArrayList<>();
 
@@ -77,7 +78,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private ClientActorStats clientActorStats;
 
     @Value("${stats.application-processor.enabled}")
-    private Boolean applicationProcessorStatsEnabled;
+    private boolean applicationProcessorStatsEnabled;
 
     private TimerStats timerStats;
 
@@ -96,7 +97,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public MessagesStats createMsgDispatcherPublishStats() {
-        log.trace("Creating MsgDispatcherPublishStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Creating MsgDispatcherPublishStats.");
+        }
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.MSG_DISPATCHER_PRODUCER.getPrintName());
         managedStats.add(stats);
         return stats;
@@ -104,7 +107,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public ClientSessionEventConsumerStats createClientSessionEventConsumerStats(String consumerId) {
-        log.trace("Creating ClientSessionEventConsumerStats, consumerId - {}.", consumerId);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating ClientSessionEventConsumerStats, consumerId - {}.", consumerId);
+        }
         ClientSessionEventConsumerStats stats = new DefaultClientSessionEventConsumerStats(consumerId, statsFactory);
         managedClientSessionEventConsumerStats.add(stats);
         return stats;
@@ -112,7 +117,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public PublishMsgConsumerStats createPublishMsgConsumerStats(String consumerId) {
-        log.trace("Creating PublishMsgConsumerStats, consumerId - {}.", consumerId);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating PublishMsgConsumerStats, consumerId - {}.", consumerId);
+        }
         PublishMsgConsumerStats stats = new DefaultPublishMsgConsumerStats(consumerId, statsFactory);
         managedPublishMsgConsumerStats.add(stats);
         return stats;
@@ -120,7 +127,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public DeviceProcessorStats createDeviceProcessorStats(String consumerId) {
-        log.trace("Creating DeviceProcessorStats, consumerId - {}.", consumerId);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating DeviceProcessorStats, consumerId - {}.", consumerId);
+        }
         DeviceProcessorStats stats = new DefaultDeviceProcessorStats(consumerId, statsFactory);
         managedDeviceProcessorStats.add(stats);
         return stats;
@@ -128,7 +137,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public ApplicationProcessorStats createApplicationProcessorStats(String clientId) {
-        log.trace("Creating ApplicationProcessorStats, clientId - {}.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating ApplicationProcessorStats, clientId - {}.", clientId);
+        }
         if (applicationProcessorStatsEnabled) {
             ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(clientId, statsFactory);
             managedApplicationProcessorStats.put(clientId, stats);
@@ -140,7 +151,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public ApplicationProcessorStats createSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
-        log.trace("Creating SharedApplicationProcessorStats, clientId - {}.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating SharedApplicationProcessorStats, clientId - {}.", clientId);
+        }
         if (applicationProcessorStatsEnabled) {
             var compoundClientId = getCompoundClientId(clientId, subscription);
 
@@ -172,7 +185,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public void clearApplicationProcessorStats(String clientId) {
-        log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Clearing ApplicationProcessorStats, clientId - {}.", clientId);
+        }
         ApplicationProcessorStats stats = managedApplicationProcessorStats.get(clientId);
         if (stats != null && stats.isActive()) {
             stats.disable();
@@ -181,7 +196,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public void clearSharedApplicationProcessorStats(String clientId) {
-        log.trace("Clearing SharedApplicationProcessorStats, clientId - {}.", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Clearing SharedApplicationProcessorStats, clientId - {}.", clientId);
+        }
         List<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
         if (CollectionUtils.isEmpty(clientIds)) {
             return;
@@ -196,7 +213,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public void clearSharedApplicationProcessorStats(String clientId, TopicSharedSubscription subscription) {
-        log.trace("Clearing SharedApplicationProcessorStats, clientId - {}, subscription - {}.", clientId, subscription);
+        if (log.isTraceEnabled()) {
+            log.trace("Clearing SharedApplicationProcessorStats, clientId - {}, subscription - {}.", clientId, subscription);
+        }
 
         var compoundClientId = getCompoundClientId(clientId, subscription);
 
@@ -214,7 +233,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public AtomicInteger createSubscriptionSizeCounter() {
-        log.trace("Creating SubscriptionSizeCounter.");
+        if (log.isTraceEnabled()) {
+            log.trace("Creating SubscriptionSizeCounter.");
+        }
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TOPIC_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -222,7 +243,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public AtomicInteger createRetainMsgSizeCounter() {
-        log.trace("Creating RetainMsgSizeCounter.");
+        if (log.isTraceEnabled()) {
+            log.trace("Creating RetainMsgSizeCounter.");
+        }
         AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), new AtomicInteger(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_SIZE.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -230,63 +253,81 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public void registerLastWillStats(Map<?, ?> lastWillMsgsMap) {
-        log.trace("Registering LastWillStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering LastWillStats.");
+        }
         statsFactory.createGauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap, Map::size);
         gauges.add(new Gauge(StatsType.LAST_WILL_CLIENTS.getPrintName(), lastWillMsgsMap::size));
     }
 
     @Override
     public void registerActiveSessionsStats(Map<?, ?> sessionsMap) {
-        log.trace("Registering SessionsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering SessionsStats.");
+        }
         statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
         gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
     }
 
     @Override
     public void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap) {
-        log.trace("Registering AllClientSessionsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering AllClientSessionsStats.");
+        }
         statsFactory.createGauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap, Map::size);
         gauges.add(new Gauge(StatsType.ALL_CLIENT_SESSIONS.getPrintName(), clientSessionsMap::size));
     }
 
     @Override
     public void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap) {
-        log.trace("Registering ClientSubscriptionsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering ClientSubscriptionsStats.");
+        }
         statsFactory.createGauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap, Map::size);
         gauges.add(new Gauge(StatsType.CLIENT_SUBSCRIPTIONS.getPrintName(), clientSubscriptionsMap::size));
     }
 
     @Override
     public void registerRetainedMsgStats(Map<?, ?> retainedMessagesMap) {
-        log.trace("Registering RetainedMsgStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering RetainedMsgStats.");
+        }
         statsFactory.createGauge(StatsType.RETAINED_MESSAGES.getPrintName(), retainedMessagesMap, Map::size);
         gauges.add(new Gauge(StatsType.RETAINED_MESSAGES.getPrintName(), retainedMessagesMap::size));
     }
 
     @Override
     public void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
-        log.trace("Registering ActiveApplicationProcessorsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering ActiveApplicationProcessorsStats.");
+        }
         statsFactory.createGauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
         gauges.add(new Gauge(StatsType.ACTIVE_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
     }
 
     @Override
     public void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
-        log.trace("Registering ActiveSharedApplicationProcessorsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering ActiveSharedApplicationProcessorsStats.");
+        }
         statsFactory.createGauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
         gauges.add(new Gauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
     }
 
     @Override
     public void registerActorsStats(Map<?, ?> actorsMap) {
-        log.trace("Registering ActorsStats.");
+        if (log.isTraceEnabled()) {
+            log.trace("Registering ActorsStats.");
+        }
         statsFactory.createGauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap, Map::size);
         gauges.add(new Gauge(StatsType.RUNNING_ACTORS.getPrintName(), actorsMap::size));
     }
 
     @Override
     public AtomicLong createSubscriptionTrieNodesCounter() {
-        log.trace("Creating SubscriptionTrieNodesCounter.");
+        if (log.isTraceEnabled()) {
+            log.trace("Creating SubscriptionTrieNodesCounter.");
+        }
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.SUBSCRIPTION_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -294,7 +335,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public AtomicLong createRetainMsgTrieNodesCounter() {
-        log.trace("Creating RetainMsgTrieNodesCounter.");
+        if (log.isTraceEnabled()) {
+            log.trace("Creating RetainMsgTrieNodesCounter.");
+        }
         AtomicLong sizeGauge = statsFactory.createGauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), new AtomicLong(0));
         gauges.add(new Gauge(StatsType.RETAIN_MSG_TRIE_NODES.getPrintName(), sizeGauge::get));
         return sizeGauge;
@@ -302,7 +345,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
     @Override
     public MessagesStats createSqlQueueStats(String queueName, int queueIndex) {
-        log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}.", queueName, queueIndex);
+        if (log.isTraceEnabled()) {
+            log.trace("Creating SqlQueueStats, queueName - {}, queueIndex - {}.", queueName, queueIndex);
+        }
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.SQL_QUEUE.getPrintName() + "." + queueName,
                 "queueIndex", String.valueOf(queueIndex));
         managedStats.add(stats);
@@ -394,7 +439,9 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                         .collect(Collectors.joining(" "));
                 log.info("[{}][{}] Latency Stats: {}, Processing Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), latencyStatsStr, msgStatsStr);
                 if (!stats.isActive()) {
-                    log.trace("[{}] Clearing inactive APPLICATION stats", stats.getClientId());
+                    if (log.isTraceEnabled()) {
+                        log.trace("[{}] Clearing inactive APPLICATION stats", stats.getClientId());
+                    }
                     managedApplicationProcessorStats.computeIfPresent(stats.getClientId(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
                 } else {
                     stats.reset();
