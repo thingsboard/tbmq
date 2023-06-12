@@ -122,7 +122,7 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
     [
       EntityType.USER,
       {
-        helpLinkId: 'admins'
+        helpLinkId: 'users'
       }
     ],
     [
