@@ -90,6 +90,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   cellStyleCache: Array<any> = [];
 
   selectionEnabled;
+  defaultCursor;
 
   defaultPageSize = 10;
   displayPagination = true;
@@ -188,6 +189,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
     this.selectionEnabled = this.entitiesTableConfig.selectionEnabled && enabledGroupActionDescriptors.length;
+    this.defaultCursor = this.entitiesTableConfig.defaultCursor;
 
     this.columnsUpdated();
 
