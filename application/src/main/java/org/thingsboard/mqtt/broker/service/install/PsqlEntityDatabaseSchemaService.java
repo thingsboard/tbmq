@@ -24,7 +24,11 @@ import org.thingsboard.mqtt.broker.dao.util.PsqlDao;
 @Profile("install")
 public class PsqlEntityDatabaseSchemaService extends AbstractDatabaseSchemaService
         implements DatabaseSchemaService {
+
+    private static final String SCHEMA_ENTITIES_SQL = "schema-entities.sql";
+    private static final String SCHEMA_ENTITIES_IDX_SQL = "schema-entities-idx.sql";
+
     public PsqlEntityDatabaseSchemaService() {
-        super("schema-entities.sql");
+        super(SCHEMA_ENTITIES_SQL, SCHEMA_ENTITIES_IDX_SQL);
     }
 }
