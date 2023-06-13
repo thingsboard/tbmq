@@ -636,6 +636,10 @@
     },
     "disconnect": {
       "info": "Once you are finished using the client, you can disconnect the client."
-    }
+    },
+    "step-subscribe": "Subscribe for topic",
+    "step-publish": "Publish message",
+    "step-session": "View session",
+    "step-client": "Create Credentials"
   }
 }
