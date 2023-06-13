@@ -25,8 +25,8 @@ export class LogoComponent {
 
   logo = 'assets/mqtt_logo_white.svg';
 
-  gotoThingsboard(): void {
-    window.open('https://thingsboard.io', '_blank');
+  gotoTbmq(): void {
+    window.open('https://thingsboard.io/docs/mqtt-broker/', '_blank');
   }
 
 }
