@@ -19,11 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 @Slf4j
 public abstract class AbstractDatabaseSchemaService implements DatabaseSchemaService {
@@ -43,20 +45,32 @@ public abstract class AbstractDatabaseSchemaService implements DatabaseSchemaSer
     private InstallScripts installScripts;
 
     private final String schemaSql;
+    private final String schemaIdxSql;
 
-    protected AbstractDatabaseSchemaService(String schemaSql) {
+    protected AbstractDatabaseSchemaService(String schemaSql, String schemaIdxSql) {
         this.schemaSql = schemaSql;
+        this.schemaIdxSql = schemaIdxSql;
     }
 
     @Override
     public void createDatabaseSchema() throws Exception {
-
         log.info("Installing SQL DataBase schema part: " + schemaSql);
+        executeQueryFromFile(schemaSql);
+        createDatabaseIndexes();
+    }
 
+    private void createDatabaseIndexes() throws Exception {
+        if (schemaIdxSql != null) {
+            log.info("Installing SQL DataBase schema indexes part: " + schemaIdxSql);
+            executeQueryFromFile(schemaIdxSql);
+        }
+    }
+
+    void executeQueryFromFile(String schemaSql) throws SQLException, IOException {
         Path schemaFile = Paths.get(installScripts.getDataDir(), SQL_DIR, schemaSql);
+        String sql = Files.readString(schemaFile);
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
-            String sql = Files.readString(schemaFile);
-            conn.createStatement().execute(sql); //NOSONAR, ignoring because method used to load initial thingsboard database schema
+            conn.createStatement().execute(sql); //NOSONAR, ignoring because method used to load initial thingsboard_mqtt_broker database schema
         }
     }
 }
