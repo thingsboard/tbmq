@@ -29,7 +29,7 @@ fi
 if [ -f ${firstlaunch} ]; then
     echo "Starting ThingsBoard MQTT Broker ..."
 
-    java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
+    exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
                         -Dlogging.config=${CONF_FOLDER}/logback.xml \
                         org.springframework.boot.loader.PropertiesLauncher
 else

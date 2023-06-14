@@ -25,7 +25,7 @@ echo "Starting ThingsBoard MQTT Broker installation ..."
 
 set -e
 
-java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                     -Dspring.jpa.hibernate.ddl-auto=none \
                     -Dinstall.upgrade=false \
                     -Dlogging.config=/usr/share/thingsboard-mqtt-broker/bin/install/logback.xml \
