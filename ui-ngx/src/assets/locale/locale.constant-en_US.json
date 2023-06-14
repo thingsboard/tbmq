@@ -599,7 +599,7 @@
     "ssl-auth": "X.509 Certificate Auth",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
-    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/'>read docs</a>."
+    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/security/#authentication'>read docs</a>."
   },
   "kafka": {
     "address": "Address",
