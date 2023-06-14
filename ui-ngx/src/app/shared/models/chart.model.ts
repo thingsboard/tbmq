@@ -239,7 +239,7 @@ export function monitoringChartJsParams() {
               size: 9
             },
             callback(val, index) {
-              return index % 2 === 0 ? val : ''; // Hide every 2nd tick label
+              return index % 1 === 0 ? val : '';
             },
           },
           grid: {

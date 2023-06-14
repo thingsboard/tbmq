@@ -268,7 +268,7 @@ export class MonitoringComponent extends PageComponent {
 
   private inDayRange(): boolean {
     const hourMs = 1000 * 60 * 60;
-    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs < 24;
+    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs <= 24;
   }
 
   private isNotZoomedOrPanned(chartType) {
