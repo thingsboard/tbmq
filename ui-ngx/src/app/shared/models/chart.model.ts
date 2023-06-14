@@ -78,7 +78,7 @@ export function getColor(type: string, index: number): string {
 
 export function homeChartJsParams() {
   // @ts-ignore
-  Tooltip.positioners.myCustomPositioner = function(elements, eventPosition) {
+  Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
     return {
       x: eventPosition.x,
       y: eventPosition.y
@@ -155,7 +155,7 @@ export function homeChartJsParams() {
         },
         tooltip: {
           enabled: true,
-          position: 'myCustomPositioner'
+          position: 'tbPositioner'
         },
         emptyChart: {}
       },
@@ -190,7 +190,7 @@ export function homeChartJsParams() {
 
 export function monitoringChartJsParams() {
   // @ts-ignore
-  Tooltip.positioners.myCustomPositioner = function(elements, eventPosition) {
+  Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
     return {
       x: eventPosition.x,
       y: eventPosition.y
@@ -253,7 +253,8 @@ export function monitoringChartJsParams() {
         zoom: {
           zoom: {
             drag: {
-              enabled: true
+              enabled: true,
+              threshold: 5
             },
             wheel: {
               enabled: false,
@@ -273,13 +274,37 @@ export function monitoringChartJsParams() {
             font: {
               weight: 500,
               size: 12
+            },
+            generateLabels(chart) {
+              const datasets = chart.data.datasets;
+              return chart._getSortedDatasetMetas().map((meta, index) => {
+                return {
+                  datasetIndex: index,
+                  text: datasets[meta.index].label,
+                  hidden: !meta.visible,
+                  lineWidth: 5,
+                  strokeStyle: datasets[meta.index].backgroundColor,
+                  pointStyle: 'line'
+                };
+              }, this);
+            }
+          },
+          onClick(e, legendItem, legend) {
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+            if (ci.isDatasetVisible(index)) {
+              ci.hide(index);
+              legendItem.hidden = true;
+            } else {
+              ci.show(index);
+              legendItem.hidden = false;
             }
           }
         },
         tooltip: {
           enabled: false,
-          external: externalTooltipHandler,
-          position: 'myCustomPositioner'
+          external: tbTooltipHandler,
+          position: 'tbPositioner'
         },
         emptyChart: {}
       },
@@ -385,46 +410,13 @@ export function monitoringChartJsParams() {
   };
 }
 
-export const footer = (tooltipItems) => {
-  let sum = 0;
-
-  tooltipItems.forEach(function(tooltipItem) {
-    sum += tooltipItem.parsed.y;
-  });
-  return 'Sum: ' + sum;
-};
-
-export const getOrCreateTooltip = (chart) => {
-  let tooltipEl = chart.canvas.parentNode.querySelector('div');
-
-  if (!tooltipEl) {
-    tooltipEl = document.createElement('div');
-    tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
-    tooltipEl.style.borderRadius = '3px';
-    tooltipEl.style.color = 'white';
-    tooltipEl.style.opacity = 1;
-    tooltipEl.style.pointerEvents = 'none';
-    tooltipEl.style.position = 'absolute';
-    tooltipEl.style.transform = 'translate(-50%, 0)';
-    tooltipEl.style.transition = 'all .1s ease';
-
-    const table = document.createElement('table');
-    table.style.margin = '0px';
-
-    tooltipEl.appendChild(table);
-    chart.canvas.parentNode.appendChild(tooltipEl);
-  }
-
-  return tooltipEl;
-};
-
-export const externalTooltipHandler = (context) => {
+export const tbTooltipHandler = (context) => {
   // Tooltip Element
   const {chart, tooltip} = context;
-  const tooltipEl = getOrCreateTooltip(chart);
+  const tooltipEl = getTbTooltip(chart);
 
   // Hide if no tooltip
-  if (tooltip.opacity === 0) {
+  if (tooltip.opacity === 0 || tooltip.caretY > 240) {
     tooltipEl.style.opacity = 0;
     return;
   }
@@ -451,11 +443,9 @@ export const externalTooltipHandler = (context) => {
 
     const tableBody = document.createElement('tbody');
     bodyLines.forEach((body, i) => {
-      const colors = tooltip.labelColors[i];
-
       const span = document.createElement('span');
-      span.style.background = tooltip.dataPoints[0]?.dataset.backgroundColor;
-      span.style.borderColor = tooltip.dataPoints[0]?.dataset.backgroundColor;
+      span.style.background = tooltip.dataPoints[i]?.dataset.backgroundColor;
+      span.style.borderColor = tooltip.dataPoints[i]?.dataset.backgroundColor;
       span.style.borderWidth = '2px';
       span.style.marginRight = '10px';
       span.style.height = '10px';
@@ -503,4 +493,29 @@ export const externalTooltipHandler = (context) => {
   tooltipEl.style.width = '200px';
   tooltipEl.style.font = tooltip.options.bodyFont.string;
   tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+};
+
+const getTbTooltip = (chart) => {
+  let tooltipEl = chart.canvas.parentNode.querySelector('div');
+
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+    tooltipEl.style.borderRadius = '3px';
+    tooltipEl.style.color = '#ececec';
+    tooltipEl.style.opacity = 1;
+    tooltipEl.style.pointerEvents = 'none';
+    tooltipEl.style.position = 'absolute';
+    tooltipEl.style.transform = 'translate(-50%, 0)';
+    tooltipEl.style.transition = 'all .1s ease';
+
+    const table = document.createElement('table');
+    table.style.margin = '0px';
+    tooltipEl.appendChild(table);
+
+    chart.canvas.parentNode.appendChild(tooltipEl);
+  }
+
+
+  return tooltipEl;
 };
