@@ -134,6 +134,8 @@
         "check-type",
         "check-typecast"
       ]
-    }
+    },
+    "object-literal-shorthand": false,
+    "prefer-const": false
 }
 }
