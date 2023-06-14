@@ -52,6 +52,8 @@ services:
       KAFKA_LOG_SEGMENT_BYTES: 268435456
       KAFKA_LOG_RETENTION_MS: 300000
       KAFKA_LOG_CLEANUP_POLICY: delete
+    volumes:
+      - ~/.tb-mqtt-broker-data/kafka:/kafka
   tbmq:
     restart: always
     image: "dlandiak2110/tbmq:1.0.0-SNAPSHOT"
@@ -62,13 +64,14 @@ services:
       - "8083:8083"
       - "1883:1883"
     environment:
+      TB_SERVICE_ID: tbmq
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_DRIVER_CLASS_NAME: org.postgresql.Driver
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       TB_KAFKA_SERVERS: kafka:9092
-      SECURITY_MQTT_BASIC_ENABLED: 'false'
+      SECURITY_MQTT_BASIC_ENABLED: 'true'
     volumes:
       - ~/.tb-mqtt-broker-data/conf:/config
       - ~/.tb-mqtt-broker-data/log:/var/log/thingsboard-mqtt-broker
