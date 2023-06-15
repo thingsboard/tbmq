@@ -316,57 +316,23 @@ export function monitoringChartJsParams() {
     plugins: [
       {
         id: 'corsair',
-        afterInit: (chart) => {
-          chart.corsair = {
-            x: 0,
-            y: 0
-          };
-        },
+        afterInit: (chart) => { chart.corsair = {x: 0, y: 0}; },
         afterEvent: (chart, evt) => {
-          const {
-            chartArea: {
-              top,
-              bottom
-            }
-          } = chart;
-          const {
-            event: {
-              x,
-              y
-            }
-          } = evt;
-          if (y < top || y > bottom) {
-            chart.corsair = {
-              x,
-              y,
-              draw: false
-            };
+          const {chartArea: {top, bottom}} = chart;
+          const {event: {x, y}} = evt;
+          console.log(x, y);
+          if (y < top || y > bottom || x < 28) {
+            chart.corsair = {x, y, draw: false};
             chart.draw();
             return;
           }
-          chart.corsair = {
-            x,
-            y,
-            draw: true
-          };
+          chart.corsair = {x, y, draw: true};
           chart.draw();
         },
         afterDatasetsDraw: (chart, _, opts) => {
-          const {
-            ctx,
-            chartArea: {
-              top,
-              bottom
-            }
-          } = chart;
-          const {
-            x,
-            draw
-          } = chart.corsair;
-
-          if (!draw) {
-            return;
-          }
+          const {ctx, chartArea: {top, bottom}} = chart;
+          const {x, draw} = chart.corsair;
+          if (!draw) return;
           const {datasets} = chart.data;
           let hasData = false;
           for (let i = 0; i < datasets.length; i += 1) {
@@ -416,7 +382,7 @@ export const tbTooltipHandler = (context) => {
   const tooltipEl = getTbTooltip(chart);
 
   // Hide if no tooltip
-  if (tooltip.opacity === 0 || tooltip.caretY > 240) {
+  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 28) {
     tooltipEl.style.opacity = 0;
     return;
   }
