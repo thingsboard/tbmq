@@ -21,11 +21,11 @@ import {
   Timewindow,
   TimewindowType
 } from '@shared/models/time/time.models';
-import { forkJoin, Observable, of, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
-import { catchError, retry, share, switchMap, takeUntil } from 'rxjs/operators';
+import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
   getColor,
@@ -62,8 +62,7 @@ export class MonitoringComponent extends PageComponent {
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
-  private $getLatestTimeseries: Observable<TimeseriesData[]>;
-  private $getEntityTimeseries: Observable<TimeseriesData[]>;
+  private chartKeys: string[];
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
@@ -81,16 +80,7 @@ export class MonitoringComponent extends PageComponent {
   }
 
   ngOnInit() {
-    this.brokerIds = this.route.snapshot.data.brokerIds;
-    const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
-    const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
-    for (const brokerId of this.brokerIds) {
-      const keys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, keys));
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, keys));
-    }
-    this.$getEntityTimeseries = forkJoin($getEntityTimeseriesTasks);
-    this.$getLatestTimeseries = forkJoin($getLatestTimeseriesTasks);
+    this.initData();
   }
 
   ngOnDestroy() {
@@ -132,12 +122,23 @@ export class MonitoringComponent extends PageComponent {
     }
   }
 
+  private initData() {
+    this.brokerIds = this.route.snapshot.data.brokerIds;
+    for (const brokerId of this.brokerIds) {
+      this.chartKeys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
+    }
+  }
+
   private calculateFixedWindowTimeMs() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timewindow);
   }
 
   private fetchEntityTimeseries(initCharts = false) {
-    this.$getEntityTimeseries
+    const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
+    for (const brokerId of this.brokerIds) {
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, this.chartKeys));
+    }
+    forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
         if (initCharts) {
@@ -204,9 +205,13 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private startPolling() {
+    const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
+    for (const brokerId of this.brokerIds) {
+      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, this.chartKeys));
+    }
     timer(0, POLLING_INTERVAL)
     .pipe(
-      switchMap(() => this.$getLatestTimeseries),
+      switchMap(() => forkJoin($getLatestTimeseriesTasks)),
       takeUntil(this.stopPolling$),
       share()
     ).subscribe(data => {
