@@ -299,9 +299,7 @@
   },
   "monitoring": {
     "monitoring": "Monitoring",
-    "session": "Sessions",
-    "subscription": "Subscriptions",
-    "messages": "Messages"
+    "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit for data points."
   },
   "mqtt-client": {
     "client-id": "Client ID",

@@ -42,6 +42,7 @@ import 'chartjs-adapter-moment';
 import Zoom from 'chartjs-plugin-zoom';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
 
 Chart.register([Zoom]);
 
@@ -159,6 +160,7 @@ export class MonitoringComponent extends PageComponent {
         if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
           this.startPolling();
         }
+        this.checkMaxAllowedDataLength(data);
       });
   }
 
@@ -280,4 +282,27 @@ export class MonitoringComponent extends PageComponent {
     return !this.charts[chartType].isZoomedOrPanned();
   }
 
+  private checkMaxAllowedDataLength(data) {
+    let showWarning = false;
+    for (const brokerData of data) {
+      for (const key in brokerData) {
+        const dataLength = brokerData[key].length;
+        if (dataLength === 50000) {
+          showWarning = true;
+          break;
+        }
+      }
+    }
+    if (showWarning) {
+      this.store.dispatch(new ActionNotificationShow(
+        {
+          message: this.translate.instant('monitoring.max-allowed-timeseries'),
+          type: 'warn',
+          duration: 0,
+          verticalPosition: 'top',
+          horizontalPosition: 'left'
+        })
+      );
+    }
+  }
 }

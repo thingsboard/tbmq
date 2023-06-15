@@ -36,8 +36,7 @@ export class StatsService {
 
   public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeysTotal,
                              limit: number = 50000, agg: AggregationType = AggregationType.NONE, interval?: number,
-                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false,
-                             config?: RequestConfig): Observable<TimeseriesData> {
+                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
     let url = `/api/timeseries/${entityId}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;
