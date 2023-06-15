@@ -24,7 +24,7 @@ import {
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { chartKeysBroker, chartKeysTotal, StatsService } from '@core/http/stats.service';
+import { chartKeysBroker, chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
@@ -287,7 +287,7 @@ export class MonitoringComponent extends PageComponent {
     for (const brokerData of data) {
       for (const key in brokerData) {
         const dataLength = brokerData[key].length;
-        if (dataLength === 50000) {
+        if (dataLength === getTimeseriesDataLimit) {
           showWarning = true;
           break;
         }
