@@ -317,7 +317,7 @@ sql:
   # Specify whether to sort entities before batch update. Should be enabled for cluster mode to avoid deadlocks
   batch_sort: "${SQL_BATCH_SORT:true}"
   # Specify partitioning size for timestamp key-value storage. Example: DAYS, MONTHS, YEARS, INDEFINITE.
-  ts_key_value_partitioning: "${SQL_TS_KV_PARTITIONING:MONTHS}"
+  ts_key_value_partitioning: "${SQL_TS_KV_PARTITIONING:DAYS}"
   ts:
     batch_size: "${SQL_TS_BATCH_SIZE:10000}"
     batch_max_delay: "${SQL_TS_BATCH_MAX_DELAY_MS:100}"
@@ -325,8 +325,8 @@ sql:
   ttl:
     ts:
       enabled: "${SQL_TTL_TS_ENABLED:true}"
-      execution_interval_ms: "${SQL_TTL_TS_EXECUTION_INTERVAL_MS:86400000}" # Number of milliseconds. The current value corresponds to one day
-      ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:0}" # Number of seconds
+      execution_interval_ms: "${SQL_TTL_TS_EXECUTION_INTERVAL_MS:86400000}" # Number of milliseconds. The current value corresponds to 1 day
+      ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}" # Number of seconds. Corresponds to 7 days
 
 # SQL DAO Configuration
 spring:
