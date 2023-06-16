@@ -16,34 +16,41 @@
 
 import 'hammerjs';
 
-import {Component, OnInit} from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 
-import {environment as env} from '@env/environment';
+import { environment as env } from '@env/environment';
 
-import {TranslateService} from '@ngx-translate/core';
-import {select, Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {LocalStorageService} from '@core/local-storage/local-storage.service';
-import {DomSanitizer} from '@angular/platform-browser';
-import {MatIconRegistry} from '@angular/material/icon';
-import {combineLatest} from 'rxjs';
-import {selectIsAuthenticated, selectIsUserLoaded} from '@core/auth/auth.selectors';
-import {distinctUntilChanged, filter, map, skip} from 'rxjs/operators';
-import {AuthService} from "@core/http/auth.service";
+import { TranslateService } from '@ngx-translate/core';
+import { select, Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { LocalStorageService } from '@core/local-storage/local-storage.service';
+import { DomSanitizer } from '@angular/platform-browser';
+import { MatIconRegistry } from '@angular/material/icon';
+import { combineLatest } from 'rxjs';
+import { getCurrentAuthState, selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
+import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
+import { AuthService } from '@core/http/auth.service';
+import { isMobileApp } from '@core/utils';
+import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
 
   constructor(private store: Store<AppState>,
               private storageService: LocalStorageService,
               private translate: TranslateService,
               private matIconRegistry: MatIconRegistry,
               private domSanitizer: DomSanitizer,
-              private authService: AuthService) {
+              private authService: AuthService,
+              private dialog: MatDialog,
+              private zone: NgZone,
+              private router: Router) {
 
     console.log(`ThingsBoard MQTT Broker Version: ${env.tbMqttBrokerVersion}`);
 
@@ -74,21 +81,39 @@ export class AppComponent implements OnInit {
     ).pipe(
       map(results => ({isAuthenticated: results[0], isUserLoaded: results[1]})),
       distinctUntilChanged(),
-      filter((data) => data.isUserLoaded ),
+      filter((data) => data.isUserLoaded),
       skip(1),
     ).subscribe((data) => {
-      this.authService.gotoDefaultPlace(data.isAuthenticated);
+      this.gotoDefaultPlace(data.isAuthenticated);
     });
     this.authService.reloadUser();
-  }
-
-  ngOnInit() {
   }
 
   onActivateComponent($event: any) {
     const loadingElement = $('div#tb-loading-spinner');
     if (loadingElement.length) {
       loadingElement.remove();
+    }
+  }
+
+  private gotoDefaultPlace(isAuthenticated: boolean) {
+    if (!isMobileApp()) {
+      const authState = getCurrentAuthState(this.store);
+      if (authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1) {
+        this.dialog.open(ChangePasswordDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          backdropClass: ['grey-background'],
+          data: {
+            changeDefaultPassword: true
+          }
+        });
+      } else {
+        const url = this.authService.defaultUrl(isAuthenticated, authState);
+        this.zone.run(() => {
+          this.router.navigateByUrl(url);
+        });
+      }
     }
   }
 

@@ -61,6 +61,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
     this.config.tableTitle = this.translate.instant('retained-message.retained-messages');
     this.config.entitiesDeleteEnabled = false;
     this.config.addEnabled = false;
+    this.config.defaultCursor = true;
 
     this.config.entityTitle = (message) => message ? message.topic : '';
     this.config.detailsReadonly = () => true;

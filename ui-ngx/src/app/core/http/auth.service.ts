@@ -35,11 +35,9 @@ import { AuthUser, User } from '@shared/models/user.model';
 import { UtilsService } from '@core/services/utils.service';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { isMobileApp } from '@core/utils';
 import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
-import { getCurrentAuthState, getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { ConfigService } from '@core/http/config.service';
-import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -185,27 +183,6 @@ export class AuthService {
 
   private notifyUserLoaded(isUserLoaded: boolean) {
     this.store.dispatch(new ActionAuthLoadUser({isUserLoaded}));
-  }
-
-  public gotoDefaultPlace(isAuthenticated: boolean) {
-    if (!isMobileApp()) {
-      const authState = getCurrentAuthState(this.store);
-      if (authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1) {
-        this.dialog.open(ChangePasswordDialogComponent, {
-          disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-          backdropClass: ['grey-background'],
-          data: {
-            changeDefaultPassword: true
-          }
-        });
-      } else {
-        const url = this.defaultUrl(isAuthenticated, authState);
-        this.zone.run(() => {
-          this.router.navigateByUrl(url);
-        });
-      }
-    }
   }
 
   public defaultUrl(isAuthenticated: boolean, authState?: AuthState, path?: string, params?: any): UrlTree {

@@ -34,26 +34,34 @@ public class ApplicationSessionCtxServiceImpl implements ApplicationSessionCtxSe
 
     @Override
     public ApplicationSessionCtx saveApplicationSessionCtx(ApplicationSessionCtx applicationSessionCtx) {
-        log.trace("Executing saveApplicationSessionCtx [{}]", applicationSessionCtx);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveApplicationSessionCtx [{}]", applicationSessionCtx);
+        }
         validate(applicationSessionCtx);
         return applicationSessionCtxDao.save(applicationSessionCtx);
     }
 
     @Override
     public void deleteApplicationSessionCtx(String clientId) {
-        log.trace("Executing deleteApplicationSessionCtx [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteApplicationSessionCtx [{}]", clientId);
+        }
         applicationSessionCtxDao.remove(clientId);
     }
 
     @Override
     public Optional<ApplicationSessionCtx> findApplicationSessionCtx(String clientId) {
-        log.trace("Executing findApplicationSessionCtx [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findApplicationSessionCtx [{}]", clientId);
+        }
         return Optional.ofNullable(applicationSessionCtxDao.findByClientId(clientId));
     }
 
     @Override
     public ListenableFuture<ApplicationSessionCtx> findApplicationSessionCtxAsync(String clientId) {
-        log.trace("Executing findApplicationSessionCtxAsync [{}]", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findApplicationSessionCtxAsync [{}]", clientId);
+        }
         return applicationSessionCtxDao.findByClientIdAsync(clientId);
     }
 

@@ -149,6 +149,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entityType: EntityType = null;
   tableTitle = '';
   selectionEnabled = true;
+  defaultCursor = false;
   searchEnabled = true;
   addEnabled = true;
   entitiesDeleteEnabled = true;

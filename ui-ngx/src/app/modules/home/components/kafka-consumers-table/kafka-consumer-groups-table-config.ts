@@ -34,6 +34,7 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
     this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
+    this.defaultPageSize = 5;
     this.entityTranslations = {
       noEntities: 'kafka.no-kafka-consumer-group-text',
       search: 'kafka.consumer-groups-search'

@@ -59,6 +59,7 @@ import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-co
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
+import { KafkaTopic, KafkaTopicsTooltipMap } from '@shared/models/kafka.model';
 
 @Component({
   selector: 'tb-kafka-entities-table',
@@ -559,6 +560,34 @@ export class KafkaEntitiesTableComponent extends PageComponent implements AfterV
 
   trackByEntityId(index: number, entity: any) {
     return entity.id;
+  }
+
+  showTooltip(entity: KafkaTopic) {
+    if (entity?.name) {
+      const rowName = entity.name;
+      for (let key in KafkaTopicsTooltipMap) {
+        if (rowName.includes('tbmq.msg.app')) {
+          if (rowName.includes('tbmq.msg.app.shared')) {
+            return KafkaTopicsTooltipMap['tbmq.msg.app.shared'];
+          } else {
+            return KafkaTopicsTooltipMap['tbmq.msg.app'];
+          }
+        }
+        if (rowName.includes('tbmq.client.session')) {
+          if (rowName.includes('tbmq.client.session.event.response')) {
+            return KafkaTopicsTooltipMap['tbmq.client.session.event.response'];
+          } else if (rowName.includes('tbmq.client.session.event.request')) {
+            return KafkaTopicsTooltipMap['tbmq.client.session.event.request'];
+          } else {
+            return KafkaTopicsTooltipMap['tbmq.client.session'];
+          }
+        }
+        if (rowName.includes(key)) {
+          return KafkaTopicsTooltipMap[key];
+        }
+      }
+    }
+    return undefined;
   }
 
 }

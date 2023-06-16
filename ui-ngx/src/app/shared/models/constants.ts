@@ -59,11 +59,11 @@ export const helpBaseUrl = 'https://thingsboard.io';
 
 export const HelpLinks = {
   linksMap: {
-    outgoingMailSettings: helpBaseUrl + '/docs/user-guide/ui/mail-settings',
-    admins: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/admins',
-    clientCredentials: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials',
-    sessions: helpBaseUrl + '/docs/mqtt-broker/getting-started',
-    sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/shared-subscriptions',
+    outgoingMailSettings: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mail-server/',
+    users: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/users/',
+    clientCredentials: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/',
+    sessions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/sessions',
+    sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
   }
 };
 

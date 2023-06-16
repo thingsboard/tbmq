@@ -603,6 +603,9 @@ mat-label {
     cursor: pointer;
   }
 
+  .mat-row-unset-cursor {
+    cursor: unset;
+  }
 
   .mat-header-row.mat-table-sticky {
     background-clip: padding-box;

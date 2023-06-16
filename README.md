@@ -1,9 +1,14 @@
 # ThingsBoard MQTT Broker
 
-ThingsBoard MQTT Broker is an open-source MQTT message broker that was specifically designed to work fast and reliable
-in the most common scenarios.
+ThingsBoard MQTT Broker represents an open-source MQTT message broker renowned for its remarkable capacity to handle a staggering number of connected MQTT clients,
+reaching up to **4M** clients, while proficiently processing a minimum of **200K messages per second** per node.
+In the cluster mode, its capabilities are further enhanced.
 
-ThingsBoard MQTT Broker support MQTT v3.x and v5.0
+ThingsBoard MQTT Broker support MQTT v3.x and v5.0.
+
+## Documentation
+
+ThingsBoard MQTT Broker documentation is hosted on [thingsboard.io](https://thingsboard.io/docs/mqtt-broker/).
 
 ## MQTT 5 supported features:
 

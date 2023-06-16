@@ -55,3 +55,9 @@ export const SecurityParameterConfigMap = new Map<ConfigParams, string>(
     [ConfigParams.X509_CERT_CHAIN_AUTH, 'SECURITY_MQTT_SSL_ENABLED']
   ]
 );
+
+export interface SystemVersionInfo {
+  version?: string;
+  artifact?: string;
+  name?: string;
+}

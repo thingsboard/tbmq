@@ -36,21 +36,21 @@ export class InstructionsService {
     const steps = [
       {
         id: 'subscribe',
-        title: 'Subscribe for topic'
+        title: 'getting-started.step-subscribe'
       },
       {
         id: 'publish',
-        title: 'Publish message'
+        title: 'getting-started.step-publish'
       },
       {
-        id: 'disconnect',
-        title: 'View session'
+        id: 'session',
+        title: 'getting-started.step-session'
       }
     ];
     if (basicAuthEnabled) {
       steps.unshift({
         id: 'client',
-        title: 'Create credentials'
+        title: 'getting-started.step-client'
       });
     }
     // @ts-ignore

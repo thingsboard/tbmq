@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Injector, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, forwardRef, Injector, Input, OnInit } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -54,8 +54,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   topicListFormGroup: FormGroup;
   mqttQoSTypes = mqttQoSTypes;
-  showShareName: boolean = false;
-  shareNameCounter: number = 0;
+  showShareName = false;
+  shareNameCounter = 0;
 
   private propagateChange = null;
 
@@ -63,7 +63,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   constructor(protected store: Store<AppState>,
               private injector: Injector,
-              private fb: FormBuilder) {
+              private fb: FormBuilder,
+              private cd: ChangeDetectorRef) {
     super(store);
   }
 
@@ -137,6 +138,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
       $event.stopPropagation();
     }
     this.showShareName = !this.showShareName;
+    this.cd.markForCheck();
   }
 
   private updateView(value: TopicSubscription[]) {

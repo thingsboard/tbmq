@@ -84,19 +84,19 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private buildSessionForm(entity: DetailedClientSessionInfo): void {
     this.entityForm = this.fb.group({
-      clientId: [entity ? entity.clientId : null],
-      clientType: [entity ? entity.clientType : null],
-      clientIpAdr: [entity ? entity.clientIpAdr : null],
-      nodeId: [entity ? entity.nodeId : null],
-      keepAliveSeconds: [entity ? entity.keepAliveSeconds : null],
-      sessionExpiryInterval: [entity ? entity.sessionExpiryInterval : null],
-      sessionEndTs: [entity ? entity.sessionEndTs : null],
-      connectedAt: [entity ? entity.connectedAt : null],
-      connectionState: [entity ? entity.connectionState : null],
-      disconnectedAt: [entity ? entity.disconnectedAt : null],
-      subscriptions: [entity ? entity.subscriptions : null],
-      cleanStart: [entity ? entity.cleanStart : null],
-      subscriptionsCount: [entity ? entity.subscriptionsCount : null]
+      clientId: [{value: entity ? entity.clientId : null, disabled: false}],
+      clientType: [{value: entity ? entity.clientType : null, disabled: false}],
+      clientIpAdr: [{value: entity ? entity.clientIpAdr : null, disabled: false}],
+      nodeId: [{value: entity ? entity.nodeId : null, disabled: false}],
+      keepAliveSeconds: [{value: entity ? entity.keepAliveSeconds : null, disabled: false}],
+      sessionExpiryInterval: [{value: entity ? entity.sessionExpiryInterval : null, disabled: false}],
+      sessionEndTs: [{value: entity ? entity.sessionEndTs : null, disabled: false}],
+      connectedAt: [{value: entity ? entity.connectedAt : null, disabled: false}],
+      connectionState: [{value: entity ? entity.connectionState : null, disabled: false}],
+      disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: false}],
+      subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
+      cleanStart: [{value: entity ? entity.cleanStart : null, disabled: false}],
+      subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
       this.entity.subscriptions = value;
@@ -121,17 +121,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
   }
 
-  onSessionIdCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('mqtt-client-session.session-id-copied-message'),
-        type: 'success',
-        duration: 2000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
-      }));
-  }
-
   private onSave(): void {
     const value = {...this.entity, ...this.subscriptions.value};
     this.mqttClientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
@@ -147,12 +136,13 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private onDisconnect(): void {
-    this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe((value) => {
+    this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe(
+      () => {
       this.mqttClientSessionService.getDetailedClientSessionInfo(this.entity.clientId).subscribe(
-        (entity: DetailedClientSessionInfo) => {
+        () => {
           this.closeDialog();
         }
-      )
+      );
     });
   }
 
@@ -174,5 +164,17 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private closeDialog(): void {
     this.dialogRef.close();
+  }
+
+  onContentCopied() {
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('action.on-copied'),
+        type: 'success',
+        duration: 500,
+        verticalPosition: 'bottom',
+        horizontalPosition: 'right'
+      })
+    );
   }
 }

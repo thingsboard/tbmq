@@ -23,10 +23,10 @@ import {Component} from '@angular/core';
 })
 export class LogoComponent {
 
-  logo = 'assets/logo_title_white.svg';
+  logo = 'assets/mqtt_logo_white.svg';
 
-  gotoThingsboard(): void {
-    window.open('https://thingsboard.io', '_blank');
+  gotoTbmq(): void {
+    window.open('https://thingsboard.io/docs/mqtt-broker/', '_blank');
   }
 
 }

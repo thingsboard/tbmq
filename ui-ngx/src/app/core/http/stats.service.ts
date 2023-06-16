@@ -25,6 +25,7 @@ import { TimeseriesData } from '@shared/models/chart.model';
 
 export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
 export const chartKeysBroker = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs'];
+export const getTimeseriesDataLimit = 50000;
 
 @Injectable({
   providedIn: 'root'
@@ -35,9 +36,8 @@ export class StatsService {
   }
 
   public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeysTotal,
-                             limit: number = 100, agg: AggregationType = AggregationType.NONE, interval?: number,
-                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false,
-                             config?: RequestConfig): Observable<TimeseriesData> {
+                             limit: number = getTimeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
+                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
     let url = `/api/timeseries/${entityId}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;

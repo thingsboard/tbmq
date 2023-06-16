@@ -299,9 +299,7 @@
   },
   "monitoring": {
     "monitoring": "Monitoring",
-    "session": "Sessions",
-    "subscription": "Subscriptions",
-    "messages": "Messages"
+    "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points."
   },
   "mqtt-client": {
     "client-id": "Client ID",
@@ -422,7 +420,7 @@
     "session-expiry-interval": "Session Expiry Interval (seconds)",
     "session-end": "Session End",
     "session-id-copied-message": "Session ID has been copied to clipboard",
-    "search": "Search sessions",
+    "search": "Search sessions by client ID",
     "selected-sessions": "{ count, plural, 1 {1 session} other {# sessions} } selected",
     "subscriptions": "Subscriptions",
     "subscriptions-count": "Subscriptions",
@@ -460,12 +458,12 @@
     "shared-subscription-details": "Application Shared Subscription details",
     "no-shared-subscription-text": "No Application Shared Subscriptions found",
     "search": "Search Application Shared Subscriptions",
-    "selected-shared-subscriptions": "{ count, plural, 1 {1 ApplicationShared Subscription} other {# Application Shared Subscriptions} } selected",
+    "selected-shared-subscriptions": "{ count, plural, 1 {1 Application Shared Subscription} other {# Application Shared Subscriptions} } selected",
     "name": "Name",
     "name-required": "Name is required",
     "hint-application-shared-subscription-info": "Info",
     "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> are the TB MQTT Broker entities used for effective management of the MQTT shared</br> subscriptions feature. Provision such entities if you plan to use <b>shared subscriptions with Application clients</b>. <a href='' target='_blank'>Read more.</a>",
-    "hint-topic-filter": "Application Shared Subscriptions provide for client load balancing and prefixed with <code>$share/{group-name}/{topic-filter}</code>.</br>If shared subscription topic is <code>$share/group1/city/+/home/#</code>, set <i>Topic filter</i> as <code>city/+/home/#</code>",
+    "hint-topic-filter": "Application Shared Subscriptions provide for client load balancing and prefixed with <code>$share/group-name/topic-filter</code>.</br>If shared subscription topic is <code>$share/group1/city/+/home/#</code>, set <i>Topic filter</i> as <code>city/+/home/#</code>",
     "hint-partitions": "It is recommended that the number of partitions to be <b>equal or multiple of an expected number of clients</b> of the shared subscription.</br>For example, if 5 clients are going to be subscribed to the shared subscription, set the <i>Partitions</i> to 5, 10 or 15.</br>This will guarantee the load is distributed evenly by the subscribers.",
     "hint-shared-subscription-notes": "Notes:<ul><li><i>Topic filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Application Shared Subscription feature works with MQTT v5 and earlier versions.</li></ul>",
     "partitions": "Partitions",
@@ -495,7 +493,7 @@
     "no-retained-messages-matching": "No retained messages matching '{{entity}}' were found.",
     "topic-required": "Topic is required",
     "details": "Retained Message Details",
-    "search": "Search retained messages",
+    "search": "Search retained messages by topic",
     "selected-retained-messages": "{ count, plural, 1 {1 retained message} other {# retained messages} } selected",
     "type-retained-message": "Retained message",
     "type-retained-messages": "Retained messages",
@@ -585,9 +583,8 @@
   "version": {
     "version": "Version",
     "update": "Update",
-    "current-version": "Your <b>Thingsboard MQTT Broker</b> version is",
     "no-updates-available": "You have latest version. No updates available.",
-    "updates-available": "<b>A new version is available!</b>"
+    "updates-available": "A new version is available!"
   },
   "config": {
     "port-mqtt": "Port MQTT",
@@ -600,7 +597,7 @@
     "ssl-auth": "X.509 Certificate Auth",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
-    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/'>read docs</a>."
+    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/security/#authentication'>read docs</a>."
   },
   "kafka": {
     "address": "Address",
@@ -637,6 +634,10 @@
     },
     "disconnect": {
       "info": "Once you are finished using the client, you can disconnect the client."
-    }
+    },
+    "step-subscribe": "Subscribe for topic",
+    "step-publish": "Publish message",
+    "step-session": "View session",
+    "step-client": "Create Credentials"
   }
 }

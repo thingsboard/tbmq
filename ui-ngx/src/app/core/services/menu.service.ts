@@ -122,7 +122,7 @@ export class MenuService {
         name: 'admin.system-settings',
         type: 'toggle',
         path: '/settings',
-        height: '320px',
+        height: '40px',
         icon: 'settings',
         pages: [
           {

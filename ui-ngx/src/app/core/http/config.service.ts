@@ -18,7 +18,7 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BrokerConfig } from '@shared/models/config.model';
+import { BrokerConfig, SystemVersionInfo } from '@shared/models/config.model';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +34,10 @@ export class ConfigService {
 
   public getBrokerServiceIds(config?: RequestConfig): Observable<string[]> {
     return this.http.get<Array<string>>(`/api/app/brokers`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getSystemVersionInfo(config?: RequestConfig): Observable<SystemVersionInfo> {
+    return this.http.get<SystemVersionInfo>(`/api/system/info`, defaultHttpOptionsFromConfig(config));
   }
 
 }

@@ -42,7 +42,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tb-mqtt-broker:1.0.0-SNAPSHOT
+          image: thingsboard/tbmq-node:1.0.0-SNAPSHOT
           ports:
             - containerPort: 8083
               name: http
