@@ -101,8 +101,8 @@ export function homeChartJsParams() {
       },
       layout: {
         padding: {
-          right: 10,
-          left: 10,
+          right: 0,
+          left: 0,
           bottom: 0,
           top: 0
         }
@@ -118,9 +118,23 @@ export function homeChartJsParams() {
       },
       scales: {
         y: {
-          display: false,
+          display: true,
           min: 0,
-          suggestedMax: 1
+          suggestedMax: 1,
+          ticks: {
+            maxRotation: 0,
+            labelOffset: 0,
+            source: 'auto',
+            autoSkip: true,
+            font: {
+              size: 8
+            },
+            callback(label, index) {
+              if (Math.floor(label) === label) {
+                return label;
+              }
+            }
+          }
         },
         x: {
           type: 'time',
@@ -320,7 +334,6 @@ export function monitoringChartJsParams() {
         afterEvent: (chart, evt) => {
           const {chartArea: {top, bottom}} = chart;
           const {event: {x, y}} = evt;
-          console.log(x, y);
           if (y < top || y > bottom || x < 28) {
             chart.corsair = {x, y, draw: false};
             chart.draw();
