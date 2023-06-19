@@ -141,7 +141,7 @@ export function homeChartJsParams() {
           display: true,
           time: {
             round: 'second',
-            tooltipFormat: 'HH:mm:ss',
+            tooltipFormat: 'HH:mm',
             displayFormats: {
               minute: 'HH:mm'
             }
@@ -229,6 +229,9 @@ export function monitoringChartJsParams() {
             display: false
           },
           ticks: {
+            font: {
+              size: 9
+            },
             callback(label, index) {
               if (Math.floor(label) === label) {
                 return label;
@@ -325,6 +328,14 @@ export function monitoringChartJsParams() {
       parsing: {
         xAxisKey: 'ts',
         yAxisKey: 'value'
+      },
+      layout: {
+        padding: {
+          right: 0,
+          left: 0,
+          bottom: 0,
+          top: 0
+        }
       }
     },
     plugins: [
@@ -476,7 +487,6 @@ export const tbTooltipHandler = (context) => {
 
 const getTbTooltip = (chart) => {
   let tooltipEl = chart.canvas.parentNode.querySelector('div');
-
   if (!tooltipEl) {
     tooltipEl = document.createElement('div');
     tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
@@ -494,7 +504,5 @@ const getTbTooltip = (chart) => {
 
     chart.canvas.parentNode.appendChild(tooltipEl);
   }
-
-
   return tooltipEl;
 };
