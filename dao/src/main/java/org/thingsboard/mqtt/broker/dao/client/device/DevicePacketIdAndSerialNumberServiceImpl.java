@@ -43,7 +43,9 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
 
     @Override
     public Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Set<String> clientIds) {
-        log.debug("Trying to find PacketIdAndSerialNumbers for clients: {}", clientIds);
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to find PacketIdAndSerialNumbers for clients: {}", clientIds);
+        }
         Map<String, PacketIdAndSerialNumber> result = Maps.newHashMap();
         Cache cache = getCache();
 
@@ -58,7 +60,9 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
         });
 
         if (!clientIdsFromDb.isEmpty()) {
-            log.debug("Did not find in cache, getting PacketIdAndSerialNumbers from DB for: {}", clientIdsFromDb);
+            if (log.isDebugEnabled()) {
+                log.debug("Did not find in cache, getting PacketIdAndSerialNumbers from DB for: {}", clientIdsFromDb);
+            }
             Collection<DeviceSessionCtx> deviceSessionsFromDb = findSessionsByClientIds(clientIdsFromDb);
             result.putAll(updateCacheAndToMap(deviceSessionsFromDb, cache));
         }
@@ -84,7 +88,9 @@ public class DevicePacketIdAndSerialNumberServiceImpl implements DevicePacketIdA
     }
 
     private Collection<DeviceSessionCtx> findSessionsByClientIds(Set<String> clientIds) {
-        log.trace("Processing findSessionsByClientIds: {}", clientIds);
+        if (log.isTraceEnabled()) {
+            log.trace("Processing findSessionsByClientIds: {}", clientIds);
+        }
         return deviceSessionCtxService.findAllContexts(clientIds);
     }
 

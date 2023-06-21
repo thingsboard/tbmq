@@ -49,7 +49,9 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
             throw new IllegalArgumentException("Can't create entity for domain object {" + domain + "}", e);
         }
         setSearchText(entity);
-        log.debug("Saving entity {}", entity);
+        if (log.isDebugEnabled()) {
+            log.debug("Saving entity {}", entity);
+        }
         if (entity.getId() == null) {
             UUID uuid = UUID.randomUUID();
             entity.setId(uuid);
@@ -61,14 +63,18 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
 
     @Override
     public D findById(UUID key) {
-        log.debug("Get entity by key {}", key);
+        if (log.isDebugEnabled()) {
+            log.debug("Get entity by key {}", key);
+        }
         Optional<E> entity = getCrudRepository().findById(key);
         return DaoUtil.getData(entity);
     }
 
     @Override
     public ListenableFuture<D> findByIdAsync(UUID key) {
-        log.debug("Get entity by key async {}", key);
+        if (log.isDebugEnabled()) {
+            log.debug("Get entity by key async {}", key);
+        }
         return service.submit(() -> DaoUtil.getData(getCrudRepository().findById(key)));
     }
 
@@ -76,7 +82,9 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
     @Transactional
     public boolean removeById(UUID id) {
         getCrudRepository().deleteById(id);
-        log.debug("Remove request: {}", id);
+        if (log.isDebugEnabled()) {
+            log.debug("Remove request: {}", id);
+        }
         return !getCrudRepository().existsById(id);
     }
 

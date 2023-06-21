@@ -64,7 +64,9 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     @Override
     public void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
-        log.trace("Saving device publish messages: failOnConflict - {}, msgs - {}", failOnConflict, devicePublishMessages);
+        if (log.isTraceEnabled()) {
+            log.trace("Saving device publish messages: failOnConflict - {}, msgs - {}", failOnConflict, devicePublishMessages);
+        }
         List<DevicePublishMsgEntity> entities = devicePublishMessages.stream().map(DevicePublishMsgEntity::new).collect(Collectors.toList());
         if (failOnConflict) {
             lowLevelDeviceMsgRepository.insert(entities);
@@ -75,7 +77,9 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     @Override
     public List<DevicePublishMsg> findPersistedMessages(String clientId, int messageLimit) {
-        log.trace("Finding device publish messages, clientId - {}, limit - {}", clientId, messageLimit);
+        if (log.isTraceEnabled()) {
+            log.trace("Finding device publish messages, clientId - {}, limit - {}", clientId, messageLimit);
+        }
         List<DevicePublishMsgEntity> devicePublishMsgs = deviceMsgRepository.findByClientIdReversed(clientId, messageLimit).stream()
                 .sorted(Comparator.comparingLong(DevicePublishMsgEntity::getSerialNumber))
                 .collect(Collectors.toList());
@@ -84,26 +88,34 @@ public class SqlDeviceMsgDao implements DeviceMsgDao {
 
     @Override
     public List<DevicePublishMsg> findPersistedMessagesBySerialNumber(String clientId, long fromSerialNumber, long toSerialNumber) {
-        log.trace("Finding device publish messages, clientId - {}, fromSerialNumber - {}, toSerialNumber - {}", clientId, fromSerialNumber, toSerialNumber);
+        if (log.isTraceEnabled()) {
+            log.trace("Finding device publish messages, clientId - {}, fromSerialNumber - {}, toSerialNumber - {}", clientId, fromSerialNumber, toSerialNumber);
+        }
         List<DevicePublishMsgEntity> devicePublishMsgs = deviceMsgRepository.findByClientIdAndSerialNumberInRange(clientId, fromSerialNumber, toSerialNumber);
         return DaoUtil.convertDataList(devicePublishMsgs);
     }
 
     @Override
     public void removePersistedMessages(String clientId) {
-        log.debug("Removing device publish messages, clientId - {}", clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Removing device publish messages, clientId - {}", clientId);
+        }
         lowLevelDeviceMsgRepository.removePacketsByClientId(clientId);
     }
 
     @Override
     public ListenableFuture<Void> removePersistedMessage(String clientId, int packetId) {
-        log.trace("Removing device publish message, clientId - {}, packetId - {}", clientId, packetId);
+        if (log.isTraceEnabled()) {
+            log.trace("Removing device publish message, clientId - {}, packetId - {}", clientId, packetId);
+        }
         return deletePacketQueue.add(new DeletePacketInfo(clientId, packetId));
     }
 
     @Override
     public ListenableFuture<Void> updatePacketType(String clientId, int packetId, PersistedPacketType packetType) {
-        log.trace("Updating packet type for device publish message, clientId - {}, packetId - {}, packetType - {}.", clientId, packetId, packetType);
+        if (log.isTraceEnabled()) {
+            log.trace("Updating packet type for device publish message, clientId - {}, packetId - {}, packetType - {}.", clientId, packetId, packetType);
+        }
         return updatePacketTypeQueue.add(new UpdatePacketTypeInfo(clientId, packetType, packetId));
     }
 
