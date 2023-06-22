@@ -170,35 +170,13 @@ export function homeChartJsParams() {
         tooltip: {
           enabled: true,
           position: 'tbPositioner'
-        },
-        emptyChart: {}
+        }
       },
       parsing: {
         xAxisKey: 'ts',
         yAxisKey: 'value'
       }
-    },
-    plugins: [
-      {
-        id: 'emptyChart',
-        afterDraw(chart, args, options) {
-          const {datasets} = chart.data;
-          let hasData = false;
-          for (let i = 0; i < datasets.length; i += 1) {
-            const dataset = datasets[i];
-            hasData = dataset.data.length > 0;
-          }
-          if (!hasData) {
-            const {chartArea: {left, top, right, bottom}, ctx} = chart;
-            const centerX = (left + right) / 2;
-            const centerY = (top + bottom) / 2;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('', centerX, centerY);
-          }
-        }
-      }
-    ]
+    }
   };
 }
 
@@ -322,8 +300,7 @@ export function monitoringChartJsParams() {
           enabled: false,
           external: tbTooltipHandler,
           position: 'tbPositioner'
-        },
-        emptyChart: {}
+        }
       },
       parsing: {
         xAxisKey: 'ts',
@@ -374,25 +351,6 @@ export function monitoringChartJsParams() {
             ctx.lineTo(x, top);
             ctx.stroke();
             ctx.restore();
-          }
-        }
-      },
-      {
-        id: 'emptyChart',
-        afterDraw(chart, args, options) {
-          const {datasets} = chart.data;
-          let hasData = false;
-          for (let i = 0; i < datasets.length; i += 1) {
-            const dataset = datasets[i];
-            hasData = dataset.data.length > 0;
-          }
-          if (!hasData) {
-            const {chartArea: {left, top, right, bottom}, ctx} = chart;
-            const centerX = (left + right) / 2;
-            const centerY = (top + bottom) / 2;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('', centerX, centerY);
           }
         }
       }
