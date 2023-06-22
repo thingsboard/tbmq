@@ -25,10 +25,11 @@ import org.thingsboard.mqtt.broker.dao.model.UserEntity;
 import java.util.UUID;
 
 public interface UserRepository extends PagingAndSortingRepository<UserEntity, UUID> {
+
     UserEntity findByEmail(String email);
 
     @Query("SELECT u FROM UserEntity u WHERE " +
-            "LOWER(u.searchText) LIKE LOWER(CONCAT(:textSearch, '%'))")
+            "LOWER(u.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<UserEntity> findAll(@Param("textSearch") String textSearch,
                              Pageable pageable);
 }
