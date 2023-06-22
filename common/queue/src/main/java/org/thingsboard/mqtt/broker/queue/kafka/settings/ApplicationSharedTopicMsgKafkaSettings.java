@@ -25,4 +25,5 @@ import org.springframework.stereotype.Component;
 public class ApplicationSharedTopicMsgKafkaSettings {
     private String topicProperties;
     private String additionalConsumerConfig;
+    private String additionalProducerConfig;
 }
