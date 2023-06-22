@@ -345,7 +345,7 @@ export function monitoringChartJsParams() {
         afterEvent: (chart, evt) => {
           const {chartArea: {top, bottom}} = chart;
           const {event: {x, y}} = evt;
-          if (y < top || y > bottom || x < 28) {
+          if (y < top || y > bottom || x < 20) {
             chart.corsair = {x, y, draw: false};
             chart.draw();
             return;
@@ -406,7 +406,7 @@ export const tbTooltipHandler = (context) => {
   const tooltipEl = getTbTooltip(chart);
 
   // Hide if no tooltip
-  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 28) {
+  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 20) {
     tooltipEl.style.opacity = 0;
     return;
   }
