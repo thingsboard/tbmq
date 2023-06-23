@@ -1092,19 +1092,3 @@ mat-label {
     margin-bottom: 10px;
   }
 }
-
-.tb-home-overview {
-  display: flex;
-  background-color: #dcdcdc;
-  padding: 12px 12px 0 12px;
-  gap: 12px;
-
-  .tb-home-card-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 12px;
-    border-radius: 10px;
-    background-color: #fff;
-  }
-}
