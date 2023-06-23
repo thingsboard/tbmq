@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  overflow-x: auto;
-}
-
 :host::ng-deep {
   .chart-container {
     border: 1px solid #e0e0e0;
