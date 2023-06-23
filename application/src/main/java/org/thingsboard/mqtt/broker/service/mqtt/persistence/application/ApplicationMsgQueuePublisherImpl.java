@@ -47,6 +47,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
+    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> sharedSubsPublisher;
 
     @Value("${mqtt.handler.app_msg_callback_threads:0}")
     private int threadsCount;
@@ -66,6 +67,11 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                 .partition(0)
                 .build();
         this.publisher.init();
+        this.sharedSubsPublisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
+                .queueName("applicationSharedSubsMsg")
+                .producer(applicationPersistenceMsgQueueFactory.createSharedSubsProducer(serviceInfoProvider.getServiceId()))
+                .build();
+        this.sharedSubsPublisher.init();
     }
 
     @Override
@@ -99,7 +105,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     @Override
     public void sendMsgToSharedTopic(String sharedTopic, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        publisher.send(new TbProtoQueueMsg<>(msgProto),
+        sharedSubsPublisher.send(new TbProtoQueueMsg<>(msgProto),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -126,6 +132,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     @PreDestroy
     public void destroy() {
         publisher.destroy();
+        sharedSubsPublisher.destroy();
         if (callbackProcessor != null) {
             callbackProcessor.shutdownNow();
         }
