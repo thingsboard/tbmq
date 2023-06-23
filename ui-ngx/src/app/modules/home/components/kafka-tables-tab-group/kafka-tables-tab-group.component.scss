@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  ::ng-deep div > .mat-tab-label-content {
+:host::ng-deep {
+  .mat-tab-label-content {
     font-size: 12px !important;
+  }
+
+  .mat-tab-label {
+    height: 30px;
   }
 }
