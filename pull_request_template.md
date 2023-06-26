@@ -6,8 +6,7 @@ Put your PR description here instead of this sentence.
 
 - [ ] You have reviewed the guidelines [document](https://docs.google.com/document/d/1A4Vc3wrHsY_159b9RG5LOtCryoH6VPwgOhrFEzJKwbI/edit?usp=sharing).
 - [ ] [Labels](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels#about-labels) that classify your pull request have been added.
-- [ ] The [milestone](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones) is
-  specified and corresponds to fix version.
+- [ ] The [milestone](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones) is specified and corresponds to fix version.
 - [ ] Description references specific [issue](https://github.com/thingsboard/TBMQ/issues).
 - [ ] Description contains human-readable scope of changes.
 - [ ] Description contains brief notes about what needs to be added to the documentation.
