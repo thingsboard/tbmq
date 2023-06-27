@@ -499,6 +499,9 @@ management:
         # Expose metrics endpoint (use value 'info' to disable prometheus metrics).
         include: '${METRICS_ENDPOINTS_EXPOSE:prometheus}'
 
+# spring freemarker configuration
+spring.freemarker.checkTemplateLocation: "false"
+
 # spring CORS configuration
 spring.mvc.cors:
   mappings:
