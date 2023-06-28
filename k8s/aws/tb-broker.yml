@@ -45,7 +45,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:1.0.0-SNAPSHOT
+          image: thingsboard/tbmq-node:1.0.0
           resources:
             limits:
               cpu: 58
