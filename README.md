@@ -21,11 +21,15 @@ and providing the ability to withstand peak loads from publishing clients, all w
 clients.
 Additionally, we prioritized supporting distributed and partitioned processing, allowing for seamless scalability as our
 operations expand.
-Crucially, we sought to implement a fault-tolerant mechanism for message processing, capable of handling potential 
+Crucially, we sought to implement a fault-tolerant mechanism for message processing, capable of handling potential
 failures that may arise among the participants in the data flow.
 
 TBMQ provides compatibility with both MQTT v3.x and v5.0 protocols.
 Last but not least, it had been running in production for more than a year before being open-sourced.
+
+[![TBMQ Home](./img/tbmq-home.png "TBMQ Home")](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring/)
+
+[![TBMQ Sessions](./img/tbmq-sessions.png "TBMQ Sessions")](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/sessions/)
 
 ## Documentation
 
