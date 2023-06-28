@@ -5,7 +5,7 @@ connected MQTT clients,
 reaching up to **4M** clients, while proficiently processing a minimum of **200K messages per second** per node.
 In the cluster mode, its capabilities are further enhanced,
 enabling it to effortlessly support an impressive **100M** concurrently connected clients and handle
-[3M messages per second]((https://thingsboard.io/docs/mqtt-broker/reference/performance-tests/)).
+[3M messages per second](https://thingsboard.io/docs/mqtt-broker/reference/performance-tests/).
 
 Within the ThingsBoard company, our extensive expertise and profound understanding of diverse IoT requirements and use
 cases
