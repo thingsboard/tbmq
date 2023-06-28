@@ -1,15 +1,12 @@
 # TBMQ
 
-TBMQ represents an open-source MQTT message broker renowned for its remarkable capacity to handle a staggering number of
-connected MQTT clients,
-reaching up to **4M** clients, while proficiently processing a minimum of **200K messages per second** per node.
-In the cluster mode, its capabilities are further enhanced,
-enabling it to effortlessly support an impressive **100M** concurrently connected clients and handle
-[3M messages per second](https://thingsboard.io/docs/mqtt-broker/reference/performance-tests/).
+TBMQ represents an open-source MQTT message broker with the capacity to handle up to **4M** concurrent client connections, 
+while proficiently processing a minimum of **200K messages per second** per single cluster node. 
+In the cluster mode, its capabilities are further enhanced, enabling it to effortlessly support more than **100M** concurrently connected clients 
+and handle more than [3M messages per second](https://thingsboard.io/docs/mqtt-broker/reference/performance-tests/).
 
-Within the ThingsBoard company, our extensive expertise and profound understanding of diverse IoT requirements and use
-cases
-have enabled us to discern two primary scenarios in which our clients develop their solutions.
+Within the ThingsBoard company, our expertise and understanding of diverse IoT requirements and use cases have enabled us 
+to discern two primary scenarios in which our clients develop their solutions.
 The first scenario entails numerous devices generating a substantial volume of messages that are consumed by specific
 applications, resulting in a fan-in pattern.
 Conversely, the second scenario involves numerous devices subscribing to specific updates or notifications,
@@ -24,10 +21,11 @@ and providing the ability to withstand peak loads from publishing clients, all w
 clients.
 Additionally, we prioritized supporting distributed and partitioned processing, allowing for seamless scalability as our
 operations expand.
-Crucially, we sought to implement a fault-tolerant mechanism for message processing, capable of handling any potential
+Crucially, we sought to implement a fault-tolerant mechanism for message processing, capable of handling potential 
 failures that may arise among the participants in the data flow.
 
-Last but not least, TBMQ provides compatibility with both MQTT v3.x and v5.0 protocols.
+TBMQ provides compatibility with both MQTT v3.x and v5.0 protocols.
+Last but not least, it had been running in production for more than a year before being open-sourced.
 
 ## Documentation
 
