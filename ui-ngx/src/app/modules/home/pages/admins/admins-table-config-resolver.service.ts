@@ -32,6 +32,7 @@ import { User } from '@shared/models/user.model';
 import { AdminComponent } from '@home/pages/admins/admin.component';
 import { AdminService } from '@core/http/admin.service';
 import { AuthorityTranslationMap } from '@shared/models/authority.enum';
+import { getCurrentAuthUser } from "@core/auth/auth.selectors";
 
 @Injectable()
 export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User>> {
@@ -51,7 +52,8 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
     this.config.tableTitle = this.translate.instant('user.users');
-    this.config.entitiesDeleteEnabled = false;
+    this.config.entitySelectionEnabled = (user) => user.id !== getCurrentAuthUser(this.store).userId;
+    this.config.deleteEnabled = (user) => user ? user.id !== getCurrentAuthUser(this.store).userId : true;
     this.config.entityTitle = (user) => user ? user.email : '';
 
     this.config.columns.push(

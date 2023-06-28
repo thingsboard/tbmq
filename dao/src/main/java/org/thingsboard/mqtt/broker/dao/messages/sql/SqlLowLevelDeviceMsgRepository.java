@@ -135,7 +135,9 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
         });
         int updatedPacketTypes = IntStream.of(result).sum();
         if (updatedPacketTypes != packets.size()) {
-            log.debug("Expected to update {} packet types, actually updated {} packets", packets.size(), updatedPacketTypes);
+            if (log.isDebugEnabled()) {
+                log.debug("Expected to update {} packet types, actually updated {} packets", packets.size(), updatedPacketTypes);
+            }
         }
     }
 
@@ -157,7 +159,9 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
         });
         int deletedPackets = IntStream.of(result).sum();
         if (deletedPackets != packets.size()) {
-            log.debug("Expected to delete {} packet, actually deleted {} packets", packets.size(), deletedPackets);
+            if (log.isDebugEnabled()) {
+                log.debug("Expected to delete {} packet, actually deleted {} packets", packets.size(), deletedPackets);
+            }
         }
     }
 
@@ -166,7 +170,8 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
         int removedPackets = jdbcTemplate.update(DELETE_PACKETS_BY_CLIENT_ID, ps -> {
             ps.setString(1, clientId);
         });
-
-        log.trace("Removed {} packets for client {}", removedPackets, clientId);
+        if (log.isTraceEnabled()) {
+            log.trace("Removed {} packets for client {}", removedPackets, clientId);
+        }
     }
 }

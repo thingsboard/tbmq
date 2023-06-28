@@ -42,7 +42,9 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
 
     @Override
     public ApplicationSharedSubscription saveSharedSubscription(ApplicationSharedSubscription subscription) {
-        log.trace("Executing saveSharedSubscription [{}]", subscription);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveSharedSubscription [{}]", subscription);
+        }
         sharedSubscriptionValidator.validate(subscription);
         try {
             return applicationSharedSubscriptionDao.save(subscription);
@@ -59,25 +61,33 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
 
     @Override
     public boolean deleteSharedSubscription(UUID id) {
-        log.trace("Executing deleteSharedSubscription [{}]", id);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteSharedSubscription [{}]", id);
+        }
         return applicationSharedSubscriptionDao.removeById(id);
     }
 
     @Override
     public ApplicationSharedSubscription findSharedSubscriptionByTopic(String topic) {
-        log.trace("Executing findSharedSubscriptionByTopic [{}]", topic);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findSharedSubscriptionByTopic [{}]", topic);
+        }
         return applicationSharedSubscriptionDao.findByTopic(topic);
     }
 
     @Override
     public ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopicAsync(String topic) {
-        log.trace("Executing findSharedSubscriptionByTopicAsync [{}]", topic);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findSharedSubscriptionByTopicAsync [{}]", topic);
+        }
         return applicationSharedSubscriptionDao.findByTopicAsync(topic);
     }
 
     @Override
     public PageData<ApplicationSharedSubscription> getSharedSubscriptions(PageLink pageLink) {
-        log.trace("Executing getSharedSubscriptions, pageLink [{}]", pageLink);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getSharedSubscriptions, pageLink [{}]", pageLink);
+        }
         validatePageLink(pageLink);
         PageData<ApplicationSharedSubscription> pageData = applicationSharedSubscriptionDao.findAll(pageLink);
         return new PageData<>(pageData.getData(), pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
@@ -85,7 +95,9 @@ public class ApplicationSharedSubscriptionServiceImpl implements ApplicationShar
 
     @Override
     public Optional<ApplicationSharedSubscription> getSharedSubscriptionById(UUID id) {
-        log.trace("Executing getSharedSubscriptionById [{}]", id);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getSharedSubscriptionById [{}]", id);
+        }
         return Optional.ofNullable(applicationSharedSubscriptionDao.findById(id));
     }
 

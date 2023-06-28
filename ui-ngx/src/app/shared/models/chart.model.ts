@@ -101,8 +101,8 @@ export function homeChartJsParams() {
       },
       layout: {
         padding: {
-          right: 10,
-          left: 10,
+          right: 0,
+          left: 0,
           bottom: 0,
           top: 0
         }
@@ -118,16 +118,30 @@ export function homeChartJsParams() {
       },
       scales: {
         y: {
-          display: false,
+          display: true,
           min: 0,
-          suggestedMax: 1
+          suggestedMax: 1,
+          ticks: {
+            maxRotation: 0,
+            labelOffset: 0,
+            source: 'auto',
+            autoSkip: true,
+            font: {
+              size: 8
+            },
+            callback(label, index) {
+              if (Math.floor(label) === label) {
+                return label;
+              }
+            }
+          }
         },
         x: {
           type: 'time',
           display: true,
           time: {
             round: 'second',
-            tooltipFormat: 'HH:mm:ss',
+            tooltipFormat: 'HH:mm',
             displayFormats: {
               minute: 'HH:mm'
             }
@@ -156,35 +170,13 @@ export function homeChartJsParams() {
         tooltip: {
           enabled: true,
           position: 'tbPositioner'
-        },
-        emptyChart: {}
+        }
       },
       parsing: {
         xAxisKey: 'ts',
         yAxisKey: 'value'
       }
-    },
-    plugins: [
-      {
-        id: 'emptyChart',
-        afterDraw(chart, args, options) {
-          const {datasets} = chart.data;
-          let hasData = false;
-          for (let i = 0; i < datasets.length; i += 1) {
-            const dataset = datasets[i];
-            hasData = dataset.data.length > 0;
-          }
-          if (!hasData) {
-            const {chartArea: {left, top, right, bottom}, ctx} = chart;
-            const centerX = (left + right) / 2;
-            const centerY = (top + bottom) / 2;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('', centerX, centerY);
-          }
-        }
-      }
-    ]
+    }
   };
 }
 
@@ -215,6 +207,9 @@ export function monitoringChartJsParams() {
             display: false
           },
           ticks: {
+            font: {
+              size: 9
+            },
             callback(label, index) {
               if (Math.floor(label) === label) {
                 return label;
@@ -305,12 +300,19 @@ export function monitoringChartJsParams() {
           enabled: false,
           external: tbTooltipHandler,
           position: 'tbPositioner'
-        },
-        emptyChart: {}
+        }
       },
       parsing: {
         xAxisKey: 'ts',
         yAxisKey: 'value'
+      },
+      layout: {
+        padding: {
+          right: 0,
+          left: 0,
+          bottom: 0,
+          top: 0
+        }
       }
     },
     plugins: [
@@ -320,8 +322,7 @@ export function monitoringChartJsParams() {
         afterEvent: (chart, evt) => {
           const {chartArea: {top, bottom}} = chart;
           const {event: {x, y}} = evt;
-          console.log(x, y);
-          if (y < top || y > bottom || x < 28) {
+          if (y < top || y > bottom || x < 20) {
             chart.corsair = {x, y, draw: false};
             chart.draw();
             return;
@@ -352,25 +353,6 @@ export function monitoringChartJsParams() {
             ctx.restore();
           }
         }
-      },
-      {
-        id: 'emptyChart',
-        afterDraw(chart, args, options) {
-          const {datasets} = chart.data;
-          let hasData = false;
-          for (let i = 0; i < datasets.length; i += 1) {
-            const dataset = datasets[i];
-            hasData = dataset.data.length > 0;
-          }
-          if (!hasData) {
-            const {chartArea: {left, top, right, bottom}, ctx} = chart;
-            const centerX = (left + right) / 2;
-            const centerY = (top + bottom) / 2;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('', centerX, centerY);
-          }
-        }
       }
     ]
   };
@@ -382,7 +364,7 @@ export const tbTooltipHandler = (context) => {
   const tooltipEl = getTbTooltip(chart);
 
   // Hide if no tooltip
-  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 28) {
+  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 20) {
     tooltipEl.style.opacity = 0;
     return;
   }
@@ -463,7 +445,6 @@ export const tbTooltipHandler = (context) => {
 
 const getTbTooltip = (chart) => {
   let tooltipEl = chart.canvas.parentNode.querySelector('div');
-
   if (!tooltipEl) {
     tooltipEl = document.createElement('div');
     tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
@@ -481,7 +462,5 @@ const getTbTooltip = (chart) => {
 
     chart.canvas.parentNode.appendChild(tooltipEl);
   }
-
-
   return tooltipEl;
 };

@@ -75,3 +75,4 @@ services:
     volumes:
       - ~/.tb-mqtt-broker-data/conf:/config
       - ~/.tb-mqtt-broker-data/log:/var/log/thingsboard-mqtt-broker
+      - ~/.tb-mqtt-broker-data/data:/data

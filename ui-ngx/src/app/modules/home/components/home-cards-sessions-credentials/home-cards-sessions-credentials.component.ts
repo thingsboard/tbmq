@@ -25,7 +25,8 @@ import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, Session
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',
-  templateUrl: './home-cards-sessions-credentials.component.html'
+  templateUrl: './home-cards-sessions-credentials.component.html',
+  styles: [':host {display: flex}']
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 

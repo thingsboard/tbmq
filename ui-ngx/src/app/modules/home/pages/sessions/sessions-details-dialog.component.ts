@@ -138,11 +138,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   private onDisconnect(): void {
     this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe(
       () => {
-      this.mqttClientSessionService.getDetailedClientSessionInfo(this.entity.clientId).subscribe(
-        () => {
-          this.closeDialog();
-        }
-      );
+        this.closeDialog();
     });
   }
 

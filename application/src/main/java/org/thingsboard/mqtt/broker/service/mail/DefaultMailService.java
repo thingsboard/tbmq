@@ -68,6 +68,7 @@ public class DefaultMailService implements MailService {
     @PostConstruct
     private void init() {
         updateMailConfiguration();
+        freemarkerConfig.setClassForTemplateLoading(this.getClass(), "/templates");
     }
 
     @Override
@@ -91,7 +92,7 @@ public class DefaultMailService implements MailService {
         model.put("passwordResetLink", passwordResetLink);
         model.put(TARGET_EMAIL, email);
 
-        String message = mergeTemplateIntoString("reset.password.ftl", model);
+        String message = mergeTemplateIntoString("tbmq.reset.password.ftl", model);
 
         sendMail(mailSender, mailFrom, email, subject, message, timeout);
     }
@@ -116,7 +117,7 @@ public class DefaultMailService implements MailService {
         model.put("loginLink", loginLink);
         model.put(TARGET_EMAIL, email);
 
-        String message = mergeTemplateIntoString("password.was.reset.ftl", model);
+        String message = mergeTemplateIntoString("tbmq.password.was.reset.ftl", model);
 
         sendMail(mailSender, mailFrom, email, subject, message, timeout);
     }
@@ -136,7 +137,7 @@ public class DefaultMailService implements MailService {
         Map<String, Object> model = new HashMap<>();
         model.put(TARGET_EMAIL, email);
 
-        String message = mergeTemplateIntoString("test.ftl", model);
+        String message = mergeTemplateIntoString("tbmq.test.ftl", model);
 
         sendMail(testMailSender, mailFrom, email, subject, message, timeout);
     }
@@ -244,8 +245,7 @@ public class DefaultMailService implements MailService {
         } else {
             message = exception.getMessage();
         }
-        log.warn("Unable to send mail: {}", message);
-        return new ThingsboardException(String.format("Unable to send mail: %s", message),
-                ThingsboardErrorCode.GENERAL);
+        log.warn("Unable to send mail!", exception);
+        return new ThingsboardException(String.format("Unable to send mail: %s", message), ThingsboardErrorCode.GENERAL);
     }
 }

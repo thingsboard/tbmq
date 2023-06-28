@@ -41,21 +41,27 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
 
     @Override
     public AdminSettings findAdminSettingsById(UUID adminSettingsId) {
-        log.trace("Executing findAdminSettingsById [{}]", adminSettingsId);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findAdminSettingsById [{}]", adminSettingsId);
+        }
         Validator.validateId(adminSettingsId, "Incorrect adminSettingsId " + adminSettingsId);
         return adminSettingsDao.findById(adminSettingsId);
     }
 
     @Override
     public AdminSettings findAdminSettingsByKey(String key) {
-        log.trace("Executing findAdminSettingsByKey [{}]", key);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findAdminSettingsByKey [{}]", key);
+        }
         Validator.validateString(key, "Incorrect key " + key);
         return adminSettingsDao.findByKey(key);
     }
 
     @Override
     public AdminSettings saveAdminSettings(AdminSettings adminSettings) {
-        log.trace("Executing saveAdminSettings [{}]", adminSettings);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveAdminSettings [{}]", adminSettings);
+        }
         adminSettingsDataValidator.validate(adminSettings);
         if (adminSettings.getKey().equals("mail") && !adminSettings.getJsonValue().has("password")) {
             AdminSettings mailSettings = findAdminSettingsByKey("mail");
@@ -68,7 +74,9 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
 
     @Override
     public void deleteAdminSettingsByKey(String key) {
-        log.trace("Executing deleteAdminSettings, key [{}]", key);
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteAdminSettings, key [{}]", key);
+        }
         Validator.validateString(key, "Incorrect key " + key);
         adminSettingsDao.removeByKey(key);
     }

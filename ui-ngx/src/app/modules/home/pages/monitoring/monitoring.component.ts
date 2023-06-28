@@ -98,6 +98,9 @@ export class MonitoringComponent extends PageComponent {
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
     this.fetchEntityTimeseries();
+    for (const chartType in StatsChartType) {
+      this.charts[chartType].resetZoom();
+    }
   }
 
   onFullScreen(chartType) {
@@ -200,8 +203,7 @@ export class MonitoringComponent extends PageComponent {
       this.updateXScale(chartType);
       ctx.addEventListener('dblclick', () => {
         this.charts[chartType].resetZoom();
-        this.updateXScale(chartType);
-        this.updateChart(chartType);
+        this.updateChartView(chartType);
       });
     }
   }
@@ -255,7 +257,7 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private updateXScale(chartType: string) {
-    if (this.isNotZoomedOrPanned(chartType)) {
+    if (this.isNotZoomed(chartType)) {
       this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
       this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
     }
@@ -278,8 +280,8 @@ export class MonitoringComponent extends PageComponent {
     return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs <= 24;
   }
 
-  private isNotZoomedOrPanned(chartType) {
-    return !this.charts[chartType].isZoomedOrPanned();
+  private isNotZoomed(chartType) {
+    return this.charts[chartType].getZoomLevel() === 1;
   }
 
   private checkMaxAllowedDataLength(data) {

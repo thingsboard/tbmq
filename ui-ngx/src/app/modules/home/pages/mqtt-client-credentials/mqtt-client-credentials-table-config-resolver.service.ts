@@ -19,9 +19,7 @@ import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
 import {
   clientTypeCell, clientTypeWarning,
-  credetialsTypeCell,
   DateEntityTableColumn,
-  defaultCellStyle,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
@@ -121,7 +119,8 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
                     return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
                 }
                 return '';
-              })
+              }, () => null, false
+            )
           );
         }
         return true;

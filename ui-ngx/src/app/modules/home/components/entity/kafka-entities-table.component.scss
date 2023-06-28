@@ -91,10 +91,6 @@
     position: sticky;
     z-index: 10;
   }
-
-  .mat-drawer-content {
-    overflow: auto;
-  }
 }
 
 :host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {

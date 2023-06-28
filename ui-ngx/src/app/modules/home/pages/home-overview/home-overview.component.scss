@@ -14,9 +14,30 @@
  * limitations under the License.
  */
 
-:host {
- .tb-home-card-border {
-   border-radius: 10px;
-   background-color: #fff;
- }
+:host::ng-deep {
+  display: flex;
+  margin-bottom: 12px;
+  height: 100%;
+  width: 100%;
+
+  .tb-home-overview {
+    flex: 1 1 auto;
+    background-color: #dcdcdc;
+    padding: 12px 12px 0 12px;
+    gap: 12px;
+
+    .tb-home-card {
+      border-radius: 10px;
+      background-color: #fff;
+    }
+
+    .tb-home-card-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 12px;
+      border-radius: 10px;
+      background-color: #fff;
+    }
+  }
 }

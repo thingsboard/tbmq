@@ -16,9 +16,8 @@
 
 -->
 <div style="height: 230px">
-  <mat-drawer-container hasBackdrop="false" class="tb-absolute-fill">
-    <div class="mat-padding tb-kafka-entity-table tb-absolute-fill">
-      <div class="kafka-table-search">
+  <div class="mat-padding tb-absolute-fill">
+      <section>
         <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
           <div class="mat-toolbar-tools" fxLayoutGap="4px">
             <span fxFlex></span>
@@ -64,9 +63,9 @@
             </button>
           </div>
         </mat-toolbar>
-      </div>
+      </section>
       <div fxLayout="column">
-        <div class="table-container" style="min-height: 125px">
+        <div style="height: 140px; overflow-x: auto; overflow-y: unset">
           <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                      matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
             <ng-container matColumnDef="select" sticky>
@@ -201,5 +200,4 @@
                        showFirstLastButtons></mat-paginator>
       </div>
     </div>
-  </mat-drawer-container>
 </div>

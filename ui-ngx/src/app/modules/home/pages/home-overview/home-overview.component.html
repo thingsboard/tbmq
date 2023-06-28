@@ -15,21 +15,21 @@
     limitations under the License.
 
 -->
-<div fxLayout="row" class="tb-home-overview" fxLayout.lt-lg="column" fxFlex>
-  <div fxLayout="column" fxFlex="70" fxLayoutGap="12px">
-    <tb-home-charts class="tb-home-card-border"></tb-home-charts>
-    <div fxLayout="column" fxLayoutGap="12px">
-      <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-      <div fxLayout="row" fxLayoutGap="12px">
-        <tb-card-config class="tb-home-card-border"></tb-card-config>
-        <tb-kafka-brokers-table class="tb-home-card-border"></tb-kafka-brokers-table>
+<div class="tb-home-overview" fxLayout="row" fxLayout.lt-lg="column">
+  <div fxLayout="column" fxFlex="70" fxFlex.lt-lg="auto" fxLayoutGap="12px">
+    <tb-home-charts></tb-home-charts>
+    <div fxFlex fxLayout="column" fxLayoutGap="12px">
+      <tb-home-cards-sessions-credentials fxFlex></tb-home-cards-sessions-credentials>
+      <div fxLayout="row" fxLayoutGap="12px" fxFlex>
+        <tb-card-config class="tb-home-card"></tb-card-config>
+        <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
       </div>
     </div>
-    <tb-kafka-tables-tab-group class="tb-home-card-border"></tb-kafka-tables-tab-group>
+    <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
   </div>
-  <div fxLayout="column" fxFlex="30" fxLayoutGap="12px">
-    <tb-getting-started class="tb-home-card-border"></tb-getting-started>
-    <tb-quick-links class="tb-home-card-border"></tb-quick-links>
-    <tb-version-card class="tb-home-card-border"></tb-version-card>
+  <div fxLayout="column" fxFlex="30" fxFlex.lt-lg="auto" fxLayoutGap="12px">
+    <tb-getting-started style="flex: 2" class="tb-home-card"></tb-getting-started>
+    <tb-quick-links style="flex: 1" class="tb-home-card"></tb-quick-links>
+    <tb-version-card style="flex: 1" class="tb-home-card"></tb-version-card>
   </div>
 </div>
