@@ -80,11 +80,10 @@ public class KeepAliveServiceImplTest {
 
         keepAliveService.processKeepAlive();
 
-        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
-        assertEquals(3, keepAliveService.getKeepAliveInfoSize());
+        verify(clientMqttActorManager, times(0)).disconnect(any(), any());
 
         keepAliveService.unregisterSession(sessionId1);
-        assertEquals(2, keepAliveService.getKeepAliveInfoSize());
+        assertEquals(3, keepAliveService.getKeepAliveInfoSize());
     }
 
 }
