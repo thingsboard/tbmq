@@ -52,7 +52,8 @@ if check_directory_exists "$HOME/.tb-mqtt-broker-data"; then
       read -r -p "Directory permissions are incorrect. Do you want to correct them? (y/n): " response
       if [[ "$response" =~ ^[Yy]$ ]]; then
         echo "Correcting permissions..."
-        sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data"
+        sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
+        sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
         echo "Permissions corrected."
       else
         echo "Skipping permission correction."
@@ -65,7 +66,8 @@ if check_directory_exists "$HOME/.tb-mqtt-broker-data"; then
 else
   echo "Creating necessary directories..."
   mkdir -p "$HOME/.tb-mqtt-broker-data/kafka" "$HOME/.tb-mqtt-broker-data/log" "$HOME/.tb-mqtt-broker-data/data" "$HOME/.tb-mqtt-broker-data/postgres"
-  sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data"
+  sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
+  sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
   echo "Directories created."
 fi
 
