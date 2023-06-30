@@ -73,6 +73,5 @@ services:
       TB_KAFKA_SERVERS: kafka:9092
       SECURITY_MQTT_BASIC_ENABLED: 'true'
     volumes:
-      - ~/.tb-mqtt-broker-data/conf:/config
       - ~/.tb-mqtt-broker-data/log:/var/log/thingsboard-mqtt-broker
       - ~/.tb-mqtt-broker-data/data:/data
