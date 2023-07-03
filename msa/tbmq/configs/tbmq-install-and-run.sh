@@ -41,9 +41,11 @@ check_subdirectories_exist() {
 # Function to check directory permissions
 check_directory_permissions() {
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    local uid=$(stat -c "%u" "$1")
-    local gid=$(stat -c "%g" "$1")
-    if [[ "$uid" == "799" && "$gid" == "799" ]]; then
+    local uid_log=$(stat -c "%u" "$1/log")
+    local gid_log=$(stat -c "%g" "$1/log")
+    local uid_data=$(stat -c "%u" "$1/data")
+    local gid_data=$(stat -c "%g" "$1/data")
+    if [[ "$uid_log" == "799" && "$gid_log" == "799" && "$uid_data" == "799" && "$gid_data" == "799" ]]; then
       return 0
     else
       return 1
