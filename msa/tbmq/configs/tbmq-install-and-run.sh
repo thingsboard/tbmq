@@ -24,12 +24,16 @@ check_subdirectories_exist() {
 
 # Function to check directory permissions
 check_directory_permissions() {
-  local uid=$(stat -c "%u" "$1")
-  local gid=$(stat -c "%g" "$1")
-  if [[ "$uid" == "799" && "$gid" == "799" ]]; then
-    return 0
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    local uid=$(stat -c "%u" "$1")
+    local gid=$(stat -c "%g" "$1")
+    if [[ "$uid" == "799" && "$gid" == "799" ]]; then
+      return 0
+    else
+      return 1
+    fi
   else
-    return 1
+    return 0
   fi
 }
 
@@ -52,8 +56,10 @@ if check_directory_exists "$HOME/.tb-mqtt-broker-data"; then
       read -r -p "Directory permissions are incorrect. Do you want to correct them? (y/n): " response
       if [[ "$response" =~ ^[Yy]$ ]]; then
         echo "Correcting permissions..."
-        sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
-        sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+          sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
+          sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
+        fi
         echo "Permissions corrected."
       else
         echo "Skipping permission correction."
@@ -66,8 +72,10 @@ if check_directory_exists "$HOME/.tb-mqtt-broker-data"; then
 else
   echo "Creating necessary directories..."
   mkdir -p "$HOME/.tb-mqtt-broker-data/kafka" "$HOME/.tb-mqtt-broker-data/log" "$HOME/.tb-mqtt-broker-data/data" "$HOME/.tb-mqtt-broker-data/postgres"
-  sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
-  sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
+    sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
+  fi
   echo "Directories created."
 fi
 
@@ -78,4 +86,3 @@ if command -v docker-compose >/dev/null 2>&1; then
 else
   docker compose up -d
 fi
-
