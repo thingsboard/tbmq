@@ -199,7 +199,7 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         doDelete("/api/mqtt/client/credentials/" + savedMqttClientCredentials.getId())
                 .andExpect(status().isOk());
         doDelete("/api/mqtt/client/credentials/" + savedMqttClientCredentials.getId())
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().is4xxClientError());
     }
 
     private MqttClientCredentials newBasicMqttClientCredentials(ClientCredentialsType credentialsType, BasicMqttCredentials basicMqttCredentials) {
