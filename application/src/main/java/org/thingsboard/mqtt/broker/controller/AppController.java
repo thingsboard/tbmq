@@ -120,7 +120,7 @@ public class AppController extends BaseController {
     @ResponseBody
     public HomePageConfigDto getBrokerConfig() throws ThingsboardException {
         try {
-            return brokerHomePageConfig.getConfig();
+            return checkNotNull(brokerHomePageConfig.getConfig());
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -131,7 +131,7 @@ public class AppController extends BaseController {
     @ResponseBody
     public List<String> getBrokerServiceIds() throws ThingsboardException {
         try {
-            return tbQueueAdmin.getBrokerServiceIds();
+            return checkNotNull(tbQueueAdmin.getBrokerServiceIds());
         } catch (Exception e) {
             throw handleException(e);
         }

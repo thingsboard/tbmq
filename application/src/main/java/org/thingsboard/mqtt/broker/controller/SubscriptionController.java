@@ -88,7 +88,7 @@ public class SubscriptionController extends BaseController {
     @ResponseBody
     public Set<TopicSubscription> getClientSubscriptions(@RequestParam String clientId) throws ThingsboardException {
         try {
-            return clientSubscriptionCache.getClientSubscriptions(clientId);
+            return checkNotNull(clientSubscriptionCache.getClientSubscriptions(clientId));
         } catch (Exception e) {
             throw handleException(e);
         }

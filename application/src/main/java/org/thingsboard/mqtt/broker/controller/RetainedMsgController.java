@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 
@@ -36,7 +35,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 public class RetainedMsgController extends BaseController {
 
     private final RetainedMsgService retainedMsgService;
-    private final RetainedMsgListenerService retainedMsgListenerService;
     private final RetainedMsgPageService retainedMsgPageService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -66,6 +64,7 @@ public class RetainedMsgController extends BaseController {
     @ResponseBody
     public void deleteRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         try {
+            checkRetainedMsg(topicName);
             retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
         } catch (Exception e) {
             throw handleException(e);
