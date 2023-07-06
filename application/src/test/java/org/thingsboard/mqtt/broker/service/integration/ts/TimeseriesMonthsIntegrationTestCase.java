@@ -53,7 +53,8 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final long TTL_1_MONTH = 2628000;
+    private static final long TTL_1_MONTH_SEC = 2628000;
+    private static final long TTL_1_MONTH_MS = TTL_1_MONTH_SEC * 1000;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -75,8 +76,8 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
     @Test
     public void givenSavedRecordsOlderThanMaxPartitionByTTL_whenExecuteCleanUpForMonths_thenRemovedPartitions() throws Throwable {
         long ts1 = LocalDate.now().minusYears(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts2 = LocalDate.now().minusMonths(2).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts3 = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts2 = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts3 = LocalDate.now().minusMonths(4).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
         long ts4 = LocalDate.now().minusMonths(6).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
@@ -88,21 +89,21 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH_SEC);
         Assert.assertEquals(4, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(0, cleanUpResult.getDeletedRows());
     }
 
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForMonths_thenRemovedPartitionsAndRows() throws Throwable {
-        long ts1 = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts2 = LocalDate.now().minusMonths(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts3 = LocalDate.now().minusMonths(2).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts4 = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts5 = LocalDate.now().minusMonths(4).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts6 = LocalDate.now().minusMonths(5).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts7 = LocalDate.now().minusMonths(6).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts8 = LocalDate.now().minusMonths(6).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts1 = System.currentTimeMillis();
+        long ts2 = System.currentTimeMillis() - TTL_1_MONTH_MS - ONE_HOUR_MS;
+        long ts3 = System.currentTimeMillis() - TTL_1_MONTH_MS * 2 - ONE_HOUR_MS;
+        long ts4 = System.currentTimeMillis() - TTL_1_MONTH_MS * 3;
+        long ts5 = System.currentTimeMillis() - TTL_1_MONTH_MS * 4;
+        long ts6 = System.currentTimeMillis() - TTL_1_MONTH_MS * 5;
+        long ts7 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
+        long ts8 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -117,11 +118,11 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH * 2);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH_SEC * 2);
         Assert.assertEquals(4, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
 
-        cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH);
+        cleanUpResult = timeseriesService.cleanUp(TTL_1_MONTH_SEC);
         Assert.assertEquals(1, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(1, cleanUpResult.getDeletedRows());
     }

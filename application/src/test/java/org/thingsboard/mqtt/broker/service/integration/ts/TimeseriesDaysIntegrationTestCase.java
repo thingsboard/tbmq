@@ -53,8 +53,9 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final int TTL_7_DAYS_SEC = 604800;
-    private static final int TTL_1_DAY_MS = 86400000;
+    private static final int TTL_1_DAY_SEC = 86400;
+    private static final int TTL_1_DAY_MS = TTL_1_DAY_SEC * 1000;
+    private static final int TTL_7_DAYS_SEC = TTL_1_DAY_SEC * 7;
     private static final String KEY = "KEY";
     private static final LongDataEntry KV = new LongDataEntry(KEY, 1L);
 
@@ -75,14 +76,10 @@ public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegration
 
     @Test
     public void givenSavedRecordsOlderThanMaxPartitionByTTL_whenExecuteCleanUpForDays_thenRemovedPartitions() throws Throwable {
-        long ts1 = LocalDate.now().minusDays(10)
-                .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts2 = LocalDate.now().minusMonths(1).minusDays(13)
-                .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts3 = LocalDate.now().minusMonths(1).minusDays(7)
-                .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long ts4 = LocalDate.now().minusDays(4)
-                .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts1 = LocalDate.now().minusDays(10).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts2 = LocalDate.now().minusMonths(1).minusDays(13).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts3 = LocalDate.now().minusMonths(1).minusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        long ts4 = LocalDate.now().minusDays(4).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
@@ -143,7 +140,7 @@ public class TimeseriesDaysIntegrationTestCase extends AbstractPubSubIntegration
         );
         timeseriesService.save(entityId, kvEntries).get(30, TimeUnit.SECONDS);
 
-        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_7_DAYS_SEC / 7);
+        CleanUpResult cleanUpResult = timeseriesService.cleanUp(TTL_1_DAY_SEC);
         Assert.assertEquals(3, cleanUpResult.getDeletedPartitions());
         Assert.assertEquals(3, cleanUpResult.getDeletedRows());
     }
