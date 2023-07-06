@@ -97,7 +97,7 @@ public class AppSharedSubscriptionController extends BaseController {
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ApplicationSharedSubscription getSharedSubscriptionById(@PathVariable String id) throws ThingsboardException {
         try {
-            return applicationSharedSubscriptionService.getSharedSubscriptionById(toUUID(id)).orElse(null);
+            return checkNotNull(applicationSharedSubscriptionService.getSharedSubscriptionById(toUUID(id)).orElse(null));
         } catch (Exception e) {
             throw handleException(e);
         }

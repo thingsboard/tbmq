@@ -100,7 +100,7 @@ public class TimeseriesYearsIntegrationTestCase extends AbstractPubSubIntegratio
     @Test
     public void givenSavedRecords_whenExecuteCleanUpForYears_thenRemovedPartitionsAndRows() throws Throwable {
         long ts1 = System.currentTimeMillis() - TTL_1_YEAR_MS;
-        long ts2 = System.currentTimeMillis() - TTL_1_YEAR_MS * 2;
+        long ts2 = System.currentTimeMillis() - TTL_1_YEAR_MS * 2 - ONE_HOUR_MS;
         long ts3 = System.currentTimeMillis() - TTL_1_YEAR_MS * 3;
         long ts4 = System.currentTimeMillis() - TTL_1_YEAR_MS * 4;
         long ts5 = System.currentTimeMillis() - TTL_1_YEAR_MS * 5;

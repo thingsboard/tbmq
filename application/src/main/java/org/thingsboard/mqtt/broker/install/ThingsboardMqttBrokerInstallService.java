@@ -43,7 +43,7 @@ public class ThingsboardMqttBrokerInstallService {
             if (isUpgrade) {
                 log.warn("Nothing to upgrade yet...");
             } else {
-                log.info("Starting ThingsBoard MQTT Broker Installation...");
+                log.info("Starting TBMQ Installation...");
 
                 log.info("Installing DataBase schema...");
 
@@ -57,8 +57,8 @@ public class ThingsboardMqttBrokerInstallService {
                 log.info("Installation finished successfully!");
             }
         } catch (Exception e) {
-            log.error("Unexpected error during ThingsBoard MQTT Broker installation!", e);
-            throw new ThingsboardInstallException("Unexpected error during ThingsBoard installation!", e);
+            log.error("Unexpected error during TBMQ installation!", e);
+            throw new ThingsboardInstallException("Unexpected error during TBMQ installation!", e);
         } finally {
             SpringApplication.exit(context);
         }
