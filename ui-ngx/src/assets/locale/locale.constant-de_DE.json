@@ -124,8 +124,8 @@
     "created-time": "Erstellungszeit",
     "loading": "Laden...",
     "proceed": "Fortfahren",
-    "enabled": "Aktiviert",
-    "disabled": "Deaktiviert"
+    "enabled": "Enabled",
+    "disabled": "Disabled"
   },
   "details": {
     "details": "Details",
@@ -313,7 +313,7 @@
     "hint-allow-self-signed-certificates": "Hinweis: Erlauben Sie selbstsignierte Zertifikate",
     "hint-client-type-application": "Verwenden Sie den Typ 'Anwendung' für Clients, die in der Regel Themen mit hoher Nachrichtenrate abonnieren und die Anforderung haben, Nachrichten beim Offline-Client zu speichern, z.B. IoT-Anwendungen.",
     "hint-client-type-device": "Verwenden Sie den Typ 'Gerät' für Clients, die in der Regel viele Nachrichten veröffentlichen, aber nur wenige Themen mit geringer Nachrichtenrate abonnieren, z.B. IoT-Geräte.",
-    "hint-client-type-read-more": "<a href='' target='_blank'>Mehr erfahren</a>.",
+    "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Mehr erfahren</a>.",
     "hint-credentials-type-basic": "<b>'Basic'</b> ist eine Einweg-Authentifizierungsmethode basierend auf verschiedenen Kombinationen von <b>Client-ID, Benutzername und/oder Passwort</b>:<ul><li><b>Client-ID</b> - überprüft, ob der verbundene Client die angegebene Client-ID hat;</li></br><li><b>Benutzername</b> - überprüft, ob der verbundene Client den angegebenen Benutzernamen hat;</li></br><li><b>Client-ID und Benutzername</b> - überprüft, ob der verbundene Client sowohl die angegebene Client-ID als auch den Benutzernamen hat;</li></br><li><b>Benutzername und Passwort</b> - überprüft, ob der verbundene Client sowohl den angegebenen Benutzernamen als auch das Passwort hat;</li></br><li><b>Client-ID und Passwort</b> - überprüft, ob der verbundene Client sowohl die angegebene Client-ID als auch das Passwort hat;</li></br><li><b>Client-ID, Benutzername und Passwort</b> - überprüft, ob der verbundene Client die angegebene Client-ID, den Benutzernamen und das Passwort hat.</li></br></ul>",
     "hint-credentials-type-ssl": "<b>'X.509-Zertifikatskette'</b> ist eine sichere bidirektionale Authentifizierungsmethode über TLS mit einer Kette von öffentlichen Schlüsselzertifikaten.",
     "hint-name": "Hinweis: Name",
@@ -413,7 +413,7 @@
     "name": "Name",
     "name-required": "Name ist erforderlich",
     "hint-application-shared-subscription-info": "Info",
-    "hint-application-shared-subscription": "<b>Anwendungsfreigegebene Abonnements</b> sind TB MQTT Broker-Entitäten, die für eine effektive Verwaltung der MQTT-Freigegebenen Abonnements-Funktion verwendet werden. Richten Sie solche Entitäten ein, wenn Sie <b>Freigegebene Abonnements mit Anwendungsclients</b> verwenden möchten. <a href='' target='_blank'>Weitere Informationen.</a>",
+    "hint-application-shared-subscription": "<b>Anwendungsfreigegebene Abonnements</b> sind TB MQTT Broker-Entitäten, die für eine effektive Verwaltung der MQTT-Freigegebenen Abonnements-Funktion verwendet werden. Richten Sie solche Entitäten ein, wenn Sie <b>Freigegebene Abonnements mit Anwendungsclients</b> verwenden möchten. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Weitere Informationen.</a>",
     "hint-topic-filter": "Anwendungsfreigegebene Abonnements ermöglichen das Lastenausgleich für Clients und sind mit dem Präfix <code>$share/gruppenname/themenfilter</code> versehen.</br>Wenn das Themenfilter des Freigegebenen Abonnements <code>$share/gruppe1/stadt/+/home/#</code> lautet, setzen Sie den <i>Themenfilter</i> auf <code>stadt/+/home/#</code>.",
     "hint-partitions": "Es wird empfohlen, dass die Anzahl der Partitionen <b>gleich oder ein Vielfaches der erwarteten Anzahl von Clients</b> des freigegebenen Abonnements ist.</br>Beispiel: Wenn 5 Clients das freigegebene Abonnement abonnieren sollen, setzen Sie die <i>Partitionen</i> auf 5, 10 oder 15.</br>Dadurch wird sichergestellt, dass die Last gleichmäßig auf die Abonnenten verteilt wird.",
     "hint-shared-subscription-notes": "Hinweise:<ul><li>Die Felder <i>Themenfilter</i> und <i>Partitionen</i> können nach der Erstellung nicht geändert werden.</li><li>Die Funktion für Anwendungsfreigegebene Abonnements funktioniert mit MQTT v5 und früheren Versionen.</li></ul>",
@@ -570,25 +570,14 @@
   },
   "getting-started": {
     "getting-started": "Erste Schritte",
-    "see-docs": "Dokumentation anzeigen",
-    "view-credentials": "Meine Anmeldeinformationen anzeigen",
-    "subscribe": {
-      "info": "Der zweite Schritt besteht darin, deine Abonnements einzurichten.<br><br>Zu Demonstrationszwecken verwenden wir einen Open-Source-Nachrichtenbroker <a href='' target='_blank'>Eclipse Mosquitto</a>.<br><br>Verwende einfache Befehle, um den Mosquitto-Broker zu installieren und dich für ein Thema zu abonnieren:"
-    },
-    "publish": {
-      "info": "Sobald du einen verbundenen Client hast, kannst du auch Nachrichten zu einem Thema veröffentlichen:"
-    },
-    "client": {
-      "info": "Der erste Schritt besteht darin, den MQTT-Client mit einer einfachen Authentifizierungsmethode basierend auf <b>Benutzername und Passwort</b> zu erstellen.<br><br>Klicke bitte auf den folgenden Button und fülle die folgenden Parameter aus:",
-      "info-button": "Client-Anmeldeinformationen hinzufügen",
-      "additional": "Beachte, dass Thingsboard MQTT Broker verschiedene Authentifizierungs- und Autorisierungsmethoden hat."
-    },
-    "disconnect": {
-      "info": "Sobald du den Client nicht mehr benötigst, kannst du die Verbindung trennen."
-    },
     "step-subscribe": "Für Thema abonnieren",
     "step-publish": "Nachricht veröffentlichen",
     "step-session": "Sitzung anzeigen",
-    "step-client": "Anmeldeinformationen erstellen"
+    "step-client": "Anmeldeinformationen erstellen",
+    "step-client-dev": "Geräteanmeldeinformationen hinzufügen",
+    "step-client-app": "Anwendungsanmeldeinformationen hinzufügen",
+    "step-enable-basic-auth": "Aktivieren Sie Authentifizierung",
+    "add-dev-credentials": "Geräteanmeldeinformationen hinzufügen",
+    "add-app-credentials": "Anwendungsanmeldeinformationen hinzufügen"
   }
 }

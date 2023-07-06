@@ -32,7 +32,7 @@ import { User } from '@shared/models/user.model';
 import { AdminComponent } from '@home/pages/admins/admin.component';
 import { AdminService } from '@core/http/admin.service';
 import { AuthorityTranslationMap } from '@shared/models/authority.enum';
-import { getCurrentAuthUser } from "@core/auth/auth.selectors";
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Injectable()
 export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User>> {
@@ -47,7 +47,7 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
               private translate: TranslateService,
               private datePipe: DatePipe) {
 
-    this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    this.config.entityType = EntityType.USER;
     this.config.entityComponent = AdminComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);

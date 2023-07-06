@@ -30,6 +30,7 @@ import { ActionNotificationShow } from '@core/notification/notification.actions'
 import { TranslateService } from '@ngx-translate/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
+import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -88,6 +89,13 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     form.get('credentialsType').valueChanges.subscribe(() => {
       form.patchValue({credentialsValue: null});
     });
+    if (isNotNullOrUndefined(this.entitiesTableConfigValue.demoData)) {
+      for (const [key, value] of Object.entries(this.entitiesTableConfigValue.demoData)) {
+        form.patchValue({
+          [key]: value
+        });
+      }
+    }
     return form;
   }
 

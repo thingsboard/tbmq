@@ -37,18 +37,18 @@ export interface KafkaConsumerGroup extends BaseData {
 }
 
 export const KafkaTopicsTooltipMap = {
-  'tbmq.msg.all': 'All published messages from MQTT clients to the broker.',
-  'tbmq.msg.app': 'Messages the APPLICATION client should receive based on its subscriptions.',
-  'tbmq.msg.app.shared': 'Messages related to the APPLICATION shared subscription.',
-  'tbmq.msg.persisted': 'Messages that DEVICE clients should receive based on their subscriptions.',
-  'tbmq.msg.retained': 'Retained messages.',
-  'tbmq.client.subscriptions': 'Client subscriptions.',
-  'tbmq.client.session': 'Client sessions.',
-  'tbmq.client.session.event.request': 'Processing client session events like request session connection,  request session cleanup, notify client disconnected, etc.',
-  'tbmq.client.session.event.response': 'Responses to client session events of the previous topic sent to specific broker node where target client is connected.',
-  'tbmq.client.disconnect': 'Force client disconnections (by admin request from UI/API or on sessions conflicts).',
-  'tbmq.msg.downlink.basic': 'Send messages from one Broker node to another to which the DEVICE subscriber is connected.',
-  'tbmq.msg.downlink.persisted': 'Send messages from one Broker node to another to which the DEVICE persistent subscriber is connected.',
-  'tbmq.sys.app.removed': 'Events to process removal of APPLICATION client topic.',
-  'tbmq.sys.historical.data': 'Historical data stats published from each broker in the cluster to calculate the total.'
+  'tbmq.msg.all': 'All published messages from MQTT clients to the broker',
+  'tbmq.msg.app': 'Messages the APPLICATION client should receive based on its subscriptions',
+  'tbmq.msg.app.shared': 'Messages related to the APPLICATION shared subscription',
+  'tbmq.msg.persisted': 'Messages that DEVICE clients should receive based on their subscriptions',
+  'tbmq.msg.retained': 'Retained messages',
+  'tbmq.client.subscriptions': 'Client subscriptions',
+  'tbmq.client.session': 'Client sessions',
+  'tbmq.client.session.event.request': 'Processing client session events like request session connection,  request session cleanup, notify client disconnected, etc',
+  'tbmq.client.session.event.response': 'Responses to client session events of the previous topic sent to specific broker node where target client is connected',
+  'tbmq.client.disconnect': 'Force client disconnections (by admin request from UI/API or on sessions conflicts)',
+  'tbmq.msg.downlink.basic': 'Send messages from one Broker node to another to which the DEVICE subscriber is connected',
+  'tbmq.msg.downlink.persisted': 'Send messages from one Broker node to another to which the DEVICE persistent subscriber is connected',
+  'tbmq.sys.app.removed': 'Events to process removal of APPLICATION client topic',
+  'tbmq.sys.historical.data': 'Historical data stats published from each broker in the cluster to calculate the total'
 };

@@ -35,6 +35,14 @@ export class InstructionsService {
   public setSteps(basicAuthEnabled: boolean): Observable<Array<any>> {
     const steps = [
       {
+        id: 'client-app',
+        title: 'getting-started.step-client-app'
+      },
+      {
+        id: 'client-device',
+        title: 'getting-started.step-client-dev'
+      },
+      {
         id: 'subscribe',
         title: 'getting-started.step-subscribe'
       },
@@ -47,11 +55,13 @@ export class InstructionsService {
         title: 'getting-started.step-session'
       }
     ];
-    if (basicAuthEnabled) {
-      steps.unshift({
-        id: 'client',
-        title: 'getting-started.step-client'
-      });
+    if (!basicAuthEnabled) {
+      steps.unshift(
+        {
+            id: 'enable-basic-auth',
+            title: 'getting-started.step-enable-basic-auth'
+          }
+        );
     }
     // @ts-ignore
     steps.map((el, index) => el.position = index + 1);

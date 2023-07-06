@@ -227,7 +227,8 @@
     "last-login-time": "Last Login",
     "change-password": "Change password",
     "change-default-password": "Change default password",
-    "current-password": "Current password"
+    "current-password": "Current password",
+    "default-password-warn": "The default password for a new user is 'sysadmin'."
   },
   "user": {
     "admins": "Admins",
@@ -362,15 +363,15 @@
     "hint-allow-self-signed-certificates": "hint-allow-self-signed-certificates",
     "hint-client-type-application": "Use 'Application' type for clients that usually subscribe to topics with high message rates and with the requirement to persist messages when the</br>client is offline, i.e. <b>IoT applications</b>.",
     "hint-client-type-device": "Use 'Device' type for clients that usually publish a lot of messages, but subscribe to a few topics with low message rate, i.e. <b>IoT devices</b>.",
-    "hint-client-type-read-more": "<a href='' target='_blank'>Read more</a>.",
+    "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Read more</a>.",
     "hint-credentials-type-basic": "<b>'Basic'</b> is a one-way authentication method based on different combinations of <b>Client ID, Username and/or Password</b>:<ul><li><b>Client ID</b> - will check if connecting client has specified clientId;</li></br><li><b>Username</b> - will check if connecting client has specified username;</li></br><li><b>Client ID and username</b>- will check if connecting client has both specified clientId and username;</li></br><li><b>Username and password</b> - will check if connecting client has both specified username and password;</li></br><li><b>Client ID and password</b> - will check if connecting client has both specified clientId and password;</li></br><li><b>Client ID, username and password</b> - will check if connecting client has specified clientId, username and password</li></br></ul>",
     "hint-credentials-type-ssl": "<b>'X.509 Certificate chain'</b> is a secure two-way authentication method over TLS with chain of public-key certificates.",
     "hint-name": "hint-name",
     "hint-ssl-cert-common-name": "<i>Certificate common name</i> (CN) should be <b>exactly the same</b> as the client's or, if present, one of the parent's certificate CN.</br>Authentication will fail if none of the certificates in the chain has the same CN.",
-    "hint-authorization-ssl": "Authorization rules allows to control what topics authenticated clients are able to publish/subscribe to based on successful combination of:</br><ul><li><i>Client certificate CN matcher regex</i> - should match with the CN of the Client certificate.</li><li><i>Publish/subscribe authorization rule patterns</i> - allow to control what topics clients with matched <i>Client certificate CN matcher regex</i></br> can publish/subscribe to.</li></ul>",
-    "hint-authorization-ssl-example": "Please consider the following examples:<ul><li>If the client certificate has CN <b>cn_example_1</b> - set <i>Client certificate CN matcher regex</i> to <code>cn_example_1</code> or <code>example_1</code> or <code>.*example.*</code>.<li>If <i>Publish authorization rule patterns</i> are set as <code>[pub_topic/one/.*, pub_topic/two/.*]</code> - client will be able to publish only </br>to the topics that starts with <b>pub_topic/one/</b> or <b>pub_topic/two/</b>.</li><li>If <i>Subscribe authorization rule patterns</i> is set to default value <code>[.*]</code> - client will be able to subscribe to <b>any topic</b>.</li><li>If <i>Publish/Subscribe authorization rules</i> has no rules (field is empty) - client will be <b>forbidden</b> to publish/subscribe to any topics.</li></ul>",
-    "hint-authorization-basic": "Authorization rule patterns allows to control what topics clients can publish/subscribe to based on regular expression syntax:",
-    "hint-regex-patterns": "<ul><li><b>Allow particular topic(s)</b> - rule <code>country/.*</code> will allow clients to publish/subscribe messages only to topics that start with <code>country/</code>.</li><li><b>Allow any topic</b> - rule <code>.*</code> (default) will allow clients to publish/subscribe messages to <b>any topic</b>.</li><li><b>Forbid all topics</b> - if the rule is <b><i>empty</i></b>, client is <b>forbidden</b> to publish/subscribe to.</li></ul>",
+    "hint-authorization-ssl": "Authorization rules allow control of topics that authenticated clients are able to publish/subscribe to based on successful combination of:</br><ul><li><i>Client certificate CN matcher regex</i> - should match with the CN of the Client certificate.</li><li><i>Publish/subscribe authorization rule patterns</i> - allow control of topics that clients with matched <i>Client certificate CN matcher regex</i></br> can publish/subscribe to.</li></ul>",
+    "hint-authorization-ssl-example": "Please consider the following examples:<ul><li>If the client certificate has CN <b>cn_example_1</b> - set <i>Client certificate CN matcher regex</i> to <code>cn_example_1</code> or <code>example_1</code> or <code>.*example.*</code>.<li>If <i>Publish authorization rule patterns</i> are set as <code>[pub_topic/one/.*, pub_topic/two/.*]</code> - client will be able to publish only </br>to the topics that start with <b>pub_topic/one/</b> or <b>pub_topic/two/</b>.</li><li>If <i>Subscribe authorization rule patterns</i> are set to the default value <code>[.*]</code> - client will be able to subscribe to <b>any topic</b>.</li><li>If <i>Publish/Subscribe authorization rules</i> are empty - client will be <b>forbidden</b> to publish/subscribe to any topics.</li></ul>",
+    "hint-authorization-basic": "Authorization rule patterns allow control of topics the clients can publish/subscribe to based on regular expression syntax:",
+    "hint-regex-patterns": "<ul><li><b>Allow particular topic(s)</b> - rule <code>country/.*</code> will allow clients to publish/subscribe only to topics that start with <code>country/</code>.</li><li><b>Allow any topic</b> - rule <code>.*</code> (default) will allow clients to publish/subscribe to <b>any topic</b>.</li><li><b>Forbid all topics</b> - if the rule is <b><i>empty</i></b>, the client is <b>forbidden</b> to publish/subscribe.</li></ul>",
     "rule": "Rule",
     "type-basic": "Basic",
     "type-ssl": "X.509 Certificate Chain",
@@ -411,7 +412,7 @@
     "list-of-sessions": "{ count, plural, 1 {One session} other {List of # sessions} }",
     "hint-clean-start-true": "This session is not persistent. All info and messages from previous persistent session will be lost after disconnection.",
     "hint-clean-start-false": "This session is persistent. All info and messages are stored until the start of clean session.",
-    "hint-keep-alive": "For how long Broker and Client may not communicate with each other before session is closed.",
+    "hint-keep-alive": "For how long Broker and Client may not communicate before session is closed. If value is 0 - mechanism is off.",
     "hint-session-end": "When the session info and messages will be removed.",
     "hint-session-expiry-interval": "For how long the Client session information is stored after the connection is lost.",
     "sessions": "Sessions",
@@ -428,7 +429,7 @@
     "single-level-wildcards-hint": "<code>[+]</code> is suitable for any topic filter level. Ex.: <b>city/+/country</b> or <b>+/city/+/country</b>.",
     "share-name": "Share group",
     "show-share-name": "Show Shared Subscription group names",
-    "multi-level-wildcards-hint": "<code>[#]</code> can replace the topic filter itself and must be the last symbol of the topic. Ex.: <b>#</b> or <b>country/city/#</b>.",
+    "multi-level-wildcards-hint": "<code>[#]</code> can replace the topic filter itself and must be the last symbol of the topic filter. Ex.: <b>#</b> or <b>country/city/#</b>.",
     "topic": "Topic",
     "topic-filter": "Topic filter",
     "type-session": "Session",
@@ -462,10 +463,10 @@
     "name": "Name",
     "name-required": "Name is required",
     "hint-application-shared-subscription-info": "Info",
-    "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> are the TB MQTT Broker entities used for effective management of the MQTT shared</br> subscriptions feature. Provision such entities if you plan to use <b>shared subscriptions with Application clients</b>. <a href='' target='_blank'>Read more.</a>",
-    "hint-topic-filter": "Application Shared Subscriptions provide for client load balancing and prefixed with <code>$share/group-name/topic-filter</code>.</br>If shared subscription topic is <code>$share/group1/city/+/home/#</code>, set <i>Topic filter</i> as <code>city/+/home/#</code>",
-    "hint-partitions": "It is recommended that the number of partitions to be <b>equal or multiple of an expected number of clients</b> of the shared subscription.</br>For example, if 5 clients are going to be subscribed to the shared subscription, set the <i>Partitions</i> to 5, 10 or 15.</br>This will guarantee the load is distributed evenly by the subscribers.",
-    "hint-shared-subscription-notes": "Notes:<ul><li><i>Topic filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Application Shared Subscription feature works with MQTT v5 and earlier versions.</li></ul>",
+    "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> are the TB MQTT Broker entities used for effective management of the MQTT shared</br> subscriptions feature. Provision such entities if you plan to use <b>shared subscriptions with Application clients</b>. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Read more.</a>",
+    "hint-topic-filter": "The format for a shared subscription topic filter is <code>$share/ShareName/TopicFilter</code>.</br>If shared subscription topic filter is <code>$share/group1/city/+/home/#</code>, set <i>Topic filter</i> as <code>city/+/home/#</code>",
+    "hint-partitions": "It is recommended that the number of partitions is <b>equal to or X times more than the expected number of clients</b> of the shared subscription.</br>For example, if 5 clients are going to be subscribed to the shared subscription, set the <i>Partitions</i> value to 5, 10 or 15.</br>This will guarantee even load distribution between the subscribers.",
+    "hint-shared-subscription-notes": "Notes:<ul><li><i>Topic filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Application Shared Subscription feature works with MQTT v5 and v3.x</li></ul>",
     "partitions": "Partitions",
     "partitions-required": "Partitions are required",
     "partitions-min": "Minimum value is 1",
@@ -489,7 +490,7 @@
     "select-retained-message": "Select retained message",
     "clear-empty-retained-message-nodes": "Clear empty retained message nodes",
     "clear-empty-retained-message-nodes-title": "Clear empty retained message nodes?",
-    "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation will be cleared all empty retained message nodes.",
+    "clear-empty-retained-message-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages/#clearing-empty-retained-message-nodes'>retained message nodes</a>.",
     "no-retained-messages-matching": "No retained messages matching '{{entity}}' were found.",
     "topic-required": "Topic is required",
     "details": "Retained Message Details",
@@ -513,11 +514,11 @@
     "dropped-messages": "Dropped messages",
     "sessions": "Sessions",
     "subscriptions": "Subscriptions",
-    "incoming-messages-tooltip": "Messages published by MQTT clients to the broker.",
-    "outgoing-messages-tooltip": "Messages that the broker delivers to subscribing clients.",
-    "dropped-messages-tooltip": "Messages that do not have subscribers or when the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations.",
-    "sessions-tooltip": "Number of current MQTT sessions.",
-    "subscriptions-tooltip": "Number of current subscriptions.",
+    "incoming-messages-tooltip": "Messages published by MQTT clients to the broker",
+    "outgoing-messages-tooltip": "Messages that the broker delivers to subscribing clients",
+    "dropped-messages-tooltip": "Messages that do not have subscribers or when the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations",
+    "sessions-tooltip": "Number of current MQTT sessions",
+    "subscriptions-tooltip": "Number of current subscriptions",
     "topics": "Topics"
   },
   "timeinterval": {
@@ -587,12 +588,12 @@
     "updates-available": "A new version is available!"
   },
   "config": {
-    "port-mqtt": "Port MQTT",
+    "port-mqtt": "TCP Port",
     "tcp-listener": "TCP Listener",
     "tcp-listener-max-payload-size": "TCP Listener Max Payload Size",
     "tls-listener": "TLS Listener",
     "tls-listener-max-payload-size": "TLS Listener Max Payload Size",
-    "tls-tcp-port": "TLS TCP Port",
+    "tls-tcp-port": "TLS Port",
     "basic-auth": "Basic Auth",
     "ssl-auth": "X.509 Certificate Auth",
     "port-copied": "Port has been copied to clipboard",
@@ -619,25 +620,13 @@
   },
   "getting-started": {
     "getting-started": "Getting started",
-    "see-docs": "See Docs",
-    "view-credentials": "View my Credentials",
-    "subscribe": {
-      "info": "The second step is to setup your subscriptions.<br><br>For demo purpose we will use  an open source message broker <a href='' target='_blank'>Eclipse Mosquitto</a>.<br><br>Use simple commands to install Mosquitto broker and subscribe for topic:"
-    },
-    "publish": {
-      "info": "Once you have a connected client, you can also publish messages to a topic:"
-    },
-    "client": {
-      "info": "The first step is to create the MQTT Client with a simple Authentication method based on <b>username and password</b>.<br><br>Please click on the button below and fill the following params:",
-      "info-button": "Add Client Credentials",
-      "additional": "Note that Thingsboard MQTT Broker has different Authentication and Authorization methods."
-    },
-    "disconnect": {
-      "info": "Once you are finished using the client, you can disconnect the client."
-    },
-    "step-subscribe": "Subscribe for topic",
-    "step-publish": "Publish message",
-    "step-session": "View session",
-    "step-client": "Create Credentials"
+    "step-subscribe": "Subscribe to Topic",
+    "step-publish": "Publish Message",
+    "step-session": "View Session Details",
+    "step-client-dev": "Add Device Credentials",
+    "step-client-app": "Add Application Credentials",
+    "step-enable-basic-auth": "Enable Basic Authentication",
+    "add-dev-credentials": "Add Device Credentials",
+    "add-app-credentials": "Add Application Credentials"
   }
 }

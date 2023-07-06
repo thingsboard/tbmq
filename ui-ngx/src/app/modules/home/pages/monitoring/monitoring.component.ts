@@ -24,7 +24,7 @@ import {
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { chartKeysBroker, chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
+import { chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
@@ -63,7 +63,6 @@ export class MonitoringComponent extends PageComponent {
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
-  private chartKeys: string[];
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
@@ -128,9 +127,6 @@ export class MonitoringComponent extends PageComponent {
 
   private initData() {
     this.brokerIds = this.route.snapshot.data.brokerIds;
-    for (const brokerId of this.brokerIds) {
-      this.chartKeys = brokerId === TOTAL_KEY ? chartKeysTotal : chartKeysBroker;
-    }
   }
 
   private calculateFixedWindowTimeMs() {
@@ -140,7 +136,7 @@ export class MonitoringComponent extends PageComponent {
   private fetchEntityTimeseries(initCharts = false) {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, this.chartKeys));
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, chartKeysTotal));
     }
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
@@ -211,7 +207,7 @@ export class MonitoringComponent extends PageComponent {
   private startPolling() {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, this.chartKeys));
+      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, chartKeysTotal));
     }
     timer(0, POLLING_INTERVAL)
     .pipe(

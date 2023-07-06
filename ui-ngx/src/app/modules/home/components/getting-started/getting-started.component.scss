@@ -306,7 +306,7 @@
             color: rgba(0, 0, 0, 0.38);
             overflow: hidden;
             white-space: break-spaces;
-            word-break: break-all;
+            word-break: break-word;
             & * {
               color: rgba(0, 0, 0, 0.38);
               cursor: inherit;

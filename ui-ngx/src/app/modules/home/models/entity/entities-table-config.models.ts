@@ -142,6 +142,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   }
 
   componentsData: any = null;
+  demoData: any = null;
 
   loadDataOnInit = true;
   onLoadAction: (route: ActivatedRoute) => void = null;

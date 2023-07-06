@@ -52,7 +52,7 @@ export class AppComponent {
               private zone: NgZone,
               private router: Router) {
 
-    console.log(`ThingsBoard MQTT Broker Version: ${env.tbMqttBrokerVersion}`);
+    console.log(`TBMQ Version: ${env.tbMqttBrokerVersion}`);
 
     this.matIconRegistry.addSvgIconSetInNamespace('mdi',
       this.domSanitizer.bypassSecurityTrustResourceUrl('./assets/mdi.svg'));

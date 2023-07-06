@@ -19,7 +19,7 @@ import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { MqttClientCredentials, MqttCredentialsType } from '@shared/models/client-crenetials.model';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
@@ -32,6 +32,7 @@ import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
+import { ClientType } from '@shared/models/client.model';
 
 @Component({
   selector: 'tb-getting-started',
@@ -66,12 +67,41 @@ export class GettingStartedComponent implements AfterViewInit {
     this.router.navigateByUrl(`/${path}`);
   }
 
-  addClientCredentials() {
+  addClientCredentials(type: string) {
     const config = new EntityTableConfig<MqttClientCredentials>();
     config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     config.entityComponent = MqttClientCredentialsComponent;
     config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    if (type === 'dev') {
+      config.demoData = {
+        name: 'TBMQ Device Demo',
+        clientType: ClientType.DEVICE,
+        credentialsType: MqttCredentialsType.MQTT_BASIC,
+        credentialsValue: JSON.stringify({
+          userName: 'tbmq_dev',
+          password: 'tbmq_dev',
+          authRules: {
+            pubAuthRulePatterns: ['.*'],
+            subAuthRulePatterns: ['.*']
+          }
+        })
+      };
+    } else if (type === 'app') {
+      config.demoData = {
+        name: 'TBMQ Application Demo',
+        clientType: ClientType.APPLICATION,
+        credentialsType: MqttCredentialsType.MQTT_BASIC,
+        credentialsValue: JSON.stringify({
+          userName: 'tbmq_app',
+          password: 'tbmq_app',
+          authRules: {
+            pubAuthRulePatterns: ['.*'],
+            subAuthRulePatterns: ['.*']
+          }
+        })
+      };
+    }
     const $entity = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<MqttClientCredentials>,
       MqttClientCredentials>(AddEntityDialogComponent, {
       disableClose: true,
@@ -105,7 +135,7 @@ export class GettingStartedComponent implements AfterViewInit {
         this.configParams = {} as BrokerConfig;
         this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
         this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
-        this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client') : this.init('subscribe');
+        this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client-app') : this.init('enable-basic-auth');
         return data;
       }
     )).subscribe();

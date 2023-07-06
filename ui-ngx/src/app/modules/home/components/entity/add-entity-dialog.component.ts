@@ -25,19 +25,22 @@ import {
   SkipSelf,
   ViewChild
 } from '@angular/core';
-import {ErrorStateMatcher} from '@angular/material/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {FormControl, FormGroup, FormGroupDirective, NgForm} from '@angular/forms';
-import {EntityTypeResource, EntityTypeTranslation} from '@shared/models/entity-type.models';
-import {BaseData} from '@shared/models/base-data';
-import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
-import {EntityComponent} from './entity.component';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {AddEntityDialogData} from '@home/models/entity/entity-component.models';
-import {DialogComponent} from '@shared/components/dialog.component';
-import {Router} from '@angular/router';
+import { ErrorStateMatcher } from '@angular/material/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { FormControl, FormGroup, FormGroupDirective, NgForm } from '@angular/forms';
+import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { BaseData } from '@shared/models/base-data';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
+import { EntityComponent } from './entity.component';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { Router } from '@angular/router';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
 
 @Component({
   selector: 'tb-add-entity-dialog',
@@ -63,7 +66,8 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
               public dialogRef: MatDialogRef<AddEntityDialogComponent, BaseData>,
               private componentFactoryResolver: ComponentFactoryResolver,
               private injector: Injector,
-              private changeDetectorRef: ChangeDetectorRef,
+              private cd: ChangeDetectorRef,
+              private translate: TranslateService,
               @SkipSelf() private errorStateMatcher: ErrorStateMatcher) {
     super(store, router, dialogRef);
   }
@@ -122,12 +126,30 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
       this.entitiesTableConfig.saveEntity(this.entity).subscribe(
         (entity) => {
           this.dialogRef.close(entity);
+          if (this.entitiesTableConfig.entityType === EntityType.USER) {
+            this.showDefaultPassWarning();
+          }
         }
       );
     }
   }
 
   ngAfterContentChecked(): void {
-    this.changeDetectorRef.detectChanges();
+    if (isNotNullOrUndefined(this.entitiesTableConfig?.demoData)) {
+      this.detailsForm.markAsDirty();
+    }
+    this.cd.detectChanges();
+  }
+
+  private showDefaultPassWarning() {
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('profile.default-password-warn'),
+        type: 'success',
+        duration: 0,
+        verticalPosition: 'top',
+        horizontalPosition: 'left'
+      })
+    );
   }
 }

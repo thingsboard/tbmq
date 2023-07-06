@@ -24,7 +24,6 @@ import { Direction } from '@shared/models/page/sort-order';
 import { TimeseriesData } from '@shared/models/chart.model';
 
 export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
-export const chartKeysBroker = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs'];
 export const getTimeseriesDataLimit = 50000;
 
 @Injectable({

@@ -28,14 +28,18 @@
         <div class="tb-markdown-view">
           <markdown [data]="data | async"></markdown>
         </div>
-        <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client'">
-          <button mat-stroked-button type="button" (click)="addClientCredentials()">
-            {{'mqtt-client-credentials.add-credentials' | translate}}
-          </button>
-          <button mat-stroked-button type="button" (click)="navigate('client-credentials')">
-            {{'getting-started.view-credentials' | translate}}
-          </button>
-        </section>
+        <div style="margin-top: 8px">
+          <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-device'">
+            <button mat-raised-button type="button" (click)="addClientCredentials('dev')">
+              {{'getting-started.add-dev-credentials' | translate}}
+            </button>
+          </section>
+          <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-app'">
+            <button mat-raised-button type="button" (click)="addClientCredentials('app')">
+              {{'getting-started.add-app-credentials' | translate}}
+            </button>
+          </section>
+        </div>
       </mat-step>
     </ng-container>
   </mat-vertical-stepper>

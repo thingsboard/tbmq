@@ -29,17 +29,13 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr, isString } from '@core/utils';
-import {
-  AuthRulePatternsType, AuthRules,
-  BasicMqttCredentials,
-  MqttClientCredentials
-} from '@shared/models/client-crenetials.model';
+import { AuthRulePatternsType, AuthRules, BasicMqttCredentials, MqttClientCredentials } from '@shared/models/client-crenetials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData
 } from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
-import { MatChipInputEvent } from "@angular/material/chips";
+import { MatChipInputEvent } from '@angular/material/chips';
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -68,7 +64,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @Output()
   changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
-  authRulePatternsType = AuthRulePatternsType
+  authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: FormGroup;
   pubRulesSet: Set<string> = new Set();
   subRulesSet: Set<string> = new Set();
@@ -124,11 +120,13 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
       this.clearRuleSets();
       const valueJson = JSON.parse(value);
-      for (const rule of Object.keys(valueJson.authRules)) {
-        if (valueJson.authRules[rule]?.length) {
-          valueJson.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
-          const commaSeparatedRuleValues = valueJson.authRules[rule].join(',');
-          valueJson.authRules[rule] = [commaSeparatedRuleValues];
+      if (valueJson.authRules) {
+        for (const rule of Object.keys(valueJson.authRules)) {
+          if (valueJson.authRules[rule]?.length) {
+            valueJson.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
+            const commaSeparatedRuleValues = valueJson.authRules[rule].join(',');
+            valueJson.authRules[rule] = [commaSeparatedRuleValues];
+          }
         }
       }
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
@@ -145,10 +143,10 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   private setDefaultAuthRuleValue(defaultValue: string = '.*') {
     const authRulesControl = this.credentialsMqttFormGroup.get('authRules');
     for (const rule of Object.keys(authRulesControl.value)) {
-      authRulesControl.patchValue({ [rule]: defaultValue });
+      authRulesControl.patchValue({[rule]: defaultValue});
       this.addValueToAuthRulesSet(rule, defaultValue);
     }
-}
+  }
 
   updateView(value: BasicMqttCredentials) {
     value.authRules = this.formatAuthRules(value.authRules);
@@ -160,8 +158,12 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     const result = {} as AuthRules;
     for (const rule of Object.keys(authRules)) {
       const value = authRules[rule];
-       if (isString(value)) result[rule] = value.length ? [authRules[rule]] : null;
-       if (Array.isArray(value)) result[rule] = authRules[rule][0].length ? authRules[rule][0].split(',') : null;
+      if (isString(value)) {
+        result[rule] = value.length ? [authRules[rule]] : null;
+      }
+      if (Array.isArray(value)) {
+        result[rule] = authRules[rule][0].length ? authRules[rule][0].split(',') : null;
+      }
     }
     return result;
   }
@@ -169,15 +171,15 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   changePassword(): void {
     this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
       MqttClientCredentials>(ChangeMqttBasicPasswordDialogComponent, {
-        disableClose: true,
-        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-        data: {
-          credentialsId: this.entity?.id
-        }
-      }).afterClosed().subscribe((res: MqttClientCredentials) => {
-        if (res) {
-          this.changePasswordCloseDialog.emit(res);
-        }
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        credentialsId: this.entity?.id
+      }
+    }).afterClosed().subscribe((res: MqttClientCredentials) => {
+      if (res) {
+        this.changePasswordCloseDialog.emit(res);
+      }
     });
   }
 

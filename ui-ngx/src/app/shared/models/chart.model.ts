@@ -294,6 +294,12 @@ export function monitoringChartJsParams() {
               ci.show(index);
               legendItem.hidden = false;
             }
+          },
+          onHover: function(e) {
+            e.native.target.style.cursor = 'pointer';
+          },
+          onLeave: function(e) {
+            e.native.target.style.cursor = 'default';
           }
         },
         tooltip: {
