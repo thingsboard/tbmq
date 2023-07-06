@@ -17,12 +17,12 @@
 -->
 <mat-tab-group>
   <mat-tab [label]="'kafka.topics' | translate">
-    <div class="tb-home-card-container">
+    <div class="tb-home-card-container" fxLayoutGap="20px">
       <tb-kafka-topics-table></tb-kafka-topics-table>
     </div>
   </mat-tab>
   <mat-tab [label]="'kafka.consumer-groups' | translate">
-    <div class="tb-home-card-container">
+    <div class="tb-home-card-container" fxLayoutGap="20px">
       <tb-kafka-consumers-table></tb-kafka-consumers-table>
     </div>
   </mat-tab>
