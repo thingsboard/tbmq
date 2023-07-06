@@ -1,10 +1,9 @@
-# Docker configuration for ThingsBoard MQTT Broker
+# Docker configuration for TBMQ
 
-This folder containing scripts and Docker Compose configurations to run ThingsBoard MQTT Broker.
+This folder containing scripts and Docker Compose configurations to run TBMQ.
 
 ## Prerequisites
 
-ThingsBoard Microservices are running in dockerized environment.
 Before starting please make sure [Docker CE](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/install/) are installed in your system.
 
 ## Installation
@@ -35,7 +34,7 @@ you browser (e.g. [http://localhost:8083](http://localhost:8083))
 and connect using MQTT protocol on 1883 port.
 
 In case of any issues you can examine service logs for errors.
-For example to see ThingsBoard Mqtt Broker logs execute the following command:
+For example to see TBMQ logs execute the following command:
 
 `
 $ docker compose logs -f tb-mqtt-broker-1

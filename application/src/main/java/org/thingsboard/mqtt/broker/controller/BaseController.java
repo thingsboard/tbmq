@@ -32,18 +32,24 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
+import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
 
 @Slf4j
 public abstract class BaseController {
@@ -53,6 +59,10 @@ public abstract class BaseController {
 
     @Autowired
     protected UserService userService;
+    @Autowired
+    protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected RetainedMsgListenerService retainedMsgListenerService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -88,6 +98,18 @@ public abstract class BaseController {
         }
     }
 
+    <T> T checkNotNull(Optional<T> reference) throws ThingsboardException {
+        return checkNotNull(reference, "Requested item wasn't found!");
+    }
+
+    <T> T checkNotNull(Optional<T> reference, String notFoundMessage) throws ThingsboardException {
+        if (reference.isPresent()) {
+            return reference.get();
+        } else {
+            throw new ThingsboardException(notFoundMessage, ThingsboardErrorCode.ITEM_NOT_FOUND);
+        }
+    }
+
     <T> T checkNotNull(T reference) throws ThingsboardException {
         if (reference == null) {
             throw new ThingsboardException("Requested item wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
@@ -116,6 +138,18 @@ public abstract class BaseController {
         } catch (Exception e) {
             throw handleException(e, false);
         }
+    }
+
+    MqttClientCredentials checkClientCredentialsId(UUID clientCredentialsId) throws ThingsboardException {
+        validateId(clientCredentialsId, "Incorrect clientCredentialsId " + clientCredentialsId);
+        Optional<MqttClientCredentials> credentials = mqttClientCredentialsService.getCredentialsById(clientCredentialsId);
+        return checkNotNull(credentials);
+    }
+
+    RetainedMsgDto checkRetainedMsg(String topicName) throws ThingsboardException {
+        validateString(topicName, "Incorrect topicName " + topicName);
+        RetainedMsgDto retainedMsg = retainedMsgListenerService.getRetainedMsgForTopic(topicName);
+        return checkNotNull(retainedMsg);
     }
 
     protected SecurityUser getCurrentUser() throws ThingsboardException {

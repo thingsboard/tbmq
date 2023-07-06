@@ -528,8 +528,8 @@ swagger:
   api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
   non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
-  title: "${SWAGGER_TITLE:ThingsBoard MQTT Broker REST API}"
-  description: "${SWAGGER_DESCRIPTION:ThingsBoard MQTT Broker open-source REST API documentation}"
+  title: "${SWAGGER_TITLE:TBMQ REST API}"
+  description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
     name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"

@@ -53,6 +53,7 @@ public class AdminController extends BaseController {
     @ResponseBody
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
         try {
+            checkNotNull(adminDto);
             return adminService.createAdmin(adminDto);
         } catch (Exception e) {
             throw handleException(e);
@@ -64,6 +65,7 @@ public class AdminController extends BaseController {
     @ResponseBody
     public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         try {
+            checkParameter("key", key);
             AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
             if (adminSettings.getKey().equals("mail")) {
                 ((ObjectNode) adminSettings.getJsonValue()).remove("password");
@@ -79,6 +81,7 @@ public class AdminController extends BaseController {
     @ResponseBody
     public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         try {
+            checkNotNull(adminSettings);
             adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
             if (adminSettings.getKey().equals("mail")) {
                 mailService.updateMailConfiguration();
@@ -155,7 +158,11 @@ public class AdminController extends BaseController {
     @RequestMapping(value = "/user", method = RequestMethod.POST)
     @ResponseBody
     public User saveAdminUser(@RequestBody User user) throws ThingsboardException {
-        checkNotNull(user);
-        return checkNotNull(userService.saveUser(user));
+        try {
+            checkNotNull(user);
+            return checkNotNull(userService.saveUser(user));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
     }
 }

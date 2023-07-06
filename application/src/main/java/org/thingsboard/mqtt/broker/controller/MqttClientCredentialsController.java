@@ -37,15 +37,15 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mqtt/client/credentials")
 public class MqttClientCredentialsController extends BaseController {
 
-    private final MqttClientCredentialsService mqttClientCredentialsService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
@@ -86,7 +86,7 @@ public class MqttClientCredentialsController extends BaseController {
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.GET)
     public MqttClientCredentials getCredentialsById(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
-            return mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null);
+            return checkNotNull(mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -96,7 +96,9 @@ public class MqttClientCredentialsController extends BaseController {
     @RequestMapping(value = "/{credentialsId}", method = RequestMethod.DELETE)
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
-            mqttClientCredentialsService.deleteCredentials(toUUID(strCredentialsId));
+            UUID uuid = toUUID(strCredentialsId);
+            checkClientCredentialsId(uuid);
+            mqttClientCredentialsService.deleteCredentials(uuid);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -107,6 +109,8 @@ public class MqttClientCredentialsController extends BaseController {
     public MqttClientCredentials changeMqttBasicCredentialsPassword(@PathVariable("credentialsId") String strCredentialsId,
                                                                     @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
         try {
+            checkParameter("credentialsId", strCredentialsId);
+            checkNotNull(changePasswordRequest);
             MqttClientCredentials mqttClientCredentials = getCredentialsById(strCredentialsId);
             if (mqttClientCredentials.getCredentialsType() != ClientCredentialsType.MQTT_BASIC) {
                 throw new ThingsboardException("MQTT credentials should be of 'MQTT_BASIC' type!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
