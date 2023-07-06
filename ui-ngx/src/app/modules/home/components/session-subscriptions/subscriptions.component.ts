@@ -138,7 +138,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
       $event.stopPropagation();
     }
     this.showShareName = !this.showShareName;
-    this.cd.markForCheck();
   }
 
   private updateView(value: TopicSubscription[]) {
