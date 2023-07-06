@@ -64,6 +64,10 @@ public class KeepAliveServiceImpl implements KeepAliveService {
     }
 
     boolean isInactive(int keepAliveSeconds, long lastPacketTime) {
+        // A Keep Alive value of 0 has the effect of turning off the Keep Alive mechanism
+        if (keepAliveSeconds == 0) {
+            return false;
+        }
         long now = System.currentTimeMillis();
         long actualKeepAliveMs = (long) (TimeUnit.SECONDS.toMillis(keepAliveSeconds) * 1.5);
         return lastPacketTime + actualKeepAliveMs < now;
