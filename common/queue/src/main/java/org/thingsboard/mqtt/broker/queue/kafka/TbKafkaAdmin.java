@@ -272,10 +272,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     .limit(pageLink.getPageSize())
                     .collect(Collectors.toList());
 
+            int totalPages = (int) Math.ceil((double) kafkaTopics.size() / pageLink.getPageSize());
             return new PageData<>(data,
-                    kafkaTopics.size() / pageLink.getPageSize(),
+                    totalPages,
                     kafkaTopics.size(),
-                    pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaTopics.size());
+                    pageLink.getPage() < totalPages - 1);
         } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
             throw new RuntimeException(e);
@@ -340,10 +341,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     .limit(pageLink.getPageSize())
                     .collect(Collectors.toList());
 
+            int totalPages = (int) Math.ceil((double) kafkaConsumerGroups.size() / pageLink.getPageSize());
             return new PageData<>(data,
-                    kafkaConsumerGroups.size() / pageLink.getPageSize(),
+                    totalPages,
                     kafkaConsumerGroups.size(),
-                    pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < kafkaConsumerGroups.size());
+                    pageLink.getPage() < totalPages - 1);
         } catch (Exception e) {
             log.warn("Failed to get Kafka consumer groups", e);
             throw new RuntimeException(e);

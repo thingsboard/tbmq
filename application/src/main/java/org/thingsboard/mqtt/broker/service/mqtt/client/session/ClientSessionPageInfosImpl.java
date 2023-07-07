@@ -53,10 +53,11 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
+        int totalPages = (int) Math.ceil((double) filteredByTextSearch.size() / pageLink.getPageSize());
         return new PageData<>(data,
-                filteredByTextSearch.size() / pageLink.getPageSize(),
+                totalPages,
                 filteredByTextSearch.size(),
-                pageLink.getPageSize() + pageLink.getPage() * pageLink.getPageSize() < filteredByTextSearch.size());
+                pageLink.getPage() < totalPages - 1);
     }
 
     @Override

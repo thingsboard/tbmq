@@ -80,6 +80,7 @@ public class ClientSessionPageInfosImplTest {
 
         assertEquals(5, data.size());
         assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(2, clientSessionInfos.getTotalPages());
         assertTrue(clientSessionInfos.hasNext());
     }
 
@@ -91,6 +92,7 @@ public class ClientSessionPageInfosImplTest {
 
         assertEquals(5, data.size());
         assertEquals(5, clientSessionInfos.getTotalElements());
+        assertEquals(1, clientSessionInfos.getTotalPages());
         assertFalse(clientSessionInfos.hasNext());
     }
 
@@ -102,6 +104,7 @@ public class ClientSessionPageInfosImplTest {
 
         assertEquals(10, data.size());
         assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(1, clientSessionInfos.getTotalPages());
         assertFalse(clientSessionInfos.hasNext());
 
         assertEquals("clientId5", data.get(4).getClientId());
@@ -119,7 +122,88 @@ public class ClientSessionPageInfosImplTest {
                 new PageLink(100, 0, null, new SortOrder("wrongProperty")));
         assertNotNull(clientSessionInfos);
         assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(1, clientSessionInfos.getTotalPages());
         assertFalse(clientSessionInfos.hasNext());
+    }
+
+    @Test
+    public void testPaginationResponse() {
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", getClientSessionInfo("clientId1"),
+                "clientId5", getClientSessionInfo("clientId5"),
+                "clientId2", getClientSessionInfo("clientId2"),
+                "clientId4", getClientSessionInfo("clientId4"),
+                "clientId3", getClientSessionInfo("clientId3"),
+                "test1", getClientSessionInfo("test1"),
+                "test2", getClientSessionInfo("test2"),
+                "test5", getClientSessionInfo("test5"),
+                "test4", getClientSessionInfo("test4"),
+                "test3", getClientSessionInfo("test3")
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(3, 0));
+        assertNotNull(clientSessionInfos);
+        assertEquals(3, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(4, clientSessionInfos.getTotalPages());
+        assertTrue(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(3, 3));
+        assertNotNull(clientSessionInfos);
+        assertEquals(1, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(4, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(3, 4));
+        assertNotNull(clientSessionInfos);
+        assertEquals(0, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(4, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(1, 2));
+        assertNotNull(clientSessionInfos);
+        assertEquals(1, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(10, clientSessionInfos.getTotalPages());
+        assertTrue(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(1, 11));
+        assertNotNull(clientSessionInfos);
+        assertEquals(0, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(10, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(4, 2));
+        assertNotNull(clientSessionInfos);
+        assertEquals(2, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(3, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(6, 1));
+        assertNotNull(clientSessionInfos);
+        assertEquals(4, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(2, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(6, 2));
+        assertNotNull(clientSessionInfos);
+        assertEquals(0, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(2, clientSessionInfos.getTotalPages());
+        assertFalse(clientSessionInfos.hasNext());
+
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(new PageLink(7, 0));
+        assertNotNull(clientSessionInfos);
+        assertEquals(7, clientSessionInfos.getData().size());
+        assertEquals(10, clientSessionInfos.getTotalElements());
+        assertEquals(2, clientSessionInfos.getTotalPages());
+        assertTrue(clientSessionInfos.hasNext());
     }
 
     @Test
@@ -136,6 +220,7 @@ public class ClientSessionPageInfosImplTest {
 
         assertEquals(5, data.size());
         assertEquals(5, clientSessionInfos.getTotalElements());
+        assertEquals(1, clientSessionInfos.getTotalPages());
         assertFalse(clientSessionInfos.hasNext());
 
         assertEquals("clientId4", data.get(0).getClientId());
