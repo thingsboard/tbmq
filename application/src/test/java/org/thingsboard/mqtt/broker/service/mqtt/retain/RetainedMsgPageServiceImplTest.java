@@ -68,6 +68,24 @@ public class RetainedMsgPageServiceImplTest {
         assertEquals(3, data.size());
         assertEquals(5, retainedMessages.getTotalElements());
         assertTrue(retainedMessages.hasNext());
+
+        retainedMessages = retainedMsgPageService.getRetainedMessages(
+                new PageLink(3, 1));
+        data = retainedMessages.getData();
+
+        assertEquals(2, data.size());
+        assertEquals(5, retainedMessages.getTotalElements());
+        assertEquals(2, retainedMessages.getTotalPages());
+        assertFalse(retainedMessages.hasNext());
+
+        retainedMessages = retainedMsgPageService.getRetainedMessages(
+                new PageLink(3, 2));
+        data = retainedMessages.getData();
+
+        assertEquals(0, data.size());
+        assertEquals(5, retainedMessages.getTotalElements());
+        assertEquals(2, retainedMessages.getTotalPages());
+        assertFalse(retainedMessages.hasNext());
     }
 
     @Test
