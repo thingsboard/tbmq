@@ -585,7 +585,8 @@
     "version": "Version",
     "update": "Update",
     "no-updates-available": "You have latest version. No updates available.",
-    "updates-available": "A new version is available!"
+    "available-version": "New release available",
+    "current-version": "Current TBMQ version"
   },
   "config": {
     "port-mqtt": "TCP Port",
@@ -627,6 +628,7 @@
     "step-client-app": "Add Application Credentials",
     "step-enable-basic-auth": "Enable Basic Authentication",
     "add-dev-credentials": "Add Device Credentials",
-    "add-app-credentials": "Add Application Credentials"
+    "add-app-credentials": "Add Application Credentials",
+    "credentials-added": "Credentials added successfully"
   }
 }

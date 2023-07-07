@@ -57,7 +57,9 @@ export const SecurityParameterConfigMap = new Map<ConfigParams, string>(
 );
 
 export interface SystemVersionInfo {
-  version?: string;
-  artifact?: string;
-  name?: string;
+  version: string;
+  artifact: string;
+  name: string;
+  latestLink?: string;
+  latestVersion?: string;
 }

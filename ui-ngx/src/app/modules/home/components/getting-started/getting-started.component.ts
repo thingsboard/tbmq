@@ -33,6 +33,8 @@ import { map } from 'rxjs/operators';
 import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-getting-started',
@@ -52,6 +54,7 @@ export class GettingStartedComponent implements AfterViewInit {
               private dialog: MatDialog,
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private router: Router,
+              private translate: TranslateService,
               private store: Store<AppState>) {
   }
 
@@ -113,7 +116,16 @@ export class GettingStartedComponent implements AfterViewInit {
     $entity.subscribe(
       (entity) => {
         if (entity) {
-          this.mqttClientCredentialsService.saveMqttClientCredentials(entity).subscribe();
+          this.mqttClientCredentialsService.saveMqttClientCredentials(entity).subscribe(() => {
+            this.store.dispatch(new ActionNotificationShow(
+              {
+                message: this.translate.instant('getting-started.credentials-added'),
+                type: 'success',
+                duration: 1500,
+                verticalPosition: 'top',
+                horizontalPosition: 'left'
+              }));
+          });
         }
       }
     );

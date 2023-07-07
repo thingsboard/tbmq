@@ -36,8 +36,13 @@ export class ConfigService {
     return this.http.get<Array<string>>(`/api/app/brokers`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getSystemVersionInfo(config?: RequestConfig): Observable<SystemVersionInfo> {
+  public getSystemVersion(config?: RequestConfig): Observable<SystemVersionInfo> {
     return this.http.get<SystemVersionInfo>(`/api/system/info`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getGithubSystemVersion(config?: RequestConfig): Observable<any> {
+    const url = 'https://api.github.com/repos/thingsboard/tbmq/releases/latest';
+    return this.http.get<any>(url, defaultHttpOptionsFromConfig(config));
   }
 
 }

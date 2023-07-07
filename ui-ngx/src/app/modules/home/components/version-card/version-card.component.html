@@ -19,12 +19,14 @@
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="version-card-container">
     <section>
-      {{versionData?.name}} v. <a target="_blank" href="https://github.com/thingsboard/tbmq">{{versionData?.version}}</a>
+      <span [innerHTML]="'version.current-version' | translate"></span>:
+      <span><a target="_blank" href='https://github.com/thingsboard/tbmq'>{{versionData.version}}</a></span>
     </section>
-    <ng-container [ngSwitch]="updateAvailable">
+    <ng-container [ngSwitch]="updatesAvailable">
       <ng-template [ngSwitchCase]="true">
         <section>
-          <span  [innerHTML]="'version.updates-available' | translate"></span>
+          <span [innerHTML]="'version.available-version' | translate"></span>:
+          <span><a target="_blank" [href]='versionData.latestLink'>{{versionData.latestVersion}}</a></span>
         </section>
       </ng-template>
       <ng-template [ngSwitchCase]="false">

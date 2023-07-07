@@ -18,6 +18,7 @@ import { Component, OnInit } from '@angular/core';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { SystemVersionInfo } from '@shared/models/config.model';
 import { ConfigService } from '@core/http/config.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'tb-version-card',
@@ -28,14 +29,25 @@ export class VersionCardComponent implements OnInit {
 
   cardType = HomePageTitleType.VERSION;
   versionData: SystemVersionInfo;
-  updateAvailable = false;
+  updatesAvailable = false;
 
   constructor(private configService: ConfigService ) {
   }
 
   ngOnInit(): void {
-    this.configService.getSystemVersionInfo().subscribe(data => {
-      this.versionData = data;
-    });
-  }
+    forkJoin([this.configService.getSystemVersion(), this.configService.getGithubSystemVersion()])
+      .subscribe(
+        res => {
+          if (res) {
+            const currentRelease = res[0];
+            const latestRelease = res[1];
+            const currentReleaseVersion = currentRelease.version;
+            const latestReleaseVersion = latestRelease.tag_name.slice(1);
+            this.versionData = currentRelease;
+            this.versionData.latestLink = latestRelease.html_url;
+            this.versionData.latestVersion = latestRelease.name;
+            this.updatesAvailable = latestReleaseVersion !== currentReleaseVersion;
+          }
+        });
+    }
 }
