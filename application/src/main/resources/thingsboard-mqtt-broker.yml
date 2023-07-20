@@ -508,15 +508,15 @@ spring.mvc.cors:
     # Intercept path
     "[/api/**]":
       #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
-      allowed-origins: "*"
+      allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
       #Comma-separated list of methods to allow. '*' allows all methods.
-      allowed-methods: "*"
+      allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
       #Comma-separated list of headers to allow in a request. '*' allows all headers.
-      allowed-headers: "*"
+      allowed-headers: "${MVC_CORS_API_ALLOWED_HEADERS:*}"
       #How long, in seconds, the response from a pre-flight request can be cached by clients.
-      max-age: "1800"
+      max-age: "${MVC_CORS_API_MAX_AGE:1800}"
       #Set whether credentials are supported. When not set, credentials are not supported.
-      allow-credentials: "true"
+      allow-credentials: "${MVC_CORS_API_ALLOW_CREDENTIALS:true}"
 
 # The default timeout for asynchronous requests in milliseconds
 spring.mvc.async.request-timeout: "${SPRING_MVC_ASYNC_REQUEST_TIMEOUT:30000}"
