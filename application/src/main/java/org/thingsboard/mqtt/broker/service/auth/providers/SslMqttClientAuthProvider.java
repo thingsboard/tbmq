@@ -44,7 +44,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
 
-    @Value("${listener.ssl.config.skip_validity_check_for_client_cert:false}")
+    @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
     private boolean skipValidityCheckForClientCert;
 
     @Override

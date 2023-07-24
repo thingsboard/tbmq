@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.ws;
+package org.thingsboard.mqtt.broker.server.wshandler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,7 +23,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import java.util.List;
 
-public class MqttWsEncoder extends MessageToMessageEncoder<ByteBuf> {
+public class WsByteBufEncoder extends MessageToMessageEncoder<ByteBuf> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {

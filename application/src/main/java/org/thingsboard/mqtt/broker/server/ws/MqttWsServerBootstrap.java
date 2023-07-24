@@ -15,14 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.server.ws;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.ResourceLeakDetector;
-import io.netty.util.concurrent.Future;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,87 +24,57 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.server.AbstractMqttChannelInitializer;
+import org.thingsboard.mqtt.broker.server.AbstractMqttServerBootstrap;
 
 import javax.annotation.PreDestroy;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Getter
 @Slf4j
 @ConditionalOnProperty(prefix = "listener.ws", value = "enabled", havingValue = "true", matchIfMissing = true)
-public class MqttWsServerBootstrap {
+public class MqttWsServerBootstrap extends AbstractMqttServerBootstrap {
 
     @Value("${listener.ws.bind_address}")
     private String host;
     @Value("${listener.ws.bind_port}")
-    private Integer port;
+    private int port;
 
-    @Value("${listener.tcp.netty.leak_detector_level}")
+    @Value("${listener.ws.netty.leak_detector_level}")
     private String leakDetectorLevel;
-    @Value("${listener.tcp.netty.boss_group_thread_count}")
-    private Integer bossGroupThreadCount;
-    @Value("${listener.tcp.netty.worker_group_thread_count}")
-    private Integer workerGroupThreadCount;
-    @Value("${listener.tcp.netty.so_keep_alive}")
+    @Value("${listener.ws.netty.boss_group_thread_count}")
+    private int bossGroupThreadCount;
+    @Value("${listener.ws.netty.worker_group_thread_count}")
+    private int workerGroupThreadCount;
+    @Value("${listener.ws.netty.so_keep_alive}")
     private boolean keepAlive;
 
-    @Value("${listener.tcp.netty.shutdown_quiet_period:0}")
-    private Integer shutdownQuietPeriod;
-    @Value("${listener.tcp.netty.shutdown_timeout:5}")
-    private Integer shutdownTimeout;
+    @Value("${listener.ws.netty.shutdown_quiet_period:0}")
+    private int shutdownQuietPeriod;
+    @Value("${listener.ws.netty.shutdown_timeout:5}")
+    private int shutdownTimeout;
 
     private final MqttWsChannelInitializer mqttWsChannelInitializer;
-
-    private Channel serverChannel;
-    private EventLoopGroup bossGroup;
-    private EventLoopGroup workerGroup;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(value = 102)
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) throws Exception {
-        log.info("[WS Server] Setting resource leak detector level to {}", leakDetectorLevel);
-        ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.PARANOID);
-
-        log.info("[WS Server] Starting MQTT WS server...");
-        bossGroup = new NioEventLoopGroup(bossGroupThreadCount);
-        workerGroup = new NioEventLoopGroup(workerGroupThreadCount);
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(mqttWsChannelInitializer)
-                .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
-
-        serverChannel = b.bind(host, port).sync().channel();
-        log.info("[WS Server] Mqtt server started!");
+        super.init();
     }
 
     @PreDestroy
     public void shutdown() throws InterruptedException {
-        log.info("[WS Server] Stopping MQTT WS server!");
+        super.shutdown();
+    }
 
-        Future<?> bossFuture = null;
-        Future<?> workerFuture = null;
+    @Override
+    public AbstractMqttChannelInitializer getChannelInitializer() {
+        return mqttWsChannelInitializer;
+    }
 
-        if (serverChannel != null) {
-            serverChannel.close().sync();
-        }
-
-        if (bossGroup != null) {
-            bossFuture = bossGroup.shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.SECONDS);
-        }
-        if (workerGroup != null) {
-            workerFuture = workerGroup.shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.SECONDS);
-        }
-
-        log.info("[WS Server] Awaiting shutdown gracefully boss and worker groups...");
-
-        if (bossFuture != null) {
-            bossFuture.sync();
-        }
-        if (workerFuture != null) {
-            workerFuture.sync();
-        }
-
-        log.info("[WS Server] MQTT WS server stopped!");
+    @Override
+    public String getServerName() {
+        return "WS Server";
     }
 }

@@ -13,7 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.common;
+package org.thingsboard.mqtt.broker.server.wshandler;
 
-public abstract class AbstractMqttChannelInitializer {
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+
+public class WsBinaryFrameHandler extends SimpleChannelInboundHandler<BinaryWebSocketFrame> {
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, BinaryWebSocketFrame msg) throws Exception {
+        ctx.fireChannelRead(msg.content().retain());
+    }
+
 }

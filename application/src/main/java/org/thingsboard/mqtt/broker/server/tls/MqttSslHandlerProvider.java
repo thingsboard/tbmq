@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.wss;
+package org.thingsboard.mqtt.broker.server.tls;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,21 +28,21 @@ import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentialsConfig;
 
 @Slf4j
-@Component("MqttWssHandlerProvider")
-@ConditionalOnProperty(prefix = "listener.wss", value = "enabled", havingValue = "true", matchIfMissing = false)
-public class MqttWssHandlerProvider extends AbstractMqttHandlerProvider {
+@Component("MqttSslHandlerProvider")
+@ConditionalOnProperty(prefix = "listener.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
+public class MqttSslHandlerProvider extends AbstractMqttHandlerProvider {
 
-    @Value("${listener.wss.config.protocol}")
+    @Value("${listener.ssl.config.protocol}")
     private String sslProtocol;
 
     @Bean
-    @ConfigurationProperties(prefix = "listener.wss.config.credentials")
-    public SslCredentialsConfig mqttWssCredentials() {
-        return new SslCredentialsConfig("MQTT WSS Credentials", false);
+    @ConfigurationProperties(prefix = "listener.ssl.config.credentials")
+    public SslCredentialsConfig mqttSslCredentials() {
+        return new SslCredentialsConfig("MQTT SSL Credentials", false);
     }
 
     @Autowired(required = false)
-    @Qualifier("mqttWssCredentials")
+    @Qualifier("mqttSslCredentials")
     private SslCredentialsConfig mqttSslCredentialsConfig;
 
     @Override

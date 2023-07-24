@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.wss;
+package org.thingsboard.mqtt.broker.server.tls;
 
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.server.AbstractMqttWsChannelInitializer;
+import org.thingsboard.mqtt.broker.server.AbstractMqttChannelInitializer;
 import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 
 @Slf4j
 @Component
-@Qualifier("WssChannelInitializer")
+@Qualifier("SslChannelInitializer")
 @Getter
-public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer {
+public class MqttSslChannelInitializer extends AbstractMqttChannelInitializer {
 
-    @Value("${listener.wss.netty.sub_protocols}")
-    private String subprotocols;
+    private final MqttSslServerContext context;
 
-    private final MqttWssServerContext context;
-
-    public MqttWssChannelInitializer(MqttHandlerFactory handlerFactory, MqttWssServerContext context) {
+    public MqttSslChannelInitializer(MqttHandlerFactory handlerFactory, MqttSslServerContext context) {
         super(handlerFactory);
         this.context = context;
     }
@@ -53,11 +49,12 @@ public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer 
 
     @Override
     public String getChannelInitializerName() {
-        return "WSS";
+        return "SSL";
     }
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getWssHandlerProvider().getSslHandler();
+        return context.getSslHandlerProvider().getSslHandler();
     }
+
 }

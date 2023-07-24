@@ -27,6 +27,6 @@ public class MqttWssServerContext {
     @Autowired(required = false)
     private MqttWssHandlerProvider wssHandlerProvider;
 
-    @Value("${listener.ssl.netty.max_payload_size}")
-    private Integer maxPayloadSize;
+    @Value("${listener.wss.netty.max_payload_size}")
+    private int maxPayloadSize;
 }

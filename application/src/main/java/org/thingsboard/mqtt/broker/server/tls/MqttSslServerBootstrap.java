@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.wss;
+package org.thingsboard.mqtt.broker.server.tls;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,32 +33,32 @@ import javax.annotation.PreDestroy;
 @RequiredArgsConstructor
 @Getter
 @Slf4j
-@ConditionalOnProperty(prefix = "listener.wss", value = "enabled", havingValue = "true", matchIfMissing = false)
-public class MqttWssServerBootstrap extends AbstractMqttServerBootstrap {
+@ConditionalOnProperty(prefix = "listener.ssl", value = "enabled", havingValue = "true", matchIfMissing = false)
+public class MqttSslServerBootstrap extends AbstractMqttServerBootstrap {
 
-    @Value("${listener.wss.bind_address}")
+    @Value("${listener.ssl.bind_address}")
     private String host;
-    @Value("${listener.wss.bind_port}")
+    @Value("${listener.ssl.bind_port}")
     private int port;
 
-    @Value("${listener.wss.netty.leak_detector_level}")
+    @Value("${listener.ssl.netty.leak_detector_level}")
     private String leakDetectorLevel;
-    @Value("${listener.wss.netty.boss_group_thread_count}")
+    @Value("${listener.ssl.netty.boss_group_thread_count}")
     private int bossGroupThreadCount;
-    @Value("${listener.wss.netty.worker_group_thread_count}")
+    @Value("${listener.ssl.netty.worker_group_thread_count}")
     private int workerGroupThreadCount;
-    @Value("${listener.wss.netty.so_keep_alive}")
+    @Value("${listener.ssl.netty.so_keep_alive}")
     private boolean keepAlive;
 
-    @Value("${listener.wss.netty.shutdown_quiet_period:0}")
+    @Value("${listener.ssl.netty.shutdown_quiet_period:0}")
     private int shutdownQuietPeriod;
-    @Value("${listener.wss.netty.shutdown_timeout:5}")
+    @Value("${listener.ssl.netty.shutdown_timeout:5}")
     private int shutdownTimeout;
 
-    private final MqttWssChannelInitializer mqttWssChannelInitializer;
+    private final MqttSslChannelInitializer mqttSslChannelInitializer;
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(value = 103)
+    @Order(value = 101)
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) throws Exception {
         super.init();
     }
@@ -70,11 +70,11 @@ public class MqttWssServerBootstrap extends AbstractMqttServerBootstrap {
 
     @Override
     public AbstractMqttChannelInitializer getChannelInitializer() {
-        return mqttWssChannelInitializer;
+        return mqttSslChannelInitializer;
     }
 
     @Override
     public String getServerName() {
-        return "WSS Server";
+        return "SSL Server";
     }
 }

@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.ws;
+package org.thingsboard.mqtt.broker.server;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+public interface MqttServerBootstrap {
 
-public class WsContinuationFrameHandler extends SimpleChannelInboundHandler<ContinuationWebSocketFrame> {
+    String getHost();
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ContinuationWebSocketFrame msg) throws Exception {
-        ctx.fireChannelRead(msg.content().retain());
-    }
+    int getPort();
+
+    String getLeakDetectorLevel();
+
+    int getBossGroupThreadCount();
+
+    int getWorkerGroupThreadCount();
+
+    boolean isKeepAlive();
+
+    int getShutdownQuietPeriod();
+
+    int getShutdownTimeout();
+
+    AbstractMqttChannelInitializer getChannelInitializer();
+
+    String getServerName();
 }

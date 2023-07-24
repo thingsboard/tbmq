@@ -20,37 +20,49 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
-import lombok.RequiredArgsConstructor;
+import io.netty.handler.ssl.SslHandler;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component
-@Qualifier("TcpChannelInitializer")
-@RequiredArgsConstructor
-public class MqttTcpChannelInitializer extends ChannelInitializer<SocketChannel> {
+@Getter
+public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<SocketChannel> implements MqttChannelInitializer {
+
     @Value("${mqtt.version-3-1.max-client-id-length}")
     private int maxClientIdLength;
 
-    private final MqttTcpServerContext context;
     private final MqttHandlerFactory handlerFactory;
+
+    public AbstractMqttChannelInitializer(MqttHandlerFactory handlerFactory) {
+        this.handlerFactory = handlerFactory;
+    }
 
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("decoder", new MqttDecoder(context.getMaxPayloadSize(), maxClientIdLength));
+        SslHandler sslHandler = getSslHandler();
+        if (sslHandler != null) {
+            pipeline.addLast(sslHandler);
+        }
+
+        constructWsPipeline(ch);
+
+        pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttSessionHandler handler = handlerFactory.create(null);
+        MqttSessionHandler handler = handlerFactory.create(sslHandler);
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);
 
         if (log.isDebugEnabled()) {
-            log.debug("[{}] Created TCP channel for IP {}.", handler.getSessionId(), ch.localAddress());
+            log.debug("[{}] Created {} channel for IP {}.", handler.getSessionId(), getChannelInitializerName(), ch.localAddress());
         }
+    }
+
+    protected void constructWsPipeline(SocketChannel ch) {
+
     }
 
 }

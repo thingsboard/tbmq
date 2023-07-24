@@ -15,61 +15,37 @@
  */
 package org.thingsboard.mqtt.broker.server.ws;
 
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.server.AbstractMqttWsChannelInitializer;
 import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
-import org.thingsboard.mqtt.broker.server.MqttSessionHandler;
-import org.thingsboard.mqtt.broker.server.MqttTcpServerContext;
 
 @Slf4j
 @Component
 @Qualifier("WsChannelInitializer")
-@RequiredArgsConstructor
-public class MqttWsChannelInitializer extends ChannelInitializer<SocketChannel> {
+@Getter
+public class MqttWsChannelInitializer extends AbstractMqttWsChannelInitializer {
 
-    @Value("${mqtt.version-3-1.max-client-id-length}")
-    private int maxClientIdLength;
+    @Value("${listener.ws.netty.sub_protocols}")
+    private String subprotocols;
     @Value("${listener.ws.netty.max_payload_size}")
     private int maxPayloadSize;
 
-    private final MqttTcpServerContext context;
-    private final MqttHandlerFactory handlerFactory;
+    public MqttWsChannelInitializer(MqttHandlerFactory handlerFactory) {
+        super(handlerFactory);
+    }
 
     @Override
     public void initChannel(SocketChannel ch) {
-        ChannelPipeline pipeline = ch.pipeline();
+        super.initChannel(ch);
+    }
 
-        pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(65536));
-        pipeline.addLast(new WebSocketServerProtocolHandler("/mqtt", "mqttv3.1,mqtt"));
-
-        pipeline.addLast(new WsBinaryFrameHandler());
-        pipeline.addLast(new WsContinuationFrameHandler());
-        pipeline.addLast(new WsTextFrameHandler());
-
-        pipeline.addLast(new MqttWsEncoder());
-
-        pipeline.addLast("decoder", new MqttDecoder(maxPayloadSize, maxClientIdLength));
-        pipeline.addLast("encoder", MqttEncoder.INSTANCE);
-
-        MqttSessionHandler handler = handlerFactory.create(null);
-
-        pipeline.addLast(handler);
-        ch.closeFuture().addListener(handler);
-
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Created WS channel for IP {}.", handler.getSessionId(), ch.localAddress());
-        }
+    @Override
+    public String getChannelInitializerName() {
+        return "WS";
     }
 }
