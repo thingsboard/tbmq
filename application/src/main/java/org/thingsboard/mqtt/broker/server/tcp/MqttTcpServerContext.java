@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.server.tcp;
 
-import io.netty.handler.ssl.SslHandler;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-public interface MqttHandlerFactory {
+@Component
+public class MqttTcpServerContext {
 
-    MqttSessionHandler create(SslHandler sslHandler);
+    @Getter
+    @Value("${listener.tcp.netty.max_payload_size}")
+    private int maxPayloadSize;
 }

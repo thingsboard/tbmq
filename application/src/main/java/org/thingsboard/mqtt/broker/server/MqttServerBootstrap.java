@@ -15,9 +15,25 @@
  */
 package org.thingsboard.mqtt.broker.server;
 
-import io.netty.handler.ssl.SslHandler;
+public interface MqttServerBootstrap {
 
-public interface MqttHandlerFactory {
+    String getHost();
 
-    MqttSessionHandler create(SslHandler sslHandler);
+    int getPort();
+
+    String getLeakDetectorLevel();
+
+    int getBossGroupThreadCount();
+
+    int getWorkerGroupThreadCount();
+
+    boolean isKeepAlive();
+
+    int getShutdownQuietPeriod();
+
+    int getShutdownTimeout();
+
+    AbstractMqttChannelInitializer getChannelInitializer();
+
+    String getServerName();
 }

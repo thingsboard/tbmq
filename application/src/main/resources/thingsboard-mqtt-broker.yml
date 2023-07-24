@@ -69,7 +69,7 @@ listener:
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
     config:
-      # SSL protocol: See http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext
+      # SSL protocol
       protocol: "${LISTENER_SSL_PROTOCOL:TLSv1.2}"
       # Server SSL credentials
       credentials:
@@ -95,8 +95,6 @@ listener:
           key_alias: "${LISTENER_SSL_KEY_ALIAS:}"
           # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
           key_password: "${LISTENER_SSL_KEY_PASSWORD:server_key_password}"
-      # Skip certificate validity check for client certificates.
-      skip_validity_check_for_client_cert: "${LISTENER_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
     netty:
       leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
@@ -105,6 +103,59 @@ listener:
       so_keep_alive: "${SSL_NETTY_SO_KEEPALIVE:true}"
       shutdown_quiet_period: "${SSL_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
       shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+  ws:
+    enabled: "${LISTENER_WS_ENABLED:true}"
+    bind_address: "${LISTENER_WS_BIND_ADDRESS:0.0.0.0}"
+    bind_port: "${LISTENER_WS_BIND_PORT:8084}"
+    netty:
+      sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
+      leak_detector_level: "${WS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      boss_group_thread_count: "${WS_NETTY_BOSS_GROUP_THREADS:1}"
+      worker_group_thread_count: "${WS_NETTY_WORKER_GROUP_THREADS:12}"
+      max_payload_size: "${WS_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${WS_NETTY_SO_KEEPALIVE:true}"
+      shutdown_quiet_period: "${WS_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
+      shutdown_timeout: "${WS_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+  wss:
+    enabled: "${LISTENER_WSS_ENABLED:false}"
+    bind_address: "${LISTENER_WSS_BIND_ADDRESS:0.0.0.0}"
+    bind_port: "${LISTENER_WSS_BIND_PORT:8085}"
+    config:
+      # SSL protocol
+      protocol: "${LISTENER_WSS_PROTOCOL:TLSv1.2}"
+      # Server SSL credentials
+      credentials:
+        # Server credentials type (PEM - pem certificate file; KEYSTORE - java keystore)
+        type: "${LISTENER_WSS_CREDENTIALS_TYPE:PEM}"
+        # PEM server credentials
+        pem:
+          # Path to the server certificate file (holds server certificate or certificate chain, may include server private key)
+          cert_file: "${LISTENER_WSS_PEM_CERT:ws_mqtt_server.pem}"
+          # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file;
+          key_file: "${LISTENER_WSS_PEM_KEY:ws_mqtt_server_key.pem}"
+          # Server certificate private key password (optional)
+          key_password: "${LISTENER_WSS_PEM_KEY_PASSWORD:ws_server_key_password}"
+        # Keystore server credentials
+        keystore:
+          # Type of the key store (JKS or PKCS12)
+          type: "${LISTENER_WSS_KEY_STORE_TYPE:JKS}"
+          # Path to the key store that holds the SSL certificate
+          store_file: "${LISTENER_WSS_KEY_STORE:ws_mqtt_server.jks}"
+          # Password used to access the key store
+          store_password: "${LISTENER_WSS_KEY_STORE_PASSWORD:ws_server_ks_password}"
+          # Optional alias of the private key; If not set, the platform will load the first private key from the keystore;
+          key_alias: "${LISTENER_WSS_KEY_ALIAS:}"
+          # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
+          key_password: "${LISTENER_WSS_KEY_PASSWORD:ws_server_key_password}"
+    netty:
+      sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
+      leak_detector_level: "${WSS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      boss_group_thread_count: "${WSS_NETTY_BOSS_GROUP_THREADS:1}"
+      worker_group_thread_count: "${WSS_NETTY_WORKER_GROUP_THREADS:12}"
+      max_payload_size: "${WSS_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      so_keep_alive: "${WSS_NETTY_SO_KEEPALIVE:true}"
+      shutdown_quiet_period: "${WSS_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
+      shutdown_timeout: "${WSS_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
 
 queue:
   msg-all:
@@ -367,6 +418,8 @@ security:
     ssl:
       # If enabled the server will try to authenticate client with client certificate chain
       enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
+      # Skip certificate validity check for client certificates.
+      skip_validity_check_for_client_cert: "${SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
   # JWT Token parameters
   jwt:
     tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)

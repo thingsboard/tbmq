@@ -42,6 +42,9 @@ public class BrokerConstants {
         }
     }
 
+    public static final int WS_MAX_CONTENT_LENGTH = 65536;
+    public static final String WS_PATH = "/mqtt";
+
     public static final int DEFAULT_PAGE_SIZE = 1000;
 
     public static final String MQTT_PROTOCOL_NAME = "MQTT";

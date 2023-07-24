@@ -17,7 +17,16 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
 
-public interface MqttHandlerFactory {
+public interface MqttChannelInitializer {
 
-    MqttSessionHandler create(SslHandler sslHandler);
+    int getMaxPayloadSize();
+
+    int getMaxClientIdLength();
+
+    String getChannelInitializerName();
+
+    default SslHandler getSslHandler() {
+        return null;
+    }
+
 }
