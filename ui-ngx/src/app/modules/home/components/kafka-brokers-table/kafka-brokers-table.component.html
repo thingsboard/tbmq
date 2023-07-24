@@ -18,9 +18,9 @@
 <div fxFlex class="tb-home-card-container" fxLayoutGap="20px">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="tb-kafka-table">
-    <table mat-table [dataSource]="dataSource" matSort>
+    <table mat-table [dataSource]="dataSource">
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>
+        <mat-header-cell *matHeaderCellDef>
           {{ column.title | translate }}
         </mat-header-cell>
         <mat-cell *matCellDef="let entity; let row = index"
