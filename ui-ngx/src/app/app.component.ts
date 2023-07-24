@@ -105,7 +105,9 @@ export class AppComponent {
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           backdropClass: ['grey-background'],
           data: {
-            changeDefaultPassword: true
+            changeDefaultPassword: true,
+            isAuthenticated,
+            authState
           }
         });
       } else {

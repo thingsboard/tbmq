@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, NgZone, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -40,6 +40,7 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
               private translate: TranslateService,
               private authService: AuthService,
               public dialogRef: MatDialogRef<ChangePasswordDialogComponent>,
+              private zone: NgZone,
               @Inject(MAT_DIALOG_DATA) public data: any,
               public fb: FormBuilder) {
     super(store, router, dialogRef);
@@ -71,5 +72,13 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
           this.dialogRef.close(true);
       });
     }
+  }
+
+  onSkip(): void {
+    this.dialogRef.close(true);
+    const url = this.authService.defaultUrl(this.data?.isAuthenticated, this.data?.authState);
+    this.zone.run(() => {
+      this.router.navigateByUrl(url);
+    });
   }
 }
