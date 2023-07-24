@@ -108,7 +108,7 @@ listener:
     bind_address: "${LISTENER_WS_BIND_ADDRESS:0.0.0.0}"
     bind_port: "${LISTENER_WS_BIND_PORT:8084}"
     netty:
-      sub_protocols: "${LISTENER_WS_BIND_PORT:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
+      sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
       leak_detector_level: "${WS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
       boss_group_thread_count: "${WS_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${WS_NETTY_WORKER_GROUP_THREADS:12}"
@@ -148,6 +148,7 @@ listener:
           # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
           key_password: "${LISTENER_WSS_KEY_PASSWORD:ws_server_key_password}"
     netty:
+      sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
       leak_detector_level: "${WSS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
       boss_group_thread_count: "${WSS_NETTY_BOSS_GROUP_THREADS:1}"
       worker_group_thread_count: "${WSS_NETTY_WORKER_GROUP_THREADS:12}"
