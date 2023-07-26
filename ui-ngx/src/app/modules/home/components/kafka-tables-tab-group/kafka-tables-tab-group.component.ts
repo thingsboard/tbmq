@@ -14,11 +14,29 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { KafkaTable, KafkaTableTranslationMap } from '@shared/models/kafka.model';
 
 @Component({
   selector: 'tb-kafka-tables-tab-group',
   templateUrl: './kafka-tables-tab-group.component.html',
   styleUrls: ['./kafka-tables-tab-group.component.scss']
 })
-export class KafkaTablesTabGroupComponent {}
+export class KafkaTablesTabGroupComponent implements OnInit {
+
+  public selectedTab: KafkaTable;
+  public readonly KafkaTable = KafkaTable;
+  public readonly kafkaTableTranslationMap = KafkaTableTranslationMap;
+
+  constructor(private cd: ChangeDetectorRef) {
+  }
+
+  ngOnInit() {
+    this.selectedTab = KafkaTable.TOPICS;
+  }
+
+  select(table: KafkaTable) {
+    this.selectedTab = table;
+    this.cd.detectChanges();
+  }
+}

@@ -15,15 +15,27 @@
     limitations under the License.
 
 -->
-<mat-tab-group>
-  <mat-tab [label]="'kafka.topics' | translate">
-    <div class="tb-home-card-container" fxLayoutGap="20px">
-      <tb-kafka-topics-table></tb-kafka-topics-table>
-    </div>
-  </mat-tab>
-  <mat-tab [label]="'kafka.consumer-groups' | translate">
-    <div class="tb-home-card-container" fxLayoutGap="20px">
-      <tb-kafka-consumers-table></tb-kafka-consumers-table>
-    </div>
-  </mat-tab>
-</mat-tab-group>
+<div class="container">
+  <div class="tabs-toolbar">
+    <button mat-button (click)="select(KafkaTable.TOPICS)"
+            [ngClass]="{'tb-active': selectedTab ===  KafkaTable.TOPICS}">
+      {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
+    </button>
+    <button mat-button (click)="select(KafkaTable.CONSUMER_GROUPS)"
+            [ngClass]="{'tb-active': selectedTab ===  KafkaTable.CONSUMER_GROUPS}">
+      {{ kafkaTableTranslationMap.get(KafkaTable.CONSUMER_GROUPS) | translate }}
+    </button>
+  </div>
+  <div [ngSwitch]="selectedTab">
+    <ng-template [ngSwitchCase]="KafkaTable.TOPICS" ngSwitchDefault>
+      <div class="tb-home-card-container">
+        <tb-kafka-topics-table></tb-kafka-topics-table>
+      </div>
+    </ng-template>
+    <ng-template [ngSwitchCase]="KafkaTable.CONSUMER_GROUPS">
+      <div class="tb-home-card-container">
+        <tb-kafka-consumers-table></tb-kafka-consumers-table>
+      </div>
+    </ng-template>
+  </div>
+</div>

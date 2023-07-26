@@ -52,3 +52,15 @@ export const KafkaTopicsTooltipMap = {
   'tbmq.sys.app.removed': 'Events to process removal of APPLICATION client topic',
   'tbmq.sys.historical.data': 'Historical data stats published from each broker in the cluster to calculate the total'
 };
+
+export enum KafkaTable {
+  TOPICS = 'TOPICS',
+  CONSUMER_GROUPS = 'CONSUMER_GROUPS'
+}
+
+export const KafkaTableTranslationMap = new Map<KafkaTable, string>(
+  [
+    [KafkaTable.TOPICS, 'kafka.topics'],
+    [KafkaTable.CONSUMER_GROUPS, 'kafka.consumer-groups']
+  ]
+);

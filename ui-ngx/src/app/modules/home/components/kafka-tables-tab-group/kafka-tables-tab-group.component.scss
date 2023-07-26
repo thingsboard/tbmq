@@ -13,12 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host::ng-deep {
-  .mat-tab-label-content {
-    font-size: 12px !important;
+:host {
+
+  .container {
+    padding: 0 12px 12px 12px;
   }
 
-  .mat-tab-label {
-    height: 30px;
+  .tabs-toolbar {
+    position: absolute;
+    margin: 12px 0 0 12px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.05);
+    width: fit-content;
+  }
+}
+
+:host::ng-deep {
+  .tabs-toolbar > button {
+    border-radius: 20px;
+    border: 1px solid transparent;;
+
+    span {
+      color: rgba(0,0,0,0.38);
+      font-size: 12px;
+    }
+  }
+
+  .tabs-toolbar > button:hover {
+    background: rgba(0,0,0,0.1);
+  }
+
+  .tb-active {
+    background: rgba(0, 105, 92, 0.04) !important;
+    border: 1px solid #00695C !important;
+
+    span {
+      color: #1F8B4D !important;
+    }
   }
 }
