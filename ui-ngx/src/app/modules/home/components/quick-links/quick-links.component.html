@@ -20,8 +20,12 @@
   <section class="links">
     <div class="link" *ngFor="let section of quickLinks$ | async"
          (click)="navigate(section.path)">
-      <mat-icon color="primary" [svgIcon]="section.icon"></mat-icon>
-      <span>{{section.name | translate}}</span>
+      <div class="icon-container">
+        <mat-icon color="primary" [svgIcon]="section.icon"></mat-icon>
+      </div>
+      <div class="link-container">
+        <span>{{section.name | translate}}</span>
+      </div>
     </div>
   </section>
 </div>
