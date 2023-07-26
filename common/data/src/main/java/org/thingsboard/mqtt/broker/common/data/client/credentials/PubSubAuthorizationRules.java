@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data.client.credentials;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.List;
 
@@ -26,7 +27,9 @@ import java.util.List;
 @AllArgsConstructor
 public class PubSubAuthorizationRules {
 
+    @NoXss
     private List<String> pubAuthRulePatterns;
+    @NoXss
     private List<String> subAuthRulePatterns;
 
     public static PubSubAuthorizationRules newInstance(List<String> authRules) {

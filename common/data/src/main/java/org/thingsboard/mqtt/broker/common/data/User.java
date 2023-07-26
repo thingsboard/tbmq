@@ -19,6 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.UUID;
 
@@ -35,9 +36,11 @@ public class User extends SearchTextBasedWithAdditionalInfo {
     private Authority authority;
     @Getter
     @Setter
+    @NoXss
     private String firstName;
     @Getter
     @Setter
+    @NoXss
     private String lastName;
 
     public User() {

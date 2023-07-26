@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.UUID;
 
@@ -27,10 +28,16 @@ import java.util.UUID;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class MqttClientCredentials extends SearchTextBased {
+
+    @NoXss
     private String credentialsId;
+    @NoXss
     private String name;
+    @NoXss
     private ClientType clientType;
+    @NoXss
     private ClientCredentialsType credentialsType;
+    @NoXss
     private String credentialsValue;
 
     public MqttClientCredentials() {

@@ -27,6 +27,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class ClientSession {
+
     private final boolean connected;
     private final SessionInfo sessionInfo;
 
