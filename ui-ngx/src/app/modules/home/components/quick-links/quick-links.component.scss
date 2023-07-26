@@ -24,15 +24,28 @@
   .links {
     display: flex;
     flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-evenly;
   }
 
   .link {
     width: 45%;
     color: #494949;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 6px;
+    line-height: 21px;
+    cursor: pointer;
 
-    a {
+    &:hover {
+      box-shadow: 0 4px 10px 0 rgba(23, 33, 90, 0.08);
+    }
+
+    span {
       font-size: 12px;
       border: 1px solid transparent;
+      padding-left: 4px;
     }
   }
+
 }
