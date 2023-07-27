@@ -15,11 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 
 @Component
+@RequiredArgsConstructor
 public class BrokerHomePageConfig {
 
     @Value("${listener.tcp.bind_port}")
@@ -39,6 +43,21 @@ public class BrokerHomePageConfig {
     @Value("${security.mqtt.ssl.enabled}")
     private boolean x509AuthEnabled;
 
+    @Value("${listener.ws.bind_port}")
+    private int wsPort;
+    @Value("${listener.wss.bind_port}")
+    private int wssPort;
+    @Value("${listener.ws.enabled}")
+    private boolean wsListenerEnabled;
+    @Value("${listener.wss.enabled}")
+    private boolean wssListenerEnabled;
+    @Value("${listener.ws.netty.max_payload_size}")
+    private int wsMaxPayloadSize;
+    @Value("${listener.wss.netty.max_payload_size}")
+    private int wssMaxPayloadSize;
+
+    public final MqttClientCredentialsService mqttClientCredentialsService;
+
     public HomePageConfigDto getConfig() {
         return HomePageConfigDto.builder()
                 .tcpPort(getTcpPort())
@@ -49,10 +68,18 @@ public class BrokerHomePageConfig {
                 .tlsMaxPayloadSize(getTlsMaxPayloadSize())
                 .basicAuthEnabled(isBasicAuthEnabled())
                 .x509AuthEnabled(isX509AuthEnabled())
+                .wsPort(getWsPort())
+                .wssPort(getWssPort())
+                .wsListenerEnabled(isWsListenerEnabled())
+                .wssListenerEnabled(isWssListenerEnabled())
+                .wsMaxPayloadSize(getWsMaxPayloadSize())
+                .wssMaxPayloadSize(getWssMaxPayloadSize())
+                .existsBasicCredentials(existsBasicCredentials())
+                .existsX509Credentials(existsX509Credentials())
                 .build();
     }
 
-    public int getTcpPort() {
+    private int getTcpPort() {
         String tcpPortStr = System.getenv("LISTENER_TCP_BIND_PORT");
         if (tcpPortStr != null) {
             return Integer.parseInt(tcpPortStr);
@@ -61,7 +88,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public int getTlsPort() {
+    private int getTlsPort() {
         String tlsPortStr = System.getenv("LISTENER_SSL_BIND_PORT");
         if (tlsPortStr != null) {
             return Integer.parseInt(tlsPortStr);
@@ -70,7 +97,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public boolean isTcpListenerEnabled() {
+    private boolean isTcpListenerEnabled() {
         String tcpListenerEnabledStr = System.getenv("LISTENER_TCP_ENABLED");
         if (tcpListenerEnabledStr != null) {
             return Boolean.parseBoolean(tcpListenerEnabledStr);
@@ -79,7 +106,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public boolean isTlsListenerEnabled() {
+    private boolean isTlsListenerEnabled() {
         String tlsListenerEnabledStr = System.getenv("LISTENER_SSL_ENABLED");
         if (tlsListenerEnabledStr != null) {
             return Boolean.parseBoolean(tlsListenerEnabledStr);
@@ -88,7 +115,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public int getTcpMaxPayloadSize() {
+    private int getTcpMaxPayloadSize() {
         String tcpMaxPayloadSizeStr = System.getenv("TCP_NETTY_MAX_PAYLOAD_SIZE");
         if (tcpMaxPayloadSizeStr != null) {
             return Integer.parseInt(tcpMaxPayloadSizeStr);
@@ -97,7 +124,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public int getTlsMaxPayloadSize() {
+    private int getTlsMaxPayloadSize() {
         String tlsMaxPayloadSizeStr = System.getenv("SSL_NETTY_MAX_PAYLOAD_SIZE");
         if (tlsMaxPayloadSizeStr != null) {
             return Integer.parseInt(tlsMaxPayloadSizeStr);
@@ -106,7 +133,7 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public boolean isBasicAuthEnabled() {
+    private boolean isBasicAuthEnabled() {
         String basicAuthEnabledStr = System.getenv("SECURITY_MQTT_BASIC_ENABLED");
         if (basicAuthEnabledStr != null) {
             return Boolean.parseBoolean(basicAuthEnabledStr);
@@ -115,12 +142,74 @@ public class BrokerHomePageConfig {
         }
     }
 
-    public boolean isX509AuthEnabled() {
+    private boolean isX509AuthEnabled() {
         String x509AuthEnabledStr = System.getenv("SECURITY_MQTT_SSL_ENABLED");
         if (x509AuthEnabledStr != null) {
             return Boolean.parseBoolean(x509AuthEnabledStr);
         } else {
             return x509AuthEnabled;
         }
+    }
+
+    private int getWsPort() {
+        String wsPortStr = System.getenv("LISTENER_WS_BIND_PORT");
+        if (wsPortStr != null) {
+            return Integer.parseInt(wsPortStr);
+        } else {
+            return wsPort;
+        }
+    }
+
+    private int getWssPort() {
+        String wssPortStr = System.getenv("LISTENER_WSS_BIND_PORT");
+        if (wssPortStr != null) {
+            return Integer.parseInt(wssPortStr);
+        } else {
+            return wssPort;
+        }
+    }
+
+    private boolean isWsListenerEnabled() {
+        String wsListenerEnabledStr = System.getenv("LISTENER_WS_ENABLED");
+        if (wsListenerEnabledStr != null) {
+            return Boolean.parseBoolean(wsListenerEnabledStr);
+        } else {
+            return wsListenerEnabled;
+        }
+    }
+
+    private boolean isWssListenerEnabled() {
+        String wssListenerEnabledStr = System.getenv("LISTENER_WSS_ENABLED");
+        if (wssListenerEnabledStr != null) {
+            return Boolean.parseBoolean(wssListenerEnabledStr);
+        } else {
+            return wssListenerEnabled;
+        }
+    }
+
+    private int getWsMaxPayloadSize() {
+        String wsMaxPayloadSizeStr = System.getenv("WS_NETTY_MAX_PAYLOAD_SIZE");
+        if (wsMaxPayloadSizeStr != null) {
+            return Integer.parseInt(wsMaxPayloadSizeStr);
+        } else {
+            return wsMaxPayloadSize;
+        }
+    }
+
+    private int getWssMaxPayloadSize() {
+        String wssMaxPayloadSizeStr = System.getenv("WSS_NETTY_MAX_PAYLOAD_SIZE");
+        if (wssMaxPayloadSizeStr != null) {
+            return Integer.parseInt(wssMaxPayloadSizeStr);
+        } else {
+            return wssMaxPayloadSize;
+        }
+    }
+
+    private boolean existsBasicCredentials() {
+        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.MQTT_BASIC);
+    }
+
+    private boolean existsX509Credentials() {
+        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.SSL);
     }
 }

@@ -30,5 +30,13 @@ public class HomePageConfigDto {
     private int tlsMaxPayloadSize;
     private boolean basicAuthEnabled;
     private boolean x509AuthEnabled;
+    private int wsPort;
+    private int wssPort;
+    private boolean wsListenerEnabled;
+    private boolean wssListenerEnabled;
+    private int wsMaxPayloadSize;
+    private int wssMaxPayloadSize;
+    private boolean existsBasicCredentials;
+    private boolean existsX509Credentials;
 
 }
