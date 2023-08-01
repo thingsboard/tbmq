@@ -39,12 +39,16 @@ public class AwaitingPubRelPacketsCtx {
     }
 
     public void await(String clientId, int packetId) {
-        log.debug("[{}] Adding packet, awaitingForQoS2PubRelPackets size: {}", clientId, awaitingForQoS2PubRelPackets.size());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Adding packet, awaitingForQoS2PubRelPackets size: {}", clientId, awaitingForQoS2PubRelPackets.size());
+        }
         awaitingForQoS2PubRelPackets.put(packetId, new QoS2PubRelPacketInfo(packetId));
     }
 
     public boolean complete(String clientId, int packetId) {
-        log.debug("[{}] Removing packet, awaitingForQoS2PubRelPackets size: {}", clientId, awaitingForQoS2PubRelPackets.size());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Removing packet, awaitingForQoS2PubRelPackets size: {}", clientId, awaitingForQoS2PubRelPackets.size());
+        }
         return awaitingForQoS2PubRelPackets.remove(packetId) != null;
     }
 

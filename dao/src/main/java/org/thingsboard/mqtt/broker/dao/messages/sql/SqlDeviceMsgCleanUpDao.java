@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class SqlDeviceMsgCleanUpDao implements DeviceMsgCleanUpDao {
+
     private final DeviceMsgRepository deviceMsgRepository;
     private final DeviceSessionCtxRepository deviceSessionCtxRepository;
 
