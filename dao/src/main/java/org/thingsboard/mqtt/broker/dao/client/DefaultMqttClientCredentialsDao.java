@@ -20,6 +20,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
@@ -64,5 +65,10 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
         return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
+    }
+
+    @Override
+    public boolean existsByCredentialsType(ClientCredentialsType credentialsType) {
+        return mqttClientCredentialsRepository.existsByCredentialsType(credentialsType);
     }
 }

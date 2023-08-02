@@ -27,8 +27,10 @@ import java.util.Collection;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 public class ApplicationSessionCtx {
+
     private String clientId;
     private long lastUpdatedTime;
     private Collection<ApplicationMsgInfo> publishMsgInfos;
     private Collection<ApplicationMsgInfo> pubRelMsgInfos;
+
 }

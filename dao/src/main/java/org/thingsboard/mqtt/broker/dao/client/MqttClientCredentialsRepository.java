@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
 import java.util.List;
@@ -30,6 +31,8 @@ public interface MqttClientCredentialsRepository extends PagingAndSortingReposit
     MqttClientCredentialsEntity findByCredentialsId(String credentialsId);
 
     List<MqttClientCredentialsEntity> findByCredentialsIdIn(List<String> credentialsIds);
+
+    boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
             "LOWER(c.searchText) LIKE LOWER(CONCAT(:textSearch, '%'))")

@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 import java.util.List;
@@ -38,4 +39,6 @@ public interface MqttClientCredentialsService {
     Optional<MqttClientCredentials> getCredentialsById(UUID id);
 
     ClientCredentialsInfoDto getClientCredentialsInfo();
+
+    boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 }

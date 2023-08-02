@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -173,6 +174,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         long applicationCredentialsCount = totalCount - deviceCredentialsCount;
 
         return new ClientCredentialsInfoDto(deviceCredentialsCount, applicationCredentialsCount, totalCount);
+    }
+
+    @Override
+    public boolean existsByCredentialsType(ClientCredentialsType credentialsType) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing existsByCredentialsType [{}]", credentialsType);
+        }
+        return mqttClientCredentialsDao.existsByCredentialsType(credentialsType);
     }
 
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {

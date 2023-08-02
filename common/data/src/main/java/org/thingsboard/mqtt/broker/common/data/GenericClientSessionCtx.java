@@ -27,7 +27,9 @@ import java.util.Set;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 public class GenericClientSessionCtx {
+
     private String clientId;
     private long lastUpdatedTime;
     private Set<Integer> qos2PublishPacketIds;
+
 }

@@ -27,7 +27,9 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class ConnectionInfo {
+
     private final long connectedAt;
     private final long disconnectedAt;
     private final int keepAlive;
+
 }

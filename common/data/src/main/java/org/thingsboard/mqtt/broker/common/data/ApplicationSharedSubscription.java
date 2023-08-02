@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.UUID;
 
@@ -26,7 +27,9 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationSharedSubscription extends SearchTextBased {
 
+    @NoXss
     private String name;
+    @NoXss
     private String topicFilter;
     private int partitions;
 

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data.client.credentials;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class SslMqttCredentials {
 
+    @NoXss
     private String certCommonName;
     private Map<String, PubSubAuthorizationRules> authRulesMapping;
 

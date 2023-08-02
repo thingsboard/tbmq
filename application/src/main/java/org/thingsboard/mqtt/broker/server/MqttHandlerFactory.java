@@ -18,5 +18,6 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 
 public interface MqttHandlerFactory {
+
     MqttSessionHandler create(SslHandler sslHandler);
 }

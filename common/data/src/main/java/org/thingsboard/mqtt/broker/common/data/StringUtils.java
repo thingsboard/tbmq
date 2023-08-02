@@ -21,6 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 public class StringUtils {
+
     public static final String EMPTY = "";
 
     public static final int INDEX_NOT_FOUND = -1;

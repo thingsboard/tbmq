@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.server.tls;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,5 +28,5 @@ public class MqttSslServerContext {
     private MqttSslHandlerProvider sslHandlerProvider;
 
     @Value("${listener.ssl.netty.max_payload_size}")
-    private Integer maxPayloadSize;
+    private int maxPayloadSize;
 }

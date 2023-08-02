@@ -26,6 +26,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(exclude = "properties")
 @AllArgsConstructor
 public class DevicePublishMsg {
+
     private String clientId;
     private String topic;
     private Long serialNumber;
@@ -36,4 +37,5 @@ public class DevicePublishMsg {
     private byte[] payload;
     private MqttProperties properties;
     private boolean isRetained;
+
 }

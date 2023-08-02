@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data;
 
 public enum ClientType {
+
     DEVICE,
     APPLICATION,
 }

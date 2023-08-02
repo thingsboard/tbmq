@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.server.wshandler;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 
-@Component
-public class MqttTcpServerContext {
-    @Getter
-    @Value("${listener.tcp.netty.max_payload_size}")
-    private Integer maxPayloadSize;
+public class WsContinuationFrameHandler extends SimpleChannelInboundHandler<ContinuationWebSocketFrame> {
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, ContinuationWebSocketFrame msg) throws Exception {
+        ctx.fireChannelRead(msg.content().retain());
+    }
 }

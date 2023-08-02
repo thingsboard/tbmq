@@ -25,8 +25,10 @@ import lombok.ToString;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 public class DeviceSessionCtx {
+
     private String clientId;
     private long lastUpdatedTime;
     private Long lastSerialNumber;
     private Integer lastPacketId;
+
 }
