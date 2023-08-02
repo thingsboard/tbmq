@@ -29,22 +29,22 @@
   <section class="cards">
     <div class="version-container">
       <section fxLayout="column" fxLayoutGap="10px">
-        <a class="tb-title-link" (click)="viewRelease()">
+        <a class="tb-title-link" (click)="viewRelease(currentReleaseVersion)">
           {{ 'version.current' | translate}} {{ '&#8599;' }}
         </a>
-        <span>1.0.0</span>
+        <span>{{ currentReleaseVersion }}</span>
       </section>
     </div>
     <div class="version-container">
       <div fxLayout="row" fxLayoutAlign="space-between start">
         <section fxLayout="column" fxLayoutGap="10px">
-          <a class="tb-title-link" (click)="viewRelease()">
+          <a class="tb-title-link" (click)="viewRelease(latestReleaseVersion)">
             {{ 'version.available' | translate}} {{ '&#8599;' }}
           </a>
-          <span>1.0.1</span>
+          <span>{{ latestReleaseVersion }}</span>
         </section>
         <button mat-raised-button color="primary"
-                [disabled]="updatesAvailable"
+                [disabled]="!updatesAvailable"
                 (click)="viewDocumentation('docs')"
                 matTooltip="{{'version.upgrade' | translate}}">
           {{'version.upgrade' | translate}}

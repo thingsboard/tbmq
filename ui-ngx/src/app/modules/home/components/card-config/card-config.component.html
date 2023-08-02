@@ -36,7 +36,8 @@
                   [ngStyle]="cellStyle(entity, column, row)">
           <span *ngIf="column.key === 'key'" [innerHTML]="cellContent(entity, column, row)"></span>
           <span *ngIf="column.key === 'value'">{{transformValue(entity) | boolean }}</span>
-          <span *ngIf="column.key === 'value' && (entity.key === configParams.tlsPort || entity.key === configParams.tcpPort)">
+          <span *ngIf="column.key === 'value' && (entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
+                                                  entity.key === configParams.wsPort || entity.key === configParams.wssPort)">
             <mat-icon class="config-material-icon"
                       ngxClipboard
                       (cbOnSuccess)="onCopy()"
@@ -47,8 +48,8 @@
             </mat-icon>
           </span>
           <span *ngIf="!entity.value && column.key === 'value'
-                        && ((entity.key === configParams.x509AuthEnabled && (hasX509AuthCredentials | async))
-                        || (entity.key === configParams.basicAuthEnabled && (hasBasicCredentials | async)))">
+                        && ((entity.key === configParams.x509AuthEnabled && hasX509AuthCredentials)
+                        || (entity.key === configParams.basicAuthEnabled && hasBasicCredentials))">
             <section class="warning-icon" >
                  <mat-icon (click)="viewDocumentation('security/#authentication')"
                            [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"

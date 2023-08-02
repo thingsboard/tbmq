@@ -25,6 +25,14 @@ export interface BrokerConfig {
   tlsListenerEnabled: boolean;
   basicAuthEnabled: boolean;
   x509AuthEnabled: boolean;
+  wsPort: number;
+  wssPort: number;
+  wsListenerEnabled: boolean;
+  wssListenerEnabled: boolean;
+  wsMaxPayloadSize: number;
+  wssMaxPayloadSize: number;
+  existsBasicCredentials: boolean;
+  existsX509Credentials: boolean;
 }
 
 export interface BrokerConfigTable extends BaseData {
@@ -40,7 +48,15 @@ export enum ConfigParams {
   tlsMaxPayloadSize = 'tlsMaxPayloadSize',
   tlsPort = 'tlsPort',
   basicAuthEnabled = 'basicAuthEnabled',
-  x509AuthEnabled = 'x509AuthEnabled'
+  x509AuthEnabled = 'x509AuthEnabled',
+  wsPort = 'wsPort',
+  wssPort = 'wssPort',
+  wsListenerEnabled = 'wsListenerEnabled',
+  wssListenerEnabled = 'wssListenerEnabled',
+  wsMaxPayloadSize = 'wsMaxPayloadSize',
+  wssMaxPayloadSize = 'wssMaxPayloadSize',
+  existsBasicCredentials = 'existsBasicCredentials',
+  existsX509Credentials = 'existsX509Credentials'
 }
 
 export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
@@ -53,6 +69,12 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.tlsPort, 'config.tls-tcp-port'],
     [ConfigParams.basicAuthEnabled, 'config.basic-auth'],
     [ConfigParams.x509AuthEnabled, 'config.ssl-auth'],
+    [ConfigParams.wsPort, 'config.ws-port'],
+    [ConfigParams.wssPort, 'config.wss-port'],
+    [ConfigParams.wsListenerEnabled, 'config.ws-listener'],
+    [ConfigParams.wssListenerEnabled, 'config.wss-listener'],
+    [ConfigParams.wsMaxPayloadSize, 'config.ws-listener-max-payload-size'],
+    [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size']
   ]
 );
 
@@ -60,6 +82,4 @@ export interface SystemVersionInfo {
   version: string;
   artifact: string;
   name: string;
-  latestLink?: string;
-  latestVersion?: string;
 }

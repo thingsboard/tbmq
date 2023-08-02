@@ -14,47 +14,52 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import {
-  BrokerConfigTable,
-  ConfigParams,
-  ConfigParamsTranslationMap,
-} from '@shared/models/config.model';
+import { Component } from '@angular/core';
+import { BrokerConfigTable, ConfigParams, ConfigParamsTranslationMap, } from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from '@core/http/config.service';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
-import { PageLink } from '@shared/models/page/page-link';
-import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
 import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-card-config',
   templateUrl: './card-config.component.html',
   styleUrls: ['./card-config.component.scss']
 })
-export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> implements AfterViewInit {
+export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
-  hasBasicCredentials: Observable<boolean>;
-  hasX509AuthCredentials: Observable<boolean>;
+  hasBasicCredentials: boolean;
+  hasX509AuthCredentials: boolean;
 
-  fetchEntities$ = () => this.configService.getBrokerConfigPageData();
+  fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
+    map((data) => {
+      data.data = data.data.filter(el => {
+        if (el.key === ConfigParams.existsBasicCredentials) {
+          this.hasBasicCredentials = el.value;
+        }
+        if (el.key === ConfigParams.existsX509Credentials) {
+          this.hasX509AuthCredentials = el.value;
+        }
+        return (el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials);
+      });
+      return data;
+    })
+  )
   tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,
-              protected domSanitizer: DomSanitizer,
-              private mqttClientCredentialsService: MqttClientCredentialsService) {
+              protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
   }
 
@@ -67,15 +72,6 @@ export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> 
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;
-  }
-
-  ngAfterViewInit(): void {
-    this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(10000)).subscribe(
-      data => {
-        this.hasBasicCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.MQTT_BASIC));
-        this.hasX509AuthCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.SSL));
-      }
-    );
   }
 
   onCopy() {
@@ -94,7 +90,8 @@ export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> 
   }
 
   transformValue(entity: BrokerConfigTable) {
-    if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize) {
+    if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize ||
+       entity.key === ConfigParams.wsMaxPayloadSize || entity.key === ConfigParams.wssMaxPayloadSize) {
       return formatBytes(entity.value);
     }
     return entity.value;

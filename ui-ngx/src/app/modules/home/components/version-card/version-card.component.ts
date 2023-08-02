@@ -16,7 +16,6 @@
 
 import { Component, OnInit } from '@angular/core';
 import { HomePageTitleType } from '@shared/models/home-page.model';
-import { SystemVersionInfo } from '@shared/models/config.model';
 import { ConfigService } from '@core/http/config.service';
 import { forkJoin } from 'rxjs';
 
@@ -28,8 +27,9 @@ import { forkJoin } from 'rxjs';
 export class VersionCardComponent implements OnInit {
 
   cardType = HomePageTitleType.VERSION;
-  versionData: SystemVersionInfo;
-  updatesAvailable = false;
+  updatesAvailable: boolean;
+  currentReleaseVersion: string;
+  latestReleaseVersion: string;
 
   constructor(private configService: ConfigService ) {
   }
@@ -41,12 +41,9 @@ export class VersionCardComponent implements OnInit {
           if (res) {
             const currentRelease = res[0];
             const latestRelease = res[1];
-            const currentReleaseVersion = currentRelease.version;
-            const latestReleaseVersion = latestRelease.tag_name.slice(1);
-            this.versionData = currentRelease;
-            this.versionData.latestLink = latestRelease.html_url;
-            this.versionData.latestVersion = latestRelease.name;
-            this.updatesAvailable = latestReleaseVersion !== currentReleaseVersion;
+            this.currentReleaseVersion = currentRelease.version.split('-')[0];
+            this.latestReleaseVersion = latestRelease.tag_name.slice(1);
+            this.updatesAvailable = this.latestReleaseVersion !== this.currentReleaseVersion;
           }
         });
     }
@@ -55,7 +52,7 @@ export class VersionCardComponent implements OnInit {
     window.open(`https://thingsboard.io/${page}`, '_blank');
   }
 
-  viewRelease(){
-    window.open(`https://thingsboard.io/docs/`, '_blank');
+  viewRelease(version: string){
+    window.open(`https://github.com/thingsboard/tbmq/releases/tag/v${version}`, '_blank');
   }
 }

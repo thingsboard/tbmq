@@ -600,6 +600,12 @@
     "tls-tcp-port": "TLS Port",
     "basic-auth": "Basic Auth",
     "ssl-auth": "X.509 Certificate Auth",
+    "ws-port": "WS Port",
+    "wss-port": "WSS Port",
+    "ws-listener": "WS Listener",
+    "wss-listener": "WSS Listener",
+    "ws-listener-max-payload-size": "WS Listener Max Payload Size",
+    "wss-listener-max-payload-size": "WSS Listener Max Payload Size",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
     "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
