@@ -25,6 +25,7 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class ConnectionAcceptedMsg extends SessionDependentMsg {
+
     private final boolean sessionPresent;
     private final PublishMsg lastWillMsg;
     private final int keepAliveTimeSeconds;

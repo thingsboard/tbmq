@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import javax.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
@@ -41,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 
 @Slf4j
 @Component
@@ -94,7 +94,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                         }
                         allRetainedMsgs.remove(topic);
                     } else {
-                        RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());
+                        RetainedMsg retainedMsg = convertToRetainedMsg(msg);
                         if (dummyTopic.equals(topic)) {
                             encounteredDummyTopic = true;
                         } else {
@@ -133,13 +133,13 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                     int clearedRetainedMsgCount = 0;
                     for (TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg : messages) {
                         String topic = msg.getKey();
-                        String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
+                        String serviceId = BytesUtil.bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
 
                         if (isRetainedMsgProtoEmpty(msg.getValue())) {
                             callback.accept(topic, serviceId, null);
                             clearedRetainedMsgCount++;
                         } else {
-                            RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());
+                            RetainedMsg retainedMsg = convertToRetainedMsg(msg);
                             callback.accept(topic, serviceId, retainedMsg);
                             newRetainedMsgCount++;
                         }
@@ -158,6 +158,19 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                 }
             }
         });
+    }
+
+    private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg) {
+        RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());
+
+        byte[] bytes = msg.getHeaders().get(BrokerConstants.MESSAGE_EXPIRY_INTERVAL);
+        if (bytes != null) {
+            int messageExpiryInterval = BytesUtil.bytesToInteger(bytes);
+            retainedMsg.getProperties().add(
+                    new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval)
+            );
+        }
+        return retainedMsg;
     }
 
     private String persistDummyRetainedMsg() throws QueuePersistenceException {

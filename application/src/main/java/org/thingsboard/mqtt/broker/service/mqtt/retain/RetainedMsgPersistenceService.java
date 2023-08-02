@@ -23,6 +23,8 @@ public interface RetainedMsgPersistenceService {
 
     void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback);
 
+    void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval);
+
     void persistRetainedMsgSync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) throws QueuePersistenceException;
 
 }

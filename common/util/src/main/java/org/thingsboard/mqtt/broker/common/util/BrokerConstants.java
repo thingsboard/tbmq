@@ -56,6 +56,10 @@ public class BrokerConstants {
     public static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
     public static final int SHARE_NAME_IDX = SHARED_SUBSCRIPTION_PREFIX.length();
 
+    public static final String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
+    public static final int PUB_EXPIRY_INTERVAL_PROP_ID = 2;
+    public static final int USER_PROPERTIES_ID = 38;
+
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 

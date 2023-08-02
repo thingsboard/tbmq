@@ -15,8 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
@@ -25,6 +27,7 @@ import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +88,13 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         cacheRetainedMsg(topic, retainedMsg);
 
         QueueProtos.RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
-        retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback);
+
+        MqttProperties.IntegerProperty messageExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(retainedMsg);
+        if (messageExpiryIntervalProperty != null) {
+            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback, messageExpiryIntervalProperty.value());
+        } else {
+            retainedMsgPersistenceService.persistRetainedMsgAsync(topic, retainedMsgProto, callback);
+        }
     }
 
     @Override
@@ -134,7 +143,11 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
             log.trace("[{}] Executing getRetainedMsgForTopic", topic);
         }
         RetainedMsg retainedMsg = retainedMessagesMap.getOrDefault(topic, null);
-        return retainedMsg != null ? RetainedMsgDto.newInstance(retainedMsg) : null;
+        if (retainedMsg != null) {
+            return MqttPropertiesUtil
+                    .isRetainedMsgExpired(retainedMsg, System.currentTimeMillis()) ? null : RetainedMsgDto.newInstance(retainedMsg);
+        }
+        return null;
     }
 
     @Override
@@ -142,7 +155,13 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         if (log.isTraceEnabled()) {
             log.trace("Executing getRetainedMessages");
         }
-        return new ArrayList<>(retainedMessagesMap.values());
+        long currentTs = System.currentTimeMillis();
+        List<RetainedMsg> collect = retainedMessagesMap
+                .values()
+                .stream()
+                .filter(retainedMsg -> MqttPropertiesUtil.isRetainedMsgNotExpired(retainedMsg, currentTs))
+                .toList();
+        return new ArrayList<>(collect);
     }
 
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
@@ -163,5 +182,25 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
             }
             cacheRetainedMsg(topic, retainedMsg);
         }
+    }
+
+    @Scheduled(fixedRateString = "${mqtt.retain-msg.expiry-processing-period-ms}")
+    void clearRetainedMessagesByMessageExpiryIntervals() {
+        if (retainedMessagesMap == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Retained messages map is not yet initialized!");
+            }
+            return;
+        }
+        long currentTs = System.currentTimeMillis();
+        retainedMessagesMap.forEach((topic, retainedMsg) -> {
+            boolean retainedMsgExpired = MqttPropertiesUtil.isRetainedMsgExpired(retainedMsg, currentTs);
+            if (retainedMsgExpired) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Clearing retained message by scheduled expiry interval!", retainedMsg.getTopic());
+                }
+                clearRetainedMsgAndPersist(retainedMsg.getTopic());
+            }
+        });
     }
 }

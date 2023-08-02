@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 @Slf4j
 @Service
@@ -52,15 +53,21 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
     }
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        MqttProperties properties = new MqttProperties();
-        MqttProperties.MqttProperty property = getUserProperties(publishMsg);
-        if (property != null) {
-            properties.add(property);
-        }
+        MqttProperties properties = getMqttProperties(publishMsg);
         return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), properties);
     }
 
-    private MqttProperties.MqttProperty getUserProperties(PublishMsg publishMsg) {
-        return publishMsg.getProperties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
+    private static MqttProperties getMqttProperties(PublishMsg publishMsg) {
+        MqttProperties properties = new MqttProperties();
+        MqttProperties.UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg);
+        if (userProperties != null) {
+            properties.add(userProperties);
+        }
+        MqttProperties.IntegerProperty pubExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(publishMsg);
+        if (pubExpiryIntervalProperty != null) {
+            properties.add(pubExpiryIntervalProperty);
+        }
+        return properties;
     }
+
 }

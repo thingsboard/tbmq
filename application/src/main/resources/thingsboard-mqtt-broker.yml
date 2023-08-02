@@ -470,6 +470,8 @@ mqtt:
     # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
     clear-nodes-zone: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_ZONE:UTC}"
+  retain-msg:
+    expiry-processing-period-ms: "${MQTT_RETAIN_MSG_EXPIRY_PROCESSING_PERIOD_MS:60000}"
   client-session-expiry:
     # Cron specification when to run clearing old and not active client sessions. Defaults to 'every hour'
     cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"

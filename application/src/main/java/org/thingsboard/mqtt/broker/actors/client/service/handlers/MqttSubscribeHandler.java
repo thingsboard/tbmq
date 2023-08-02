@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
@@ -220,9 +221,11 @@ public class MqttSubscribeHandler {
     }
 
     private List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
+        long currentTs = System.currentTimeMillis();
         List<RetainedMsg> retainedMessages = getRetainedMessages(topicSubscription);
         return retainedMessages
                 .stream()
+                .filter(retainedMsg -> MqttPropertiesUtil.isRetainedMsgNotExpired(retainedMsg, currentTs))
                 .map(retainedMsg -> {
                     int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
                     return newRetainedMsg(retainedMsg, minQoSValue);
