@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import { BaseData } from '@shared/models/base-data';
+
 export interface BrokerConfig {
   tcpPort: number;
   tlsPort: number;
@@ -25,34 +27,32 @@ export interface BrokerConfig {
   x509AuthEnabled: boolean;
 }
 
+export interface BrokerConfigTable extends BaseData {
+  key: ConfigParams;
+  value: any;
+}
+
 export enum ConfigParams {
-  PORT_MQTT = 'tcpPort',
-  TCP_LISTENER = 'tcpListenerEnabled',
-  TCP_LISTENER_MAX_PAYLOAD_SIZE = 'tcpMaxPayloadSize',
-  TLS_LISTENER = 'tlsListenerEnabled',
-  TLS_LISTENER_MAX_PAYLOAD_SIZE = 'tlsMaxPayloadSize',
-  TLS_TCP_PORT = 'tlsPort',
-  BASIC_AUTH = 'basicAuthEnabled',
-  X509_CERT_CHAIN_AUTH = 'x509AuthEnabled',
+  tcpPort = 'tcpPort',
+  tcpListenerEnabled = 'tcpListenerEnabled',
+  tcpMaxPayloadSize = 'tcpMaxPayloadSize',
+  tlsListenerEnabled = 'tlsListenerEnabled',
+  tlsMaxPayloadSize = 'tlsMaxPayloadSize',
+  tlsPort = 'tlsPort',
+  basicAuthEnabled = 'basicAuthEnabled',
+  x509AuthEnabled = 'x509AuthEnabled'
 }
 
 export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
   [
-    [ConfigParams.PORT_MQTT, 'config.port-mqtt'],
-    [ConfigParams.TCP_LISTENER, 'config.tcp-listener'],
-    [ConfigParams.TCP_LISTENER_MAX_PAYLOAD_SIZE, 'config.tcp-listener-max-payload-size'],
-    [ConfigParams.TLS_LISTENER, 'config.tls-listener'],
-    [ConfigParams.TLS_LISTENER_MAX_PAYLOAD_SIZE, 'config.tls-listener-max-payload-size'],
-    [ConfigParams.TLS_TCP_PORT, 'config.tls-tcp-port'],
-    [ConfigParams.BASIC_AUTH, 'config.basic-auth'],
-    [ConfigParams.X509_CERT_CHAIN_AUTH, 'config.ssl-auth'],
-  ]
-);
-
-export const SecurityParameterConfigMap = new Map<ConfigParams, string>(
-  [
-    [ConfigParams.BASIC_AUTH, 'SECURITY_MQTT_BASIC_ENABLED'],
-    [ConfigParams.X509_CERT_CHAIN_AUTH, 'SECURITY_MQTT_SSL_ENABLED']
+    [ConfigParams.tcpPort, 'config.port-mqtt'],
+    [ConfigParams.tcpListenerEnabled, 'config.tcp-listener'],
+    [ConfigParams.tcpMaxPayloadSize, 'config.tcp-listener-max-payload-size'],
+    [ConfigParams.tlsListenerEnabled, 'config.tls-listener'],
+    [ConfigParams.tlsMaxPayloadSize, 'config.tls-listener-max-payload-size'],
+    [ConfigParams.tlsPort, 'config.tls-tcp-port'],
+    [ConfigParams.basicAuthEnabled, 'config.basic-auth'],
+    [ConfigParams.x509AuthEnabled, 'config.ssl-auth'],
   ]
 );
 

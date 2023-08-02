@@ -672,7 +672,7 @@ mat-label {
     vertical-align: middle;
     border-width: 0;
     border-bottom-width: 1px;
-    border-bottom-color: rgba(0, 0, 0, 0.12);
+    border-bottom-color: rgba(0,0,0,0);
     border-style: solid;
     text-overflow: ellipsis;
     touch-action: auto !important;
@@ -717,7 +717,7 @@ mat-label {
   }
 
   .mat-cell, .mat-footer-cell {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .mat-cell, .mat-footer-cell, .mat-header-cell {

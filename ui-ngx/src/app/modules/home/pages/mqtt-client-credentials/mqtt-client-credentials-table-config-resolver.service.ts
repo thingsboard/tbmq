@@ -107,8 +107,8 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       map((user) => {
         this.config.componentsData = {};
         this.config.componentsData.config = {
-          basicAuthEnabled: user.additionalInfo?.config?.[ConfigParams.BASIC_AUTH],
-          sslAuthEnabled: user.additionalInfo?.config?.[ConfigParams.X509_CERT_CHAIN_AUTH]
+          basicAuthEnabled: user.additionalInfo?.config?.[ConfigParams.basicAuthEnabled],
+          sslAuthEnabled: user.additionalInfo?.config?.[ConfigParams.x509AuthEnabled]
         };
         if (!this.config.columns.find(el => el.key === 'warning')) {
           this.config.columns.push(

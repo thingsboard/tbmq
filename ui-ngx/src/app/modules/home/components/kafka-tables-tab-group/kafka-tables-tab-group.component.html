@@ -28,12 +28,12 @@
   </div>
   <div [ngSwitch]="selectedTab">
     <ng-template [ngSwitchCase]="KafkaTable.TOPICS" ngSwitchDefault>
-      <div class="tb-home-card-container">
+      <div class="tb-home-card-container" style="padding: 12px 0 12px 0">
         <tb-kafka-topics-table></tb-kafka-topics-table>
       </div>
     </ng-template>
     <ng-template [ngSwitchCase]="KafkaTable.CONSUMER_GROUPS">
-      <div class="tb-home-card-container">
+      <div class="tb-home-card-container" style="padding: 12px 0 12px 0">
         <tb-kafka-consumers-table></tb-kafka-consumers-table>
       </div>
     </ng-template>

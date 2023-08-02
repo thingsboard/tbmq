@@ -21,7 +21,7 @@
 
   .tabs-toolbar {
     position: absolute;
-    margin: 12px 0 0 12px;
+    margin-top: 14px;
     border-radius: 20px;
     background: rgba(0,0,0,0.05);
     width: fit-content;
@@ -31,7 +31,8 @@
 :host::ng-deep {
   .tabs-toolbar > button {
     border-radius: 20px;
-    border: 1px solid transparent;;
+    border: 1px solid transparent;
+    line-height: 28px;
 
     span {
       color: rgba(0,0,0,0.38);

@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container" fxLayoutGap="20px">
+<div fxFlex class="tb-home-card-container">
   <section fxLayout="row">
     <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
     <span fxFlex></span>
@@ -26,32 +26,41 @@
       {{'home.view-docs' | translate}}
     </button>
   </section>
-  <section fxFlex fxLayout="column" class="config-card-container">
-    <div *ngFor="let item of overviewConfig | async | keyvalue : noSorting">
-      <div fxFlex fxLayout="row" fxLayoutAlign="space-between center">
-        <div fxFlex="70" class="config-key">{{ configParamsTranslationMap.get(item.key) | translate }}</div>
-        <div fxFlex="30" class="config-value">
-          <span>{{transformValue(item) | boolean }}</span>
-          <span *ngIf="item.key === configParams.PORT_MQTT || item.key === configParams.TLS_TCP_PORT">
+  <section class="tb-config-table">
+    <table mat-table [dataSource]="dataSource">
+      <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
+        <mat-header-cell *matHeaderCellDef>
+          {{ column.title | translate }}
+        </mat-header-cell>
+        <mat-cell *matCellDef="let entity; let row = index"
+                  [ngStyle]="cellStyle(entity, column, row)">
+          <span *ngIf="column.key === 'key'" [innerHTML]="cellContent(entity, column, row)"></span>
+          <span *ngIf="column.key === 'value'">{{transformValue(entity) | boolean }}</span>
+          <span *ngIf="column.key === 'value' && (entity.key === configParams.tlsPort || entity.key === configParams.tcpPort)">
             <mat-icon class="config-material-icon"
                       ngxClipboard
                       (cbOnSuccess)="onCopy()"
-                      [cbContent]="item.value"
-                      matTooltip="{{'config.copy-port' | translate}} {{item.value}}">
+                      [cbContent]="entity.value"
+                      style="color: #0a5b25"
+                      matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
               content_copy
             </mat-icon>
           </span>
-          <span *ngIf="((item.key === configParams.X509_CERT_CHAIN_AUTH && (hasX509AuthCredentials | async) )
-                        || (item.key === configParams.BASIC_AUTH && (hasBasicCredentials | async)))
-                        && !item.value">
-            <section class="hover-text">
-              <mat-icon class="config-material-icon-warning">warning</mat-icon>
-              <span class="tooltip-text" [innerHTML]="tooltipContent(configParamsTranslationMap.get(item.key))"></span>
+          <span *ngIf="!entity.value && column.key === 'value'
+                        && ((entity.key === configParams.x509AuthEnabled && (hasX509AuthCredentials | async))
+                        || (entity.key === configParams.basicAuthEnabled && (hasBasicCredentials | async)))">
+            <section class="warning-icon" >
+                 <mat-icon (click)="viewDocumentation('security/#authentication')"
+                           [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
+                           style="color: #ff9a00"
+                           class="config-material-icon">warning
+                 </mat-icon>
             </section>
           </span>
-        </div>
-      </div>
-    </div>
-    <span fxFlex></span>
+        </mat-cell>
+      </ng-container>
+      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </table>
   </section>
 </div>

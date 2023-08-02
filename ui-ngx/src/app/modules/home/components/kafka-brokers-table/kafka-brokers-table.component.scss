@@ -34,8 +34,15 @@
       flex-wrap: nowrap;
     }
 
-    .mat-cell, .mat-header-cell {
-      padding: 0 16px;
+    .mat-cell {
+      padding: 0;
+    }
+
+    .mat-header-cell {
+      color: rgba(0, 0, 0, 0.38);
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0;
     }
   }
 

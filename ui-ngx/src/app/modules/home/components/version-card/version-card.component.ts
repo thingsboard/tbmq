@@ -50,4 +50,12 @@ export class VersionCardComponent implements OnInit {
           }
         });
     }
+
+  viewDocumentation(page: string){
+    window.open(`https://thingsboard.io/${page}`, '_blank');
+  }
+
+  viewRelease(){
+    window.open(`https://thingsboard.io/docs/`, '_blank');
+  }
 }

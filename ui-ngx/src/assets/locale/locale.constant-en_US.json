@@ -229,7 +229,7 @@
     "change-password": "Change password",
     "change-default-password": "Change default password",
     "current-password": "Current password",
-    "default-password-warn": "The default password for a new user is 'sysadmin'."
+    "default-password-warn": "The default password for a new user is 'sysadmin'"
   },
   "user": {
     "admins": "Admins",
@@ -584,12 +584,14 @@
   },
   "version": {
     "version": "Version",
-    "update": "Update",
-    "no-updates-available": "You have latest version. No updates available.",
-    "available-version": "New release available",
-    "current-version": "Current TBMQ version"
+    "upgrade": "Upgrade",
+    "contact-us": "Contact us",
+    "available": "Available",
+    "current": "Current"
   },
   "config": {
+    "key": "Key",
+    "value": "Value",
     "port-mqtt": "TCP Port",
     "tcp-listener": "TCP Listener",
     "tcp-listener-max-payload-size": "TCP Listener Max Payload Size",
@@ -600,7 +602,7 @@
     "ssl-auth": "X.509 Certificate Auth",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
-    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/security/#authentication'>read docs</a>."
+    "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
   },
   "kafka": {
     "address": "Address",

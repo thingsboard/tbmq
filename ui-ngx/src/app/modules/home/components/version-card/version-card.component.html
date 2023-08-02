@@ -15,23 +15,41 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container" fxLayoutGap="20px">
-  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section class="version-card-container">
-    <section>
-      <span [innerHTML]="'version.current-version' | translate"></span>:
-      <span><a target="_blank" href='https://github.com/thingsboard/tbmq'>{{versionData?.version}}</a></span>
-    </section>
-    <ng-container [ngSwitch]="updatesAvailable">
-      <ng-template [ngSwitchCase]="true">
-        <section>
-          <span [innerHTML]="'version.available-version' | translate"></span>:
-          <span><a target="_blank" [href]='versionData?.latestLink'>{{versionData?.latestVersion}}</a></span>
+<div class="tb-home-card-container">
+  <section fxLayout="row">
+    <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+    <span fxFlex></span>
+    <button mat-button color="primary"
+            (click)="viewDocumentation('docs/contact-us')"
+            matTooltipPosition="above"
+            matTooltip="{{'version.contact-us' | translate}}">
+      {{'version.contact-us' | translate}}
+    </button>
+  </section>
+  <section class="cards">
+    <div class="version-container">
+      <section fxLayout="column" fxLayoutGap="10px">
+        <a class="tb-title-link" (click)="viewRelease()">
+          {{ 'version.current' | translate}} {{ '&#8599;' }}
+        </a>
+        <span>1.0.0</span>
+      </section>
+    </div>
+    <div class="version-container">
+      <div fxLayout="row" fxLayoutAlign="space-between start">
+        <section fxLayout="column" fxLayoutGap="10px">
+          <a class="tb-title-link" (click)="viewRelease()">
+            {{ 'version.available' | translate}} {{ '&#8599;' }}
+          </a>
+          <span>1.0.1</span>
         </section>
-      </ng-template>
-      <ng-template [ngSwitchCase]="false">
-        <span [innerHTML]="'version.no-updates-available' | translate"></span>
-      </ng-template>
-    </ng-container>
+        <button mat-raised-button color="primary"
+                [disabled]="updatesAvailable"
+                (click)="viewDocumentation('docs')"
+                matTooltip="{{'version.upgrade' | translate}}">
+          {{'version.upgrade' | translate}}
+        </button>
+      </div>
+    </div>
   </section>
 </div>

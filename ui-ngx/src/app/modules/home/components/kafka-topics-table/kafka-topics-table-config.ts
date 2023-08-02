@@ -45,11 +45,14 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
 
     this.columns.push(
       new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
-      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%'),
-      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%'),
-      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%', entity => {
-        return formatBytes(entity.size);
-      })
+      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%',
+        undefined, () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%',
+        undefined, () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%',
+          entity => formatBytes(entity.size),
+        () => ({color: 'rgba(0,0,0,0.54)'})
+      )
     );
   }
 

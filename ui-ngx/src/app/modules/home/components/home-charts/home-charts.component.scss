@@ -20,8 +20,10 @@
     padding-top: 4px;
 
     span {
-      font-size: 10px;
-      font-weight: 400;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.54);
+      padding-left: 6px;
     }
 
     .chart {
@@ -30,16 +32,15 @@
     }
 
     mat-icon {
-      font-size: 14px;
-      height: 14px;
-      width: 14px;
+      font-size: 18px;
+      height: 18px;
       padding-left: 4px;
-      color: #727272;
+      color: rgba(0,0,0,0.12);
       cursor: default;
     }
 
     mat-icon:hover {
-      color: #000;
+      color: rgba(0,0,0,0.38);
     }
   }
 }

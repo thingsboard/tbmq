@@ -14,9 +14,13 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap, SecurityParameterConfigMap } from '@shared/models/config.model';
+import {
+  BrokerConfigTable,
+  ConfigParams,
+  ConfigParamsTranslationMap,
+} from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -25,54 +29,48 @@ import { ConfigService } from '@core/http/config.service';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { PageLink } from '@shared/models/page/page-link';
 import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
-import { formatBytes } from '@home/components/entity/kafka-table.component';
+import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 import { HomePageTitleType } from '@shared/models/home-page.model';
+import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'tb-card-config',
   templateUrl: './card-config.component.html',
   styleUrls: ['./card-config.component.scss']
 })
-export class CardConfigComponent implements OnInit, AfterViewInit {
+export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> implements AfterViewInit {
 
   cardType = HomePageTitleType.CONFIG;
-  securityParameterConfigMap = SecurityParameterConfigMap;
   configParamsTranslationMap = ConfigParamsTranslationMap;
-
   configParams = ConfigParams;
   hasBasicCredentials: Observable<boolean>;
   hasX509AuthCredentials: Observable<boolean>;
-  overviewConfig: Observable<BrokerConfig>;
 
-  tooltipContent = (type) => `<span>${this.translate.instant('config.warning', {type: this.translate.instant(type)})}</span>`;
+  fetchEntities$ = () => this.configService.getBrokerConfigPageData();
+  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,
-              private mqttClientCredentialsService: MqttClientCredentialsService) { }
-
-  ngOnInit(): void {
+              protected domSanitizer: DomSanitizer,
+              private mqttClientCredentialsService: MqttClientCredentialsService) {
+    super(domSanitizer);
   }
 
-  onCopy() {
-    const message = this.translate.instant('config.port-copied');
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message,
-        type: 'success',
-        duration: 1500,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      }));
-  }
-
-  viewDocumentation(page: string) {
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
+  getColumns() {
+    const columns: Array<EntityColumn<BrokerConfigTable>> = [];
+    columns.push(
+      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '80%',
+          entity => this.translate.instant(this.configParamsTranslationMap.get(entity.key))),
+      new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '20%',
+          entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
+    );
+    return columns;
   }
 
   ngAfterViewInit(): void {
-    this.overviewConfig = this.configService.getBrokerConfig();
-    this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(100)).subscribe(
+    this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(10000)).subscribe(
       data => {
         this.hasBasicCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.MQTT_BASIC));
         this.hasX509AuthCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.SSL));
@@ -80,14 +78,25 @@ export class CardConfigComponent implements OnInit, AfterViewInit {
     );
   }
 
-  transformValue(item) {
-    if (item.key === ConfigParams.TCP_LISTENER_MAX_PAYLOAD_SIZE || item.key === ConfigParams.TLS_LISTENER_MAX_PAYLOAD_SIZE) {
-      return formatBytes(item.value);
-    }
-    return item.value;
+  onCopy() {
+    const message = this.translate.instant('config.port-copied');
+    this.store.dispatch(new ActionNotificationShow({
+      message,
+      type: 'success',
+      duration: 1500,
+      verticalPosition: 'top',
+      horizontalPosition: 'left'
+    }));
   }
 
-  noSorting() {
-    return 0;
+  viewDocumentation(page: string){
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
+  }
+
+  transformValue(entity: BrokerConfigTable) {
+    if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize) {
+      return formatBytes(entity.value);
+    }
+    return entity.value;
   }
 }

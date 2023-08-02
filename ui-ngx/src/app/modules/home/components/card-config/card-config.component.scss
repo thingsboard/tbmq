@@ -14,63 +14,55 @@
  * limitations under the License.
  */
 :host {
+  display: flex;
   flex: 1;
 
-  .config-card-container {
-    font-size: 12px;
-    color: rgba(0,0,0,0.87);
-    padding: 0 12px 12px 12px;
-    line-height: 1.5em;
-  }
-
-  .config-value {
-    font-weight: 400;
-  }
-
-  .config-key {
-    color: rgba(61, 61, 61, 0.87);
-  }
-
   .config-material-icon {
-    color: #0a5b25;
-    cursor: pointer;
+    color: #ff9a00;
     font-size: 14px;
     height: 14px;
     width: 14px;
     margin-left: 4px;
-    line-height: 9px;
+    line-height: 15px;
+    cursor: pointer;
   }
 
-  .config-material-icon-warning {
-    color: #ff9a00;
-    font-size: 16px;
-    height: 16px;
-    width: 16px;
-    margin-left: 4px;
-    line-height: 9px;
-  }
-
-  .tooltip-text {
-    visibility: hidden;
-    position: absolute;
-    z-index: 2;
-    width: 200px;
-    color: #1e1e1e;
-    font-size: 12px;
-    background-color: rgb(255, 244, 229);
-    border-radius: 10px;
-    padding: 10px 15px 10px 15px;
-    top: -8px;
-    left: 120%;
-  }
-
-  .hover-text:hover .tooltip-text {
-    visibility: visible;
-  }
-
-  .hover-text {
+  .warning-icon {
     position: relative;
     display: inline-block;
     text-align: left;
+  }
+
+  .tb-config-table {
+    overflow: auto;
+    height: 164px;
+
+    .mat-tab {
+      overflow: auto;
+    }
+
+    .mat-row, .mat-header-row {
+      cursor: unset;
+      height: 22px;
+    }
+
+    .mat-paginator-container {
+      flex-wrap: nowrap;
+    }
+
+    .mat-cell {
+      padding: 0;
+    }
+
+    .mat-header-cell {
+      color: rgba(0, 0, 0, 0.38);
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0;
+    }
+  }
+
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
   }
 }

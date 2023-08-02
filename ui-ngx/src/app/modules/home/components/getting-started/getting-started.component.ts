@@ -136,8 +136,8 @@ export class GettingStartedComponent implements AfterViewInit {
       select(selectUserDetails),
       map((user) => user?.additionalInfo?.config)).pipe(
       map((data) => {
-        const portMqtt = data ? data[ConfigParams.PORT_MQTT] : null;
-        const basicAuth = data ? data[ConfigParams.BASIC_AUTH] : null;
+        const portMqtt = data ? data[ConfigParams.tcpPort] : null;
+        const basicAuth = data ? data[ConfigParams.basicAuthEnabled] : null;
         this.steps = this.instructionsService.setSteps(basicAuth);
         this.steps.subscribe((res) => {
           this.stepsData = res;
@@ -145,9 +145,9 @@ export class GettingStartedComponent implements AfterViewInit {
         // @ts-ignore
         window.mqttPort = portMqtt;
         this.configParams = {} as BrokerConfig;
-        this.configParams[ConfigParams.BASIC_AUTH] = basicAuth;
-        this.configParams[ConfigParams.PORT_MQTT] = portMqtt;
-        this.configParams[ConfigParams.BASIC_AUTH]  ? this.init('client-app') : this.init('enable-basic-auth');
+        this.configParams[ConfigParams.basicAuthEnabled] = basicAuth;
+        this.configParams[ConfigParams.tcpPort] = portMqtt;
+        this.configParams[ConfigParams.basicAuthEnabled]  ? this.init('client-app') : this.init('enable-basic-auth');
         return data;
       }
     )).subscribe();
