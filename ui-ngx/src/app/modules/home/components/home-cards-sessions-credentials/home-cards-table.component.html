@@ -27,7 +27,7 @@
       {{'home.view-docs' | translate}}
     </button>
   </section>
-  <section class="cards" fxLayoutGap="10px">
+  <section class="cards" fxLayoutGap="12px">
     <div fxFlex class="key-value" *ngFor="let item of config">
       <div class="key">{{ item.label | translate }}</div>
       <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>

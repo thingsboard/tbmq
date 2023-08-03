@@ -16,7 +16,7 @@
 
 -->
 <div fxFlex class="tb-home-card-container">
-  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+  <tb-card-title-button style="padding: 10px 0 10px" [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="tb-kafka-table">
     <table mat-table [dataSource]="dataSource">
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
