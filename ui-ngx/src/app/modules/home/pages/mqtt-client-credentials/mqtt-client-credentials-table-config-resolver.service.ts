@@ -68,7 +68,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.addEnabled = true;
     this.config.entitiesDeleteEnabled = true;
     this.config.deleteEnabled = () => true;
-    this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.credentialsId : '';
+    this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
 
     this.config.columns.push(
       new DateEntityTableColumn<MqttClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
