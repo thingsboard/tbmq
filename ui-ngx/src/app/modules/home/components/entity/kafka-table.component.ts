@@ -106,14 +106,14 @@ export abstract class KafkaTableComponent<T extends BaseData> implements OnInit,
     } else {
       this.pageLink.page = 0;
     }
-    /*if (this.sort.active) {
+    if (this.sort.active) {
       this.pageLink.sortOrder = {
         property: this.sort.active,
         direction: Direction[this.sort.direction.toUpperCase()]
       };
     } else {
       this.pageLink.sortOrder = null;
-    }*/
+    }
     this.loadEntities();
   }
 
