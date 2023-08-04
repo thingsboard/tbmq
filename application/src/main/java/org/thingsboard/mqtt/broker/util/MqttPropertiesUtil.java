@@ -123,11 +123,11 @@ public class MqttPropertiesUtil {
             }
         }
 
-        int publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
+        long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
         if (publishMsgExpiryInterval < 0) {
             return new MsgExpiryResult(true, true, 0);
         } else {
-            return new MsgExpiryResult(true, false, publishMsgExpiryInterval);
+            return new MsgExpiryResult(true, false, msToSeconds(publishMsgExpiryInterval));
         }
     }
 
@@ -152,19 +152,21 @@ public class MqttPropertiesUtil {
             createdTime = BytesUtil.bytesToLong(createdTimeBytes);
         }
 
-        int publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
+        long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
         if (publishMsgExpiryInterval < 0) {
             return new MsgExpiryResult(true, true, 0);
         } else {
-            return new MsgExpiryResult(true, false, publishMsgExpiryInterval);
+            return new MsgExpiryResult(true, false, msToSeconds(publishMsgExpiryInterval));
         }
     }
 
     // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value
     // minus the time that the Application Message has been waiting in the Server
-    private static int calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
-        long publishMsgExpiryIntervalMs = TimeUnit.SECONDS.toMillis(messageExpiryInterval) - (currentTs - createdTime);
-        return (int) TimeUnit.MILLISECONDS.toSeconds(publishMsgExpiryIntervalMs);
+    private static long calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
+        return TimeUnit.SECONDS.toMillis(messageExpiryInterval) - (currentTs - createdTime);
     }
 
+    private static int msToSeconds(long value) {
+        return Math.toIntExact(TimeUnit.MILLISECONDS.toSeconds(value));
+    }
 }
