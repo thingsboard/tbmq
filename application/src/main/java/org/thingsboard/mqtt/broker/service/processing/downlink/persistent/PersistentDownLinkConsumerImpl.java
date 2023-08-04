@@ -20,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -28,6 +30,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelper;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -89,7 +92,9 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
                     }
 
                     for (TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto> msg : msgs) {
-                        processor.process(msg.getKey(), msg.getValue());
+                        DevicePublishMsg devicePublishMsg = ProtoConverter.toDevicePublishMsg(msg.getValue());
+                        MqttPropertiesUtil.addMsgExpiryIntervalToProps(devicePublishMsg.getProperties(), msg.getHeaders());
+                        processor.process(msg.getKey(), devicePublishMsg);
                     }
                     consumer.commitSync();
                 } catch (Exception e) {

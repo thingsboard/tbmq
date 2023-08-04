@@ -23,7 +23,15 @@ import java.util.Map;
 
 public class DefaultTbQueueMsgHeaders implements TbQueueMsgHeaders {
 
-    protected final Map<String, byte[]> data = new HashMap<>();
+    private final Map<String, byte[]> data;
+
+    public DefaultTbQueueMsgHeaders() {
+        this.data = new HashMap<>();
+    }
+
+    public DefaultTbQueueMsgHeaders(Map<String, byte[]> data) {
+        this.data = data;
+    }
 
     @Override
     public byte[] put(String key, byte[] value) {
@@ -38,5 +46,10 @@ public class DefaultTbQueueMsgHeaders implements TbQueueMsgHeaders {
     @Override
     public Map<String, byte[]> getData() {
         return data;
+    }
+
+    @Override
+    public DefaultTbQueueMsgHeaders copy() {
+        return new DefaultTbQueueMsgHeaders(this.data);
     }
 }

@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEven
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
@@ -48,6 +49,7 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -165,6 +167,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
         switch (persistedMessage.getPacketType()) {
             case PUBLISH:
+                MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(persistedMessage, System.currentTimeMillis());
+                if (msgExpiryResult.isExpired()) {
+                    return;
+                }
                 // TODO: guaranty that DUP flag is correctly set even if Device Actor is dropped
                 boolean isDup = inFlightPacketIds.contains(persistedMessage.getPacketId());
                 if (!isDup) {
@@ -172,6 +178,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 }
                 lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
                 PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
+                if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
+                    MqttPropertiesUtil.addMsgExpiryIntervalToPublish(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                }
                 publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
                 break;
             case PUBREL:
@@ -201,9 +210,17 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(publishMsg);
         processedAnyMsg = true;
 
+        MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
+        if (msgExpiryResult.isExpired()) {
+            return;
+        }
+
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
             PublishMsg pubMsg = getPublishMsg(publishMsg, false);
+            if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
+                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+            }
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {

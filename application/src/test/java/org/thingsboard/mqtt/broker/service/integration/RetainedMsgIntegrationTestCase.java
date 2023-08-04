@@ -16,8 +16,13 @@
 package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.MqttSubscription;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +33,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,22 +90,74 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         assertFalse(receivedRetainedMsg.get());
     }
 
+    @Test
+    public void givenNewSubscriber_whenRetainedMsgWasAlreadyPublishedWithExpiration_thenReceiveRetainedMsg() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(1);
+        AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
+
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        pubClient.connect();
+
+        MqttProperties properties = new MqttProperties();
+        properties.setMessageExpiryInterval(100L);
+        MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), 1, true, properties);
+        pubClient.publish("expiration/retain", message);
+        disconnectAndCloseClient(pubClient);
+
+        MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("expiration/retain", receivedRetainedMsg, receivedResponses);
+
+        boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        disconnectAndCloseClient(subClient);
+
+        assertTrue(receivedRetainedMsg.get());
+    }
+
+    @Test
+    public void givenNewSubscriber_whenRetainedMsgWasAlreadyPublishedWithExpirationAndSleep_thenNotReceiveRetainedMsg() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(1);
+        AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
+
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        pubClient.connect();
+
+        MqttProperties properties = new MqttProperties();
+        properties.setMessageExpiryInterval(1L);
+        MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), 1, true, properties);
+        pubClient.publish("expiration/retain", message);
+        disconnectAndCloseClient(pubClient);
+
+        Thread.sleep(1000);
+
+        MqttClient subClient = createSubClientSubscribeToRetainedMsgTopicAndCheckMsg("expiration/retain", receivedRetainedMsg, receivedResponses);
+
+        boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        disconnectAndCloseClient(subClient);
+
+        assertFalse(receivedRetainedMsg.get());
+    }
+
     private MqttClient createSubClientSubscribeToRetainedMsgTopicAndCheckMsg(String topicFilter, AtomicBoolean receivedRetainedMsg,
                                                                              CountDownLatch receivedResponses) throws MqttException {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client");
         subClient.connect();
-        subClient.subscribe(topicFilter, 1, (topic, message) -> {
+        IMqttMessageListener[] listeners = {(topic, message) -> {
             log.error("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
             if (message.isRetained()) {
                 receivedRetainedMsg.set(true);
             }
             receivedResponses.countDown();
-        });
+        }};
+        MqttSubscription[] subscriptions = {new MqttSubscription(topicFilter, 1)};
+        subClient.subscribe(subscriptions, listeners);
         return subClient;
     }
 
     private void createPubClientPublishRetainedMsgAndClose(byte[] payload) throws MqttException {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "test_pub_client");
         pubClient.connect();
         pubClient.publish(TEST_RETAIN_TOPIC, payload, 1, true);
         disconnectAndCloseClient(pubClient);

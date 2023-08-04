@@ -16,12 +16,13 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface MsgDispatcherService {
+
     void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback);
 
-    void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback);
+    void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback);
+
 }

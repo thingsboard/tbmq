@@ -48,7 +48,7 @@ public class KeepAliveIntegrationTestCase extends AbstractPubSubIntegrationTest 
         options.setCleanStart(true);
         options.setSessionExpiryInterval(1000L);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, "keepAliveClient");
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "keepAliveClient");
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {

@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
@@ -47,9 +47,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
-
-    private static final int BLANK_PACKET_ID = -1;
-    private static final long BLANK_SERIAL_NUMBER = -1L;
 
     private final ClientSessionCache clientSessionCache;
     private final ClientLogger clientLogger;
@@ -99,7 +96,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                     downLinkProxy.sendPersistentMsg(
                             targetServiceId,
                             devicePublishMsg.getClientId(),
-                            ProtoConverter.toDevicePublishMsgProto(devicePublishMsg));
+                            devicePublishMsg);
                 } else {
                     downLinkProxy.sendBasicMsg(
                             targetServiceId,
@@ -111,7 +108,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     }
 
     private boolean messageWasPersisted(DevicePublishMsg devicePublishMsg) {
-        return !devicePublishMsg.getPacketId().equals(BLANK_PACKET_ID) && !devicePublishMsg.getSerialNumber().equals(BLANK_SERIAL_NUMBER);
+        return !devicePublishMsg.getPacketId().equals(BrokerConstants.BLANK_PACKET_ID) && !devicePublishMsg.getSerialNumber().equals(BrokerConstants.BLANK_SERIAL_NUMBER);
     }
 
     private void persistDeviceMsgs(List<DevicePublishMsg> devicePublishMessages,
@@ -178,13 +175,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
 
     private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
         return msgs.stream()
-                .map(protoMsg -> ProtoConverter.toDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue()))
-                .map(devicePublishMsg -> devicePublishMsg.toBuilder()
-                        .packetId(BLANK_PACKET_ID)
-                        .serialNumber(BLANK_SERIAL_NUMBER)
-                        .packetType(PersistedPacketType.PUBLISH)
-                        .time(System.currentTimeMillis())
-                        .build())
+                .map(protoMsg -> ProtoConverter.toDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue(), protoMsg.getHeaders()))
                 .collect(Collectors.toList());
     }
 }

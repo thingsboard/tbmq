@@ -15,16 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 
 import java.util.UUID;
 
-@AllArgsConstructor
+@Data
 public class PublishMsgWithId {
-    @Getter
+
     private final UUID id;
-    @Getter
     private final QueueProtos.PublishMsgProto publishMsgProto;
+    private final TbQueueMsgHeaders headers;
+
 }

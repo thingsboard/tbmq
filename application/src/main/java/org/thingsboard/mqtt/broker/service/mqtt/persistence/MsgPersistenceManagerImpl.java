@@ -23,7 +23,10 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -31,10 +34,12 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersist
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +62,9 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final ClientLogger clientLogger;
 
     @Override
-    public void processPublish(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
+    public void processPublish(PublishMsgWithId publishMsgWithId, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
+        PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
+
         List<Subscription> deviceSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getDeviceSubscriptions());
         List<Subscription> applicationSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getApplicationSubscriptions());
         Set<String> sharedTopics = getUniqueSharedTopics(persistentSubscriptions.getAllApplicationSharedSubscriptions());
@@ -73,25 +80,20 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         if (deviceSubscriptions != null) {
             for (Subscription deviceSubscription : deviceSubscriptions) {
+                String clientId = getClientIdFromSubscription(deviceSubscription);
+                PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgProto);
                 deviceMsgQueuePublisher.sendMsg(
-                        getClientIdFromSubscription(deviceSubscription),
-                        createReceiverPublishMsg(deviceSubscription, publishMsgProto),
+                        clientId,
+                        new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
                         callbackWrapper);
             }
         }
         if (applicationSubscriptions != null) {
             if (applicationSubscriptions.size() == 1) {
-                Subscription applicationSubscription = applicationSubscriptions.get(0);
-                applicationMsgQueuePublisher.sendMsg(
-                        getClientIdFromSubscription(applicationSubscription),
-                        createReceiverPublishMsg(applicationSubscription, publishMsgProto),
-                        callbackWrapper);
+                sendApplicationMsg(applicationSubscriptions.get(0), publishMsgWithId, callbackWrapper);
             } else {
                 for (Subscription applicationSubscription : applicationSubscriptions) {
-                    applicationMsgQueuePublisher.sendMsg(
-                            getClientIdFromSubscription(applicationSubscription),
-                            createReceiverPublishMsg(applicationSubscription, publishMsgProto),
-                            callbackWrapper);
+                    sendApplicationMsg(applicationSubscription, publishMsgWithId, callbackWrapper);
                 }
             }
         }
@@ -99,12 +101,26 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             for (String sharedTopic : sharedTopics) {
                 applicationMsgQueuePublisher.sendMsgToSharedTopic(
                         sharedTopic,
-                        createReceiverPublishMsg(publishMsgProto),
+                        new TbProtoQueueMsg<>(createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
                         callbackWrapper);
             }
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
+    }
+
+    private void sendApplicationMsg(Subscription applicationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        PublishMsgProto publishMsg = createReceiverPublishMsg(applicationSubscription, publishMsgWithId.getPublishMsgProto());
+        applicationMsgQueuePublisher.sendMsg(
+                getClientIdFromSubscription(applicationSubscription),
+                new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsg, getAppMsgHeaders(publishMsgWithId)),
+                callbackWrapper);
+    }
+
+    private TbQueueMsgHeaders getAppMsgHeaders(PublishMsgWithId publishMsgWithId) {
+        TbQueueMsgHeaders headers = publishMsgWithId.getHeaders().copy();
+        headers.put(BrokerConstants.CREATED_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
+        return headers;
     }
 
     private List<Subscription> getSubscriptionsIfNotNull(List<Subscription> persistentSubscriptions) {

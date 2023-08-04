@@ -59,9 +59,9 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     }
 
     @Override
-    public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
+    public void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Sending msg in DEVICE Queue");
-        publisher.send(new TbProtoQueueMsg<>(clientId, msgProto),
+        publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -78,7 +78,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
                     public void onFailure(Throwable t) {
                         callbackProcessor.submit(() -> {
                             log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
-                                    clientId, msgProto.getTopicName(), t);
+                                    clientId, queueMsg.getValue().getTopicName(), t);
                             callback.onFailure(t);
                         });
                     }

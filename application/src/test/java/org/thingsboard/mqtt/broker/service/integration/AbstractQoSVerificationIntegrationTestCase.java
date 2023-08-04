@@ -69,7 +69,7 @@ public abstract class AbstractQoSVerificationIntegrationTestCase extends Abstrac
         AtomicInteger counter = new AtomicInteger(0);
         CountDownLatch receivedResponses = new CountDownLatch(2);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client");
         subClient.setManualAcks(true);
         MqttConnectOptions subConnectOptions = new MqttConnectOptions();
         subConnectOptions.setCleanSession(subscriberCleanSession);
@@ -81,7 +81,7 @@ public abstract class AbstractQoSVerificationIntegrationTestCase extends Abstrac
             receivedResponses.countDown();
         });
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "test_pub_client");
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
         pubClient.connect(connectOptions);

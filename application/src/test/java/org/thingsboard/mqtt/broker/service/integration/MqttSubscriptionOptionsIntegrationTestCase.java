@@ -94,11 +94,11 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         MqttConnectionOptions persistOptions = new MqttConnectionOptions();
         persistOptions.setCleanStart(true);
 
-        devClient = new MqttClient("tcp://localhost:" + mqttPort, DEV_CLIENT_ID);
+        devClient = new MqttClient(SERVER_URI + mqttPort, DEV_CLIENT_ID);
         devClient.connect(persistOptions);
         devClient.disconnect();
 
-        appClient = new MqttClient("tcp://localhost:" + mqttPort, APP_CLIENT_ID);
+        appClient = new MqttClient(SERVER_URI + mqttPort, APP_CLIENT_ID);
         appClient.connect(persistOptions);
         appClient.disconnect();
 
@@ -142,7 +142,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         mqttSubscription.setRetainAsPublished(retainAsPublished);
         MqttSubscription[] subscriptions = {mqttSubscription};
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "cleanClient");
         MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
         subClient.connect(options);
         subClient.subscribe(subscriptions, listeners);
@@ -150,15 +150,15 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         MqttConnectionOptions persistOptions = new MqttConnectionOptions();
         persistOptions.setCleanStart(false);
 
-        devClient = new MqttClient("tcp://localhost:" + mqttPort, DEV_CLIENT_ID);
+        devClient = new MqttClient(SERVER_URI + mqttPort, DEV_CLIENT_ID);
         devClient.connect(persistOptions);
         devClient.subscribe(subscriptions, listeners);
 
-        appClient = new MqttClient("tcp://localhost:" + mqttPort, APP_CLIENT_ID);
+        appClient = new MqttClient(SERVER_URI + mqttPort, APP_CLIENT_ID);
         appClient.connect(persistOptions);
         appClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "pubClient");
         pubClient.connect(options);
         pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
 
@@ -180,11 +180,11 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "pubClient");
         pubClient.connect(options);
         pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "cleanClient");
         subClient.connect(options);
 
         MqttSubscription mqttSubscription = new MqttSubscription(MY_TOPIC, 2);
@@ -210,11 +210,11 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "pubClient");
         pubClient.connect(options);
         pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "cleanClient");
         subClient.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -247,7 +247,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         MqttConnectionOptions options = getConnectionOptionsWithGenericUserName();
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "cleanClient");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "cleanClient");
         subClient.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -264,7 +264,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
         subClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "pubClient");
         pubClient.connect(options);
         pubClient.publish(MY_TOPIC, MSG_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
 
@@ -291,7 +291,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
 
     @Test(expected = MqttException.class)
     public void givenSubClientWithNoLocalOptionSet_whenSubscribeToSharedSubs_thenSubscriptionFailedClientDisconnected() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "sharedSubsNoLocal");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "sharedSubsNoLocal");
         subClient.connect(getConnectionOptionsWithGenericUserName());
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -304,7 +304,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
     }
 
     private void clearRetainedMsg() throws MqttException {
-        MqttClient pubClientClearRetained = new MqttClient("tcp://localhost:" + mqttPort, "pubClearRetained");
+        MqttClient pubClientClearRetained = new MqttClient(SERVER_URI + mqttPort, "pubClearRetained");
         MqttConnectionOptions clearRetainedOptions = getConnectionOptionsWithGenericUserName();
 
         pubClientClearRetained.connect(clearRetainedOptions);

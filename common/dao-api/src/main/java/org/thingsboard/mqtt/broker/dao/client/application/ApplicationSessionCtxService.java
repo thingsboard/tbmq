@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import java.util.Optional;
 
 public interface ApplicationSessionCtxService {
+
     ApplicationSessionCtx saveApplicationSessionCtx(ApplicationSessionCtx applicationSessionCtx);
 
     void deleteApplicationSessionCtx(String clientId);

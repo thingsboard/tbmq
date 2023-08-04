@@ -15,10 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.dao.model.sql;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.data.UserProperties;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
@@ -38,6 +40,7 @@ import javax.persistence.Table;
 @Table(name = ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME)
 @IdClass(DevicePublishMsgCompositeKey.class)
 public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
+
     @Id
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY)
     private String clientId;
@@ -71,6 +74,9 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_RETAIN_PROPERTY)
     private boolean retain;
 
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_EXPIRY_INTERVAL_PROPERTY)
+    private Integer msgExpiryInterval;
+
     public DevicePublishMsgEntity() {
     }
 
@@ -85,10 +91,20 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.payload = devicePublishMsg.getPayload();
         this.userProperties = JacksonUtil.toString(UserProperties.newInstance(devicePublishMsg.getProperties()));
         this.retain = devicePublishMsg.isRetained();
+        this.msgExpiryInterval = getMsgExpiryInterval(devicePublishMsg);
+    }
+
+    private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg) {
+        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
+        return property == null ? 0 : property.value();
     }
 
     @Override
     public DevicePublishMsg toData() {
+        MqttProperties properties = UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class));
+        if (msgExpiryInterval != null) {
+            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, msgExpiryInterval));
+        }
         return DevicePublishMsg.builder()
                 .clientId(clientId)
                 .topic(topic)
@@ -98,7 +114,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
                 .payload(payload)
                 .packetId(packetId)
                 .packetType(packetType)
-                .properties(UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class)))
+                .properties(properties)
                 .isRetained(retain)
                 .build();
     }

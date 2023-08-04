@@ -18,5 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 public interface BasicDownLinkProcessor {
+
     void process(String clientId, QueueProtos.PublishMsgProto msg);
+
 }

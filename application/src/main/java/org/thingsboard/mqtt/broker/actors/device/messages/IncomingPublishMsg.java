@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 @Getter
 @RequiredArgsConstructor
 public class IncomingPublishMsg implements TbActorMsg {
+
     private final DevicePublishMsg publishMsg;
 
     @Override

@@ -93,13 +93,13 @@ public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubInteg
 
         MqttConnectOptions persistedConnectOptions = getConnectOptions(false, APP_USERNAME);
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, TEST_APPLICATION_CLIENT);
+        persistedClient = new MqttClient(SERVER_URI + mqttPort, TEST_APPLICATION_CLIENT);
         persistedClient.connect(persistedConnectOptions);
         log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> responses.countDown());
         persistedClient.disconnect();
 
-        MqttClient publishingClient = new MqttClient("tcp://localhost:" + mqttPort, PUBLISHING_CLIENT);
+        MqttClient publishingClient = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
         publishingClient.connect(getConnectOptions(true, DEV_USERNAME));
         publishingClient.publish("test", "test_message".getBytes(), 1, false);
         publishingClient.disconnect();
@@ -117,12 +117,12 @@ public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubInteg
 
         MqttConnectOptions persistedConnectOptions = getConnectOptions(false, APP_USERNAME);
 
-        persistedClient = new MqttClient("tcp://localhost:" + mqttPort, TEST_APPLICATION_CLIENT);
+        persistedClient = new MqttClient(SERVER_URI + mqttPort, TEST_APPLICATION_CLIENT);
         persistedClient.connect(persistedConnectOptions);
         log.warn("Persisted client connected: {}", isConnected());
         persistedClient.subscribe("test", 1, (topic, msg) -> responses.countDown());
 
-        MqttClient publishingClient = new MqttClient("tcp://localhost:" + mqttPort, PUBLISHING_CLIENT);
+        MqttClient publishingClient = new MqttClient(SERVER_URI + mqttPort, PUBLISHING_CLIENT);
         publishingClient.connect(getConnectOptions(true, DEV_USERNAME));
         publishingClient.publish("test", "test_message_1".getBytes(), 1, false);
 
