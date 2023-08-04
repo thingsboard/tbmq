@@ -118,7 +118,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                                    Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
                                    String consumerId, DeviceProcessorStats stats) {
         setPacketIdAndSerialNumber(devicePublishMessages, lastPacketIdAndSerialNumbers);
-
+        log.error("TEST COMMIT!");
         DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
         DevicePackProcessingContext ctx = new DevicePackProcessingContext(devicePublishMessages);
         while (!Thread.interrupted()) {
