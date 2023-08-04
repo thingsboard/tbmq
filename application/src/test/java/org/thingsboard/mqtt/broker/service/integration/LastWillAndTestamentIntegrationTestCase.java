@@ -41,12 +41,13 @@ import java.util.concurrent.TimeoutException;
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubIntegrationTest {
+
     private static final String TEST_TOPIC = "test";
     private static final String TEST_MESSAGE = "test_message";
 
     @Test(expected = TimeoutException.class)
     public void testNoLastWillOnDisconnect() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
         subClient.connect();
         Waiter waiter = new Waiter();
         subClient.subscribe(TEST_TOPIC, (topic, message) -> {
@@ -54,7 +55,7 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
             waiter.assertNull(topic);
         });
 
-        MqttClient lastWillClient = new MqttClient("tcp://localhost:" + mqttPort, "test_last_will_client" + UUID.randomUUID().toString().substring(0, 5));
+        MqttClient lastWillClient = new MqttClient(SERVER_URI + mqttPort, "test_last_will_client" + UUID.randomUUID().toString().substring(0, 5));
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setWill(TEST_TOPIC, TEST_MESSAGE.getBytes(), 1, false);
         lastWillClient.connect(connectOptions);
@@ -67,7 +68,7 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
 
     @Test
     public void testLastWillOnKeepAliveFail() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client" + UUID.randomUUID().toString().substring(0, 5));
         subClient.connect();
 
         Waiter waiter = new Waiter();
@@ -78,7 +79,7 @@ public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubInteg
             waiter.resume();
         });
 
-        MqttAsyncClient lastWillClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "test_last_will_client" + UUID.randomUUID().toString().substring(0, 5),
+        MqttAsyncClient lastWillClient = new MqttAsyncClient(SERVER_URI + mqttPort, "test_last_will_client" + UUID.randomUUID().toString().substring(0, 5),
                 null, DisabledMqttPingSender.DISABLED_MQTT_PING_SENDER);
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setKeepAliveInterval(1);

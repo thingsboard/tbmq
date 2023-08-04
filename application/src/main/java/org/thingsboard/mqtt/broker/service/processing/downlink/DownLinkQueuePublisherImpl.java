@@ -18,7 +18,9 @@ package org.thingsboard.mqtt.broker.service.processing.downlink;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -27,6 +29,7 @@ import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFa
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -88,10 +91,11 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     }
 
     @Override
-    public void publishPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg) {
+    public void publishPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
         clientLogger.logEvent(clientId, this.getClass(), "Putting msg to persistent down-link queue");
-        persistentPublisher.send(new TbProtoQueueMsg<>(clientId, msg),
+        QueueProtos.DevicePublishMsgProto msg = ProtoConverter.toDevicePublishMsgProto(devicePublishMsg);
+        persistentPublisher.send(new TbProtoQueueMsg<>(clientId, msg, MqttPropertiesUtil.createHeaders(devicePublishMsg)),
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

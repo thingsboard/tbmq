@@ -25,11 +25,13 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -39,6 +41,7 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,6 +94,7 @@ public class MsgPersistenceManagerImplTest {
     @Test
     public void testProcessPublish() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
                 List.of(
                         createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
@@ -103,15 +107,15 @@ public class MsgPersistenceManagerImplTest {
                 Collections.emptySet()
         );
 
-        msgPersistenceManager.processPublish(publishMsgProto, persistentMsgSubscriptions, null);
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);
 
         ArgumentCaptor<String> deviceMsgQueuePublisherCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> applicationMsgQueuePublisherCaptor = ArgumentCaptor.forClass(String.class);
 
         verify(deviceMsgQueuePublisher, times(2)).sendMsg(
-                deviceMsgQueuePublisherCaptor.capture(), eq(publishMsgProto), any());
+                deviceMsgQueuePublisherCaptor.capture(), any(), any());
         verify(applicationMsgQueuePublisher, times(2)).sendMsg(
-                applicationMsgQueuePublisherCaptor.capture(), eq(publishMsgProto), any());
+                applicationMsgQueuePublisherCaptor.capture(), any(), any());
 
         String lastDeviceClientId = deviceMsgQueuePublisherCaptor.getValue();
         assertEquals("devClientId2", lastDeviceClientId);
@@ -123,18 +127,19 @@ public class MsgPersistenceManagerImplTest {
     @Test
     public void testProcessPublishWhenNoSubscriptions() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
                 null,
                 null,
                 null
         );
 
-        msgPersistenceManager.processPublish(publishMsgProto, persistentMsgSubscriptions, null);
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);
 
         verify(deviceMsgQueuePublisher, times(0)).sendMsg(
-                any(), eq(publishMsgProto), any());
+                any(), any(), any());
         verify(applicationMsgQueuePublisher, times(0)).sendMsg(
-                any(), eq(publishMsgProto), any());
+                any(), any(), any());
     }
 
     private Subscription createSubscription(String topicFilter, int qos, String clientId, ClientType type) {

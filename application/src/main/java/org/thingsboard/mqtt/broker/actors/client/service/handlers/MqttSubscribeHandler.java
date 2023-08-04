@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -223,13 +224,21 @@ public class MqttSubscribeHandler {
     private List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
         long currentTs = System.currentTimeMillis();
         List<RetainedMsg> retainedMessages = getRetainedMessages(topicSubscription);
-        return retainedMessages
-                .stream()
-                .filter(retainedMsg -> MqttPropertiesUtil.isRetainedMsgNotExpired(retainedMsg, currentTs))
-                .map(retainedMsg -> {
-                    int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
-                    return newRetainedMsg(retainedMsg, minQoSValue);
-                }).collect(Collectors.toList());
+        List<RetainedMsg> result = new ArrayList<>(retainedMessages.size());
+        for (RetainedMsg retainedMsg : retainedMessages) {
+            MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(retainedMsg, currentTs);
+            if (msgExpiryResult.isExpired()) {
+                continue;
+            }
+            int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
+            RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, minQoSValue);
+
+            if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
+                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+            }
+            result.add(newRetainedMsg);
+        }
+        return result;
     }
 
     private List<RetainedMsg> getRetainedMessages(TopicSubscription topicSubscription) {

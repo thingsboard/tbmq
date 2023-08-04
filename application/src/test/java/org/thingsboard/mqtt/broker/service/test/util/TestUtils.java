@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.service.test.util;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.common.MqttException;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
@@ -42,6 +44,20 @@ public class TestUtils {
         newClientToClear.connect(connectOptions);
         newClientToClear.disconnect();
         newClientToClear.close();
+    }
+
+    public static void clearPersistedClient(org.eclipse.paho.mqttv5.client.MqttClient persistedClient, MqttConnectionOptions options) throws Exception {
+        if (persistedClient.isConnected()) {
+            persistedClient.disconnect();
+        }
+        persistedClient.connect(options);
+        persistedClient.disconnect();
+        persistedClient.close();
+    }
+
+    public static void disconnectAndCloseClient(org.eclipse.paho.mqttv5.client.MqttClient client) throws MqttException {
+        client.disconnect();
+        client.close();
     }
 
     public static String[] getTopicNames(Collection<TopicSubscription> topicSubscriptions) {

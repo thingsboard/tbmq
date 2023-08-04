@@ -46,8 +46,8 @@ public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
     }
 
     @Override
-    public void sendMsg(QueueProtos.PublishMsgProto msgProto, TbQueueCallback callback) {
-        publisher.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto), callback);
+    public void sendMsg(TbProtoQueueMsg<QueueProtos.PublishMsgProto> msgProto, TbQueueCallback callback) {
+        publisher.send(msgProto, callback);
     }
 
     @PreDestroy

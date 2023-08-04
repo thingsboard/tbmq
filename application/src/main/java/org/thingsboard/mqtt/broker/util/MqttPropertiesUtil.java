@@ -16,7 +16,11 @@
 package org.thingsboard.mqtt.broker.util;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
@@ -29,9 +33,13 @@ public class MqttPropertiesUtil {
         if (property != null && property.value() > 0) {
             int messageExpiryInterval = property.value();
             long createdTime = retainedMsg.getCreatedTime();
-            return createdTime + TimeUnit.SECONDS.toMillis(messageExpiryInterval) < currentTs;
+            return isMsgExpired(createdTime, messageExpiryInterval, currentTs);
         }
         return false;
+    }
+
+    private static boolean isMsgExpired(long createdTime, int messageExpiryInterval, long currentTs) {
+        return createdTime + TimeUnit.SECONDS.toMillis(messageExpiryInterval) < currentTs;
     }
 
     public static boolean isRetainedMsgNotExpired(RetainedMsg retainedMsg, long currentTs) {
@@ -46,8 +54,13 @@ public class MqttPropertiesUtil {
         return getPubExpiryIntervalProperty(publishMsg.getProperties());
     }
 
+    public static MqttProperties.IntegerProperty getPubExpiryIntervalProperty(DevicePublishMsg devicePublishMsg) {
+        return getPubExpiryIntervalProperty(devicePublishMsg.getProperties());
+    }
+
     public static MqttProperties.IntegerProperty getPubExpiryIntervalProperty(MqttProperties properties) {
-        return (MqttProperties.IntegerProperty) properties.getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
+        MqttProperties.MqttProperty property = properties.getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
+        return property != null ? (MqttProperties.IntegerProperty) property : null;
     }
 
     public static MqttProperties.UserProperties getUserProperties(PublishMsg publishMsg) {
@@ -56,6 +69,102 @@ public class MqttPropertiesUtil {
 
     public static MqttProperties.UserProperties getUserProperties(MqttProperties properties) {
         return (MqttProperties.UserProperties) properties.getProperty(BrokerConstants.USER_PROPERTIES_ID);
+    }
+
+    public static void addMsgExpiryIntervalToProps(MqttProperties properties, TbQueueMsgHeaders headers) {
+        byte[] bytes = headers.get(BrokerConstants.MESSAGE_EXPIRY_INTERVAL);
+        if (bytes != null) {
+            int messageExpiryInterval = BytesUtil.bytesToInteger(bytes);
+            properties.add(
+                    new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval)
+            );
+        }
+    }
+
+    public static void addMsgExpiryIntervalToPublish(MqttProperties properties, int messageExpiryInterval) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval));
+    }
+
+    public static DefaultTbQueueMsgHeaders createHeaders(PublishMsg publishMsg) {
+        return createHeaders(publishMsg.getProperties());
+    }
+
+    public static DefaultTbQueueMsgHeaders createHeaders(DevicePublishMsg devicePublishMsg) {
+        return createHeaders(devicePublishMsg.getProperties());
+    }
+
+    public static DefaultTbQueueMsgHeaders createHeaders(MqttProperties properties) {
+        DefaultTbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();
+        MqttProperties.IntegerProperty pubExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(properties);
+        if (pubExpiryIntervalProperty != null) {
+            headers.put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(pubExpiryIntervalProperty.value()));
+        }
+        return headers;
+    }
+
+    public static MsgExpiryResult getMsgExpiryResult(RetainedMsg retainedMsg, long currentTs) {
+        return getMsgExpiryResult(retainedMsg.getProperties(), retainedMsg.getCreatedTime(), currentTs);
+    }
+
+    public static MsgExpiryResult getMsgExpiryResult(DevicePublishMsg publishMsg, long currentTs) {
+        return getMsgExpiryResult(publishMsg.getProperties(), publishMsg.getTime(), currentTs);
+    }
+
+    public static MsgExpiryResult getMsgExpiryResult(MqttProperties properties, long createdTime, long currentTs) {
+        int messageExpiryInterval;
+
+        MqttProperties.IntegerProperty pubExpiryIntervalProperty = getPubExpiryIntervalProperty(properties);
+        if (pubExpiryIntervalProperty == null) {
+            return new MsgExpiryResult(false, false, 0);
+        } else {
+            messageExpiryInterval = pubExpiryIntervalProperty.value();
+            if (messageExpiryInterval == 0) {
+                return new MsgExpiryResult(true, false, 0);
+            }
+        }
+
+        int publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
+        if (publishMsgExpiryInterval < 0) {
+            return new MsgExpiryResult(true, true, 0);
+        } else {
+            return new MsgExpiryResult(true, false, publishMsgExpiryInterval);
+        }
+    }
+
+    public static MsgExpiryResult getMsgExpiryResult(TbQueueMsgHeaders headers, long currentTs) {
+        int messageExpiryInterval;
+        long createdTime;
+
+        byte[] messageExpiryBytes = headers.get(BrokerConstants.MESSAGE_EXPIRY_INTERVAL);
+        if (messageExpiryBytes == null) {
+            return new MsgExpiryResult(false, false, 0);
+        } else {
+            messageExpiryInterval = BytesUtil.bytesToInteger(messageExpiryBytes);
+            if (messageExpiryInterval == 0) {
+                return new MsgExpiryResult(true, false, 0);
+            }
+        }
+
+        byte[] createdTimeBytes = headers.get(BrokerConstants.CREATED_TIME);
+        if (createdTimeBytes == null) {
+            return new MsgExpiryResult(true, false, messageExpiryInterval);
+        } else {
+            createdTime = BytesUtil.bytesToLong(createdTimeBytes);
+        }
+
+        int publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
+        if (publishMsgExpiryInterval < 0) {
+            return new MsgExpiryResult(true, true, 0);
+        } else {
+            return new MsgExpiryResult(true, false, publishMsgExpiryInterval);
+        }
+    }
+
+    // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value
+    // minus the time that the Application Message has been waiting in the Server
+    private static int calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
+        long publishMsgExpiryIntervalMs = TimeUnit.SECONDS.toMillis(messageExpiryInterval) - (currentTs - createdTime);
+        return (int) TimeUnit.MILLISECONDS.toSeconds(publishMsgExpiryIntervalMs);
     }
 
 }

@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import java.util.List;
 
 public interface DeviceMsgService {
+
     void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
 
     List<DevicePublishMsg> findPersistedMessages(String clientId);
@@ -32,4 +33,5 @@ public interface DeviceMsgService {
     ListenableFuture<Void> tryRemovePersistedMessage(String clientId, int packetId);
 
     ListenableFuture<Void> tryUpdatePacketReceived(String clientId, int packetId);
+
 }

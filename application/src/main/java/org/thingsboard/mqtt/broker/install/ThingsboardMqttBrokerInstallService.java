@@ -22,6 +22,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.install.DatabaseEntitiesUpgradeService;
 import org.thingsboard.mqtt.broker.service.install.DatabaseSchemaService;
 import org.thingsboard.mqtt.broker.service.install.SystemDataLoaderService;
 
@@ -33,15 +34,30 @@ public class ThingsboardMqttBrokerInstallService {
 
     @Value("${install.upgrade:false}")
     private Boolean isUpgrade;
+    @Value("${install.upgrade.from_version:1.2.3}")
+    private String upgradeFromVersion;
 
     private final DatabaseSchemaService databaseSchemaService;
     private final ApplicationContext context;
     private final SystemDataLoaderService systemDataLoaderService;
+    private final DatabaseEntitiesUpgradeService databaseEntitiesUpgradeService;
 
     public void performInstall() {
         try {
             if (isUpgrade) {
-                log.warn("Nothing to upgrade yet...");
+                log.info("Starting TBMQ Upgrade from version {} ...", upgradeFromVersion);
+
+                switch (upgradeFromVersion) {
+                    case "1.0.0":
+                    case "1.0.1":
+                        log.info("Upgrading TBMQ from version 1.0.1 to 1.0.2 ...");
+                        databaseEntitiesUpgradeService.upgradeDatabase("1.0.1");
+                        break;
+                    default:
+                        throw new RuntimeException("Unable to upgrade TBMQ, unsupported fromVersion: " + upgradeFromVersion);
+                }
+
+                log.info("Upgrade finished successfully!");
             } else {
                 log.info("Starting TBMQ Installation...");
 

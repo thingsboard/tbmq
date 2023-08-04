@@ -75,10 +75,10 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     }
 
     @Override
-    public void sendMsg(String clientId, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
+    public void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
         String clientQueueTopic = MqttApplicationClientUtil.getAppTopic(clientId, validateClientId);
-        publisher.send(new TbProtoQueueMsg<>(msgProto.getTopicName(), msgProto),
+        publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -95,7 +95,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                     public void onFailure(Throwable t) {
                         callbackProcessor.submit(() -> {
                             log.error("[{}] Failed to send publish msg to the queue for MQTT topic {}.",
-                                    clientId, msgProto.getTopicName(), t);
+                                    clientId, queueMsg.getValue().getTopicName(), t);
                             callback.onFailure(t);
                         });
                     }
@@ -104,8 +104,8 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     }
 
     @Override
-    public void sendMsgToSharedTopic(String sharedTopic, QueueProtos.PublishMsgProto msgProto, PublishMsgCallback callback) {
-        sharedSubsPublisher.send(new TbProtoQueueMsg<>(msgProto),
+    public void sendMsgToSharedTopic(String sharedTopic, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
+        sharedSubsPublisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {

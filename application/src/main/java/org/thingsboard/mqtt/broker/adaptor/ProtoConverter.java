@@ -26,13 +26,16 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -275,14 +278,20 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static DevicePublishMsg toDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto publishMsgProto) {
+    public static DevicePublishMsg toDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto publishMsgProto, TbQueueMsgHeaders headers) {
+        MqttProperties mqttProperties = createMqttProperties(publishMsgProto.getUserPropertiesList());
+        MqttPropertiesUtil.addMsgExpiryIntervalToProps(mqttProperties, headers);
         return DevicePublishMsg.builder()
                 .clientId(clientId)
                 .topic(publishMsgProto.getTopicName())
                 .qos(publishMsgProto.getQos())
                 .payload(publishMsgProto.getPayload().toByteArray())
-                .properties(createMqttProperties(publishMsgProto.getUserPropertiesList()))
+                .properties(mqttProperties)
                 .isRetained(publishMsgProto.getRetain())
+                .packetId(BrokerConstants.BLANK_PACKET_ID)
+                .serialNumber(BrokerConstants.BLANK_SERIAL_NUMBER)
+                .packetType(PersistedPacketType.PUBLISH)
+                .time(System.currentTimeMillis())
                 .build();
     }
 

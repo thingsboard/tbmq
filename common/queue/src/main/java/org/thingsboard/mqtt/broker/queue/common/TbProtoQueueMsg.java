@@ -32,6 +32,10 @@ public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> i
         this(null, value, new DefaultTbQueueMsgHeaders());
     }
 
+    public TbProtoQueueMsg(T value, TbQueueMsgHeaders headers) {
+        this(null, value, headers);
+    }
+
     public TbProtoQueueMsg(String key, T value) {
         this(key, value, new DefaultTbQueueMsgHeaders());
     }

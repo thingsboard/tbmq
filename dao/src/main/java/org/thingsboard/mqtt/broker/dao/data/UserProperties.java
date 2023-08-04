@@ -35,7 +35,7 @@ public class UserProperties {
 
     public static MqttProperties mapToMqttProperties(UserProperties userProperties) {
         MqttProperties.UserProperties mqttUserProperties = mapToMqttUserProperties(userProperties);
-        return userProperties != null ? createMqttProperties(mqttUserProperties) : MqttProperties.NO_PROPERTIES;
+        return userProperties != null ? createMqttProperties(mqttUserProperties) : new MqttProperties();
     }
 
     public static MqttProperties.UserProperties mapToMqttUserProperties(UserProperties userProperties) {

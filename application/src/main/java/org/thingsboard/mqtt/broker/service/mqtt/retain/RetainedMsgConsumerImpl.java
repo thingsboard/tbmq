@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +33,7 @@ import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
@@ -162,14 +162,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg) {
         RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());
-
-        byte[] bytes = msg.getHeaders().get(BrokerConstants.MESSAGE_EXPIRY_INTERVAL);
-        if (bytes != null) {
-            int messageExpiryInterval = BytesUtil.bytesToInteger(bytes);
-            retainedMsg.getProperties().add(
-                    new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval)
-            );
-        }
+        MqttPropertiesUtil.addMsgExpiryIntervalToProps(retainedMsg.getProperties(), msg.getHeaders());
         return retainedMsg;
     }
 

@@ -110,7 +110,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         int totalMsgCount = ctx.getPendingMap().size();
                         submitStrategy.process(msg -> {
                             long msgProcessingStart = System.nanoTime();
-                            msgDispatcherService.processPublishMsg(msg.getPublishMsgProto(), new BasePublishMsgCallback(msg.getId(), ctx));
+                            msgDispatcherService.processPublishMsg(msg, new BasePublishMsgCallback(msg.getId(), ctx));
                             stats.logMsgProcessingTime(System.nanoTime() - msgProcessingStart, TimeUnit.NANOSECONDS);
                         });
 
@@ -153,7 +153,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         int i = 0;
         for (var msg : msgs) {
             UUID id = new UUID(packId, i++);
-            publishMsgPendingMap.put(id, new PublishMsgWithId(id, msg.getValue()));
+            publishMsgPendingMap.put(id, new PublishMsgWithId(id, msg.getValue(), msg.getHeaders()));
         }
         return publishMsgPendingMap;
     }

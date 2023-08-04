@@ -38,7 +38,7 @@ public class MqttProtocolValidationIntegrationTestCase extends AbstractPubSubInt
 
     @Test(expected = MqttException.class)
     public void testEmptyClientWithNoCleanSession() throws Throwable {
-        try (MqttClient testClient = new MqttClient("tcp://localhost:" + mqttPort, "")) {
+        try (MqttClient testClient = new MqttClient(SERVER_URI + mqttPort, "")) {
             MqttConnectOptions connectOptions = new MqttConnectOptions();
             connectOptions.setCleanSession(false);
             try {

@@ -31,6 +31,8 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -52,6 +54,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -102,11 +105,15 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         producerStats.incrementTotal();
         tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
-        publishMsgQueuePublisher.sendMsg(publishMsgProto, callback);
+
+        DefaultTbQueueMsgHeaders headers = createHeaders(publishMsg);
+        TbProtoQueueMsg<PublishMsgProto> msgProto = new TbProtoQueueMsg<>(publishMsgProto.getTopicName(), publishMsgProto, headers);
+        publishMsgQueuePublisher.sendMsg(msgProto, callback);
     }
 
     @Override
-    public void processPublishMsg(PublishMsgProto publishMsgProto, PublishMsgCallback callback) {
+    public void processPublishMsg(PublishMsgWithId publishMsgWithId, PublishMsgCallback callback) {
+        PublishMsgProto publishMsgProto = publishMsgWithId.getPublishMsgProto();
         String senderClientId = ProtoConverter.getClientId(publishMsgProto);
 
         clientLogger.logEvent(senderClientId, this.getClass(), "Start msg processing");
@@ -126,7 +133,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         PersistentMsgSubscriptions persistentMsgSubscriptions = processBasicAndCollectPersistentSubscriptions(msgSubscriptions, publishMsgProto);
 
         if (persistentMsgSubscriptions.isNotEmpty()) {
-            processPersistentSubscriptions(publishMsgProto, persistentMsgSubscriptions, callback);
+            processPersistentSubscriptions(publishMsgWithId, persistentMsgSubscriptions, callback);
         } else {
             callback.onSuccess();
         }
@@ -134,9 +141,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         clientLogger.logEvent(senderClientId, this.getClass(), "Finished msg processing");
     }
 
-    private void processPersistentSubscriptions(PublishMsgProto publishMsgProto, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
+    private void processPersistentSubscriptions(PublishMsgWithId publishMsgWithId, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
         long startTime = System.nanoTime();
-        msgPersistenceManager.processPublish(publishMsgProto, persistentSubscriptions, callback);
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentSubscriptions, callback);
         publishMsgProcessingTimerStats.logPersistentMessagesProcessing(startTime, TimeUnit.NANOSECONDS);
     }
 
@@ -297,7 +304,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private List<Subscription> collectCommonSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
 
-        if (clientSubscriptionWithTopicFilterList.size() == 0) {
+        if (clientSubscriptionWithTopicFilterList.isEmpty()) {
             return null;
         }
 
@@ -473,5 +480,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {
         PublishMsgProto publishMsg = createBasicPublishMsg(subscription, publishMsgProto);
         sendToNode(publishMsg, subscription);
+    }
+
+    private DefaultTbQueueMsgHeaders createHeaders(PublishMsg publishMsg) {
+        return MqttPropertiesUtil.createHeaders(publishMsg);
     }
 }

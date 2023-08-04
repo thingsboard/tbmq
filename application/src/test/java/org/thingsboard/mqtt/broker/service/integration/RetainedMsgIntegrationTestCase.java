@@ -95,7 +95,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         CountDownLatch receivedResponses = new CountDownLatch(1);
         AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         pubClient.connect();
 
         MqttProperties properties = new MqttProperties();
@@ -119,7 +119,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
         CountDownLatch receivedResponses = new CountDownLatch(1);
         AtomicBoolean receivedRetainedMsg = new AtomicBoolean(false);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
         pubClient.connect();
 
         MqttProperties properties = new MqttProperties();
@@ -142,7 +142,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
 
     private MqttClient createSubClientSubscribeToRetainedMsgTopicAndCheckMsg(String topicFilter, AtomicBoolean receivedRetainedMsg,
                                                                              CountDownLatch receivedResponses) throws MqttException {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "test_sub_client");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "test_sub_client");
         subClient.connect();
         IMqttMessageListener[] listeners = {(topic, message) -> {
             log.error("[{}] Received msg with id: {}, isRetained: {}", topic, message.getId(), message.isRetained());
@@ -157,7 +157,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
     }
 
     private void createPubClientPublishRetainedMsgAndClose(byte[] payload) throws MqttException {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_pub_client");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "test_pub_client");
         pubClient.connect();
         pubClient.publish(TEST_RETAIN_TOPIC, payload, 1, true);
         disconnectAndCloseClient(pubClient);

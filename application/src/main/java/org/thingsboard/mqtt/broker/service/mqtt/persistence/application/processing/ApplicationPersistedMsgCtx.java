@@ -25,6 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @EqualsAndHashCode
 public class ApplicationPersistedMsgCtx {
+
     @Getter
     private final Map<Long, Integer> publishMsgIds;
     @Getter

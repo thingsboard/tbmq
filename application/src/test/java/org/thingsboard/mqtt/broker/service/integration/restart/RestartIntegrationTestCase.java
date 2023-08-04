@@ -51,10 +51,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.clearPersistedClient;
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getQoSLevels;
-import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNames;
-
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = RestartIntegrationTestCase.class, loader = SpringBootContextLoader.class)
@@ -62,6 +58,7 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 // Fails if separated on different classes
 public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
+
     private static final String TEST_CLIENT_ID = "test-application-client";
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test";
@@ -87,7 +84,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @After
     public void clear() throws Exception {
-        clearPersistedClient(persistedClient, initClient());
+        TestUtils.clearPersistedClient(persistedClient, initClient());
         credentialsService.deleteCredentials(applicationCredentials.getId());
     }
 
@@ -108,7 +105,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
         connectOptions.setCleanSession(false);
         persistedClient.connect(connectOptions);
 
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        persistedClient.subscribe(TestUtils.getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), TestUtils.getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
 
         SpringRestarter.getInstance().restart();
 
@@ -128,7 +125,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(false);
         persistedClient.connect(connectOptions);
-        persistedClient.subscribe(getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
+        persistedClient.subscribe(TestUtils.getTopicNames(TEST_TOPIC_SUBSCRIPTIONS), TestUtils.getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS));
         persistedClient.disconnect();
 
         SpringRestarter.getInstance().restart();
@@ -145,14 +142,14 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
     }
 
     private MqttClient initClient() throws MqttException {
-        return new MqttClient("tcp://localhost:" + mqttPort, TEST_CLIENT_ID);
+        return new MqttClient(SERVER_URI + mqttPort, TEST_CLIENT_ID);
     }
 
     private void testPubSub(int startSequence, AtomicReference<AbstractPubSubIntegrationTest.TestPublishMsg> previousMsg) throws Throwable {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "app_restart_test_pub");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "app_restart_test_pub");
         pubClient.connect();
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "app_restart_test_sub");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "app_restart_test_sub");
         subClient.connect();
 
         Waiter waiter = new Waiter();

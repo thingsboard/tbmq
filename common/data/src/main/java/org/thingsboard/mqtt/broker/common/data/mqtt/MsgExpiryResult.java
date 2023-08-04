@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
+package org.thingsboard.mqtt.broker.common.data.mqtt;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
+import lombok.Data;
 
-public interface DeviceMsgQueuePublisher {
+@Data
+public class MsgExpiryResult {
 
-    void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> msgProto, PublishMsgCallback callbackWrapper);
+    private final boolean msgExpiryIntervalPresent;
+    private final boolean expired;
+    private final int msgExpiryInterval; // in seconds, used for PUBLISH message sent from the broker to the client
+
 }

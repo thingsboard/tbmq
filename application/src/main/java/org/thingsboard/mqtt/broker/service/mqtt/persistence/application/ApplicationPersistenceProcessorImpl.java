@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -61,6 +62,7 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -751,20 +753,26 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                                                  ApplicationPersistedMsgCtx persistedMsgCtx,
                                                                  List<TbProtoQueueMsg<PublishMsgProto>> publishProtoMessages,
                                                                  TopicSharedSubscription subscription) {
+        long currentTs = System.currentTimeMillis();
         List<PersistedPublishMsg> result = new ArrayList<>(publishProtoMessages.size());
         for (TbProtoQueueMsg<PublishMsgProto> msg : publishProtoMessages) {
+            MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(msg.getHeaders(), currentTs);
+            if (msgExpiryResult.isExpired()) {
+                continue;
+            }
+
             var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
             boolean isDup = msgPacketId != null;
             int minQoSValue = getMinQoSValue(subscription, msg.getValue().getQos());
-            PublishMsg publishMsg = toPubMsg(msg.getValue(), packetId, minQoSValue, isDup);
+
+            PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(msg.getValue(), packetId, minQoSValue, isDup);
+            if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
+                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+            }
             result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
         }
         return result;
-    }
-
-    private PublishMsg toPubMsg(PublishMsgProto persistedMsgProto, int packetId, int qos, boolean isDup) {
-        return ProtoConverter.convertToPublishMsg(persistedMsgProto, packetId, qos, isDup);
     }
 
     private boolean isClientConnected(UUID sessionId, ClientActorStateInfo clientState) {
