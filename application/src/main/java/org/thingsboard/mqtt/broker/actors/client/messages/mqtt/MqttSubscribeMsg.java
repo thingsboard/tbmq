@@ -27,6 +27,7 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class MqttSubscribeMsg extends QueueableMqttMsg {
+
     private final int messageId;
     private final List<TopicSubscription> topicSubscriptions;
     private final MqttProperties properties;

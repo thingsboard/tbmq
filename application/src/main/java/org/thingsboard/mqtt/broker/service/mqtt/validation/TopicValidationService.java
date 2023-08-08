@@ -16,7 +16,9 @@
 package org.thingsboard.mqtt.broker.service.mqtt.validation;
 
 public interface TopicValidationService {
+
     void validateTopic(String topic);
 
     void validateTopicFilter(String topicFilter);
+
 }

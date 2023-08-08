@@ -454,6 +454,12 @@ mqtt:
     max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}" # in seconds, defaults to 10 minutes, for mqtt 5 clients
   topic:
     max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}" # 0 means the limitation is disabled
+    # max count of topic aliases per connection
+    # 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
+    alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"
+    # minimal required topic name length that Broker publishes to client that can be replaced with topic alias
+    # (e.g. if topic has more than 50 chars - it can be replaced with alias)
+    min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   shared-subscriptions:
     processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}" # supported types: ROUND_ROBIN
   subscription-trie:

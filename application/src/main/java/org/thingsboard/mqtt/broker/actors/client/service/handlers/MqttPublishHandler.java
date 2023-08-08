@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
@@ -85,6 +86,22 @@ public class MqttPublishHandler {
         if (isTraceEnabled) {
             log.trace("[{}][{}] Processing publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg);
         }
+
+        String topicNameByAlias;
+        try {
+            topicNameByAlias = ctx.getTopicAliasCtx().getTopicNameByAlias(publishMsg);
+        } catch (MqttException e) {
+            if (TopicAliasCtx.UNKNOWN_TOPIC_ALIAS_MSG.equals(e.getMessage())) {
+                disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR, e.getMessage());
+            } else {
+                disconnectClient(ctx, DisconnectReasonType.TOPIC_ALIAS_INVALID, e.getMessage());
+            }
+            return;
+        }
+        if (topicNameByAlias != null) {
+            publishMsg = buildPublishMsgWithTopicName(publishMsg, topicNameByAlias);
+        }
+
         boolean validateSuccess = validatePubMsg(ctx, publishMsg);
         if (!validateSuccess) {
             return;
@@ -170,9 +187,7 @@ public class MqttPublishHandler {
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    clientMqttActorManager.disconnect(ctx.getClientId(), new MqttDisconnectMsg(
-                            ctx.getSessionId(),
-                            new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to publish msg")));
+                    disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg");
                 });
             }
         });
@@ -251,6 +266,18 @@ public class MqttPublishHandler {
                     ctx.getClientId(), ctx.getSessionId(), ctx.getAuthRulePatterns(), topic);
             throw new MqttException("Client is not authorized to publish to the topic");
         }
+    }
+
+    private PublishMsg buildPublishMsgWithTopicName(PublishMsg publishMsg, String topicName) {
+        return publishMsg.toBuilder().topicName(topicName).build();
+    }
+
+    private void disconnectClient(ClientSessionCtx ctx, DisconnectReasonType disconnectReasonType, String message) {
+        clientMqttActorManager.disconnect(
+                ctx.getClientId(),
+                new MqttDisconnectMsg(
+                        ctx.getSessionId(),
+                        new DisconnectReason(disconnectReasonType, message)));
     }
 
     @PreDestroy

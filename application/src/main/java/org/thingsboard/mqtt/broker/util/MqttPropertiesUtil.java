@@ -59,7 +59,19 @@ public class MqttPropertiesUtil {
     }
 
     public static MqttProperties.IntegerProperty getPubExpiryIntervalProperty(MqttProperties properties) {
-        MqttProperties.MqttProperty property = properties.getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
+        return getIntegerProperty(properties, BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
+    }
+
+    public static MqttProperties.IntegerProperty getTopicAliasMaxProperty(MqttProperties properties) {
+        return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_MAX_PROP_ID);
+    }
+
+    public static MqttProperties.IntegerProperty getTopicAliasProperty(MqttProperties properties) {
+        return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_PROP_ID);
+    }
+
+    private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
+        MqttProperties.MqttProperty property = properties.getProperty(propertyId);
         return property != null ? (MqttProperties.IntegerProperty) property : null;
     }
 

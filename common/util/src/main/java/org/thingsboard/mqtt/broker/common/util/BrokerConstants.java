@@ -59,6 +59,8 @@ public class BrokerConstants {
     public static final String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
     public static final String CREATED_TIME = "createdTime";
     public static final int PUB_EXPIRY_INTERVAL_PROP_ID = 2;
+    public static final int TOPIC_ALIAS_MAX_PROP_ID = 34;
+    public static final int TOPIC_ALIAS_PROP_ID = 35;
     public static final int USER_PROPERTIES_ID = 38;
 
     public static final String SERVICE_ID_HEADER = "serviceId";

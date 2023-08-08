@@ -27,6 +27,7 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class MqttConnectMsg extends SessionDependentMsg {
+
     private final String clientIdentifier;
     private final boolean cleanStart;
     private final int keepAliveTimeSeconds;
