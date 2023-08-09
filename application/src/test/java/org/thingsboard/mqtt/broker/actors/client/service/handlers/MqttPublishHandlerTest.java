@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
 import java.util.Collections;
 import java.util.List;
@@ -85,6 +86,7 @@ public class MqttPublishHandlerTest {
 
         when(ctx.getPubResponseProcessingCtx()).thenReturn(new PubResponseProcessingCtx(10));
         when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(new AwaitingPubRelPacketsCtx());
+        when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
 
     @Test

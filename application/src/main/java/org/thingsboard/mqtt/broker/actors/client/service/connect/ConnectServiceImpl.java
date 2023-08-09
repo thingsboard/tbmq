@@ -52,7 +52,9 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import javax.annotation.PostConstruct;
@@ -86,9 +88,14 @@ public class ConnectServiceImpl implements ConnectService {
     private int maxServerKeepAlive;
     @Value("${mqtt.client-session-expiry.max-expiry-interval:604800}")
     private int maxExpiryInterval;
+    @Value("${mqtt.topic.alias-max:10}")
+    private int maxTopicAlias;
 
     @PostConstruct
     public void init() {
+        if (this.maxTopicAlias < 0) {
+            throw new RuntimeException("'Max Topic Alias' can not be negative!");
+        }
         this.connectHandlerExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "connect-handler-executor");
     }
 
@@ -110,6 +117,7 @@ public class ConnectServiceImpl implements ConnectService {
                         sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getAddress())
         );
 
+        sessionCtx.setTopicAliasCtx(getTopicAliasCtx(msg));
         keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));
 
         ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
@@ -139,6 +147,18 @@ public class ConnectServiceImpl implements ConnectService {
                 refuseConnection(sessionCtx, t);
             }
         }, connectHandlerExecutor);
+    }
+
+    private TopicAliasCtx getTopicAliasCtx(MqttConnectMsg msg) {
+        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
+        if (property != null) {
+            int value = Math.min(property.value(), maxTopicAlias);
+            if (log.isDebugEnabled()) {
+                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, msg.getClientIdentifier());
+            }
+            return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
+        }
+        return TopicAliasCtx.DISABLED_TOPIC_ALIASES;
     }
 
     private int getSessionExpiryInterval(MqttConnectMsg msg) {
@@ -195,7 +215,13 @@ public class ConnectServiceImpl implements ConnectService {
         var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
         var keepAliveSecs = Math.min(msg.getKeepAliveTimeSeconds(), maxServerKeepAlive);
         var sessionExpiryInterval = actorState.getCurrentSessionCtx().getSessionInfo().getSessionExpiryInterval();
-        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(sessionPresent, assignedClientId, keepAliveSecs, sessionExpiryInterval);
+        var maxTopicAlias = actorState.getCurrentSessionCtx().getTopicAliasCtx().getMaxTopicAlias();
+        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(
+                sessionPresent,
+                assignedClientId,
+                keepAliveSecs,
+                sessionExpiryInterval,
+                maxTopicAlias);
         sessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
     }
 
@@ -233,13 +259,15 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent, String assignedClientId,
-                                                    int keepAliveTimeSeconds, int sessionExpiryInterval) {
+                                                    int keepAliveTimeSeconds, int sessionExpiryInterval,
+                                                    int maxTopicAlias) {
         return mqttMessageGenerator.createMqttConnAckMsg(
                 CONNECTION_ACCEPTED,
                 sessionPresent,
                 assignedClientId,
                 keepAliveTimeSeconds,
-                sessionExpiryInterval);
+                sessionExpiryInterval,
+                maxTopicAlias);
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {

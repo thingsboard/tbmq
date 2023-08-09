@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.exception;
 
 public class MqttException extends RuntimeException {
+
     public MqttException() {
     }
 

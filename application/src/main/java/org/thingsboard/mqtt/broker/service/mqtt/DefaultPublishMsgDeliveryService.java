@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -43,6 +44,9 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final DeliveryTimerStats deliveryTimerStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
+    @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
+    private int minTopicNameLengthForAliasReplacement;
+
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
                                             RetransmissionService retransmissionService,
                                             StatsManager statsManager,
@@ -58,6 +62,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         if (log.isTraceEnabled()) {
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
         }
+        pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
@@ -68,6 +73,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         if (log.isTraceEnabled()) {
             log.trace("[{}] Sending Pub msg to client without flushing {}", sessionCtx.getClientId(), pubMsg);
         }
+        pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);

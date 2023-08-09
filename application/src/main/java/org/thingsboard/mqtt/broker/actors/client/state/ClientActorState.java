@@ -23,6 +23,7 @@ import java.util.UUID;
     not thread-safe
  */
 public interface ClientActorState extends ClientActorStateUpdater {
+
     void setStopActorCommandId(UUID commandId);
 
     void clearStopActorCommandId();

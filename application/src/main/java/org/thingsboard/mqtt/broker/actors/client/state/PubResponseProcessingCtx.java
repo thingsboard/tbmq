@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import lombok.Getter;
 
+@Getter
 public class PubResponseProcessingCtx {
-    @Getter
+
     private final OrderedProcessingQueue qos1PubAckResponseMsgs;
-    @Getter
     private final OrderedProcessingQueue qos2PubRecResponseMsgs;
 
     public PubResponseProcessingCtx(int maxAwaitingQueueSize) {

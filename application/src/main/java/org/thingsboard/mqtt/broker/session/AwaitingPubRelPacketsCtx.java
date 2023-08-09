@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class AwaitingPubRelPacketsCtx {
+
     private final ConcurrentMap<Integer, QoS2PubRelPacketInfo> awaitingForQoS2PubRelPackets = new ConcurrentHashMap<>();
 
     public void loadPersistedPackets(Set<Integer> awaitingPacketIds) {
@@ -63,6 +64,7 @@ public class AwaitingPubRelPacketsCtx {
     @Getter
     @EqualsAndHashCode
     public static class QoS2PubRelPacketInfo {
+
         private final int packetId;
         @Setter
         private volatile boolean persisted = false;

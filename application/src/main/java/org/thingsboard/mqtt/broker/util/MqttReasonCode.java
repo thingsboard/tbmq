@@ -32,6 +32,7 @@ public enum MqttReasonCode {
     SESSION_TAKEN_OVER((byte) 0x8E),
     TOPIC_NAME_INVALID((byte) 0x90),
     PACKET_ID_NOT_FOUND((byte) 0x92),
+    TOPIC_ALIAS_INVALID((byte) 0x94),
     PACKET_TOO_LARGE((byte) 0x95),
     MESSAGE_RATE_TOO_HIGH((byte) 0x96),
     QUOTA_EXCEEDED((byte) 0x97),

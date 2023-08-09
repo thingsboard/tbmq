@@ -23,6 +23,8 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class ConnectionResponse {
+
     private final boolean success;
     private final boolean sessionPresent;
+
 }
