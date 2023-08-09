@@ -91,6 +91,7 @@ public class MqttPublishHandler {
         try {
             topicNameByAlias = ctx.getTopicAliasCtx().getTopicNameByAlias(publishMsg);
         } catch (MqttException e) {
+            log.warn("[{}][{}] Failed to process publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
             if (TopicAliasCtx.UNKNOWN_TOPIC_ALIAS_MSG.equals(e.getMessage())) {
                 disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR, e.getMessage());
             } else {

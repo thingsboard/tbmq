@@ -153,6 +153,9 @@ public class ConnectServiceImpl implements ConnectService {
         MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
         if (property != null) {
             int value = Math.min(property.value(), maxTopicAlias);
+            if (log.isDebugEnabled()) {
+                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, msg.getClientIdentifier());
+            }
             return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
         }
         return TopicAliasCtx.DISABLED_TOPIC_ALIASES;
