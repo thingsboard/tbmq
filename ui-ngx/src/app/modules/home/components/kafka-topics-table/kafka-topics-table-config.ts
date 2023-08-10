@@ -29,13 +29,10 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
               private translate: TranslateService,
               public entityId: string = null) {
     super();
-    this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
-    this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.defaultPageSize = 5;
     this.entityTranslations = {
       noEntities: 'kafka.no-kafka-topic-text',
       search: 'kafka.topics-search'

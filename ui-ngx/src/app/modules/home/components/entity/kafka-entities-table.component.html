@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div style="height: 230px">
+<div>
   <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
     <div class="mat-toolbar-tools" fxLayoutGap="4px">
       <span fxFlex></span>
@@ -61,139 +61,137 @@
       </button>
     </div>
   </mat-toolbar>
-  <div fxLayout="column">
-    <div style="height: 140px; overflow-x: auto; overflow-y: unset">
-      <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
-                 matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
-        <ng-container matColumnDef="select" sticky>
-          <mat-header-cell *matHeaderCellDef style="width: 30px;">
-            <mat-checkbox (change)="$event ? dataSource.masterToggle() : null"
-                          [checked]="dataSource.selection.hasValue() && (dataSource.isAllSelected() | async)"
-                          [indeterminate]="dataSource.selection.hasValue() && !(dataSource.isAllSelected() | async)">
-            </mat-checkbox>
-          </mat-header-cell>
-          <mat-cell *matCellDef="let entity">
-            <mat-checkbox (click)="$event.stopPropagation()"
-                          [fxShow]="entitiesTableConfig.entitySelectionEnabled(entity)"
-                          (change)="$event ? dataSource.selection.toggle(entity) : null"
-                          [checked]="dataSource.selection.isSelected(entity)">
-            </mat-checkbox>
-          </mat-cell>
-        </ng-container>
-        <ng-container [matColumnDef]="column.key" *ngFor="let column of entityColumns; trackBy: trackByColumnKey;">
-          <mat-header-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
-                           [fxHide.lt-lg]="column.mobileHide"
-                           *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
-            {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
-          <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
-                    [fxHide.lt-lg]="column.mobileHide"
-                    *matCellDef="let entity; let row = index"
-                    [matTooltip]="showTooltip(entity)"
-                    matTooltipPosition="above"
-                    [ngStyle]="cellStyle(entity, column, row)">
-            <span [innerHTML]="cellContent(entity, column, row)"></span>
-            <ng-template [ngIf]="column.actionCell">
-              <ng-container [ngSwitch]="column.actionCell.type">
-                <ng-template [ngSwitchCase]="cellActionType.COPY_BUTTON">
-                  <tb-copy-button
-                    [disabled]="isLoading$ | async"
-                    [fxShow]="column.actionCell.isEnabled(entity)"
-                    [copyText]="column.actionCell.onAction(null, entity)"
-                    tooltipText="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
-                    tooltipPosition="above"
-                    [icon]="column.actionCell.icon"
-                    [mdiIcon]="column.actionCell.mdiIcon" [style]="column.actionCell.style">
-                  </tb-copy-button>
-                </ng-template>
-                <ng-template ngSwitchDefault>
-                  <button mat-icon-button [disabled]="isLoading$ | async"
-                          [fxShow]="column.actionCell.isEnabled(entity)"
-                          matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
-                          matTooltipPosition="above"
-                          (click)="column.actionCell.onAction($event, entity)">
-                    <mat-icon [svgIcon]="column.actionCell.mdiIcon" [ngStyle]="column.actionCell.style">
-                      {{column.actionCell.icon}}
-                    </mat-icon>
-                  </button>
-                </ng-template>
-              </ng-container>
-            </ng-template>
-          </mat-cell>
-        </ng-container>
-        <ng-container [matColumnDef]="column.key" *ngFor="let column of actionColumns; trackBy: trackByColumnKey;">
-          <mat-header-cell *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
-          <mat-cell *matCellDef="let entity; let row = index"
-                    [ngStyle]="cellStyle(entity, column, row)">
-            <button mat-icon-button [disabled]="isLoading$ | async"
-                    [fxShow]="column.actionDescriptor.isEnabled(entity)"
-                    matTooltip="{{ column.actionDescriptor.nameFunction ? column.actionDescriptor.nameFunction(entity) : column.actionDescriptor.name }}"
-                    matTooltipPosition="above"
-                    (click)="column.actionDescriptor.onAction($event, entity)">
-              <mat-icon [svgIcon]="column.actionDescriptor.mdiIcon" [ngStyle]="column.actionDescriptor.style">
-                {{column.actionDescriptor.icon}}</mat-icon>
-            </button>
-          </mat-cell>
-        </ng-container>
-        <ng-container matColumnDef="actions" stickyEnd>
-          <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                                maxWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                                width: (cellActionDescriptors.length * 40) + 'px' }">
-            {{ entitiesTableConfig.actionsColumnTitle ? (entitiesTableConfig.actionsColumnTitle | translate) : '' }}
-          </mat-header-cell>
-          <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                                maxWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                                width: (cellActionDescriptors.length * 40) + 'px' }">
-            <div fxHide fxShow.gt-md fxFlex fxLayout="row" fxLayoutAlign="end">
-              <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
-                   matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
-                <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
-                        (click)="actionDescriptor.onAction($event, entity)">
-                  <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
-                    {{actionDescriptor.icon}}</mat-icon>
+  <div class="mat-table-container">
+    <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
+               matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
+      <ng-container matColumnDef="select" sticky>
+        <mat-header-cell *matHeaderCellDef style="width: 30px;">
+          <mat-checkbox (change)="$event ? dataSource.masterToggle() : null"
+                        [checked]="dataSource.selection.hasValue() && (dataSource.isAllSelected() | async)"
+                        [indeterminate]="dataSource.selection.hasValue() && !(dataSource.isAllSelected() | async)">
+          </mat-checkbox>
+        </mat-header-cell>
+        <mat-cell *matCellDef="let entity">
+          <mat-checkbox (click)="$event.stopPropagation()"
+                        [fxShow]="entitiesTableConfig.entitySelectionEnabled(entity)"
+                        (change)="$event ? dataSource.selection.toggle(entity) : null"
+                        [checked]="dataSource.selection.isSelected(entity)">
+          </mat-checkbox>
+        </mat-cell>
+      </ng-container>
+      <ng-container [matColumnDef]="column.key" *ngFor="let column of entityColumns; trackBy: trackByColumnKey;">
+        <mat-header-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
+                         [fxHide.lt-lg]="column.mobileHide"
+                         *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
+          {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
+        <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
+                  [fxHide.lt-lg]="column.mobileHide"
+                  *matCellDef="let entity; let row = index"
+                  [matTooltip]="showTooltip(entity)"
+                  matTooltipPosition="above"
+                  [ngStyle]="cellStyle(entity, column, row)">
+          <span [innerHTML]="cellContent(entity, column, row)"></span>
+          <ng-template [ngIf]="column.actionCell">
+            <ng-container [ngSwitch]="column.actionCell.type">
+              <ng-template [ngSwitchCase]="cellActionType.COPY_BUTTON">
+                <tb-copy-button
+                  [disabled]="isLoading$ | async"
+                  [fxShow]="column.actionCell.isEnabled(entity)"
+                  [copyText]="column.actionCell.onAction(null, entity)"
+                  tooltipText="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
+                  tooltipPosition="above"
+                  [icon]="column.actionCell.icon"
+                  [mdiIcon]="column.actionCell.mdiIcon" [style]="column.actionCell.style">
+                </tb-copy-button>
+              </ng-template>
+              <ng-template ngSwitchDefault>
+                <button mat-icon-button [disabled]="isLoading$ | async"
+                        [fxShow]="column.actionCell.isEnabled(entity)"
+                        matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
+                        matTooltipPosition="above"
+                        (click)="column.actionCell.onAction($event, entity)">
+                  <mat-icon [svgIcon]="column.actionCell.mdiIcon" [ngStyle]="column.actionCell.style">
+                    {{column.actionCell.icon}}
+                  </mat-icon>
                 </button>
-              </div>
-            </div>
-            <div fxHide fxShow.lt-lg *ngIf="cellActionDescriptors.length">
-              <button mat-icon-button
-                      (click)="$event.stopPropagation()"
-                      [matMenuTriggerFor]="cellActionsMenu">
-                <mat-icon class="material-icons">more_vert</mat-icon>
+              </ng-template>
+            </ng-container>
+          </ng-template>
+        </mat-cell>
+      </ng-container>
+      <ng-container [matColumnDef]="column.key" *ngFor="let column of actionColumns; trackBy: trackByColumnKey;">
+        <mat-header-cell *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
+        <mat-cell *matCellDef="let entity; let row = index"
+                  [ngStyle]="cellStyle(entity, column, row)">
+          <button mat-icon-button [disabled]="isLoading$ | async"
+                  [fxShow]="column.actionDescriptor.isEnabled(entity)"
+                  matTooltip="{{ column.actionDescriptor.nameFunction ? column.actionDescriptor.nameFunction(entity) : column.actionDescriptor.name }}"
+                  matTooltipPosition="above"
+                  (click)="column.actionDescriptor.onAction($event, entity)">
+            <mat-icon [svgIcon]="column.actionDescriptor.mdiIcon" [ngStyle]="column.actionDescriptor.style">
+              {{column.actionDescriptor.icon}}</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="actions" stickyEnd>
+        <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
+                                                              maxWidth: (cellActionDescriptors.length * 40) + 'px',
+                                                              width: (cellActionDescriptors.length * 40) + 'px' }">
+          {{ entitiesTableConfig.actionsColumnTitle ? (entitiesTableConfig.actionsColumnTitle | translate) : '' }}
+        </mat-header-cell>
+        <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
+                                                              maxWidth: (cellActionDescriptors.length * 40) + 'px',
+                                                              width: (cellActionDescriptors.length * 40) + 'px' }">
+          <div fxHide fxShow.gt-md fxFlex fxLayout="row" fxLayoutAlign="end">
+            <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
+                <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
+                  {{actionDescriptor.icon}}</mat-icon>
               </button>
-              <mat-menu #cellActionsMenu="matMenu" xPosition="before">
-                <button mat-menu-item *ngFor="let actionDescriptor of cellActionDescriptors"
-                        [disabled]="isLoading$ | async"
-                        [fxShow]="actionDescriptor.isEnabled(entity)"
-                        (click)="actionDescriptor.onAction($event, entity)">
-                  <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
-                    {{actionDescriptor.icon}}</mat-icon>
-                  <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
-                </button>
-              </mat-menu>
             </div>
-          </mat-cell>
-        </ng-container>
-        <mat-header-row [ngClass]="{'mat-row-select': selectionEnabled}" *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-        <mat-row [fxShow]="!dataSource.dataLoading"
-                 class="kafka-table-mat-row"
-                 [ngClass]="{'mat-row-select': selectionEnabled,
-                             'mat-selected': dataSource.selection.isSelected(entity),
-                             'tb-current-entity': dataSource.isCurrentEntity(entity)}"
-                 *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
-      </table>
-      <span [fxShow]="!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading"
-            fxLayoutAlign="center center"
-            class="no-data-found">{{ translations.noEntities | translate }}</span>
-      <span [fxShow]="dataSource.dataLoading"
-            fxLayoutAlign="center center"
-            class="no-data-found">{{ 'common.loading' | translate }}</span>
-    </div>
-    <mat-divider *ngIf="displayPagination"></mat-divider>
-    <mat-paginator *ngIf="displayPagination"
-                   [length]="dataSource.total() | async"
-                   [pageIndex]="pageLink.page"
-                   [pageSize]="pageLink.pageSize"
-                   [pageSizeOptions]="pageSizeOptions"
-                   class="mat-paginator-sticky"
-                   showFirstLastButtons></mat-paginator>
+          </div>
+          <div fxHide fxShow.lt-lg *ngIf="cellActionDescriptors.length">
+            <button mat-icon-button
+                    (click)="$event.stopPropagation()"
+                    [matMenuTriggerFor]="cellActionsMenu">
+              <mat-icon class="material-icons">more_vert</mat-icon>
+            </button>
+            <mat-menu #cellActionsMenu="matMenu" xPosition="before">
+              <button mat-menu-item *ngFor="let actionDescriptor of cellActionDescriptors"
+                      [disabled]="isLoading$ | async"
+                      [fxShow]="actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
+                <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
+                  {{actionDescriptor.icon}}</mat-icon>
+                <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
+              </button>
+            </mat-menu>
+          </div>
+        </mat-cell>
+      </ng-container>
+      <mat-header-row [ngClass]="{'mat-row-select': selectionEnabled}" *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+      <mat-row [fxShow]="!dataSource.dataLoading"
+               class="kafka-table-mat-row"
+               [ngClass]="{'mat-row-select': selectionEnabled,
+                           'mat-selected': dataSource.selection.isSelected(entity),
+                           'tb-current-entity': dataSource.isCurrentEntity(entity)}"
+               *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
+    </table>
+    <span [fxShow]="!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading"
+          fxLayoutAlign="center center"
+          class="no-data-found">{{ translations.noEntities | translate }}</span>
+    <span [fxShow]="dataSource.dataLoading"
+          fxLayoutAlign="center center"
+          class="no-data-found">{{ 'common.loading' | translate }}</span>
   </div>
+  <mat-divider *ngIf="displayPagination"></mat-divider>
+  <mat-paginator *ngIf="displayPagination"
+                 [length]="dataSource.total() | async"
+                 [pageIndex]="pageLink.page"
+                 [pageSize]="pageLink.pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 showFirstLastButtons></mat-paginator>
+
 </div>

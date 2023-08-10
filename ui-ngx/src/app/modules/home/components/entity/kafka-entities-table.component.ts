@@ -202,8 +202,8 @@ export class KafkaEntitiesTableComponent extends PageComponent implements AfterV
     }
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.defaultPageSize = this.entitiesTableConfig.defaultPageSize;
-    this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
+    this.defaultPageSize = window.innerWidth > 1920 ? 10 : 5;
+    this.pageSizeOptions = [5, 10, 15, 20];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));

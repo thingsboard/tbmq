@@ -15,18 +15,20 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container" style="overflow-x: auto">
-  <section fxFlex fxLayoutAlign="space-between">
+<div #homeChartsContainer class="tb-home-card-container tb-home-padding" style="overflow: auto;">
+  <section fxLayoutAlign="space-between" fxLayoutGap="12px">
     <div *ngFor="let chart of statsCharts">
       <div class="chart-container">
-        <div fxFlex fxLayout="column">
-          <section>
+        <div fxLayout="column">
+          <section style="white-space: nowrap;">
             <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
             <mat-icon [matTooltip]="chartTooltip(chart)">
               info_outline
             </mat-icon>
           </section>
-          <canvas class="chart" [width]="width" [id]="chart+chartIdSuf"></canvas>
+          <div [ngStyle]="{'width': width + 'px', 'height': width*0.6 + 'px'}">
+            <canvas [id]="chart+chartIdSuf"></canvas>
+          </div>
         </div>
       </div>
     </div>

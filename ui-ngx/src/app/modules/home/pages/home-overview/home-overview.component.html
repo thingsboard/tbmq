@@ -18,18 +18,18 @@
 <div class="tb-home-overview" fxLayoutGap="12px" fxLayout="row" fxLayout.lt-lg="column">
   <div fxLayout="column" fxFlex="70" fxFlex.lt-lg="auto" fxLayoutGap="12px">
     <tb-home-charts></tb-home-charts>
-    <div fxFlex fxLayout="column" fxLayoutGap="12px">
-      <tb-home-cards-sessions-credentials fxFlex></tb-home-cards-sessions-credentials>
+    <div fxLayout="column" fxLayoutGap="12px">
+      <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
       <div fxLayout="row" fxLayoutGap="12px" fxFlex>
         <tb-card-config class="tb-home-card"></tb-card-config>
         <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
       </div>
     </div>
-    <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
+    <tb-kafka-tables-tab-group fxFlex class="tb-home-card"></tb-kafka-tables-tab-group>
   </div>
   <div fxLayout="column" fxFlex="30" fxFlex.lt-lg="auto" fxLayoutGap="12px">
-    <tb-getting-started style="flex: 2" class="tb-home-card"></tb-getting-started>
-    <tb-quick-links style="flex: 1" class="tb-home-card"></tb-quick-links>
-    <tb-version-card style="flex: 1" class="tb-home-card"></tb-version-card>
+    <tb-getting-started fxFlex class="tb-home-card"></tb-getting-started>
+    <tb-quick-links class="tb-home-card"></tb-quick-links>
+    <tb-version-card class="tb-home-card"></tb-version-card>
   </div>
 </div>

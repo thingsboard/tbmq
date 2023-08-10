@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
@@ -31,6 +31,7 @@ import {
 } from '@shared/models/chart.model';
 import Chart from 'chart.js/auto';
 import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { ResizeObserver } from '@juggle/resize-observer';
 
 @Component({
   selector: 'tb-home-charts',
@@ -38,6 +39,8 @@ import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shar
   styleUrls: ['./home-charts.component.scss']
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  @ViewChild('homeChartsContainer', {static: true}) homeChartsContainer: ElementRef;
 
   cardType = HomePageTitleType.MONITORING;
   chartIdSuf = 'home';
@@ -58,17 +61,13 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit() {
+    this.resizeCharts();
     this.calculateFixedWindowTimeMs();
-    this.setChartSize();
   }
 
   private calculateFixedWindowTimeMs() {
     this.fixedWindowTimeMs = calculateFixedWindowTimeMs(this.timeService.defaultTimewindow());
     this.fixedWindowTimeMs.startTimeMs = this.fixedWindowTimeMs.endTimeMs - HOME_CHARTS_DURATION;
-  }
-
-  private setChartSize() {
-    this.width = $(window).width() * 0.11;
   }
 
   ngAfterViewInit(): void {
@@ -156,4 +155,11 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.charts[chartType].update();
   }
 
+  private resizeCharts() {
+    const resizeObserver = new ResizeObserver((entries) => {
+      const containerWidth = entries[0].contentRect.width;
+      this.width = (containerWidth > 1000) ? ((containerWidth / 5) - 16) : (containerWidth / 7);
+    });
+    resizeObserver.observe(this.homeChartsContainer.nativeElement);
+  }
 }
