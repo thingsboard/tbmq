@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  display: flex;
-  flex: 2;
+@import "../../../../../scss/constants";
 
+:host {
   .mat-button:disabled {
     color: rgba(0,0,0,0.87);
   }
@@ -25,7 +24,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    justify-content: space-evenly;
+    justify-content: space-between;
   }
 
   .link {
@@ -62,6 +61,17 @@
         font-size: 14px;
         border: 1px solid transparent;
         padding-left: 4px;
+      }
+
+      @media #{$mat-lt-xl} {
+        span {
+          font-size: 11px;
+        }
+
+        .icon-container {
+          width: 24px;
+          height: 24px;
+        }
       }
     }
   }

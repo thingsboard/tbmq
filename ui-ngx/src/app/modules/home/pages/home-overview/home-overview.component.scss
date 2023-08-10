@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import '../../../../../scss/constants';
 
 :host::ng-deep {
-  margin-bottom: 12px;
-
   .tb-home-overview {
+    width: 100%;
+    margin-bottom: 12px;
     background-color: #dcdcdc;
     padding: 12px 12px 0 12px;
 
@@ -30,9 +31,16 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding: 16px;
       border-radius: 10px;
       background-color: #fff;
+    }
+
+    .tb-home-padding {
+      padding: 16px;
+
+      @media #{$mat-lt-xl} {
+        padding: 12px;
+      }
     }
   }
 }

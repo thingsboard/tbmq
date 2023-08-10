@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import "../../../../../scss/constants";
+
 :host {
   display: flex;
   flex: 1;
@@ -35,7 +37,16 @@
 
   .tb-config-table {
     overflow: auto;
-    height: 164px;
+
+    @media #{$mat-lt-xl} {
+      height: 80px;
+    }
+    @media #{$mat-gt-xl} {
+      height: 160px;
+    }
+    @media #{$mat-gt-xxl} {
+      height: max-content;
+    }
 
     .mat-tab {
       overflow: auto;
@@ -59,6 +70,10 @@
       font-size: 12px;
       font-weight: 400;
       padding: 0;
+
+      @media #{$mat-lt-xl} {
+        font-size: 10px;
+      }
     }
   }
 

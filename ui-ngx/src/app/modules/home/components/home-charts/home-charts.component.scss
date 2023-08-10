@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import "../../../../../scss/constants";
+
 :host::ng-deep {
   .chart-container {
     border: 1px solid #e0e0e0;
@@ -26,11 +28,6 @@
       padding-left: 6px;
     }
 
-    .chart {
-      border-radius: 10px;
-      background-color: #fcfcfc;
-    }
-
     mat-icon {
       font-size: 18px;
       height: 18px;
@@ -41,6 +38,17 @@
 
     mat-icon:hover {
       color: rgba(0,0,0,0.38);
+    }
+
+    @media #{$mat-lt-xl} {
+      span {
+        font-size: 11px;
+      }
+
+      mat-icon {
+        font-size: 14px;
+        height: 14px;
+      }
     }
   }
 }

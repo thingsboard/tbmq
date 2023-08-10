@@ -720,6 +720,12 @@ mat-label {
     font-size: 14px;
   }
 
+  @media #{$mat-lt-xl} {
+    .mat-cell, .mat-footer-cell {
+      font-size: 11px;
+    }
+  }
+
   .mat-cell, .mat-footer-cell, .mat-header-cell {
     // fix for ie11 'align-items: center'
     height: 20px;

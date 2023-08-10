@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import "../../../../../scss/constants";
+
 :host {
-  display: flex;
   flex: 1;
 
   .tb-kafka-table {
     overflow: auto;
+
+    @media #{$mat-lt-xl} {
+      height: 80px
+    }
+    @media #{$mat-gt-xl} {
+      height: 160px;
+    }
+    @media #{$mat-gt-xxl} {
+      height: auto;
+    }
 
     .mat-tab {
       overflow: auto;

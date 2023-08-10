@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div class="container">
+<section>
   <div class="tabs-toolbar">
     <button mat-button (click)="select(KafkaTable.TOPICS)"
             [ngClass]="{'tb-active': selectedTab ===  KafkaTable.TOPICS}">
@@ -28,14 +28,14 @@
   </div>
   <div [ngSwitch]="selectedTab">
     <ng-template [ngSwitchCase]="KafkaTable.TOPICS" ngSwitchDefault>
-      <div class="tb-home-card-container" style="padding: 12px 0 12px 0">
+      <div class="tb-home-card-container tb-home-padding tb-kafka-table">
         <tb-kafka-topics-table></tb-kafka-topics-table>
       </div>
     </ng-template>
     <ng-template [ngSwitchCase]="KafkaTable.CONSUMER_GROUPS">
-      <div class="tb-home-card-container" style="padding: 12px 0 12px 0">
+      <div class="tb-home-card-container tb-home-padding tb-kafka-table">
         <tb-kafka-consumers-table></tb-kafka-consumers-table>
       </div>
     </ng-template>
   </div>
-</div>
+</section>

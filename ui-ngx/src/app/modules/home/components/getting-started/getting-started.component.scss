@@ -16,9 +16,6 @@
 @import '../../../../../scss/constants';
 
 :host::ng-deep {
-  display: flex;
-  flex: 4;
-
   .mat-expansion-panel-body {
     padding: 0 22px 16px;
   }
@@ -314,6 +311,40 @@
             }
           }
         }
+    }
+  }
+
+  @media #{$mat-lt-xl} {
+    .tb-get-started .mat-vertical-stepper-header {
+      padding: 6px;
+    }
+
+    .tb-get-started .mat-step-label {
+      font-size: 11px;
+      line-height: 13px;
+    }
+
+    .tb-get-started .mat-step-label.mat-step-label-selected {
+      font-size: 11px;
+      line-height: 13px;
+    }
+
+    .tb-get-started .mat-vertical-content {
+      padding: 0 12px 12px 12px;
+      p, li {
+        font-size: 11px;
+        line-height: 13px;
+        em {
+          font-size: 11px;
+        }
+      }
+      .tb-markdown-view {
+        .code-wrapper {
+          code[class*="language-"], pre[class*="language-"] {
+            font-size: 11px;
+          }
+        }
+      }
     }
   }
 }

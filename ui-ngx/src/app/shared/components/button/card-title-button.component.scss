@@ -16,11 +16,6 @@
 @import '../../../../scss/constants';
 
 :host {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-
   .tb-title-link {
     font-style: normal;
     font-weight: 500;
@@ -30,6 +25,11 @@
     color: rgba(0, 0, 0, 0.54);
     position: relative;
     border-bottom: none;
+
+    @media #{$mat-lt-xl} {
+      font-size: 11px;
+      line-height: 14px;
+    }
   }
 
   .tb-title-link-hover {

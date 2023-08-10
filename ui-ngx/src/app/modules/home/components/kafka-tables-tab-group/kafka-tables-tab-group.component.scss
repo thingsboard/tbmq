@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import "../../../../../scss/constants";
+
 :host {
-
-  .container {
-    padding: 0 12px 12px 12px;
-  }
-
   .tabs-toolbar {
     position: absolute;
-    margin-top: 14px;
+    margin: 14px 0 0 14px;
     border-radius: 20px;
     background: rgba(0,0,0,0.05);
     width: fit-content;
+  }
+
+  .tb-kafka-table {
+    padding-bottom: 0;
   }
 }
 
@@ -37,6 +38,10 @@
     span {
       color: rgba(0,0,0,0.38);
       font-size: 14px;
+
+      @media #{$mat-lt-xl} {
+        font-size: 11px;
+      }
     }
   }
 
