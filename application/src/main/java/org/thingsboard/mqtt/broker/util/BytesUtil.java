@@ -58,6 +58,16 @@ public class BytesUtil {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
+    public static byte[] integerToBytes(int value) {
+        ByteBuffer buf = ByteBuffer.allocate(Integer.BYTES);
+        buf.putInt(value);
+        return buf.array();
+    }
+
+    public static int bytesToInteger(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getInt();
+    }
+
     public static String toHostAddress(byte[] ipAddr) {
         try {
             return InetAddress.getByAddress(ipAddr).getHostAddress();

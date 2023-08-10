@@ -71,10 +71,10 @@ public class DefaultLastWillService implements LastWillService {
 
     @Override
     public void saveLastWillMsg(SessionInfo sessionInfo, PublishMsg publishMsg) {
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             log.trace("[{}][{}] Saving last will msg, topic - [{}]",
                     sessionInfo.getClientInfo().getClientId(), sessionInfo.getSessionId(), publishMsg.getTopicName());
-
+        }
         lastWillMessages.compute(sessionInfo.getSessionId(), (sessionId, lastWillMsg) -> {
             if (lastWillMsg != null) {
                 log.error("[{}][{}] Last-will message has been saved already!", sessionInfo.getClientInfo().getClientId(), sessionId);

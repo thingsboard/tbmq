@@ -67,7 +67,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testSendLastWillOnDisconnectMsgWithSpecialReasonCode() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -80,7 +80,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill");
+        MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill");
 
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setWill(MY_TOPIC, new MqttMessage("will".getBytes(StandardCharsets.UTF_8), 2, false, MQTT_PROPERTIES));
@@ -105,7 +105,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testNoLastWillSentWhenReconnectSessionBeforeWillDelayElapsed() throws Throwable {
         AtomicBoolean lastWillReceived = new AtomicBoolean(false);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -117,7 +117,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+        final MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill",
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
@@ -134,7 +134,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
 
         Thread.sleep(1000); // needed to wait a bit for will delay
 
-        MqttAsyncClient pubClientReconnect = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill");
+        MqttAsyncClient pubClientReconnect = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill");
         pubClientReconnect.connect().waitForCompletion();
 
         Thread.sleep(3000); // needed to wait a bit for will delay
@@ -149,7 +149,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testLastWillSentWhenSessionExpires() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -161,7 +161,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+        final MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill",
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
@@ -187,7 +187,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testLastWillSentWhenSessionExpiresWithValueFromDisconnect() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
         subClient.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -199,7 +199,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        final MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+        final MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill",
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
@@ -231,7 +231,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testSendMsgWithPropertiesForMqtt3AndMqtt5Clients() throws Throwable {
         CountDownLatch latch = new CountDownLatch(2);
 
-        MqttClient subClientMqtt5 = new MqttClient("tcp://localhost:" + mqttPort, "subClientMqtt5");
+        MqttClient subClientMqtt5 = new MqttClient(SERVER_URI + mqttPort, "subClientMqtt5");
         subClientMqtt5.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -247,7 +247,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
         subClientMqtt5.subscribe(subscriptions, listeners);
 
         org.eclipse.paho.client.mqttv3.MqttClient subClientMqtt3 =
-                new org.eclipse.paho.client.mqttv3.MqttClient("tcp://localhost:" + mqttPort, "subClientMqtt3");
+                new org.eclipse.paho.client.mqttv3.MqttClient(SERVER_URI + mqttPort, "subClientMqtt3");
         subClientMqtt3.connect();
         subClientMqtt3.subscribe(MY_TOPIC, 2, (topic, message) -> {
             log.error("[{}] Received msg: {}", topic, message);
@@ -257,7 +257,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
             latch.countDown();
         });
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "pubClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "pubClient");
         pubClient.connect();
 
         MqttMessage message = new MqttMessage("test123".getBytes(StandardCharsets.UTF_8), 2, false, MQTT_PROPERTIES);
@@ -280,7 +280,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testSendMsgAndReceiveForSameClient() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, "sameClient");
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "sameClient");
         client.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -306,7 +306,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
     public void testSendMsgAndNotReceiveForSameClientWhenNoLocal() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, "sameClientNoLocal");
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "sameClientNoLocal");
         client.connect();
 
         IMqttMessageListener[] listeners = {(topic, message) -> {

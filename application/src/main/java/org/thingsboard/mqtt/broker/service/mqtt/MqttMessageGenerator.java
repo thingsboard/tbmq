@@ -31,7 +31,8 @@ public interface MqttMessageGenerator {
     MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode);
 
     MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent,
-                                            String assignedClientId, int keepAliveTimeSeconds, int sessionExpiryInterval);
+                                            String assignedClientId, int keepAliveTimeSeconds, int sessionExpiryInterval,
+                                            int maxTopicAlias);
 
     MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
 

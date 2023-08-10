@@ -79,7 +79,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test(expected = MqttException.class)
     public void givenClient_whenPublishToWrongTopic_thenDisconnect() throws Throwable {
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect();
 
         client.publish(MY_TOPIC, "msg".getBytes(StandardCharsets.UTF_8), 1, false);
@@ -88,7 +88,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test
     public void givenClient_whenPublishToCorrectTopic_thenSuccess() throws Throwable {
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect();
 
         client.publish(TEST_TOPIC, "msg".getBytes(StandardCharsets.UTF_8), 1, false);
@@ -98,7 +98,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test(expected = MqttException.class)
     public void givenClient_whenSubscribeToWrongTopic_thenDisconnect() throws Throwable {
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect();
 
         client.subscribe(TEST_TOPIC);
@@ -107,7 +107,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test
     public void givenClient_whenSubscribeToCorrectTopic_thenSuccess() throws Throwable {
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect();
 
         client.subscribe(MY_TOPIC);

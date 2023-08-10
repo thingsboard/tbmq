@@ -34,38 +34,29 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
+@Getter
 public class ClientSessionCtx implements SessionContext {
 
-    @Getter
     private final UUID sessionId;
-    @Getter
     private final SslHandler sslHandler;
-    @Getter
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
-    @Getter
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
-    @Getter
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
-    @Getter
     private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
 
-    @Getter
     @Setter
     private volatile SessionInfo sessionInfo;
-    @Getter
     @Setter
     private volatile List<AuthRulePatterns> authRulePatterns;
-    @Getter
     @Setter
     private volatile ClientType clientType;
-    @Getter
     @Setter
     private volatile MqttVersion mqttVersion;
-    @Getter
     @Setter
     private volatile InetSocketAddress address;
+    @Setter
+    private volatile TopicAliasCtx topicAliasCtx;
 
-    @Getter
     private ChannelHandlerContext channel;
 
     public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMsgs) {

@@ -52,7 +52,9 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
 
     @Override
     public void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback) {
-        log.trace("[{}] Persisting retained msg asynchronously - {}", topic, retainedMsgProto);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting retained msg asynchronously - {}", topic, retainedMsgProto);
+        }
         retainedMsgProducer.send(generateRequest(topic, retainedMsgProto), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -71,8 +73,32 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     }
 
     @Override
+    public void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting retained msg asynchronously - {} with expiry interval {}", topic, retainedMsgProto, messageExpiryInterval);
+        }
+        retainedMsgProducer.send(generateRequest(topic, retainedMsgProto, messageExpiryInterval), new TbQueueCallback() {
+            @Override
+            public void onSuccess(TbQueueMsgMetadata metadata) {
+                if (callback != null) {
+                    callback.onSuccess();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            }
+        });
+    }
+
+    @Override
     public void persistRetainedMsgSync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) throws QueuePersistenceException {
-        log.trace("[{}] Persisting retained msg synchronously - {}", topic, retainedMsgProto);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Persisting retained msg synchronously - {}", topic, retainedMsgProto);
+        }
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
         retainedMsgProducer.send(generateRequest(topic, retainedMsgProto), new TbQueueCallback() {
@@ -99,7 +125,9 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
             log.warn("[{}] Failed to update retained msg. Reason - {}.",
                     topic, error != null ? error.getMessage() : "timeout waiting");
             if (error != null) {
-                log.trace("Detailed error:", error);
+                if (log.isTraceEnabled()) {
+                    log.trace("Detailed error:", error);
+                }
             }
             if (!waitSuccessful) {
                 throw new QueuePersistenceException("Timed out to update retained msg for topic " + topic);
@@ -112,6 +140,12 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     private TbProtoQueueMsg<QueueProtos.RetainedMsgProto> generateRequest(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) {
         TbProtoQueueMsg<QueueProtos.RetainedMsgProto> request = new TbProtoQueueMsg<>(topic, retainedMsgProto);
         request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
+        return request;
+    }
+
+    private TbProtoQueueMsg<QueueProtos.RetainedMsgProto> generateRequest(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, int messageExpiryInterval) {
+        TbProtoQueueMsg<QueueProtos.RetainedMsgProto> request = generateRequest(topic, retainedMsgProto);
+        request.getHeaders().put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(messageExpiryInterval));
         return request;
     }
 

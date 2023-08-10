@@ -77,7 +77,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         options.setCleanStart(true);
         options.setSessionExpiryInterval(5L);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -104,7 +104,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setCleanStart(true);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -127,7 +127,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         options.setCleanStart(true);
         options.setSessionExpiryInterval(1000L);
 
-        MqttAsyncClient client = new MqttAsyncClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttAsyncClient client = new MqttAsyncClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options).waitForCompletion();
 
         MqttProperties disconnectProperties = new MqttProperties();
@@ -152,7 +152,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         ClientSession clientSession = clientSessionCache.getClientSession(CLIENT_ID);
         Assert.assertNull(clientSession);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -183,7 +183,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         ClientSession clientSession = clientSessionCache.getClientSession(CLIENT_ID);
         Assert.assertNull(clientSession);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -204,7 +204,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
                 .atMost(5, TimeUnit.SECONDS)
                 .until(this::clientSessionNotCleared);
 
-        client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         options.setCleanStart(true);
         options.setSessionExpiryInterval(0L);
         client.connect(options);
@@ -218,7 +218,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         options.setCleanStart(true);
         options.setSessionExpiryInterval(5L);
 
-        MqttClient client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         client.connect(options);
 
         IMqttMessageListener[] listeners = {(topic, message) -> {
@@ -235,7 +235,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         Assert.assertNotNull(clientSubscriptions);
         Assert.assertEquals(1, clientSubscriptions.size());
 
-        client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         options.setCleanStart(false);
         client.connect(options);
 
@@ -246,7 +246,7 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
         client.disconnect();
         client.close();
 
-        client = new MqttClient("tcp://localhost:" + mqttPort, CLIENT_ID);
+        client = new MqttClient(SERVER_URI + mqttPort, CLIENT_ID);
         options.setCleanStart(true);
         options.setSessionExpiryInterval(0L);
         client.connect(options);

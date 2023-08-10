@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 
@@ -32,6 +33,7 @@ import java.util.UUID;
 
 @DaoSqlTest
 public class DeviceMsgServiceTest extends AbstractServiceTest {
+
     @Autowired
     private DeviceMsgService deviceMsgService;
 
@@ -47,7 +49,7 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
 
     private static DevicePublishMsg newDevicePublishMsg(long serialNumber) {
         return new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), serialNumber, 0L, 0, 0,
-                PersistedPacketType.PUBLISH, TEST_PAYLOAD, MqttProperties.NO_PROPERTIES, false);
+                PersistedPacketType.PUBLISH, TEST_PAYLOAD, new MqttProperties(), false);
     }
 
     @After
@@ -84,5 +86,14 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     public void testFindNoneInRange() {
         deviceMsgService.save(TEST_MESSAGES, true);
         Assert.assertEquals(Collections.emptyList(), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 5, 10));
+    }
+
+    @Test
+    public void testSaveWithNoFailOnConflict() {
+        deviceMsgService.save(TEST_MESSAGES, true);
+        DevicePublishMsg pubMsg = newDevicePublishMsg(0L);
+        pubMsg.getProperties().add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 123));
+        deviceMsgService.save(List.of(pubMsg), false);
+        Assert.assertEquals(List.of(pubMsg), deviceMsgService.findPersistedMessages(TEST_CLIENT_ID, 0, 1));
     }
 }

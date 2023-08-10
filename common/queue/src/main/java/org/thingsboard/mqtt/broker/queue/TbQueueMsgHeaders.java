@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
+
 import java.util.Map;
 
 public interface TbQueueMsgHeaders {
@@ -24,4 +26,6 @@ public interface TbQueueMsgHeaders {
     byte[] get(String key);
 
     Map<String, byte[]> getData();
+
+    DefaultTbQueueMsgHeaders copy();
 }

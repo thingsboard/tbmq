@@ -45,6 +45,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.UUID;
@@ -107,6 +108,8 @@ public class ConnectServiceImplTest {
 
         actorState = mock(ClientActorStateInfo.class);
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
+
+        when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
 
     @Test

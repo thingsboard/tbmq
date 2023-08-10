@@ -127,7 +127,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     private MqttClient processTest(String subClientId, String pubClientId, boolean cleanStart, int qos) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, subClientId);
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, subClientId);
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setCleanStart(cleanStart);
         subClient.connect(options);
@@ -141,7 +141,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, qos)};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, pubClientId);
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, pubClientId);
         pubClient.connect();
 
         MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), qos, false, MQTT_PROPERTIES);
@@ -161,7 +161,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     public void testUserPropertiesOnLastWillMsg() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWill");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWill");
         MqttConnectionOptions subCliOptions = new MqttConnectionOptions();
         subCliOptions.setUserName(DEFAULT_USER_NAME);
         subClient.connect(subCliOptions);
@@ -178,7 +178,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 2)};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWill",
+        MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWill",
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
@@ -199,7 +199,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     public void testUserPropertiesOnLastWillRetainedMsg() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttAsyncClient pubClient = new MqttAsyncClient("tcp://localhost:" + mqttPort, "pubClientLastWillRetained",
+        MqttAsyncClient pubClient = new MqttAsyncClient(SERVER_URI + mqttPort, "pubClientLastWillRetained",
                 null, DisabledMqtt5PingSender.DISABLED_MQTT_PING_SENDER, null);
 
         MqttConnectionOptions options = new MqttConnectionOptions();
@@ -212,7 +212,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         boolean await = latch.await(3, TimeUnit.SECONDS);
         Assert.assertFalse(await);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, "subClientLastWillRetained");
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, "subClientLastWillRetained");
         MqttConnectionOptions subCliOptions = new MqttConnectionOptions();
         subCliOptions.setUserName(DEFAULT_USER_NAME);
         subClient.connect(subCliOptions);
@@ -242,7 +242,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
     }
 
     private void clearRetainedMsg() throws MqttException {
-        MqttClient pubClientClearRetained = new MqttClient("tcp://localhost:" + mqttPort, "pubClearRetained");
+        MqttClient pubClientClearRetained = new MqttClient(SERVER_URI + mqttPort, "pubClearRetained");
         MqttConnectionOptions clearRetainedOptions = new MqttConnectionOptions();
         clearRetainedOptions.setUserName(DEFAULT_USER_NAME);
 

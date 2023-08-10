@@ -56,6 +56,13 @@ public class BrokerConstants {
     public static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
     public static final int SHARE_NAME_IDX = SHARED_SUBSCRIPTION_PREFIX.length();
 
+    public static final String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
+    public static final String CREATED_TIME = "createdTime";
+    public static final int PUB_EXPIRY_INTERVAL_PROP_ID = 2;
+    public static final int TOPIC_ALIAS_MAX_PROP_ID = 34;
+    public static final int TOPIC_ALIAS_PROP_ID = 35;
+    public static final int USER_PROPERTIES_ID = 38;
+
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
@@ -71,4 +78,7 @@ public class BrokerConstants {
     public static final String CLIENT_SESSION_CG_PREFIX = "client-session-consumer-group-";
     public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-consumer-group-";
     public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-consumer-group-";
+
+    public static final int BLANK_PACKET_ID = -1;
+    public static final long BLANK_SERIAL_NUMBER = -1L;
 }

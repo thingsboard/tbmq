@@ -79,7 +79,7 @@ public class DefaultTopicValidationService implements TopicValidationService {
     }
 
     private void validateTopicNameAndFilter(String topic) {
-        if (topic.length() < 1) {
+        if (topic.isEmpty()) {
             throw new DataValidationException("Topic Names and Topic Filters must be at least one character long.");
         }
         if (topic.contains("\u0000")) {

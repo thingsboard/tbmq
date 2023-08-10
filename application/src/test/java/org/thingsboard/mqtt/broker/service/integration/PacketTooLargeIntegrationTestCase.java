@@ -47,7 +47,7 @@ public class PacketTooLargeIntegrationTestCase extends AbstractPubSubIntegration
 
     @Test(expected = Exception.class)
     public void testSendTooLargeMsgSoServerDisconnectClient() throws Throwable {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "testClient");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "testClient");
         pubClient.connect();
 
         Awaitility.await()

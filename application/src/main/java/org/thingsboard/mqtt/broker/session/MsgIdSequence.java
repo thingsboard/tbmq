@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.session;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MsgIdSequence {
+
     private final AtomicInteger msgIdSeq = new AtomicInteger(1);
 
     public int nextMsgId() {

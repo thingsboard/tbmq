@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 
 public interface ClientMqttActorManager {
+
     void initSession(String clientId, boolean isClientIdGenerated, SessionInitMsg sessionInitMsg);
 
     void disconnect(String clientId, MqttDisconnectMsg disconnectMsg);
@@ -37,4 +38,5 @@ public interface ClientMqttActorManager {
     void subscribe(String clientId, SubscribeCommandMsg subscribeCommandMsg);
 
     void unsubscribe(String clientId, UnsubscribeCommandMsg unsubscribeCommandMsg);
+
 }

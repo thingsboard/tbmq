@@ -25,7 +25,9 @@ CREATE OR REPLACE PROCEDURE insert_tb_schema_settings()
 $$
 BEGIN
     IF (SELECT COUNT(*) FROM tb_schema_settings) = 0 THEN
-        INSERT INTO tb_schema_settings (schema_version) VALUES (1000000);
+        INSERT
+        INTO tb_schema_settings (schema_version)
+        VALUES (1000002);
     END IF;
 END;
 $$;
@@ -83,6 +85,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     payload bytea NOT NULL,
     user_properties varchar,
     retain boolean,
+    msg_expiry_interval int,
     CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, serial_number)
 );
 

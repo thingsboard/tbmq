@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkProcessor;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkProcessor;
@@ -43,11 +44,11 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     @Override
-    public void sendPersistentMsg(String targetServiceId, String clientId, QueueProtos.DevicePublishMsgProto msg) {
+    public void sendPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg) {
         if (belongsToThisNode(targetServiceId)) {
-            persistentDownLinkProcessor.process(clientId, msg);
+            persistentDownLinkProcessor.process(clientId, devicePublishMsg);
         } else {
-            queuePublisher.publishPersistentMsg(targetServiceId, clientId, msg);
+            queuePublisher.publishPersistentMsg(targetServiceId, clientId, devicePublishMsg);
         }
     }
 

@@ -101,7 +101,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
         Assert.assertNotNull(mqttClientCredentials);
         Assert.assertNotNull(mqttClientCredentials.getCredentialsId());
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "noUserNameWithPass");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "noUserNameWithPass");
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setUserName(null);
         options.setPassword(password.getBytes(StandardCharsets.UTF_8));
@@ -118,13 +118,13 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     public void givenPubSubClients_whenPubMsgToNoAuthTopic_thenNotReceiveMsgBySubscriber() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, SUB_CLIENT_ID);
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT_ID);
         subClient.connect();
         MqttSubscription[] subscriptions = {new MqttSubscription(MY_TOPIC, 1)};
         IMqttMessageListener[] listeners = {(topic, message) -> latch.countDown()};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, PUB_CLIENT_ID);
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT_ID);
         pubClient.connect();
         pubClient.publish(MY_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
 
@@ -142,13 +142,13 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     public void givenPubSubClients_whenSubToNoAuthTopic_thenNotReceiveMsgBySubscriber() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
 
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, SUB_CLIENT_ID);
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT_ID);
         subClient.connect();
         MqttSubscription[] subscriptions = {new MqttSubscription(TEST_TOPIC, 1)};
         IMqttMessageListener[] listeners = {(topic, message) -> latch.countDown()};
         subClient.subscribe(subscriptions, listeners);
 
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, PUB_CLIENT_ID);
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT_ID);
         pubClient.connect();
         pubClient.publish(TEST_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
 
@@ -177,7 +177,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
     @Test
     public void givenSubClient_whenSubscribeSeveralTopics_thenOnlyValidSubscriptionsPresent() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, SUB_CLIENT_ID);
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT_ID);
         subClient.connect();
         MqttSubscription[] subscriptions = {
                 new MqttSubscription(TEST_TOPIC, 1),
@@ -206,7 +206,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
     @Test
     public void givenSubClient_whenSubscribeTopicAndSubscribeSameTopicAgainWithDifferentQos_thenSuccess() throws Throwable {
-        MqttClient subClient = new MqttClient("tcp://localhost:" + mqttPort, SUB_CLIENT_ID);
+        MqttClient subClient = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT_ID);
         subClient.connect();
         MqttSubscription[] subscriptions = {
                 new MqttSubscription(MY_TOPIC, 1)

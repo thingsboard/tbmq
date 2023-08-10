@@ -42,7 +42,7 @@ public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest
 
     @Test
     public void testClientDisconnectedWhenRateLimitsDetected() throws Throwable {
-        MqttClient pubClient = new MqttClient("tcp://localhost:" + mqttPort, "test_rate_limits");
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, "test_rate_limits");
         pubClient.connect();
 
         for (int i = 0; i < 500; i++) {
