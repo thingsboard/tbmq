@@ -22,18 +22,32 @@ upgradeversion=${DATA_FOLDER}/.upgradeversion
 
 source "${CONF_FOLDER}/${configfile}"
 
-echo "Starting TBMQ installation ..."
+FROM_VERSION=`cat ${upgradeversion}`
 
-set -e
+echo "Starting TBMQ upgrade ..."
 
-echo "Saving install version to file..."
+if [[ -z "${FROM_VERSION// }" ]]; then
+    # TODO: remove this check in the next version
+    if [ "${pkg.upgradeVersion}" == "1.1.0" ]; then
+      fromVersion="1.0.1"
+    else
+      echo "FROM_VERSION variable is invalid or unspecified!"
+      exit 1
+    fi
+else
+    fromVersion="${FROM_VERSION// }"
+fi
+
+java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+                -Dspring.jpa.hibernate.ddl-auto=none \
+                -Dinstall.upgrade=true \
+                -Dinstall.upgrade.from_version=${fromVersion} \
+                -Dlogging.config=/usr/share/thingsboard-mqtt-broker/bin/install/logback.xml \
+                org.springframework.boot.loader.PropertiesLauncher
+
+echo "Saving upgrade version to file..."
 
 echo "${pkg.upgradeVersion}" > ${upgradeversion}
 
 echo "Saved ${pkg.upgradeVersion}"
 
-exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
-                    -Dspring.jpa.hibernate.ddl-auto=none \
-                    -Dinstall.upgrade=false \
-                    -Dlogging.config=/usr/share/thingsboard-mqtt-broker/bin/install/logback.xml \
-                    org.springframework.boot.loader.PropertiesLauncher

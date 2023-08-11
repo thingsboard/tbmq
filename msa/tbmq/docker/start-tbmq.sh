@@ -27,11 +27,11 @@ if [ ! -f ${firstlaunch} ]; then
 fi
 
 if [ -f ${firstlaunch} ]; then
-    echo "Starting ThingsBoard MQTT Broker ..."
+    echo "Starting TBMQ ..."
 
     exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
                         -Dlogging.config=${CONF_FOLDER}/logback.xml \
                         org.springframework.boot.loader.PropertiesLauncher
 else
-    echo "ERROR: ThingsBoard MQTT Broker is not installed"
+    echo "ERROR: TBMQ is not installed"
 fi

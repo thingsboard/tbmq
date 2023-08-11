@@ -18,12 +18,13 @@ FROM thingsboard/openjdk17:bullseye-slim
 
 ENV DATA_FOLDER=/data
 
-COPY logback.xml ${pkg.name}.conf start-tbmq.sh install-tbmq.sh ${pkg.name}.deb /tmp/
+COPY logback.xml ${pkg.name}.conf start-tbmq.sh install-tbmq.sh upgrade-tbmq.sh ${pkg.name}.deb /tmp/
 
 RUN apt-get update \
     && chmod a+x /tmp/*.sh \
     && mv /tmp/start-tbmq.sh /usr/bin \
     && mv /tmp/install-tbmq.sh /usr/bin \
+    && mv /tmp/upgrade-tbmq.sh /usr/bin \
     && dpkg -i /tmp/${pkg.name}.deb \
     && rm /tmp/${pkg.name}.deb \
     && (systemctl --no-reload disable --now ${pkg.name}.service > /dev/null 2>&1 || :) \

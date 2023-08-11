@@ -37,6 +37,7 @@
         <pkg.name>thingsboard-mqtt-broker</pkg.name>
         <tbmq.docker.name>tbmq</tbmq.docker.name>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
+        <pkg.upgradeVersion>1.1.0</pkg.upgradeVersion>
     </properties>
 
     <dependencies>
