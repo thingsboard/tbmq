@@ -43,4 +43,9 @@
       }
     }
   }
+
+  .mat-cell,
+  .mat-header-cell {
+    border-bottom-color: transparent !important;
+  }
 }
