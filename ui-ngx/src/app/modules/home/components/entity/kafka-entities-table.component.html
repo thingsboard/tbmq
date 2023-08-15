@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div>
+<div tb-fullscreen [fullscreen]="isFullscreen">
   <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
     <div class="mat-toolbar-tools" fxLayoutGap="4px">
       <span fxFlex></span>
@@ -38,6 +38,12 @@
               matTooltip="{{ 'action.refresh' | translate }}"
               matTooltipPosition="above">
         <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button
+              [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
+              matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+              matTooltipPosition="above">
+        <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
     </div>
   </mat-toolbar>

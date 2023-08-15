@@ -104,14 +104,14 @@ export class KafkaEntitiesTableComponent extends PageComponent implements AfterV
 
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
+  isFullscreen = false;
 
   @ViewChild('kafkaEntityTableHeader', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
   @ViewChild('searchInput') searchInputField: ElementRef;
-
   @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
 
+  @ViewChild(MatSort) sort: MatSort;
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
