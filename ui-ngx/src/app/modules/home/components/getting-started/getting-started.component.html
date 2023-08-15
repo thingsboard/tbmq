@@ -17,7 +17,7 @@
 -->
 <div class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="updateSelectedIndex($event)">
+  <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
     <ng-container *ngFor="let step of steps | async; let index = index;">
       <mat-step [completed]="false">
         <ng-template matStepLabel>
@@ -26,7 +26,7 @@
           </div>
         </ng-template>
         <div class="tb-markdown-view">
-          <markdown [data]="data | async"></markdown>
+          <markdown [data]="data"></markdown>
         </div>
         <div style="margin-top: 8px">
           <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-device'">

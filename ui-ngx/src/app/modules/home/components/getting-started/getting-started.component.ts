@@ -25,7 +25,6 @@ import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credenti
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
-import { Router } from '@angular/router';
 import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
@@ -46,28 +45,40 @@ export class GettingStartedComponent implements AfterViewInit {
   cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);
   stepsData: Array<any> = [];
-  data: Observable<string>;
+  data: string;
   configParams: BrokerConfig;
-  expandedStep = 1;
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
               private mqttClientCredentialsService: MqttClientCredentialsService,
-              private router: Router,
               private translate: TranslateService,
               private store: Store<AppState>) {
   }
 
-  private init(id: string) {
-    this.data = this.getStep(id);
+  ngAfterViewInit(): void {
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => user?.additionalInfo?.config)).pipe(
+      map((data) => {
+          const tcpPort = data ? data[ConfigParams.tcpPort] : null;
+          const basicAuthEnabled = data ? data[ConfigParams.basicAuthEnabled] : null;
+          this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
+          this.steps.subscribe((res) => {
+            this.stepsData = res;
+          });
+          // @ts-ignore
+          window.mqttPort = tcpPort;
+          this.configParams = {} as BrokerConfig;
+          this.configParams[ConfigParams.basicAuthEnabled] = basicAuthEnabled;
+          this.configParams[ConfigParams.tcpPort] = tcpPort;
+          this.configParams[ConfigParams.basicAuthEnabled]  ? this.init('client-app') : this.init('enable-basic-auth');
+          return data;
+        }
+      )).subscribe();
   }
 
-  getStep(id: string): Observable<string> {
-    return this.instructionsService.getGetStartedInstruction(id);
-  }
-
-  navigate(path: string) {
-    this.router.navigateByUrl(`/${path}`);
+  selectStep(event: any) {
+    this.getStep(this.stepsData[event.selectedIndex].id);
   }
 
   addClientCredentials(type: string) {
@@ -131,30 +142,13 @@ export class GettingStartedComponent implements AfterViewInit {
     );
   }
 
-  ngAfterViewInit(): void {
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => user?.additionalInfo?.config)).pipe(
-      map((data) => {
-        const portMqtt = data ? data[ConfigParams.tcpPort] : null;
-        const basicAuth = data ? data[ConfigParams.basicAuthEnabled] : null;
-        this.steps = this.instructionsService.setSteps(basicAuth);
-        this.steps.subscribe((res) => {
-          this.stepsData = res;
-        });
-        // @ts-ignore
-        window.mqttPort = portMqtt;
-        this.configParams = {} as BrokerConfig;
-        this.configParams[ConfigParams.basicAuthEnabled] = basicAuth;
-        this.configParams[ConfigParams.tcpPort] = portMqtt;
-        this.configParams[ConfigParams.basicAuthEnabled]  ? this.init('client-app') : this.init('enable-basic-auth');
-        return data;
-      }
-    )).subscribe();
+  private getStep(id: string) {
+    this.instructionsService.getInstruction(id).subscribe(data =>
+      this.data = data
+    );
   }
 
-  updateSelectedIndex(event) {
-    this.expandedStep = event?.selectedIndex;
-    this.data = this.getStep(this.stepsData[event.selectedIndex].id);
+  private init(id: string) {
+    this.getStep(id);
   }
 }
