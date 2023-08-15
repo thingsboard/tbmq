@@ -48,7 +48,7 @@
               matTooltipPosition="above">
         <mat-icon>search</mat-icon>
       </button>
-      <mat-form-field fxFlex="50">
+      <mat-form-field fxFlex="50" fxFlex.xs="100">
         <mat-label>&nbsp;</mat-label>
         <input #searchInput matInput
                [(ngModel)]="pageLink.textSearch"
@@ -61,7 +61,7 @@
       </button>
     </div>
   </mat-toolbar>
-  <div class="mat-table-container">
+  <div style="overflow-x: auto;">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
       <ng-container matColumnDef="select" sticky>

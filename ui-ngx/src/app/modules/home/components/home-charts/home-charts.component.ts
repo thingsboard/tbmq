@@ -158,7 +158,13 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeCharts() {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
-      this.width = (containerWidth > 1000) ? ((containerWidth / 5) - 16) : (containerWidth / 7);
+      this.width = (containerWidth / 5) - 16;
+      if (containerWidth < 700) {
+        this.width = (containerWidth / 5) - 32; // Tablet
+      }
+      if (containerWidth < 400) {
+        this.width = containerWidth / 2; // Mobile
+      }
     });
     resizeObserver.observe(this.homeChartsContainer.nativeElement);
   }
