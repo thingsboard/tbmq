@@ -50,5 +50,17 @@
         height: 14px;
       }
     }
+
+    @media #{$mat-lt-lg} {
+      span {
+        font-size: 9px;
+      }
+
+      mat-icon {
+        font-size: 9px;
+        height: 9px;
+        line-height: 6px;
+      }
+    }
   }
 }

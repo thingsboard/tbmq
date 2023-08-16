@@ -40,8 +40,8 @@ export class KafkaBrokersTableComponent extends EntitiesTableHomeNoPagination<Ka
   getColumns() {
     const columns: Array<EntityColumn<KafkaBroker>> = [];
     columns.push(
-      new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '50%'),
-      new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '50%',
+      new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '80%'),
+      new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '20%',
           entity => formatBytes(entity.brokerSize),
         () => ({color: 'rgba(0,0,0,0.54)'}))
     );

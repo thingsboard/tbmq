@@ -868,7 +868,7 @@ mat-label {
     &:not(.mat-icon-button) {
       @media #{$mat-lt-md} {
         padding: 0 6px;
-        min-width: 88px;
+        min-width: 70px;
       }
       mat-icon {
         margin-right: 5px;
