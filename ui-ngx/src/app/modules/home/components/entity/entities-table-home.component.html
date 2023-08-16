@@ -16,57 +16,59 @@
 
 -->
 <div tb-fullscreen [fullscreen]="isFullscreen">
-  <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
-    <div class="mat-toolbar-tools" fxLayoutGap="4px">
-      <span fxFlex></span>
-      <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
-              [disabled]="isLoading$ | async" (click)="enterFilterMode()"
-              matTooltip="{{ translations.search | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>search</mat-icon>
-      </button>
-      <button mat-mini-fab [disabled]="isLoading$ | async" color="primary"
-              [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
-              matTooltip="{{ actionDescriptor.name }}"
-              matTooltipPosition="above"
-              (click)="actionDescriptor.onAction($event)">
-        <mat-icon *ngIf="actionDescriptor.isMdiIcon" [svgIcon]="actionDescriptor.icon"></mat-icon>
-        <mat-icon *ngIf="!actionDescriptor.isMdiIcon">{{actionDescriptor.icon}}</mat-icon>
-      </button>
-      <button mat-icon-button
-              [disabled]="isLoading$ | async" (click)="updateData()"
-              matTooltip="{{ 'action.refresh' | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>refresh</mat-icon>
-      </button>
-      <button mat-icon-button
-              [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
-              matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-              matTooltipPosition="above">
-        <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-      </button>
-    </div>
-  </mat-toolbar>
-  <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
-    <div class="mat-toolbar-tools" style="justify-content: right;">
-      <button mat-icon-button
-              matTooltip="{{ translations.search | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>search</mat-icon>
-      </button>
-      <mat-form-field fxFlex="50" fxFlex.xs="100">
-        <mat-label>&nbsp;</mat-label>
-        <input #searchInput matInput
-               [(ngModel)]="pageLink.textSearch"
-               placeholder="{{ translations.search | translate }}"/>
-      </mat-form-field>
-      <button mat-icon-button (click)="exitFilterMode()"
-              matTooltip="{{ 'action.close' | translate }}"
-              matTooltipPosition="above">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-  </mat-toolbar>
+  <div class="mat-table-toolbar-container">
+    <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
+      <div class="mat-toolbar-tools" fxLayoutGap="4px">
+        <span fxFlex></span>
+        <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
+                [disabled]="isLoading$ | async" (click)="enterFilterMode()"
+                matTooltip="{{ translations.search | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>search</mat-icon>
+        </button>
+        <button mat-mini-fab [disabled]="isLoading$ | async" color="primary"
+                [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
+                matTooltip="{{ actionDescriptor.name }}"
+                matTooltipPosition="above"
+                (click)="actionDescriptor.onAction($event)">
+          <mat-icon *ngIf="actionDescriptor.isMdiIcon" [svgIcon]="actionDescriptor.icon"></mat-icon>
+          <mat-icon *ngIf="!actionDescriptor.isMdiIcon">{{actionDescriptor.icon}}</mat-icon>
+        </button>
+        <button mat-icon-button
+                [disabled]="isLoading$ | async" (click)="updateData()"
+                matTooltip="{{ 'action.refresh' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>refresh</mat-icon>
+        </button>
+        <button mat-icon-button
+                [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
+                matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                matTooltipPosition="above">
+          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+    <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
+      <div class="mat-toolbar-tools" style="justify-content: right;">
+        <button mat-icon-button
+                matTooltip="{{ translations.search | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>search</mat-icon>
+        </button>
+        <mat-form-field fxFlex="50" fxFlex.xs="100">
+          <mat-label>&nbsp;</mat-label>
+          <input #searchInput matInput
+                 [(ngModel)]="pageLink.textSearch"
+                 placeholder="{{ translations.search | translate }}"/>
+        </mat-form-field>
+        <button mat-icon-button (click)="exitFilterMode()"
+                matTooltip="{{ 'action.close' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+  </div>
   <div style="overflow-x: auto;">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>

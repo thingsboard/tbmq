@@ -21,18 +21,18 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from '@core/http/config.service';
-import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { map } from 'rxjs/operators';
+import { EntitiesTableHomeNoPagination, formatBytes } from '@home/components/entity/entities-table-home.component';
 
 @Component({
   selector: 'tb-card-config',
   templateUrl: './card-config.component.html',
   styleUrls: ['./card-config.component.scss']
 })
-export class CardConfigComponent extends KafkaTableComponent<BrokerConfigTable> {
+export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
   configParamsTranslationMap = ConfigParamsTranslationMap;

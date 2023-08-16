@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import '../../../../../scss/constants';
+@import 'constants';
 
 :host {
   display: flex;
@@ -53,7 +53,7 @@
   }
 
   mat-toolbar.mat-table-toolbar {
-    padding: 0 24px;
+    padding: 0 16px;
     .mat-toolbar-tools {
       padding: 0;
       & > button.mat-icon-button:last-child {
@@ -100,5 +100,10 @@
   .mat-drawer-container {
     background-color: #fff;
     border-radius: 20px;
+  }
+
+  .mat-table-toolbar-container .mat-icon-button {
+    height: 25px;
+    line-height: 20px;
   }
 }

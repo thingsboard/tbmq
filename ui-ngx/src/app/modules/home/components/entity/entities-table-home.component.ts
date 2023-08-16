@@ -20,6 +20,7 @@ import {
   ChangeDetectorRef,
   Component,
   ComponentFactoryResolver,
+  Directive,
   ElementRef,
   EventEmitter,
   Input,
@@ -60,14 +61,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { KafkaTopic, KafkaTopicsTooltipMap } from '@shared/models/kafka.model';
+import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
-  selector: 'tb-kafka-entities-table',
-  templateUrl: './kafka-entities-table.component.html',
-  styleUrls: ['./kafka-entities-table.component.scss'],
+  selector: 'tb-entities-table-home',
+  templateUrl: './entities-table-home.component.html',
+  styleUrls: ['./entities-table-home.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class KafkaEntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
+export class EntitiesTableHomeComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
   @Input()
   entitiesTableConfig: EntityTableConfig<BaseData>;
@@ -106,7 +108,7 @@ export class KafkaEntitiesTableComponent extends PageComponent implements AfterV
   detailsPanelOpened = new EventEmitter<boolean>();
   isFullscreen = false;
 
-  @ViewChild('kafkaEntityTableHeader', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
+  @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
   @ViewChild('searchInput') searchInputField: ElementRef;
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -589,5 +591,90 @@ export class KafkaEntitiesTableComponent extends PageComponent implements AfterV
     }
     return undefined;
   }
+}
 
+@Directive()
+// tslint:disable-next-line:directive-class-suffix
+export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit {
+
+  columns = [];
+  dataSource: MatTableDataSource<T> = new MatTableDataSource();
+  displayedColumns: Array<string> = [];
+  pageLink: PageLink = new PageLink(999);
+
+  cellContentCache: Array<SafeHtml> = [];
+  cellStyleCache: Array<any> = [];
+
+  abstract fetchEntities$: () => Observable<any>;
+
+  constructor(protected domSanitizer: DomSanitizer) {
+  }
+
+  ngOnInit(): void {
+    this.columns = this.getColumns();
+    this.columns.forEach(
+      column => {
+        this.displayedColumns.push(column.key);
+      }
+    );
+    this.updateData();
+  }
+
+  updateData() {
+    this.loadEntities();
+  }
+
+  private loadEntities() {
+    this.fetchEntities$().subscribe(
+      data => {
+        this.dataSource = new MatTableDataSource(data.data);
+      }
+    );
+  }
+
+  cellStyle(entity: T, column: EntityColumn<T>, row: number) {
+    const col = this.columns.indexOf(column);
+    const index = row * this.columns.length + col;
+    let res = this.cellStyleCache[index];
+    if (!res) {
+      const widthStyle: any = {width: column.width};
+      if (column.width !== '0px') {
+        widthStyle.minWidth = column.width;
+        widthStyle.maxWidth = column.width;
+      }
+      if (column instanceof EntityTableColumn) {
+        res = {...column.cellStyleFunction(entity, column.key), ...widthStyle};
+      } else {
+        res = widthStyle;
+      }
+      this.cellStyleCache[index] = res;
+    }
+    return res;
+  }
+
+  cellContent(entity: T, column: EntityColumn<T>, row: number) {
+    if (column instanceof EntityTableColumn) {
+      const col = this.columns.indexOf(column);
+      const index = row * this.columns.length + col;
+      let res = this.cellContentCache[index];
+      if (isUndefined(res)) {
+        res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
+        this.cellContentCache[index] = res;
+      }
+      return res;
+    } else {
+      return '';
+    }
+  }
+
+  abstract getColumns();
+}
+
+export function formatBytes(bytes, decimals = 1) {
+  if (!+bytes) { return '0 B'; }
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../../scss/constants";
+@import 'constants';
 
 :host {
   .tabs-toolbar {
@@ -56,5 +56,9 @@
     span {
       color: #1F8B4D !important;
     }
+  }
+
+  .mat-form-field-appearance-legacy .mat-form-field-infix {
+    padding: 0 0.1em !important;
   }
 }

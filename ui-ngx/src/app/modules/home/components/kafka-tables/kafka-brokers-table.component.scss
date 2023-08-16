@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../../scss/constants";
+@import 'constants';
 
 :host {
   flex: 1;
@@ -25,7 +25,7 @@
       height: 80px
     }
     @media #{$mat-gt-xl} {
-      height: 160px;
+      height: 150px;
     }
     @media #{$mat-gt-xxl} {
       height: auto;
