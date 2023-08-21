@@ -34,4 +34,3 @@ kubectl exec tb-db-setup -- sh -c 'export INSTALL_TB=true; start-tb-mqtt-broker.
 
 kubectl delete pod tb-db-setup
 
-kubectl apply -f routes.yml
