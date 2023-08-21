@@ -30,17 +30,14 @@ done
 
 if [[ -z "${FROM_VERSION// }" ]]; then
     echo "--fromVersion parameter is invalid or unspecified!"
-    echo "Usage: docker-upgrade-tbmq.sh --fromVersion={VERSION}"
+    echo "Usage: k8s-upgrade-tb-mqtt-broker.sh --fromVersion={VERSION}"
     exit 1
 else
     fromVersion="${FROM_VERSION// }"
 fi
 
-set -e
+kubectl apply -f database-setup.yml &&
+kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
+kubectl exec tb-db-setup -- sh -c 'export UPGRADE_TB=true; export FROM_VERSION='"$fromVersion"'; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'
 
-docker compose -f docker-compose.yml pull tb-mqtt-broker-1
-
-docker compose -f docker-compose.yml up -d postgres
-
-docker compose -f docker-compose.yml run --no-deps --rm \
--e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} tb-mqtt-broker-1
+kubectl delete pod tb-db-setup
