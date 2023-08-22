@@ -29,7 +29,7 @@
             {{ 'version.current' }}
           </a>
         </section>
-        <span>{{ currentReleaseVersion }}</span>
+        <span style="color: rgba(0,0,0,0.76)">{{ currentReleaseVersion }}</span>
       </section>
     </div>
     <div class="version-container">
@@ -40,7 +40,7 @@
               {{ 'version.available' }}
             </a>
           </section>
-          <span>{{ latestReleaseVersion }}</span>
+          <span style="color: rgba(0,0,0,0.76)">{{ latestReleaseVersion }}</span>
         </section>
         <button fxHide.lt-md mat-raised-button color="primary"
                 [disabled]="!updatesAvailable"

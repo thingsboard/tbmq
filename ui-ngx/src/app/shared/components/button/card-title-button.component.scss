@@ -22,7 +22,7 @@
     font-style: normal;
     font-weight: 500;
     font-size: 14px;
-    line-height: 16px;
+    line-height: 14px;
     letter-spacing: 0.25px;
     color: rgba(0, 0, 0, 0.54);
     position: relative;
@@ -43,6 +43,7 @@
       font-weight: normal;
       font-style: normal;
       font-size: 18px;
+      line-height: 18px;
       color: rgba(0, 0, 0, 0.54);
       vertical-align: bottom;
       cursor: default !important;
@@ -81,6 +82,13 @@
       height: 13px !important;
       width: 13px !important;
       line-height: 7px !important;
+    }
+
+    .tb-title-link-hover {
+      &::after {
+        font-size: 13px;
+        line-height: 15px;
+      }
     }
   }
 }

@@ -103,7 +103,8 @@
       }
       .tb-title-link-container {
         &::after {
-          transform: scale(0.75) rotate(315deg);
+          font-size: 13px;
+          line-height: 15px;
         }
       }
       .mat-raised-button {
