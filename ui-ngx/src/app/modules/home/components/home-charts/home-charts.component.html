@@ -18,18 +18,16 @@
 <div #homeChartsContainer class="tb-home-card-container tb-home-padding" style="overflow: auto;">
   <section fxLayoutAlign="space-between" fxLayoutGap="12px">
     <div *ngFor="let chart of statsCharts">
-      <div class="chart-container">
-        <div fxLayout="column">
-          <section style="white-space: nowrap;">
-            <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-            <mat-icon [matTooltip]="chartTooltip(chart)">
-              info_outline
-            </mat-icon>
-          </section>
-          <div [ngStyle]="{'width': width + 'px', 'height': width*0.6 + 'px'}">
-            <canvas [id]="chart+chartIdSuf"></canvas>
-          </div>
-        </div>
+      <div class="chart-container" fxLayout="column">
+        <section style="white-space: nowrap">
+          <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+          <mat-icon [matTooltip]="chartTooltip(chart)">
+            info_outline
+          </mat-icon>
+        </section>
+        <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
+          <canvas [id]="chart+chartIdSuf"></canvas>
+        </section>
       </div>
     </div>
   </section>

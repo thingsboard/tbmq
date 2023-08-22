@@ -46,9 +46,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   chartIdSuf = 'home';
   charts = {};
   statsCharts = Object.values(StatsChartType);
-  width = 100;
-
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  chartWidth: string;
+  chartHeight: string;
+
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
   private fixedWindowTimeMs: FixedWindow;
@@ -158,13 +159,11 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeCharts() {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
-      this.width = (containerWidth / 5) - 16;
-      if (containerWidth < 700) {
-        this.width = (containerWidth / 5) - 32; // Tablet
-      }
-      if (containerWidth < 400) {
-        this.width = containerWidth / 2; // Mobile
-      }
+      let chartWidthPx = (containerWidth / 5) - 16;
+      if (containerWidth < 700) chartWidthPx = (containerWidth / 5) - 32; // Tablet
+      if (containerWidth < 400) chartWidthPx = containerWidth / 2; // Mobile
+      this.chartWidth = chartWidthPx + 'px';
+      this.chartHeight = (chartWidthPx * 0.5) + 'px';
     });
     resizeObserver.observe(this.homeChartsContainer.nativeElement);
   }

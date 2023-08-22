@@ -16,29 +16,19 @@
 
 -->
 <div fxFlex class="tb-home-card-container tb-home-padding">
-  <section fxLayout="row">
-    <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-    <span fxFlex></span>
-    <button mat-stroked-button color="primary"
-            type="button"
-            (click)="viewDocumentation('user-guide/ui/monitoring/#config')"
-            matTooltip="{{'home.config' | translate}}">
-      {{'home.view-docs' | translate}}
-    </button>
-  </section>
+  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="tb-config-table">
-    <table mat-table [dataSource]="dataSource">
+    <table mat-table matSort [dataSource]="dataSource">
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-        <mat-header-cell *matHeaderCellDef>
+        <mat-header-cell mat-sort-header *matHeaderCellDef>
           {{ column.title | translate }}
         </mat-header-cell>
-        <mat-cell *matCellDef="let entity; let row = index"
-                  [ngStyle]="cellStyle(entity, column, row)">
-          <span *ngIf="column.key === 'key'" [innerHTML]="cellContent(entity, column, row)"></span>
-          <span *ngIf="column.key === 'value'">{{transformValue(entity) | boolean }}</span>
-          <span *ngIf="column.key === 'value' && (entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
-                                                  entity.key === configParams.wsPort || entity.key === configParams.wssPort)">
-            <mat-icon class="config-material-icon"
+        <mat-cell *matCellDef="let entity; let row = index" [ngStyle]="cellStyle(entity, column, row)">
+          <span *ngIf="column.key === 'key'" translate>{{configParamsTranslationMap.get(entity.key)}}</span>
+          <span *ngIf="column.key === 'value'">
+            {{ formatBytesToValue(entity) }}
+            <mat-icon *ngIf="showCopyButton(entity, configParams)"
+                      class="tb-config-icon"
                       ngxClipboard
                       (cbOnSuccess)="onCopy()"
                       [cbContent]="entity.value"
@@ -46,15 +36,11 @@
                       matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
               content_copy
             </mat-icon>
-          </span>
-          <span *ngIf="!entity.value && column.key === 'value'
-                        && ((entity.key === configParams.x509AuthEnabled && hasX509AuthCredentials)
-                        || (entity.key === configParams.basicAuthEnabled && hasBasicCredentials))">
-            <section class="warning-icon" >
-                 <mat-icon (click)="viewDocumentation('security/#authentication')"
+            <section class="tb-warning-icon" *ngIf="showWarningIcon(entity, configParams)">
+                 <mat-icon (click)="gotoDocs('security/#authentication')"
                            [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
                            style="color: #ff9a00"
-                           class="config-material-icon">warning
+                           class="tb-config-icon">warning
                  </mat-icon>
             </section>
           </span>

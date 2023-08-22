@@ -26,14 +26,6 @@
                 matTooltipPosition="above">
           <mat-icon>search</mat-icon>
         </button>
-        <button mat-mini-fab [disabled]="isLoading$ | async" color="primary"
-                [fxShow]="actionDescriptor.isEnabled()" *ngFor="let actionDescriptor of headerActionDescriptors"
-                matTooltip="{{ actionDescriptor.name }}"
-                matTooltipPosition="above"
-                (click)="actionDescriptor.onAction($event)">
-          <mat-icon *ngIf="actionDescriptor.isMdiIcon" [svgIcon]="actionDescriptor.icon"></mat-icon>
-          <mat-icon *ngIf="!actionDescriptor.isMdiIcon">{{actionDescriptor.icon}}</mat-icon>
-        </button>
         <button mat-icon-button
                 [disabled]="isLoading$ | async" (click)="updateData()"
                 matTooltip="{{ 'action.refresh' | translate }}"
@@ -200,6 +192,6 @@
                  [pageIndex]="pageLink.page"
                  [pageSize]="pageLink.pageSize"
                  [pageSizeOptions]="pageSizeOptions"
+                 [hidePageSize]="isMobile"
                  showFirstLastButtons></mat-paginator>
-
 </div>

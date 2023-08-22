@@ -15,6 +15,13 @@
     limitations under the License.
 
 -->
-<a class="tb-title-link" [ngClass]="!disabled ? 'tb-title-link-hover' : 'tb-title-link-disabled'" (click)="navigate()">
-  {{ title?.label | translate}} {{ !disabled ? '&#8599;' : '' }}
-</a>
+<div fxLayout="row" fxLayoutAlign="space-between center">
+  <section [ngClass]="!disabled ? 'tb-title-link-hover' : 'tb-title-link-disabled'">
+    <a (click)="navigate()">{{ title?.label | translate}}</a>
+  </section>
+  <section *ngIf="title?.docsLink">
+    <mat-icon [matTooltip]="'help.goto-help-page' | translate" (click)="gotoDocs()">
+      help_outline
+    </mat-icon>
+  </section>
+</div>

@@ -19,17 +19,16 @@
   display: flex;
   flex: 1;
 
-  .config-material-icon {
-    color: #ff9a00;
+  .tb-config-icon {
     font-size: 14px;
     height: 14px;
     width: 14px;
     margin-left: 4px;
-    line-height: 15px;
+    line-height: 12px;
     cursor: pointer;
   }
 
-  .warning-icon {
+  .tb-warning-icon {
     position: relative;
     display: inline-block;
     text-align: left;
@@ -38,11 +37,14 @@
   .tb-config-table {
     overflow: auto;
 
-    @media #{$mat-lt-xl} {
-      height: 80px;
-    }
     @media #{$mat-gt-xl} {
       height: 150px;
+    }
+    @media #{$mat-lt-xl} {
+      height: 130px;
+    }
+    @media #{$mat-lg} {
+      height: 80px;
     }
     @media #{$mat-gt-xxl} {
       height: max-content;
@@ -75,9 +77,5 @@
         font-size: 10px;
       }
     }
-  }
-
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
   }
 }

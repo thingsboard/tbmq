@@ -62,6 +62,8 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { KafkaTopic, KafkaTopicsTooltipMap } from '@shared/models/kafka.model';
 import { MatTableDataSource } from '@angular/material/table';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { MediaBreakpoints } from '@shared/models/constants';
 
 @Component({
   selector: 'tb-entities-table-home',
@@ -107,6 +109,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
   isFullscreen = false;
+  isMobile = false;
 
   @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
@@ -124,13 +127,14 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
               public dialog: MatDialog,
               private dialogService: DialogService,
               private domSanitizer: DomSanitizer,
-              private cd: ChangeDetectorRef,
+              private breakpointObserver: BreakpointObserver,
               private router: Router,
               private componentFactoryResolver: ComponentFactoryResolver) {
     super(store);
   }
 
   ngOnInit() {
+    this.isMobile = this.breakpointObserver.isMatched(MediaBreakpoints['xs']);
     if (this.entitiesTableConfig) {
       this.init(this.entitiesTableConfig);
     } else {
@@ -205,7 +209,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
     this.defaultPageSize = window.innerWidth > 1920 ? 10 : 5;
-    this.pageSizeOptions = [5, 10, 15, 20];
+    this.pageSizeOptions = [5, 10, 15, 20, 30];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
@@ -413,12 +417,15 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   exitFilterMode() {
+    const updateData = this.pageLink.textSearch.length;
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     if (this.displayPagination) {
       this.paginator.pageIndex = 0;
     }
-    this.updateData();
+    if (updateData) {
+      this.updateData();
+    }
   }
 
   resetSortAndFilter(update: boolean = true, preserveTimewindow: boolean = false) {
@@ -595,7 +602,9 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
-export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit {
+export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit, AfterViewInit {
+
+  @ViewChild(MatSort) sort: MatSort;
 
   columns = [];
   dataSource: MatTableDataSource<T> = new MatTableDataSource();
@@ -606,6 +615,7 @@ export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implemen
   cellStyleCache: Array<any> = [];
 
   abstract fetchEntities$: () => Observable<any>;
+  abstract getColumns();
 
   constructor(protected domSanitizer: DomSanitizer) {
   }
@@ -667,7 +677,23 @@ export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implemen
     }
   }
 
-  abstract getColumns();
+  ngAfterViewInit(): void {
+    if (this.sort) {
+      this.sort.sortChange.subscribe(() => {
+        this.dataSource = new MatTableDataSource(this.dataSource.data.sort(this.sortTable()));
+      });
+    }
+  }
+
+  private sortTable() {
+    if (this.sort?.direction) {
+      let direction = this.sort.direction === 'desc' ? -1 : 1;
+      let active = this.sort.active;
+      return function(a, b) {
+        return ((a[active] < b[active]) ? -1 : (a[active] > b[active]) ? 1 : 0) * direction;
+      };
+    }
+  }
 }
 
 export function formatBytes(bytes, decimals = 1) {

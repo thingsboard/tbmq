@@ -21,16 +21,6 @@
   .tb-kafka-table {
     overflow: auto;
 
-    @media #{$mat-lt-xl} {
-      height: 80px
-    }
-    @media #{$mat-gt-xl} {
-      height: 150px;
-    }
-    @media #{$mat-gt-xxl} {
-      height: auto;
-    }
-
     .mat-tab {
       overflow: auto;
     }
@@ -54,9 +44,19 @@
       font-weight: 400;
       padding: 0;
     }
-  }
 
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
+    @media #{$mat-lt-xl} {
+      height: 80px;
+
+      .mat-header-cell {
+        font-size: 10px;
+      }
+    }
+    @media #{$mat-gt-xl} {
+      height: 150px;
+    }
+    @media #{$mat-gt-xxl} {
+      height: auto;
+    }
   }
 }

@@ -37,8 +37,9 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   cardType = HomePageTitleType.CONFIG;
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
-  hasBasicCredentials: boolean;
-  hasX509AuthCredentials: boolean;
+
+  private hasBasicCredentials: boolean;
+  private hasX509AuthCredentials: boolean;
 
   fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
     map((data) => {
@@ -66,8 +67,7 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   getColumns() {
     const columns: Array<EntityColumn<BrokerConfigTable>> = [];
     columns.push(
-      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '80%',
-          entity => this.translate.instant(this.configParamsTranslationMap.get(entity.key))),
+      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '80%'),
       new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '20%',
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
@@ -85,15 +85,29 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     }));
   }
 
-  viewDocumentation(page: string){
+  gotoDocs(page: string){
     window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  transformValue(entity: BrokerConfigTable) {
+  formatBytesToValue(entity: BrokerConfigTable): string {
     if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize ||
        entity.key === ConfigParams.wsMaxPayloadSize || entity.key === ConfigParams.wssMaxPayloadSize) {
       return formatBytes(entity.value);
     }
+    if (typeof entity.value === 'boolean') {
+      return entity.value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
+    }
     return entity.value;
+  }
+
+  showCopyButton(entity: BrokerConfigTable, configParams: any): boolean {
+    return entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
+           entity.key === configParams.wsPort || entity.key === configParams.wssPort;
+  }
+
+  showWarningIcon(entity: BrokerConfigTable, configParams: any): boolean {
+    return !entity.value &&
+           ((entity.key === configParams.x509AuthEnabled && this.hasX509AuthCredentials) ||
+            (entity.key === configParams.basicAuthEnabled && this.hasBasicCredentials));
   }
 }

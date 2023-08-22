@@ -21,12 +21,14 @@ import { PageData } from '@shared/models/page/page-data';
 import { KafkaTopic } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
 import { formatBytes } from '@home/components/entity/entities-table-home.component';
+import { EntityType } from '@shared/models/entity-type.models';
 
 export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
               public entityId: string = null) {
     super();
+    this.entityType = EntityType.KAFKA_TOPIC;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;
@@ -41,13 +43,14 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
     this.columns.push(
       new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
       new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%',
-        undefined, () => ({color: 'rgba(0,0,0,0.54)'})),
+        entity => entity.partitions.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
       new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%',
-        undefined, () => ({color: 'rgba(0,0,0,0.54)'})),
+        entity => entity.replicationFactor.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
       new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%',
           entity => formatBytes(entity.size),
-        () => ({color: 'rgba(0,0,0,0.54)'})
-      )
+        () => ({color: 'rgba(0,0,0,0.54)'}))
     );
   }
 

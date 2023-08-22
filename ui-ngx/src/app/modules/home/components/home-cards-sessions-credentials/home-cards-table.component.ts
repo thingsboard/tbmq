@@ -44,8 +44,4 @@ export class HomeCardsTableComponent {
 
   @Input()
   docsTooltip: string;
-
-  viewDocumentation(page: string) {
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.docsLink}`, '_blank');
-  }
 }

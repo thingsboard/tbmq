@@ -14,8 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, Input } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+import { AfterViewInit, Component, Input } from '@angular/core';
 import { HomePageTitle, homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
 
@@ -36,9 +35,7 @@ export class CardTitleButtonComponent implements AfterViewInit {
 
   title: HomePageTitle;
 
-  constructor(private router: Router,
-              private translate: TranslateService,
-              private cd: ChangeDetectorRef) {
+  constructor(private router: Router) {
   }
 
   ngAfterViewInit() {
@@ -49,4 +46,7 @@ export class CardTitleButtonComponent implements AfterViewInit {
     this.router.navigate([this.title.link]);
   }
 
+  gotoDocs(){
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title.docsLink}`, '_blank');
+  }
 }

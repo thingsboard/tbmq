@@ -16,36 +16,35 @@
 
 -->
 <div class="tb-home-card-container tb-home-padding" fxLayoutGap="8px">
-  <section fxLayout="row">
+  <section fxLayout="row" class="title-container">
     <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
     <span fxFlex></span>
-    <button mat-button color="primary"
-            (click)="viewDocumentation('docs/contact-us')"
-            matTooltipPosition="above"
-            matTooltip="{{'version.contact-us' | translate}}">
-      {{'version.contact-us' | translate}}
-    </button>
+    <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">
     <div class="version-container">
       <section fxLayout="column" fxLayoutGap="10px">
-        <a class="tb-title-link" (click)="viewRelease(currentReleaseVersion)">
-          {{ 'version.current' | translate}} {{ '&#8599;' }}
-        </a>
+        <section class="tb-title-link-container">
+          <a class="tb-title-link" (click)="gotoGithub(currentReleaseVersion)" translate>
+            {{ 'version.current' }}
+          </a>
+        </section>
         <span>{{ currentReleaseVersion }}</span>
       </section>
     </div>
     <div class="version-container">
-      <div fxLayout="row" fxLayoutAlign="space-between start">
+      <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
         <section fxLayout="column" fxLayoutGap="10px">
-          <a class="tb-title-link" (click)="viewRelease(latestReleaseVersion)">
-            {{ 'version.available' | translate}} {{ '&#8599;' }}
-          </a>
+          <section class="tb-title-link-container">
+            <a class="tb-title-link" (click)="gotoGithub(latestReleaseVersion)" translate>
+              {{ 'version.available' }}
+            </a>
+          </section>
           <span>{{ latestReleaseVersion }}</span>
         </section>
-        <button mat-raised-button color="primary"
+        <button fxHide.lt-md mat-raised-button color="primary"
                 [disabled]="!updatesAvailable"
-                (click)="viewDocumentation('docs')"
+                (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
                 matTooltip="{{'version.upgrade' | translate}}">
           {{'version.upgrade' | translate}}
         </button>

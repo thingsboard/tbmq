@@ -15,8 +15,10 @@
  */
 @import 'constants';
 
-:host {
-  .tb-title-link {
+:host::ng-deep {
+  width: 100%;
+
+  a {
     font-style: normal;
     font-weight: 500;
     font-size: 14px;
@@ -25,11 +27,6 @@
     color: rgba(0, 0, 0, 0.54);
     position: relative;
     border-bottom: none;
-
-    @media #{$mat-lt-xl} {
-      font-size: 11px;
-      line-height: 14px;
-    }
   }
 
   .tb-title-link-hover {
@@ -38,9 +35,52 @@
       border-bottom: none;
       color: inherit;
     }
+    &::after {
+      font-family: 'Material Icons';
+      content: 'arrow_forward';
+      display: inline-block;
+      transform: rotate(315deg);
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.54);
+      vertical-align: bottom;
+      cursor: default !important;
+    }
+    &:hover {
+      &::after {
+        color: #000;
+      }
+    }
   }
 
   .tb-title-link-disabled {
     cursor: default;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    cursor: pointer;
+    line-height: 12px;
+    color: rgba(0, 0, 0, 0.12);
+    &:hover {
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+
+  @media #{$mat-lt-xl} {
+    a {
+      font-size: 11px;
+      line-height: 11px;
+    }
+
+    mat-icon {
+      font-size: 13px !important;
+      height: 13px !important;
+      width: 13px !important;
+      line-height: 7px !important;
+    }
   }
 }

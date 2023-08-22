@@ -16,21 +16,12 @@
 
 -->
 <div fxFlex class="tb-home-card-container tb-home-padding">
-  <section fxLayout="row">
-    <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
-    <span fxFlex></span>
-    <button mat-stroked-button color="primary"
-            type="button"
-            [disabled]="isLoading$ | async"
-            (click)="viewDocumentation(docsLink)"
-            matTooltip="{{docsTooltip}}">
-      {{'home.view-docs' | translate}}
-    </button>
-  </section>
+  <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
   <section class="cards" fxLayoutGap="12px">
     <div fxFlex class="key-value" *ngFor="let item of config">
       <div class="key">{{ item.label | translate }}</div>
       <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>
     </div>
   </section>
+  <span fxFlex></span>
 </div>

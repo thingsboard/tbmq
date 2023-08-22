@@ -16,19 +16,19 @@
 @import 'constants';
 
 :host {
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
-  }
-
   .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 4px;
   }
 
   .link {
-    width: 45%;
+    @media #{$mat-lt-lg} {
+      width: 100% !important;
+    }
+
+    flex: 1 0 45%;
+    flex-wrap: wrap;
     display: flex;
     color: #494949;
     border: 1px solid rgba(0,0,0,0.05);
@@ -37,7 +37,6 @@
     line-height: 21px;
     cursor: pointer;
     box-shadow: 0 5px 16px rgba(0, 0, 0, 0.04);
-
     &:hover {
       box-shadow: 0 4px 10px rgba(23, 33, 90, 0.08);
       border: 1px solid rgba(0,0,0,0.1);
@@ -48,12 +47,11 @@
       width: 30px;
       height: 30px;
       border-radius: 6px;
-      align-items:center;
-      justify-content:center;
-      background: rgba(0, 105, 92, 0.04);
+      align-items: center;
+      justify-content: center;
     }
 
-    .link-container {
+    .link-content {
       display: flex;
       align-items:center;
 
@@ -66,8 +64,8 @@
       @media #{$mat-lt-xl} {
         span {
           font-size: 11px;
+          white-space: nowrap;
         }
-
         .icon-container {
           width: 24px;
           height: 24px;
@@ -75,5 +73,4 @@
       }
     }
   }
-
 }

@@ -16,7 +16,6 @@
 @import 'constants';
 
 :host {
-  display: flex;
   flex-direction: column;
 
   @media #{$mat-xs} {
@@ -53,12 +52,9 @@
   }
 
   mat-toolbar.mat-table-toolbar {
-    padding: 0 16px;
+    padding: 0;
     .mat-toolbar-tools {
       padding: 0;
-      & > button.mat-icon-button:last-child {
-        margin-right: -12px;
-      }
     }
   }
 
@@ -75,6 +71,10 @@
       font-size: 12px;
       font-weight: 400;
       padding: 0;
+
+      @media #{$mat-lt-xl} {
+        font-size: 10px;
+      }
     }
   }
 
@@ -90,7 +90,7 @@
   }
 
   .mat-toolbar-single-row {
-    height: 40px;
+    height: 35px;
   }
 
   .mat-form-field {

@@ -48,11 +48,11 @@ export class VersionCardComponent implements OnInit {
         });
     }
 
-  viewDocumentation(page: string){
+  gotoDocs(page: string){
     window.open(`https://thingsboard.io/${page}`, '_blank');
   }
 
-  viewRelease(version: string){
+  gotoGithub(version: string){
     window.open(`https://github.com/thingsboard/tbmq/releases/tag/v${version}`, '_blank');
   }
 }

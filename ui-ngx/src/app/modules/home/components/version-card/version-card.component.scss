@@ -16,6 +16,16 @@
 @import 'constants';
 
 :host {
+  a {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f8b4d;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    white-space: nowrap;
+  }
+
   .mat-button {
     line-height: 26px !important;
   }
@@ -50,24 +60,62 @@
 
       &:hover, &:focus {
         border-bottom: none;
-        color: inherit;
       }
     }
 
-    @media #{$mat-lt-xl} {
+    .tb-title-link + span {
+      color: rgba(0,0,0,0.76);
+    }
+
+    .tb-title-link-container {
+      &::after {
+        font-family: 'Material Icons';
+        content: 'arrow_forward';
+        display: inline-block;
+        transform: rotate(315deg);
+        font-weight: normal;
+        font-style: normal;
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.54);
+        vertical-align: bottom;
+      }
+
+      &:hover {
+        &::after {
+          color: #000;
+        }
+      }
+    }
+  }
+
+  @media #{$mat-lt-xl} {
+    .title-container a {
+      font-size: 12px;
+    }
+
+    .cards {
       span {
         font-size: 16px;
       }
-
       .tb-title-link {
         font-size: 11px;
         line-height: 13px;
       }
-    }
-
-    @media #{$mat-lg} {
+      .tb-title-link-container {
+        &::after {
+          transform: scale(0.75) rotate(315deg);
+        }
+      }
       .mat-raised-button {
-        padding: 0 4px;
+        font-size: 12px;
+      }
+    }
+  }
+
+  @media #{$mat-xs} {
+    .cards {
+      .version-container {
+        padding: 5px;
       }
     }
   }

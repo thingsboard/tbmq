@@ -16,6 +16,9 @@
 @import 'constants';
 
 :host::ng-deep {
+  height: 100%;
+  display: flex;
+
   .tb-home-overview {
     width: 100%;
     margin-bottom: 12px;
@@ -36,7 +39,7 @@
     }
 
     .tb-home-padding {
-      padding: 16px;
+      padding: 18px;
 
       @media #{$mat-lt-xl} {
         padding: 12px;

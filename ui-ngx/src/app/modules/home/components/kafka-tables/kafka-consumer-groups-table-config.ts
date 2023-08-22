@@ -20,12 +20,14 @@ import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
+import { EntityType } from '@shared/models/entity-type.models';
 
 export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsumerGroup, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
               public entityId: string = null) {
     super();
+    this.entityType = EntityType.KAFKA_CONSUMER_GROUP;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;
@@ -39,9 +41,15 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
 
     this.columns.push(
       new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '70%'),
-      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%', entity => entity.lag)
+      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%',
+        entity => entity.state,
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%',
+        entity => entity.members.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%',
+          entity => entity.lag,
+        () => ({color: 'rgba(0,0,0,0.54)'}))
     );
   }
 

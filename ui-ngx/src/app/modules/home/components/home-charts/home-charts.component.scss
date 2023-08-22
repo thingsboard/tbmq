@@ -18,7 +18,7 @@
 :host::ng-deep {
   .chart-container {
     border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    border-radius: 8px;
     padding-top: 4px;
 
     span {
@@ -31,6 +31,8 @@
     mat-icon {
       font-size: 18px;
       height: 18px;
+      width: 18px;
+      line-height: 18px;
       padding-left: 4px;
       color: rgba(0,0,0,0.12);
       cursor: default;
@@ -48,6 +50,7 @@
       mat-icon {
         font-size: 14px;
         height: 14px;
+        line-height: 14px;
       }
     }
 
@@ -59,7 +62,7 @@
       mat-icon {
         font-size: 9px;
         height: 9px;
-        line-height: 6px;
+        line-height: 9px;
       }
     }
   }
