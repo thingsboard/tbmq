@@ -105,7 +105,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         (entity) => defaultCellStyle(entity.subscriptionsCount)),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
         (entity) => defaultCellStyle(entity.nodeId)),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '120px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))
     );
