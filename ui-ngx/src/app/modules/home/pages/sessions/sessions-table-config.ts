@@ -82,7 +82,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
 
     this.columns.push(
-      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '120px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
         (entity) => {
           return '<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:' +

@@ -25,8 +25,7 @@ import { DialogService } from '@core/services/dialog.service';
 
 @Component({
   selector: 'tb-sessions-table',
-  templateUrl: './sessions-table.component.html',
-  styleUrls: ['./sessions-table.component.scss']
+  templateUrl: './sessions-table.component.html'
 })
 export class SessionsTableComponent implements OnInit {
 

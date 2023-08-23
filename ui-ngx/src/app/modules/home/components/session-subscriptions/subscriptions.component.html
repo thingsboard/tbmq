@@ -51,7 +51,7 @@
         <mat-select formControlName="qos" required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
                     [disabled]="topicFilter.get('shareName').value?.length">
           <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-            {{mqttQoS.name | translate}}
+            {{ mqttQoSValue(mqttQoS) }}
           </mat-option>
         </mat-select>
       </mat-form-field>
