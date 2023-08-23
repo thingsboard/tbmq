@@ -621,7 +621,7 @@
     "members": "Members",
     "brokers": "Kafka Brokers",
     "topics": "Kafka Topics",
-    "topics-search": "Search Topics",
+    "topics-search": "Search topics",
     "consumer-groups": "Kafka Consumer Groups",
     "consumer-groups-search": "Search Consumer Groups",
     "no-kafka-consumer-group-text": "No Kafka consumer groups found",

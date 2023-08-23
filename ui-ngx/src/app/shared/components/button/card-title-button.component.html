@@ -16,11 +16,11 @@
 
 -->
 <div fxLayout="row" fxLayoutAlign="space-between center">
-  <section [ngClass]="!disabled ? 'tb-title-link-hover' : 'tb-title-link-disabled'">
+  <section [ngClass]="!disabled ? 'tb-title-link-active' : 'tb-title-link-disabled'">
     <a (click)="navigate()">{{ title?.label | translate}}</a>
   </section>
   <section *ngIf="title?.docsLink">
-    <mat-icon [matTooltip]="'help.goto-help-page' | translate" (click)="gotoDocs()">
+    <mat-icon class="home-page-material-icons" [matTooltip]="'help.goto-help-page' | translate" (click)="gotoDocs()">
       help_outline
     </mat-icon>
   </section>

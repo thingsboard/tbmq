@@ -24,19 +24,19 @@
                 [disabled]="isLoading$ | async" (click)="enterFilterMode()"
                 matTooltip="{{ translations.search | translate }}"
                 matTooltipPosition="above">
-          <mat-icon>search</mat-icon>
+          <mat-icon class="home-page-material-icons">search</mat-icon>
         </button>
         <button mat-icon-button
                 [disabled]="isLoading$ | async" (click)="updateData()"
                 matTooltip="{{ 'action.refresh' | translate }}"
                 matTooltipPosition="above">
-          <mat-icon>refresh</mat-icon>
+          <mat-icon class="home-page-material-icons">refresh</mat-icon>
         </button>
         <button mat-icon-button
                 [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
                 matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
                 matTooltipPosition="above">
-          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          <mat-icon class="home-page-material-icons">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
         </button>
       </div>
     </mat-toolbar>
@@ -45,7 +45,7 @@
         <button mat-icon-button
                 matTooltip="{{ translations.search | translate }}"
                 matTooltipPosition="above">
-          <mat-icon>search</mat-icon>
+          <mat-icon class="home-page-material-icons">search</mat-icon>
         </button>
         <mat-form-field fxFlex="50" fxFlex.xs="100">
           <mat-label>&nbsp;</mat-label>
@@ -56,7 +56,7 @@
         <button mat-icon-button (click)="exitFilterMode()"
                 matTooltip="{{ 'action.close' | translate }}"
                 matTooltipPosition="above">
-          <mat-icon>close</mat-icon>
+          <mat-icon class="home-page-material-icons">close</mat-icon>
         </button>
       </div>
     </mat-toolbar>

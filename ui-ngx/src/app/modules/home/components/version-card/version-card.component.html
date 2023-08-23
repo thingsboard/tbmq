@@ -16,9 +16,8 @@
 
 -->
 <div class="tb-home-card-container tb-home-padding" fxLayoutGap="8px">
-  <section fxLayout="row" class="title-container">
+  <section fxLayout="row" class="title-container" fxLayoutAlign="space-between flex-end">
     <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-    <span fxFlex></span>
     <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">

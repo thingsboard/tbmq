@@ -36,6 +36,12 @@
       padding: 0 16px 0 16px;
     }
   }
+
+  @media #{$mat-lt-xl} {
+    input {
+      font-size: 11px;
+    }
+  }
 }
 
 :host ::ng-deep {
@@ -103,7 +109,10 @@
   }
 
   .mat-table-toolbar-container .mat-icon-button {
-    height: 25px;
-    line-height: 20px;
+    width: 36px;
+
+    @media #{$mat-lt-xl} {
+      width: 26px;
+    }
   }
 }

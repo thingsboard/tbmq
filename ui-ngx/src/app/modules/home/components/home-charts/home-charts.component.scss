@@ -46,24 +46,6 @@
       span {
         font-size: 11px;
       }
-
-      mat-icon {
-        font-size: 14px;
-        height: 14px;
-        line-height: 14px;
-      }
-    }
-
-    @media #{$mat-lt-lg} {
-      span {
-        font-size: 9px;
-      }
-
-      mat-icon {
-        font-size: 9px;
-        height: 9px;
-        line-height: 9px;
-      }
     }
   }
 }

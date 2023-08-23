@@ -15,9 +15,7 @@
  */
 @import 'constants';
 
-:host::ng-deep {
-  width: 100%;
-
+:host {
   a {
     font-style: normal;
     font-weight: 500;
@@ -29,7 +27,7 @@
     border-bottom: none;
   }
 
-  .tb-title-link-hover {
+  .tb-title-link-active {
     cursor: pointer;
     &:hover, &:focus {
       border-bottom: none;
@@ -60,12 +58,13 @@
   }
 
   mat-icon {
-    font-size: 18px;
+    font-size: 20px;
     height: 18px;
     width: 18px;
-    cursor: pointer;
-    line-height: 12px;
+    line-height: 18px;
     color: rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+
     &:hover {
       color: rgba(0, 0, 0, 0.38);
     }
@@ -76,18 +75,10 @@
       font-size: 11px;
       line-height: 11px;
     }
-
-    mat-icon {
-      font-size: 13px !important;
-      height: 13px !important;
-      width: 13px !important;
-      line-height: 7px !important;
-    }
-
-    .tb-title-link-hover {
+    .tb-title-link-active {
       &::after {
-        font-size: 13px;
-        line-height: 15px;
+        font-size: 14px;
+        line-height: 14px;
       }
     }
   }
