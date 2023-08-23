@@ -18,8 +18,8 @@
 <div class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
-    <ng-container *ngFor="let step of steps | async; let index = index;">
-      <mat-step [completed]="false">
+    <ng-container *ngFor="let step of steps | async; let index = index;" class="tb-active">
+      <mat-step [completed]="index < selectedStep" [editable]="true">
         <ng-template matStepLabel>
           <div style="width: 100%;" fxLayout="row" fxLayoutAlign="space-between center">
             <div>{{step.title | translate}}</div>

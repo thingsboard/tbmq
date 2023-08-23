@@ -34,11 +34,18 @@ import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
+import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 
 @Component({
   selector: 'tb-getting-started',
   templateUrl: './getting-started.component.html',
-  styleUrls: ['./getting-started.component.scss']
+  styleUrls: ['./getting-started.component.scss'],
+  providers: [
+    {
+      provide: STEPPER_GLOBAL_OPTIONS,
+      useValue: { displayDefaultIndicatorType: false }
+    }
+  ]
 })
 export class GettingStartedComponent implements AfterViewInit {
 
@@ -47,6 +54,7 @@ export class GettingStartedComponent implements AfterViewInit {
   stepsData: Array<any> = [];
   data: string;
   configParams: BrokerConfig;
+  selectedStep = 0;
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
@@ -78,6 +86,7 @@ export class GettingStartedComponent implements AfterViewInit {
   }
 
   selectStep(event: any) {
+    this.selectedStep = event.selectedIndex;
     this.getStep(this.stepsData[event.selectedIndex].id);
   }
 

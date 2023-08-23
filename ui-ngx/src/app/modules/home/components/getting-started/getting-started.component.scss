@@ -305,6 +305,11 @@
     letter-spacing: 0.2px;
   }
 
+  .mat-step-icon .mat-icon {
+    height: 13px;
+    width: 13px;
+  }
+
   @media #{$mat-lt-xl} {
     .tb-get-started {
       .mat-vertical-stepper-header {
