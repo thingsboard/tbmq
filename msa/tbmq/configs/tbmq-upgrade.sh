@@ -49,18 +49,41 @@ function composeVersion() {
 
 set -u
 
+# Define TBMQ versions
+old_version="1.0.1"
+new_version="1.1.0-SNAPSHOT"
+
+# Define TBMQ images
+old_image="image: \"thingsboard/tbmq:$old_version\""
+new_image="image: \"thingsboard/tbmq:$new_version\""
+
+# Define DB variables
+db_url="jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
+db_username="postgres"
+db_password="postgres"
+
+# Define data directory
+data_dir="$HOME/.tb-mqtt-broker-data/data"
+
 COMPOSE_VERSION=$(composeVersion) || exit $?
 echo 'Docker Compose version is: '$COMPOSE_VERSION
 
-docker pull thingsboard/tbmq:1.1.0-SNAPSHOT
+docker pull thingsboard/tbmq:$new_version
 
 # Backup the original Docker Compose file
 cp docker-compose.yml docker-compose.yml.bak
 echo "Docker Compose file backup created: docker-compose.yml.bak"
 
 # Replace the TBMQ image version using sed
-sed -i 's#image: "thingsboard/tbmq:1.0.1"#image: "thingsboard/tbmq:1.1.0-SNAPSHOT"#g' docker-compose.yml
-echo "TBMQ image line updated in docker-compose.yml with the new version"
+echo "Trying to replace the TBMQ image version from [$old_image] to [$new_image]..."
+sed -i "s#$old_image#$new_image#g" docker-compose.yml
+
+if grep -q "$new_image" docker-compose.yml; then
+    echo "TBMQ image line updated in docker-compose.yml with the new version"
+else
+    echo "Failed to replace the image version. Please, update the version manually and re-run the script"
+    exit 1
+fi
 
 case $COMPOSE_VERSION in
 V2)
@@ -71,12 +94,12 @@ V2)
   composeNetworkId=$(docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
   docker run -it --network=$composeNetworkId \
-    -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker \
-    -e SPRING_DATASOURCE_USERNAME=postgres \
-    -e SPRING_DATASOURCE_PASSWORD=postgres \
-    -v ~/.tb-mqtt-broker-data/data:/data \
+    -e SPRING_DATASOURCE_URL=$db_url \
+    -e SPRING_DATASOURCE_USERNAME=$db_username \
+    -e SPRING_DATASOURCE_PASSWORD=$db_password \
+    -v $data_dir:/data \
     --rm \
-    thingsboard/tbmq:1.1.0-SNAPSHOT upgrade-tbmq.sh
+    thingsboard/tbmq:$new_version upgrade-tbmq.sh
 
   docker compose rm tbmq
 
@@ -90,12 +113,12 @@ V1)
   composeNetworkId=$(docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
   docker run -it --network=$composeNetworkId \
-    -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker \
-    -e SPRING_DATASOURCE_USERNAME=postgres \
-    -e SPRING_DATASOURCE_PASSWORD=postgres \
-    -v ~/.tb-mqtt-broker-data/data:/data \
+    -e SPRING_DATASOURCE_URL=$db_url \
+    -e SPRING_DATASOURCE_USERNAME=$db_username \
+    -e SPRING_DATASOURCE_PASSWORD=$db_password \
+    -v $data_dir:/data \
     --rm \
-    thingsboard/tbmq:1.1.0-SNAPSHOT upgrade-tbmq.sh
+    thingsboard/tbmq:$new_version upgrade-tbmq.sh
 
   docker-compose rm tbmq
 
