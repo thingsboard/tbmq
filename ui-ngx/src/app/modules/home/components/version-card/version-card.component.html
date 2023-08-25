@@ -15,23 +15,39 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container" fxLayoutGap="20px">
-  <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section class="version-card-container">
-    <section>
-      <span [innerHTML]="'version.current-version' | translate"></span>:
-      <span><a target="_blank" href='https://github.com/thingsboard/tbmq'>{{versionData?.version}}</a></span>
-    </section>
-    <ng-container [ngSwitch]="updatesAvailable">
-      <ng-template [ngSwitchCase]="true">
-        <section>
-          <span [innerHTML]="'version.available-version' | translate"></span>:
-          <span><a target="_blank" [href]='versionData?.latestLink'>{{versionData?.latestVersion}}</a></span>
+<div class="tb-home-card-container tb-home-padding" fxLayoutGap="8px">
+  <section fxLayout="row" class="title-container" fxLayoutAlign="space-between flex-end">
+    <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
+    <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
+  </section>
+  <section class="cards">
+    <div class="version-container">
+      <section fxLayout="column" fxLayoutGap="10px">
+        <section class="tb-title-link-container">
+          <a class="tb-title-link" (click)="gotoGithub(currentReleaseVersion)" translate>
+            {{ 'version.current' }}
+          </a>
         </section>
-      </ng-template>
-      <ng-template [ngSwitchCase]="false">
-        <span [innerHTML]="'version.no-updates-available' | translate"></span>
-      </ng-template>
-    </ng-container>
+        <span style="color: rgba(0,0,0,0.76)">{{ currentReleaseVersion }}</span>
+      </section>
+    </div>
+    <div class="version-container">
+      <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
+        <section fxLayout="column" fxLayoutGap="10px">
+          <section class="tb-title-link-container">
+            <a class="tb-title-link" (click)="gotoGithub(latestReleaseVersion)" translate>
+              {{ 'version.available' }}
+            </a>
+          </section>
+          <span style="color: rgba(0,0,0,0.76)">{{ latestReleaseVersion }}</span>
+        </section>
+        <button fxHide.lt-md mat-raised-button color="primary"
+                [disabled]="!updatesAvailable"
+                (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
+                matTooltip="{{'version.upgrade' | translate}}">
+          {{'version.upgrade' | translate}}
+        </button>
+      </div>
+    </div>
   </section>
 </div>

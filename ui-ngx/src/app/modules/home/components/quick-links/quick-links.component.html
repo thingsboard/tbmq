@@ -15,14 +15,16 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container" fxLayoutGap="20px">
+<div class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section class="links">
-    <div class="link" *ngFor="let section of quickLinks$ | async">
-      <a mat-button (click)="navigate(section.path)">
+  <section class="links" fxLayout.lt-lg="column">
+    <div class="link" *ngFor="let section of quickLinks$ | async" (click)="navigate(section.path)">
+      <div class="icon-container" fxHide.lg>
         <mat-icon color="primary" [svgIcon]="section.icon"></mat-icon>
+      </div>
+      <div class="link-content">
         <span>{{section.name | translate}}</span>
-      </a>
+      </div>
     </div>
   </section>
 </div>

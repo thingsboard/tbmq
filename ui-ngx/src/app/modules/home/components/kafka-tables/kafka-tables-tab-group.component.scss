@@ -1,0 +1,64 @@
+/**
+ * Copyright © 2016-2023 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import 'constants';
+
+:host {
+  .tabs-toolbar {
+    position: absolute;
+    margin: 14px 0 0 14px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.05);
+    width: fit-content;
+  }
+
+  .tb-kafka-table {
+    padding-bottom: 0;
+  }
+}
+
+:host::ng-deep {
+  .tabs-toolbar > button {
+    border-radius: 20px;
+    border: 1px solid transparent;
+    line-height: 28px;
+
+    span {
+      color: rgba(0,0,0,0.38);
+      font-size: 14px;
+
+      @media #{$mat-lt-xl} {
+        font-size: 11px;
+      }
+    }
+  }
+
+  .tabs-toolbar > button:hover {
+    background: rgba(0,0,0,0.1);
+  }
+
+  .tb-active {
+    background: rgba(0, 105, 92, 0.04) !important;
+    border: 1px solid #00695C !important;
+
+    span {
+      color: #1F8B4D !important;
+    }
+  }
+
+  .mat-form-field-appearance-legacy .mat-form-field-infix {
+    padding: 0 0.1em !important;
+  }
+}

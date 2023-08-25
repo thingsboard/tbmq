@@ -15,45 +15,46 @@
 ///
 
 import { EntityTableColumn, EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { TranslateService } from '@ngx-translate/core';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaTopic } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { formatBytes } from '@home/components/entity/kafka-table.component';
+import { formatBytes } from '@home/components/entity/entities-table-home.component';
+import { EntityType } from '@shared/models/entity-type.models';
 
 export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
-              private translate: TranslateService,
               public entityId: string = null) {
     super();
-    this.loadDataOnInit = true;
+    this.entityType = EntityType.KAFKA_TOPIC;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
-    this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.defaultPageSize = 5;
     this.entityTranslations = {
       noEntities: 'kafka.no-kafka-topic-text',
       search: 'kafka.topics-search'
     };
 
-    this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
+    this.entitiesFetchFunction = pageLink => this.fetchKafkaTopics(pageLink);
 
     this.columns.push(
       new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
-      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%'),
-      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%'),
-      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%', entity => {
-        return formatBytes(entity.size);
-      })
+      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%',
+        entity => entity.partitions.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%',
+        entity => entity.replicationFactor.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%',
+          entity => formatBytes(entity.size),
+        () => ({color: 'rgba(0,0,0,0.54)'}))
     );
   }
 
-  private fetchSessions(pageLink: TimePageLink): Observable<PageData<KafkaTopic>> {
+  private fetchKafkaTopics(pageLink: TimePageLink): Observable<PageData<KafkaTopic>> {
     return this.kafkaService.getKafkaTopics(pageLink);
   }
 }

@@ -27,7 +27,7 @@ import {AuthUser} from '@shared/models/user.model';
 import {EntityType} from '@shared/models/entity-type.models';
 import {FormGroup} from '@angular/forms';
 import {PageLink} from '@shared/models/page/page-link';
-import {NULL_UUID} from "@shared/models/constants";
+import {NULL_UUID} from '@shared/models/constants';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix

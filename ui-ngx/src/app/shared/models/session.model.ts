@@ -60,6 +60,11 @@ export enum MqttQoS {
   EXACTLY_ONCE = 'EXACTLY_ONCE'
 }
 
+export interface MqttQoSType {
+  value: MqttQoS;
+  name: string;
+}
+
 export const mqttQoSTypes = [
   {
     value: MqttQoS.AT_MOST_ONCE,

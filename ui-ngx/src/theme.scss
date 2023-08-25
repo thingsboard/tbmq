@@ -225,6 +225,22 @@ $tb-dark-theme: get-tb-dark-theme(
   }
 
   @include mat-fab-toolbar-theme($tb-theme);
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(203, 203, 203, 0.8);
+    &:hover {
+      background: rgba(165, 165, 165, 0.65);
+    }
+  }
 }
 
 .tb-default {

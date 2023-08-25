@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Injector, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, OnInit } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -31,7 +31,8 @@ import { PageComponent } from '@shared/components/page.component';
 import { Subscription } from 'rxjs';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import { MqttQoS, mqttQoSTypes, TopicSubscription } from '@shared/models/session.model';
+import { MqttQoS, MqttQoSType, mqttQoSTypes, TopicSubscription } from '@shared/models/session.model';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'tb-subscriptions',
@@ -58,13 +59,11 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   shareNameCounter = 0;
 
   private propagateChange = null;
-
   private valueChangeSubscription: Subscription = null;
 
   constructor(protected store: Store<AppState>,
-              private injector: Injector,
-              private fb: FormBuilder,
-              private cd: ChangeDetectorRef) {
+              private translate: TranslateService,
+              private fb: FormBuilder) {
     super(store);
   }
 
@@ -140,8 +139,15 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.showShareName = !this.showShareName;
   }
 
+  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
+    const index = mqttQoSTypes.findIndex(object => {
+      return object.value === mqttQoSValue.value;
+    });
+    const name = this.translate.instant(mqttQoSValue.name);
+    return index + ' - ' + name;
+  }
+
   private updateView(value: TopicSubscription[]) {
     this.propagateChange(this.topicListFormGroup.get('subscriptions').value);
   }
-
 }

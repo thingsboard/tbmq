@@ -146,7 +146,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
       {
         message: this.translate.instant('profile.default-password-warn'),
         type: 'success',
-        duration: 0,
+        duration: 2000,
         verticalPosition: 'top',
         horizontalPosition: 'left'
       })

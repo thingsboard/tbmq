@@ -13,34 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import '../../../../scss/constants';
+@import 'constants';
 
 :host {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
-
-  .tb-title-link {
+  a {
     font-style: normal;
     font-weight: 500;
-    font-size: 12px;
-    line-height: 16px;
+    font-size: 14px;
+    line-height: 14px;
     letter-spacing: 0.25px;
     color: rgba(0, 0, 0, 0.54);
     position: relative;
     border-bottom: none;
   }
 
-  .tb-title-link-hover {
+  .tb-title-link-active {
     cursor: pointer;
     &:hover, &:focus {
       border-bottom: none;
       color: inherit;
     }
+    &::after {
+      font-family: 'Material Icons';
+      content: 'arrow_forward';
+      display: inline-block;
+      transform: rotate(315deg);
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 18px;
+      color: rgba(0, 0, 0, 0.54);
+      vertical-align: bottom;
+      cursor: default !important;
+    }
+    &:hover {
+      &::after {
+        color: #000;
+      }
+    }
   }
 
   .tb-title-link-disabled {
     cursor: default;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    height: 18px;
+    width: 18px;
+    line-height: 18px;
+    color: rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+
+    &:hover {
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+
+  @media #{$mat-lt-xl} {
+    a {
+      font-size: 11px;
+      line-height: 11px;
+    }
+    .tb-title-link-active {
+      &::after {
+        font-size: 14px;
+        line-height: 14px;
+      }
+    }
   }
 }

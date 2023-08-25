@@ -13,26 +13,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import 'constants';
+
 :host {
-  display: flex;
-  flex: 2;
-
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
-  }
-
   .links {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 4px;
   }
 
   .link {
-    width: 45%;
-    color: #494949;
+    @media #{$mat-lt-lg} {
+      width: 100% !important;
+    }
 
-    a {
-      font-size: 12px;
-      border: 1px solid transparent;
+    flex: 1 0 45%;
+    flex-wrap: wrap;
+    display: flex;
+    color: #494949;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 1px;
+    line-height: 21px;
+    cursor: pointer;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.04);
+    &:hover {
+      box-shadow: 0 4px 10px rgba(23, 33, 90, 0.08);
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .icon-container {
+      display: flex;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .link-content {
+      display: flex;
+      align-items:center;
+
+      span {
+        font-size: 14px;
+        border: 1px solid transparent;
+        padding-left: 4px;
+      }
+
+      @media #{$mat-lt-xl} {
+        span {
+          font-size: 11px;
+          white-space: nowrap;
+        }
+        .icon-container {
+          width: 24px;
+          height: 24px;
+        }
+      }
     }
   }
 }

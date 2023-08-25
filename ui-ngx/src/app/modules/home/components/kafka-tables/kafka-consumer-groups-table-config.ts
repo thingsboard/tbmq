@@ -15,42 +15,45 @@
 ///
 
 import { EntityTableColumn, EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { TranslateService } from '@ngx-translate/core';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
+import { EntityType } from '@shared/models/entity-type.models';
 
 export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsumerGroup, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
-              private translate: TranslateService,
               public entityId: string = null) {
     super();
-    this.loadDataOnInit = true;
+    this.entityType = EntityType.KAFKA_CONSUMER_GROUP;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
-    this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.defaultPageSize = 5;
     this.entityTranslations = {
       noEntities: 'kafka.no-kafka-consumer-group-text',
       search: 'kafka.consumer-groups-search'
     };
 
-    this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
+    this.entitiesFetchFunction = pageLink => this.fetchKafkaConsumerGroups(pageLink);
 
     this.columns.push(
       new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '70%'),
-      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%', entity => entity.lag)
+      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%',
+        entity => entity.state,
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%',
+        entity => entity.members.toString(),
+        () => ({color: 'rgba(0,0,0,0.54)'})),
+      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%',
+          entity => entity.lag,
+        () => ({color: 'rgba(0,0,0,0.54)'}))
     );
   }
 
-  private fetchSessions(pageLink: TimePageLink): Observable<PageData<KafkaConsumerGroup>> {
+  private fetchKafkaConsumerGroups(pageLink: TimePageLink): Observable<PageData<KafkaConsumerGroup>> {
     return this.kafkaService.getKafkaConsumerGroups(pageLink);
   }
 }

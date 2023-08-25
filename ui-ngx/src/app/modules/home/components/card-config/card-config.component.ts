@@ -14,80 +14,100 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { BrokerConfig, ConfigParams, ConfigParamsTranslationMap, SecurityParameterConfigMap } from '@shared/models/config.model';
+import { Component } from '@angular/core';
+import { BrokerConfigTable, ConfigParams, ConfigParamsTranslationMap, } from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from '@core/http/config.service';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
-import { PageLink } from '@shared/models/page/page-link';
-import { MqttCredentialsType } from '@shared/models/client-crenetials.model';
-import { formatBytes } from '@home/components/entity/kafka-table.component';
 import { HomePageTitleType } from '@shared/models/home-page.model';
+import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
+import { DomSanitizer } from '@angular/platform-browser';
+import { map } from 'rxjs/operators';
+import { EntitiesTableHomeNoPagination, formatBytes } from '@home/components/entity/entities-table-home.component';
 
 @Component({
   selector: 'tb-card-config',
   templateUrl: './card-config.component.html',
   styleUrls: ['./card-config.component.scss']
 })
-export class CardConfigComponent implements OnInit, AfterViewInit {
+export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
-  securityParameterConfigMap = SecurityParameterConfigMap;
   configParamsTranslationMap = ConfigParamsTranslationMap;
-
   configParams = ConfigParams;
-  hasBasicCredentials: Observable<boolean>;
-  hasX509AuthCredentials: Observable<boolean>;
-  overviewConfig: Observable<BrokerConfig>;
 
-  tooltipContent = (type) => `<span>${this.translate.instant('config.warning', {type: this.translate.instant(type)})}</span>`;
+  private hasBasicCredentials: boolean;
+  private hasX509AuthCredentials: boolean;
+
+  fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
+    map((data) => {
+      data.data = data.data.filter(el => {
+        if (el.key === ConfigParams.existsBasicCredentials) {
+          this.hasBasicCredentials = el.value;
+        }
+        if (el.key === ConfigParams.existsX509Credentials) {
+          this.hasX509AuthCredentials = el.value;
+        }
+        return (el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials);
+      });
+      return data;
+    })
+  )
+  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,
-              private mqttClientCredentialsService: MqttClientCredentialsService) { }
+              protected domSanitizer: DomSanitizer) {
+    super(domSanitizer);
+  }
 
-  ngOnInit(): void {
+  getColumns() {
+    const columns: Array<EntityColumn<BrokerConfigTable>> = [];
+    columns.push(
+      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '80%'),
+      new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '20%',
+          entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
+    );
+    return columns;
   }
 
   onCopy() {
     const message = this.translate.instant('config.port-copied');
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message,
-        type: 'success',
-        duration: 1500,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      }));
+    this.store.dispatch(new ActionNotificationShow({
+      message,
+      type: 'success',
+      duration: 1500,
+      verticalPosition: 'top',
+      horizontalPosition: 'left'
+    }));
   }
 
-  viewDocumentation(page: string) {
+  gotoDocs(page: string){
     window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  ngAfterViewInit(): void {
-    this.overviewConfig = this.configService.getBrokerConfig();
-    this.mqttClientCredentialsService.getMqttClientsCredentials(new PageLink(100)).subscribe(
-      data => {
-        this.hasBasicCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.MQTT_BASIC));
-        this.hasX509AuthCredentials = of(!!data.data.find(el => el.credentialsType === MqttCredentialsType.SSL));
-      }
-    );
-  }
-
-  transformValue(item) {
-    if (item.key === ConfigParams.TCP_LISTENER_MAX_PAYLOAD_SIZE || item.key === ConfigParams.TLS_LISTENER_MAX_PAYLOAD_SIZE) {
-      return formatBytes(item.value);
+  formatBytesToValue(entity: BrokerConfigTable): string {
+    if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize ||
+       entity.key === ConfigParams.wsMaxPayloadSize || entity.key === ConfigParams.wssMaxPayloadSize) {
+      return formatBytes(entity.value);
     }
-    return item.value;
+    if (typeof entity.value === 'boolean') {
+      return entity.value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
+    }
+    return entity.value;
   }
 
-  noSorting() {
-    return 0;
+  showCopyButton(entity: BrokerConfigTable, configParams: any): boolean {
+    return entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
+           entity.key === configParams.wsPort || entity.key === configParams.wssPort;
+  }
+
+  showWarningIcon(entity: BrokerConfigTable, configParams: any): boolean {
+    return !entity.value &&
+           ((entity.key === configParams.x509AuthEnabled && this.hasX509AuthCredentials) ||
+            (entity.key === configParams.basicAuthEnabled && this.hasBasicCredentials));
   }
 }
