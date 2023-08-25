@@ -140,8 +140,8 @@ export function homeChartJsParams() {
           type: 'time',
           display: true,
           time: {
-            round: 'second',
-            tooltipFormat: 'HH:mm',
+            round: 'minute',
+            tooltipFormat: 'dd HH:mm',
             displayFormats: {
               minute: 'HH:mm'
             }
@@ -153,7 +153,7 @@ export function homeChartJsParams() {
               size: 8
             },
             callback(val, index) {
-              return (index === 0) ? val : ''; // Show only first tick label
+              return (index === 0 || index === 10) ? val : ''; // show first, last ticks
             },
           },
           grid: {

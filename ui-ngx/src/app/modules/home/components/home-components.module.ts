@@ -22,7 +22,7 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
-import { EventContentDialogComponent } from "@home/components/event/event-content-dialog.component";
+import { EventContentDialogComponent } from '@home/components/event/event-content-dialog.component';
 
 @NgModule({
   declarations:

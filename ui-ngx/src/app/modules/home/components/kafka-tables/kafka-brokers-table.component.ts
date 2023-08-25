@@ -19,15 +19,15 @@ import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-ta
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaBroker } from '@shared/models/kafka.model';
-import { formatBytes, KafkaTableComponent } from '@home/components/entity/kafka-table.component';
 import { HomePageTitleType } from '@shared/models/home-page.model';
+import { EntitiesTableHomeNoPagination, formatBytes } from '@home/components/entity/entities-table-home.component';
 
 @Component({
   selector: 'tb-kafka-brokers-table',
   templateUrl: './kafka-brokers-table.component.html',
   styleUrls: ['./kafka-brokers-table.component.scss']
 })
-export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker> {
+export class KafkaBrokersTableComponent extends EntitiesTableHomeNoPagination<KafkaBroker> {
 
   cardType = HomePageTitleType.KAFKA_BROKERS;
   fetchEntities$ = () => this.kafkaService.getKafkaBrokers(this.pageLink);
@@ -40,11 +40,10 @@ export class KafkaBrokersTableComponent extends KafkaTableComponent<KafkaBroker>
   getColumns() {
     const columns: Array<EntityColumn<KafkaBroker>> = [];
     columns.push(
-      new EntityTableColumn<KafkaBroker>('brokerId', 'kafka.id', '25%', entity => entity.brokerId),
-      new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '25%'),
-      new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '25%', entity => {
-        return formatBytes(entity.brokerSize);
-      })
+      new EntityTableColumn<KafkaBroker>('address', 'kafka.address', '80%'),
+      new EntityTableColumn<KafkaBroker>('brokerSize', 'kafka.size', '20%',
+          entity => formatBytes(entity.brokerSize),
+        () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;
   }

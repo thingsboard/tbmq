@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import '../../../../../scss/constants';
+@import 'constants';
 
 :host {
-  width: 100%;
-  height: 100%;
+  flex-direction: column;
 
   @media #{$mat-xs} {
     .mat-toolbar {
@@ -37,6 +36,12 @@
       padding: 0 16px 0 16px;
     }
   }
+
+  @media #{$mat-lt-xl} {
+    input {
+      font-size: 11px;
+    }
+  }
 }
 
 :host ::ng-deep {
@@ -53,11 +58,28 @@
   }
 
   mat-toolbar.mat-table-toolbar {
-    padding: 0 24px;
+    padding: 0;
     .mat-toolbar-tools {
       padding: 0;
-      & > button.mat-icon-button:last-child {
-        margin-right: -12px;
+    }
+  }
+
+  .mat-row:not(.mat-row-select), .mat-header-row:not(.mat-row-select) {
+    mat-cell:first-child, mat-footer-cell:first-child, mat-header-cell:first-child {
+      padding: 0;
+    }
+    mat-cell:nth-child(n+2):nth-last-child(n+2), mat-footer-cell:nth-child(n+2):nth-last-child(n+2), mat-header-cell:nth-child(n+2):nth-last-child(n+2) {
+      padding: 0 28px 0 0;
+    }
+
+    .mat-header-cell {
+      color: rgba(0, 0, 0, 0.38);
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0;
+
+      @media #{$mat-lt-xl} {
+        font-size: 10px;
       }
     }
   }
@@ -74,7 +96,7 @@
   }
 
   .mat-toolbar-single-row {
-    height: 40px;
+    height: 35px;
   }
 
   .mat-form-field {
@@ -86,13 +108,11 @@
     border-radius: 20px;
   }
 
-  .mat-paginator-sticky {
-    bottom: 0;
-    position: sticky;
-    z-index: 10;
-  }
-}
+  .mat-table-toolbar-container .mat-icon-button {
+    width: 36px;
 
-:host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {
-  opacity: 1 !important;
+    @media #{$mat-lt-xl} {
+      width: 26px;
+    }
+  }
 }

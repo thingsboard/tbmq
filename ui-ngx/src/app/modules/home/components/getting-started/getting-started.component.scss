@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import '../../../../../scss/constants';
+@import 'constants';
 
 :host::ng-deep {
-  display: flex;
-  flex: 4;
-
   .mat-expansion-panel-body {
     padding: 0 22px 16px;
   }
@@ -35,8 +32,8 @@
       background-color: #1f8b4d;
       border: 1px solid transparent;
       border-radius: 20px;
-      height: 24px;
-      width: 24px;
+      height: 22px;
+      width: 22px;
       line-height: 1.6em;
     }
 
@@ -64,10 +61,6 @@
     }
   }
 
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
-  }
-
   .mat-expansion-panel button {
     margin-left: 0;
   }
@@ -88,15 +81,6 @@
     max-width: 400px;
     overflow-x: scroll;
     white-space: nowrap;
-  }
-
-  .config-material-icon {
-    color: #0a5b25;
-    cursor: pointer;
-    line-height: 2em;
-    height: 24px;
-    width: 24px;
-    font-size: 20px;
   }
 
   .tb-markdown-view {
@@ -212,13 +196,9 @@
     }
   }
 
-}
-
-:host ::ng-deep {
-
   .tb-get-started .mat-vertical-stepper-header {
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px;
     height: auto;
   }
 
@@ -243,15 +223,15 @@
     width: 100%;
     white-space: inherit;
     font-weight: 400;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
     color: rgba(0, 0, 0, 0.76);
   }
 
   .tb-get-started .mat-step-label.mat-step-label-selected {
-    font-weight: 500;
-    font-size: 12px;
-    line-height: 24px;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
     color: rgba(0, 0, 0, 0.87);
   }
 
@@ -259,7 +239,7 @@
     p, li {
       font-style: normal;
       font-weight: 400;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 20px;
       letter-spacing: 0.2px;
       color: rgba(0, 0, 0, 0.54);
@@ -280,7 +260,7 @@
       align-items: stretch;
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 8px;
-      padding: 16px;
+      padding: 18px;
       p {
         margin-top: 16px;
         margin-bottom: 8px;
@@ -314,6 +294,58 @@
             }
           }
         }
+    }
+  }
+
+  .tb-get-started .mat-step-icon-content, .mat-step-icon .mat-icon {
+    font-size: 13px;
+  }
+
+  .tb-get-started .mat-step-text-label {
+    letter-spacing: 0.2px;
+  }
+
+  .mat-step-icon .mat-icon {
+    height: 13px;
+    width: 13px;
+  }
+
+  @media #{$mat-lt-xl} {
+    .tb-get-started {
+      .mat-vertical-stepper-header {
+        padding: 4px;
+      }
+      .mat-step-label, .mat-step-label.mat-step-label-selected {
+        font-size: 11px;
+        line-height: 13px;
+      }
+      .mat-step-icon-content, .mat-step-icon .mat-icon {
+        font-size: 11px;
+      }
+      .mat-vertical-content {
+        padding: 0 12px 12px 12px;
+        p, li {
+          font-size: 11px;
+          line-height: 13px;
+          em {
+            font-size: 11px;
+          }
+        }
+        .tb-markdown-view {
+          .code-wrapper {
+            code[class*="language-"], pre[class*="language-"] {
+              font-size: 11px;
+            }
+          }
+        }
+      }
+       .mat-step-label.mat-step-label-selected {
+        font-size: 12px;
+      }
+      .mat-step-icon {
+        width: 22px;
+        height: 22px;
+      }
     }
   }
 }

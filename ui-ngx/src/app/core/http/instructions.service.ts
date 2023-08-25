@@ -28,11 +28,11 @@ export class InstructionsService {
   ) {
   }
 
-  public getGetStartedInstruction(id: string): Observable<string> {
+  public getInstruction(id: string): Observable<string> {
     return this.http.get(`/assets/getting-started/${id}.md`, { responseType: 'text' });
   }
 
-  public setSteps(basicAuthEnabled: boolean): Observable<Array<any>> {
+  public setInstructionsList(basicAuthEnabled: boolean): Observable<Array<any>> {
     const steps = [
       {
         id: 'client-app',

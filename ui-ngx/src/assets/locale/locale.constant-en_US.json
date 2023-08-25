@@ -196,7 +196,6 @@
     "menu": "Menu",
     "avatar": "Avatar",
     "open-user-menu": "Open user menu",
-    "view-docs": "View Docs",
     "config": "Config",
     "quick-links": "Quick links",
     "rest-api": "Rest API",
@@ -229,7 +228,7 @@
     "change-password": "Change password",
     "change-default-password": "Change default password",
     "current-password": "Current password",
-    "default-password-warn": "The default password for a new user is 'sysadmin'."
+    "default-password-warn": "The default password for a new user is 'sysadmin'"
   },
   "user": {
     "admins": "Admins",
@@ -584,12 +583,14 @@
   },
   "version": {
     "version": "Version",
-    "update": "Update",
-    "no-updates-available": "You have latest version. No updates available.",
-    "available-version": "New release available",
-    "current-version": "Current TBMQ version"
+    "upgrade": "Upgrade",
+    "contact-us": "Contact us",
+    "available": "Available",
+    "current": "Current"
   },
   "config": {
+    "key": "Key",
+    "value": "Value",
     "port-mqtt": "TCP Port",
     "tcp-listener": "TCP Listener",
     "tcp-listener-max-payload-size": "TCP Listener Max Payload Size",
@@ -598,9 +599,15 @@
     "tls-tcp-port": "TLS Port",
     "basic-auth": "Basic Auth",
     "ssl-auth": "X.509 Certificate Auth",
+    "ws-port": "WS Port",
+    "wss-port": "WSS Port",
+    "ws-listener": "WS Listener",
+    "wss-listener": "WSS Listener",
+    "ws-listener-max-payload-size": "WS Listener Max Payload Size",
+    "wss-listener-max-payload-size": "WSS Listener Max Payload Size",
     "port-copied": "Port has been copied to clipboard",
     "copy-port": "Copy port",
-    "warning": "You have created credentials with auth method <b>{{type}}</b> that is disabled in the config. For more info <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/security/#authentication'>read docs</a>."
+    "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
   },
   "kafka": {
     "address": "Address",
@@ -614,7 +621,7 @@
     "members": "Members",
     "brokers": "Kafka Brokers",
     "topics": "Kafka Topics",
-    "topics-search": "Search Topics",
+    "topics-search": "Search topics",
     "consumer-groups": "Kafka Consumer Groups",
     "consumer-groups-search": "Search Consumer Groups",
     "no-kafka-consumer-group-text": "No Kafka consumer groups found",

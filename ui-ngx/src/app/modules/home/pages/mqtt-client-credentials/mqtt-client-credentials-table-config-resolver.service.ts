@@ -68,7 +68,7 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
     this.config.addEnabled = true;
     this.config.entitiesDeleteEnabled = true;
     this.config.deleteEnabled = () => true;
-    this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.credentialsId : '';
+    this.config.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
 
     this.config.columns.push(
       new DateEntityTableColumn<MqttClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
@@ -107,8 +107,8 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       map((user) => {
         this.config.componentsData = {};
         this.config.componentsData.config = {
-          basicAuthEnabled: user.additionalInfo?.config?.[ConfigParams.BASIC_AUTH],
-          sslAuthEnabled: user.additionalInfo?.config?.[ConfigParams.X509_CERT_CHAIN_AUTH]
+          basicAuthEnabled: user.additionalInfo?.config?.[ConfigParams.basicAuthEnabled],
+          sslAuthEnabled: user.additionalInfo?.config?.[ConfigParams.x509AuthEnabled]
         };
         if (!this.config.columns.find(el => el.key === 'warning')) {
           this.config.columns.push(

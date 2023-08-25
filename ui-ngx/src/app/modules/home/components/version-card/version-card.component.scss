@@ -13,22 +13,111 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import 'constants';
+
 :host {
-  display: flex;
-  flex: 1;
-  font-size: 13px;
-
   a {
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f8b4d;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    white-space: nowrap;
   }
 
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
+  .mat-button {
+    line-height: 26px !important;
   }
 
-  .version-card-container {
-    padding-top: 16px;
-    padding-left: 16px;
-    line-height: 20px;
+  .cards {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+
+    .version-container {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #e0e0e0;
+    }
+
+    span {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .tb-title-link {
+      font-style: normal;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 16px;
+      letter-spacing: 0.25px;
+      color: rgba(0,0,0,0.54);
+      position: relative;
+      border-bottom: none;
+      cursor: pointer;
+
+      &:hover, &:focus {
+        border-bottom: none;
+      }
+    }
+
+    .tb-title-link + span {
+      color: rgba(0,0,0,0.76);
+    }
+
+    .tb-title-link-container {
+      &::after {
+        font-family: 'Material Icons';
+        content: 'arrow_forward';
+        display: inline-block;
+        transform: rotate(315deg);
+        font-weight: normal;
+        font-style: normal;
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.54);
+        vertical-align: bottom;
+      }
+
+      &:hover {
+        &::after {
+          color: #000;
+        }
+      }
+    }
+  }
+
+  @media #{$mat-lt-xl} {
+    .title-container a {
+      font-size: 12px;
+    }
+
+    .cards {
+      span {
+        font-size: 16px;
+      }
+      .tb-title-link {
+        font-size: 11px;
+        line-height: 13px;
+      }
+      .tb-title-link-container {
+        &::after {
+          font-size: 14px;
+          line-height: 14px;
+        }
+      }
+      .mat-raised-button {
+        font-size: 12px;
+      }
+    }
+  }
+
+  @media #{$mat-xs} {
+    .cards {
+      .version-container {
+        padding: 5px;
+      }
+    }
   }
 }

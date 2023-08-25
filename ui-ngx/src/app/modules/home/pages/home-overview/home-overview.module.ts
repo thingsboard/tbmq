@@ -23,13 +23,11 @@ import { HomeChartsComponent } from '@home/components/home-charts/home-charts.co
 import { QuickLinksComponent } from '@home/components/quick-links/quick-links.component';
 import { VersionCardComponent } from '@home/components/version-card/version-card.component';
 import { CardConfigComponent } from '@home/components/card-config/card-config.component';
-import { KafkaTopicsTableComponent } from '@home/components/kafka-topics-table/kafka-topics-table.component';
-import { KafkaBrokersTableComponent } from '@home/components/kafka-brokers-table/kafka-brokers-table.component';
-import { KafkaConsumersTableComponent } from '@home/components/kafka-consumers-table/kafka-consumers-table.component';
+import { KafkaBrokersTableComponent } from '@home/components/kafka-tables/kafka-brokers-table.component';
 import { HomeCardsSessionsCredentialsComponent } from '@home/components/home-cards-sessions-credentials/home-cards-sessions-credentials.component';
-import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables-tab-group/kafka-tables-tab-group.component';
+import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables/kafka-tables-tab-group.component';
 import { GettingStartedComponent } from '@home/components/getting-started/getting-started.component';
-import { KafkaEntitiesTableComponent } from '@home/components/entity/kafka-entities-table.component';
+import { EntitiesTableHomeComponent } from '@home/components/entity/entities-table-home.component';
 import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-credentials/home-cards-table.component';
 
 @NgModule({
@@ -41,12 +39,10 @@ import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-cr
     HomeCardsSessionsCredentialsComponent,
     HomeCardsTableComponent,
     CardConfigComponent,
-    KafkaTopicsTableComponent,
     KafkaBrokersTableComponent,
-    KafkaConsumersTableComponent,
     KafkaTablesTabGroupComponent,
     GettingStartedComponent,
-    KafkaEntitiesTableComponent
+    EntitiesTableHomeComponent
   ],
   imports: [
     CommonModule,

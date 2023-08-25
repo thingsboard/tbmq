@@ -18,7 +18,9 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BrokerConfig, SystemVersionInfo } from '@shared/models/config.model';
+import { BrokerConfigTable, SystemVersionInfo } from '@shared/models/config.model';
+import { map } from 'rxjs/operators';
+import { PageData } from '@shared/models/page/page-data';
 
 @Injectable({
   providedIn: 'root'
@@ -28,8 +30,28 @@ export class ConfigService {
   constructor(private http: HttpClient) {
   }
 
-  public getBrokerConfig(config?: RequestConfig): Observable<BrokerConfig> {
-    return this.http.get<BrokerConfig>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
+  public getBrokerConfig(config?: RequestConfig): Observable<BrokerConfigTable> {
+    return this.http.get<BrokerConfigTable>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getBrokerConfigPageData(config?: RequestConfig): Observable<PageData<BrokerConfigTable>> {
+    return this.getBrokerConfig(config).pipe(
+      map(brokerConfig => {
+        const data = [];
+        for (const [key, value] of Object.entries(brokerConfig)) {
+          data.push({
+            key,
+            value
+          });
+        }
+        return {
+          data: data,
+          totalPages: 1,
+          totalElements: data.length,
+          hasNext: false
+        };
+      })
+    );
   }
 
   public getBrokerServiceIds(config?: RequestConfig): Observable<string[]> {

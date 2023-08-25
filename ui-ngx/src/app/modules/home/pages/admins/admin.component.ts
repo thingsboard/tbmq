@@ -20,8 +20,8 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { User } from "@shared/models/user.model";
-import { getCurrentAuthUser } from "@core/auth/auth.selectors";
+import { User } from '@shared/models/user.model';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Component({
   selector: 'tb-mqtt-admin-credentials',

@@ -554,7 +554,7 @@ mat-label {
     .mat-toolbar-tools {
       padding: 0;
       & > button.mat-icon-button:last-child {
-        margin-right: -12px;
+        //margin-right: -12px;
       }
     }
   }
@@ -672,7 +672,7 @@ mat-label {
     vertical-align: middle;
     border-width: 0;
     border-bottom-width: 1px;
-    border-bottom-color: rgba(0, 0, 0, 0.12);
+    border-bottom-color: rgba(0,0,0,0.12);
     border-style: solid;
     text-overflow: ellipsis;
     touch-action: auto !important;
@@ -717,7 +717,13 @@ mat-label {
   }
 
   .mat-cell, .mat-footer-cell {
-    font-size: 13px;
+    font-size: 14px;
+  }
+
+  @media #{$mat-lt-xl} {
+    .mat-cell, .mat-footer-cell {
+      font-size: 11px;
+    }
   }
 
   .mat-cell, .mat-footer-cell, .mat-header-cell {
@@ -862,7 +868,7 @@ mat-label {
     &:not(.mat-icon-button) {
       @media #{$mat-lt-md} {
         padding: 0 6px;
-        min-width: 88px;
+        min-width: 70px;
       }
       mat-icon {
         margin-right: 5px;
@@ -1090,5 +1096,15 @@ mat-label {
 
   .hint {
     margin-bottom: 10px;
+  }
+
+  .home-page-material-icons {
+    @media #{$mat-lt-xl} {
+      font-size: 14px !important;
+      width: 14px !important;
+      height: 14px !important;
+      line-height: 14px !important;
+      padding: 2px;
+    }
   }
 }

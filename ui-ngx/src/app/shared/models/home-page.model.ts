@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-export const POLLING_INTERVAL = 1000 * 60; // 1 min
-export const HOME_CHARTS_DURATION = 1000 * 60 * 10; // 10 min
+export const POLLING_INTERVAL = 1000 * 60;
+export const HOME_CHARTS_DURATION = 1000 * 60 * 11;
 
 export enum HomePageTitleType {
   MONITORING = 'MONITORING',
@@ -32,6 +32,7 @@ export interface HomePageTitle {
   label: string;
   tooltip: string;
   link?: string;
+  docsLink?: string;
 }
 
 export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
@@ -49,7 +50,8 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'mqtt-client-session.sessions',
         tooltip: 'mqtt-client-session.sessions',
-        link: 'sessions'
+        link: 'sessions',
+        docsLink: 'user-guide/ui/sessions'
       }
     ],
         [
@@ -57,21 +59,24 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'mqtt-client-credentials.credentials',
         tooltip: 'mqtt-client-credentials.credentials',
-        link: 'client-credentials'
+        link: 'client-credentials',
+        docsLink: 'user-guide/ui/mqtt-client-credentials'
       }
     ],
         [
       HomePageTitleType.CONFIG,
       {
         label: 'home.config',
-        tooltip: 'home.config'
+        tooltip: 'home.config',
+        docsLink: 'user-guide/ui/monitoring/#config'
       }
     ],
         [
       HomePageTitleType.KAFKA_BROKERS,
       {
         label: 'kafka.brokers',
-        tooltip: 'kafka.brokers'
+        tooltip: 'kafka.brokers',
+        docsLink: 'user-guide/ui/monitoring/#kafka-brokers'
       }
     ],
         [
