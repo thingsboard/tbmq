@@ -22,18 +22,18 @@ import lombok.Data;
 @Builder
 public class HomePageConfigDto {
 
-    private int tcpPort;
-    private int tlsPort;
-    private boolean tcpListenerEnabled;
-    private boolean tlsListenerEnabled;
-    private int tcpMaxPayloadSize;
-    private int tlsMaxPayloadSize;
     private boolean basicAuthEnabled;
     private boolean x509AuthEnabled;
+    private int tcpPort;
+    private int tlsPort;
     private int wsPort;
     private int wssPort;
+    private boolean tcpListenerEnabled;
+    private boolean tlsListenerEnabled;
     private boolean wsListenerEnabled;
     private boolean wssListenerEnabled;
+    private int tcpMaxPayloadSize;
+    private int tlsMaxPayloadSize;
     private int wsMaxPayloadSize;
     private int wssMaxPayloadSize;
     private boolean existsBasicCredentials;
