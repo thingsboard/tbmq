@@ -47,7 +47,7 @@ services:
       - zookeeper
   tb-mqtt-broker-1:
     restart: always
-    image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
+    image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"
     ports:
       - "1883"
       - "8083"
@@ -68,7 +68,7 @@ services:
       - kafka
   tb-mqtt-broker-2:
     restart: always
-    image: "${DOCKER_REPO}/${DOCKER_NAME}:${TB_MQTT_BROKER_VERSION}"
+    image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"
     ports:
       - "1883"
       - "8083"
