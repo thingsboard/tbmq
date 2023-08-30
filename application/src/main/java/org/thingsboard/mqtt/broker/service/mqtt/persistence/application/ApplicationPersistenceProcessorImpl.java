@@ -116,15 +116,19 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private long packProcessingTimeout;
     @Value("${queue.application-persisted-msg.shared-topic-validation:true}")
     private boolean validateSharedTopicFilter;
+    @Value("${queue.application-persisted-msg.shared-subs-threads-count}")
+    private int sharedSubsThreadsCount;
 
     private volatile boolean stopped = false;
     private ExecutorService persistedMsgsConsumerExecutor;
+    private ExecutorService sharedSubsMsgsConsumerExecutor;
 
     @PostConstruct
     public void init() {
         statsManager.registerActiveApplicationProcessorsStats(processingFutures);
         statsManager.registerActiveSharedApplicationProcessorsStats(sharedSubscriptionsProcessingJobs);
         persistedMsgsConsumerExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "application-persisted-msg-consumers");
+        sharedSubsMsgsConsumerExecutor = ThingsBoardExecutors.initExecutorService(sharedSubsThreadsCount, "application-shared-subs-msg-consumers");
     }
 
     @Override
@@ -257,7 +261,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 continue;
             }
             ApplicationSharedSubscriptionJob job = new ApplicationSharedSubscriptionJob(subscription, null, false);
-            Future<?> future = persistedMsgsConsumerExecutor.submit(() -> {
+            Future<?> future = sharedSubsMsgsConsumerExecutor.submit(() -> {
                 try {
                     ApplicationProcessorStats stats = statsManager.createSharedApplicationProcessorStats(clientId, subscription);
 
@@ -803,19 +807,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 log.warn("[{}] Failed to save APPLICATION context.", clientId);
             }
         });
-        shutdownExecutor();
+        shutdownExecutor(persistedMsgsConsumerExecutor, "persistence");
+        shutdownExecutor(sharedSubsMsgsConsumerExecutor, "shared subscriptions");
     }
 
-    private void shutdownExecutor() {
-        if (persistedMsgsConsumerExecutor == null) {
+    private void shutdownExecutor(ExecutorService service, String name) {
+        if (service == null) {
             return;
         }
-        persistedMsgsConsumerExecutor.shutdown();
+        service.shutdown();
         try {
-            boolean terminationSuccessful = persistedMsgsConsumerExecutor.awaitTermination(3, TimeUnit.SECONDS);
-            log.info("Application persistence consumers' executor termination is: [{}]", terminationSuccessful ? "successful" : "failed");
+            boolean terminationSuccessful = service.awaitTermination(3, TimeUnit.SECONDS);
+            log.info("Application {} consumers' executor termination is: [{}]", name, terminationSuccessful ? "successful" : "failed");
         } catch (InterruptedException e) {
-            log.warn("Failed to stop application persistence consumers' executor gracefully due to interruption!", e);
+            log.warn("Failed to stop application {} consumers' executor gracefully due to interruption!", name, e);
         }
     }
 }

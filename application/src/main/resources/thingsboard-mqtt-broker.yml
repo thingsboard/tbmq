@@ -184,6 +184,7 @@ queue:
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
     # enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
+    shared-subs-threads-count: "${TB_APP_PERSISTED_MSG_SHARED_SUBS_THREADS_COUNT:16}"
   device-persisted-msg:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
