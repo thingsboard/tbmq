@@ -17,12 +17,14 @@ package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,7 +74,7 @@ public interface StatsManager {
 
     void registerActiveApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
 
-    void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap);
+    void registerActiveSharedApplicationProcessorsStats(Map<String, List<ApplicationSharedSubscriptionJob>> processingFuturesMap);
 
     SubscriptionTimerStats getSubscriptionTimerStats();
 

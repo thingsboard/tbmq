@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.Timer;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.RetainedMsgTimerStats;
@@ -306,12 +307,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
-    public void registerActiveSharedApplicationProcessorsStats(Map<?, ?> processingFuturesMap) {
+    public void registerActiveSharedApplicationProcessorsStats(Map<String, List<ApplicationSharedSubscriptionJob>> processingFuturesMap) {
         if (log.isTraceEnabled()) {
             log.trace("Registering ActiveSharedApplicationProcessorsStats.");
         }
-        statsFactory.createGauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap, Map::size);
-        gauges.add(new Gauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap::size));
+        statsFactory.createGauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), processingFuturesMap, this::getSum);
+        gauges.add(new Gauge(StatsType.ACTIVE_SHARED_APP_PROCESSORS.getPrintName(), () -> getSum(processingFuturesMap)));
+    }
+
+    private int getSum(Map<String, List<ApplicationSharedSubscriptionJob>> processingFuturesMap) {
+        return processingFuturesMap.values().stream().mapToInt(List::size).sum();
     }
 
     @Override
