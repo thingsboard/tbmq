@@ -62,7 +62,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN msg_expiry_interval int;"); //NOSONAR, ignoring because method used to execute thingsboard_mqtt_broker database upgrade script
 
-                            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1000002;");
+                            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1001000;");
                         } catch (Exception ignored) {
                         }
                     }
