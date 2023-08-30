@@ -55,3 +55,25 @@ Execute the following command to stop and completely remove deployed docker cont
 `
 $ ./scripts/docker-remove-services.sh
 `
+
+## Upgrading
+
+**Note**: Make sure `TBMQ_VERSION` in .env file is set to the target version.
+
+After that execute the following commands:
+
+`
+$ ./scripts/docker-stop-services.sh
+`
+
+`
+$ ./scripts/docker-upgrade-tbmq.sh --fromVersion=FROM_VERSION
+`
+
+`
+$ ./scripts/docker-start-services.sh
+`
+
+Where `FROM_VERSION` - from which version upgrade should be started.
+See [Upgrade Instructions](https://thingsboard.io/docs/mqtt-broker/install/upgrade-instructions/) for
+valid `fromVersion` values.
