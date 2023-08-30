@@ -44,14 +44,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = ApplicationPersistenceProcessorImpl.class)
 @TestPropertySource(properties = {
         "queue.application-persisted-msg.poll-interval=100",
         "queue.application-persisted-msg.pack-processing-timeout=2000",
-        "queue.application-persisted-msg.threads-count=1"
+        "queue.application-persisted-msg.threads-count=1",
+        "queue.application-persisted-msg.shared-subs-threads-count=10"
 })
 @Slf4j
 public class ApplicationPersistenceProcessorImplTest {
@@ -109,7 +109,7 @@ public class ApplicationPersistenceProcessorImplTest {
 
         List<TopicSharedSubscription> cancelledSubscriptions = cancelledJobs.stream()
                 .map(ApplicationSharedSubscriptionJob::getSubscription)
-                .collect(Collectors.toList());
+                .toList();
         Assert.assertTrue(cancelledSubscriptions.containsAll(
                 List.of(newSharedSubscriptionTopicFilter("test/1"),
                         newSharedSubscriptionTopicFilter("test/2"),
