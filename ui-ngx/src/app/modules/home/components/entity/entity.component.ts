@@ -14,16 +14,16 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
-import {FormBuilder, FormGroup} from '@angular/forms';
-import {PageComponent} from '@shared/components/page.component';
-import {ChangeDetectorRef, Directive, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {EntityAction} from '@home/models/entity/entity-component.models';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {PageLink} from '@shared/models/page/page-link';
-import {deepTrim} from '@core/utils';
+import { BaseData } from '@shared/models/base-data';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { PageComponent } from '@shared/components/page.component';
+import { ChangeDetectorRef, Directive, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { EntityAction } from '@home/models/entity/entity-component.models';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { PageLink } from '@shared/models/page/page-link';
+import { deepTrim } from '@core/utils';
 
 // @dynamic
 @Directive()

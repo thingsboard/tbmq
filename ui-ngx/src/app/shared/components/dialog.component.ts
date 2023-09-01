@@ -40,6 +40,11 @@ export abstract class DialogComponent<T, R = any> extends PageComponent implemen
       .subscribe(() => {
         this.dialogRef.close();
       });
+    this.dialogRef.keydownEvents().subscribe(event => {
+      if (event.key === 'Escape') {
+        this.dialogRef.close();
+      }
+    });
   }
 
   ngOnDestroy(): void {

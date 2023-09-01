@@ -74,12 +74,12 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     return columns;
   }
 
-  onCopy() {
-    const message = this.translate.instant('config.port-copied');
+  onCopied() {
+    const message = this.translate.instant('action.on-copied');
     this.store.dispatch(new ActionNotificationShow({
       message,
       type: 'success',
-      duration: 1500,
+      duration: 1000,
       verticalPosition: 'top',
       horizontalPosition: 'left'
     }));

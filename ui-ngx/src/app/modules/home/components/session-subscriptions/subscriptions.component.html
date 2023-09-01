@@ -35,15 +35,15 @@
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
-        <input name="shareName" formControlName="shareName" readonly style="cursor: not-allowed;" matInput >
+        <input name="shareName" formControlName="shareName" readonly matInput style="cursor:not-allowed">
       </mat-form-field>
       <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
         <input matInput name="topicFilter" formControlName="topicFilter" required placeholder="{{ 'mqtt-client-session.topic' | translate }}"
                [readonly]="topicFilter.get('shareName').value?.length"
-               [ngStyle]="{'cursor': topicFilter.get('shareName').value?.length ? 'not-allowed' : 'default'}">
+               [ngStyle]="{'cursor': topicFilter.get('shareName').value?.length ? 'not-allowed' : 'unset'}">
         <mat-error *ngIf="topicFilter.invalid">
-          {{ 'mqtt-client-session.topic-required' | translate }}
+          {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
       <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">

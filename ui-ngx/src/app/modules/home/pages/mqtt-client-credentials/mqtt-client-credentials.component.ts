@@ -26,8 +26,6 @@ import {
   MqttCredentialsType
 } from '@shared/models/client-crenetials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
 import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
@@ -60,8 +58,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
               @Inject('entity') protected entityValue: MqttClientCredentials,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttClientCredentials>,
               public fb: FormBuilder,
-              protected cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+              protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
@@ -108,27 +105,5 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
 
   onChangePasswordCloseDialog($event: MqttClientCredentials) {
     this.updateForm($event);
-  }
-
-  onIdCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('mqtt-client-credentials.id-copied-message'),
-        type: 'success',
-        duration: 2000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
-      }));
-  }
-
-  onClientCredentialsCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('mqtt-client-credentials.client-credentials-id-copied-message'),
-        type: 'success',
-        duration: 2000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
-      }));
   }
 }

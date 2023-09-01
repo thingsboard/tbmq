@@ -164,9 +164,9 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
       {
         message: this.translate.instant('action.on-copied'),
         type: 'success',
-        duration: 2000,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
+        duration: 1000,
+        verticalPosition: 'top',
+        horizontalPosition: 'left'
       }));
   }
 

@@ -93,14 +93,15 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
     return this.config;
   }
 
-  configureGroupActions(): Array<GroupActionDescriptor<RetainedMessage>> {
+  private configureGroupActions(): Array<GroupActionDescriptor<RetainedMessage>> {
     const actions: Array<GroupActionDescriptor<RetainedMessage>> = [];
     actions.push(
       {
-        name: this.translate.instant('retained-message.delete'),
-        icon: 'delete',
+        name: this.translate.instant('action.delete'),
+        icon: 'mdi:trash-can-outline',
+        isMdiIcon: true,
         isEnabled: true,
-        onAction: ($event, entities) => this.deleteEntities($event, entities.map((entity) => entity))
+        onAction: ($event, entities) => this.deleteEntities($event, entities)
       }
     );
     return actions;
@@ -122,7 +123,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
         onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
       },
       {
-        name: this.translate.instant('retained-message.delete'),
+        name: this.translate.instant('action.delete'),
         mdiIcon: 'mdi:trash-can-outline',
         isEnabled: () => true,
         onAction: ($event, entity) => this.deleteEntity($event, entity)

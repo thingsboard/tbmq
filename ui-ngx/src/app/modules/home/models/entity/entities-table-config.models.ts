@@ -65,6 +65,7 @@ export interface CellActionDescriptor<T extends BaseData> {
 export interface GroupActionDescriptor<T extends BaseData> {
   name: string;
   icon: string;
+  isMdiIcon?: boolean;
   isEnabled: boolean;
   onAction: ($event: MouseEvent, entities: T[]) => void;
 }

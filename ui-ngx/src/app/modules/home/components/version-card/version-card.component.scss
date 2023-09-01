@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 @import 'constants';
+@import '../../../../../theme';
 
 :host {
   a {
     font-size: 14px;
     font-weight: 500;
-    color: #1f8b4d;
+    color: $tb-primary-color;
     cursor: pointer;
     text-decoration: none;
     border: none;
     white-space: nowrap;
+
+    &:hover {
+      color: unset;
+    };
   }
 
   .mat-button {
@@ -76,13 +81,14 @@
         font-weight: normal;
         font-style: normal;
         font-size: 18px;
-        color: rgba(0, 0, 0, 0.54);
+        margin-left: 6px;
+        color: rgba(0,0,0,0.12);
         vertical-align: bottom;
       }
 
       &:hover {
         &::after {
-          color: #000;
+          color: rgba(0,0,0,0.54);
         }
       }
     }

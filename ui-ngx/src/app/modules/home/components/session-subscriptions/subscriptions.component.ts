@@ -49,7 +49,7 @@ import { TranslateService } from '@ngx-translate/core';
       multi: true
     }]
 })
-export class SubscriptionsComponent extends PageComponent implements ControlValueAccessor, Validator, OnInit {
+export class SubscriptionsComponent extends PageComponent implements ControlValueAccessor, OnInit {
 
   @Input() disabled: boolean;
 
@@ -127,7 +127,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
-    return control.value.length && this.topicListFormGroup.valid ? null : {
+    return this.topicListFormGroup.valid ? null : {
       topicFilters: {valid: false}
     };
   }

@@ -15,14 +15,11 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
-  <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
-  <section class="cards" fxLayoutGap="12px">
-    <div fxFlex class="key-value" *ngFor="let item of config">
-      <div class="key">{{ item.label | translate }}</div>
-      <span fxFlex fxHide.lt-lg></span>
-      <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>
-      <span fxFlex fxHide.lt-lg></span>
-    </div>
-  </section>
-</div>
+<button mat-raised-button
+        ngxClipboard
+        (cbOnSuccess)="onCopied()"
+        [cbContent]="cbContent"
+        [fxShow]="!isEdit">
+  <mat-icon svgIcon="mdi:content-copy"></mat-icon>
+  <span translate>{{title}}</span>
+</button>

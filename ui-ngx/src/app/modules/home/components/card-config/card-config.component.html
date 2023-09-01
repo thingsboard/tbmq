@@ -30,7 +30,7 @@
             <mat-icon *ngIf="showCopyButton(entity, configParams)"
                       class="tb-config-icon"
                       ngxClipboard
-                      (cbOnSuccess)="onCopy()"
+                      (cbOnSuccess)="onCopied()"
                       [cbContent]="entity.value"
                       style="color: #0a5b25"
                       matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">

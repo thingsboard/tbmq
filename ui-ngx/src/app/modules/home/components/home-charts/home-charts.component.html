@@ -19,7 +19,7 @@
   <section fxLayoutAlign="space-between" fxLayoutGap="12px">
     <div *ngFor="let chart of statsCharts">
       <div class="chart-container" fxLayout="column">
-        <section fxFlex="row" fxLayoutGap="2px" style="white-space: nowrap">
+        <section fxFlex="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="2px" style="white-space: nowrap">
           <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
           <mat-icon class="home-page-material-icons" style="padding: 0"
                     [matTooltip]="chartTooltip(chart)">

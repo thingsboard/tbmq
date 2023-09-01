@@ -162,14 +162,14 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     this.dialogRef.close();
   }
 
-  onContentCopied() {
+  onCopied() {
     this.store.dispatch(new ActionNotificationShow(
       {
         message: this.translate.instant('action.on-copied'),
         type: 'success',
-        duration: 500,
-        verticalPosition: 'bottom',
-        horizontalPosition: 'right'
+        duration: 1000,
+        verticalPosition: 'top',
+        horizontalPosition: 'left'
       })
     );
   }

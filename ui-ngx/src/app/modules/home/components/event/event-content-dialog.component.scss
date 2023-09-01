@@ -13,11 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import '../../../../../theme';
+
 :host {
   .tb-event-content {
     width: 100%;
     min-width: 400px;
     height: 100%;
     min-height: 50px;
+  }
+
+  .tb-copy-icon {
+    color: $tb-primary-color;
+    cursor: pointer;
+    &:hover {
+      color: unset;
+    }
   }
 }

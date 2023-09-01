@@ -42,13 +42,14 @@
       font-style: normal;
       font-size: 18px;
       line-height: 18px;
-      color: rgba(0, 0, 0, 0.54);
+      margin-left: 6px;
+      color: rgba(0, 0, 0, 0.12);
       vertical-align: bottom;
       cursor: default !important;
     }
     &:hover {
       &::after {
-        color: #000;
+        color: rgba(0, 0, 0, 0.54);
       }
     }
   }

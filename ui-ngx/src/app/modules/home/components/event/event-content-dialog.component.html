@@ -24,21 +24,18 @@
     <mat-icon class="material-icons">close</mat-icon>
   </button>
 </mat-toolbar>
-<div mat-dialog-content fxLayout="column">
-  <div #eventContentEditor class="tb-event-content">
-  </div>
+<div mat-dialog-content fxLayout="row">
+  <div #eventContentEditor class="tb-event-content"></div>
+  <mat-icon class="tb-copy-icon"
+            ngxClipboard
+            (cbOnSuccess)="onCopied()"
+            [cbContent]="data.content"
+            matTooltip="{{'action.copy' | translate}}">
+    content_copy
+  </mat-icon>
 </div>
-<div mat-dialog-actions fxLayout="row">
-  <span fxFlex></span>
-  <button mat-button
-          ngxClipboard
-          (cbOnSuccess)="onCopied()"
-          [cbContent]="data.content">
-    <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
-    {{ 'action.copy' | translate }}
-  </button>
-  <button mat-button color="primary"
-          type="button"
+<div mat-dialog-actions fxLayout="row" fxLayoutAlign="flex-end">
+  <button mat-button type="button"
           [disabled]="(isLoading$ | async)"
           [mat-dialog-close]="false" cdkFocusInitial>
     {{ 'action.close' | translate }}

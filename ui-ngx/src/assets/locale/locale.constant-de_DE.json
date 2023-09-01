@@ -280,7 +280,6 @@
     "copy-client-credentials-id": "Anmeldeinformations-ID kopieren",
     "delete-client-credentials": "Client-Anmeldeinformationen löschen",
     "id-copied-message": "ID wurde in die Zwischenablage kopiert",
-    "client-credentials-id-copied-message": "Anmeldeinformations-ID wurde in die Zwischenablage kopiert",
     "delete-client-credential-title": "Sind Sie sicher, dass Sie die Client-Anmeldeinformationen '{{clientCredentialsName}}' löschen möchten?",
     "delete-client-credentials-title": "Sind Sie sicher, dass Sie { count, plural, 1 {1 Client-Anmeldeinformation} other {# Client-Anmeldeinformationen} } löschen möchten?",
     "delete-client-credential-text": "Seien Sie vorsichtig, nach der Bestätigung werden die Client-Anmeldeinformationen gelöscht und alle damit verbundenen Daten können nicht wiederhergestellt werden.",
@@ -381,6 +380,7 @@
     "multi-level-wildcards-hint": "<code>[#]</code> kann den Themenfilter selbst ersetzen und muss das letzte Zeichen des Themas sein. Beispiel: <b>#</b> oder <b>country/city/#</b>.",
     "topic": "Thema",
     "topic-filter": "Themenfilter",
+    "topic-filter-required": "Themenfilter ist erforderlich",
     "type-session": "Sitzung",
     "type-sessions": "Sitzungen",
     "remove-session": "Sitzung entfernen",
@@ -545,7 +545,6 @@
     "tls-tcp-port": "TLS TCP-Port",
     "basic-auth": "Grundlegende Authentifizierung",
     "ssl-auth": "X.509-Zertifikat-Authentifizierung",
-    "port-copied": "Der Port wurde in die Zwischenablage kopiert",
     "copy-port": "Port kopieren",
     "warning": "Du hast Anmeldeinformationen mit der Authentifizierungsmethode <b>{{type}}</b> erstellt, die in der Konfiguration deaktiviert ist. Weitere Informationen findest du in der <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/security/#authentication'>Dokumentation</a>."
   },

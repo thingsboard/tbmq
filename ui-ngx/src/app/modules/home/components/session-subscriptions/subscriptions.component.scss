@@ -28,4 +28,18 @@
   .add-button {
     margin: 8px 0 8px 0;
   }
+
+  .mat-select-disabled .mat-select-value {
+    color: unset;
+    cursor: not-allowed;
+  }
+
+  .mat-form-field-appearance-fill.mat-form-field-disabled .mat-form-field-flex,
+  .mat-form-field .mat-select.mat-select-disabled .mat-select-arrow{
+    border-bottom: 1px solid rgba(0,0,0,0.54);
+  }
+
+  .mat-form-field-appearance-fill.mat-form-field-disabled .mat-form-field-label {
+    color: rgba(0,0,0,0.6);
+  }
 }
