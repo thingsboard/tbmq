@@ -49,6 +49,10 @@
       border-radius: 6px;
       align-items: center;
       justify-content: center;
+
+      @media screen and (min-width: 1279px) and (max-width: 1500px) {
+        display: none;
+      }
     }
 
     .link-content {

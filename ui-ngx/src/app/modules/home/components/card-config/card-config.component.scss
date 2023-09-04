@@ -36,17 +36,11 @@
 
   .tb-config-table {
     overflow: auto;
-
-    @media #{$mat-gt-xl} {
-      height: 150px;
-    }
-    @media #{$mat-lt-xl} {
-      height: 130px;
-    }
-    @media #{$mat-lg} {
+    height: 150px;
+    @media screen and (min-width: 1400px) and (max-width: 1500px) {
       height: 80px;
     }
-    @media #{$mat-gt-xxl} {
+    @media #{$mat-gt-xxl}, (orientation: portrait) {
       height: max-content;
     }
 

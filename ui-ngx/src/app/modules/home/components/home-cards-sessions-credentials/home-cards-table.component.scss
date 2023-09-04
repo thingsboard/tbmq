@@ -71,6 +71,16 @@
         font-size: 14px;
       }
     }
+
+    @media screen and (min-width: 1280px) and (max-width: 1370px) {
+      .key-value {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .key {
+        font-size: 0.7em;
+      }
+    }
   }
 }
 
