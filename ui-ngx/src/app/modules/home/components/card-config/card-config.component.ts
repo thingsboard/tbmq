@@ -67,8 +67,8 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   getColumns() {
     const columns: Array<EntityColumn<BrokerConfigTable>> = [];
     columns.push(
-      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '80%'),
-      new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '20%',
+      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '70%'),
+      new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '30%',
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;

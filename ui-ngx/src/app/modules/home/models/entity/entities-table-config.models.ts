@@ -212,9 +212,9 @@ export function credetialsTypeCell(value: string): string {
 export function clientTypeCell(value: ClientType): string {
   const icon = value.toUpperCase() === ClientType.DEVICE ? 'devices_other' : 'desktop_mac';
   const color = value.toUpperCase() === ClientType.DEVICE ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
-  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;
+  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px; white-space: nowrap"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;
 }
 
 export function clientTypeWarning(value: string) {
-  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px;"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
+  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px; white-space: nowrap"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
 }

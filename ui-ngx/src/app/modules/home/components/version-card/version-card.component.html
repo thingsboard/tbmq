@@ -41,7 +41,7 @@
           </section>
           <span style="color: rgba(0,0,0,0.76)">{{ latestReleaseVersion }}</span>
         </section>
-        <button fxHide.lt-md mat-raised-button color="primary"
+        <button [fxHide.lt-md]="true" mat-raised-button color="primary"
                 [disabled]="!updatesAvailable"
                 (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
                 matTooltip="{{'version.upgrade' | translate}}">

@@ -27,7 +27,6 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { DialogService } from '@core/services/dialog.service';
 import { User } from '@shared/models/user.model';
 import { AdminComponent } from '@home/pages/admins/admin.component';
 import { AdminService } from '@core/http/admin.service';
@@ -42,7 +41,6 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
   private readonly authorityTranslationMap = AuthorityTranslationMap;
 
   constructor(private store: Store<AppState>,
-              private dialogService: DialogService,
               private adminService: AdminService,
               private translate: TranslateService,
               private datePipe: DatePipe) {
@@ -60,7 +58,8 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<User>('email', 'user.email', '25%'),
       new EntityTableColumn<User>('authority', 'user.role', '25%',
-        entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority))),
+        entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority)),
+        undefined, false),
       new EntityTableColumn<User>('firstName', 'user.first-name', '25%'),
       new EntityTableColumn<User>('lastName', 'user.last-name', '25%')
     );
