@@ -48,6 +48,7 @@
     }
 
     span {
+      color: rgba(0,0,0,0.76);
       font-size: 20px;
       font-weight: 600;
     }
@@ -68,11 +69,9 @@
       }
     }
 
-    .tb-title-link + span {
-      color: rgba(0,0,0,0.76);
-    }
-
     .tb-title-link-container {
+      cursor: pointer;
+      width: fit-content;
       &::after {
         font-family: 'Material Icons';
         content: 'arrow_forward';
@@ -85,11 +84,8 @@
         color: rgba(0,0,0,0.12);
         vertical-align: bottom;
       }
-
-      &:hover {
-        &::after {
-          color: rgba(0,0,0,0.54);
-        }
+      &:hover::after {
+        color: rgba(0,0,0,0.54);
       }
     }
   }

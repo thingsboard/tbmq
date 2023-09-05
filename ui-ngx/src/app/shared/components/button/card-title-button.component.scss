@@ -16,7 +16,7 @@
 @import 'constants';
 
 :host {
-  a {
+  span {
     font-style: normal;
     font-weight: 500;
     font-size: 14px;
@@ -65,7 +65,7 @@
   }
 
   @media #{$mat-lt-xl} {
-    a {
+    span {
       font-size: 11px;
       line-height: 11px;
     }

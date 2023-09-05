@@ -23,23 +23,19 @@
   <section class="cards">
     <div class="version-container">
       <section fxLayout="column" fxLayoutGap="10px">
-        <section class="tb-title-link-container">
-          <a class="tb-title-link" (click)="gotoGithub(currentReleaseVersion)" translate>
-            {{ 'version.current' }}
-          </a>
+        <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+          <span class="tb-title-link">{{ 'version.current' | translate }}</span>
         </section>
-        <span style="color: rgba(0,0,0,0.76)">{{ currentReleaseVersion }}</span>
+        <span>{{ currentReleaseVersion }}</span>
       </section>
     </div>
     <div class="version-container">
       <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
         <section fxLayout="column" fxLayoutGap="10px">
-          <section class="tb-title-link-container">
-            <a class="tb-title-link" (click)="gotoGithub(latestReleaseVersion)" translate>
-              {{ 'version.available' }}
-            </a>
+          <section class="tb-title-link-container" (click)="gotoGithub(latestReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.available' | translate }}</span>
           </section>
-          <span style="color: rgba(0,0,0,0.76)">{{ latestReleaseVersion }}</span>
+          <span>{{ latestReleaseVersion }}</span>
         </section>
         <button [fxHide.lt-md]="true" mat-raised-button color="primary"
                 [disabled]="!updatesAvailable"
