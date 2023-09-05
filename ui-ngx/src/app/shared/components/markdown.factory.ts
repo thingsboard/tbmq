@@ -73,33 +73,53 @@ function wrapCopyCode(id: number, content: string, code: string): string {
 
 (window as any).markdownCopyCode = (id: number) => {
   const text = $('#copyCodeId' + id).text();
-  navigator.clipboard.writeText(text).then(() => {
-    // @ts-ignore
-    import('tooltipster').then(
-      () => {
-        const copyBtn = $('#copyCodeBtn' + id);
-        if (!copyBtn.hasClass('tooltipstered')) {
-          copyBtn.tooltipster(
-            {
-              content: 'Copied',
-              theme: 'tooltipster-shadow',
-              delay: 0,
-              trigger: 'custom',
-              triggerClose: {
-                click: true,
-                tap: true,
-                scroll: true,
-                mouseleave: true
-              },
-              side: 'bottom',
-              distance: 12,
-              trackOrigin: true
-            }
-          );
-        }
-        const tooltip = copyBtn.tooltipster('instance');
-        tooltip.open();
-      }
-    );
-  });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showCopyTooltipster(id);
+    });
+  } else {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showCopyTooltipster(id);
+    } catch (err) {
+      console.error(err);
+    }
+    document.body.removeChild(textArea);
+  }
 };
+
+function showCopyTooltipster(id) {
+  // @ts-ignore
+  import('tooltipster').then(
+    () => {
+      const copyBtn = $('#copyCodeBtn' + id);
+      if (!copyBtn.hasClass('tooltipstered')) {
+        copyBtn.tooltipster(
+          {
+            content: 'Copied',
+            theme: 'tooltipster-shadow',
+            delay: 0,
+            trigger: 'custom',
+            triggerClose: {
+              click: true,
+              tap: true,
+              scroll: true,
+              mouseleave: true
+            },
+            side: 'bottom',
+            distance: 12,
+            trackOrigin: true
+          }
+        );
+      }
+      const tooltip = copyBtn.tooltipster('instance');
+      tooltip.open();
+    }
+  );
+}
