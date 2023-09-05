@@ -29,10 +29,6 @@
 
   .tb-title-link-active {
     cursor: pointer;
-    &:hover, &:focus {
-      border-bottom: none;
-      color: inherit;
-    }
     &::after {
       font-family: 'Material Icons';
       content: 'arrow_forward';
@@ -45,12 +41,9 @@
       margin-left: 6px;
       color: rgba(0, 0, 0, 0.12);
       vertical-align: bottom;
-      cursor: default !important;
     }
-    &:hover {
-      &::after {
-        color: rgba(0, 0, 0, 0.54);
-      }
+    &:hover::after {
+      color: rgba(0, 0, 0, 0.54);
     }
   }
 
