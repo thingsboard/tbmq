@@ -56,7 +56,7 @@ services:
       - ~/.tb-mqtt-broker-data/kafka:/kafka
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:1.0.1"
+    image: "thingsboard/tbmq:1.1.0-SNAPSHOT"
     depends_on:
       - postgres
       - kafka
