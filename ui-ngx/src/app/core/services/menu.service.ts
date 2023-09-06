@@ -14,16 +14,16 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {select, Store} from '@ngrx/store';
-import {AppState} from '../core.state';
-import {selectAuth, selectIsAuthenticated} from '../auth/auth.selectors';
-import {take} from 'rxjs/operators';
-import {MenuSection} from '@core/services/menu.models';
+import { Injectable } from '@angular/core';
+import { select, Store } from '@ngrx/store';
+import { AppState } from '../core.state';
+import { selectAuth, selectIsAuthenticated } from '../auth/auth.selectors';
+import { take } from 'rxjs/operators';
+import { MenuSection } from '@core/services/menu.models';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
-import {Authority} from '@shared/models/authority.enum';
-import {guid} from '@core/utils';
-import {AuthState} from '@core/auth/auth.models';
+import { Authority } from '@shared/models/authority.enum';
+import { guid } from '@core/utils';
+import { AuthState } from '@core/auth/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -146,55 +146,54 @@ export class MenuService {
   public quickLinks(): Observable<Array<any>> {
     return of([
       {
-        name: 'mqtt-client-credentials.credentials',
-        path: '/client-credentials',
-        icon: 'mdi:shield-lock',
-        isMdiIcon: true
-      },
-      {
-        name: 'mqtt-client-session.sessions',
-        path: '/sessions',
-        icon: 'mdi:book-multiple',
-        isMdiIcon: true
-      },
-      {
-        name: 'shared-subscription.shared-subscriptions',
-        path: '/shared-subscriptions',
-        icon: 'mdi:monitor-share',
-        isMdiIcon: true
-      },
-      {
-        name: 'retained-message.retained-messages',
-        path: '/retained-messages',
-        icon: 'mdi:archive-outline',
-        isMdiIcon: true
-      },
-      {
-        name: 'user.users',
-        path: '/users',
-        icon: 'mdi:account-multiple-outline',
-        isMdiIcon: true
-      },
-      {
-        name: 'monitoring.monitoring',
-        path: '/monitoring',
-        icon: 'mdi:monitor-dashboard',
-        isMdiIcon: true
-      },
-      {
-        name: 'admin.outgoing-mail',
-        path: '/settings/outgoing-mail',
-        icon: 'mdi:email',
-        isMdiIcon: true
-      },
-      {
         name: 'home.rest-api',
         path: 'rest-api',
         icon: 'mdi:api',
         isMdiIcon: true
+      },
+      {
+        name: 'home.configuration',
+        path: 'install/config',
+        icon: 'mdi:cog-outline',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.integration-with-thingsboard',
+        path: 'user-guide/integrations/how-to-connect-thingsboard-to-tbmq',
+        icon: 'input',
+        isMdiIcon: false
+      },
+      {
+        name: 'home.performance-tests',
+        path: 'reference/performance-tests',
+        icon: 'mdi:speedometer',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.security',
+        path: 'security',
+        icon: 'mdi:security',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.mqtt-client-type',
+        path: 'user-guide/mqtt-client-type',
+        icon: 'mdi:devices',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.shared-subscriptions',
+        path: 'user-guide/shared-subscriptions',
+        icon: 'mdi:monitor-share',
+        isMdiIcon: true
+      },
+      {
+        name: 'home.retained-messages',
+        path: 'user-guide/retained-messages',
+        icon: 'mdi:archive-outline',
+        isMdiIcon: true
       }
     ]);
   }
-
 }
 
