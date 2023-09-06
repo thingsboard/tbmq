@@ -61,7 +61,7 @@
       </div>
     </mat-toolbar>
   </div>
-  <div style="overflow-x: auto;">
+  <div [ngStyle]="{height: calcTableHeight()}">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
       <ng-container matColumnDef="select" sticky>

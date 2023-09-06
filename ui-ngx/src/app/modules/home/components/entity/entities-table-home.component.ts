@@ -210,7 +210,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
     this.defaultPageSize = window.innerWidth > 1920 ? 10 : 5;
-    this.pageSizeOptions = [5, 10, 15, 20, 30];
+    this.pageSizeOptions = [5, 10, 15, 20];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
@@ -598,6 +598,15 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       }
     }
     return undefined;
+  }
+
+  calcTableHeight(): string {
+    const pageSize = this.paginator?.pageSize;
+    if (this.isFullscreen) return undefined;
+    if (pageSize === 5) return '140px';
+    if (pageSize === 10) return '250px';
+    if (pageSize === 15) return '360px';
+    if (pageSize === 20) return '470px';
   }
 }
 

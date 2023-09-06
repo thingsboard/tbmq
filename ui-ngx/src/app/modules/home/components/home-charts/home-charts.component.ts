@@ -160,8 +160,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
       let chartWidthPx = (containerWidth / 5) - 16;
-      if (containerWidth < 700) chartWidthPx = (containerWidth / 5) - 32; // Tablet
-      if (containerWidth < 400) chartWidthPx = containerWidth / 2; // Mobile
+      if (containerWidth < 500) chartWidthPx = containerWidth / 2; // Mobile
       if (window.innerHeight > window.innerWidth) chartWidthPx = containerWidth / 2; // Portrait
       this.chartWidth = chartWidthPx + 'px';
       this.chartHeight = (chartWidthPx * 0.5) + 'px';

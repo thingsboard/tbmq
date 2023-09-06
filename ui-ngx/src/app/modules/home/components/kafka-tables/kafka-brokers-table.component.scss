@@ -20,6 +20,7 @@
 
   .tb-kafka-table {
     overflow: auto;
+    height: 150px;
 
     .mat-tab {
       overflow: auto;
@@ -46,17 +47,12 @@
     }
 
     @media #{$mat-lt-xl} {
-      height: 80px;
-
       .mat-header-cell {
         font-size: 10px;
       }
     }
-    @media #{$mat-gt-xl} {
-      height: 150px;
-    }
-    @media #{$mat-gt-xxl} {
-      height: auto;
+    @media screen and (min-width: 1400px) and (max-width: 1500px) {
+      height: 80px;
     }
   }
 }

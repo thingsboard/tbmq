@@ -14,9 +14,8 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
-import { Router } from '@angular/router';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 
 @Component({
@@ -24,25 +23,21 @@ import { HomePageTitleType } from '@shared/models/home-page.model';
   templateUrl: './quick-links.component.html',
   styleUrls: ['./quick-links.component.scss']
 })
-export class QuickLinksComponent implements OnInit {
+export class QuickLinksComponent {
 
   quickLinks$ = this.menuService.quickLinks();
   cardType = HomePageTitleType.QUICK_LINKS;
 
-  constructor(private router: Router,
-              private menuService: MenuService) {
-  }
-
-  ngOnInit(): void {
+  constructor(private menuService: MenuService) {
   }
 
   navigate(path: string) {
+    let location: string;
     if (path === 'rest-api') {
-      const location = window.location.origin + '/swagger-ui.html';
-      window.open(location, '_blank');
+      location = window.location.origin + '/swagger-ui.html';
     } else {
-      this.router.navigateByUrl(path);
+      location = 'https://thingsboard.io/docs/mqtt-broker/' + path;
     }
+    window.open(location, '_blank');
   }
-
 }

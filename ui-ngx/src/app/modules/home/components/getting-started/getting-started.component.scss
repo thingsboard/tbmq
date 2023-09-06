@@ -22,10 +22,10 @@
   }
 
   .step-expansion-header {
-    flex: 1 1 0%;
+    flex: 1 1 0;
     box-sizing: border-box;
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     align-items: center;
 
     .step-icon {
@@ -340,12 +340,19 @@
           }
         }
       }
-       .mat-step-label.mat-step-label-selected {
+      .mat-step-label.mat-step-label-selected {
         font-size: 12px;
       }
       .mat-step-icon {
         width: 22px;
         height: 22px;
+      }
+      .mat-step-icon .mat-icon {
+        height: 11px;
+        width: 11px;
+      }
+      .mat-raised-button {
+        font-size: 12px;
       }
     }
   }

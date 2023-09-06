@@ -69,7 +69,6 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
   }
 
   ngOnInit() {
-
     this.authUser$ = this.store.pipe(select(selectAuthUser));
     this.userDetails$ = this.store.pipe(select(selectUserDetails));
     this.userDetailsString = this.userDetails$.pipe(map((user: User) => {
@@ -92,6 +91,7 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
           }
         }
       );
+    this.toggleFullscreenOnF11();
   }
 
   ngAfterViewInit() {
@@ -167,5 +167,15 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
     if (this.searchableComponent) {
       this.searchableComponent.onSearchTextUpdated(this.searchText);
     }
+  }
+
+  private toggleFullscreenOnF11() {
+    $(document).on('keydown',
+      (event) => {
+        if (event.which === 122) {
+          event.preventDefault();
+          this.toggleFullscreen();
+        }
+      });
   }
 }

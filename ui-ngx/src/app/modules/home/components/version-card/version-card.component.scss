@@ -72,6 +72,7 @@
     .tb-title-link-container {
       cursor: pointer;
       width: fit-content;
+      white-space: nowrap;
       &::after {
         font-family: 'Material Icons';
         content: 'arrow_forward';

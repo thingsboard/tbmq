@@ -17,7 +17,7 @@
 -->
 <div fxFlex class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section class="tb-config-table">
+  <section fxFlex class="tb-config-table" fxFlex.lt-lg="auto">
     <table mat-table matSort [dataSource]="dataSource">
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
         <mat-header-cell mat-sort-header *matHeaderCellDef>
@@ -49,5 +49,6 @@
       <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </table>
+    <div fxFlex></div>
   </section>
 </div>

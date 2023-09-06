@@ -16,14 +16,13 @@
 @import 'constants';
 
 :host::ng-deep {
-  height: 100%;
+  height: 100vw;
   display: flex;
 
   .tb-home-overview {
     width: 100%;
-    margin-bottom: 12px;
     background-color: #dcdcdc;
-    padding: 12px 12px 0 12px;
+    padding: 12px 12px 8px 12px;
 
     .tb-home-card {
       border-radius: 10px;

@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container tb-home-padding">
+<div fxFlex class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
     <ng-container *ngFor="let step of steps | async; let index = index;" class="tb-active">
@@ -43,4 +43,5 @@
       </mat-step>
     </ng-container>
   </mat-vertical-stepper>
+  <div fxFlex></div>
 </div>

@@ -33,7 +33,7 @@
         <span fxFlex></span>
         <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
         <span fxFlex></span>
-        <mat-icon [matTooltip]="chartTooltip(chart)" class="material-icons" style="cursor: default">
+        <mat-icon [matTooltip]="chartTooltip(chart)" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
           info_outline
         </mat-icon>
         <button type="button"

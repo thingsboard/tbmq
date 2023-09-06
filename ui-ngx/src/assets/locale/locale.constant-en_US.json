@@ -200,7 +200,14 @@
     "config": "Config",
     "quick-links": "Quick links",
     "rest-api": "Rest API",
-    "total": "Total"
+    "total": "Total",
+    "security": "Security",
+    "configuration": "Configuration",
+    "integration-with-thingsboard": "Integration with ThingsBoard",
+    "mqtt-client-type": "MQTT client type",
+    "performance-tests": "Performance tests",
+    "retained-messages": "Retained messages",
+    "shared-subscriptions": "Shared subscriptions"
   },
   "login": {
     "login": "Login",
@@ -361,7 +368,7 @@
     "hint-client-type-device": "Use 'Device' type for clients that usually publish a lot of messages, but subscribe to a few topics with low message rate, i.e. <b>IoT devices</b>.",
     "hint-client-type-read-more": "<a href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/' target='_blank'>Read more</a>.",
     "hint-credentials-type-basic": "<b>'Basic'</b> is a one-way authentication method based on different combinations of <b>Client ID, Username and/or Password</b>:<ul><li><b>Client ID</b> - will check if connecting client has specified clientId;</li></br><li><b>Username</b> - will check if connecting client has specified username;</li></br><li><b>Client ID and username</b>- will check if connecting client has both specified clientId and username;</li></br><li><b>Username and password</b> - will check if connecting client has both specified username and password;</li></br><li><b>Client ID and password</b> - will check if connecting client has both specified clientId and password;</li></br><li><b>Client ID, username and password</b> - will check if connecting client has specified clientId, username and password</li></br></ul>",
-    "hint-credentials-type-ssl": "<b>'X.509 Certificate chain'</b> is a secure two-way authentication method over TLS with chain of public-key certificates.",
+    "hint-credentials-type-ssl": "<b>'X.509 Certificate Chain'</b> is a secure two-way authentication method over TLS with chain of public-key certificates.",
     "hint-name": "hint-name",
     "hint-ssl-cert-common-name": "<i>Certificate common name</i> (CN) should be <b>exactly the same</b> as the client's or, if present, one of the parent's certificate CN.</br>Authentication will fail if none of the certificates in the chain has the same CN.",
     "hint-authorization-ssl": "Authorization rules allow control of topics that authenticated clients are able to publish/subscribe to based on successful combination of:</br><ul><li><i>Client certificate CN matcher regex</i> - should match with the CN of the Client certificate.</li><li><i>Publish/subscribe authorization rule patterns</i> - allow control of topics that clients with matched <i>Client certificate CN matcher regex</i></br> can publish/subscribe to.</li></ul>",
@@ -597,7 +604,7 @@
     "tls-listener-max-payload-size": "TLS Listener Max Payload Size",
     "tls-tcp-port": "TLS Port",
     "basic-auth": "Basic Auth",
-    "ssl-auth": "X.509 Certificate Auth",
+    "ssl-auth": "X.509 Certificate Chain Auth",
     "ws-port": "WS Port",
     "wss-port": "WSS Port",
     "ws-listener": "WS Listener",
