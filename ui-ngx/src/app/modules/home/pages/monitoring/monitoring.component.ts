@@ -109,15 +109,14 @@ export class MonitoringComponent extends PageComponent {
     const chartContainer = document.getElementById(chartType + 'container');
     chartContainer.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
-        this.isFullscreen = !this.isFullscreen;
+        this.isFullscreen = false;
         updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
         updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
       }
     });
     if (this.isFullscreen) {
       chartContainer.requestFullscreen();
-      updateHtmlElementStyle(chart.parentNode, 'height', '90%');
-      updateHtmlElementStyle(chartContainer, 'padding-top', '5%');
+      updateHtmlElementStyle(chart.parentNode, 'height', '95%');
     } else {
       document.exitFullscreen();
       updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
