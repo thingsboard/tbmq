@@ -60,7 +60,7 @@ if [ -f "docker-compose.yml" ]; then
   echo "docker-compose.yml is already present in the current directory. Skipping download."
 else
   echo "docker-compose.yml is absent in the current directory. Downloading the file..."
-  wget https://raw.githubusercontent.com/thingsboard/tbmq/main/msa/tbmq/configs/docker-compose.yml
+  wget https://raw.githubusercontent.com/thingsboard/tbmq/develop/1.1.0/msa/tbmq/configs/docker-compose.yml
 fi
 
 # Check if ~/.tb-mqtt-broker-data directory exists
