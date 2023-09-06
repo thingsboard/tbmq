@@ -35,7 +35,7 @@ public interface MqttClientCredentialsRepository extends PagingAndSortingReposit
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
-            "LOWER(c.searchText) LIKE LOWER(CONCAT(:textSearch, '%'))")
+            "LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,
                                               Pageable pageable);
 }
