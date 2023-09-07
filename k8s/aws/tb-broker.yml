@@ -58,7 +58,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SECURITY_MQTT_BASIC_ENABLED
-              value: "false"
+              value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "false"
             - name: TB_KAFKA_SERVERS
