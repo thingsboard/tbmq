@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -118,6 +119,9 @@ public class AdminController extends BaseController {
         checkParameter("userId", strUserId);
         try {
             UUID userId = toUUID(strUserId);
+            if (getCurrentUser().getId().equals(userId)) {
+                throw new ThingsboardException("It is not allowed to delete its own user!", ThingsboardErrorCode.PERMISSION_DENIED);
+            }
             checkUserId(userId);
             userService.deleteUser(userId);
         } catch (Exception e) {
