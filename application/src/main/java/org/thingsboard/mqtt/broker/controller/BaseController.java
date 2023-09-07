@@ -40,11 +40,13 @@ import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,6 +65,8 @@ public abstract class BaseController {
     protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
+    @Autowired
+    protected TbQueueAdmin tbQueueAdmin;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -137,6 +141,13 @@ public abstract class BaseController {
             return checkNotNull(user);
         } catch (Exception e) {
             throw handleException(e, false);
+        }
+    }
+
+    void checkEntityId(String entityId) throws ThingsboardException {
+        List<String> allEntityIds = tbQueueAdmin.getBrokerServiceIds();
+        if (!BrokerConstants.ENTITY_ID_TOTAL.equals(entityId) && !allEntityIds.contains(entityId)) {
+            throw new ThingsboardException("Entity with requested id wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
     }
 

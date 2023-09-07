@@ -30,7 +30,7 @@ done
 
 if [[ -z "${FROM_VERSION// }" ]]; then
     echo "--fromVersion parameter is invalid or unspecified!"
-    echo "Usage: k8s-upgrade-tb-mqtt-broker.sh --fromVersion={VERSION}"
+    echo "Usage: k8s-upgrade-tbmq.sh --fromVersion={VERSION}"
     exit 1
 else
     fromVersion="${FROM_VERSION// }"

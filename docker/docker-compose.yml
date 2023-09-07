@@ -20,7 +20,7 @@ version: '3.0'
 services:
   postgres:
     restart: always
-    image: "postgres:12.8"
+    image: "postgres:15"
     ports:
       - "5432"
     environment:
@@ -97,13 +97,13 @@ services:
       - ./haproxy/certs.d:/usr/local/etc/haproxy/certs.d
     ports:
       - "8083:8083"
-      - "8883:8883"
+      - "443:443"
       - "1883:1883"
     cap_add:
       - NET_ADMIN
     environment:
       HTTP_PORT: 8083
-      HTTPS_PORT: 8883
+      HTTPS_PORT: 443
       MQTT_PORT: 1883
       FORCE_HTTPS_REDIRECT: "false"
     links:
