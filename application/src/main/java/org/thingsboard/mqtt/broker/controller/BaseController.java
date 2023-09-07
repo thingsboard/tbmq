@@ -146,7 +146,7 @@ public abstract class BaseController {
 
     void checkEntityId(String entityId) throws ThingsboardException {
         List<String> allEntityIds = tbQueueAdmin.getBrokerServiceIds();
-        if (!allEntityIds.contains(entityId)) {
+        if (!BrokerConstants.ENTITY_ID_TOTAL.equals(entityId) && !allEntityIds.contains(entityId)) {
             throw new ThingsboardException("Entity with requested id wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
     }
