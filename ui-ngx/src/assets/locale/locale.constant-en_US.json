@@ -188,7 +188,8 @@
     "expand": "Expand"
   },
   "help": {
-    "goto-help-page": "Go to help page"
+    "goto-help-page": "Go to help page",
+    "goto-docs": "Go to docs"
   },
   "home": {
     "home": "Home",

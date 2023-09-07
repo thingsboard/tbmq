@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div tb-fullscreen [fullscreen]="isFullscreen">
+<div tb-fullscreen [fullscreen]="isFullscreen" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
   <div class="mat-table-toolbar-container">
     <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
       <div class="mat-toolbar-tools" fxLayoutGap="4px">

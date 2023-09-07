@@ -209,7 +209,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     }
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.defaultPageSize = window.innerWidth > 1920 ? 10 : 5;
+    this.defaultPageSize = window.innerWidth > 1920 ? 15 : 5;
     this.pageSizeOptions = [5, 10, 15, 20];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;

@@ -20,7 +20,7 @@
     <span>{{ title?.label | translate}}</span>
   </section>
   <section *ngIf="title?.docsLink">
-    <mat-icon class="home-page-material-icons" [matTooltip]="'help.goto-help-page' | translate" (click)="gotoDocs()">
+    <mat-icon class="home-page-material-icons" [matTooltip]="'help.goto-docs' | translate" (click)="gotoDocs()">
       help_outline
     </mat-icon>
   </section>

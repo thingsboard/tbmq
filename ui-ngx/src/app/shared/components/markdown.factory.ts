@@ -26,7 +26,7 @@ export function markedOptionsFactory(): MarkedOptions {
   let id = 1;
 
   renderer.code = (code: string, language: string | undefined, isEscaped: boolean) => {
-    if (code.endsWith(copyCodeBlock)) {
+    if (code?.endsWith(copyCodeBlock)) {
       if (code.includes('{:hostname}')) {
         code = code.replace('{:hostname}', window.location.hostname);
         // @ts-ignore
@@ -45,7 +45,7 @@ export function markedOptionsFactory(): MarkedOptions {
     header: boolean;
     align: 'center' | 'left' | 'right' | null;
   }) => {
-    if (content.endsWith(copyCodeBlock)) {
+    if (content?.endsWith(copyCodeBlock)) {
       content = content.substring(0, content.length - copyCodeBlock.length);
       id++;
       content = wrapCopyCode(id, content, content);

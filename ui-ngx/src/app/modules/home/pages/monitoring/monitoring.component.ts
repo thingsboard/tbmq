@@ -13,6 +13,7 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
+// @ts-nocheck
 
 import { Component } from '@angular/core';
 import {
@@ -108,17 +109,34 @@ export class MonitoringComponent extends PageComponent {
     const chart = document.getElementById(chartType + this.chartIdSuf);
     const chartContainer = document.getElementById(chartType + 'container');
     chartContainer.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
+      const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      if (!isInFullScreen) {
         this.isFullscreen = false;
         updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
         updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
       }
     });
     if (this.isFullscreen) {
-      chartContainer.requestFullscreen();
+      if (chartContainer.requestFullscreen) {
+        chartContainer.requestFullscreen();
+      } else if (chartContainer.mozRequestFullScreen) {
+        chartContainer.mozRequestFullScreen();
+      } else if (chartContainer.webkitRequestFullscreen) {
+        chartContainer.webkitRequestFullscreen();
+      } else if (chartContainer.msRequestFullscreen) {
+        chartContainer.msRequestFullscreen();
+      }
       updateHtmlElementStyle(chart.parentNode, 'height', '95%');
     } else {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
       updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
       updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
     }

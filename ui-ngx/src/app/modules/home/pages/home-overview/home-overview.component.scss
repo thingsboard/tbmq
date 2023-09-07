@@ -44,6 +44,14 @@
         padding: 12px;
       }
     }
+
+    tb-getting-started {
+      overflow: auto;
+
+      @media #{$mat-lt-lg} {
+        overflow: unset;
+      }
+    }
   }
 
   .mat-cell,
