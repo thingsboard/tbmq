@@ -13,37 +13,35 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
+
 // @ts-nocheck
 
-import { Component } from '@angular/core';
-import {
-  calculateFixedWindowTimeMs,
-  FixedWindow,
-  Timewindow,
-  TimewindowType
-} from '@shared/models/time/time.models';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
-import { TimeService } from '@core/services/time.service';
-import { chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
-import { share, switchMap, takeUntil } from 'rxjs/operators';
+import {Component} from '@angular/core';
+import {calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType} from '@shared/models/time/time.models';
+import {forkJoin, Observable, Subject, timer} from 'rxjs';
+import {TranslateService} from '@ngx-translate/core';
+import {TimeService} from '@core/services/time.service';
+import {chartKeysTotal, getTimeseriesDataLimit, StatsService} from '@core/http/stats.service';
+import {share, switchMap, takeUntil} from 'rxjs/operators';
 import {
   ChartTooltipTranslationMap,
   getColor,
-  monitoringChartJsParams, ONLY_TOTAL_KEYS,
+  monitoringChartJsParams,
+  ONLY_TOTAL_KEYS,
   StatsChartType,
   StatsChartTypeTranslationMap,
-  TimeseriesData, TOTAL_KEY
+  TimeseriesData,
+  TOTAL_KEY
 } from '@shared/models/chart.model';
-import { PageComponent } from '@shared/components/page.component';
-import { AppState } from '@core/core.state';
-import { Store } from '@ngrx/store';
+import {PageComponent} from '@shared/components/page.component';
+import {AppState} from '@core/core.state';
+import {Store} from '@ngrx/store';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import Zoom from 'chartjs-plugin-zoom';
-import { POLLING_INTERVAL } from '@shared/models/home-page.model';
-import { ActivatedRoute } from '@angular/router';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
+import {POLLING_INTERVAL} from '@shared/models/home-page.model';
+import {ActivatedRoute} from '@angular/router';
+import {ActionNotificationShow} from '@core/notification/notification.actions';
 
 Chart.register([Zoom]);
 
