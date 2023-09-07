@@ -75,6 +75,8 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
+            checkEntityId(entityId);
+
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
             ListenableFuture<List<TsKvEntry>> future;
             if (StringUtils.isEmpty(keysStr)) {
@@ -103,6 +105,8 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
+            checkEntityId(entityId);
+
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
             // If interval is 0, convert this to a NONE aggregation, which is probably what the user really wanted
@@ -179,6 +183,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "startTs", required = false) Long startTs,
             @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
         try {
+            checkEntityId(entityId);
             return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
         } catch (Exception e) {
             throw handleException(e);
