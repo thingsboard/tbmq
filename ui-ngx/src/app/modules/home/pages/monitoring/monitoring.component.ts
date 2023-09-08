@@ -68,7 +68,7 @@ export class MonitoringComponent extends PageComponent {
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
 
-  chartTooltip = (chartType: string) => ChartTooltipTranslationMap.get(chartType);
+  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
