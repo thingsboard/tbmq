@@ -42,6 +42,7 @@ import java.util.Properties;
 @Component
 @RequiredArgsConstructor
 public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
+
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "latest");
 
     private final TbKafkaConsumerSettings consumerSettings;
@@ -89,34 +90,34 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
 
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(
-            String topic, String consumerGroup, String consumerId) {
+            String topic, String consumerGroupId, String consumerId) {
 
         String clientId = "application-persisted-msg-consumer-" + consumerId;
 
         Properties props = consumerSettings.toProps(topic, applicationPersistenceMsgSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationMsgQueue-" + consumerId, props, requiredConsumerProperties);
 
-        return createConsumer(topic, consumerGroup, clientId, props);
+        return createConsumer(topic, consumerGroupId, clientId, props);
     }
 
     @Override
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumerForSharedTopic(
-            String topic, String consumerGroup, String consumerId) {
+            String topic, String consumerGroupId, String consumerId) {
 
         String clientId = "application-shared-msg-consumer-" + consumerId;
         Properties props = consumerSettings.toProps(topic, applicationSharedTopicMsgSettings.getAdditionalConsumerConfig());
 
-        return createConsumer(topic, consumerGroup, clientId, props);
+        return createConsumer(topic, consumerGroupId, clientId, props);
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(
-            String topic, String consumerGroup, String clientId, Properties props) {
+            String topic, String consumerGroupId, String clientId, Properties props) {
 
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(props);
         consumerBuilder.topic(topic);
         consumerBuilder.clientId(clientId);
-        consumerBuilder.groupId(consumerGroup);
+        consumerBuilder.groupId(consumerGroupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.autoCommit(false);

@@ -28,9 +28,9 @@ public interface ApplicationPersistenceMsgQueueFactory {
 
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createSharedSubsProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroup, String consumerId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumerForSharedTopic(String topic, String consumerGroup, String consumerId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumerForSharedTopic(String topic, String consumerGroupId, String consumerId);
 
     Map<String, String> getTopicConfigs();
 

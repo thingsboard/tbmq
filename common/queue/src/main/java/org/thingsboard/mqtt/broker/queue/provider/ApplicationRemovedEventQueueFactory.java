@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ApplicationRemovedEventQueueFactory {
+
     TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventProducer(String serviceId);
 
     TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId);
