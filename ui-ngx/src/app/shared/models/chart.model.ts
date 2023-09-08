@@ -377,7 +377,7 @@ export const tbTooltipHandler = (context) => {
   const tooltipEl = getTbTooltip(chart);
 
   // Hide if no tooltip
-  if (tooltip.opacity === 0 || tooltip.caretY > 240 || tooltip.caretX < 20) {
+  if (tooltip.opacity === 0 || tooltip.caretY > chart.chartArea.height + 8 || tooltip.caretX < 20) {
     tooltipEl.style.opacity = 0;
     return;
   }
