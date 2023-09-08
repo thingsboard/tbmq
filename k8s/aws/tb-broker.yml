@@ -39,6 +39,15 @@ spec:
                 path: thingsboard-mqtt-broker.conf
               - key: logback
                 path: logback.xml
+        # Uncomment the following lines to enable two-way MQTTS
+      #        - name: tbmq-mqtts-config
+      #          configMap:
+      #            name: tbmq-mqtts-config
+      #            items:
+      #              - key: server.pem
+      #                path: server.pem
+      #              - key: mqttserver_key.pem
+      #                path: mqttserver_key.pem
       nodeSelector:
         role: tbmq
       containers:
@@ -49,9 +58,9 @@ spec:
             - containerPort: 8083
               name: http
             - containerPort: 1883
-              name: mqtt-tcp
+              name: mqtt
             - containerPort: 8883
-              name: mqtt-ssl
+              name: mqtts
           env:
             - name: TB_SERVICE_ID
               valueFrom:
@@ -60,7 +69,7 @@ spec:
             - name: SECURITY_MQTT_BASIC_ENABLED
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
-              value: "false"
+              value: "true"
             - name: TB_KAFKA_SERVERS
               value: "PUT_YOUR_KAFKA_SERVERS_HERE"
             - name: HTTP_BIND_PORT
@@ -77,12 +86,24 @@ spec:
               value: "prometheus"
             - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
+            # Uncomment the following lines to enable two-way MQTTS
+          #            - name: LISTENER_SSL_ENABLED
+          #              value: "true"
+          #            - name: LISTENER_SSL_CREDENTIALS_TYPE
+          #              value: "PEM"
+          #            - name: LISTENER_SSL_PEM_CERT
+          #              value: "/ssl-config/server.pem"
+          #            - name: LISTENER_SSL_PEM_KEY
+          #              value: "/ssl-config/mqttserver_key.pem"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
           volumeMounts:
             - mountPath: /config
               name: tb-broker-config
+            # Uncomment the following lines to enable two-way MQTTS
+          #            - mountPath: /ssl-config
+          #              name: tbmq-mqtts-config
           readinessProbe:
             tcpSocket:
               port: 1883
@@ -107,19 +128,13 @@ metadata:
   name: tb-broker
   namespace: thingsboard-mqtt-broker
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: tb-broker
   ports:
     - port: 8083
-      targetPort: 8083
-      nodePort: 30001
       name: http
     - port: 1883
-      targetPort: 1883
-      nodePort: 30002
-      name: mqtt-tcp
+      name: mqtt
     - port: 8883
-      targetPort: 8883
-      nodePort: 30003
-      name: mqtt-ssl
+      name: mqtts

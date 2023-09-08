@@ -22,5 +22,3 @@ kubectl config set-context $(kubectl config current-context) --namespace=thingsb
 
 kubectl apply -f tb-broker-configmap.yml
 kubectl apply -f tb-broker.yml
-
-kubectl apply -f routes.yml

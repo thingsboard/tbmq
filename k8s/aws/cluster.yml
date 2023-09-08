@@ -17,15 +17,15 @@
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
-availabilityZones: [us-east-1a,us-east-1b,us-east-1c]
+availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 
 metadata:
-  name: thingsboard-mqtt-broker-cluster
+  name: tbmq
   region: us-east-1
-  version: "1.23"
+  version: "1.25"
 
 managedNodeGroups:
-  - name: tb-mqtt-broker
+  - name: managed
     instanceType: m6a.large
     desiredCapacity: 2
     maxSize: 2
