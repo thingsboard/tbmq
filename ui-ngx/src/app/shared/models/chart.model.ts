@@ -254,7 +254,14 @@ export function monitoringChartJsParams() {
             wheel: {
               enabled: false,
             },
-            mode: 'x'
+            mode: 'x',
+            onZoomStart: ({ chart, event, point }) => {
+              chart.corsair = {x: 0, y: 0, draw: false};
+              chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            },
+            onZoomComplete: ({ chart }) => {
+              chart.update();
+            }
           }
         },
         legend: {

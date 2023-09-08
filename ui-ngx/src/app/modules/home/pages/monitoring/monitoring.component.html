@@ -27,27 +27,130 @@
 </mat-toolbar>
 <div class="mat-padding">
   <div fxFlex fxLayout="column" fxLayoutGap="16px">
-    <div [id]="chart+'container'" class="mat-padding chart-container" *ngFor="let chart of statsCharts">
-      <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      <section fxFlex fxLayoutAlign="space-between center">
-        <span fxFlex></span>
-        <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-        <span fxFlex></span>
-        <mat-icon [matTooltip]="chartTooltip(chart)" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
-          info_outline
-        </mat-icon>
-        <button type="button"
-                mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                (click)="onFullScreen(chart)"
-                matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                matTooltipPosition="above">
-          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-        </button>
-      </section>
-      <section>
-        <canvas [id]="chart+chartIdSuf" [height]="chartHeight"></canvas>
-      </section>
-      <mat-divider [fxShow]="isFullscreen"></mat-divider>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'incomingMsgs'"
+         [fullscreenElement]="incomingMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'incomingMsgscontainer'" class="mat-padding chart-container" #incomingMsgs>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span>{{ statChartTypeTranslationMap.get('incomingMsgs') | translate }}</span>
+          <span fxFlex></span>
+          <mat-icon [matTooltip]="chartTooltip('incomingMsgs')" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('incomingMsgs')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'incomingMsgsmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
+    </div>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'outgoingMsgs'"
+         [fullscreenElement]="outgoingMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'outgoingMsgscontainer'" class="mat-padding chart-container" #outgoingMsgs>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span>{{ statChartTypeTranslationMap.get('outgoingMsgs') | translate }}</span>
+          <span fxFlex></span>
+          <mat-icon [matTooltip]="chartTooltip('outgoingMsgs')" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('outgoingMsgs')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'outgoingMsgsmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
+    </div>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'droppedMsgs'"
+         [fullscreenElement]="droppedMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'droppedMsgscontainer'" class="mat-padding chart-container" #droppedMsgs>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span>{{ statChartTypeTranslationMap.get('droppedMsgs') | translate }}</span>
+          <span fxFlex></span>
+          <mat-icon [matTooltip]="chartTooltip('droppedMsgs')" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('droppedMsgs')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'droppedMsgsmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
+    </div>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'sessions'"
+         [fullscreenElement]="sessions" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'sessionscontainer'" class="mat-padding chart-container" #sessions>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span>{{ statChartTypeTranslationMap.get('sessions') | translate }}</span>
+          <span fxFlex></span>
+          <mat-icon [matTooltip]="chartTooltip('sessions')" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('sessions')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'sessionsmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
+    </div>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'subscriptions'"
+         [fullscreenElement]="subscriptions" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'subscriptionscontainer'" class="mat-padding chart-container" #subscriptions>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span>{{ statChartTypeTranslationMap.get('subscriptions') | translate }}</span>
+          <span fxFlex></span>
+          <mat-icon [matTooltip]="chartTooltip('subscriptions')" class="material-icons" style="cursor: default" [fxHide]="isFullscreen">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('subscriptions')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'subscriptionsmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
     </div>
   </div>
 </div>

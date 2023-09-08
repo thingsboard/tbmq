@@ -61,6 +61,8 @@ export class MonitoringComponent extends PageComponent {
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   isFullscreen = false;
   chartHeight = 300;
+  chartContainerHeight;
+  fullscreenChart;
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
@@ -68,7 +70,7 @@ export class MonitoringComponent extends PageComponent {
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
 
-  chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
+  chartTooltip = (chartType: string) => ChartTooltipTranslationMap.get(chartType);
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -92,6 +94,13 @@ export class MonitoringComponent extends PageComponent {
 
   ngAfterViewInit(): void {
     this.fetchEntityTimeseries(true);
+    $(document).on('keydown',
+    (event) => {
+      if ((event.which === 27) && this.isFullscreen) {
+        event.preventDefault();
+        this.onFullScreen();
+      }
+    });
   }
 
   onTimewindowChange() {
@@ -103,42 +112,14 @@ export class MonitoringComponent extends PageComponent {
     }
   }
 
-  onFullScreen(chartType) {
+  onFullScreen(chartType: string) {
     this.isFullscreen = !this.isFullscreen;
-    const updateHtmlElementStyle = (element: any, key: string, value: string) => element.style[key] = value;
-    const chart = document.getElementById(chartType + this.chartIdSuf);
-    const chartContainer = document.getElementById(chartType + 'container');
-    chartContainer.addEventListener('fullscreenchange', () => {
-      const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-      if (!isInFullScreen) {
-        this.isFullscreen = false;
-        updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
-        updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
-      }
-    });
     if (this.isFullscreen) {
-      if (chartContainer.requestFullscreen) {
-        chartContainer.requestFullscreen();
-      } else if (chartContainer.mozRequestFullScreen) {
-        chartContainer.mozRequestFullScreen();
-      } else if (chartContainer.webkitRequestFullscreen) {
-        chartContainer.webkitRequestFullscreen();
-      } else if (chartContainer.msRequestFullscreen) {
-        chartContainer.msRequestFullscreen();
-      }
-      updateHtmlElementStyle(chart.parentNode, 'height', '95%');
+      this.fullscreenChart = chartType;
+      this.chartContainerHeight = '90%';
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
-      updateHtmlElementStyle(chart.parentNode, 'height', `${this.chartHeight}px`);
-      updateHtmlElementStyle(chartContainer, 'padding-top', '16px');
+      this.fullscreenChart = undefined;
+      this.chartContainerHeight = this.chartHeight + 'px';
     }
   }
 
