@@ -51,13 +51,15 @@ spec:
                 path: logback.xml
         - name: tb-broker-logs
           emptyDir: { }
-      #        Uncomment the following lines to enable two-way MQTTS
-      #        - name: tb-broker-mqtts-config
+      # Uncomment the following lines to enable two-way MQTTS
+      #        - name: tbmq-mqtts-config
       #          configMap:
-      #            name: tb-broker-mqtts-config
+      #            name: tbmq-mqtts-config
       #            items:
       #              - key: server.pem
       #                path: server.pem
+      #              - key: mqttserver_key.pem
+      #                path: mqttserver_key.pem
       containers:
         - name: server
           imagePullPolicy: Always
@@ -81,7 +83,7 @@ spec:
             - name: SECURITY_MQTT_BASIC_ENABLED
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
-              value: "false"
+              value: "true"
             - name: TB_KAFKA_SERVERS
               value: "kafka-headless:9092"
           #            Uncomment the following lines to enable two-way MQTTS
@@ -91,6 +93,8 @@ spec:
           #              value: "PEM"
           #            - name: LISTENER_SSL_PEM_CERT
           #              value: "/ssl-config/server.pem"
+          #            - name: LISTENER_SSL_PEM_KEY
+          #              value: "/ssl-config/mqttserver_key.pem"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
@@ -99,9 +103,9 @@ spec:
               name: tb-broker-config
             - mountPath: /var/log/thingsboard-mqtt-broker
               name: tb-broker-logs
-          #            Uncomment the following lines to enable two-way MQTTS
+          # Uncomment the following lines to enable two-way MQTTS
           #            - mountPath: /ssl-config
-          #              name: tb-broker-mqtts-config
+          #              name: tbmq-mqtts-config
           readinessProbe:
             tcpSocket:
               port: 1883
