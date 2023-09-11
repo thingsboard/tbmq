@@ -30,6 +30,16 @@ spec:
       labels:
         app: tb-broker
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                      - tb-broker
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: tb-broker-config
           configMap:
@@ -57,10 +67,14 @@ spec:
           ports:
             - containerPort: 8083
               name: http
+            - containerPort: 443
+              name: https
             - containerPort: 1883
               name: mqtt
             - containerPort: 8883
               name: mqtts
+            - containerPort: 8084
+              name: mqtt-ws
           env:
             - name: TB_SERVICE_ID
               valueFrom:
