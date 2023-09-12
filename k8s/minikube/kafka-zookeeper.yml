@@ -72,7 +72,7 @@ spec:
               name: server
             - containerPort: 3888
               name: election
-          command: ["/conf/start-node.sh"]
+          command: [ "/conf/start-node.sh" ]
           readinessProbe:
             periodSeconds: 60
             tcpSocket:

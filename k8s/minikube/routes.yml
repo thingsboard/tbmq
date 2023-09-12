@@ -27,31 +27,31 @@ spec:
   rules:
     - http:
         paths:
-        - path: /swagger-ui.html
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: tb-broker
-              port:
-                number: 8083
-        - path: /v2
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: tb-broker
-              port:
-                number: 8083
-        - path: /swagger-resources
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: tb-broker
-              port:
-                number: 8083
-        - path: /webjars
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: tb-broker
-              port:
-                number: 8083
+          - path: /swagger-ui.html
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tb-broker
+                port:
+                  number: 8083
+          - path: /v2
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tb-broker
+                port:
+                  number: 8083
+          - path: /swagger-resources
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tb-broker
+                port:
+                  number: 8083
+          - path: /webjars
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tb-broker
+                port:
+                  number: 8083
