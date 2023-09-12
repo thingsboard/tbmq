@@ -51,7 +51,7 @@ set -u
 
 # Define TBMQ versions
 old_version="1.0.1"
-new_version="1.1.0-SNAPSHOT"
+new_version="1.1.0"
 
 # Define TBMQ images
 old_image="image: \"thingsboard/tbmq:$old_version\""

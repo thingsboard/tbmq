@@ -50,7 +50,7 @@ public class ThingsboardMqttBrokerInstallService {
                 switch (upgradeFromVersion) {
                     case "1.0.0":
                     case "1.0.1":
-                        log.info("Upgrading TBMQ from version 1.0.1 to 1.0.2 ...");
+                        log.info("Upgrading TBMQ from version 1.0.1 to 1.1.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("1.0.1");
                         break;
                     default:
