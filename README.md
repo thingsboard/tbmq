@@ -58,8 +58,10 @@ This project is released under [Apache 2.0 License](./LICENSE).
 - Bi-directional DISCONNECT packets
 - Using passwords without usernames
 - Session expiry feature
+- Message expiry feature
 - Shared subscriptions
 - Subscription options
+- Topic aliases
 - Maximum Packet Size
 - Will delay
 - Server Keep-Alive
@@ -69,8 +71,6 @@ This project is released under [Apache 2.0 License](./LICENSE).
 ## MQTT 5 features in active development:
 
 - AUTH packet & Enhanced Authentication
-- Message expiry feature
-- Topic aliases
 - The payload format and content types
 - Request / Response & Correlation Data
 - Flow Control
