@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.thingsboard.mqtt-broker</groupId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
         <artifactId>msa</artifactId>
     </parent>
     <groupId>org.thingsboard.mqtt-broker.msa</groupId>
@@ -37,7 +37,7 @@
         <pkg.name>thingsboard-mqtt-broker</pkg.name>
         <tbmq.docker.name>tbmq</tbmq.docker.name>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
-        <pkg.upgradeVersion>1.1.0</pkg.upgradeVersion>
+        <pkg.upgradeVersion>1.1.1</pkg.upgradeVersion>
     </properties>
 
     <dependencies>

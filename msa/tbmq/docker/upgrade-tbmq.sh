@@ -27,13 +27,8 @@ FROM_VERSION=`cat ${upgradeversion}`
 echo "Starting TBMQ upgrade ..."
 
 if [[ -z "${FROM_VERSION// }" ]]; then
-    # TODO: remove this check in the next version
-    if [ "${pkg.upgradeVersion}" == "1.1.0" ]; then
-      fromVersion="1.0.1"
-    else
-      echo "FROM_VERSION variable is invalid or unspecified!"
-      exit 1
-    fi
+    echo "FROM_VERSION variable is invalid or unspecified!"
+    exit 1
 else
     fromVersion="${FROM_VERSION// }"
 fi
