@@ -23,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -82,6 +83,8 @@ public class MsgDispatcherServiceImplTest {
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
     @MockBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
+    @MockBean
+    ServiceInfoProvider serviceInfoProvider;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 

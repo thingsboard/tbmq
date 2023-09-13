@@ -107,6 +107,12 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         PacketIdAndSerialNumber lastPacketIdAndSerialNumber = getLastPacketIdAndSerialNumber();
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
+            // It means there was at least one persistent offline subscriber and published message with QoS > 0.
+            // If Subscriber QoS is 0 - publish messages QoS is downgraded to 0, so we can not acknowledge such messages from DB.
+            // They can be received by another subscriber with QoS > 0 or will be deleted by TTL.
+            if (topicSharedSubscription.getQos() == 0) {
+                continue;
+            }
             String key = topicSharedSubscription.getKey();
             List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(key);
             if (CollectionUtils.isEmpty(persistedMessages)) {
