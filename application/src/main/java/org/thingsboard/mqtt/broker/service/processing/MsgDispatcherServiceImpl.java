@@ -350,7 +350,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
         return new Subscription(
-                sharedSubscription.getTopicSharedSubscription().getTopic(),
+                sharedSubscription.getTopicSharedSubscription().getTopicFilter(),
                 qos,
                 createDummyClientSession(sharedSubscription),
                 sharedSubscription.getTopicSharedSubscription().getShareName(),

@@ -407,7 +407,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
-        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopic(), validateSharedTopicFilter);
+        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopicFilter(), validateSharedTopicFilter);
         String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
         String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
