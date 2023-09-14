@@ -60,7 +60,11 @@ public class ApplicationPackProcessingCtx {
         for (PersistedMsg persistedMsg : submitStrategy.getOrderedMessages()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
-                    publishPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPublishMsg) persistedMsg);
+                    PersistedPublishMsg persistedPublishMsg = (PersistedPublishMsg) persistedMsg;
+                    if (persistedPublishMsg.isSharedSubscriptionMsg() && persistedPublishMsg.getPublishMsg().getQosLevel() == 0) {
+                        break;
+                    }
+                    publishPendingMsgMap.put(persistedMsg.getPacketId(), persistedPublishMsg);
                     break;
                 case PUBREL:
                     pubRelPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPubRelMsg) persistedMsg);

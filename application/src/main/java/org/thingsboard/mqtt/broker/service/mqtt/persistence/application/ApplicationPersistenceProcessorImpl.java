@@ -774,7 +774,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
-            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
+            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset(), subscription != null));
         }
         return result;
     }

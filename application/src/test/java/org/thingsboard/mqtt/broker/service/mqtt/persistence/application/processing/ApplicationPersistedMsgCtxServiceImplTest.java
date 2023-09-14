@@ -100,7 +100,7 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
         ApplicationPackProcessingCtx applicationPackProcessingCtx = mock(ApplicationPackProcessingCtx.class);
 
         when(applicationPackProcessingCtx.getPublishPendingMsgMap())
-                .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPublishMsg(buildPubMsg(), 100))));
+                .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPublishMsg(buildPubMsg(), 100, false))));
         when(applicationPackProcessingCtx.getPubRelPendingMsgMap())
                 .thenReturn(new ConcurrentHashMap<>(Map.of(1, new PersistedPubRelMsg(1, 100))));
         when(applicationPackProcessingCtx.getPubRelMsgCtx())
