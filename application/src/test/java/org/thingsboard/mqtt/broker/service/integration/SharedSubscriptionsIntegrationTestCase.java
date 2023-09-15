@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
@@ -56,6 +57,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     private DbConnectionChecker dbConnectionChecker;
     @Autowired
     private ClientSessionService clientSessionService;
+    @Autowired
+    private ClientSubscriptionService clientSubscriptionService;
 
     private MqttClient shareSubClient1;
     private MqttClient shareSubClient2;
@@ -161,7 +164,6 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
-    // TODO: 02.02.23 verify logic without 2nd subscribe and improve it for persistent clients
     @Test
     public void givenTwoPersistentClients_whenBothGotDisconnectedAndMessagesSent_thenBothConnectedAndFirstOneReceiveAllMessages() throws Throwable {
         dbConnectionChecker.setDbConnected(true);
@@ -177,6 +179,11 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
         shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+
+        Awaitility
+                .await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> clientSubscriptionService.getClientSubscriptionsCount() == 2);
 
         //disconnect
         shareSubClient1.disconnect();
@@ -196,10 +203,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         Thread.sleep(100);
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);

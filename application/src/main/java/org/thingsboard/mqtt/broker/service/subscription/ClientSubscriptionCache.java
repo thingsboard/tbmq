@@ -15,10 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+
 import java.util.Set;
 
 public interface ClientSubscriptionCache {
 
     Set<TopicSubscription> getClientSubscriptions(String clientId);
+
+    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
 
 }

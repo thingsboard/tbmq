@@ -21,6 +21,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,13 +36,14 @@ import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -74,7 +76,9 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     @Autowired
     private ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     @Autowired
-    private ClientSubscriptionCache clientSubscriptionCache;
+    private ClientSubscriptionService clientSubscriptionService;
+    @Autowired
+    private ClientSessionService clientSessionService;
 
     MqttClientCredentials applicationCredentials1;
     MqttClientCredentials applicationCredentials2;
@@ -125,6 +129,48 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
 
         applicationTopicService.deleteSharedTopic(applicationSharedSubscription);
         applicationSharedSubscriptionService.deleteSharedSubscription(applicationSharedSubscription.getId());
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith1PersistedClient_whenDisconnectAndConnect_thenReceiveAllMessagesWithoutAdditionalSubscribe() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+        AtomicInteger shareSubClientReceivedMessages = new AtomicInteger();
+
+        //sub
+        MqttClient shareSubClient = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClientReceivedMessages), false);
+        shareSubClient.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClientReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(5, TimeUnit.SECONDS);
+        Awaitility
+                .await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> clientSubscriptionService.getClientSubscriptionsCount() == 1);
+
+        //disconnect
+        shareSubClient.disconnect();
+        Awaitility
+                .await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> clientSessionService.getClientSessionInfo(shareSubClient.getClientConfig().getClientId()).isDisconnected());
+
+        shareSubClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        Awaitility
+                .await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> clientSessionService.getClientSessionInfo(shareSubClient.getClientConfig().getClientId()).isConnected());
+
+        //pub
+        MqttClient pubClient = getPubClient();
+        sendPublishPackets(pubClient);
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT, shareSubClientReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient);
     }
 
     @Test
@@ -188,9 +234,9 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         //unsub
         shareSubClient2.off("$share/g1/test/+").get(5, TimeUnit.SECONDS);
 
-        Set<TopicSubscription> client1Subscriptions = clientSubscriptionCache.getClientSubscriptions("test_sub_client3");
+        Set<TopicSubscription> client1Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client3");
         assertEquals(1, client1Subscriptions.size());
-        Set<TopicSubscription> client2Subscriptions = clientSubscriptionCache.getClientSubscriptions("test_sub_client4");
+        Set<TopicSubscription> client2Subscriptions = clientSubscriptionService.getClientSubscriptions("test_sub_client4");
         assertTrue(client2Subscriptions.isEmpty());
 
         receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);

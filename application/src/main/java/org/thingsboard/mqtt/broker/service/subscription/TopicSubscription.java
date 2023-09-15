@@ -57,4 +57,8 @@ public class TopicSubscription {
     public int hashCode() {
         return Objects.hash(topicFilter);
     }
+
+    public boolean isSharedSubscription() {
+        return shareName != null;
+    }
 }

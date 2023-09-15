@@ -207,6 +207,17 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
 
+    @Override
+    public Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId) {
+        Set<TopicSubscription> clientSubscriptions = getClientSubscriptions(clientId);
+        return clientSubscriptions
+                .stream()
+                .filter(TopicSubscription::isSharedSubscription)
+                .collect(Collectors.groupingBy(subscription ->
+                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
+                .keySet();
+    }
+
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
         if (isSharedSubscription(topicSubscription)) {
             unsubscribeSharedSubscription(topicSubscription);
