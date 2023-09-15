@@ -147,6 +147,71 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     }
 
     @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos0_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.AT_MOST_ONCE, MqttQoS.AT_MOST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos1_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.AT_LEAST_ONCE, MqttQoS.AT_LEAST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos2_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.EXACTLY_ONCE, MqttQoS.EXACTLY_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos0PubAndQos1Sub_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.AT_LEAST_ONCE, MqttQoS.AT_MOST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos1PubAndQos0Sub_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.AT_MOST_ONCE, MqttQoS.AT_LEAST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos0PubAndQos2Sub_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.EXACTLY_ONCE, MqttQoS.AT_MOST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos2PubAndQos0Sub_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(MqttQoS.AT_MOST_ONCE, MqttQoS.EXACTLY_ONCE);
+    }
+
+    private void process(MqttQoS subQos, MqttQoS pubQos) throws Exception {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        MqttClient shareSubClient1 = getClient("test_sub_client1", getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        MqttClient shareSubClient2 = getClient("test_sub_client2", getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+
+        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
+
+        //pub
+        MqttClient pubClient = getPubClient();
+        sendPublishPackets(pubClient, pubQos);
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectWithCleanSession(shareSubClient1);
+        disconnectWithCleanSession(shareSubClient2);
+    }
+
+    @Test
     public void givenSharedSubsGroupWith1PersistedClient_whenDisconnectAndConnect_thenReceiveAllMessagesWithoutAdditionalSubscribe() throws Throwable {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
         AtomicInteger shareSubClientReceivedMessages = new AtomicInteger();
@@ -274,11 +339,15 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     }
 
     private void sendPublishPackets(MqttClient pubClient) throws Exception {
+        sendPublishPackets(pubClient, MqttQoS.EXACTLY_ONCE);
+    }
+
+    private void sendPublishPackets(MqttClient pubClient, MqttQoS qos) throws Exception {
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish(
                             "test/topic",
                             Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)),
-                            MqttQoS.EXACTLY_ONCE)
+                            qos)
                     .get(5, TimeUnit.SECONDS);
             Thread.sleep(50);
         }
