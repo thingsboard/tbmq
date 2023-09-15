@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -70,6 +71,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final DeviceActorConfiguration deviceActorConfig;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
 
     private final Set<Integer> inFlightPacketIds = Sets.newConcurrentHashSet();
     private final Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = Maps.newConcurrentMap();
@@ -89,6 +91,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.clientMqttActorManager = systemContext.getClientMqttActorManager();
         this.clientLogger = systemContext.getClientLogger();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
+        this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
@@ -107,6 +110,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         PacketIdAndSerialNumber lastPacketIdAndSerialNumber = getLastPacketIdAndSerialNumber();
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
+            boolean anyDeviceClientConnected = sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, topicSharedSubscription);
+            if (anyDeviceClientConnected) {
+                continue;
+            }
             // It means there was at least one persistent offline subscriber and published message with QoS > 0.
             // If Subscriber QoS is 0 - publish messages QoS is downgraded to 0, so we can not acknowledge such messages from DB.
             // They can be received by another subscriber with QoS > 0 or will be deleted by TTL.
