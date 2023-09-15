@@ -407,7 +407,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
-        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopic(), validateSharedTopicFilter);
+        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopicFilter(), validateSharedTopicFilter);
         String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
         String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
@@ -774,7 +774,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
-            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
+            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset(), subscription != null));
         }
         return result;
     }

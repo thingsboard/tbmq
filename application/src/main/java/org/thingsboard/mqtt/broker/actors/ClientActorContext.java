@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 @Component
 @RequiredArgsConstructor
 public class ClientActorContext {
+
     private final SessionClusterManager sessionClusterManager;
     private final SubscriptionChangesManager subscriptionChangesManager;
     private final SubscriptionCommandService subscriptionCommandService;

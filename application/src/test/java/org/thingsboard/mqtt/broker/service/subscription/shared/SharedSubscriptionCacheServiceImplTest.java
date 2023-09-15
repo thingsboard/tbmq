@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -41,6 +43,7 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     private static final String CLIENT_ID_1 = "clientId1";
     private static final String CLIENT_ID_2 = "clientId2";
+    private static final String CLIENT_ID_3 = "clientId3";
 
     ClientSessionCache clientSessionCache;
     SharedSubscriptionCacheServiceImpl sharedSubscriptionCache;
@@ -63,6 +66,7 @@ public class SharedSubscriptionCacheServiceImplTest {
     @After
     public void destroy() {
         sharedSubscriptionCache.getSharedSubscriptionsMap().clear();
+        Mockito.reset(clientSessionInfo1, clientSessionInfo2);
     }
 
     @Test
@@ -211,5 +215,68 @@ public class SharedSubscriptionCacheServiceImplTest {
                 assertEquals(1, subscription.getQos());
             }
         }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testIsAnyOtherDeviceClientConnectedThrowsException() {
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
+        sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
+    }
+
+    @Test
+    public void testIsAnyOtherDeviceClientConnectedWithSameClient() {
+        when(clientSessionInfo1.isConnected()).thenReturn(true);
+        when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
+
+        sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
+                new TopicSubscription("something", 2, "g1"),
+                new TopicSubscription("#", 0, "g2")
+        ));
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
+        boolean anyDeviceClientConnected = sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_1, topicSharedSubscription);
+        assertFalse(anyDeviceClientConnected);
+    }
+
+    @Test
+    public void testIsAnyOtherDeviceClientConnectedFalse() {
+        when(clientSessionInfo1.isConnected()).thenReturn(false);
+        when(clientSessionInfo2.isConnected()).thenReturn(false);
+
+        when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
+        when(clientSessionInfo2.getClientId()).thenReturn(CLIENT_ID_2);
+
+        sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
+                new TopicSubscription("something", 2, "g1"),
+                new TopicSubscription("#", 0, "g2")
+        ));
+        sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
+                new TopicSubscription("something", 2, "g1")
+        ));
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
+        boolean anyDeviceClientConnected = sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
+        assertFalse(anyDeviceClientConnected);
+    }
+
+    @Test
+    public void testIsAnyOtherDeviceClientConnectedTrue() {
+        when(clientSessionInfo1.isConnected()).thenReturn(true);
+        when(clientSessionInfo2.isConnected()).thenReturn(false);
+
+        when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
+        when(clientSessionInfo2.getClientId()).thenReturn(CLIENT_ID_2);
+
+        sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
+                new TopicSubscription("something", 2, "g1"),
+                new TopicSubscription("#", 0, "g2")
+        ));
+        sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
+                new TopicSubscription("something", 2, "g1")
+        ));
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
+        boolean anyDeviceClientConnected = sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
+        assertTrue(anyDeviceClientConnected);
     }
 }

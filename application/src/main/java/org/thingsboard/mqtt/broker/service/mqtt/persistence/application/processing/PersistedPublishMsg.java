@@ -25,11 +25,12 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @ToString
+@Getter
 public class PersistedPublishMsg implements PersistedMsg {
 
-    @Getter
     private final PublishMsg publishMsg;
     private final long offset;
+    private final boolean sharedSubscriptionMsg;
 
     @Override
     public long getPacketOffset() {
