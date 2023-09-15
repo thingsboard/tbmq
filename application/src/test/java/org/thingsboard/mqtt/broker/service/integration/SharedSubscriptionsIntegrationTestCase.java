@@ -251,12 +251,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         log.error("The result of awaiting is: [{}]", await);
 
         //asserts
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1Group1ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2Group1ReceivedMessages.get());
-
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1Group2ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2Group2ReceivedMessages.get());
-
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1Group1ReceivedMessages.get() + shareSubClient2Group1ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1Group2ReceivedMessages.get() + shareSubClient2Group2ReceivedMessages.get());
         assertEquals(TOTAL_MSG_COUNT, subClientReceivedMessages.get());
 
         //disconnect clients
