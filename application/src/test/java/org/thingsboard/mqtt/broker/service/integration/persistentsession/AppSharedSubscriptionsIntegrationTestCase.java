@@ -131,6 +131,21 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         applicationSharedSubscriptionService.deleteSharedSubscription(applicationSharedSubscription.getId());
     }
 
+    private void disconnectWithCleanSession(MqttClient client) throws Exception {
+        if (client != null) {
+            MqttClientConfig config = new MqttClientConfig();
+            config.setCleanSession(true);
+            config.setClientId(client.getClientConfig().getClientId());
+            if (client.isConnected()) {
+                client.disconnect();
+                Thread.sleep(50);
+            }
+            client = MqttClient.create(config, null);
+            client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+            client.disconnect();
+        }
+    }
+
     @Test
     public void givenSharedSubsGroupWith1PersistedClient_whenDisconnectAndConnect_thenReceiveAllMessagesWithoutAdditionalSubscribe() throws Throwable {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
@@ -170,7 +185,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         //disconnect clients
         disconnectClient(pubClient);
 
-        disconnectClient(shareSubClient);
+        disconnectWithCleanSession(shareSubClient);
     }
 
     @Test
@@ -200,8 +215,8 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         //disconnect clients
         disconnectClient(pubClient);
 
-        disconnectClient(shareSubClient1);
-        disconnectClient(shareSubClient2);
+        disconnectWithCleanSession(shareSubClient1);
+        disconnectWithCleanSession(shareSubClient2);
     }
 
     @Test
@@ -254,8 +269,8 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         //disconnect clients
         disconnectClient(pubClient);
 
-        disconnectClient(shareSubClient1);
-        disconnectClient(shareSubClient2);
+        disconnectWithCleanSession(shareSubClient1);
+        disconnectWithCleanSession(shareSubClient2);
     }
 
     private void sendPublishPackets(MqttClient pubClient) throws Exception {
