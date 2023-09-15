@@ -160,6 +160,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
                 .stream()
                 .filter(subscription -> !subscription.getClientSessionInfo().getClientId().equals(clientId))
                 .filter(subscription -> findClientSessionInfo(subscription.getClientSessionInfo().getClientId()).isConnected())
+                .filter(subscription -> subscription.getQos() > 0)
                 .count();
         return count > 0;
     }
