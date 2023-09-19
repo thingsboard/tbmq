@@ -75,14 +75,18 @@ cp docker-compose.yml docker-compose.yml.bak
 echo "Docker Compose file backup created: docker-compose.yml.bak"
 
 # Replace the TBMQ image version using sed
-echo "Trying to replace the TBMQ image version from [$old_image] to [$new_image]..."
-sed -i "s#$old_image#$new_image#g" docker-compose.yml
+echo "Trying to replace the TBMQ image version from [$old_version] to [$new_version]..."
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  sed -i "s#$old_image#$new_image#g" docker-compose.yml
+else
+  sed -i '' "s#$old_image#$new_image#g" docker-compose.yml
+fi
 
 if grep -q "$new_image" docker-compose.yml; then
-    echo "TBMQ image line updated in docker-compose.yml with the new version"
+  echo "TBMQ image line updated in docker-compose.yml with the new version"
 else
-    echo "Failed to replace the image version. Please, update the version manually and re-run the script"
-    exit 1
+  echo "Failed to replace the image version. Please, update the version manually and re-run the script"
+  exit 1
 fi
 
 case $COMPOSE_VERSION in
