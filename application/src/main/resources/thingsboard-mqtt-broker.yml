@@ -543,6 +543,8 @@ caffeine:
       timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}" # it is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
       maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
 
+spring.data.redis.repositories.enabled: false
+
 redis:
   # standalone or cluster or sentinel
   connection:

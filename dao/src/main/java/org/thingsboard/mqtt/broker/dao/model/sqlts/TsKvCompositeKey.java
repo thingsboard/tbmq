@@ -28,7 +28,7 @@ import java.io.Serializable;
 public class TsKvCompositeKey implements Serializable {
 
     @Transient
-    private static final long serialVersionUID = -4089175869616037523L;
+    private static final long serialVersionUID = -6526088307431953373L;
 
     private String entityId;
     private int key;

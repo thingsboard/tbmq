@@ -45,9 +45,6 @@ import java.util.List;
 @Data
 public abstract class TBRedisCacheConfiguration {
 
-    private static final String COMMA = ",";
-    private static final String COLON = ":";
-
     @Value("${redis.pool_config.maxTotal:128}")
     private int maxTotal;
 
@@ -130,9 +127,9 @@ public abstract class TBRedisCacheConfiguration {
             result = Collections.emptyList();
         } else {
             result = new ArrayList<>();
-            for (String hostPort : nodes.split(COMMA)) {
-                String host = hostPort.split(COLON)[0];
-                int port = Integer.parseInt(hostPort.split(COLON)[1]);
+            for (String hostPort : nodes.split(CacheConstants.COMMA)) {
+                String host = hostPort.split(CacheConstants.COLON)[0];
+                int port = Integer.parseInt(hostPort.split(CacheConstants.COLON)[1]);
                 result.add(new RedisNode(host, port));
             }
         }

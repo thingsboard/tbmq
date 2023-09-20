@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.generic;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
 
-public interface GenericClientSessionCtxRepository extends CrudRepository<GenericClientSessionCtxEntity, String> {
+public interface GenericClientSessionCtxRepository extends JpaRepository<GenericClientSessionCtxEntity, String> {
+
     GenericClientSessionCtxEntity findByClientId(String clientId);
+
 }
