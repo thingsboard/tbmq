@@ -31,7 +31,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = CaffeineCacheConfiguration.class)
+@ContextConfiguration(classes = TbCaffeineCacheConfiguration.class)
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "cache.type=caffeine",
@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "caffeine.specs.mqttClientCredentials.maxSize=100"
 })
 @Slf4j
-public class CaffeineCacheConfigurationTest {
+public class TbCaffeineCacheConfigurationTest {
 
     @Autowired
     CacheManager cacheManager;

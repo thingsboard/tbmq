@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CaffeineCacheDefaultConfigurationTest {
 
     @Autowired
-    CaffeineCacheConfiguration caffeineCacheConfiguration;
+    TbCaffeineCacheConfiguration caffeineCacheConfiguration;
 
     @Test
     public void verifyTransactionAwareCacheManagerProxy() {
