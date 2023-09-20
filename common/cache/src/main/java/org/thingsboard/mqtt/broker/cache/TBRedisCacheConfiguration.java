@@ -78,6 +78,9 @@ public abstract class TBRedisCacheConfiguration {
     @Value("${redis.pool_config.blockWhenExhausted:true}")
     private boolean blockWhenExhausted;
 
+    @Value("${cache.stats.enabled:true}")
+    private boolean cacheStatsEnabled;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         return loadFactory();
@@ -91,7 +94,11 @@ public abstract class TBRedisCacheConfiguration {
         RedisCacheConfiguration.registerDefaultConverters(redisConversionService);
         registerDefaultConverters(redisConversionService);
         RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig().withConversionService(redisConversionService);
-        return RedisCacheManager.builder(cf).cacheDefaults(configuration).transactionAware().build();
+        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration).transactionAware();
+        if (cacheStatsEnabled) {
+            redisCacheManagerBuilder.enableStatistics();
+        }
+        return redisCacheManagerBuilder.build();
     }
 
     @Bean
