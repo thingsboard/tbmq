@@ -19,8 +19,11 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
 
+import java.io.Serial;
+
 public abstract class AbstractJwtAuthenticationToken extends AbstractAuthenticationToken {
 
+    @Serial
     private static final long serialVersionUID = -6212297506742428406L;
 
     private RawAccessJwtToken rawAccessToken;

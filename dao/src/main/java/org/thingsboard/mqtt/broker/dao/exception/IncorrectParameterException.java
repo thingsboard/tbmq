@@ -16,8 +16,11 @@
 package org.thingsboard.mqtt.broker.dao.exception;
 
 
+import java.io.Serial;
+
 public class IncorrectParameterException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 601995650578985289L;
 
     public IncorrectParameterException(String message) {
