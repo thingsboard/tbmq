@@ -101,6 +101,9 @@ public class DevicePersistenceProcessorImplTest {
 
     @Test
     public void stopProcessingPersistedMessagesTest() {
+        Cache cache = mock(Cache.class);
+        when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
+
         devicePersistenceProcessor.stopProcessingPersistedMessages(clientId);
 
         verify(deviceActorManager, times(1)).notifyClientDisconnected(eq(clientId));
