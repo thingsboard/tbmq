@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.client.device;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 @RequiredArgsConstructor
+@ToString
 public class PacketIdAndSerialNumber implements Serializable {
 
     @Serial
