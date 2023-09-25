@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Copyright © 2016-2023 The Thingsboard Authors
 #
@@ -15,6 +14,14 @@
 # limitations under the License.
 #
 
-set -e
-source scripts/compose-utils.sh
-checkFolders --create
+version: '3.0'
+
+services:
+  redis:
+    volumes:
+      - redis-data:/bitnami/redis/data
+
+volumes:
+  redis-data:
+    external:
+      name: ${REDIS_DATA_VOLUME}

@@ -17,4 +17,27 @@
 
 set -e
 
-docker compose -f docker-compose.yml up -d
+source scripts/compose-utils.sh
+
+COMPOSE_VERSION=$(composeVersion) || exit $?
+
+ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
+
+checkFolders --create || exit $?
+
+COMPOSE_ARGS="\
+      --env-file ./.env \
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+      up -d"
+
+case $COMPOSE_VERSION in
+    V2)
+        docker compose $COMPOSE_ARGS
+    ;;
+    V1)
+        docker-compose $COMPOSE_ARGS
+    ;;
+    *)
+        # unknown option
+    ;;
+esac

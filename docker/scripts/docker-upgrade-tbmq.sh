@@ -38,9 +38,45 @@ fi
 
 set -e
 
-docker compose -f docker-compose.yml pull tb-mqtt-broker-1
+source scripts/compose-utils.sh
 
-docker compose -f docker-compose.yml up -d postgres
+COMPOSE_VERSION=$(composeVersion) || exit $?
 
-docker compose -f docker-compose.yml run --no-deps --rm \
--e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} tb-mqtt-broker-1
+ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
+
+ADDITIONAL_STARTUP_SERVICES=$(additionalStartupServices) || exit $?
+
+checkFolders --create || exit $?
+
+COMPOSE_ARGS_PULL="\
+      --env-file ./.env \
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+      pull \
+      tb-mqtt-broker-1"
+
+COMPOSE_ARGS_UP="\
+      --env-file ./.env \
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+      up -d ${ADDITIONAL_STARTUP_SERVICES}"
+
+COMPOSE_ARGS_RUN="\
+      --env-file ./.env \
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+      run --no-deps --rm -e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} \
+      tb-mqtt-broker-1"
+
+case $COMPOSE_VERSION in
+    V2)
+        docker compose $COMPOSE_ARGS_PULL
+        docker compose $COMPOSE_ARGS_UP
+        docker compose $COMPOSE_ARGS_RUN
+    ;;
+    V1)
+        docker-compose $COMPOSE_ARGS_PULL
+        docker-compose $COMPOSE_ARGS_UP
+        docker-compose $COMPOSE_ARGS_RUN
+    ;;
+    *)
+        # unknown option
+    ;;
+esac

@@ -38,13 +38,15 @@ services:
       ZOO_SERVERS: server.1=zookeeper:2888:3888;zookeeper:2181
   kafka:
     restart: always
-    image: "wurstmeister/kafka:2.13-2.8.1"
+    image: "bitnami/kafka:3.4"
     ports:
-      - "9092"
+      - "9092:9092"
     env_file:
       - kafka.env
     depends_on:
       - zookeeper
+    volumes:
+      - ./tb-mqtt-broker/kafka:/bitnami/kafka
   tb-mqtt-broker-1:
     restart: always
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"

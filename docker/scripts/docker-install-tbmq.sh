@@ -18,8 +18,50 @@
 
 set -e
 
-docker compose -f docker-compose.yml up -d postgres
+source scripts/compose-utils.sh
 
-docker compose -f docker-compose.yml run --no-deps --rm -e INSTALL_TB=true tb-mqtt-broker-1
+COMPOSE_VERSION=$(composeVersion) || exit $?
 
+ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
 
+ADDITIONAL_STARTUP_SERVICES=$(additionalStartupServices) || exit $?
+
+checkFolders --create || exit $?
+
+if [ ! -z "${ADDITIONAL_STARTUP_SERVICES// }" ]; then
+
+    COMPOSE_ARGS="\
+          --env-file ./.env \
+          -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+          up -d ${ADDITIONAL_STARTUP_SERVICES}"
+
+    case $COMPOSE_VERSION in
+        V2)
+            docker compose $COMPOSE_ARGS
+        ;;
+        V1)
+            docker-compose $COMPOSE_ARGS
+        ;;
+        *)
+            # unknown option
+        ;;
+    esac
+fi
+
+COMPOSE_ARGS="\
+      --env-file ./.env \
+      -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
+      run --no-deps --rm -e INSTALL_TB=true \
+      tb-mqtt-broker-1"
+
+case $COMPOSE_VERSION in
+    V2)
+        docker compose $COMPOSE_ARGS
+    ;;
+    V1)
+        docker-compose $COMPOSE_ARGS
+    ;;
+    *)
+        # unknown option
+    ;;
+esac
