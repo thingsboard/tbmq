@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages.sql;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgCompositeKey;
@@ -28,7 +28,8 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLIS
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;
 
-public interface DeviceMsgRepository extends CrudRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
+public interface DeviceMsgRepository extends JpaRepository<DevicePublishMsgEntity, DevicePublishMsgCompositeKey> {
+
     String DEVICE_PUBLISH_MSG = DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME;
     String CLIENT_ID = DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY;
     String SERIAL_NUMBER = DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY;

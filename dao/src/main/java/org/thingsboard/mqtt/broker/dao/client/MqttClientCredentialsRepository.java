@@ -17,8 +17,8 @@ package org.thingsboard.mqtt.broker.dao.client;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 import java.util.List;
 import java.util.UUID;
 
-public interface MqttClientCredentialsRepository extends PagingAndSortingRepository<MqttClientCredentialsEntity, UUID> {
+public interface MqttClientCredentialsRepository extends JpaRepository<MqttClientCredentialsEntity, UUID> {
 
     MqttClientCredentialsEntity findByCredentialsId(String credentialsId);
 

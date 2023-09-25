@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.data.exception;
 
+import java.io.Serial;
+
 public class ThingsboardException extends Exception {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private ThingsboardErrorCode errorCode;

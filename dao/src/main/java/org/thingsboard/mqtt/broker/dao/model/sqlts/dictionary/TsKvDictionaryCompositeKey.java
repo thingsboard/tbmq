@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Transient;
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
@@ -27,6 +28,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class TsKvDictionaryCompositeKey implements Serializable {
 
+    @Serial
     @Transient
     private static final long serialVersionUID = -4089175869616037523L;
 

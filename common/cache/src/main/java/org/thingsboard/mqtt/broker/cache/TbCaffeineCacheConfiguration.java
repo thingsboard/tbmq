@@ -22,7 +22,6 @@ import com.github.benmanes.caffeine.cache.Weigher;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -33,7 +32,6 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheManagerProxy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import javax.annotation.PostConstruct;
@@ -54,9 +52,7 @@ import java.util.stream.Collectors;
 @EnableCaching
 @Data
 @Slf4j
-public class CaffeineCacheConfiguration {
-
-    private Map<String, CacheSpecs> specs;
+public class TbCaffeineCacheConfiguration {
 
     @Value("${cache.stats.enabled:true}")
     private boolean cacheStatsEnabled;
@@ -64,18 +60,12 @@ public class CaffeineCacheConfiguration {
     @Value("${cache.stats.intervalSec:60}")
     private long cacheStatsInterval;
 
-    @Lazy
-    @Autowired
-    private CacheManager cacheManager;
+    private Map<String, CacheSpecs> specs;
 
     private ScheduledExecutorService scheduler = null;
 
     List<CaffeineCache> caches = Collections.emptyList();
 
-    /**
-     * Transaction aware CaffeineCache implementation with TransactionAwareCacheManagerProxy
-     * to synchronize cache put/evict operations with ongoing Spring-managed transactions.
-     */
     @Bean
     public CacheManager cacheManager() {
         if (log.isTraceEnabled()) {

@@ -84,6 +84,8 @@
         <hibernate-validator.version>6.0.20.Final</hibernate-validator.version>
         <javax.el.version>3.0.0</javax.el.version>
         <antisamy.version>1.7.2</antisamy.version>
+        <spring-data-redis.version>2.7.10</spring-data-redis.version>
+        <jedis.version>3.8.0</jedis.version>
     </properties>
 
     <modules>
@@ -1045,6 +1047,16 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>${jedis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-redis</artifactId>
+                <version>${spring-data-redis.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>

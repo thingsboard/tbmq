@@ -22,12 +22,16 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class MqttClientCredentials extends SearchTextBased {
+
+    @Serial
+    private static final long serialVersionUID = -8551302106113554112L;
 
     @NoXss
     private String credentialsId;
