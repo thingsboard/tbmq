@@ -34,7 +34,7 @@ data:
     syncLimit=2
     maxClientCnxns=200
     standaloneEnabled=true
-    server.0=zookeeper-0.zookeeper.thingsboard.svc.cluster.local:2888:3888;2181
+    server.0=zookeeper-0.zookeeper.thingsboard-mqtt-broker.svc.cluster.local:2888:3888;2181
   log4j.properties: |+
     zookeeper.root.logger=INFO, CONSOLE
     zookeeper.console.threshold=INFO

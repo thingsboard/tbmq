@@ -26,6 +26,9 @@ kubectl rollout status deployment/postgres
 # install Kafka and Zookeeper
 kubectl apply -f kafka-zookeeper.yml
 
+# install Redis
+kubectl apply -f redis.yml
+
 # install ThingsBoard MQTT Broker
 kubectl apply -f tb-broker-configmap.yml
 kubectl apply -f database-setup.yml &&
