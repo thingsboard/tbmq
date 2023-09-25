@@ -11,6 +11,7 @@ tb-mqtt-broker/redis-sentinel-data-slave/**
 tb-mqtt-broker/redis-sentinel-data-sentinel/**
 tb-mqtt-broker/redis-data/**
 tb-mqtt-broker/kafka/**
+tb-mqtt-broker/zookeeper/**
 !.env
 */.idea/**
 .idea/**

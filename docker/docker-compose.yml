@@ -30,12 +30,13 @@ services:
       - ./tb-mqtt-broker/postgres:/var/lib/postgresql/data
   zookeeper:
     restart: always
-    image: "zookeeper:3.8"
+    image: "bitnami/zookeeper:3.8"
     ports:
-      - "2181"
+      - "2181:2181"
     environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888;zookeeper:2181
+      ALLOW_ANONYMOUS_LOGIN: yes
+    volumes:
+      - ./tb-mqtt-broker/zookeeper:/bitnami/zookeeper
   kafka:
     restart: always
     image: "bitnami/kafka:3.4"

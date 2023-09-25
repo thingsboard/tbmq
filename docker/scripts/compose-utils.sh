@@ -66,6 +66,7 @@ function permissionList() {
       799  799  tb-mqtt-broker/log
       999  999  tb-mqtt-broker/postgres
       1001  1001  tb-mqtt-broker/kafka
+      1001  1001  tb-mqtt-broker/zookeeper
       "
 
   source .env
