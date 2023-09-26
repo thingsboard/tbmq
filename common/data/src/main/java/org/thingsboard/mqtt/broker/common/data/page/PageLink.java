@@ -17,8 +17,10 @@ package org.thingsboard.mqtt.broker.common.data.page;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor(force = true)
 public class PageLink {
 
     private final int pageSize;

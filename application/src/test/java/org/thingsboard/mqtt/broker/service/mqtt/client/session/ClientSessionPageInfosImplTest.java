@@ -16,18 +16,27 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +66,11 @@ public class ClientSessionPageInfosImplTest {
 
         Map<String, ClientSessionInfo> clientSessionInfoMap = getClientSessionInfoMap();
         doReturn(clientSessionInfoMap).when(clientSessionCache).getAllClientSessions();
+    }
+
+    @After
+    public void destroy() {
+        Mockito.reset(clientSessionCache, clientSubscriptionCache);
     }
 
     private Map<String, ClientSessionInfo> getClientSessionInfoMap() {
@@ -225,6 +239,328 @@ public class ClientSessionPageInfosImplTest {
 
         assertEquals("clientId4", data.get(0).getClientId());
         assertEquals("clientId5", data.get(4).getClientId());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithStartAndEndTimes() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        long startTime = convertStringToTimestamp("2023-10-10 12:00:00");
+        long endTime = convertStringToTimestamp("2023-10-11 12:00:00");
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0, null, null, startTime, endTime))
+                .build();
+
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+
+        assertEquals(2, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithConnectedStatusList() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .connectedStatusList(List.of())
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(3, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .connectedStatusList(List.of(ConnectionState.CONNECTED, ConnectionState.DISCONNECTED))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(3, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .connectedStatusList(List.of(ConnectionState.DISCONNECTED))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(2, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithClientTypeList() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, "tbmq2", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-11-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, "tbmq3", false,
+                ClientType.APPLICATION, convertStringToTimestamp("2023-10-09 16:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3,
+                "clientId2", clientSessionInfo2,
+                "clientId4", clientSessionInfo4
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .clientTypeList(List.of())
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(5, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .clientTypeList(List.of(ClientType.DEVICE, ClientType.APPLICATION))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(5, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .clientTypeList(List.of(ClientType.APPLICATION))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(3, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithCleanStartList() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, "tbmq2", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-11-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, "tbmq3", false,
+                ClientType.APPLICATION, convertStringToTimestamp("2023-10-09 16:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3,
+                "clientId2", clientSessionInfo2,
+                "clientId4", clientSessionInfo4
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .cleanStartList(List.of())
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(5, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .cleanStartList(List.of(true, false))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(5, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .cleanStartList(List.of(true))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(2, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithNodeIdList() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, "tbmq2", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-11-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, "tbmq3", false,
+                ClientType.APPLICATION, convertStringToTimestamp("2023-10-09 16:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3,
+                "clientId2", clientSessionInfo2,
+                "clientId4", clientSessionInfo4
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .nodeIdList(List.of())
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(5, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .nodeIdList(List.of("tbmq1"))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(3, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .nodeIdList(List.of("tbmq3", "tbmq2"))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(2, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .nodeIdList(List.of("tbmq5"))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(0, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptions() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo("clientId1", true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo("clientId5", false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo("clientId3", false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo("clientId2", false, "tbmq2", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-11-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo("clientId4", true, "tbmq3", false,
+                ClientType.APPLICATION, convertStringToTimestamp("2023-10-09 16:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3,
+                "clientId2", clientSessionInfo2,
+                "clientId4", clientSessionInfo4
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        when(clientSubscriptionCache.getClientSubscriptions("clientId1")).thenReturn(Set.of(new TopicSubscription("tf1", 1)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId2")).thenReturn(Set.of(new TopicSubscription("tf2", 2)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId3")).thenReturn(Set.of(new TopicSubscription("tf3", 0)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId4")).thenReturn(Set.of(
+                new TopicSubscription("tf4", 1),
+                new TopicSubscription("tf44", 1)
+        ));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId5")).thenReturn(Set.of(
+                new TopicSubscription("tf5", 1),
+                new TopicSubscription("tf55", 0),
+                new TopicSubscription("tf555", 2)
+        ));
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(1, clientSessionInfos.getData().size());
+        assertEquals("clientId4", clientSessionInfos.getData().get(0).getClientId());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithQuery() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+        ClientSessionInfo clientSessionInfo5 = getClientSessionInfo(false, "tbmq1", true,
+                ClientType.DEVICE, 0, convertStringToTimestamp("2023-10-11 13:00:00"));
+        ClientSessionInfo clientSessionInfo3 = getClientSessionInfo(false, "tbmq1", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-10-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo2 = getClientSessionInfo(false, "tbmq2", false,
+                ClientType.APPLICATION, 0, convertStringToTimestamp("2023-11-11 12:00:00"));
+        ClientSessionInfo clientSessionInfo4 = getClientSessionInfo(true, "tbmq3", false,
+                ClientType.APPLICATION, convertStringToTimestamp("2023-10-09 16:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1,
+                "clientId5", clientSessionInfo5,
+                "clientId3", clientSessionInfo3,
+                "clientId2", clientSessionInfo2,
+                "clientId4", clientSessionInfo4
+
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .connectedStatusList(List.of(ConnectionState.CONNECTED))
+                .cleanStartList(List.of(false))
+                .clientTypeList(List.of(ClientType.APPLICATION))
+                .nodeIdList(List.of("tbmq2"))
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(0, clientSessionInfos.getData().size());
+
+        clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .connectedStatusList(List.of(ConnectionState.CONNECTED))
+                .cleanStartList(List.of(true))
+                .clientTypeList(List.of(ClientType.DEVICE))
+                .nodeIdList(List.of("tbmq1"))
+                .build();
+        clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(1, clientSessionInfos.getData().size());
+    }
+
+    public static long convertStringToTimestamp(String dateString) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
+        return dateTime.toEpochSecond(OffsetDateTime.now().getOffset()) * 1000;
     }
 
     private TopicSubscription getTopicSubscription() {

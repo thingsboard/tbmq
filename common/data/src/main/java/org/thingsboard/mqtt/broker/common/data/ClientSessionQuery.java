@@ -15,8 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
-public enum ConnectionState {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-    CONNECTED,
-    DISCONNECTED
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+public class ClientSessionQuery {
+
+    private TimePageLink pageLink;
+    private List<ConnectionState> connectedStatusList;
+    private List<ClientType> clientTypeList;
+    private List<Boolean> cleanStartList;
+    private List<String> nodeIdList;
+    private Integer subscriptions;
+
 }
