@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
@@ -23,6 +24,8 @@ import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 public interface ClientSessionPageInfos {
 
     PageData<ShortClientSessionInfoDto> getClientSessionInfos(PageLink pageLink);
+
+    PageData<ShortClientSessionInfoDto> getClientSessionInfos(ClientSessionQuery query);
 
     ClientSessionStatsInfoDto getClientSessionStatsInfo();
 
