@@ -72,7 +72,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       TB_KAFKA_SERVERS: kafka:9092
       SECURITY_MQTT_BASIC_ENABLED: 'true'
-    #      JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
+      #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
     volumes:
       - ~/.tb-mqtt-broker-data/log:/var/log/thingsboard-mqtt-broker
       - ~/.tb-mqtt-broker-data/data:/data

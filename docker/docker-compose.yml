@@ -61,7 +61,7 @@ services:
         max-file: "30"
     environment:
       TB_SERVICE_ID: tb-mqtt-broker-1
-    #      JAVA_OPTS: "${JAVA_OPTS}"
+      #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:
@@ -83,7 +83,7 @@ services:
         max-file: "30"
     environment:
       TB_SERVICE_ID: tb-mqtt-broker-2
-    #      JAVA_OPTS: "${JAVA_OPTS}"
+      #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:
