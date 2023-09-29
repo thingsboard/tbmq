@@ -27,6 +27,10 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
 public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration {
 
+    public TBRedisClusterConfiguration(CacheSpecsMap cacheSpecsMap) {
+        super(cacheSpecsMap);
+    }
+
     @Value("${redis.cluster.nodes:}")
     private String clusterNodes;
 

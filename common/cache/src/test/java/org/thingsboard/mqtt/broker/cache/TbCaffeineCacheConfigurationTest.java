@@ -31,14 +31,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TbCaffeineCacheConfiguration.class)
+@ContextConfiguration(classes = {CacheSpecsMap.class, TbCaffeineCacheConfiguration.class})
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "cache.type=caffeine",
-        "caffeine.specs.packetIdAndSerialNumber.timeToLiveInMinutes=1440",
-        "caffeine.specs.packetIdAndSerialNumber.maxSize=100",
-        "caffeine.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
-        "caffeine.specs.mqttClientCredentials.maxSize=100"
+        "cache.specs.packetIdAndSerialNumber.timeToLiveInMinutes=1440",
+        "cache.specs.packetIdAndSerialNumber.maxSize=100",
+        "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
+        "cache.specs.mqttClientCredentials.maxSize=100"
 })
 @Slf4j
 public class TbCaffeineCacheConfigurationTest {

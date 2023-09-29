@@ -530,8 +530,6 @@ cache:
   stats:
     enabled: "${CACHE_STATS_ENABLED:true}"
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
-
-caffeine:
   specs:
     packetIdAndSerialNumber:
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"

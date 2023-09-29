@@ -24,7 +24,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
@@ -40,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,19 +46,18 @@ import java.util.stream.Collectors;
 
 @Configuration
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "caffeine", matchIfMissing = true)
-@ConfigurationProperties(prefix = "caffeine")
 @EnableCaching
 @Data
 @Slf4j
 public class TbCaffeineCacheConfiguration {
+
+    private final CacheSpecsMap configuration;
 
     @Value("${cache.stats.enabled:true}")
     private boolean cacheStatsEnabled;
 
     @Value("${cache.stats.intervalSec:60}")
     private long cacheStatsInterval;
-
-    private Map<String, CacheSpecs> specs;
 
     private ScheduledExecutorService scheduler = null;
 
@@ -69,12 +66,12 @@ public class TbCaffeineCacheConfiguration {
     @Bean
     public CacheManager cacheManager() {
         if (log.isTraceEnabled()) {
-            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), specs);
+            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), configuration.getSpecs());
         }
         SimpleCacheManager manager = new SimpleCacheManager();
-        if (specs != null) {
+        if (configuration.getSpecs() != null) {
             caches =
-                    specs.entrySet().stream()
+                    configuration.getSpecs().entrySet().stream()
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());

@@ -22,7 +22,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.ConverterRegistry;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -30,20 +29,23 @@ import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.format.support.DefaultFormattingConversionService;
-import org.springframework.util.Assert;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @EnableCaching
 @Data
 public abstract class TBRedisCacheConfiguration {
+
+    private final CacheSpecsMap cacheSpecsMap;
 
     @Value("${redis.pool_config.maxTotal:128}")
     private int maxTotal;
@@ -92,13 +94,28 @@ public abstract class TBRedisCacheConfiguration {
     public CacheManager cacheManager(RedisConnectionFactory cf) {
         DefaultFormattingConversionService redisConversionService = new DefaultFormattingConversionService();
         RedisCacheConfiguration.registerDefaultConverters(redisConversionService);
-        registerDefaultConverters(redisConversionService);
-        RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig().withConversionService(redisConversionService);
-        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration).transactionAware();
+        RedisCacheConfiguration configuration = createRedisCacheConfig(redisConversionService);
+
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        if (cacheSpecsMap != null) {
+            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getSpecs().entrySet()) {
+                cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
+            }
+        }
+
+        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration).withInitialCacheConfigurations(cacheConfigurations).transactionAware();
         if (cacheStatsEnabled) {
             redisCacheManagerBuilder.enableStatistics();
         }
         return redisCacheManagerBuilder.build();
+    }
+
+    private RedisCacheConfiguration createRedisCacheConfigWithTtl(DefaultFormattingConversionService redisConversionService, int ttlInMinutes) {
+        return createRedisCacheConfig(redisConversionService).entryTtl(Duration.ofMinutes(ttlInMinutes));
+    }
+
+    private RedisCacheConfiguration createRedisCacheConfig(DefaultFormattingConversionService redisConversionService) {
+        return RedisCacheConfiguration.defaultCacheConfig().withConversionService(redisConversionService);
     }
 
     @Bean
@@ -106,10 +123,6 @@ public abstract class TBRedisCacheConfiguration {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
         return template;
-    }
-
-    private static void registerDefaultConverters(ConverterRegistry registry) {
-        Assert.notNull(registry, "ConverterRegistry must not be null!");
     }
 
     protected JedisPoolConfig buildPoolConfig() {

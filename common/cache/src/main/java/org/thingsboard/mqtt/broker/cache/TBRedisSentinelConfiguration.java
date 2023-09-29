@@ -27,6 +27,10 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "sentinel")
 public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration {
 
+    public TBRedisSentinelConfiguration(CacheSpecsMap cacheSpecsMap) {
+        super(cacheSpecsMap);
+    }
+
     @Value("${redis.sentinel.master:}")
     private String master;
 

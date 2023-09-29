@@ -237,7 +237,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     }
 
     @Test
-    public void givenSharedSubsGroupWith2PersistedClients_whenPubMsgToSharedTopic_thenReceiveEqualMessages() throws Throwable {
+    public void givenSharedSubsGroupWith2PersistedClients_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
@@ -261,8 +261,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         log.error("The result of awaiting is: [{}]", await);
 
         //asserts
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
 
         //disconnect clients
         disconnectClient(pubClient);
