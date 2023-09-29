@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {NotificationState} from './notification.models';
-import {NotificationActions, NotificationActionTypes} from './notification.actions';
+import { NotificationState } from './notification.models';
+import { NotificationActions, NotificationActionTypes } from './notification.actions';
 
 export const initialState: NotificationState = {
   notification: null,
@@ -23,8 +23,8 @@ export const initialState: NotificationState = {
 };
 
 export function notificationReducer(
-  state: NotificationState = initialState,
-  action: NotificationActions
+    state: NotificationState = initialState,
+    action: NotificationActions
 ): NotificationState {
   switch (action.type) {
     case NotificationActionTypes.SHOW_NOTIFICATION:

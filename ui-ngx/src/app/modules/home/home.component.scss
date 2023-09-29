@@ -49,7 +49,7 @@
             max-width: 100%;
             height: 36px;
             max-height: 100%;
-            margin: 14px 20px;
+            margin: auto;
           }
         }
       }
@@ -58,6 +58,13 @@
       overflow-y: auto;
       height: inherit;
       padding: 0;
+      align-items: initial;
+      section.version {
+        margin: 0 8px 5px 0;
+        font-size: .6em;
+        text-align: right;
+        font-weight: normal;
+      }
     }
   }
   .tb-primary-toolbar {

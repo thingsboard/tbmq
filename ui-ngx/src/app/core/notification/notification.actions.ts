@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {Action} from '@ngrx/store';
-import {HideNotification, NotificationMessage} from '@app/core/notification/notification.models';
+import { Action } from '@ngrx/store';
+import { HideNotification, NotificationMessage } from '@app/core/notification/notification.models';
 
 export enum NotificationActionTypes {
   SHOW_NOTIFICATION = '[Notification] Show',
@@ -35,4 +35,4 @@ export class ActionNotificationHide implements Action {
 }
 
 export type NotificationActions =
-  | ActionNotificationShow | ActionNotificationHide;
+    | ActionNotificationShow | ActionNotificationHide;

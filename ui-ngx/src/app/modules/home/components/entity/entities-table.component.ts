@@ -59,6 +59,8 @@ import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-co
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
+import { Timewindow } from '@shared/models/time/time.models';
+import { UntypedFormBuilder } from '@angular/forms';
 
 @Component({
   selector: 'tb-entities-table',
@@ -98,6 +100,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   pageLink: PageLink;
   pageMode = true;
   textSearchMode = false;
+  hidePageSize = false;
+  timewindow: Timewindow;
   dataSource: EntitiesDataSource<BaseData>;
 
   cellActionType = CellActionDescriptorType;
@@ -112,6 +116,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
+  textSearch = this.fb.control('', {nonNullable: true});
+
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
@@ -124,7 +130,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
               private domSanitizer: DomSanitizer,
               private cd: ChangeDetectorRef,
               private router: Router,
-              private componentFactoryResolver: ComponentFactoryResolver) {
+              private componentFactoryResolver: ComponentFactoryResolver,
+              private fb: UntypedFormBuilder) {
     super(store);
   }
 
@@ -159,7 +166,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 
-    this.entitiesTableConfig.table = this;
+    this.entitiesTableConfig.setTable(this);
     this.translations = this.entitiesTableConfig.entityTranslations;
 
     this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
@@ -262,6 +269,11 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   addEnabled() {
     return this.entitiesTableConfig.addEnabled;
+  }
+
+  clearSelection() {
+    this.dataSource.selection.clear();
+    this.cd.detectChanges();
   }
 
   updateData(closeDetails: boolean = true) {
@@ -402,6 +414,13 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     });
   }
 
+  onTimewindowChange() {
+    if (this.displayPagination) {
+      this.paginator.pageIndex = 0;
+    }
+    this.updateData();
+  }
+
   enterFilterMode() {
     this.textSearchMode = true;
     this.pageLink.textSearch = '';
@@ -475,6 +494,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     if (resetData) {
       this.dataSource.reset();
     }
+  }
+
+  cellActionDescriptorsUpdated() {
+    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
   }
 
   headerCellStyle(column: EntityColumn<BaseData>) {
@@ -561,6 +584,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   trackByEntityId(index: number, entity: any) {
     return entity.id;
+  }
+
+  detectChanges() {
+    this.cd.markForCheck();
   }
 
 }

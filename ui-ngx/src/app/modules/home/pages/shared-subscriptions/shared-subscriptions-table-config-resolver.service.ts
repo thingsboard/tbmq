@@ -62,7 +62,7 @@ export class SharedSubscriptionsTableConfigResolver implements Resolve<EntityTab
         name: this.translate.instant('shared-subscription.add'),
         icon: 'add',
         isEnabled: () => true,
-        onAction: ($event) => this.config.table.addEntity($event)
+        onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
 

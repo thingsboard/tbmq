@@ -15,21 +15,24 @@
 ///
 
 import {
-  AfterContentChecked,
+  AfterContentChecked, AfterViewInit,
   ChangeDetectorRef,
   Component,
   ComponentFactoryResolver,
+  ElementRef,
+  HostBinding,
   Inject,
   Injector,
   OnInit,
   SkipSelf,
-  ViewChild
+  ViewChild,
+  ViewContainerRef
 } from '@angular/core';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormControl, FormGroup, FormGroupDirective, NgForm } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, FormGroupDirective, NgForm, UntypedFormBuilder } from '@angular/forms';
 import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { BaseData } from '@shared/models/base-data';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
@@ -40,7 +43,12 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
-import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
+import { isDefinedAndNotNull } from '@core/utils';
+import { MatStepper } from '@angular/material/stepper';
+import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { MediaBreakpoints } from '@app/shared/models/constants';
+import { Subscription } from 'rxjs/internal/Subscription';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
 
 @Component({
   selector: 'tb-add-entity-dialog',
@@ -48,17 +56,35 @@ import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
   providers: [{provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent}],
   styleUrls: ['./add-entity-dialog.component.scss']
 })
-export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData> implements OnInit, ErrorStateMatcher, AfterContentChecked {
+export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
+                                      implements OnInit, AfterViewInit, ErrorStateMatcher, AfterContentChecked {
+
+  @ViewChild('addGroupEntityWizardStepper') addGroupEntityWizardStepper: MatStepper;
+  @ViewChild('detailsFormStep', {read: ViewContainerRef}) detailsFormStepContainerRef: ViewContainerRef;
+  @ViewChild('entityDetailsForm') entityDetailsFormAnchor: TbAnchorComponent;
+  @ViewChild('ownersAndGroupPanel') ownersAndGroup: ElementRef;
+
+  @HostBinding('style')
+  style = this.data.entitiesTableConfig.addDialogStyle;
+
+  selectedIndex = 0;
+
+  showNext = true;
+
+  labelPosition: 'bottom' | 'end' = 'end';
 
   entityComponent: EntityComponent<BaseData>;
-  detailsForm: FormGroup;
+  detailsForm: UntypedFormGroup;
   entitiesTableConfig: EntityTableConfig<BaseData>;
   translations: EntityTypeTranslation;
   resources: EntityTypeResource<BaseData>;
   entity: BaseData;
   submitted = false;
 
-  @ViewChild('entityDetailsForm', {static: true}) entityDetailsFormAnchor: TbAnchorComponent;
+  entityType: EntityType;
+  addDialogOwnerAndGroupWizard = false;
+
+  private subscriptions: Subscription[] = [];
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -68,16 +94,34 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
               private injector: Injector,
               private cd: ChangeDetectorRef,
               private translate: TranslateService,
+              private breakpointObserver: BreakpointObserver,
+              private fb: UntypedFormBuilder,
               @SkipSelf() private errorStateMatcher: ErrorStateMatcher) {
     super(store, router, dialogRef);
   }
 
   ngOnInit(): void {
     this.entitiesTableConfig = this.data.entitiesTableConfig;
+    this.entityType = this.entitiesTableConfig.entityType;
     this.translations = this.entitiesTableConfig.entityTranslations;
     this.resources = this.entitiesTableConfig.entityResources;
+    // this.addDialogOwnerAndGroupWizard = this.entitiesTableConfig.addDialogOwnerAndGroupWizard;
     this.entity = {};
-    const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.entityComponent);
+
+    this.labelPosition = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']) ? 'end' : 'bottom';
+
+    this.subscriptions.push(this.breakpointObserver
+      .observe(MediaBreakpoints['gt-sm'])
+      .subscribe((state: BreakpointState) => {
+          if (state.matches) {
+            this.labelPosition = 'end';
+          } else {
+            this.labelPosition = 'bottom';
+          }
+        }
+      ));
+
+   /* const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.entityComponent);
     const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
     viewContainerRef.clear();
     const injector: Injector = Injector.create(
@@ -98,7 +142,35 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
     const componentRef = viewContainerRef.createComponent(componentFactory, 0, injector);
     this.entityComponent = componentRef.instance;
     this.entityComponent.isEdit = true;
+    this.detailsForm = this.entityComponent.entityForm;*/
+  }
+
+  ngAfterViewInit() {
+    const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
+    viewContainerRef.clear();
+
+    const injector: Injector = Injector.create(
+      {
+        providers: [
+          {
+            provide: 'entity',
+            useValue: this.entity
+          },
+          {
+            provide: 'entitiesTableConfig',
+            useValue: this.entitiesTableConfig
+          }
+        ],
+        parent: this.addDialogOwnerAndGroupWizard ? this.detailsFormStepContainerRef.injector : null
+      }
+    );
+    const componentRef = viewContainerRef.createComponent(
+      this.entitiesTableConfig.entityComponent,
+      {index: 0, injector});
+    this.entityComponent = componentRef.instance;
+    this.entityComponent.isEdit = true;
     this.detailsForm = this.entityComponent.entityForm;
+    this.cd.detectChanges();
   }
 
   helpLinkId(): string {
@@ -109,7 +181,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
     }
   }
 
-  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+  isErrorState(control: UntypedFormControl | null, form: FormGroupDirective | NgForm | null): boolean {
     const originalErrorState = this.errorStateMatcher.isErrorState(control, form);
     const customErrorState = !!(control && control.invalid && this.submitted);
     return originalErrorState || customErrorState;
@@ -135,7 +207,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   ngAfterContentChecked(): void {
-    if (isNotNullOrUndefined(this.entitiesTableConfig?.demoData)) {
+    if (isDefinedAndNotNull(this.entitiesTableConfig?.demoData)) {
       this.detailsForm.markAsDirty();
     }
     this.cd.detectChanges();
@@ -151,5 +223,82 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
         horizontalPosition: 'left'
       })
     );
+  }
+
+  previousStep(): void {
+    this.addGroupEntityWizardStepper.previous();
+  }
+
+  nextStep(): void {
+    this.addGroupEntityWizardStepper.next();
+  }
+
+  getFormLabel(index: number): string {
+    switch (index) {
+      case 0:
+        return this.translations.details;
+      case 1:
+        return 'entity-group.owner-and-groups';
+    }
+  }
+
+  get maxStepperIndex(): number {
+    return this.addGroupEntityWizardStepper?._steps?.length - 1;
+  }
+
+/*  add(): void {
+    if (this.allValid()) {
+      this.entity = {...this.entity, ...this.entityComponent.entityFormValue()};
+      this.entity.id = {
+        entityType: this.entityType,
+        id: null
+      };
+      const targetOwnerAndGroups: OwnerAndGroupsData = this.ownerAndGroupsFormGroup.get('ownerAndGroups').value;
+      const targetOwner = targetOwnerAndGroups.owner;
+      let targetOwnerId: EntityId;
+      if ((targetOwner as EntityInfoData).name) {
+        targetOwnerId = (targetOwner as EntityInfoData).id;
+      } else {
+        targetOwnerId = targetOwner as EntityId;
+      }
+      if (targetOwnerId.entityType === EntityType.CUSTOMER) {
+        if (this.entityType === EntityType.CUSTOMER) {
+          (this.entity as Customer).parentCustomerId = targetOwnerId as CustomerId;
+        } else {
+          this.entity.customerId = targetOwnerId as CustomerId;
+        }
+      }
+      const entityGroupIds = targetOwnerAndGroups.groups.map(group => group.id.id);
+      this.entityService.saveGroupEntity(this.entity, entityGroupIds).subscribe(
+        (entity) => {
+          this.dialogRef.close(entity);
+        }
+      );
+    }
+  }*/
+
+/*  allValid(): boolean {
+    if (!this.addDialogOwnerAndGroupWizard) {
+      this.detailsForm.markAllAsTouched();
+      return this.detailsForm.valid && this.ownerAndGroupsFormGroup.valid;
+    }
+    return !this.addGroupEntityWizardStepper.steps.find((item, index) => {
+      if (item.stepControl.invalid) {
+        item.interacted = true;
+        this.addGroupEntityWizardStepper.selectedIndex = index;
+        return true;
+      } else {
+        return false;
+      }
+    });
+  }*/
+
+  changeStep($event: StepperSelectionEvent): void {
+    this.selectedIndex = $event.selectedIndex;
+    if (this.selectedIndex === this.maxStepperIndex) {
+      this.showNext = false;
+    } else {
+      this.showNext = true;
+    }
   }
 }

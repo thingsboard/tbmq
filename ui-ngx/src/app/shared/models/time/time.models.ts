@@ -44,7 +44,8 @@ export enum RealtimeWindowType {
 export enum HistoryWindowType {
   LAST_INTERVAL,
   FIXED,
-  INTERVAL
+  INTERVAL,
+  FOR_ALL_TIME
 }
 
 export interface IntervalWindow {
@@ -732,7 +733,7 @@ export interface TimeInterval {
 }
 
 export const defaultTimeIntervals = new Array<TimeInterval>(
-  /*{
+  {
     name: 'timeinterval.seconds-interval',
     translateParams: {seconds: 1},
     value: SECOND
@@ -786,7 +787,7 @@ export const defaultTimeIntervals = new Array<TimeInterval>(
     name: 'timeinterval.minutes-interval',
     translateParams: {minutes: 30},
     value: 30 * MINUTE
-  },*/
+  },
   {
     name: 'timeinterval.hours-interval',
     translateParams: {hours: 1},

@@ -16,8 +16,6 @@
 
 import { NgModule } from '@angular/core';
 
-import { MODULES_MAP } from '@shared/public-api';
-import { modulesMap } from '../../common/modules-map';
 import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
 import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
@@ -39,12 +37,6 @@ import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
     HomeOverviewModule,
     RetainedMessagesModule,
     MonitoringModule
-  ],
-  providers: [
-    {
-      provide: MODULES_MAP,
-      useValue: modulesMap
-    }
   ]
 })
 export class HomePagesModule {

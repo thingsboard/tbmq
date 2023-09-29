@@ -15,7 +15,7 @@
 ///
 
 
-import {MonoTypeOperatorFunction, Observable, Operator, Subscriber} from 'rxjs';
+import { MonoTypeOperatorFunction, Observable, Operator, Subscriber } from 'rxjs';
 
 export type EnterZoneSignature<T> = (zone: { run: (fn: any) => any }) => Observable<T>;
 

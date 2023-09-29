@@ -66,7 +66,6 @@ import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
-import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { DndModule } from 'ngx-drag-drop';
@@ -87,10 +86,19 @@ import { BooleanPipe } from '@shared/pipe/boolean.pipe';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
+import { SelectableColumnsPipe, TruncatePipe } from './pipe/public-api';
+import { TbIconComponent } from './components/icon.component';
+import { SafePipe } from '@shared/pipe/safe.pipe';
+import { ShortNumberPipe } from '@shared/pipe/short-number.pipe';
+import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
 
 @NgModule({
   providers: [
     DatePipe,
+    SafePipe,
+    ShortNumberPipe,
+    TbJsonPipe,
+    TruncatePipe,
     MillisecondsToTimeStringPipe,
     {
       provide: MAT_DATE_LOCALE,
@@ -103,8 +111,13 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    MatChipDraggableDirective,
+    TbIconComponent,
+    SafePipe,
     TbAnchorComponent,
+    SelectableColumnsPipe,
+    ShortNumberPipe,
+    TbJsonPipe,
+    TruncatePipe,
     HelpComponent,
     TbCheckboxComponent,
     TbSnackBarComponent,
@@ -186,7 +199,12 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    MatChipDraggableDirective,
+    SelectableColumnsPipe,
+    TbIconComponent,
+    ShortNumberPipe,
+    SafePipe,
+    TbJsonPipe,
+    TruncatePipe,
     TbAnchorComponent,
     HelpComponent,
     TbCheckboxComponent,

@@ -20,7 +20,7 @@ import {AuthUser, User} from '@shared/models/user.model';
 import {PageComponent} from '@shared/components/page.component';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/core.state';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {HasConfirmForm} from '@core/guards/confirm-on-exit.guard';
 import {ActionAuthUpdateUserDetails} from '@core/auth/auth.actions';
 import {environment as env} from '@env/environment';
@@ -40,7 +40,7 @@ import {AuthService} from "@core/http/auth.service";
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 
-  profile: FormGroup;
+  profile: UntypedFormGroup;
   user: User;
   languageList = env.supportedLangs;
   private readonly authUser: AuthUser;
@@ -52,7 +52,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
               private translate: TranslateService,
               public dialog: MatDialog,
               public dialogService: DialogService,
-              public fb: FormBuilder) {
+              public fb: UntypedFormBuilder) {
     super(store);
     this.authUser = getCurrentAuthUser(this.store);
   }
@@ -116,7 +116,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
     this.profile.get('language').setValue(lang);
   }
 
-  confirmForm(): FormGroup {
+  confirmForm(): UntypedFormGroup {
     return this.profile;
   }
 }

@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
@@ -28,7 +28,7 @@ import {
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
-import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-mqtt-client-credentials',
@@ -57,7 +57,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: MqttClientCredentials,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttClientCredentials>,
-              public fb: FormBuilder,
+              public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
@@ -70,7 +70,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     }
   }
 
-  buildForm(entity: MqttClientCredentials): FormGroup {
+  buildForm(entity: MqttClientCredentials): UntypedFormGroup {
     const form = this.fb.group(
       {
         name: [entity ? entity.name : null, [Validators.required]],
@@ -86,7 +86,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     form.get('credentialsType').valueChanges.subscribe(() => {
       form.patchValue({credentialsValue: null});
     });
-    if (isNotNullOrUndefined(this.entitiesTableConfigValue.demoData)) {
+    if (isDefinedAndNotNull(this.entitiesTableConfigValue.demoData)) {
       for (const [key, value] of Object.entries(this.entitiesTableConfigValue.demoData)) {
         form.patchValue({
           [key]: value

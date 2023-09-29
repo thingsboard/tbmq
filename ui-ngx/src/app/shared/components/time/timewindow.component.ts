@@ -55,6 +55,7 @@ import { TimeService } from '@core/services/time.service';
 import { TooltipPosition } from '@angular/material/tooltip';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 // @dynamic
 @Component({
@@ -144,6 +145,10 @@ export class TimewindowComponent implements OnInit, OnDestroy, ControlValueAcces
   }
 
   asButtonValue = false;
+
+  @Input()
+  @coerceBoolean()
+  forAllTimeEnabled = false;
 
   @Input()
   set asButton(val) {
@@ -268,6 +273,7 @@ export class TimewindowComponent implements OnInit, OnDestroy, ControlValueAcces
       {
         timewindow: deepClone(this.innerValue),
         historyOnly: this.historyOnly,
+        forAllTimeEnabled: this.forAllTimeEnabled,
         quickIntervalOnly: this.quickIntervalOnly,
         aggregation: this.aggregation,
         timezone: this.timezone,

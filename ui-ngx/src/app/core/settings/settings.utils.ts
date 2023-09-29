@@ -51,10 +51,10 @@ function detectSupportedLang(targetLang: string): string {
         lang = langTag;
       }
       const foundLangs = env.supportedLangs.filter(
-        (supportedLang: string) => {
-          const supportedLangParts = supportedLang.split('_');
-          return supportedLangParts[0] === lang;
-        }
+          (supportedLang: string) => {
+            const supportedLangParts = supportedLang.split('_');
+            return supportedLangParts[0] === lang;
+          }
       );
       if (foundLangs.length) {
         return foundLangs[0];

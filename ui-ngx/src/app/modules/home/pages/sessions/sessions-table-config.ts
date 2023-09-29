@@ -252,6 +252,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   }
 
   private updateTable() {
-    this.table.updateData();
+    this.getTable().updateData();
   }
 }

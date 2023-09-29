@@ -25,7 +25,7 @@ import {BehaviorSubject} from 'rxjs';
 import {getCurrentAuthUser} from '@core/auth/auth.selectors';
 import {AuthUser} from '@shared/models/user.model';
 import {EntityType} from '@shared/models/entity-type.models';
-import {FormGroup} from '@angular/forms';
+import {UntypedFormGroup} from '@angular/forms';
 import {PageLink} from '@shared/models/page/page-link';
 import {NULL_UUID} from '@shared/models/constants';
 
@@ -79,7 +79,7 @@ export abstract class EntityTabsComponent<T extends BaseData,
   }
 
   @Input()
-  detailsForm: FormGroup;
+  detailsForm: UntypedFormGroup;
 
   private entityTabsSubject = new BehaviorSubject<Array<MatTab>>(null);
 

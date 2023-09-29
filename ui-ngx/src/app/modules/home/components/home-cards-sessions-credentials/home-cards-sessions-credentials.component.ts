@@ -39,7 +39,7 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
   sessionConfig = SessionsHomeCardConfig;
   credentialsConfig = CredentialsHomeCardConfig;
 
-  private stopPolling$ = new Subject();
+  private stopPolling$ = new Subject<void>();
 
   constructor(private mqttClientCredentialsService: MqttClientCredentialsService,
               private mqttClientSessionService: MqttClientSessionService) {

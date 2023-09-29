@@ -51,9 +51,9 @@ function loadAceDependencies(): Observable<any> {
     aceObservables.push(from(import('ace-builds/src-noconflict/theme-textmate')));
     aceObservables.push(from(import('ace-builds/src-noconflict/theme-github')));
     return forkJoin(aceObservables).pipe(
-      tap(() => {
-        aceDependenciesLoaded = true;
-      })
+        tap(() => {
+          aceDependenciesLoaded = true;
+        })
     );
   }
 }
@@ -63,14 +63,29 @@ export function getAce(): Observable<any> {
     return of(aceModule);
   } else {
     return from(import('ace')).pipe(
-      mergeMap((module) => {
-        return loadAceDependencies().pipe(
-         map(() => module)
-        );
-      }),
-      tap((module) => {
-        aceModule = module;
-      })
+        mergeMap((module) => {
+          return loadAceDependencies().pipe(
+              map(() => module)
+          );
+        }),
+        tap((module) => {
+          aceModule = module;
+        })
+    );
+  }
+}
+
+export function getAceDiff(): Observable<any> {
+  if (aceDiffModule) {
+    return of(aceDiffModule);
+  } else {
+    return getAce().pipe(
+        mergeMap((ace) => {
+          return from(import('ace-diff'));
+        }),
+        tap((module) => {
+          aceDiffModule = module;
+        })
     );
   }
 }
@@ -280,9 +295,9 @@ export class Range implements Ace.Range {
 
   isEqual(range: Ace.Range): boolean {
     return this.start.row === range.start.row &&
-      this.end.row === range.end.row &&
-      this.start.column === range.start.column &&
-      this.end.column === range.end.column;
+        this.end.row === range.end.row &&
+        this.start.column === range.start.column &&
+        this.end.column === range.end.column;
   }
 
   isMultiLine(): boolean {
@@ -325,8 +340,8 @@ export class Range implements Ace.Range {
     const screenPosEnd = session.documentToScreenPosition(this.end);
 
     return new Range(
-      screenPosStart.row, screenPosStart.column,
-      screenPosEnd.row, screenPosEnd.column
+        screenPosStart.row, screenPosStart.column,
+        screenPosEnd.row, screenPosEnd.column
     );
   }
 

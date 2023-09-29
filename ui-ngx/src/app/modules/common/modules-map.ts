@@ -72,64 +72,160 @@ import * as _moment from 'moment';
 import * as DragDropModule from "@angular/cdk/drag-drop";
 import * as HttpClientModule from "@angular/common/http";
 
-declare const SystemJS;
+import { IModulesMap } from '@modules/common/modules-map.models';
 
-export const modulesMap: {[key: string]: any} = {
-  '@angular/animations': SystemJS.newModule(AngularAnimations),
-  '@angular/core': SystemJS.newModule(AngularCore),
-  '@angular/common': SystemJS.newModule(AngularCommon),
-  '@angular/common/http': SystemJS.newModule(HttpClientModule),
-  '@angular/forms': SystemJS.newModule(AngularForms),
-  '@angular/flex-layout': SystemJS.newModule(AngularFlexLayout),
-  '@angular/platform-browser': SystemJS.newModule(AngularPlatformBrowser),
-  '@angular/router': SystemJS.newModule(AngularRouter),
-  '@angular/cdk/coercion': SystemJS.newModule(AngularCdkCoercion),
-  '@angular/cdk/collections': SystemJS.newModule(AngularCdkCollections),
-  '@angular/cdk/keycodes': SystemJS.newModule(AngularCdkKeycodes),
-  '@angular/cdk/layout': SystemJS.newModule(AngularCdkLayout),
-  '@angular/cdk/overlay': SystemJS.newModule(AngularCdkOverlay),
-  '@angular/cdk/portal': SystemJS.newModule(AngularCdkPortal),
-  '@angular/cdk/drag-drop': SystemJS.newModule(DragDropModule),
-  '@angular/material/autocomplete': SystemJS.newModule(AngularMaterialAutocomplete),
-  '@angular/material/badge': SystemJS.newModule(AngularMaterialBadge),
-  '@angular/material/bottom-sheet': SystemJS.newModule(AngularMaterialBottomSheet),
-  '@angular/material/button': SystemJS.newModule(AngularMaterialButton),
-  '@angular/material/button-toggle': SystemJS.newModule(AngularMaterialButtonToggle),
-  '@angular/material/card': SystemJS.newModule(AngularMaterialCard),
-  '@angular/material/checkbox': SystemJS.newModule(AngularMaterialCheckbox),
-  '@angular/material/chips': SystemJS.newModule(AngularMaterialChips),
-  '@angular/material/core': SystemJS.newModule(AngularMaterialCore),
-  '@angular/material/dialog': SystemJS.newModule(AngularMaterialDialog),
-  '@angular/material/divider': SystemJS.newModule(AngularMaterialDivider),
-  '@angular/material/expansion': SystemJS.newModule(AngularMaterialExpansion),
-  '@angular/material/form-field': SystemJS.newModule(AngularMaterialFormField),
-  '@angular/material/grid-list': SystemJS.newModule(AngularMaterialGridList),
-  '@angular/material/icon': SystemJS.newModule(AngularMaterialIcon),
-  '@angular/material/input': SystemJS.newModule(AngularMaterialInput),
-  '@angular/material/list': SystemJS.newModule(AngularMaterialList),
-  '@angular/material/menu': SystemJS.newModule(AngularMaterialMenu),
-  '@angular/material/paginator': SystemJS.newModule(AngularMaterialPaginator),
-  '@angular/material/progress-bar': SystemJS.newModule(AngularMaterialProgressBar),
-  '@angular/material/progress-spinner': SystemJS.newModule(AngularMaterialProgressSpinner),
-  '@angular/material/radio': SystemJS.newModule(AngularMaterialRadio),
-  '@angular/material/select': SystemJS.newModule(AngularMaterialSelect),
-  '@angular/material/sidenav': SystemJS.newModule(AngularMaterialSidenav),
-  '@angular/material/slide-toggle': SystemJS.newModule(AngularMaterialSlideToggle),
-  '@angular/material/slider': SystemJS.newModule(AngularMaterialSlider),
-  '@angular/material/snack-bar': SystemJS.newModule(AngularMaterialSnackBar),
-  '@angular/material/sort': SystemJS.newModule(AngularMaterialSort),
-  '@angular/material/stepper': SystemJS.newModule(AngularMaterialStepper),
-  '@angular/material/table': SystemJS.newModule(AngularMaterialTable),
-  '@angular/material/tabs': SystemJS.newModule(AngularMaterialTabs),
-  '@angular/material/toolbar': SystemJS.newModule(AngularMaterialToolbar),
-  '@angular/material/tooltip': SystemJS.newModule(AngularMaterialTooltip),
-  '@angular/material/tree': SystemJS.newModule(AngularMaterialTree),
-  '@ngrx/store': SystemJS.newModule(NgrxStore),
-  rxjs: SystemJS.newModule(RxJs),
-  'rxjs/operators': SystemJS.newModule(RxJsOperators),
-  '@ngx-translate/core': SystemJS.newModule(TranslateCore),
-  '@core/public-api': SystemJS.newModule(TbCore),
-  '@shared/public-api': SystemJS.newModule(TbShared),
-  '@home/components/public-api': SystemJS.newModule(TbHomeComponents),
-  moment: SystemJS.newModule(_moment)
-};
+declare const System;
+
+class ModulesMap implements IModulesMap {
+
+  private initialized = false;
+
+  private modulesMap: {[key: string]: any} = {
+    '@angular/animations': System.newModule(AngularAnimations),
+    '@angular/core': System.newModule(AngularCore),
+    '@angular/common': System.newModule(AngularCommon),
+    '@angular/common/http': System.newModule(HttpClientModule),
+    '@angular/forms': System.newModule(AngularForms),
+    '@angular/flex-layout': System.newModule(AngularFlexLayout),
+    '@angular/platform-browser': System.newModule(AngularPlatformBrowser),
+    '@angular/router': System.newModule(AngularRouter),
+    '@angular/cdk/coercion': System.newModule(AngularCdkCoercion),
+    '@angular/cdk/collections': System.newModule(AngularCdkCollections),
+    '@angular/cdk/keycodes': System.newModule(AngularCdkKeycodes),
+    '@angular/cdk/layout': System.newModule(AngularCdkLayout),
+    '@angular/cdk/overlay': System.newModule(AngularCdkOverlay),
+    '@angular/cdk/portal': System.newModule(AngularCdkPortal),
+    '@angular/cdk/drag-drop': System.newModule(DragDropModule),
+    '@angular/material/autocomplete': System.newModule(AngularMaterialAutocomplete),
+    '@angular/material/badge': System.newModule(AngularMaterialBadge),
+    '@angular/material/bottom-sheet': System.newModule(AngularMaterialBottomSheet),
+    '@angular/material/button': System.newModule(AngularMaterialButton),
+    '@angular/material/button-toggle': System.newModule(AngularMaterialButtonToggle),
+    '@angular/material/card': System.newModule(AngularMaterialCard),
+    '@angular/material/checkbox': System.newModule(AngularMaterialCheckbox),
+    '@angular/material/chips': System.newModule(AngularMaterialChips),
+    '@angular/material/core': System.newModule(AngularMaterialCore),
+    '@angular/material/dialog': System.newModule(AngularMaterialDialog),
+    '@angular/material/divider': System.newModule(AngularMaterialDivider),
+    '@angular/material/expansion': System.newModule(AngularMaterialExpansion),
+    '@angular/material/form-field': System.newModule(AngularMaterialFormField),
+    '@angular/material/grid-list': System.newModule(AngularMaterialGridList),
+    '@angular/material/icon': System.newModule(AngularMaterialIcon),
+    '@angular/material/input': System.newModule(AngularMaterialInput),
+    '@angular/material/list': System.newModule(AngularMaterialList),
+    '@angular/material/menu': System.newModule(AngularMaterialMenu),
+    '@angular/material/paginator': System.newModule(AngularMaterialPaginator),
+    '@angular/material/progress-bar': System.newModule(AngularMaterialProgressBar),
+    '@angular/material/progress-spinner': System.newModule(AngularMaterialProgressSpinner),
+    '@angular/material/radio': System.newModule(AngularMaterialRadio),
+    '@angular/material/select': System.newModule(AngularMaterialSelect),
+    '@angular/material/sidenav': System.newModule(AngularMaterialSidenav),
+    '@angular/material/slide-toggle': System.newModule(AngularMaterialSlideToggle),
+    '@angular/material/slider': System.newModule(AngularMaterialSlider),
+    '@angular/material/snack-bar': System.newModule(AngularMaterialSnackBar),
+    '@angular/material/sort': System.newModule(AngularMaterialSort),
+    '@angular/material/stepper': System.newModule(AngularMaterialStepper),
+    '@angular/material/table': System.newModule(AngularMaterialTable),
+    '@angular/material/tabs': System.newModule(AngularMaterialTabs),
+    '@angular/material/toolbar': System.newModule(AngularMaterialToolbar),
+    '@angular/material/tooltip': System.newModule(AngularMaterialTooltip),
+    '@angular/material/tree': System.newModule(AngularMaterialTree),
+    '@ngrx/store': System.newModule(NgrxStore),
+    rxjs: System.newModule(RxJs),
+    'rxjs/operators': System.newModule(RxJsOperators),
+    '@ngx-translate/core': System.newModule(TranslateCore),
+    '@core/public-api': System.newModule(TbCore),
+    '@shared/public-api': System.newModule(TbShared),
+    '@home/components/public-api': System.newModule(TbHomeComponents),
+    moment: System.newModule(_moment)
+  };
+
+  init() {
+    if (!this.initialized) {
+      System.constructor.prototype.resolve = (id) => {
+        try {
+          if (this.modulesMap[id]) {
+            return 'app:' + id;
+          } else {
+            return id;
+          }
+        } catch (err) {
+          return id;
+        }
+      };
+      for (const moduleId of Object.keys(this.modulesMap)) {
+        System.set('app:' + moduleId, this.modulesMap[moduleId]);
+      }
+      System.constructor.prototype.shouldFetch = (url: string) => url.endsWith('/download');
+      System.constructor.prototype.fetch = (url, options: RequestInit & {meta?: any}) => {
+        if (options?.meta?.additionalHeaders) {
+          options.headers = { ...options.headers, ...options.meta.additionalHeaders };
+        }
+        return fetch(url, options);
+      };
+      this.initialized = true;
+    }
+  }
+}
+
+export const modulesMap = new ModulesMap();
+
+// export const modulesMap: {[key: string]: any} = {
+  // '@angular/animations': System.newModule(AngularAnimations),
+  // '@angular/core': System.newModule(AngularCore),
+  // '@angular/common': System.newModule(AngularCommon),
+  // '@angular/common/http': System.newModule(HttpClientModule),
+  // '@angular/forms': System.newModule(AngularForms),
+  // '@angular/flex-layout': System.newModule(AngularFlexLayout),
+  // '@angular/platform-browser': System.newModule(AngularPlatformBrowser),
+  // '@angular/router': System.newModule(AngularRouter),
+  // '@angular/cdk/coercion': System.newModule(AngularCdkCoercion),
+  // '@angular/cdk/collections': System.newModule(AngularCdkCollections),
+  // '@angular/cdk/keycodes': System.newModule(AngularCdkKeycodes),
+  // '@angular/cdk/layout': System.newModule(AngularCdkLayout),
+  // '@angular/cdk/overlay': System.newModule(AngularCdkOverlay),
+  // '@angular/cdk/portal': System.newModule(AngularCdkPortal),
+  // '@angular/cdk/drag-drop': System.newModule(DragDropModule),
+  // '@angular/material/autocomplete': System.newModule(AngularMaterialAutocomplete),
+  // '@angular/material/badge': System.newModule(AngularMaterialBadge),
+  // '@angular/material/bottom-sheet': System.newModule(AngularMaterialBottomSheet),
+  // '@angular/material/button': System.newModule(AngularMaterialButton),
+  // '@angular/material/button-toggle': System.newModule(AngularMaterialButtonToggle),
+  // '@angular/material/card': System.newModule(AngularMaterialCard),
+  // '@angular/material/checkbox': System.newModule(AngularMaterialCheckbox),
+  // '@angular/material/chips': System.newModule(AngularMaterialChips),
+  // '@angular/material/core': System.newModule(AngularMaterialCore),
+  // '@angular/material/dialog': System.newModule(AngularMaterialDialog),
+  // '@angular/material/divider': System.newModule(AngularMaterialDivider),
+  // '@angular/material/expansion': System.newModule(AngularMaterialExpansion),
+  // '@angular/material/form-field': System.newModule(AngularMaterialFormField),
+  // '@angular/material/grid-list': System.newModule(AngularMaterialGridList),
+  // '@angular/material/icon': System.newModule(AngularMaterialIcon),
+  // '@angular/material/input': System.newModule(AngularMaterialInput),
+  // '@angular/material/list': System.newModule(AngularMaterialList),
+  // '@angular/material/menu': System.newModule(AngularMaterialMenu),
+  // '@angular/material/paginator': System.newModule(AngularMaterialPaginator),
+  // '@angular/material/progress-bar': System.newModule(AngularMaterialProgressBar),
+  // '@angular/material/progress-spinner': System.newModule(AngularMaterialProgressSpinner),
+  // '@angular/material/radio': System.newModule(AngularMaterialRadio),
+  // '@angular/material/select': System.newModule(AngularMaterialSelect),
+  // '@angular/material/sidenav': System.newModule(AngularMaterialSidenav),
+  // '@angular/material/slide-toggle': System.newModule(AngularMaterialSlideToggle),
+  // '@angular/material/slider': System.newModule(AngularMaterialSlider),
+  // '@angular/material/snack-bar': System.newModule(AngularMaterialSnackBar),
+  // '@angular/material/sort': System.newModule(AngularMaterialSort),
+  // '@angular/material/stepper': System.newModule(AngularMaterialStepper),
+  // '@angular/material/table': System.newModule(AngularMaterialTable),
+  // '@angular/material/tabs': System.newModule(AngularMaterialTabs),
+  // '@angular/material/toolbar': System.newModule(AngularMaterialToolbar),
+  // '@angular/material/tooltip': System.newModule(AngularMaterialTooltip),
+  // '@angular/material/tree': System.newModule(AngularMaterialTree),
+  // '@ngrx/store': System.newModule(NgrxStore),
+  // rxjs: System.newModule(RxJs),
+  // 'rxjs/operators': System.newModule(RxJsOperators),
+  // '@ngx-translate/core': System.newModule(TranslateCore),
+  // '@core/public-api': System.newModule(TbCore),
+  // '@shared/public-api': System.newModule(TbShared),
+  // '@home/components/public-api': System.newModule(TbHomeComponents),
+  // moment: System.newModule(_moment)
+// };

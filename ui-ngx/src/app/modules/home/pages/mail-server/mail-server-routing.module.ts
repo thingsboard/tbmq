@@ -34,6 +34,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
+        children: [],
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {

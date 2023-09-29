@@ -39,8 +39,8 @@ import {
 } from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
-import { isNotNullOrUndefined } from 'codelyzer/util/isNotNullOrUndefined';
 import { QoSTranslationMap } from '@shared/models/session.model';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Injectable()
 export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableConfig<RetainedMessage>> {
@@ -119,7 +119,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       {
         name: this.translate.instant('retained-message.show-user-properties'),
         mdiIcon: 'mdi:code-brackets',
-        isEnabled: (entity) => isNotNullOrUndefined(entity.userProperties),
+        isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
         onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
       },
       {
@@ -152,7 +152,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
           );
           forkJoin(tasks).subscribe(
             () => {
-              this.config.table.updateData();
+              this.config.getTable().updateData();
             }
           );
         }
@@ -174,7 +174,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       if (result) {
         this.retainedMsgService.deleteRetainedMessage(entity.topic).subscribe(
           () => {
-            this.config.table.updateData();
+            this.config.getTable().updateData();
           }
         );
       }
@@ -195,7 +195,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       if (result) {
         this.retainedMsgService.clearEmptyRetainedMsgNodes().subscribe(
           () => {
-            this.config.table.updateData();
+            this.config.getTable().updateData();
           }
         );
       }

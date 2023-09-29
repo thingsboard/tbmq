@@ -62,7 +62,7 @@ export class MenuService {
     const sections: Array<MenuSection> = [];
     sections.push(
       {
-        id: guid(),
+        id: 'home',
         name: 'home.home',
         type: 'link',
         path: '/home',
@@ -70,7 +70,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'monitoring',
         name: 'monitoring.monitoring',
         type: 'link',
         path: '/monitoring',
@@ -78,7 +78,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'users',
         name: 'user.users',
         type: 'link',
         path: '/users',
@@ -86,7 +86,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'client_credentials',
         name: 'mqtt-client-credentials.credentials',
         type: 'link',
         path: '/client-credentials',
@@ -94,7 +94,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'sessions',
         name: 'mqtt-client-session.sessions',
         type: 'link',
         path: '/sessions',
@@ -102,7 +102,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'shared_subscriptions',
         name: 'shared-subscription.shared-subscriptions',
         type: 'link',
         path: '/shared-subscriptions',
@@ -110,7 +110,7 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'retained_messages',
         name: 'retained-message.retained-messages',
         type: 'link',
         path: '/retained-messages',
@@ -118,15 +118,14 @@ export class MenuService {
         isMdiIcon: true
       },
       {
-        id: guid(),
+        id: 'system_settings',
         name: 'admin.system-settings',
         type: 'toggle',
         path: '/settings',
-        height: '40px',
         icon: 'settings',
         pages: [
           {
-            id: guid(),
+            id: 'outgoing_mail',
             name: 'admin.outgoing-mail',
             type: 'link',
             path: '/settings/outgoing-mail',

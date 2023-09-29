@@ -14,10 +14,10 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core';
-import { fromEvent, Observable } from 'rxjs';
+import { AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { fromEvent, Observable, Subject } from 'rxjs';
 import { select, Store } from '@ngrx/store';
-import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, skip, startWith, takeUntil, tap } from 'rxjs/operators';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { User } from '@shared/models/user.model';
@@ -25,22 +25,23 @@ import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
 import { MediaBreakpoints } from '@shared/models/constants';
-import * as _screenfull from 'screenfull';
+import screenfull from 'screenfull';
 import { MatSidenav } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
 import { instanceOfSearchableComponent, ISearchableComponent } from '@home/models/searchable-component.models';
+import { UntypedFormBuilder } from '@angular/forms';
 
-const screenfull = _screenfull as _screenfull.Screenfull;
+// @ts-ignore
+// const screenfull = _screenfull as _screenfull.Screenfull;
 
 @Component({
   selector: 'tb-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent extends PageComponent implements AfterViewInit, OnInit {
+export class HomeComponent extends PageComponent implements OnInit {
 
   activeComponent: any;
-  searchableComponent: ISearchableComponent;
 
   sidenavMode: 'over' | 'push' | 'side' = 'side';
   sidenavOpened = true;
@@ -54,26 +55,19 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
 
   fullscreenEnabled = screenfull.isEnabled;
 
-  authUser$: Observable<any>;
-  userDetails$: Observable<User>;
-  userDetailsString: Observable<string>;
-
-  searchEnabled = false;
-  showSearch = false;
-  searchText = '';
-
   constructor(protected store: Store<AppState>,
+              private fb: UntypedFormBuilder,
               @Inject(WINDOW) private window: Window,
               public breakpointObserver: BreakpointObserver) {
     super(store);
   }
 
   ngOnInit() {
-    this.authUser$ = this.store.pipe(select(selectAuthUser));
+    /*this.authUser$ = this.store.pipe(select(selectAuthUser));
     this.userDetails$ = this.store.pipe(select(selectUserDetails));
     this.userDetailsString = this.userDetails$.pipe(map((user: User) => {
       return JSON.stringify(user);
-    }));
+    }));*/
 
     const isGtSm = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']);
     this.sidenavMode = isGtSm ? 'side' : 'over';
@@ -92,18 +86,6 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
         }
       );
     this.toggleFullscreenOnF11();
-  }
-
-  ngAfterViewInit() {
-    fromEvent(this.searchInputField.nativeElement, 'keyup')
-      .pipe(
-        debounceTime(150),
-        distinctUntilChanged(),
-        tap(() => {
-          this.searchTextUpdated();
-        })
-      )
-      .subscribe();
   }
 
   sidenavClicked() {
@@ -127,46 +109,7 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
   }
 
   activeComponentChanged(activeComponent: any) {
-    this.showSearch = false;
-    this.searchText = '';
     this.activeComponent = activeComponent;
-    if (this.activeComponent && instanceOfSearchableComponent(this.activeComponent)) {
-      this.searchEnabled = true;
-      this.searchableComponent = this.activeComponent;
-    } else {
-      this.searchEnabled = false;
-      this.searchableComponent = null;
-    }
-  }
-
-  displaySearchMode(): boolean {
-    return this.searchEnabled && this.showSearch;
-  }
-
-  openSearch() {
-    if (this.searchEnabled) {
-      this.showSearch = true;
-      setTimeout(() => {
-        this.searchInputField.nativeElement.focus();
-        this.searchInputField.nativeElement.setSelectionRange(0, 0);
-      }, 10);
-    }
-  }
-
-  closeSearch() {
-    if (this.searchEnabled) {
-      this.showSearch = false;
-      if (this.searchText.length) {
-        this.searchText = '';
-        this.searchTextUpdated();
-      }
-    }
-  }
-
-  private searchTextUpdated() {
-    if (this.searchableComponent) {
-      this.searchableComponent.onSearchTextUpdated(this.searchText);
-    }
   }
 
   private toggleFullscreenOnF11() {

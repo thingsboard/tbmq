@@ -16,10 +16,10 @@
 
 -->
 <div class="tb-login-content mat-app-background tb-dark" fxFlex fxLayoutAlign="center center">
-  <mat-card style="max-height: 80vh; overflow-y: auto;">
+  <mat-card appearance="raised" style="max-height: 80vh; overflow-y: auto;">
     <mat-card-content>
       <form class="tb-login-form" [formGroup]="loginFormGroup" (ngSubmit)="login()">
-        <fieldset [disabled]="isLoading$ | async" fxLayout="column">
+        <fieldset fxLayout="column">
           <div fxLayout="column" fxLayoutAlign="start center" style="padding: 15px 0;">
             <tb-logo class="login-logo"></tb-logo>
           </div>
@@ -27,8 +27,9 @@
           </mat-progress-bar>
           <span style="height: 4px;" *ngIf="!(isLoading$ | async)"></span>
           <div tb-toast fxLayout="column" class="layout-padding">
-            <span style="height: 50px;"></span>
-            <mat-form-field>
+            <mat-divider style="width: 100%;"></mat-divider>
+<!--            <span style="height: 50px;"></span>-->
+            <mat-form-field class="tb-appearance-transparent">
               <mat-label translate>login.username</mat-label>
               <input id="username-input" matInput type="email" autofocus formControlName="username" email required/>
               <mat-icon matPrefix>email</mat-icon>
@@ -36,7 +37,7 @@
                 {{ 'user.invalid-email-format' | translate }}
               </mat-error>
             </mat-form-field>
-            <mat-form-field>
+            <mat-form-field class="tb-appearance-transparent">
               <mat-label translate>common.password</mat-label>
               <input id="password-input" matInput type="password" formControlName="password"/>
               <tb-toggle-password matSuffix></tb-toggle-password>
@@ -55,4 +56,5 @@
       </form>
     </mat-card-content>
   </mat-card>
+  <tb-footer></tb-footer>
 </div>

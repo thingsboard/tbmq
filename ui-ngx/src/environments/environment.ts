@@ -22,7 +22,7 @@ export const environment = {
   appTitle: 'TBMQ',
   production: false,
 // @ts-ignore
-  tbMqttBrokerVersion: TB_MQTT_BROKER_VERSION,
+  tbmqVersion: TBMQ_VERSION,
 // @ts-ignore
   supportedLangs: SUPPORTED_LANGS,
   defaultLang: 'en_US'

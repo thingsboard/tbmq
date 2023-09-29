@@ -19,8 +19,8 @@ import {
   AbstractControl,
   ControlValueAccessor,
   FormArray,
-  FormBuilder,
-  FormGroup,
+  UntypedFormBuilder,
+  UntypedFormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ValidationErrors,
@@ -53,7 +53,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   @Input() disabled: boolean;
 
-  topicListFormGroup: FormGroup;
+  topicListFormGroup: UntypedFormGroup;
   mqttQoSTypes = mqttQoSTypes;
   showShareName = false;
   shareNameCounter = 0;
@@ -63,7 +63,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
-              private fb: FormBuilder) {
+              private fb: UntypedFormBuilder) {
     super(store);
   }
 

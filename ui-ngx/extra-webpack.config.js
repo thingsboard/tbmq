@@ -36,7 +36,7 @@ module.exports = (config, options) => {
 
     config.plugins.push(
         new webpack.DefinePlugin({
-            TB_VERSION: JSON.stringify(require("./package.json").version),
+            TBMQ_VERSION: JSON.stringify(require("./package.json").version),
             SUPPORTED_LANGS: JSON.stringify(langs),
         })
     );

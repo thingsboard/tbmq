@@ -20,7 +20,7 @@ import {
   FormBuilder,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
   Validator, Validators
 } from '@angular/forms';
@@ -53,9 +53,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
   @Input()
   entity: MqttClientCredentials;
 
-  credentialsMqttFormGroup: FormGroup;
+  credentialsMqttFormGroup: UntypedFormGroup;
 
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder) {

@@ -21,7 +21,7 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
@@ -48,7 +48,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   implements OnInit, OnDestroy, AfterContentChecked {
 
   entity: DetailedClientSessionInfo;
-  entityForm: FormGroup;
+  entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
 
@@ -60,7 +60,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: SessionsDetailsDialogData,
               public dialogRef: MatDialogRef<SessionsDetailsDialogComponent>,
-              private fb: FormBuilder,
+              private fb: UntypedFormBuilder,
               private mqttClientSessionService: MqttClientSessionService,
               private cd: ChangeDetectorRef,
               private translate: TranslateService) {

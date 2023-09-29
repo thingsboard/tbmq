@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
@@ -32,12 +32,12 @@ export class RetainedMessagesComponent extends EntityComponent<RetainedMessage> 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: RetainedMessage,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<RetainedMessage>,
-              public fb: FormBuilder,
+              public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
-  buildForm(entity: RetainedMessage): FormGroup {
+  buildForm(entity: RetainedMessage): UntypedFormGroup {
     const form = this.fb.group(
       {
         topic: [entity ? entity.topic : ''],

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Tooltip } from 'chart.js';
+// import { Tooltip } from 'chart.js';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -78,12 +78,12 @@ export function getColor(type: string, index: number): string {
 
 export function homeChartJsParams() {
   // @ts-ignore
-  Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
-    return {
-      x: eventPosition.x,
-      y: eventPosition.y
-    };
-  };
+  // Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
+  //   return {
+  //     x: eventPosition.x,
+  //     y: eventPosition.y
+  //   };
+  // };
   return {
     type: 'line',
     options: {
@@ -127,7 +127,7 @@ export function homeChartJsParams() {
             source: 'auto',
             autoSkip: true,
             font: {
-              size: 8
+              size: 9
             },
             callback(label, index) {
               if (Math.floor(label) === label) {
@@ -137,24 +137,21 @@ export function homeChartJsParams() {
           }
         },
         x: {
-          type: 'time',
+          type: 'timeseries',
           display: true,
           time: {
-            round: 'minute',
             tooltipFormat: 'dd HH:mm',
             displayFormats: {
-              minute: 'HH:mm'
+              minute: 'hh:mm'
             }
           },
           ticks: {
-            autoSkip: true,
             maxRotation: 0,
+            crossAlign: 'near',
             font: {
-              size: 8
+              size: 9
             },
-            callback(val, index) {
-              return (index === 0 || index === 10) ? val : ''; // show first, last ticks
-            },
+            autoSkip: true
           },
           grid: {
             display: true,
@@ -182,12 +179,12 @@ export function homeChartJsParams() {
 
 export function monitoringChartJsParams() {
   // @ts-ignore
-  Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
-    return {
-      x: eventPosition.x,
-      y: eventPosition.y
-    };
-  };
+  // Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
+  //   return {
+  //     x: eventPosition.x,
+  //     y: eventPosition.y
+  //   };
+  // };
   return {
     type: 'line',
     options: {
@@ -218,7 +215,7 @@ export function monitoringChartJsParams() {
           }
         },
         x: {
-          type: 'time',
+          type: 'timeseries',
           time: {
             round: 'second',
             displayFormats: {
@@ -226,16 +223,15 @@ export function monitoringChartJsParams() {
             }
           },
           ticks: {
+            crossAlign: 'near',
+            autoSkipPadding: 6,
             maxRotation: 0,
             labelOffset: 0,
             source: 'auto',
             autoSkip: true,
             font: {
               size: 9
-            },
-            callback(val, index) {
-              return index % 1 === 0 ? val : '';
-            },
+            }
           },
           grid: {
             display: true,
@@ -309,11 +305,11 @@ export function monitoringChartJsParams() {
             e.native.target.style.cursor = 'default';
           }
         },
-        tooltip: {
-          enabled: false,
-          external: tbTooltipHandler,
-          position: 'tbPositioner'
-        }
+        // tooltip: {
+        //   enabled: false,
+        //   external: tbTooltipHandler,
+        //   position: 'tbPositioner'
+        // }
       },
       parsing: {
         xAxisKey: 'ts',

@@ -50,8 +50,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   chartWidth: string;
   chartHeight: string;
 
-  private stopPolling$ = new Subject();
-  private destroy$ = new Subject();
+  private stopPolling$ = new Subject<void>();
+  private destroy$ = new Subject<void>();
   private fixedWindowTimeMs: FixedWindow;
 
   chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
@@ -110,7 +110,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         pointHoverBorderColor: color
       };
       const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
-      this.charts[chartType] = new Chart(ctx, params);
+      this.charts[chartType] = new Chart(ctx, params as any);
       this.updateXScale(chartType);
     }
   }

@@ -15,16 +15,20 @@
     limitations under the License.
 
 -->
-<a mat-button class="tb-button-toggle"
-        routerLinkActive="tb-active" [routerLinkActiveOptions]="{exact: true}" routerLink="{{section.path}}">
-  <mat-icon *ngIf="!section.isMdiIcon && section.icon != null" class="material-icons">{{section.icon}}</mat-icon>
-  <mat-icon *ngIf="section.isMdiIcon && section.icon != null" [svgIcon]="section.icon"></mat-icon>
-  <span>{{section.name | translate}}</span>
-  <span class=" pull-right fa fa-chevron-down tb-toggle-icon"
-        [ngClass]="{'tb-toggled' : sectionActive()}"></span>
+<a mat-button class="tb-button-toggle" (click)="toggleSection($event)">
+  <ng-container
+    *ngTemplateOutlet="toggleWithIcon;context:{section: section}">
+  </ng-container>
 </a>
 <ul id="docs-menu-{{section.name | nospace}}" class="tb-menu-toggle-list" [ngStyle]="{height: sectionHeight()}">
-  <li *ngFor="let page of section.pages; trackBy: trackBySectionPages">
+  <li *ngFor="let page of sectionPages; trackBy: trackBySectionPages">
     <tb-menu-link [section]="page"></tb-menu-link>
   </li>
 </ul>
+<ng-template #toggleWithIcon let-section="section">
+  <img *ngIf="section.iconUrl" [src]="section.iconUrl"/>
+  <tb-icon matButtonIcon *ngIf="!section.iconUrl && section.icon !== null">{{section.icon}}</tb-icon>
+  <span>{{(section.name | translate)}}</span>
+  <span class=" pull-right fa fa-chevron-down tb-toggle-icon"
+        [ngClass]="{'tb-toggled' : sectionActive()}"></span>
+</ng-template>

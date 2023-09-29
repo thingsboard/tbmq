@@ -20,7 +20,7 @@ import {
   FormBuilder,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
   Validator,
   ValidatorFn,
@@ -65,11 +65,11 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
-  credentialsMqttFormGroup: FormGroup;
+  credentialsMqttFormGroup: UntypedFormGroup;
   pubRulesSet: Set<string> = new Set();
   subRulesSet: Set<string> = new Set();
 
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder,
@@ -240,7 +240,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   }
 
   private atLeastOne(validator: ValidatorFn, controls: string[] = null) {
-    return (group: FormGroup): ValidationErrors | null => {
+    return (group: UntypedFormGroup): ValidationErrors | null => {
       if (!controls) {
         controls = Object.keys(group.controls);
       }

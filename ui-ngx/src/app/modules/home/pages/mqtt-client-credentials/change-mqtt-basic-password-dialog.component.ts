@@ -18,7 +18,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -37,7 +37,7 @@ export interface ChangeMqttBasicPasswordDialogData {
 export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<ChangeMqttBasicPasswordDialogComponent,
   ChangeMqttBasicPasswordDialogData> implements OnInit {
 
-  changePassword: FormGroup;
+  changePassword: UntypedFormGroup;
   credentialsId = this.data.credentialsId;
 
   constructor(protected store: Store<AppState>,
@@ -45,7 +45,7 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
               private translate: TranslateService,
               public dialogRef: MatDialogRef<ChangeMqttBasicPasswordDialogComponent>,
               @Inject(MAT_DIALOG_DATA) public data: ChangeMqttBasicPasswordDialogData,
-              public fb: FormBuilder,
+              public fb: UntypedFormBuilder,
               private mqttClientCredentialsService: MqttClientCredentialsService) {
     super(store, router, dialogRef);
   }

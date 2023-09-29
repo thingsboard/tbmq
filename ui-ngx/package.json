@@ -105,9 +105,10 @@
     "tv4": "^1.3.0",
     "typeface-roboto": "^1.1.13",
     "zone.js": "~0.13.0",
-    "chart.js": "^3.4.1",
-    "chartjs-plugin-annotation": "^0.5.7",
-    "chartjs-plugin-zoom": "2.0.0",
+    "@types/chart.js": "^2.9.38",
+    "chart.js": "^4.4.0",
+    "chartjs-plugin-annotation": "^3.0.1",
+    "chartjs-plugin-zoom": "^2.0.1",
     "chartjs-adapter-moment": "^1.0.1"
   },
   "devDependencies": {

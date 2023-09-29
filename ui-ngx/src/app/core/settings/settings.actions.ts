@@ -27,4 +27,4 @@ export class ActionSettingsChangeLanguage implements Action {
 }
 
 export type SettingsActions =
-  | ActionSettingsChangeLanguage;
+    | ActionSettingsChangeLanguage;

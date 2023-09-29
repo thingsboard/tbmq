@@ -55,30 +55,10 @@
                 "output": "/"
               },
               {
-                "glob": "worker-tbel.js",
-                "input": "./src/app/shared/models/ace/tbel/",
-                "output": "/"
-              },
-              {
                 "glob": "**/*",
                 "input": "node_modules/tinymce",
                 "output": "/assets/tinymce/"
               },
-              {
-                "glob": "marker-icon-2x.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              },
-              {
-                "glob": "marker-icon.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              },
-              {
-                "glob": "marker-shadow.png",
-                "input": "node_modules/leaflet/dist/images/",
-                "output": "/"
-              }
             ],
             "styles": [
               "src/styles.scss",
@@ -86,15 +66,8 @@
               "node_modules/jquery.terminal/css/jquery.terminal.min.css",
               "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
               "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css",
-              "src/app/shared/components/json-form/react/json-form.scss",
               "node_modules/rc-select/assets/index.less",
               "node_modules/jstree-bootstrap-theme/dist/themes/proton/style.min.css",
-              "node_modules/leaflet/dist/leaflet.css",
-              "src/app/modules/home/components/widget/lib/maps/markers.scss",
-              "src/app/modules/home/components/widget/lib/home-page/home-page.scss",
-              "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
-              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
-              "node_modules/@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css",
               "node_modules/prismjs/themes/prism.css",
               "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
               "node_modules/ace-diff/dist/ace-diff.min.css"
@@ -140,7 +113,6 @@
               "moment-timezone",
               "tinycolor2",
               "json-schema-defaults",
-              "leaflet-providers",
               "lodash",
               "jquery",
               "jquery.terminal",
@@ -148,7 +120,6 @@
               "jstree",
               "qrcode",
               "wcwidth",
-              "leaflet-polylinedecorator",
               "ace-diff",
               "messageformat-parser",
               "html2canvas",

@@ -69,7 +69,7 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
         name: this.translate.instant('user.add'),
         icon: 'add',
         isEnabled: () => true,
-        onAction: ($event) => this.config.table.addEntity($event)
+        onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
 

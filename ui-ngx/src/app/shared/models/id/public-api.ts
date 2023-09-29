@@ -14,11 +14,6 @@
 /// limitations under the License.
 ///
 
-import { FormattedData } from '@shared/models/widget.models';
-
-// redeclare module, maintains compatibility with @types/leaflet
-declare module 'leaflet' {
-  interface MarkerOptions {
-    tbMarkerData?: FormattedData;
-  }
-}
+export * from './entity-id';
+export * from './has-uuid';
+export * from './tb-resource-id';

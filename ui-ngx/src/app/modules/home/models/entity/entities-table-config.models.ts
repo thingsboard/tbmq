@@ -30,6 +30,7 @@ import { EntityTableHeaderComponent } from '@home/components/entity/entity-table
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
 import { ClientType } from '@shared/models/client.model';
+import { IEntitiesTableComponent } from './entity-table-component.models';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -142,12 +143,17 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   constructor() {
   }
 
+  private table: IEntitiesTableComponent = null;
+
   componentsData: any = null;
   demoData: any = null;
 
   loadDataOnInit = true;
   onLoadAction: (route: ActivatedRoute) => void = null;
-  table: EntitiesTableComponent = null;
+  useTimePageLink = false;
+  forAllTimeEnabled = false;
+  rowPointer = false;
+  // defaultTimewindowInterval = historyInterval(DAY);
   entityType: EntityType = null;
   tableTitle = '';
   selectionEnabled = true;
@@ -194,6 +200,15 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entityAdded: EntityVoidFunction<T> = () => {};
   entityUpdated: EntityVoidFunction<T> = () => {};
   entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
+
+  getTable(): IEntitiesTableComponent {
+    return this.table;
+  }
+
+  setTable(table: IEntitiesTableComponent) {
+    this.table = table;
+    // this.entityDetailsPage = null;
+  }
 }
 
 export function checkBoxCell(value: boolean): string {

@@ -22,7 +22,7 @@ import {
   FormBuilder, FormControl,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
   Validator, ValidatorFn,
   Validators
@@ -60,13 +60,13 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   entity: MqttClientCredentials;
 
   authRulePatternsType = AuthRulePatternsType;
-  rulesMappingFormGroup: FormGroup;
+  rulesMappingFormGroup: UntypedFormGroup;
   authRulesMappings: FormArray;
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
 
   private valueChangeSubscription: Subscription = null;
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   get rulesFormArray(): FormArray {

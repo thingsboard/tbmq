@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
@@ -35,7 +35,7 @@ export class AdminComponent extends EntityComponent<User> {
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: User,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<User>,
-              public fb: FormBuilder,
+              public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
@@ -48,7 +48,7 @@ export class AdminComponent extends EntityComponent<User> {
     }
   }
 
-  buildForm(entity: User): FormGroup {
+  buildForm(entity: User): UntypedFormGroup {
     const form = this.fb.group(
       {
         email: [entity ? entity.email : '', [Validators.required, Validators.email]],

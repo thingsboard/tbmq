@@ -26,4 +26,6 @@ export interface MenuSection {
   isMdiIcon?: boolean;
   height?: string;
   pages?: Array<MenuSection>;
+  isNew?: boolean;
+  opened?: boolean;
 }
