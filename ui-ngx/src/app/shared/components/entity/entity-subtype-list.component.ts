@@ -16,7 +16,7 @@
 
 import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
-import { Observable, ReplaySubject, Subscription, throwError } from 'rxjs';
+import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
@@ -25,8 +25,6 @@ import { MatChipGrid, MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
 import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
 import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
-import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
 import { ConfigService } from "@core/http/config.service";
 
 @Component({
@@ -207,6 +205,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
     }
     this.clear('');
   }
+
   remove(entitySubtype: string) {
     const index = this.entitySubtypeList.indexOf(entitySubtype);
     if (index >= 0) {

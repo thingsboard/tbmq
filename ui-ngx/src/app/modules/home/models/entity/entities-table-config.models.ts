@@ -25,7 +25,6 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { Type } from '@angular/core';
 import { EntityAction } from './entity-component.models';
 import { PageLink } from '@shared/models/page/page-link';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
@@ -260,12 +259,12 @@ export const checkBoxCell =
 export const defaultCellStyle =
   (value: string | number) => '<span style="background: rgba(111, 116, 242, 0.07); border-radius: 16px; padding: 4px 8px;">' + value + '</span>';
 
-export const credetialsTypeCell = (value: string) =>  {
+export const credetialsTypeCell = (value: string) => {
   const color = value === 'Basic' ? 'rgba(111,116,242,0.07)' : 'rgba(139,242,111,0.07)';
   return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;">${value}</span>`;
 }
 
-export const clientTypeCell = (value: ClientType) =>  {
+export const clientTypeCell = (value: ClientType) => {
   const icon = value.toUpperCase() === ClientType.DEVICE ? 'devices_other' : 'desktop_mac';
   const color = value.toUpperCase() === ClientType.DEVICE ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
   return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px; white-space: nowrap"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;

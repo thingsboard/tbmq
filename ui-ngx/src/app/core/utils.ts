@@ -17,7 +17,6 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
-import { NULL_UUID } from '@shared/models/constants';
 
 const varsRegex = /\${([^}]*)}/g;
 

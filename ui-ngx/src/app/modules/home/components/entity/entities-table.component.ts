@@ -38,7 +38,7 @@ import { MatSort } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
 import { catchError, debounceTime, distinctUntilChanged, map, takeUntil, tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
-import { forkJoin, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs';
+import { forkJoin, merge, Observable, of, Subject, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
@@ -311,8 +311,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.dataSource.loadEntities(this.pageLink);
   }
 
-  private getTimePageLinkInterval(): {startTime?: number, endTime?: number} {
-    const interval: {startTime?: number, endTime?: number} = {};
+  private getTimePageLinkInterval(): { startTime?: number, endTime?: number } {
+    const interval: { startTime?: number, endTime?: number } = {};
     switch (this.timewindow.history.historyType) {
       case HistoryWindowType.LAST_INTERVAL:
         const currentTime = Date.now();

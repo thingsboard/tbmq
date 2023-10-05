@@ -19,7 +19,6 @@ import {
   checkBoxCell,
   clientTypeCell,
   DateEntityTableColumn,
-  defaultCellStyle,
   EntityTableColumn,
   EntityTableConfig,
   GroupActionDescriptor
@@ -31,7 +30,10 @@ import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
-import { SessionsDetailsDialogComponent, SessionsDetailsDialogData } from '@home/pages/sessions/sessions-details-dialog.component';
+import {
+  SessionsDetailsDialogComponent,
+  SessionsDetailsDialogData
+} from '@home/pages/sessions/sessions-details-dialog.component';
 import {
   ConnectionState,
   connectionStateColor,

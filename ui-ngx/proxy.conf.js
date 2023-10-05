@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const forwardUrl = "http://localhost:8083";
-const wsForwardUrl = "ws://localhost:8083";
+const forwardUrl = "http://localhost:18083";
+const wsForwardUrl = "ws://localhost:18083";
 
 const PROXY_CONFIG = {
   "/api": {
