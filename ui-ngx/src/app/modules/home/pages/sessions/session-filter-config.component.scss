@@ -14,39 +14,10 @@
  * limitations under the License.
  */
 :host {
-  min-width: 48px;
-  margin: 8px 0;
+  display: flex;
   max-width: 100%;
-  &.no-margin {
-    margin: 0;
-  }
   .mdc-button {
     max-width: 100%;
-  }
-  section.tb-timewindow {
-    padding: 0 8px;
-    &.no-padding {
-      padding: 0;
-    }
-    line-height: 32px;
-    pointer-events: all;
-    cursor: pointer;
-    display: flex;
-    flex-direction: row;
-    place-content: center flex-start;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-
-    .tb-timewindow-label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .timezone-abbr {
-      font-weight: 500;
-    }
   }
 }
 
@@ -58,6 +29,23 @@
     .mdc-button__label {
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+  }
+}
+
+::ng-deep {
+  .tb-alarm-filter-config-component {
+    flex: 1;
+
+    tb-entity-subtype-list {
+      flex: 1;
+      width: 180px;
+    }
+
+    .mat-mdc-chip {
+      .mdc-evolution-chip__cell, .mat-mdc-chip-action, .mat-mdc-chip-action-label {
+        overflow: hidden;
+      }
     }
   }
 }

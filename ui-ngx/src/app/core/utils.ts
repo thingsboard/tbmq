@@ -93,7 +93,7 @@ export function isEmptyStr(value: any): boolean {
 }
 
 export function isNotEmptyStr(value: any): boolean {
-  return value !== null && typeof value === 'string' && value.trim().length > 0;
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 export function isFunction(value: any): boolean {
@@ -112,24 +112,19 @@ export function isNumeric(value: any): boolean {
   return (value - parseFloat(value) + 1) >= 0;
 }
 
-export function isString(value: any): boolean {
-  return typeof value === 'string';
+export function isBoolean(value: any): boolean {
+  return typeof value === 'boolean';
 }
 
-export function isEmpty(obj: any): boolean {
-  for (const key of Object.keys(obj)) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      return false;
-    }
-  }
-  return true;
+export function isString(value: any): boolean {
+  return typeof value === 'string';
 }
 
 export function isLiteralObject(value: any) {
   return (!!value) && (value.constructor === Object);
 }
 
-export function formatValue(value: any, dec?: number, units?: string, showZeroDecimals?: boolean): string | undefined {
+export const formatValue = (value: any, dec?: number, units?: string, showZeroDecimals?: boolean): string | undefined => {
   if (isDefinedAndNotNull(value) && isNumeric(value) &&
     (isDefinedAndNotNull(dec) || isDefinedAndNotNull(units) || Number(value).toString() === value)) {
     let formatted: string | number = Number(value);
@@ -146,6 +141,16 @@ export function formatValue(value: any, dec?: number, units?: string, showZeroDe
     return formatted;
   } else {
     return value !== null ? value : '';
+  }
+}
+
+export const formatNumberValue = (value: any, dec?: number): number | undefined => {
+  if (isDefinedAndNotNull(value) && isNumeric(value)) {
+    let formatted: string | number = Number(value);
+    if (isDefinedAndNotNull(dec)) {
+      formatted = formatted.toFixed(dec);
+    }
+    return Number(formatted);
   }
 }
 
@@ -178,21 +183,24 @@ export function objToBase64(obj: any): string {
     }));
 }
 
+export function base64toString(b64Encoded: string): string {
+  return decodeURIComponent(atob(b64Encoded).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
 export function objToBase64URI(obj: any): string {
   return encodeURIComponent(objToBase64(obj));
 }
 
 export function base64toObj(b64Encoded: string): any {
-  const json = decodeURIComponent(atob(b64Encoded).split('').map((c) => {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+  const json = decodeURIComponent(atob(b64Encoded).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
   return JSON.parse(json);
 }
 
-export function base64toString(b64Encoded: string): string {
-  return decodeURIComponent(atob(b64Encoded).split('').map((c) => {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+export function stringToBase64(value: string): string {
+  return btoa(encodeURIComponent(value).replace(/%([0-9A-F]{2})/g,
+    function toSolidBytes(match, p1) {
+      return String.fromCharCode(Number('0x' + p1));
+    }));
 }
 
 const scrollRegex = /(auto|scroll)/;
@@ -248,9 +256,9 @@ export function hashCode(str: string): number {
   }
   for (i = 0; i < str.length; i++) {
     char = str.charCodeAt(i);
-    // tslint:disable-next-line:no-bitwise
+    // eslint-disable-next-line no-bitwise
     hash = ((hash << 5) - hash) + char;
-    // tslint:disable-next-line:no-bitwise
+    // eslint-disable-next-line no-bitwise
     hash = hash & hash; // Convert to 32bit integer
   }
   return hash;
@@ -291,12 +299,10 @@ export function deepClone<T>(target: T, ignoreFields?: string[]): T {
   }
   if (target instanceof Array) {
     const cp = [] as any[];
-    (target as any[]).forEach((v) => {
-      cp.push(v);
-    });
+    (target as any[]).forEach((v) => { cp.push(v); });
     return cp.map((n: any) => deepClone<any>(n)) as any;
   }
-  if (typeof target === 'object' && isDefinedAndNotNull(target)) {
+  if (typeof target === 'object') {
     const cp = {...(target as { [key: string]: any })} as { [key: string]: any };
     Object.keys(cp).forEach(k => {
       if (!ignoreFields || ignoreFields.indexOf(k) === -1) {
@@ -308,9 +314,35 @@ export function deepClone<T>(target: T, ignoreFields?: string[]): T {
   return target;
 }
 
-export function isEqual(a: any, b: any): boolean {
-  return _.isEqual(a, b);
+export function extractType<T extends object>(target: any, keysOfProps: (keyof T)[]): T {
+  return _.pick(target, keysOfProps);
 }
+
+export const isEqual = (a: any, b: any): boolean => _.isEqual(a, b);
+
+export const isEmpty = (a: any): boolean => _.isEmpty(a);
+
+export const unset = (object: any, path: string | symbol): boolean => _.unset(object, path);
+
+export const isEqualIgnoreUndefined = (a: any, b: any): boolean => {
+  if (a === b) {
+    return true;
+  }
+  if (isDefinedAndNotNull(a) && isDefinedAndNotNull(b)) {
+    return isEqual(a, b);
+  } else {
+    return (isUndefinedOrNull(a) || !a) && (isUndefinedOrNull(b) || !b);
+  }
+};
+
+export const isArraysEqualIgnoreUndefined = (a: any[], b: any[]): boolean => {
+  const res = isEqualIgnoreUndefined(a, b);
+  if (!res) {
+    return (isUndefinedOrNull(a) || !a?.length) && (isUndefinedOrNull(b) || !b?.length);
+  } else {
+    return res;
+  }
+};
 
 export function mergeDeep<T>(target: T, ...sources: T[]): T {
   return _.merge(target, ...sources);
@@ -331,9 +363,7 @@ const SNAKE_CASE_REGEXP = /[A-Z]/g;
 
 export function snakeCase(name: string, separator: string): string {
   separator = separator || '_';
-  return name.replace(SNAKE_CASE_REGEXP, (letter, pos) => {
-    return (pos ? separator : '') + letter.toLowerCase();
-  });
+  return name.replace(SNAKE_CASE_REGEXP, (letter, pos) => (pos ? separator : '') + letter.toLowerCase());
 }
 
 export function getDescendantProp(obj: any, path: string): any {
@@ -355,6 +385,35 @@ export function insertVariable(pattern: string, name: string, value: any): strin
     match = varsRegex.exec(pattern);
   }
   return result;
+}
+
+export const hasDatasourceLabelsVariables = (pattern: string): boolean => varsRegex.test(pattern) !== null;
+
+export function parseFunction(source: any, params: string[] = ['def']): (...args: any[]) => any {
+  let res = null;
+  if (source?.length) {
+    try {
+      res = new Function(...params, source);
+    }
+    catch (err) {
+      res = null;
+    }
+  }
+  return res;
+}
+
+export function safeExecute(func: (...args: any[]) => any, params = []) {
+  let res = null;
+  if (func && typeof (func) === 'function') {
+    try {
+      res = func(...params);
+    }
+    catch (err) {
+      console.log('error in external function:', err);
+      res = null;
+    }
+  }
+  return res;
 }
 
 export function padValue(val: any, dec: number): string {
@@ -418,10 +477,6 @@ export function generateSecret(length?: number): string {
   return str.concat(generateSecret(length - str.length));
 }
 
-export function validateEntityId(entityId: string): boolean {
-  return isDefinedAndNotNull(entityId) && entityId !== NULL_UUID;
-}
-
 export function isMobileApp(): boolean {
   return isDefined((window as any).flutter_inappwebview);
 }
@@ -436,3 +491,48 @@ export function randomAlphanumeric(length: number): string {
   }
   return result;
 }
+
+function prepareMessageFromData(data): string {
+  if (typeof data === 'object' && data.constructor === ArrayBuffer) {
+    const msg = String.fromCharCode.apply(null, new Uint8Array(data));
+    try {
+      const msgObj = JSON.parse(msg);
+      if (msgObj.message) {
+        return msgObj.message;
+      } else {
+        return msg;
+      }
+    } catch (e) {
+      return msg;
+    }
+  } else {
+    return data;
+  }
+}
+
+export const getOS = (): string => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const macosPlatforms = /(macintosh|macintel|macppc|mac68k|macos|mac_powerpc)/i;
+  const windowsPlatforms = /(win32|win64|windows|wince)/i;
+  const iosPlatforms = /(iphone|ipad|ipod|darwin|ios)/i;
+  let os = null;
+
+  if (macosPlatforms.test(userAgent)) {
+    os = 'macos';
+  } else if (iosPlatforms.test(userAgent)) {
+    os = 'ios';
+  } else if (windowsPlatforms.test(userAgent)) {
+    os = 'windows';
+  } else if (/android/.test(userAgent)) {
+    os = 'android';
+  } else if (/linux/.test(userAgent)) {
+    os = 'linux';
+  }
+
+  return os;
+};
+
+
+export const camelCase = (str: string): string => {
+  return _.camelCase(str);
+};

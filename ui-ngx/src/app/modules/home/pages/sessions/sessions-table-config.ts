@@ -38,32 +38,53 @@ import {
   connectionStateTranslationMap,
   DetailedClientSessionInfo
 } from '@shared/models/session.model';
-import { clientTypeTranslationMap } from '@shared/models/client.model';
+import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { Direction } from '@shared/models/page/sort-order';
 import { DialogService } from '@core/services/dialog.service';
+import { SessionTableHeaderComponent } from "@home/pages/sessions/session-table-header.component";
+import { forAllTimeInterval } from "@shared/models/time/time.models";
+
+export interface SessionFilterConfig {
+  connectedStatusList?: ConnectionState[];
+  clientTypeList?: ClientType[];
+  nodeIdList?: string[];
+  cleanStartList?: string[];
+  subscriptions?: number;
+  clientId?: string;
+}
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
+
+  sessionFilterConfig: SessionFilterConfig;
 
   constructor(private mqttClientSessionService: MqttClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
               private dialogService: DialogService,
-              public entityId: string = null) {
+              public entityId: string = null,
+              pageMode = false) {
     super();
-    this.loadDataOnInit = true;
+    this.loadDataOnInit = pageMode;
     this.detailsPanelEnabled = false;
     this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.tableTitle = this.translate.instant('mqtt-client-session.type-sessions');
+    this.tableTitle = ''; // this.translate.instant('mqtt-client-session.type-sessions');
     this.entityTranslations = {
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
     };
     this.defaultSortOrder = {property: 'connectedAt', direction: Direction.DESC};
-    // this.groupActionDescriptors = this.configureGroupActions();
-    // this.cellActionDescriptors = this.configureCellActions();
+    this.groupActionDescriptors = this.configureGroupActions();
+    this.cellActionDescriptors = this.configureCellActions();
+
+    this.headerComponent = SessionTableHeaderComponent;
+    this.useTimePageLink = true;
+    this.forAllTimeEnabled = true;
+    this.pageMode = pageMode;
+    this.selectionEnabled = true;
+    this.defaultTimewindowInterval = forAllTimeInterval();
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
@@ -83,15 +104,10 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
         (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
-        (entity) => defaultCellStyle(entity.clientId),
-        () => ({'font-weight': 500})),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
-        (entity) => defaultCellStyle(entity.clientIpAdr)),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
-        (entity) => defaultCellStyle(entity.subscriptionsCount)),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
-        (entity) => defaultCellStyle(entity.nodeId)),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

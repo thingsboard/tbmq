@@ -59,7 +59,8 @@
     "read-more": "Read more",
     "hide": "Hide",
     "on-copied": "Copied",
-    "copy-id": "Copy Id"
+    "copy-id": "Copy Id",
+    "reset": "Reset"
   },
   "admin": {
     "admins": "Admins",
@@ -168,7 +169,8 @@
     "loading": "Loading...",
     "proceed": "Proceed",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "id": "ID"
   },
   "details": {
     "details": "Details",
@@ -453,7 +455,10 @@
     "qos-at-least-once": "At least once",
     "qos-exactly-once": "Exactly once",
     "should-be-persistent": "Application client should be persistent",
-    "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false)."
+    "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
+    "session-filter": "Session filter",
+    "session-filter-title": "Session filter",
+    "filter-title": "Filter"
   },
   "shared-subscription": {
     "add": "Add Application Shared Subscription",

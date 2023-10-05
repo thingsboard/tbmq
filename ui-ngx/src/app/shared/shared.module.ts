@@ -86,11 +86,12 @@ import { BooleanPipe } from '@shared/pipe/boolean.pipe';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
-import { SelectableColumnsPipe, TruncatePipe } from './pipe/public-api';
+import { DateAgoPipe, SelectableColumnsPipe, TruncatePipe } from './pipe/public-api';
 import { TbIconComponent } from './components/icon.component';
 import { SafePipe } from '@shared/pipe/safe.pipe';
 import { ShortNumberPipe } from '@shared/pipe/short-number.pipe';
 import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
+import { EntitySubTypeListComponent } from "@shared/components/entity/entity-subtype-list.component";
 
 @NgModule({
   providers: [
@@ -115,6 +116,7 @@ import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
     SafePipe,
     TbAnchorComponent,
     SelectableColumnsPipe,
+    DateAgoPipe,
     ShortNumberPipe,
     TbJsonPipe,
     TruncatePipe,
@@ -140,7 +142,8 @@ import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
     TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
-    QuickTimeIntervalComponent
+    QuickTimeIntervalComponent,
+    EntitySubTypeListComponent
   ],
   imports: [
     CommonModule,
@@ -200,6 +203,7 @@ import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
     ToastDirective,
     FullscreenDirective,
     SelectableColumnsPipe,
+    DateAgoPipe,
     TbIconComponent,
     ShortNumberPipe,
     SafePipe,
@@ -267,7 +271,8 @@ import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,
-    BooleanPipe
+    BooleanPipe,
+    EntitySubTypeListComponent
   ]
 })
 export class SharedModule { }

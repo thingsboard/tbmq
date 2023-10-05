@@ -22,22 +22,27 @@ import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.comp
 import { SessionsDetailsDialogComponent } from "@home/pages/sessions/sessions-details-dialog.component";
 import { SessionsRoutingModule } from "@home/pages/sessions/sessions-routing.module";
 import { SubscriptionsComponent } from "@home/components/session-subscriptions/subscriptions.component";
+import { SessionTableHeaderComponent } from "@home/pages/sessions/session-table-header.component";
+import { SessionFilterConfigComponent } from "@home/pages/sessions/session-filter-config.component";
 
 @NgModule({
-    declarations: [
-        SessionsTableComponent,
-        SessionsDetailsDialogComponent,
-        SubscriptionsComponent
-    ],
-    exports: [
-        SessionsDetailsDialogComponent
-    ],
-    imports: [
-        CommonModule,
-        SharedModule,
-        HomeComponentsModule,
-        SessionsRoutingModule
-    ]
+  declarations: [
+    SessionsTableComponent,
+    SessionsDetailsDialogComponent,
+    SubscriptionsComponent,
+    SessionTableHeaderComponent,
+    SessionFilterConfigComponent
+  ],
+  exports: [
+    SessionsDetailsDialogComponent
+  ],
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    SessionsRoutingModule
+  ]
 })
 
-export class SessionsModule { }
+export class SessionsModule {
+}

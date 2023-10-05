@@ -16,6 +16,14 @@
 
 import { ClientInfo, ClientType } from '@shared/models/client.model';
 import { BaseData } from '@shared/models/base-data';
+import { SessionFilterConfig } from "@home/pages/sessions/sessions-table-config";
+import {
+  isArraysEqualIgnoreUndefined,
+  isDefinedAndNotNull,
+  isEmpty,
+  isEqualIgnoreUndefined,
+  isUndefinedOrNull
+} from "@core/utils";
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -112,3 +120,33 @@ export interface ClientSessionStatsInfo {
   disconnectedCount: number;
   totalCount: number;
 }
+
+export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => { // TODO
+  if (filter1 === filter2) {
+    return true;
+  }
+  if ((isUndefinedOrNull(filter1) || isEmpty(filter1)) && (isUndefinedOrNull(filter2) || isEmpty(filter2))) {
+    return true;
+  } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
+    if (!isArraysEqualIgnoreUndefined(filter1.connectedStatusList, filter2.connectedStatusList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.clientTypeList, filter2.clientTypeList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.cleanStartList, filter2.cleanStartList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.nodeIdList, filter2.nodeIdList)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.subscriptions, filter2.subscriptions)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
