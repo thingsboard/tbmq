@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface ClientSubscriptionService extends ClientSubscriptionCache {
+
     void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
 
     void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);

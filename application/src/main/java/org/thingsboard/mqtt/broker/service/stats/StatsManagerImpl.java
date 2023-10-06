@@ -171,7 +171,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     private String getCompoundClientId(String clientId, TopicSharedSubscription subscription) {
-        return clientId + "_" + subscription.getShareName() + "_" + subscription.getTopic();
+        return clientId + "_" + subscription.getShareName() + "_" + subscription.getTopicFilter();
     }
 
     @Override

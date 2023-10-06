@@ -69,6 +69,20 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     log.info("Schema updated.");
                 }
                 break;
+            case "1.1.0":
+                try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+                    log.info("Updating schema ...");
+                    if (isOldSchema(conn, 1001000)) {
+                        try {
+                            // add here upgrade code if needed
+
+                            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1001001;");
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    log.info("Schema updated.");
+                }
+                break;
             default:
                 throw new RuntimeException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
         }

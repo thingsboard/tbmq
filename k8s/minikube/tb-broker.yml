@@ -36,13 +36,13 @@ spec:
             name: tb-broker-config
             items:
               - key: conf
-                path:  thingsboard-mqtt-broker.conf
+                path: thingsboard-mqtt-broker.conf
               - key: logback
-                path:  logback.xml
+                path: logback.xml
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:1.0.1
+          image: thingsboard/tbmq-node:1.1.0
           ports:
             - containerPort: 8083
               name: http
@@ -75,6 +75,10 @@ spec:
               value: "true"
             - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
               value: "15000"
+            - name: CACHE_TYPE
+              value: "redis"
+            - name: REDIS_HOST
+              value: "tb-redis"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config

@@ -53,6 +53,6 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     private boolean belongsToThisNode(String targetServiceId) {
-        return targetServiceId.equals(serviceInfoProvider.getServiceId());
+        return serviceInfoProvider.getServiceId().equals(targetServiceId);
     }
 }

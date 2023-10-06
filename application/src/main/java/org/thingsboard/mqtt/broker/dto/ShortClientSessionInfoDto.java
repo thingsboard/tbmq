@@ -48,29 +48,22 @@ public class ShortClientSessionInfoDto {
     private boolean cleanStart;
 
     public static Comparator<ShortClientSessionInfoDto> getComparator(SortOrder sortOrder) {
-        switch (sortOrder.getProperty()) {
-            case "id":
-            case "clientId":
-                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
-            case "connectionState":
-                return getStrComparator(sortOrder.getDirection(), csi -> csi.getConnectionState().name());
-            case "clientType":
-                return getStrComparator(sortOrder.getDirection(), csi -> csi.getClientType().name());
-            case "nodeId":
-                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getNodeId);
-            case "subscriptionsCount":
-                return getIntComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getSubscriptionsCount);
-            case "connectedAt":
-                return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getConnectedAt);
-            case "disconnectedAt":
-                return getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getDisconnectedAt);
-            case "clientIpAdr":
-                return getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientIpAdr);
-            case "cleanStart":
-                return getBoolComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::isCleanStart);
-            default:
-                return null;
-        }
+        return switch (sortOrder.getProperty()) {
+            case "id", "clientId" -> getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientId);
+            case "connectionState" ->
+                    getStrComparator(sortOrder.getDirection(), csi -> csi.getConnectionState().name());
+            case "clientType" -> getStrComparator(sortOrder.getDirection(), csi -> csi.getClientType().name());
+            case "nodeId" -> getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getNodeId);
+            case "subscriptionsCount" ->
+                    getIntComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getSubscriptionsCount);
+            case "connectedAt" ->
+                    getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getConnectedAt);
+            case "disconnectedAt" ->
+                    getLongComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getDisconnectedAt);
+            case "clientIpAdr" -> getStrComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::getClientIpAdr);
+            case "cleanStart" -> getBoolComparator(sortOrder.getDirection(), ShortClientSessionInfoDto::isCleanStart);
+            default -> null;
+        };
     }
 
     private static Comparator<ShortClientSessionInfoDto> getStrComparator(SortOrder.Direction direction,

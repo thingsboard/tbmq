@@ -295,7 +295,7 @@ public class MqttSubscribeHandler {
         for (TopicSharedSubscription topicSharedSubscription : topicSharedSubscriptions) {
             futures.add(Futures.transform(findSharedSubscriptionByTopic(topicSharedSubscription), sharedSubscription -> {
                 if (sharedSubscription == null) {
-                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", topicSharedSubscription.getTopic());
+                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", topicSharedSubscription.getTopicFilter());
                     return false;
                 }
                 return true;
@@ -305,7 +305,7 @@ public class MqttSubscribeHandler {
     }
 
     private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(TopicSharedSubscription topicSharedSubscription) {
-        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(topicSharedSubscription.getTopic());
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(topicSharedSubscription.getTopicFilter());
     }
 
     Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {

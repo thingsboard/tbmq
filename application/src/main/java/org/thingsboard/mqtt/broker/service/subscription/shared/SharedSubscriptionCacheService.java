@@ -26,6 +26,8 @@ public interface SharedSubscriptionCacheService {
 
     void remove(String clientId, TopicSubscription topicSubscription);
 
-    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscription);
+    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscriptions);
+
+    boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
 
 }

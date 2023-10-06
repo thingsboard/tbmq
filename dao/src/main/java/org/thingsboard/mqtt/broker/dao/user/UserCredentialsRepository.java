@@ -15,15 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.dao.user;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.thingsboard.mqtt.broker.dao.model.UserCredentialsEntity;
 
 import java.util.UUID;
 
-public interface UserCredentialsRepository extends CrudRepository<UserCredentialsEntity, UUID> {
+public interface UserCredentialsRepository extends JpaRepository<UserCredentialsEntity, UUID> {
+
     UserCredentialsEntity findByUserId(UUID userId);
 
     UserCredentialsEntity findByActivateToken(String activateToken);
 
     UserCredentialsEntity findByResetToken(String resetToken);
+
 }

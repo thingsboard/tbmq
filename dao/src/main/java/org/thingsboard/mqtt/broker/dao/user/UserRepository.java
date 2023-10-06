@@ -17,14 +17,14 @@ package org.thingsboard.mqtt.broker.dao.user;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.dao.model.UserEntity;
 
 import java.util.UUID;
 
-public interface UserRepository extends PagingAndSortingRepository<UserEntity, UUID> {
+public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     UserEntity findByEmail(String email);
 

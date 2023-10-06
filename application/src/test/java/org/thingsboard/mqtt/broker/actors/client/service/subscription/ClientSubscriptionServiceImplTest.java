@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceS
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.util.Collections;
 import java.util.Map;
@@ -72,6 +73,38 @@ public class ClientSubscriptionServiceImplTest {
     @Test
     public void givenClientTopicSubscriptions_whenInit_thenOk() {
         verify(subscriptionService, times(2)).subscribe(any(), any());
+    }
+
+    @Test
+    public void givenClientTopicSubscriptionsAndSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnExpectedResult() {
+        String clientId = "sharedClientId";
+        getAndVerifyClientSubscriptionsForClient(clientId, 0);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11")));
+        getAndVerifyClientSubscriptionsForClient(clientId, 1);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic12")));
+        getAndVerifyClientSubscriptionsForClient(clientId, 2);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic123")));
+        getAndVerifyClientSubscriptionsForClient(clientId, 3);
+
+        Set<TopicSharedSubscription> clientSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(clientId);
+
+        assertEquals(2, clientSharedSubscriptions.size());
+    }
+
+    @Test
+    public void givenClientTopicSubscriptionsAndNoSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnEmptySet() {
+        String clientId = "sharedClientId";
+        getAndVerifyClientSubscriptionsForClient(clientId, 0);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getTopicSubscription("topic123")));
+        getAndVerifyClientSubscriptionsForClient(clientId, 1);
+
+        Set<TopicSharedSubscription> clientSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(clientId);
+
+        assertEquals(0, clientSharedSubscriptions.size());
     }
 
     @Test
@@ -161,5 +194,9 @@ public class ClientSubscriptionServiceImplTest {
 
     private TopicSubscription getTopicSubscription(String topic) {
         return new TopicSubscription(topic, 1);
+    }
+
+    private TopicSubscription getSharedTopicSubscription(String topic) {
+        return new TopicSubscription(topic, 1, "sharedGroup");
     }
 }

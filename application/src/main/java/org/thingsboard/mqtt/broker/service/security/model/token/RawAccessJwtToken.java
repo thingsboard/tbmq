@@ -26,11 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.thingsboard.mqtt.broker.service.security.exception.JwtExpiredTokenException;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Slf4j
 public class RawAccessJwtToken implements JwtToken, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -797397445703066079L;
 
     private String token;

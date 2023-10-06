@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "actors.system.persisted-device")
 public class DeviceActorConfiguration {
+
     @Value("${actors.system.persisted-device.dispatcher-pool-size:4}")
     private int dispatcherSize;
     @Value("${actors.system.persisted-device.wait-before-actor-stop-minutes:10}")

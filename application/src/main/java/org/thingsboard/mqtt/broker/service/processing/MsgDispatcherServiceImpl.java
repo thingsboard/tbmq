@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -86,6 +87,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final ServiceInfoProvider serviceInfoProvider;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -348,7 +350,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
         return new Subscription(
-                sharedSubscription.getTopicSharedSubscription().getTopic(),
+                sharedSubscription.getTopicSharedSubscription().getTopicFilter(),
                 qos,
                 createDummyClientSession(sharedSubscription),
                 sharedSubscription.getTopicSharedSubscription().getShareName(),
@@ -360,6 +362,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey());
         return ClientSessionInfo.builder()
                 .connected(false)
+                .serviceId(serviceInfoProvider.getServiceId())
                 .clientId(clientInfo.getClientId())
                 .type(clientInfo.getType())
                 .clientIpAdr(clientInfo.getClientIpAdr())

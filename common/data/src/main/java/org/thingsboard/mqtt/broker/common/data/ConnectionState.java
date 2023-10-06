@@ -16,5 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data;
 
 public enum ConnectionState {
-    CONNECTED, DISCONNECTED
+
+    CONNECTED,
+    DISCONNECTED
 }

@@ -21,23 +21,23 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   volumes:
-  - name: tb-broker-config
-    configMap:
-      name: tb-broker-config
-      items:
-      - key: conf
-        path: thingsboard-mqtt-broker.conf
-      - key: logback
-        path: logback.xml
-  containers:
-  - name: tb-db-setup
-    imagePullPolicy: Always
-    image: thingsboard/tbmq-node:1.0.1
-    envFrom:
-      - configMapRef:
-          name: tb-broker-db-config
-    volumeMounts:
-      - mountPath: /config
+    - name: tb-broker-config
+      configMap:
         name: tb-broker-config
-    command: [ 'sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;' ]
+        items:
+          - key: conf
+            path: thingsboard-mqtt-broker.conf
+          - key: logback
+            path: logback.xml
+  containers:
+    - name: tb-db-setup
+      imagePullPolicy: Always
+      image: thingsboard/tbmq-node:1.1.0
+      envFrom:
+        - configMapRef:
+            name: tb-broker-db-config
+      volumeMounts:
+        - mountPath: /config
+          name: tb-broker-config
+      command: [ 'sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;' ]
   restartPolicy: Never

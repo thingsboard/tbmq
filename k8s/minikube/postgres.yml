@@ -49,42 +49,42 @@ spec:
           persistentVolumeClaim:
             claimName: postgres-pv-claim
       containers:
-      - name: postgres
-        imagePullPolicy: Always
-        image: postgres:15
-        ports:
-        - containerPort: 5432
-          name: postgres
-        env:
-        - name: POSTGRES_DB
-          value: "thingsboard_mqtt_broker"
-        - name: POSTGRES_PASSWORD
-          value: "postgres"
-        - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
-        volumeMounts:
-          - mountPath: /var/lib/postgresql/data
-            name: postgres-data
-        livenessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -h
-            - localhost
-            - -U
-            - postgres
-          initialDelaySeconds: 60
-          timeoutSeconds: 30
-        readinessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -h
-            - localhost
-            - -U
-            - postgres
-          initialDelaySeconds: 5
-          timeoutSeconds: 1
+        - name: postgres
+          imagePullPolicy: Always
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "thingsboard_mqtt_broker"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -h
+                - localhost
+                - -U
+                - postgres
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -h
+                - localhost
+                - -U
+                - postgres
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -97,6 +97,6 @@ spec:
   selector:
     app: postgres
   ports:
-  - port: 5432
-    name: postgres
+    - port: 5432
+      name: postgres
 ---

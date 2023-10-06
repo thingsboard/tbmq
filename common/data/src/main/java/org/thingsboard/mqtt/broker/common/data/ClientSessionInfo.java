@@ -57,4 +57,8 @@ public class ClientSessionInfo {
     public int safeGetSessionExpiryInterval() {
         return sessionExpiryInterval == -1 ? 0 : sessionExpiryInterval;
     }
+
+    public boolean isDisconnected() {
+        return !connected;
+    }
 }

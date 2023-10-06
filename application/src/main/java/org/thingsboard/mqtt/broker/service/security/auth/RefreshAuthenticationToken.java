@@ -19,8 +19,11 @@ package org.thingsboard.mqtt.broker.service.security.auth;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
 
+import java.io.Serial;
+
 public class RefreshAuthenticationToken extends AbstractJwtAuthenticationToken {
 
+    @Serial
     private static final long serialVersionUID = -1311042791508924523L;
 
     public RefreshAuthenticationToken(RawAccessJwtToken unsafeToken) {

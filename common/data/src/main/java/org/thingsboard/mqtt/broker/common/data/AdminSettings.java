@@ -19,10 +19,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
 import java.util.UUID;
 
 public class AdminSettings extends BaseData {
 
+    @Serial
     private static final long serialVersionUID = -7670322981725511892L;
 
     @NoXss

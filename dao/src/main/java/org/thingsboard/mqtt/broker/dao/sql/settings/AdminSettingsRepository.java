@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.dao.sql.settings;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.thingsboard.mqtt.broker.dao.model.sql.AdminSettingsEntity;
 
 import java.util.UUID;
 
-public interface AdminSettingsRepository extends CrudRepository<AdminSettingsEntity, UUID> {
+public interface AdminSettingsRepository extends JpaRepository<AdminSettingsEntity, UUID> {
 
     AdminSettingsEntity findByKey(String key);
 
