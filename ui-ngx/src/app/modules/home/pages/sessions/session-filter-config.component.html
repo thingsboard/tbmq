@@ -74,16 +74,14 @@
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client.client-id</div>
-      <mat-form-field fxFlex="100" fxFlex.gt-sm="40" appearance="outline">
-        <input matInput type="text"
-               style="max-width: 200px;"
-               formControlName="clientId">
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="clientId">
       </mat-form-field>
     </div>
-    <div class="tb-form-row space-between column-xs">
+    <div class="tb-form-row column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.subscriptions-count</div>
-      <mat-form-field fxFlex="100" fxFlex.gt-sm="40" appearance="outline">
-        <input matInput formControlName="subscriptions" type="number" step="1" min="0">
+      <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
+        <input matInput type="number" min="0" formControlName="subscriptions">
       </mat-form-field>
     </div>
     <div class="tb-form-row column-xs">
@@ -91,6 +89,8 @@
       <tb-entity-subtype-list subscriptSizing="dynamic"
                               formControlName="nodeIdList"
                               appearance="outline"
+                              [addValueOutOfList]="false"
+                              [emptyInputPlaceholder]="'action.select' | translate"
                               [additionalClasses]="['tb-chips', 'flex']"
                               [entityType]="entityType.KAFKA_BROKER">
       </tb-entity-subtype-list>

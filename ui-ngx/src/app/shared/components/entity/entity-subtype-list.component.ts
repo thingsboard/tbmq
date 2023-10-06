@@ -88,6 +88,9 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
   @coerceArray()
   additionalClasses: Array<string>;
 
+  @Input()
+  addValueOutOfList: boolean = true;
+
   @ViewChild('entitySubtypeInput') entitySubtypeInput: ElementRef<HTMLInputElement>;
   @ViewChild('entitySubtypeAutocomplete') entitySubtypeAutocomplete: MatAutocomplete;
   @ViewChild('chipList', {static: true}) chipList: MatChipGrid;
@@ -95,6 +98,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
   entitySubtypeList: Array<string> = [];
   filteredEntitySubtypeList: Observable<Array<string>>;
   private entitySubtypes: Observable<Array<string>>;
+  private allEntitySubtypes: Array<string>;
 
   placeholder: string;
   secondaryPlaceholder: string;
@@ -191,9 +195,11 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
       if (!this.modelValue) {
         this.modelValue = [];
       }
-      this.modelValue.push(entitySubtype);
-      this.entitySubtypeList.push(entitySubtype);
-      this.entitySubtypeListFormGroup.get('entitySubtypeList').setValue(this.entitySubtypeList);
+      if (this.addValueOutOfList || this.allEntitySubtypes.includes(entitySubtype)) {
+        this.modelValue.push(entitySubtype);
+        this.entitySubtypeList.push(entitySubtype);
+        this.entitySubtypeListFormGroup.get('entitySubtypeList').setValue(this.entitySubtypeList);
+      }
     }
     this.propagateChange(this.modelValue);
   }
@@ -252,7 +258,10 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
       }
       if (subTypesObservable) {
         this.entitySubtypes = subTypesObservable.pipe(
-          map(subTypes => subTypes.map(subType => subType)),
+          map(subTypes => {
+            this.allEntitySubtypes = subTypes;
+            return subTypes.map(subType => subType)
+          }),
           share({
             connector: () => new ReplaySubject(1),
             resetOnError: false,
