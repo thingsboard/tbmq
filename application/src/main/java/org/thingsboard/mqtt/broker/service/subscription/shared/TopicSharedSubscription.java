@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
-@Data
+@Getter
 @RequiredArgsConstructor
 @EqualsAndHashCode(exclude = "qos")
 @ToString
