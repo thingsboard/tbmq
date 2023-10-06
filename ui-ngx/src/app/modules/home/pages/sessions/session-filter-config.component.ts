@@ -102,7 +102,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   sessionFilterConfigForm: UntypedFormGroup;
 
-  alarmFilterOverlayRef: OverlayRef;
+  sessionFilterOverlayRef: OverlayRef;
 
   panelResult: SessionFilterConfig = null;
 
@@ -145,12 +145,12 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.sessionFilterConfigForm.valueChanges.subscribe(
       () => {
         if (!this.buttonMode) {
-          this.alarmConfigUpdated(this.sessionFilterConfigForm.value);
+          this.sessionConfigUpdated(this.sessionFilterConfigForm.value);
         }
       }
     );
     if (this.panelMode) {
-      this.updateAlarmConfigForm(this.sessionFilterConfig);
+      this.updateSessionConfigForm(this.sessionFilterConfig);
     }
   }
 
@@ -173,16 +173,16 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     }
   }
 
-  writeValue(alarmFilterConfig?: SessionFilterConfig): void {
-    this.sessionFilterConfig = alarmFilterConfig;
-    if (!this.initialSessionFilterConfig && alarmFilterConfig) {
-      this.initialSessionFilterConfig = deepClone(alarmFilterConfig);
+  writeValue(sessionFilterConfig?: SessionFilterConfig): void {
+    this.sessionFilterConfig = sessionFilterConfig;
+    if (!this.initialSessionFilterConfig && sessionFilterConfig) {
+      this.initialSessionFilterConfig = deepClone(sessionFilterConfig);
     }
     this.updateButtonDisplayValue();
-    this.updateAlarmConfigForm(alarmFilterConfig);
+    this.updateSessionConfigForm(sessionFilterConfig);
   }
 
-  toggleAlarmFilterPanel($event: Event) {
+  toggleSessionFilterPanel($event: Event) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -199,29 +199,29 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       .flexibleConnectedTo(this.nativeElement)
       .withPositions([POSITION_MAP.bottomLeft]);
 
-    this.alarmFilterOverlayRef = this.overlay.create(config);
-    this.alarmFilterOverlayRef.backdropClick().subscribe(() => {
-      this.alarmFilterOverlayRef.dispose();
+    this.sessionFilterOverlayRef = this.overlay.create(config);
+    this.sessionFilterOverlayRef.backdropClick().subscribe(() => {
+      this.sessionFilterOverlayRef.dispose();
     });
-    this.alarmFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel,
+    this.sessionFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel,
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
-      this.alarmFilterOverlayRef.updatePosition();
+      this.sessionFilterOverlayRef.updatePosition();
     });
   }
 
   cancel() {
-    this.updateAlarmConfigForm(this.sessionFilterConfig);
+    this.updateSessionConfigForm(this.sessionFilterConfig);
     if (this.overlayRef) {
       this.overlayRef.dispose();
     } else {
       this.resizeWindows.unsubscribe();
-      this.alarmFilterOverlayRef.dispose();
+      this.sessionFilterOverlayRef.dispose();
     }
   }
 
   update() {
-    this.alarmConfigUpdated(this.sessionFilterConfigForm.value);
+    this.sessionConfigUpdated(this.sessionFilterConfigForm.value);
     this.sessionFilterConfigForm.markAsPristine();
     if (this.panelMode) {
       this.panelResult = this.sessionFilterConfig;
@@ -230,30 +230,30 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       this.overlayRef.dispose();
     } else {
       this.resizeWindows.unsubscribe();
-      this.alarmFilterOverlayRef.dispose();
+      this.sessionFilterOverlayRef.dispose();
     }
   }
 
   reset() {
     if (this.initialSessionFilterConfig) {
       if (this.buttonMode || this.panelMode) {
-        const alarmFilterConfig = this.alarmFilterConfigFromFormValue(this.sessionFilterConfigForm.value);
-        if (!sessionFilterConfigEquals(alarmFilterConfig, this.initialSessionFilterConfig)) {
-          this.updateAlarmConfigForm(this.initialSessionFilterConfig);
+        const sessionFilterConfig = this.sessionFilterConfigFromFormValue(this.sessionFilterConfigForm.value);
+        if (!sessionFilterConfigEquals(sessionFilterConfig, this.initialSessionFilterConfig)) {
+          this.updateSessionConfigForm(this.initialSessionFilterConfig);
           this.sessionFilterConfigForm.markAsDirty();
         }
       } else {
         if (!sessionFilterConfigEquals(this.sessionFilterConfig, this.initialSessionFilterConfig)) {
           this.sessionFilterConfig = this.initialSessionFilterConfig;
           this.updateButtonDisplayValue();
-          this.updateAlarmConfigForm(this.sessionFilterConfig);
+          this.updateSessionConfigForm(this.sessionFilterConfig);
           this.propagateChange(this.sessionFilterConfig);
         }
       }
     }
   }
 
-  private updateAlarmConfigForm(sessiohFilterConfig?: SessionFilterConfig) {
+  private updateSessionConfigForm(sessiohFilterConfig?: SessionFilterConfig) {
     this.sessionFilterConfigForm.patchValue({
       connectedStatusList: sessiohFilterConfig?.connectedStatusList,
       clientTypeList: sessiohFilterConfig?.clientTypeList,
@@ -264,13 +264,13 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     }, {emitEvent: false});
   }
 
-  private alarmConfigUpdated(formValue: any) {
-    this.sessionFilterConfig = this.alarmFilterConfigFromFormValue(formValue);
+  private sessionConfigUpdated(formValue: any) {
+    this.sessionFilterConfig = this.sessionFilterConfigFromFormValue(formValue);
     this.updateButtonDisplayValue();
     this.propagateChange(this.sessionFilterConfig);
   }
 
-  private alarmFilterConfigFromFormValue(formValue: any): SessionFilterConfig {
+  private sessionFilterConfigFromFormValue(formValue: any): SessionFilterConfig {
     return {
       connectedStatusList: formValue.connectedStatusList,
       clientTypeList: formValue.clientTypeList,
@@ -293,13 +293,13 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
           this.translate.instant(clientTypeTranslationMap.get(s))).join(', '));
       }
       if (this.sessionFilterConfig?.nodeIdList?.length) {
-        filterTextParts.push(this.translate.instant('mqtt-client-session.node-id') + ': ' + this.sessionFilterConfig.nodeIdList.join(', '));
+        filterTextParts.push(this.sessionFilterConfig.nodeIdList.join(', '));
       }
       if (this.sessionFilterConfig?.clientId?.length) {
-        filterTextParts.push(this.translate.instant('mqtt-client.client-id') + ': ' + this.sessionFilterConfig.clientId);
+        filterTextParts.push(this.sessionFilterConfig.clientId);
       }
       if (this.sessionFilterConfig?.subscriptions) {
-        filterTextParts.push(this.translate.instant('mqtt-client-session.subscriptions') + ': ' + this.sessionFilterConfig.subscriptions);
+        filterTextParts.push(`${this.sessionFilterConfig.subscriptions} ${this.translate.instant('mqtt-client-session.subscriptions-count').toLowerCase()}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.session-filter-title');

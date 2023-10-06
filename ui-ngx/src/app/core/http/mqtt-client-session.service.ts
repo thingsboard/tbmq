@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ClientSessionStatsInfo, DetailedClientSessionInfo } from '@shared/models/session.model';
+import { ClientSessionStatsInfo, DetailedClientSessionInfo, SessionQueryV2 } from '@shared/models/session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -36,6 +36,10 @@ export class MqttClientSessionService {
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
     return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/client-session${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getShortClientSessionInfosV2(query: SessionQueryV2, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
+    return this.http.get<PageData<DetailedClientSessionInfo>>(`/api/v2/client-session${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
   public updateShortClientSessionInfo(session: DetailedClientSessionInfo, config?: RequestConfig): Observable<DetailedClientSessionInfo> {

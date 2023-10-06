@@ -38,7 +38,7 @@ import {
   ConnectionState,
   connectionStateColor,
   connectionStateTranslationMap,
-  DetailedClientSessionInfo
+  DetailedClientSessionInfo, SessionQueryV2
 } from '@shared/models/session.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { Direction } from '@shared/models/page/sort-order';
@@ -50,7 +50,7 @@ export interface SessionFilterConfig {
   connectedStatusList?: ConnectionState[];
   clientTypeList?: ClientType[];
   nodeIdList?: string[];
-  cleanStartList?: string[];
+  cleanStartList?: boolean[];
   subscriptions?: number;
   clientId?: string;
 }
@@ -64,10 +64,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               private datePipe: DatePipe,
               private dialog: MatDialog,
               private dialogService: DialogService,
-              public entityId: string = null,
-              pageMode = false) {
+              public entityId: string = null) {
     super();
-    this.loadDataOnInit = pageMode;
+    this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;
     this.searchEnabled = true;
     this.addEnabled = false;
@@ -84,7 +83,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.headerComponent = SessionTableHeaderComponent;
     this.useTimePageLink = true;
     this.forAllTimeEnabled = true;
-    this.pageMode = pageMode;
     this.selectionEnabled = true;
     this.defaultTimewindowInterval = forAllTimeInterval();
 
@@ -117,7 +115,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   }
 
   private fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {
-    return this.mqttClientSessionService.getShortClientSessionInfos(pageLink);
+    const sessionFilter = this.resolveSessionFilter(this.sessionFilterConfig);
+    const query = new SessionQueryV2(pageLink, sessionFilter);
+    return this.mqttClientSessionService.getShortClientSessionInfosV2(query);
   }
 
   private showSessionDetails($event: Event, entity: DetailedClientSessionInfo) {
@@ -271,5 +271,18 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
   private updateTable() {
     this.getTable().updateData();
+  }
+
+  private resolveSessionFilter(sessionFilterConfig?: SessionFilterConfig): SessionFilterConfig {
+    const sessionFilter: SessionFilterConfig = {};
+    if (sessionFilterConfig) {
+      sessionFilter.clientId = sessionFilterConfig.clientId;
+      sessionFilter.connectedStatusList = sessionFilterConfig.connectedStatusList;
+      sessionFilter.clientTypeList = sessionFilterConfig.clientTypeList;
+      sessionFilter.cleanStartList = sessionFilterConfig.cleanStartList;
+      sessionFilter.nodeIdList = sessionFilterConfig.nodeIdList;
+      sessionFilter.subscriptions = sessionFilterConfig.subscriptions;
+    }
+    return sessionFilter;
   }
 }

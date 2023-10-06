@@ -24,6 +24,7 @@ import {
   isEqualIgnoreUndefined,
   isUndefinedOrNull
 } from "@core/utils";
+import { TimePageLink } from '@shared/models/page/page-link';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -150,3 +151,47 @@ export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2
   }
   return false;
 };
+
+export class SessionQueryV2 {
+  pageLink: TimePageLink;
+
+  clientId: string;
+  connectedStatusList: ConnectionState[];
+  clientTypeList: ClientType[];
+  cleanStartList: boolean[];
+  nodeIdList: string[];
+  subscriptions: number;
+
+  constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
+    this.pageLink = pageLink;
+    this.connectedStatusList = sessionFilter.connectedStatusList;
+    this.clientTypeList = sessionFilter.clientTypeList;
+    this.cleanStartList = sessionFilter.cleanStartList;
+    this.nodeIdList = sessionFilter.nodeIdList;
+    this.subscriptions = sessionFilter.subscriptions;
+    if (sessionFilter.clientId && sessionFilter.clientId.length) {
+      this.pageLink.textSearch = sessionFilter.clientId;
+    }
+  }
+
+  public toQuery(): string {
+    let query = this.pageLink.toQuery();
+    if (this.connectedStatusList && this.connectedStatusList.length) {
+      query += `&connectedStatusList=${this.connectedStatusList.join(',')}`;
+    }
+    if (this.clientTypeList && this.clientTypeList.length) {
+      query += `&clientTypeList=${this.clientTypeList.join(',')}`;
+    }
+    if (this.cleanStartList && this.cleanStartList.length) {
+      query += `&cleanStartList=${this.cleanStartList.join(',')}`;
+    }
+    if (this.nodeIdList && this.nodeIdList.length) {
+      query += `&nodeIdList=${this.nodeIdList.join(',')}`;
+    }
+    if (typeof this.subscriptions !== 'undefined' && this.subscriptions !== null) {
+      query += `&subscriptions=${this.subscriptions}`;
+    }
+    return query;
+  }
+
+}

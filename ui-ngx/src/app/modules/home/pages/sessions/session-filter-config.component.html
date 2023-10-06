@@ -24,7 +24,7 @@
             matTooltip="{{buttonDisplayValue}}"
             matTooltipPosition="above"
             mat-stroked-button
-            (click)="toggleAlarmFilterPanel($event)">
+            (click)="toggleSessionFilterPanel($event)">
       <mat-icon>filter_list</mat-icon>{{buttonDisplayValue}}
     </button>
   </ng-container>
@@ -55,7 +55,7 @@
   </form>
 </ng-template>
 <ng-template #sessionFilter>
-  <div class="tb-form-panel tb-alarm-filter-config-component no-padding no-border" [formGroup]="sessionFilterConfigForm">
+  <div class="tb-form-panel tb-session-filter-config-component no-padding no-border" [formGroup]="sessionFilterConfigForm">
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.connected-status</div>
       <mat-chip-listbox multiple formControlName="connectedStatusList">
@@ -79,7 +79,7 @@
       </mat-form-field>
     </div>
     <div class="tb-form-row column-xs">
-      <div class="fixed-title-width" translate>mqtt-client-session.subscriptions-count</div>
+      <div class="fixed-title-width" translate>mqtt-client-session.subscriptions</div>
       <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
         <input matInput type="number" min="0" formControlName="subscriptions">
       </mat-form-field>
