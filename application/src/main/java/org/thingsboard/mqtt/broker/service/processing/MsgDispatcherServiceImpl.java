@@ -441,10 +441,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return subscription.getClientSessionInfo().isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
-    private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
-        var targetServiceId = subscription.getClientSessionInfo().getServiceId();
-        var clientId = subscription.getClientSessionInfo().getClientId();
-        downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
+    private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {
+        PublishMsgProto publishMsg = createBasicPublishMsg(subscription, publishMsgProto);
+        sendToNode(publishMsg, subscription);
     }
 
     private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
@@ -456,9 +455,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 .build();
     }
 
-    private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {
-        PublishMsgProto publishMsg = createBasicPublishMsg(subscription, publishMsgProto);
-        sendToNode(publishMsg, subscription);
+    private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
+        var targetServiceId = subscription.getClientSessionInfo().getServiceId();
+        var clientId = subscription.getClientSessionInfo().getClientId();
+        downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
     }
 
     private DefaultTbQueueMsgHeaders createHeaders(PublishMsg publishMsg) {
