@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.Collection;
 
 public interface ClientSessionCtxService {
+
     void registerSession(ClientSessionCtx clientSessionCtx);
 
     void unregisterSession(String clientId);
@@ -28,4 +29,5 @@ public interface ClientSessionCtxService {
     ClientSessionCtx getClientSessionCtx(String clientId);
 
     Collection<ClientSessionCtx> getAllClientSessionCtx();
+
 }

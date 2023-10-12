@@ -125,6 +125,41 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
+    public void testFilterHighestQosClientSubscriptions4() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                new ValueWithTopicFilter<>(
+                        new ClientSubscription(
+                                "clientId1",
+                                0,
+                                null,
+                                new SubscriptionOptions(
+                                        true,
+                                        false,
+                                        SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE)),
+                        "+/test/+")
+        );
+        assertEquals(1, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, "clientId1");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFilterHighestQosClientSubscriptions3() {
+        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+                newValueWithTopicFilter("clientId1", 0, "+/test/+")
+        );
+        assertEquals(1, before.size());
+
+        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
+        assertEquals(1, result.size());
+
+        assertTrue(result.contains(
+                newValueWithTopicFilter("clientId1", 0, "+/test/+")
+        ));
+    }
+
+    @Test
     public void testFilterHighestQosClientSubscriptions2() {
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+"),

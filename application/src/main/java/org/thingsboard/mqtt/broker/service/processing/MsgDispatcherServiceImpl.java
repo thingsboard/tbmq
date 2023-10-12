@@ -185,11 +185,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                                       List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
         boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
         if (nonPersistentByPubQos) {
-            if (subscriptions.size() == 1) {
-                Subscription subscription = subscriptions.get(0);
-                deliver(publishMsgProto, subscription);
-                return;
-            }
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
@@ -200,11 +195,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 }
             }
         } else {
-            if (subscriptions.size() == 1) {
-                Subscription subscription = subscriptions.get(0);
-                processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions);
-                return;
-            }
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
@@ -253,13 +243,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         Set<TopicSharedSubscription> topicSharedSubscriptions = null;
         List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
 
-        if (clientSubscriptionsSize == 1) {
-            ValueWithTopicFilter<ClientSubscription> clientSubscription = clientSubscriptions.get(0);
+        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
             topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
-        } else {
-            for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
-                topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
-            }
         }
 
         SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
@@ -413,15 +398,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        if (clientSubscriptionWithTopicFilterList.size() == 1) {
-            var clientSubsWithTopicFilter = clientSubscriptionWithTopicFilterList.get(0);
-            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
-            if (noLocalOptionMet) {
-                return null;
-            }
-            return clientSubscriptionWithTopicFilterList;
-        }
-
         Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
