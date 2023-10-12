@@ -95,7 +95,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   panelMode = false;
 
-  buttonDisplayValue = this.translate.instant('mqtt-client-session.session-filter');
+  buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
 
   sessionFilterConfigForm: UntypedFormGroup;
 
@@ -302,7 +302,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
         filterTextParts.push(`${this.translate.instant('mqtt-client-session.subscriptions-short')}: ${this.sessionFilterConfig.subscriptions}`);
       }
       if (!filterTextParts.length) {
-        this.buttonDisplayValue = this.translate.instant('mqtt-client-session.session-filter-title');
+        this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
       } else {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join('; ')}`;
       }

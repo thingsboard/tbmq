@@ -40,7 +40,7 @@ import {UntypedFormGroup} from '@angular/forms';
 import {EntityComponent} from './entity.component';
 import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
 import {EntityAction} from '@home/models/entity/entity-component.models';
-import {Subscription} from 'rxjs';
+import {Observable, ReplaySubject, Subscription} from 'rxjs';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {EntityTabsComponent} from '@home/components/entity/entity-tabs.component';
 import {deepClone, mergeDeep} from '@core/utils';
@@ -88,15 +88,15 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   entity: BaseData;
   editingEntity: BaseData;
 
-  private currentEntityId: string;
-  private subscriptions: Subscription[] = [];
-  private viewInited = false;
-  private pendingTabs: MatTab[];
+  protected currentEntityId: string;
+  protected subscriptions: Subscription[] = [];
+  protected viewInited = false;
+  protected pendingTabs: MatTab[];
 
   constructor(protected store: Store<AppState>,
-              private injector: Injector,
-              private cd: ChangeDetectorRef,
-              private componentFactoryResolver: ComponentFactoryResolver) {
+              protected injector: Injector,
+              protected cd: ChangeDetectorRef,
+              protected componentFactoryResolver: ComponentFactoryResolver) {
     super(store);
   }
 
@@ -104,7 +104,9 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   set entityId(entityId: string) {
     if (entityId && entityId !== this.currentEntityId) {
       this.currentEntityId = entityId;
-      this.reload();
+      if (this.currentEntityId) {
+        this.reloadEntity();
+      }
     }
   }
 
@@ -139,7 +141,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
     return this.isEditValue;
   }
 
-  private init() {
+  protected init() {
     this.translations = this.entitiesTableConfig.entityTranslations;
     this.resources = this.entitiesTableConfig.entityResources;
     this.buildEntityComponent();
@@ -228,7 +230,8 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
     return this.isEditValue && this.entitiesTableConfig.hideDetailsTabsOnEdit;
   }
 
-  reload(): void {
+  reloadEntity(): Observable<BaseData> {
+    const loadEntitySubject = new ReplaySubject<BaseData>();
     this.isEdit = false;
     this.entitiesTableConfig.loadEntity(this.currentEntityId).subscribe(
       (entity) => {
@@ -237,8 +240,11 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
         if (this.entityTabsComponent) {
           this.entityTabsComponent.entity = entity;
         }
+        loadEntitySubject.next(entity);
+        loadEntitySubject.complete();
       }
     );
+    return loadEntitySubject;
   }
 
   onCloseEntityDetails() {
@@ -273,7 +279,8 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
     }
   }
 
-  saveEntity() {
+  saveEntity(emitEntityUpdated = true): Observable<BaseData> {
+    const saveEntitySubject = new ReplaySubject<BaseData>();
     if (this.detailsForm.valid) {
       const editingEntity = {...this.editingEntity, ...this.entityComponent.entityFormValue()};
       if (this.editingEntity.hasOwnProperty('additionalInfo')) {
@@ -288,10 +295,18 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
             this.entityTabsComponent.entity = entity;
           }
           this.isEdit = false;
-          this.entityUpdated.emit(this.entity);
+          if (emitEntityUpdated) {
+            this.entityUpdated.emit(this.entity);
+          }
+          saveEntitySubject.next(entity);
+          saveEntitySubject.complete();
         }
       );
+    } else {
+      saveEntitySubject.next(null);
+      saveEntitySubject.complete();
     }
+    return saveEntitySubject;
   }
 
   ngAfterViewInit(): void {

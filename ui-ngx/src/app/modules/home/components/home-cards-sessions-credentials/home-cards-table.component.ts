@@ -16,7 +16,7 @@
 
 import { Component, Input } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
+import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';

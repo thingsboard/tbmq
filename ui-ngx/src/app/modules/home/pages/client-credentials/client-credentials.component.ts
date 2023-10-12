@@ -21,19 +21,19 @@ import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import {
-  clientCredentialsTypeTranslationMap,
-  MqttClientCredentials,
-  MqttCredentialsType
-} from '@shared/models/client-crenetials.model';
+  credentialsTypeTranslationMap,
+  ClientCredentials,
+  CredentialsType
+} from '@shared/models/credentials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
 import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
-  selector: 'tb-mqtt-client-credentials',
-  templateUrl: './mqtt-client-credentials.component.html',
-  styleUrls: ['./mqtt-client-credentials.component.scss'],
+  selector: 'tb-client-credentials',
+  templateUrl: './client-credentials.component.html',
+  styleUrls: ['./client-credentials.component.scss'],
   providers: [
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
@@ -41,22 +41,22 @@ import { isDefinedAndNotNull } from '@core/utils';
     }
   ]
 })
-export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCredentials> {
+export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
 
   @Output()
-  changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
+  changePasswordCloseDialog = new EventEmitter<ClientCredentials>();
 
-  credentialsType = MqttCredentialsType;
-  credentialsTypes = Object.values(MqttCredentialsType);
-  credentialsTypeTranslationMap = clientCredentialsTypeTranslationMap;
+  credentialsType = CredentialsType;
+  credentialsTypes = Object.values(CredentialsType);
+  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
   clientTypes = Object.values(ClientType);
 
   ClientType = ClientType;
   clientTypeTranslationMap = clientTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
-              @Inject('entity') protected entityValue: MqttClientCredentials,
-              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttClientCredentials>,
+              @Inject('entity') protected entityValue: ClientCredentials,
+              @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<ClientCredentials>,
               public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
@@ -70,7 +70,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     }
   }
 
-  buildForm(entity: MqttClientCredentials): UntypedFormGroup {
+  buildForm(entity: ClientCredentials): UntypedFormGroup {
     const form = this.fb.group(
       {
         name: [entity ? entity.name : null, [Validators.required]],
@@ -81,7 +81,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     );
     form.patchValue({
       clientType: ClientType.DEVICE,
-      credentialsType: MqttCredentialsType.MQTT_BASIC
+      credentialsType: CredentialsType.MQTT_BASIC
     });
     form.get('credentialsType').valueChanges.subscribe(() => {
       form.patchValue({credentialsValue: null});
@@ -96,14 +96,14 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
     return form;
   }
 
-  updateForm(entity: MqttClientCredentials) {
+  updateForm(entity: ClientCredentials) {
     this.entityForm.patchValue({name: entity.name});
     this.entityForm.patchValue({credentialsType: entity.credentialsType});
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
     this.entityForm.patchValue({clientType: entity.clientType});
   }
 
-  onChangePasswordCloseDialog($event: MqttClientCredentials) {
+  onChangePasswordCloseDialog($event: ClientCredentials) {
     this.updateForm($event);
   }
 }

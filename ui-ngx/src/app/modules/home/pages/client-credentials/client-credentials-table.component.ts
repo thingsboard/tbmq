@@ -15,20 +15,22 @@
 ///
 
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { ClientSessionService } from '@core/http/client-session.service';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { MatDialog } from '@angular/material/dialog';
-import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ClientCredentialsTableConfig
+} from '@home/pages/client-credentials/client-credentials-table-config';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
 
 @Component({
-  selector: 'tb-sessions-table',
-  templateUrl: './sessions-table.component.html'
+  selector: 'tb-client-credentials-table',
+  templateUrl: './client-credentials-table.component.html'
 })
-export class SessionsTableComponent implements OnInit {
+export class ClientCredentialsTableComponent implements OnInit {
 
   @Input()
   detailsMode: boolean;
@@ -51,8 +53,8 @@ export class SessionsTableComponent implements OnInit {
   @Input()
   set entityId(entityId: string) {
     this.entityIdValue = entityId;
-    if (this.sessionsTableConfig && this.sessionsTableConfig.entityId !== entityId) {
-      this.sessionsTableConfig.entityId = entityId;
+    if (this.clientCredentialsTableConfig && this.clientCredentialsTableConfig.entityId !== entityId) {
+      this.clientCredentialsTableConfig.entityId = entityId;
       this.entitiesTable.resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
@@ -62,25 +64,23 @@ export class SessionsTableComponent implements OnInit {
 
   @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
 
-  sessionsTableConfig: SessionsTableConfig;
+  clientCredentialsTableConfig: ClientCredentialsTableConfig;
 
-  constructor(private clientSessionService: ClientSessionService,
+  constructor(private store: Store<AppState>,
+              private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
               private datePipe: DatePipe,
-              private dialog: MatDialog,
-              private dialogService: DialogService,
               private route: ActivatedRoute,
               private router: Router) {
   }
 
   ngOnInit(): void {
     this.dirtyValue = !this.activeValue;
-    this.sessionsTableConfig = new SessionsTableConfig(
-      this.clientSessionService,
+    this.clientCredentialsTableConfig = new ClientCredentialsTableConfig(
+      this.store,
+      this.clientCredentialsService,
       this.translate,
       this.datePipe,
-      this.dialog,
-      this.dialogService,
       this.entityIdValue,
       this.route,
       this.router

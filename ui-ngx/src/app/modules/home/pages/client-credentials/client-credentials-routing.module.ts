@@ -17,15 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import {
-  MqttClientCredentialsTableConfigResolver
-} from '@home/pages/mqtt-client-credentials/mqtt-client-credentials-table-config-resolver.service';
+import { ClientCredentialsTableComponent } from '@home/pages/client-credentials/client-credentials-table.component';
 
 const routes: Routes = [
   {
     path: 'client-credentials',
-    component: EntitiesTableComponent,
+    component: ClientCredentialsTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'mqtt-client-credentials.client-credentials',
@@ -33,21 +30,16 @@ const routes: Routes = [
         label: 'mqtt-client-credentials.client-credentials',
         icon: 'mdi:shield-lock',
         isMdiIcon: true
-      }
-    },
-    resolve: {
-      entitiesTableConfig: MqttClientCredentialsTableConfigResolver
+      },
+      isPage: true
     }
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule],
-  providers: [
-    MqttClientCredentialsTableConfigResolver
-  ]
+  exports: [RouterModule]
 })
 
-export class MqttClientCredentialsRoutingModule {
+export class ClientCredentialsRoutingModule {
 }

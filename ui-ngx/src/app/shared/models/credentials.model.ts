@@ -26,30 +26,30 @@ import {
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 
-export enum MqttCredentialsType {
+export enum CredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
   SSL = 'SSL'
 }
 
-export const clientCredentialsTypeTranslationMap = new Map<MqttCredentialsType, string>(
+export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
-    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
+    [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
+    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
   ]
 );
 
-export const credentialsWarningTranslations = new Map<MqttCredentialsType, string>(
+export const credentialsWarningTranslations = new Map<CredentialsType, string>(
   [
-    [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
-    [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
+    [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
+    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
   ]
 );
 
-export interface MqttClientCredentials extends BaseData {
+export interface ClientCredentials extends BaseData {
   credentialsId: string;
   name: string;
   clientType: ClientType;
-  credentialsType: MqttCredentialsType;
+  credentialsType: CredentialsType;
   credentialsValue: string;
 }
 
@@ -58,14 +58,14 @@ export interface SslMqttCredentials extends SslAuthRulesMapping {
 }
 
 export interface SslAuthRulesMapping {
-  authRulesMapping: Array<SslMqttCredentialsAuthRules>;
+  authRulesMapping: Array<SslCredentialsAuthRules>;
 }
 
-export interface SslMqttCredentialsAuthRules {
+export interface SslCredentialsAuthRules {
   [key: string]: AuthRules;
 }
 
-export interface BasicMqttCredentials {
+export interface BasicCredentials {
   clientId: string;
   userName: string;
   password: string;
@@ -93,7 +93,7 @@ export interface ClientCredentialsInfo {
 }
 
 export interface ClientCredentialsFilterConfig {
-  credentialsTypeList?: MqttCredentialsType[];
+  credentialsTypeList?: CredentialsType[];
   clientTypeList?: ClientType[];
   name?: string;
 }
@@ -122,7 +122,7 @@ export const clientCredentialsFilterConfigEquals = (filter1?: ClientCredentialsF
 export class ClientCredentialsQuery {
   pageLink: TimePageLink;
 
-  credentialsTypeList: MqttCredentialsType[];
+  credentialsTypeList: CredentialsType[];
   clientTypeList: ClientType[];
   name: string;
 

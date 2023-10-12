@@ -25,7 +25,7 @@ import { ClientSessionStatsInfo, DetailedClientSessionInfo, SessionQuery } from 
 @Injectable({
   providedIn: 'root'
 })
-export class MqttClientSessionService {
+export class ClientSessionService {
 
   constructor(private http: HttpClient) {
   }

@@ -29,12 +29,12 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr, isString } from '@core/utils';
-import { AuthRulePatternsType, AuthRules, BasicMqttCredentials, MqttClientCredentials } from '@shared/models/client-crenetials.model';
+import { AuthRulePatternsType, AuthRules, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
-  ChangeMqttBasicPasswordDialogComponent,
-  ChangeMqttBasicPasswordDialogData
-} from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
+  ChangeBasicPasswordDialogComponent,
+  ChangeBasicPasswordDialogData
+} from '@home/pages/client-credentials/change-basic-password-dialog.component';
 import { MatChipInputEvent } from '@angular/material/chips';
 
 @Component({
@@ -59,10 +59,10 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   disabled: boolean;
 
   @Input()
-  entity: MqttClientCredentials;
+  entity: ClientCredentials;
 
   @Output()
-  changePasswordCloseDialog = new EventEmitter<MqttClientCredentials>();
+  changePasswordCloseDialog = new EventEmitter<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
@@ -148,7 +148,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     }
   }
 
-  updateView(value: BasicMqttCredentials) {
+  updateView(value: BasicCredentials) {
     value.authRules = this.formatAuthRules(value.authRules);
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
@@ -169,14 +169,14 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   }
 
   changePassword(): void {
-    this.dialog.open<ChangeMqttBasicPasswordDialogComponent, ChangeMqttBasicPasswordDialogData,
-      MqttClientCredentials>(ChangeMqttBasicPasswordDialogComponent, {
+    this.dialog.open<ChangeBasicPasswordDialogComponent, ChangeBasicPasswordDialogData,
+      ClientCredentials>(ChangeBasicPasswordDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         credentialsId: this.entity?.id
       }
-    }).afterClosed().subscribe((res: MqttClientCredentials) => {
+    }).afterClosed().subscribe((res: ClientCredentials) => {
       if (res) {
         this.changePasswordCloseDialog.emit(res);
       }

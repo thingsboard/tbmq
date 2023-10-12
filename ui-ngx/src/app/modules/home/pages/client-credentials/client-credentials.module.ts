@@ -18,36 +18,38 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import {
-  MqttClientCredentialsRoutingModule
-} from '@home/pages/mqtt-client-credentials/mqtt-client-credentials-routing.module';
+  ClientCredentialsRoutingModule
+} from '@home/pages/client-credentials/client-credentials-routing.module';
 import {
-  ChangeMqttBasicPasswordDialogComponent
-} from '@home/pages/mqtt-client-credentials/change-mqtt-basic-password-dialog.component';
+  ChangeBasicPasswordDialogComponent
+} from '@home/pages/client-credentials/change-basic-password-dialog.component';
 import { MqttCredentialsSslComponent } from '@home/components/client-credentials-templates/ssl/ssl.component';
 import { MqttCredentialsBasicComponent } from '@home/components/client-credentials-templates/basic/basic.component';
 import { AuthRulesComponent } from '@home/components/client-credentials-templates/ssl/auth-rules.component';
-import { ClientCredentialsTableHeaderComponent } from '@home/pages/mqtt-client-credentials/client-credentials-table-header.component';
-import { ClientCredentialsFilterConfigComponent } from '@home/pages/mqtt-client-credentials/client-credentials-filter-config.component';
+import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
+import { ClientCredentialsFilterConfigComponent } from '@home/pages/client-credentials/client-credentials-filter-config.component';
+import { ClientCredentialsTableComponent } from '@home/pages/client-credentials/client-credentials-table.component';
 
 @NgModule({
   declarations: [
-    MqttClientCredentialsComponent,
+    ClientCredentialsComponent,
     MqttCredentialsSslComponent,
     MqttCredentialsBasicComponent,
     AuthRulesComponent,
-    ChangeMqttBasicPasswordDialogComponent,
+    ChangeBasicPasswordDialogComponent,
     ClientCredentialsTableHeaderComponent,
-    ClientCredentialsFilterConfigComponent
+    ClientCredentialsFilterConfigComponent,
+    ClientCredentialsTableComponent
   ],
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
-    MqttClientCredentialsRoutingModule
+    ClientCredentialsRoutingModule
   ]
 })
 
-export class MqttClientCredentialsModule {
+export class ClientCredentialsModule {
 }

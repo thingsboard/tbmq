@@ -15,8 +15,8 @@
 ///
 
 export * from './http-utils';
-export * from './mqtt-client-credentials.service';
-export * from './mqtt-client-session.service';
+export * from './client-credentials.service';
+export * from './client-session.service';
 export * from './admin.service';
 export * from './auth.service';
 export * from './stats.service';

@@ -16,7 +16,7 @@
 
 import { NgModule } from '@angular/core';
 
-import { MqttClientCredentialsModule } from './mqtt-client-credentials/mqtt-client-credentials.module';
+import { ClientCredentialsModule } from '@home/pages/client-credentials/client-credentials.module';
 import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
 import { SessionsModule } from '@home/pages/sessions/sessions.module';
@@ -30,7 +30,7 @@ import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
   exports: [
     MailServerModule,
     ProfileModule,
-    MqttClientCredentialsModule,
+    ClientCredentialsModule,
     SessionsModule,
     AdminsModule,
     SharedSubscriptionsModule,

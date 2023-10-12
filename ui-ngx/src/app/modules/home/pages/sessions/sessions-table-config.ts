@@ -30,7 +30,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
-import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ClientSessionService } from '@core/http/client-session.service';
 import { SessionsDetailsDialogComponent, SessionsDetailsDialogData } from '@home/pages/sessions/sessions-details-dialog.component';
 import {
   ConnectionState,
@@ -48,12 +48,13 @@ import { SessionTableHeaderComponent } from '@home/pages/sessions/session-table-
 import { forAllTimeInterval } from '@shared/models/time/time.models';
 import { ActivatedRoute, Router } from '@angular/router';
 import { deepClone } from '@core/utils';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
   sessionFilterConfig: SessionFilterConfig = initialSessionFilterConfig;
 
-  constructor(private mqttClientSessionService: MqttClientSessionService,
+  constructor(private clientSessionService: ClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
@@ -64,22 +65,19 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     super();
     this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;
-    this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
     this.tableTitle = this.translate.instant('mqtt-client-session.type-sessions');
-    this.entityTranslations = {
-      noEntities: 'mqtt-client-session.no-session-text',
-      search: 'mqtt-client-session.search'
-    };
+    this.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_SESSION);
+    this.entityResources = entityTypeResources.get(EntityType.MQTT_SESSION);
     this.defaultSortOrder = {property: 'connectedAt', direction: Direction.DESC};
+
     this.groupActionDescriptors = this.configureGroupActions();
     this.cellActionDescriptors = this.configureCellActions();
 
     this.headerComponent = SessionTableHeaderComponent;
     this.useTimePageLink = true;
     this.forAllTimeEnabled = true;
-    this.selectionEnabled = true;
     this.defaultTimewindowInterval = forAllTimeInterval();
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
@@ -128,14 +126,14 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     }
     const sessionFilter = this.resolveSessionFilter(this.sessionFilterConfig);
     const query = new SessionQuery(pageLink, sessionFilter);
-    return this.mqttClientSessionService.getShortClientSessionInfosV2(query);
+    return this.clientSessionService.getShortClientSessionInfosV2(query);
   }
 
   private showSessionDetails($event: Event, entity: DetailedClientSessionInfo) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.mqttClientSessionService.getDetailedClientSessionInfo(entity.clientId).subscribe(
+    this.clientSessionService.getDetailedClientSessionInfo(entity.clientId).subscribe(
       session => {
         this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
           disableClose: true,
@@ -207,7 +205,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           const tasks: Observable<any>[] = [];
           sessions.forEach(
             (session) => {
-              tasks.push(this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId));
+              tasks.push(this.clientSessionService.disconnectClientSession(session.clientId, session.sessionId));
             }
           );
           forkJoin(tasks).subscribe(() => this.updateTable()); //TODO deaflynx
@@ -230,7 +228,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       true
     ).subscribe((res) => {
         if (res) {
-          this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId).subscribe(() => this.updateTable());
+          this.clientSessionService.disconnectClientSession(session.clientId, session.sessionId).subscribe(() => this.updateTable());
         }
       }
     );
@@ -250,7 +248,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       true
     ).subscribe((res) => {
         if (res) {
-          this.mqttClientSessionService.removeClientSession(session.clientId, session.sessionId).subscribe(() => this.updateTable());
+          this.clientSessionService.removeClientSession(session.clientId, session.sessionId).subscribe(() => this.updateTable());
         }
       }
     );
@@ -271,7 +269,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           const tasks: Observable<any>[] = [];
           sessions.forEach(
             (session) => {
-              tasks.push(this.mqttClientSessionService.removeClientSession(session.clientId, session.sessionId));
+              tasks.push(this.clientSessionService.removeClientSession(session.clientId, session.sessionId));
             }
           );
           forkJoin(tasks).subscribe(() => this.updateTable());

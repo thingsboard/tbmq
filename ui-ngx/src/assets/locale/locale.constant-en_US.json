@@ -385,8 +385,6 @@
     "type-ssl": "X.509 Certificate Chain",
     "type-basic-auth": "Basic Auth is disabled",
     "type-ssl-auth": "X.509 Certificate Chain Auth is disabled",
-    "client-credentials-filter": "Session filter",
-    "client-credentials-filter-title": "Session filter",
     "filter-title": "Filter"
   },
   "mqtt-client-session": {
@@ -460,8 +458,6 @@
     "qos-exactly-once": "Exactly once",
     "should-be-persistent": "Application client should be persistent",
     "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
-    "session-filter": "Session filter",
-    "session-filter-title": "Session filter",
     "filter-title": "Filter"
   },
   "shared-subscription": {

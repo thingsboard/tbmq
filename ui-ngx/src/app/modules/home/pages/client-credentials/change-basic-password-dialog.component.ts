@@ -23,19 +23,19 @@ import { ActionNotificationShow } from '@core/notification/notification.actions'
 import { TranslateService } from '@ngx-translate/core';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
 
-export interface ChangeMqttBasicPasswordDialogData {
+export interface ChangeBasicPasswordDialogData {
   credentialsId: string;
 }
 
 @Component({
   selector: 'tb-change-password-dialog',
-  templateUrl: './change-mqtt-basic-password-dialog.component.html',
-  styleUrls: ['./change-mqtt-basic-password-dialog.component.scss']
+  templateUrl: './change-basic-password-dialog.component.html',
+  styleUrls: ['./change-basic-password-dialog.component.scss']
 })
-export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<ChangeMqttBasicPasswordDialogComponent,
-  ChangeMqttBasicPasswordDialogData> implements OnInit {
+export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBasicPasswordDialogComponent,
+  ChangeBasicPasswordDialogData> implements OnInit {
 
   changePassword: UntypedFormGroup;
   credentialsId = this.data.credentialsId;
@@ -43,10 +43,10 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
   constructor(protected store: Store<AppState>,
               protected router: Router,
               private translate: TranslateService,
-              public dialogRef: MatDialogRef<ChangeMqttBasicPasswordDialogComponent>,
-              @Inject(MAT_DIALOG_DATA) public data: ChangeMqttBasicPasswordDialogData,
+              public dialogRef: MatDialogRef<ChangeBasicPasswordDialogComponent>,
+              @Inject(MAT_DIALOG_DATA) public data: ChangeBasicPasswordDialogData,
               public fb: UntypedFormBuilder,
-              private mqttClientCredentialsService: MqttClientCredentialsService) {
+              private clientCredentialsService: ClientCredentialsService) {
     super(store, router, dialogRef);
   }
 
@@ -69,7 +69,7 @@ export class ChangeMqttBasicPasswordDialogComponent extends DialogComponent<Chan
         type: 'error'
       }));
     } else {
-      this.mqttClientCredentialsService.changePassword(
+      this.clientCredentialsService.changePassword(
         this.changePassword.get('currentPassword').value,
         this.changePassword.get('newPassword').value,
         this.credentialsId).subscribe(
