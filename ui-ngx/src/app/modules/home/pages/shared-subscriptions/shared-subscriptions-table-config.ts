@@ -40,6 +40,7 @@ export class SharedSubscriptionsTableConfig extends EntityTableConfig<SharedSubs
     this.entityResources = entityTypeResources.get(EntityType.SHARED_SUBSCRIPTION);
     this.tableTitle = this.translate.instant('shared-subscription.application-shared-subscriptions');
     this.entityTitle = (entity) => entity ? entity.name : '';
+    this.addDialogStyle = {width: '800px'};
 
     this.columns.push(
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),

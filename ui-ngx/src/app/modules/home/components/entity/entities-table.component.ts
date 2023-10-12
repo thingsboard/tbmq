@@ -19,6 +19,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
   Input,
@@ -131,7 +132,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
               private domSanitizer: DomSanitizer,
               private cd: ChangeDetectorRef,
               private router: Router,
-              private viewContainerRef: ViewContainerRef,
+              private componentFactoryResolver: ComponentFactoryResolver,
               private fb: UntypedFormBuilder) {
     super(store);
   }
@@ -160,10 +161,11 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.entitiesTableConfig = entitiesTableConfig;
     this.pageMode = this.entitiesTableConfig.pageMode;
     if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.viewContainerRef.createComponent(this.entitiesTableConfig.headerComponent);
+      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
       viewContainerRef.clear();
-      const headerComponent = componentFactory.instance;
+      const componentRef = viewContainerRef.createComponent(componentFactory);
+      const headerComponent = componentRef.instance;
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 

@@ -18,6 +18,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ComponentFactoryResolver,
   Directive,
   ElementRef,
   EventEmitter,
@@ -128,7 +129,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
               private domSanitizer: DomSanitizer,
               private breakpointObserver: BreakpointObserver,
               private router: Router,
-              private viewContainerRef: ViewContainerRef) {
+              private componentFactoryResolver: ComponentFactoryResolver) {
     super(store);
   }
 
@@ -156,10 +157,11 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.isDetailsOpen = false;
     this.entitiesTableConfig = entitiesTableConfig;
     if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.viewContainerRef.createComponent(this.entitiesTableConfig.headerComponent);
+      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
       viewContainerRef.clear();
-      const headerComponent = componentFactory.instance;
+      const componentRef = viewContainerRef.createComponent(componentFactory);
+      const headerComponent = componentRef.instance;
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 
