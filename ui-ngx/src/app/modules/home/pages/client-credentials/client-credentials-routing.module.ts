@@ -28,8 +28,7 @@ const routes: Routes = [
       title: 'mqtt-client-credentials.client-credentials',
       breadcrumb: {
         label: 'mqtt-client-credentials.client-credentials',
-        icon: 'mdi:shield-lock',
-        isMdiIcon: true
+        icon: 'mdi:shield-lock'
       },
       isPage: true
     }

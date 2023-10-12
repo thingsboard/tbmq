@@ -18,7 +18,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { AdminsTableConfigResolver } from '@home/pages/admins/admins-table-config-resolver.service';
+import { UserTableConfigResolver } from '@home/pages/users/users-table-config-resolver.service';
 
 const routes: Routes = [
   {
@@ -29,12 +29,11 @@ const routes: Routes = [
       title: 'user.users',
       breadcrumb: {
         label: 'user.users',
-        icon: 'mdi:account-multiple-outline',
-        isMdiIcon: true
+        icon: 'mdi:account-multiple-outline'
       }
     },
     resolve: {
-      entitiesTableConfig: AdminsTableConfigResolver
+      entitiesTableConfig: UserTableConfigResolver
     }
   }
 ];
@@ -43,9 +42,9 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
   providers: [
-    AdminsTableConfigResolver
+    UserTableConfigResolver
   ]
 })
 
-export class AdminsRoutingModule {
+export class UsersRoutingModule {
 }

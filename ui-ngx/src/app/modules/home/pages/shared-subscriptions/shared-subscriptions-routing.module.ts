@@ -29,8 +29,7 @@ const routes: Routes = [
       title: 'shared-subscription.shared-subscriptions',
       breadcrumb: {
         label: 'shared-subscription.application-shared-subscriptions',
-        icon: 'mdi:monitor-share',
-        isMdiIcon: true
+        icon: 'mdi:monitor-share'
       }
     },
     resolve: {

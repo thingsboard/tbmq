@@ -51,8 +51,7 @@ const routes: Routes = [
           title: 'admin.outgoing-mail-settings',
           breadcrumb: {
             label: 'admin.outgoing-mail',
-            icon: 'mdi:email',
-            isMdiIcon: true
+            icon: 'mdi:email'
           }
         }
       }

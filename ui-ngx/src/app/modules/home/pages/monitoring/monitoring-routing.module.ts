@@ -49,8 +49,7 @@ const routes: Routes = [
       title: 'monitoring.monitoring',
       breadcrumb: {
         label: 'monitoring.monitoring',
-        icon: 'mdi:monitor-dashboard',
-        isMdiIcon: true
+        icon: 'mdi:monitor-dashboard'
       }
     },
     resolve: {

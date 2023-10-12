@@ -28,8 +28,7 @@ const routes: Routes = [
       title: 'mqtt-client-session.sessions',
       breadcrumb: {
         label: 'mqtt-client-session.sessions',
-        icon: 'mdi:book-multiple',
-        isMdiIcon: true
+        icon: 'mdi:book-multiple'
       },
       isPage: true
     }

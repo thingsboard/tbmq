@@ -18,20 +18,20 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { AdminComponent } from '@home/pages/admins/admin.component';
-import { AdminsRoutingModule } from '@home/pages/admins/admins-routing.module';
+import { UserComponent } from '@home/pages/users/user.component';
+import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
 
 @NgModule({
   declarations: [
-    AdminComponent
+    UserComponent
   ],
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
-    AdminsRoutingModule
+    UsersRoutingModule
   ]
 })
 
-export class AdminsModule {
+export class UsersModule {
 }

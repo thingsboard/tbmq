@@ -177,7 +177,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
-          mdiIcon: 'mdi:trash-can-outline',
+          icon: 'mdi:trash-can-outline',
           isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
@@ -186,7 +186,6 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isMdiIcon: true,
           isEnabled: true,
           onAction: ($event, entities) => this.deleteEntities($event, entities)
         }

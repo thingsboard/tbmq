@@ -26,27 +26,27 @@ import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 @Injectable({
   providedIn: 'root'
 })
-export class AdminService {
+export class UserService {
 
   constructor(private http: HttpClient) {
   }
 
-  public getAdmin(userId: string, config?: RequestConfig): Observable<User> {
+  public getUser(userId: string, config?: RequestConfig): Observable<User> {
     return this.http.get<User>(`/api/admin/user/${userId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public saveAdmin(user: User, config?: RequestConfig): Observable<User> {
+  public saveUser(user: User, config?: RequestConfig): Observable<User> {
     if (!user.password) {
       user.password = DEFAULT_PASSWORD;
     }
     return this.http.post<User>(`/api/admin`, user, defaultHttpOptionsFromConfig(config));
   }
 
-  public deleteAdmin(userId: string, config?: RequestConfig): Observable<void> {
+  public deleteUser(userId: string, config?: RequestConfig): Observable<void> {
     return this.http.delete<void>(`/api/admin/${userId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getAdmins(pageLink: PageLink, config?: RequestConfig): Observable<PageData<User>> {
+  public getUsers(pageLink: PageLink, config?: RequestConfig): Observable<PageData<User>> {
     return this.http.get<PageData<User>>(`/api/admin${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 

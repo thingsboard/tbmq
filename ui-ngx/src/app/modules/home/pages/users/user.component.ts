@@ -24,11 +24,11 @@ import { User } from '@shared/models/user.model';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Component({
-  selector: 'tb-mqtt-admin-credentials',
-  templateUrl: './admin.component.html',
-  styleUrls: ['./admin.component.scss']
+  selector: 'tb-user',
+  templateUrl: './user.component.html',
+  styleUrls: ['./user.component.scss']
 })
-export class AdminComponent extends EntityComponent<User> {
+export class UserComponent extends EntityComponent<User> {
 
   private currentUserId = getCurrentAuthUser(this.store).userId;
 

@@ -154,7 +154,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       {
         name: this.translate.instant('mqtt-client-session.disconnect-client-sessions'),
         icon: 'mdi:link-off',
-        isMdiIcon: true,
         isEnabled: true,
         onAction: ($event, entities) =>
           this.disconnectClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.CONNECTED))
@@ -162,7 +161,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       {
         name: this.translate.instant('mqtt-client-session.remove-sessions'),
         icon: 'mdi:trash-can-outline',
-        isMdiIcon: true,
         isEnabled: true,
         onAction: ($event, entities) =>
           this.removeClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.DISCONNECTED))
@@ -176,13 +174,13 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     actions.push(
       {
         name: this.translate.instant('mqtt-client-session.disconnect-client-sessions'),
-        mdiIcon: 'mdi:link-off',
+        icon: 'mdi:link-off',
         isEnabled: (entity) => (entity.connectionState === ConnectionState.CONNECTED),
         onAction: ($event, entity) => this.disconnectClientSession($event, entity)
       },
       {
         name: this.translate.instant('mqtt-client-session.remove-session'),
-        mdiIcon: 'mdi:trash-can-outline',
+        icon: 'mdi:trash-can-outline',
         isEnabled: (entity) => (entity.connectionState === ConnectionState.DISCONNECTED),
         onAction: ($event, entity) => this.removeClientSession($event, entity)
       }

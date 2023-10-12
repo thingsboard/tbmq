@@ -179,7 +179,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
-          mdiIcon: 'mdi:trash-can-outline',
+          icon: 'mdi:trash-can-outline',
           isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
@@ -188,7 +188,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isMdiIcon: true,
           isEnabled: true,
           onAction: ($event, entities) => this.deleteEntities($event, entities)
         }

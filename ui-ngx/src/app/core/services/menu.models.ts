@@ -23,7 +23,6 @@ export interface MenuSection {
   path: string;
   icon: string;
   notExact?: boolean;
-  isMdiIcon?: boolean;
   height?: string;
   pages?: Array<MenuSection>;
   isNew?: boolean;

@@ -28,25 +28,25 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { User } from '@shared/models/user.model';
-import { AdminComponent } from '@home/pages/admins/admin.component';
-import { AdminService } from '@core/http/admin.service';
+import { UserComponent } from '@home/pages/users/user.component';
+import { UserService } from '@core/http/user.service';
 import { AuthorityTranslationMap } from '@shared/models/authority.enum';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Injectable()
-export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User>> {
+export class UserTableConfigResolver implements Resolve<EntityTableConfig<User>> {
 
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
 
   constructor(private store: Store<AppState>,
-              private adminService: AdminService,
+              private adminService: UserService,
               private translate: TranslateService,
               private datePipe: DatePipe) {
 
     this.config.entityType = EntityType.USER;
-    this.config.entityComponent = AdminComponent;
+    this.config.entityComponent = UserComponent;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
     this.config.tableTitle = this.translate.instant('user.users');
@@ -79,20 +79,20 @@ export class AdminsTableConfigResolver implements Resolve<EntityTableConfig<User
     this.config.deleteEntitiesTitle = count => this.translate.instant('user.delete-users-title', {count});
     this.config.deleteEntitiesContent = () => this.translate.instant('user.delete-users-text');
     this.config.loadEntity = id => this.loadEntity(id);
-    this.config.saveEntity = user => this.adminService.saveAdmin(user);
+    this.config.saveEntity = user => this.adminService.saveUser(user);
     this.config.deleteEntity = id => this.deleteEntity(id);
   }
 
   resolve(): EntityTableConfig<User> {
-    this.config.entitiesFetchFunction = pageLink => this.adminService.getAdmins(pageLink);
+    this.config.entitiesFetchFunction = pageLink => this.adminService.getUsers(pageLink);
     return this.config;
   }
 
   loadEntity(id) {
-    return this.adminService.getAdmin(id);
+    return this.adminService.getUser(id);
   }
 
   deleteEntity(id) {
-    return this.adminService.deleteAdmin(id);
+    return this.adminService.deleteUser(id);
   }
 }

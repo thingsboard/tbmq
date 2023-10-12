@@ -20,8 +20,7 @@
   <section class="links">
     <div class="link" *ngFor="let section of quickLinks$ | async" (click)="navigate(section.path)">
       <div class="icon-container">
-        <mat-icon *ngIf="section.isMdiIcon" color="primary" [svgIcon]="section.icon"></mat-icon>
-        <mat-icon *ngIf="!section.isMdiIcon" color="primary">{{section.icon}}</mat-icon>
+        <tb-icon color="primary">{{section.icon}}</tb-icon>
       </div>
       <div class="link-content">
         <span>{{section.name | translate}}</span>

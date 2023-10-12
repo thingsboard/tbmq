@@ -72,7 +72,6 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
     this.config.headerActionDescriptors.push({
       name: this.translate.instant('retained-message.clear-empty-retained-message-nodes'),
       icon: 'delete_forever',
-      isMdiIcon: false,
       isEnabled: () => true,
       onAction: ($event) => {
         this.clearEmptyRetainedMsgNodes($event);
@@ -99,7 +98,6 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       {
         name: this.translate.instant('action.delete'),
         icon: 'mdi:trash-can-outline',
-        isMdiIcon: true,
         isEnabled: true,
         onAction: ($event, entities) => this.deleteEntities($event, entities)
       }
@@ -112,19 +110,19 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
     actions.push(
       {
         name: this.translate.instant('retained-message.show-data'),
-        mdiIcon: 'mdi:code-braces',
+        icon: 'mdi:code-braces',
         isEnabled: () => true,
         onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data')
       },
       {
         name: this.translate.instant('retained-message.show-user-properties'),
-        mdiIcon: 'mdi:code-brackets',
+        icon: 'mdi:code-brackets',
         isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
         onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
       },
       {
         name: this.translate.instant('action.delete'),
-        mdiIcon: 'mdi:trash-can-outline',
+        icon: 'mdi:trash-can-outline',
         isEnabled: () => true,
         onAction: ($event, entity) => this.deleteEntity($event, entity)
       }
