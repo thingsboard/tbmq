@@ -18,8 +18,12 @@
 <div fxFlex class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType"></tb-card-title-button>
   <section class="cards" fxLayoutGap="12px">
-    <div fxFlex class="key-value" *ngFor="let item of config; let i = index" [fxHide.md]="i === 2" [fxHide.sm]="i === 2">
-      <div class="key">{{ item.label | translate }}</div>
+    <div fxFlex class="key-value" *ngFor="let item of config; let i = index" [fxHide.md]="i === 2" [fxHide.sm]="i === 2"
+      (click)="navigateApplyFilter(item)">
+      <div style="width: 100%;" fxLayoutAlign="space-between">
+        <div class="key">{{ item.label | translate }}</div>
+        <div class="key-arrow"></div>
+      </div>
       <div class="value">{{ latestValues ? latestValues[item.key] : 0 }}</div>
     </div>
   </section>

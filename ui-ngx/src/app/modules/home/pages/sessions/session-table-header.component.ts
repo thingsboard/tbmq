@@ -18,8 +18,8 @@ import { Component } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
-import { SessionFilterConfig, SessionsTableConfig } from "@home/pages/sessions/sessions-table-config";
-import { DetailedClientSessionInfo } from "@shared/models/session.model";
+import { SessionsTableConfig } from "@home/pages/sessions/sessions-table-config";
+import { DetailedClientSessionInfo, SessionFilterConfig } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-session-table-header',

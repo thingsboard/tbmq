@@ -18,6 +18,7 @@ import {
   CellActionDescriptor,
   checkBoxCell,
   clientTypeCell,
+  connectedStateCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
@@ -30,48 +31,43 @@ import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
-import {
-  SessionsDetailsDialogComponent,
-  SessionsDetailsDialogData
-} from '@home/pages/sessions/sessions-details-dialog.component';
+import { SessionsDetailsDialogComponent, SessionsDetailsDialogData } from '@home/pages/sessions/sessions-details-dialog.component';
 import {
   ConnectionState,
   connectionStateColor,
   connectionStateTranslationMap,
-  DetailedClientSessionInfo, SessionQueryV2
+  DetailedClientSessionInfo,
+  initialSessionFilterConfig,
+  SessionFilterConfig,
+  SessionQuery
 } from '@shared/models/session.model';
-import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
+import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { Direction } from '@shared/models/page/sort-order';
 import { DialogService } from '@core/services/dialog.service';
-import { SessionTableHeaderComponent } from "@home/pages/sessions/session-table-header.component";
-import { forAllTimeInterval } from "@shared/models/time/time.models";
-
-export interface SessionFilterConfig {
-  connectedStatusList?: ConnectionState[];
-  clientTypeList?: ClientType[];
-  nodeIdList?: string[];
-  cleanStartList?: boolean[];
-  subscriptions?: number;
-  clientId?: string;
-}
+import { SessionTableHeaderComponent } from '@home/pages/sessions/session-table-header.component';
+import { forAllTimeInterval } from '@shared/models/time/time.models';
+import { ActivatedRoute, Router } from '@angular/router';
+import { deepClone } from '@core/utils';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
-  sessionFilterConfig: SessionFilterConfig;
+  sessionFilterConfig: SessionFilterConfig = initialSessionFilterConfig;
 
   constructor(private mqttClientSessionService: MqttClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
               private dialogService: DialogService,
-              public entityId: string = null) {
+              public entityId: string = null,
+              private route: ActivatedRoute,
+              private router: Router) {
     super();
     this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;
     this.searchEnabled = true;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.tableTitle = ''; // this.translate.instant('mqtt-client-session.type-sessions');
+    this.tableTitle = this.translate.instant('mqtt-client-session.type-sessions');
     this.entityTranslations = {
       noEntities: 'mqtt-client-session.no-session-text',
       search: 'mqtt-client-session.search'
@@ -92,18 +88,15 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.columns.push(
       new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
-        (entity) => {
-          return '<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:' +
-            connectionStateColor.get(entity.connectionState) +
-            '"></span>' +
-            '<span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600">' +
-            this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)) +
-            '</span>';
-        },
-        (entity) => ({color: connectionStateColor.get(entity.connectionState)})
-      ),
+        (entity) => connectedStateCell(this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)), connectionStateColor.get(entity.connectionState))),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
-        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType)))),
+        (entity) => {
+        const clientType = entity.clientType;
+        const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
+        const icon = clientTypeIcon.get(clientType);
+        const color = clientTypeColor.get(clientType);
+        return clientTypeCell(clientTypeTranslation, icon, color);
+      }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%'),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
@@ -115,8 +108,26 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   }
 
   private fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {
+    const routerQueryParams: SessionFilterConfig = this.route.snapshot.queryParams;
+    if (routerQueryParams) {
+      const queryParams = deepClone(routerQueryParams);
+      let replaceUrl = false;
+      if (routerQueryParams?.connectedStatusList) {
+        this.sessionFilterConfig.connectedStatusList = routerQueryParams?.connectedStatusList;
+        delete queryParams.connectedStatusList;
+        replaceUrl = true;
+      }
+      if (replaceUrl) {
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams,
+          queryParamsHandling: '',
+          replaceUrl: true
+        });
+      }
+    }
     const sessionFilter = this.resolveSessionFilter(this.sessionFilterConfig);
-    const query = new SessionQueryV2(pageLink, sessionFilter);
+    const query = new SessionQuery(pageLink, sessionFilter);
     return this.mqttClientSessionService.getShortClientSessionInfosV2(query);
   }
 
@@ -199,7 +210,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               tasks.push(this.mqttClientSessionService.disconnectClientSession(session.clientId, session.sessionId));
             }
           );
-          forkJoin(tasks).subscribe(() => this.updateTable());
+          forkJoin(tasks).subscribe(() => this.updateTable()); //TODO deaflynx
         }
       }
     );

@@ -16,7 +16,13 @@
 @import 'constants';
 
 :host {
-  padding-top: 10px;
+  mat-toolbar {
+    position: sticky;
+    top: 0;
+    height: 42px;
+    z-index: 1;
+  }
+
   .chart-container {
     background-color: #fff;
   }
@@ -35,9 +41,5 @@
     @media #{$mat-gt-md} {
       width: 80vw;
     }
-  }
-
-  .mat-toolbar {
-    height: 42px;
   }
 }

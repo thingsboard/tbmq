@@ -68,7 +68,18 @@
       <div class="fixed-title-width" translate>mqtt-client.client-type</div>
       <mat-chip-listbox multiple formControlName="clientTypeList">
         <mat-chip-option *ngFor="let value of clientTypes" [value]="value">
+          <mat-icon style="height: 14px; width: 14px; font-size: 14px; line-height: 16px;" class="material-icons mat-icon">
+            {{ clientTypeIcon.get(value) }}
+          </mat-icon>
           {{ clientTypeTranslationMap.get(value) | translate }}
+        </mat-chip-option>
+      </mat-chip-listbox>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>mqtt-client-session.clean-start</div>
+      <mat-chip-listbox multiple formControlName="cleanStartList">
+        <mat-chip-option *ngFor="let value of cleanStartList" [value]="value">
+          {{ value }}
         </mat-chip-option>
       </mat-chip-listbox>
     </div>
@@ -103,8 +114,5 @@
         </mat-chip-option>
       </mat-chip-listbox>
     </div>
-    <!--<mat-slide-toggle class="mat-slide" *ngIf="propagatedFilter" formControlName="searchPropagatedAlarms">
-      {{ 'alarm.search-propagated-alarms' | translate }}
-    </mat-slide-toggle>-->
   </div>
 </ng-template>

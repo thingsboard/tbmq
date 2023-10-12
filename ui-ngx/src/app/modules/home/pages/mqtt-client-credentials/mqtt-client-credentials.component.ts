@@ -21,7 +21,7 @@ import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import {
-  credentialsTypeNames,
+  clientCredentialsTypeTranslationMap,
   MqttClientCredentials,
   MqttCredentialsType
 } from '@shared/models/client-crenetials.model';
@@ -48,7 +48,7 @@ export class MqttClientCredentialsComponent extends EntityComponent<MqttClientCr
 
   credentialsType = MqttCredentialsType;
   credentialsTypes = Object.values(MqttCredentialsType);
-  credentialsTypeTranslationMap = credentialsTypeNames;
+  credentialsTypeTranslationMap = clientCredentialsTypeTranslationMap;
   clientTypes = Object.values(ClientType);
 
   ClientType = ClientType;

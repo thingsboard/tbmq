@@ -14,15 +14,24 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
-import {ClientType} from '@shared/models/client.model';
+import { BaseData } from '@shared/models/base-data';
+import { ClientType } from '@shared/models/client.model';
+import {
+  isArraysEqualIgnoreUndefined,
+  isDefinedAndNotNull,
+  isEmpty,
+  isEqualIgnoreUndefined,
+  isNotEmptyStr,
+  isUndefinedOrNull
+} from '@core/utils';
+import { TimePageLink } from '@shared/models/page/page-link';
 
 export enum MqttCredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
   SSL = 'SSL'
 }
 
-export const credentialsTypeNames = new Map<MqttCredentialsType, string>(
+export const clientCredentialsTypeTranslationMap = new Map<MqttCredentialsType, string>(
   [
     [MqttCredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
     [MqttCredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
@@ -81,4 +90,59 @@ export interface ClientCredentialsInfo {
   deviceCredentialsCount: number;
   applicationCredentialsCount: number;
   totalCount: number;
+}
+
+export interface ClientCredentialsFilterConfig {
+  credentialsTypeList?: MqttCredentialsType[];
+  clientTypeList?: ClientType[];
+  name?: string;
+}
+
+export const clientCredentialsFilterConfigEquals = (filter1?: ClientCredentialsFilterConfig, filter2?: ClientCredentialsFilterConfig): boolean => {
+  if (filter1 === filter2) {
+    return true;
+  }
+  if ((isUndefinedOrNull(filter1) || isEmpty(filter1)) && (isUndefinedOrNull(filter2) || isEmpty(filter2))) {
+    return true;
+  } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
+    if (!isArraysEqualIgnoreUndefined(filter1.credentialsTypeList, filter2.credentialsTypeList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.clientTypeList, filter2.clientTypeList)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.name, filter2.name)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
+
+export class ClientCredentialsQuery {
+  pageLink: TimePageLink;
+
+  credentialsTypeList: MqttCredentialsType[];
+  clientTypeList: ClientType[];
+  name: string;
+
+  constructor(pageLink: TimePageLink, clientCredentialsFilter: ClientCredentialsFilterConfig) {
+    this.pageLink = pageLink;
+    this.credentialsTypeList = clientCredentialsFilter.credentialsTypeList;
+    this.clientTypeList = clientCredentialsFilter.clientTypeList;
+    if (isNotEmptyStr(clientCredentialsFilter.name)) {
+      this.pageLink.textSearch = clientCredentialsFilter.name;
+    }
+  }
+
+  public toQuery(): string {
+    let query = this.pageLink.toQuery();
+    if (this.credentialsTypeList && this.credentialsTypeList.length) {
+      query += `&credentialsTypeList=${this.credentialsTypeList.join(',')}`;
+    }
+    if (this.clientTypeList && this.clientTypeList.length) {
+      query += `&clientTypeList=${this.clientTypeList.join(',')}`;
+    }
+    return query;
+  }
 }

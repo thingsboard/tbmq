@@ -14,16 +14,16 @@
 /// limitations under the License.
 ///
 
-import { ClientInfo, ClientType } from '@shared/models/client.model';
+import { ClientType } from '@shared/models/client.model';
 import { BaseData } from '@shared/models/base-data';
-import { SessionFilterConfig } from "@home/pages/sessions/sessions-table-config";
 import {
   isArraysEqualIgnoreUndefined,
   isDefinedAndNotNull,
   isEmpty,
   isEqualIgnoreUndefined,
+  isNotEmptyStr,
   isUndefinedOrNull
-} from "@core/utils";
+} from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 
 export interface DetailedClientSessionInfo extends BaseData {
@@ -41,20 +41,6 @@ export interface DetailedClientSessionInfo extends BaseData {
   sessionEndTs: number;
   clientIpAdr: string;
   subscriptionsCount?: number;
-}
-
-export interface SessionInfo {
-  serviceId: string;
-  sessionId: string;
-  persistent: boolean;
-  clientInfo: ClientInfo;
-  connectionInfo: ConnectionInfo;
-}
-
-export interface ConnectionInfo {
-  connectedAt: number;
-  disconnectedAt: number;
-  keepAlive: number;
 }
 
 export interface TopicSubscription {
@@ -122,7 +108,16 @@ export interface ClientSessionStatsInfo {
   totalCount: number;
 }
 
-export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => { // TODO
+export interface SessionFilterConfig {
+  connectedStatusList?: ConnectionState[];
+  clientTypeList?: ClientType[];
+  nodeIdList?: string[];
+  cleanStartList?: boolean[];
+  subscriptions?: number;
+  clientId?: string;
+}
+
+export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {
   if (filter1 === filter2) {
     return true;
   }
@@ -152,7 +147,7 @@ export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2
   return false;
 };
 
-export class SessionQueryV2 {
+export class SessionQuery {
   pageLink: TimePageLink;
 
   clientId: string;
@@ -169,7 +164,7 @@ export class SessionQueryV2 {
     this.cleanStartList = sessionFilter.cleanStartList;
     this.nodeIdList = sessionFilter.nodeIdList;
     this.subscriptions = sessionFilter.subscriptions;
-    if (sessionFilter.clientId && sessionFilter.clientId.length) {
+    if (isNotEmptyStr(sessionFilter.clientId)) {
       this.pageLink.textSearch = sessionFilter.clientId;
     }
   }
@@ -193,5 +188,13 @@ export class SessionQueryV2 {
     }
     return query;
   }
+}
 
+export const initialSessionFilterConfig = {
+  connectedStatusList: null,
+  clientTypeList: null,
+  cleanStartList: null,
+  nodeIdList: null,
+  clientId: null,
+  subscriptions: null
 }

@@ -28,6 +28,8 @@ import {
 import { MqttCredentialsSslComponent } from '@home/components/client-credentials-templates/ssl/ssl.component';
 import { MqttCredentialsBasicComponent } from '@home/components/client-credentials-templates/basic/basic.component';
 import { AuthRulesComponent } from '@home/components/client-credentials-templates/ssl/auth-rules.component';
+import { ClientCredentialsTableHeaderComponent } from '@home/pages/mqtt-client-credentials/client-credentials-table-header.component';
+import { ClientCredentialsFilterConfigComponent } from '@home/pages/mqtt-client-credentials/client-credentials-filter-config.component';
 
 @NgModule({
   declarations: [
@@ -35,7 +37,9 @@ import { AuthRulesComponent } from '@home/components/client-credentials-template
     MqttCredentialsSslComponent,
     MqttCredentialsBasicComponent,
     AuthRulesComponent,
-    ChangeMqttBasicPasswordDialogComponent
+    ChangeMqttBasicPasswordDialogComponent,
+    ClientCredentialsTableHeaderComponent,
+    ClientCredentialsFilterConfigComponent
   ],
   imports: [
     CommonModule,

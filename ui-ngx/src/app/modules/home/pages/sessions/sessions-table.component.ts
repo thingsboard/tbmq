@@ -22,6 +22,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'tb-sessions-table',
@@ -67,7 +68,9 @@ export class SessionsTableComponent implements OnInit {
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
-              private dialogService: DialogService) {
+              private dialogService: DialogService,
+              private route: ActivatedRoute,
+              private router: Router) {
   }
 
   ngOnInit(): void {
@@ -78,7 +81,9 @@ export class SessionsTableComponent implements OnInit {
       this.datePipe,
       this.dialog,
       this.dialogService,
-      this.entityIdValue
+      this.entityIdValue,
+      this.route,
+      this.router
     );
   }
 

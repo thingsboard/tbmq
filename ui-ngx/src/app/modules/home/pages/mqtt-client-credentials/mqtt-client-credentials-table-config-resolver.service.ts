@@ -18,7 +18,8 @@ import { Injectable } from '@angular/core';
 
 import { Resolve } from '@angular/router';
 import {
-  clientTypeCell, clientTypeWarning,
+  clientTypeCell,
+  clientTypeWarning,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -28,19 +29,17 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { DialogService } from '@core/services/dialog.service';
 import { Direction } from '@shared/models/page/sort-order';
 import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
 import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
-import { MatDialog } from '@angular/material/dialog';
-import { clientTypeTranslationMap } from '@shared/models/client.model';
+import { ClientType, clientTypeColor, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
-  credentialsTypeNames,
+  ClientCredentialsFilterConfig,
+  clientCredentialsTypeTranslationMap,
   credentialsWarningTranslations,
   MqttClientCredentials,
   MqttCredentialsType
 } from '@shared/models/client-crenetials.model';
-import { ConfigService } from '@core/http/config.service';
 import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { ConfigParams } from '@shared/models/config.model';
@@ -50,13 +49,12 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
 
   private readonly config: EntityTableConfig<MqttClientCredentials> = new EntityTableConfig<MqttClientCredentials>();
 
+  clientCredentialsFilterConfig: ClientCredentialsFilterConfig;
+
   constructor(private store: Store<AppState>,
-              private dialogService: DialogService,
               private mqttClientCredentialsService: MqttClientCredentialsService,
               private translate: TranslateService,
-              private datePipe: DatePipe,
-              private configService: ConfigService,
-              private dialog: MatDialog) {
+              private datePipe: DatePipe) {
 
     this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     this.config.entityComponent = MqttClientCredentialsComponent;
@@ -75,9 +73,15 @@ export class MqttClientCredentialsTableConfigResolver implements Resolve<EntityT
       new EntityTableColumn<MqttClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
         (entity) => entity.name),
       new EntityTableColumn<MqttClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
-        (entity) => this.translate.instant(credentialsTypeNames.get(entity.credentialsType))),
+        (entity) => this.translate.instant(clientCredentialsTypeTranslationMap.get(entity.credentialsType))),
       new EntityTableColumn<MqttClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
-        (entity) => clientTypeCell(this.translate.instant(clientTypeTranslationMap.get(entity.clientType))))
+        (entity) => {
+        const clientType = entity.clientType;
+        const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
+        const icon = clientTypeIcon.get(clientType);
+        const color = clientTypeColor.get(clientType);
+        return clientTypeCell(clientTypeTranslation, icon, color);
+      })
     );
 
     this.config.addActionDescriptors.push(

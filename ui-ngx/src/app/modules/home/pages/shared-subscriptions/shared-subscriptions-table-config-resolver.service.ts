@@ -53,8 +53,8 @@ export class SharedSubscriptionsTableConfigResolver implements Resolve<EntityTab
     this.config.columns.push(
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '33%'),
-      new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '33%'),
-      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%')
+      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%'),
+      new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '33%')
     );
 
     this.config.addActionDescriptors.push(

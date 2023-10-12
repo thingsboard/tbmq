@@ -77,13 +77,6 @@ export function getColor(type: string, index: number): string {
 }
 
 export function homeChartJsParams() {
-  // @ts-ignore
-  // Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
-  //   return {
-  //     x: eventPosition.x,
-  //     y: eventPosition.y
-  //   };
-  // };
   return {
     type: 'line',
     options: {
@@ -142,7 +135,7 @@ export function homeChartJsParams() {
           time: {
             tooltipFormat: 'dd HH:mm',
             displayFormats: {
-              minute: 'hh:mm'
+              minute: 'HH:mm'
             }
           },
           ticks: {
@@ -166,7 +159,7 @@ export function homeChartJsParams() {
         },
         tooltip: {
           enabled: true,
-          position: 'tbPositioner'
+          // position: 'tbPositioner'
         }
       },
       parsing: {
@@ -178,13 +171,6 @@ export function homeChartJsParams() {
 }
 
 export function monitoringChartJsParams() {
-  // @ts-ignore
-  // Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
-  //   return {
-  //     x: eventPosition.x,
-  //     y: eventPosition.y
-  //   };
-  // };
   return {
     type: 'line',
     options: {

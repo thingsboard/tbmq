@@ -14,6 +14,9 @@
 /// limitations under the License.
 ///
 
+import { ConnectionState } from '@shared/models/session.model';
+import { ClientType } from '@shared/models/client.model';
+
 export const POLLING_INTERVAL = 1000 * 60;
 export const HOME_CHARTS_DURATION = 1000 * 60 * 11;
 
@@ -103,30 +106,78 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
   ]
 );
 
-export const SessionsHomeCardConfig = [{
+export enum HomeCardType {
+  SESSION= 'SESSION',
+  CLIENT_CREDENTIALS = 'CLIENT_CREDENTIALS'
+}
+
+export interface HomeCardFilter {
+  key: string;
+  label: string;
+  path: string;
+  value: number;
+  type: HomeCardType;
+  filter: any;
+}
+
+export const SessionsHomeCardConfig: HomeCardFilter[] = [{
   key: 'connectedCount',
   label: 'mqtt-client-session.connected',
-  value: 0
-}, {
+  path: '/sessions',
+  value: 0,
+  type: HomeCardType.SESSION,
+  filter: {
+    connectedStatusList: [ConnectionState.CONNECTED]
+  }
+},
+{
   key: 'disconnectedCount',
   label: 'mqtt-client-session.disconnected',
-  value: 0
-}, {
+  path: '/sessions',
+  value: 0,
+  type: HomeCardType.SESSION,
+  filter: {
+    connectedStatusList: [ConnectionState.DISCONNECTED]
+  }
+},
+{
   key: 'totalCount',
   label: 'home.total',
-  value: 0
+  path: '/sessions',
+  value: 0,
+  type: HomeCardType.SESSION,
+  filter: {
+    connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED]
+  }
 }];
 
 export const CredentialsHomeCardConfig = [{
   key: 'deviceCredentialsCount',
   label: 'mqtt-client-credentials.type-devices',
-  value: 0
-}, {
+  path: '/client-credentials',
+  value: 0,
+  type: HomeCardType.CLIENT_CREDENTIALS,
+  filter: {
+    clientTypeList: [ClientType.DEVICE]
+  }
+},
+{
   key: 'applicationCredentialsCount',
   label: 'mqtt-client-credentials.type-applications',
-  value: 0
-}, {
+  path: '/client-credentials',
+  value: 0,
+  type: HomeCardType.CLIENT_CREDENTIALS,
+  filter: {
+    clientTypeList: [ClientType.APPLICATION]
+  }
+},
+{
   key: 'totalCount',
   label: 'home.total',
-  value: 0
+  path: '/client-credentials',
+  value: 0,
+  type: HomeCardType.CLIENT_CREDENTIALS,
+  filter: {
+    clientTypeList: [ClientType.DEVICE, ClientType.APPLICATION]
+  }
 }];

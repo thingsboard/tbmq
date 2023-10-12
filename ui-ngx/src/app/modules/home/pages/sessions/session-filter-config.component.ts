@@ -37,20 +37,19 @@ import { TranslateService } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
-import { SessionFilterConfig } from "@home/pages/sessions/sessions-table-config";
 import {
   ConnectionState,
-  connectionStateTranslationMap,
+  connectionStateTranslationMap, initialSessionFilterConfig,
+  SessionFilterConfig,
   sessionFilterConfigEquals
-} from "@shared/models/session.model";
+} from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
-import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
+import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 
 export interface SessionFilterConfigData {
   panelMode: boolean;
-  userMode: boolean;
   sessionFilterConfig: SessionFilterConfig;
   initialSessionFilterConfig?: SessionFilterConfig;
 }
@@ -81,10 +80,6 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   @coerceBoolean()
   @Input()
-  userMode = false;
-
-  @coerceBoolean()
-  @Input()
   propagatedFilter = true;
 
   @Input()
@@ -92,8 +87,10 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
   connectionStateTranslationMap= connectionStateTranslationMap;
+  ClientType = ClientType;
   clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
   clientTypeTranslationMap = clientTypeTranslationMap;
+  clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];
 
   panelMode = false;
@@ -127,7 +124,6 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   ngOnInit(): void {
     if (this.data) {
       this.panelMode = this.data.panelMode;
-      this.userMode = this.data.userMode;
       this.sessionFilterConfig = this.data.sessionFilterConfig;
       this.initialSessionFilterConfig = this.data.initialSessionFilterConfig;
       if (this.panelMode && !this.initialSessionFilterConfig) {
@@ -152,6 +148,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     if (this.panelMode) {
       this.updateSessionConfigForm(this.sessionFilterConfig);
     }
+    this.initialSessionFilterConfig = initialSessionFilterConfig;
   }
 
   ngOnDestroy(): void {
@@ -292,19 +289,22 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
         filterTextParts.push(this.sessionFilterConfig.clientTypeList.map(s =>
           this.translate.instant(clientTypeTranslationMap.get(s))).join(', '));
       }
-      if (this.sessionFilterConfig?.nodeIdList?.length) {
-        filterTextParts.push(this.sessionFilterConfig.nodeIdList.join(', '));
-      }
       if (this.sessionFilterConfig?.clientId?.length) {
         filterTextParts.push(this.sessionFilterConfig.clientId);
       }
+      if (this.sessionFilterConfig?.nodeIdList?.length) {
+        filterTextParts.push(this.sessionFilterConfig.nodeIdList.join(', '));
+      }
+      if (this.sessionFilterConfig?.cleanStartList?.length) {
+        filterTextParts.push(`${this.translate.instant('mqtt-client-session.clean-start')}: ${this.sessionFilterConfig.cleanStartList.join(', ')}`);
+      }
       if (this.sessionFilterConfig?.subscriptions) {
-        filterTextParts.push(`${this.sessionFilterConfig.subscriptions} ${this.translate.instant('mqtt-client-session.subscriptions-count').toLowerCase()}`);
+        filterTextParts.push(`${this.translate.instant('mqtt-client-session.subscriptions-short')}: ${this.sessionFilterConfig.subscriptions}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.session-filter-title');
       } else {
-        this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join(', ')}`;
+        this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join('; ')}`;
       }
     }
   }
