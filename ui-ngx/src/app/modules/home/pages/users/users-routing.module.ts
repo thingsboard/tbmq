@@ -17,13 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { UserTableConfigResolver } from '@home/pages/users/users-table-config-resolver.service';
+import { UsersTableComponent } from '@home/pages/users/users-table.component';
 
 const routes: Routes = [
   {
     path: 'users',
-    component: EntitiesTableComponent,
+    component: UsersTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'user.users',
@@ -31,19 +30,13 @@ const routes: Routes = [
         label: 'user.users',
         icon: 'mdi:account-multiple-outline'
       }
-    },
-    resolve: {
-      entitiesTableConfig: UserTableConfigResolver
     }
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule],
-  providers: [
-    UserTableConfigResolver
-  ]
+  exports: [RouterModule]
 })
 
 export class UsersRoutingModule {

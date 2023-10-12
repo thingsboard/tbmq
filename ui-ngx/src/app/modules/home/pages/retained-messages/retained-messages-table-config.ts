@@ -14,9 +14,6 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-
-import { Resolve } from '@angular/router';
 import {
   CellActionDescriptor,
   DateEntityTableColumn,
@@ -27,8 +24,6 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
 import { DialogService } from '@core/services/dialog.service';
 import { RetainedMessage } from '@shared/models/retained-message.model';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
@@ -41,35 +36,36 @@ import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { QoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
+import { RetainedMessagesComponent } from '@home/pages/retained-messages/retained-messages.component';
 
-@Injectable()
-export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableConfig<RetainedMessage>> {
+export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
 
-  private readonly config: EntityTableConfig<RetainedMessage> = new EntityTableConfig<RetainedMessage>();
-
-  constructor(private store: Store<AppState>,
-              private dialogService: DialogService,
+  constructor(private dialogService: DialogService,
               private retainedMsgService: RetainedMsgService,
               private translate: TranslateService,
               private dialog: MatDialog,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              public entityId: string = null) {
+    super();
 
-    this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
-    this.config.detailsPanelEnabled = false;
-    this.config.entityTranslations = entityTypeTranslations.get(EntityType.RETAINED_MESSAGE);
-    this.config.entityResources = entityTypeResources.get(EntityType.RETAINED_MESSAGE);
-    this.config.tableTitle = this.translate.instant('retained-message.retained-messages');
-    this.config.entitiesDeleteEnabled = false;
-    this.config.addEnabled = false;
-    this.config.defaultCursor = true;
+    this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    this.entityComponent = RetainedMessagesComponent;
 
-    this.config.entityTitle = (message) => message ? message.topic : '';
-    this.config.detailsReadonly = () => true;
+    this.detailsPanelEnabled = false;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.RETAINED_MESSAGE);
+    this.entityResources = entityTypeResources.get(EntityType.RETAINED_MESSAGE);
+    this.tableTitle = this.translate.instant('retained-message.retained-messages');
+    this.entitiesDeleteEnabled = false;
+    this.addEnabled = false;
+    this.defaultCursor = true;
 
-    this.config.groupActionDescriptors = this.configureGroupActions();
-    this.config.cellActionDescriptors = this.configureCellActions();
+    this.entityTitle = (message) => message ? message.topic : '';
+    this.detailsReadonly = () => true;
 
-    this.config.headerActionDescriptors.push({
+    this.groupActionDescriptors = this.configureGroupActions();
+    this.cellActionDescriptors = this.configureCellActions();
+
+    this.headerActionDescriptors.push({
       name: this.translate.instant('retained-message.clear-empty-retained-message-nodes'),
       icon: 'delete_forever',
       isEnabled: () => true,
@@ -78,18 +74,15 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       }
     });
 
-    this.config.columns.push(
+    this.columns.push(
       new DateEntityTableColumn<RetainedMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%'),
       new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', (entity) => {
         return entity.qos + ' - ' + this.translate.instant(QoSTranslationMap.get(entity.qos));
       })
     );
-  }
 
-  resolve(): EntityTableConfig<RetainedMessage> {
-    this.config.entitiesFetchFunction = pageLink => this.retainedMsgService.getRetainedMessages(pageLink);
-    return this.config;
+    this.entitiesFetchFunction = pageLink => this.retainedMsgService.getRetainedMessages(pageLink)
   }
 
   private configureGroupActions(): Array<GroupActionDescriptor<RetainedMessage>> {
@@ -124,7 +117,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
         name: this.translate.instant('action.delete'),
         icon: 'mdi:trash-can-outline',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.deleteEntity($event, entity)
+        onAction: ($event, entity) => this.deleteMessage($event, entity)
       }
     );
     return actions;
@@ -150,7 +143,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
           );
           forkJoin(tasks).subscribe(
             () => {
-              this.config.getTable().updateData();
+              this.getTable().updateData();
             }
           );
         }
@@ -158,7 +151,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
     );
   }
 
-  private deleteEntity($event: Event, entity: RetainedMessage) {
+  private deleteMessage($event: Event, entity: RetainedMessage) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -172,7 +165,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       if (result) {
         this.retainedMsgService.deleteRetainedMessage(entity.topic).subscribe(
           () => {
-            this.config.getTable().updateData();
+            this.getTable().updateData();
           }
         );
       }
@@ -193,7 +186,7 @@ export class RetainedMessagesTableConfigResolver implements Resolve<EntityTableC
       if (result) {
         this.retainedMsgService.clearEmptyRetainedMsgNodes().subscribe(
           () => {
-            this.config.getTable().updateData();
+            this.getTable().updateData();
           }
         );
       }

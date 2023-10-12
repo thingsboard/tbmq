@@ -14,9 +14,6 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-
-import { Resolve } from '@angular/router';
 import {
   DateEntityTableColumn,
   EntityTableColumn,
@@ -33,28 +30,28 @@ import { UserService } from '@core/http/user.service';
 import { AuthorityTranslationMap } from '@shared/models/authority.enum';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
-@Injectable()
-export class UserTableConfigResolver implements Resolve<EntityTableConfig<User>> {
-
-  private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
+export class UserTableConfig extends EntityTableConfig<User> {
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
 
   constructor(private store: Store<AppState>,
               private adminService: UserService,
               private translate: TranslateService,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              public entityId: string = null) {
+    super();
 
-    this.config.entityType = EntityType.USER;
-    this.config.entityComponent = UserComponent;
-    this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
-    this.config.entityResources = entityTypeResources.get(EntityType.USER);
-    this.config.tableTitle = this.translate.instant('user.users');
-    this.config.entitySelectionEnabled = (user) => user.id !== getCurrentAuthUser(this.store).userId;
-    this.config.deleteEnabled = (user) => user ? user.id !== getCurrentAuthUser(this.store).userId : true;
-    this.config.entityTitle = (user) => user ? user.email : '';
+    this.entityType = EntityType.USER;
+    this.entityComponent = UserComponent;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.USER);
+    this.entityResources = entityTypeResources.get(EntityType.USER);
+    this.tableTitle = this.translate.instant('user.users');
+    this.entitySelectionEnabled = (user) => user.id !== getCurrentAuthUser(this.store).userId;
+    this.deleteEnabled = (user) => user ? user.id !== getCurrentAuthUser(this.store).userId : true;
+    this.entityTitle = (user) => user ? user.email : '';
+    this.addDialogStyle = {height: '600px'};
 
-    this.config.columns.push(
+    this.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<User>('email', 'user.email', '25%'),
       new EntityTableColumn<User>('authority', 'user.role', '25%',
@@ -64,35 +61,24 @@ export class UserTableConfigResolver implements Resolve<EntityTableConfig<User>>
       new EntityTableColumn<User>('lastName', 'user.last-name', '25%')
     );
 
-    this.config.addActionDescriptors.push(
+    this.addActionDescriptors.push(
       {
         name: this.translate.instant('user.add'),
         icon: 'add',
         isEnabled: () => true,
-        onAction: ($event) => this.config.getTable().addEntity($event)
+        onAction: ($event) => this.getTable().addEntity($event)
       }
     );
 
-    this.config.deleteEntityTitle = user => this.translate.instant('user.delete-user-title',
+    this.deleteEntityTitle = user => this.translate.instant('user.delete-user-title',
       {userEmail: user.email});
-    this.config.deleteEntityContent = () => this.translate.instant('user.delete-user-text');
-    this.config.deleteEntitiesTitle = count => this.translate.instant('user.delete-users-title', {count});
-    this.config.deleteEntitiesContent = () => this.translate.instant('user.delete-users-text');
-    this.config.loadEntity = id => this.loadEntity(id);
-    this.config.saveEntity = user => this.adminService.saveUser(user);
-    this.config.deleteEntity = id => this.deleteEntity(id);
-  }
+    this.deleteEntityContent = () => this.translate.instant('user.delete-user-text');
+    this.deleteEntitiesTitle = count => this.translate.instant('user.delete-users-title', {count});
+    this.deleteEntitiesContent = () => this.translate.instant('user.delete-users-text');
+    this.loadEntity = id => this.adminService.getUser(id);
+    this.saveEntity = user => this.adminService.saveUser(user);
+    this.deleteEntity = id => this.adminService.deleteUser(id);
 
-  resolve(): EntityTableConfig<User> {
-    this.config.entitiesFetchFunction = pageLink => this.adminService.getUsers(pageLink);
-    return this.config;
-  }
-
-  loadEntity(id) {
-    return this.adminService.getUser(id);
-  }
-
-  deleteEntity(id) {
-    return this.adminService.deleteUser(id);
+    this.entitiesFetchFunction = pageLink => this.adminService.getUsers(pageLink)
   }
 }

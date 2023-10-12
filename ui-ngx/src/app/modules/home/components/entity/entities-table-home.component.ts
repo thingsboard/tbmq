@@ -17,9 +17,7 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
-  ComponentFactoryResolver,
   Directive,
   ElementRef,
   EventEmitter,
@@ -27,7 +25,8 @@ import {
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  ViewContainerRef
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -129,7 +128,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
               private domSanitizer: DomSanitizer,
               private breakpointObserver: BreakpointObserver,
               private router: Router,
-              private componentFactoryResolver: ComponentFactoryResolver) {
+              private viewContainerRef: ViewContainerRef) {
     super(store);
   }
 
@@ -157,11 +156,10 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.isDetailsOpen = false;
     this.entitiesTableConfig = entitiesTableConfig;
     if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
+      const componentFactory = this.viewContainerRef.createComponent(this.entitiesTableConfig.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
       viewContainerRef.clear();
-      const componentRef = viewContainerRef.createComponent(componentFactory);
-      const headerComponent = componentRef.instance;
+      const headerComponent = componentFactory.instance;
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 

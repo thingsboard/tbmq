@@ -64,13 +64,14 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
               private route: ActivatedRoute,
               private router: Router) {
     super();
-    this.loadDataOnInit = true;
+
     this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
     this.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     this.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     this.defaultSortOrder = { property: 'name', direction: Direction.ASC };
     this.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
     this.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
+    this.addDialogStyle = {width: '900px'};
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;

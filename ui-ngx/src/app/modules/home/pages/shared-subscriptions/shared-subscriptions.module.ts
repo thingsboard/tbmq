@@ -20,10 +20,12 @@ import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
 import { SharedSubscriptionsRoutingModule } from "@home/pages/shared-subscriptions/shared-subscriptions-routing.module";
 import { SharedSubscriptionComponent } from "@home/pages/shared-subscriptions/shared-subscription.component";
+import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscriptions/shared-subsriptions-table.component';
 
 @NgModule({
   declarations: [
-    SharedSubscriptionComponent
+    SharedSubscriptionComponent,
+    SharedSubsriptionsTableComponent
   ],
   imports: [
     CommonModule,

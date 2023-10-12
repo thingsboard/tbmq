@@ -14,31 +14,23 @@
 /// limitations under the License.
 ///
 
-import { Injectable, NgModule } from '@angular/core';
-import { Resolve, RouterModule, Routes } from '@angular/router';
+import { inject, NgModule } from '@angular/core';
+import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
 import { TOTAL_KEY } from '@shared/models/chart.model';
 import { mergeMap } from 'rxjs/operators';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class BrokerIdsResolver implements Resolve<string[]> {
-  constructor(private configService: ConfigService) {}
-
-  resolve(): Observable<string[]> | string[] {
-    return this.configService.getBrokerServiceIds().pipe(
-      mergeMap((brokerIds) => {
-        let ids = [TOTAL_KEY];
-        ids = brokerIds.length <= 1 ? ids : ids.concat(brokerIds);
-        return of(ids);
-      })
-    );
-  }
-}
+export const BrokerIdsResolver: ResolveFn<string[]> = () =>
+  inject(ConfigService).getBrokerServiceIds().pipe(
+    mergeMap((brokerIds) => {
+      let ids = [TOTAL_KEY];
+      ids = brokerIds.length <= 1 ? ids : ids.concat(brokerIds);
+      return of(ids);
+    })
+  );
 
 const routes: Routes = [
   {

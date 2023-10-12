@@ -19,14 +19,14 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  ViewContainerRef
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -131,7 +131,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
               private domSanitizer: DomSanitizer,
               private cd: ChangeDetectorRef,
               private router: Router,
-              private componentFactoryResolver: ComponentFactoryResolver,
+              private viewContainerRef: ViewContainerRef,
               private fb: UntypedFormBuilder) {
     super(store);
   }
@@ -160,11 +160,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.entitiesTableConfig = entitiesTableConfig;
     this.pageMode = this.entitiesTableConfig.pageMode;
     if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
+      const componentFactory = this.viewContainerRef.createComponent(this.entitiesTableConfig.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
       viewContainerRef.clear();
-      const componentRef = viewContainerRef.createComponent(componentFactory);
-      const headerComponent = componentRef.instance;
+      const headerComponent = componentFactory.instance;
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 

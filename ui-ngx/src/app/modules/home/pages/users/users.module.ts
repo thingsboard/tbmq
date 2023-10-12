@@ -20,10 +20,12 @@ import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
 import { UserComponent } from '@home/pages/users/user.component';
 import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
+import { UsersTableComponent } from '@home/pages/users/users-table.component';
 
 @NgModule({
   declarations: [
-    UserComponent
+    UserComponent,
+    UsersTableComponent
   ],
   imports: [
     CommonModule,
