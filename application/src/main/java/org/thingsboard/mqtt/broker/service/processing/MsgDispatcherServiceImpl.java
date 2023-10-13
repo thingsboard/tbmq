@@ -442,23 +442,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {
-        PublishMsgProto publishMsg = createBasicPublishMsg(subscription, publishMsgProto);
-        sendToNode(publishMsg, subscription);
-    }
-
-    private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
-        var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
-        var retain = subscription.getOptions().isRetain(publishMsgProto);
-        return publishMsgProto.toBuilder()
-                .setQos(minQos)
-                .setRetain(retain)
-                .build();
-    }
-
-    private void sendToNode(PublishMsgProto publishMsgProto, Subscription subscription) {
-        var targetServiceId = subscription.getClientSessionInfo().getServiceId();
-        var clientId = subscription.getClientSessionInfo().getClientId();
-        downLinkProxy.sendBasicMsg(targetServiceId, clientId, publishMsgProto);
+        downLinkProxy.sendBasicMsg(subscription, publishMsgProto);
     }
 
     private DefaultTbQueueMsgHeaders createHeaders(PublishMsg publishMsg) {

@@ -18,17 +18,14 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
-import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.session.DisconnectReason;
-import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 @Slf4j
 @Service
@@ -36,12 +33,11 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
 
     private final ClientSessionCtxService clientSessionCtxService;
-    private final ClientMqttActorManager clientMqttActorManager;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientLogger clientLogger;
 
     @Override
-    public void process(String clientId, QueueProtos.PublishMsgProto msg) {
+    public void process(String clientId, PublishMsgProto msg) {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
         if (clientSessionCtx == null) {
             if (log.isTraceEnabled()) {
@@ -49,31 +45,32 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             }
             return;
         }
-        try {
-            PublishMsg publishMsg = getPublishMsg(clientSessionCtx, msg);
-            publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
-            clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
-        } catch (Exception e) {
-            log.warn("[{}] Failed to deliver msg to client.", clientId, e);
-            disconnect(clientId, clientSessionCtx);
+        PublishMsg publishMsg = getPublishMsg(clientSessionCtx, msg, null);
+        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
+        clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
+    }
+
+    @Override
+    public void process(Subscription subscription, PublishMsgProto msg) {
+        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(subscription.getClientId());
+        if (clientSessionCtx == null) {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] No client session on the node.", subscription.getClientId());
+            }
+            return;
         }
+        PublishMsg publishMsg = getPublishMsg(clientSessionCtx, msg, subscription);
+        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
+        clientLogger.logEvent(subscription.getClientId(), this.getClass(), "Delivered msg to basic client");
     }
 
-    private void disconnect(String clientId, ClientSessionCtx clientSessionCtx) {
-        clientMqttActorManager.disconnect(
-                clientId,
-                new MqttDisconnectMsg(
-                        clientSessionCtx.getSessionId(),
-                        new DisconnectReason(DisconnectReasonType.ON_ERROR, "Failed to deliver PUBLISH msg")));
-    }
-
-    private PublishMsg getPublishMsg(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto msg) {
+    private PublishMsg getPublishMsg(ClientSessionCtx clientSessionCtx, PublishMsgProto msg, Subscription subscription) {
         return PublishMsg.builder()
                 .packetId(clientSessionCtx.getMsgIdSeq().nextMsgId())
                 .topicName(msg.getTopicName())
                 .payload(msg.getPayload().toByteArray())
-                .qosLevel(msg.getQos())
-                .isRetained(msg.getRetain())
+                .qosLevel(subscription == null ? msg.getQos() : Math.min(subscription.getQos(), msg.getQos()))
+                .isRetained(subscription == null ? msg.getRetain() : subscription.getOptions().isRetain(msg))
                 .isDup(false)
                 .properties(ProtoConverter.createMqttProperties(msg.getUserPropertiesList()))
                 .build();

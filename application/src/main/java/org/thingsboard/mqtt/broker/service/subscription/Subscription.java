@@ -44,4 +44,8 @@ public class Subscription {
     public String getClientId() {
         return clientSessionInfo.getClientId();
     }
+
+    public String getServiceId() {
+        return clientSessionInfo.getServiceId();
+    }
 }
