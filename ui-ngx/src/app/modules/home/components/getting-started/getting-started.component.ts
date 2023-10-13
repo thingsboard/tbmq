@@ -96,6 +96,7 @@ export class GettingStartedComponent implements AfterViewInit {
     config.entityComponent = ClientCredentialsComponent;
     config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.addDialogStyle = {width: 'fit-content'};
     if (type === 'dev') {
       config.demoData = {
         name: 'TBMQ Device Demo',

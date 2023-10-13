@@ -30,13 +30,13 @@
         </div>
         <div style="margin-top: 8px">
           <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-device'">
-            <button mat-raised-button type="button" (click)="addClientCredentials('dev')">
-              {{'getting-started.add-dev-credentials' | translate}}
+            <button mat-stroked-button color="primary" (click)="addClientCredentials('dev')">
+              <mat-icon>devices_other</mat-icon>{{'getting-started.add-dev-credentials' | translate}}
             </button>
           </section>
           <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-app'">
-            <button mat-raised-button type="button" (click)="addClientCredentials('app')">
-              {{'getting-started.add-app-credentials' | translate}}
+            <button mat-stroked-button color="primary" (click)="addClientCredentials('app')">
+              <mat-icon>desktop_mac</mat-icon>{{'getting-started.add-app-credentials' | translate}}
             </button>
           </section>
         </div>

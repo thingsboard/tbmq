@@ -41,7 +41,6 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
-import { isDefinedAndNotNull } from '@core/utils';
 import { MatStepper } from '@angular/material/stepper';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@app/shared/models/constants';
@@ -173,13 +172,6 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
         }
       );
     }
-  }
-
-  ngAfterContentChecked(): void {
-    if (isDefinedAndNotNull(this.entitiesTableConfig?.demoData)) {
-      this.detailsForm.markAsDirty();
-    }
-    this.cd.detectChanges();
   }
 
   private showDefaultPassWarning() {
