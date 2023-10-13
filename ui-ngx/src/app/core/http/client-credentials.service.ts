@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ClientCredentialsInfo, ClientCredentials } from '@shared/models/credentials.model';
+import { ClientCredentialsInfo, ClientCredentials, ClientCredentialsQuery } from '@shared/models/credentials.model';
 
 @Injectable({
   providedIn: 'root'
@@ -32,20 +32,25 @@ export class ClientCredentialsService {
   ) {
   }
 
-  public saveMqttClientCredentials(mqttClientCredentials: ClientCredentials, config?: RequestConfig): Observable<ClientCredentials> {
+  public saveClientCredentials(mqttClientCredentials: ClientCredentials, config?: RequestConfig): Observable<ClientCredentials> {
     return this.http.post<ClientCredentials>('/api/mqtt/client/credentials', mqttClientCredentials, defaultHttpOptionsFromConfig(config));
   }
 
-  public deleteMqttClientCredentials(credentialsId: string, config?: RequestConfig) {
+  public deleteClientCredentials(credentialsId: string, config?: RequestConfig) {
     return this.http.delete(`/api/mqtt/client/credentials/${credentialsId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getMqttClientsCredentials(pageLink: PageLink, config?: RequestConfig): Observable<PageData<ClientCredentials>> {
+  public getClientsCredentials(pageLink: PageLink, config?: RequestConfig): Observable<PageData<ClientCredentials>> {
     return this.http.get<PageData<ClientCredentials>>(`/api/mqtt/client/credentials${pageLink.toQuery()}`,
       defaultHttpOptionsFromConfig(config));
   }
 
-  public getMqttClientCredentials(credentialsId: string, config?: RequestConfig): Observable<ClientCredentials> {
+  public getClientCredentialsV2(query: ClientCredentialsQuery, config?: RequestConfig): Observable<PageData<ClientCredentials>> {
+    return this.http.get<PageData<ClientCredentials>>(`/api/v2/mqtt/client/credentials${query.toQuery()}`,
+      defaultHttpOptionsFromConfig(config));
+  }
+
+  public getClientCredentials(credentialsId: string, config?: RequestConfig): Observable<ClientCredentials> {
     return this.http.get<ClientCredentials>(`/api/mqtt/client/credentials/${credentialsId}`, defaultHttpOptionsFromConfig(config));
   }
 

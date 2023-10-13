@@ -136,7 +136,7 @@ export class GettingStartedComponent implements AfterViewInit {
     $entity.subscribe(
       (entity) => {
         if (entity) {
-          this.clientCredentialsService.saveMqttClientCredentials(entity).subscribe(() => {
+          this.clientCredentialsService.saveClientCredentials(entity).subscribe(() => {
             this.store.dispatch(new ActionNotificationShow(
               {
                 message: this.translate.instant('getting-started.credentials-added'),

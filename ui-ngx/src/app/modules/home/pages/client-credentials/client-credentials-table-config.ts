@@ -107,9 +107,9 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title', {count});
     this.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
 
-    this.loadEntity = id => this.clientCredentialsService.getMqttClientCredentials(id);
-    this.saveEntity = mqttClient => this.clientCredentialsService.saveMqttClientCredentials(mqttClient);
-    this.deleteEntity = id => this.clientCredentialsService.deleteMqttClientCredentials(id);
+    this.loadEntity = id => this.clientCredentialsService.getClientCredentials(id);
+    this.saveEntity = mqttClient => this.clientCredentialsService.saveClientCredentials(mqttClient);
+    this.deleteEntity = id => this.clientCredentialsService.deleteClientCredentials(id);
     this.entitiesFetchFunction = pageLink => this.fetchClientCredentials(pageLink);
 
     this.store.pipe(
@@ -159,9 +159,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     }
     const clientCredentialsFilter = this.resolveClientSessionFilter(this.clientCredentialsFilterConfig);
     const query = new ClientCredentialsQuery(pageLink, clientCredentialsFilter);
-    // return this.clientCredentialsService.getMqttClientsCredentialsV2(query);
-
-    return this.clientCredentialsService.getMqttClientsCredentials(pageLink);
+    return this.clientCredentialsService.getClientCredentialsV2(query);
   }
 
   private resolveClientSessionFilter(clientCredentialsFilterConfig?: ClientCredentialsFilterConfig): ClientCredentialsFilterConfig {
