@@ -17,61 +17,20 @@
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
-availabilityZones: [ eu-west-1a,eu-west-1b,eu-west-1c ]
+availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 
 metadata:
   name: tbmq
-  region: eu-west-1
-  version: "1.28"
+  region: us-east-1
+  version: "1.25"
 
 managedNodeGroups:
   - name: managed
-    instanceType: m7a.8xlarge
-    desiredCapacity: 0
-    maxSize: 1
-    minSize: 0
+    instanceType: m6a.large
+    desiredCapacity: 2
+    maxSize: 2
+    minSize: 1
     labels: { role: tbmq }
-    volumeSize: 10
     ssh:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here
-  - name: tb-perf-test-publishers
-    instanceType: m7a.large
-    desiredCapacity: 0
-    maxSize: 1
-    minSize: 0
-    labels: { role: tb-perf-test-publishers }
-    volumeSize: 10
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak'
-  - name: tb-perf-test-subscribers
-    instanceType: m7a.xlarge
-    desiredCapacity: 0
-    maxSize: 5
-    minSize: 0
-    labels: { role: tb-perf-test-subscribers }
-    volumeSize: 10
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak'
-  - name: tb-additional
-    instanceType: m7a.large
-    desiredCapacity: 0
-    maxSize: 1
-    minSize: 0
-    labels: { role: tb-additional }
-    volumeSize: 10
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak'
-  - name: tb-kafka
-    instanceType: m7a.large
-    desiredCapacity: 0
-    maxSize: 3
-    minSize: 0
-    labels: { role: tb-kafka }
-    volumeSize: 10
-    ssh:
-      allow: true
-      publicKeyName: 'dlandiak'
