@@ -25,8 +25,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -39,17 +41,19 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/mqtt/client/credentials")
+@RequestMapping("/api")
 public class MqttClientCredentialsController extends BaseController {
 
     private final BCryptPasswordEncoder passwordEncoder;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @RequestMapping(value = "/mqtt/client/credentials", method = RequestMethod.POST)
     @ResponseBody
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
         checkNotNull(mqttClientCredentials);
@@ -67,7 +71,7 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @RequestMapping(value = "/mqtt/client/credentials", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<ShortMqttClientCredentials> getCredentials(@RequestParam int pageSize,
                                                                @RequestParam int page,
@@ -83,7 +87,7 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.GET)
+    @RequestMapping(value = "/mqtt/client/credentials/{credentialsId}", method = RequestMethod.GET)
     public MqttClientCredentials getCredentialsById(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
             return checkNotNull(mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null));
@@ -93,7 +97,7 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/mqtt/client/credentials/{credentialsId}", method = RequestMethod.DELETE)
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
             UUID uuid = toUUID(strCredentialsId);
@@ -105,7 +109,7 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{credentialsId}", method = RequestMethod.POST)
+    @RequestMapping(value = "/mqtt/client/credentials/{credentialsId}", method = RequestMethod.POST)
     public MqttClientCredentials changeMqttBasicCredentialsPassword(@PathVariable("credentialsId") String strCredentialsId,
                                                                     @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
         try {
@@ -130,11 +134,46 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/info", method = RequestMethod.GET)
+    @RequestMapping(value = "/mqtt/client/credentials/info", method = RequestMethod.GET)
     @ResponseBody
     public ClientCredentialsInfoDto getClientCredentialsStatsInfo() throws ThingsboardException {
         try {
             return checkNotNull(mqttClientCredentialsService.getClientCredentialsInfo());
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/v2/mqtt/client/credentials", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<ShortMqttClientCredentials> getCredentialsV2(@RequestParam int pageSize,
+                                                                 @RequestParam int page,
+                                                                 @RequestParam(required = false) String textSearch,
+                                                                 @RequestParam(required = false) String sortProperty,
+                                                                 @RequestParam(required = false) String sortOrder,
+                                                                 @RequestParam(required = false) String[] clientTypeList,
+                                                                 @RequestParam(required = false) String[] credentialsTypeList) throws ThingsboardException {
+        try {
+            List<ClientType> clientTypes = new ArrayList<>();
+            if (clientTypeList != null) {
+                for (String strType : clientTypeList) {
+                    if (!StringUtils.isEmpty(strType)) {
+                        clientTypes.add(ClientType.valueOf(strType));
+                    }
+                }
+            }
+            List<ClientCredentialsType> credentialsTypes = new ArrayList<>();
+            if (credentialsTypeList != null) {
+                for (String strCredentialsType : credentialsTypeList) {
+                    if (!StringUtils.isEmpty(strCredentialsType)) {
+                        credentialsTypes.add(ClientCredentialsType.valueOf(strCredentialsType));
+                    }
+                }
+            }
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+
+            return checkNotNull(mqttClientCredentialsService.getCredentialsV2(new ClientCredentialsQuery(pageLink, clientTypes, credentialsTypes)));
         } catch (Exception e) {
             throw handleException(e);
         }
