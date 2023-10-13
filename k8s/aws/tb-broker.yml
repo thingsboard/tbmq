@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: tb-broker
@@ -30,16 +30,6 @@ spec:
       labels:
         app: tb-broker
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: "app"
-                    operator: In
-                    values:
-                      - tb-broker
-              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: tb-broker-config
           configMap:
@@ -49,75 +39,43 @@ spec:
                 path: thingsboard-mqtt-broker.conf
               - key: logback
                 path: logback.xml
-        # Uncomment the following lines to enable two-way MQTTS
-      #        - name: tbmq-mqtts-config
-      #          configMap:
-      #            name: tbmq-mqtts-config
-      #            items:
-      #              - key: server.pem
-      #                path: server.pem
-      #              - key: mqttserver_key.pem
-      #                path: mqttserver_key.pem
       nodeSelector:
         role: tbmq
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:1.1.0
+          image: thingsboard/tbmq-node:1.1.1-SNAPSHOT
+          resources:
+            limits:
+              cpu: 29
+              memory: 116Gi
+            requests:
+              cpu: 29
+              memory: 116Gi
           ports:
             - containerPort: 8083
               name: http
-            - containerPort: 443
-              name: https
             - containerPort: 1883
               name: mqtt
-            - containerPort: 8883
-              name: mqtts
-            - containerPort: 8084
-              name: mqtt-ws
           env:
             - name: TB_SERVICE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SECURITY_MQTT_BASIC_ENABLED
-              value: "true"
-            - name: SECURITY_MQTT_SSL_ENABLED
-              value: "true"
-            - name: TB_KAFKA_SERVERS
-              value: "PUT_YOUR_KAFKA_SERVERS_HERE"
-            - name: HTTP_BIND_PORT
-              value: "8083"
-            - name: LISTENER_TCP_BIND_PORT
-              value: "1883"
-            - name: LISTENER_SSL_BIND_PORT
-              value: "8883"
-            - name: STATS_ENABLED
-              value: "true"
-            - name: STATS_PRINT_INTERVAL_MS
-              value: "60000"
-            - name: METRICS_ENDPOINTS_EXPOSE
-              value: "prometheus"
-            - name: TB_KAFKA_ENABLE_TOPIC_DELETION
               value: "false"
-            # Uncomment the following lines to enable two-way MQTTS
-          #            - name: LISTENER_SSL_ENABLED
-          #              value: "true"
-          #            - name: LISTENER_SSL_CREDENTIALS_TYPE
-          #              value: "PEM"
-          #            - name: LISTENER_SSL_PEM_CERT
-          #              value: "/ssl-config/server.pem"
-          #            - name: LISTENER_SSL_PEM_KEY
-          #              value: "/ssl-config/mqttserver_key.pem"
+            - name: TB_KAFKA_SERVERS
+              value: "kafka-controller-headless:9092"
+            - name: DUMMY_VALUE_FOR_RESTART
+              value: "1000000"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config
+            - configMapRef:
+                name: tb-broker-yml-config
           volumeMounts:
             - mountPath: /config
               name: tb-broker-config
-            # Uncomment the following lines to enable two-way MQTTS
-          #            - mountPath: /ssl-config
-          #              name: tbmq-mqtts-config
           readinessProbe:
             tcpSocket:
               port: 1883
@@ -150,5 +108,3 @@ spec:
       name: http
     - port: 1883
       name: mqtt
-    - port: 8883
-      name: mqtts
