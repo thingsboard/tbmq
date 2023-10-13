@@ -40,4 +40,8 @@ public class Subscription {
     public static Subscription newInstance(String topicFilter, int qos, ClientSession clientSession) {
         return new Subscription(topicFilter, qos, ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession));
     }
+
+    public String getClientId() {
+        return clientSessionInfo.getClientId();
+    }
 }
