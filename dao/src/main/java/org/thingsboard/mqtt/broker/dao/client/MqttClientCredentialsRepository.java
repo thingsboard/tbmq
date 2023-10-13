@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
 
@@ -38,4 +39,13 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
             "LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,
                                               Pageable pageable);
+
+    @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
+            "((:clientTypes) IS NULL OR c.clientType IN (:clientTypes)) " +
+            "AND ((:clientCredentialsTypes) IS NULL OR c.credentialsType IN (:clientCredentialsTypes)) " +
+            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+    Page<MqttClientCredentialsEntity> findAllV2(@Param("clientTypes") List<ClientType> clientTypes,
+                                                @Param("clientCredentialsTypes") List<ClientCredentialsType> clientCredentialsTypes,
+                                                @Param("textSearch") String textSearch,
+                                                Pageable pageable);
 }

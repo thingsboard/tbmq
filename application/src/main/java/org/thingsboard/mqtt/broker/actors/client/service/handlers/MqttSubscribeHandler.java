@@ -15,9 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -33,13 +30,13 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
-import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
@@ -57,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,8 +71,10 @@ public class MqttSubscribeHandler {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     private final MsgPersistenceManager msgPersistenceManager;
+    private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+        Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
         if (log.isTraceEnabled()) {
@@ -91,7 +91,7 @@ public class MqttSubscribeHandler {
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
         subscribeAndPersist(ctx, validTopicSubscriptions, subAckMessage);
 
-        startProcessingSharedSubscriptions(ctx, validTopicSubscriptions);
+        startProcessingSharedSubscriptions(ctx, validTopicSubscriptions, currentSharedSubscriptions);
     }
 
     private List<TopicSubscription> collectValidSubscriptions(List<TopicSubscription> topicSubscriptions, List<MqttReasonCode> codes) {
@@ -139,6 +139,15 @@ public class MqttSubscribeHandler {
                     continue;
                 }
             }
+
+            if (subscription.isSharedSubscription() && ctx.getSessionInfo().isPersistent() && ClientType.APPLICATION == ctx.getClientType()) {
+                if (findSharedSubscriptionByTopicFilter(subscription.getTopicFilter()) == null) {
+                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic filter!", subscription.getTopicFilter());
+                    codes.add(MqttReasonCodeResolver.implementationSpecificError(ctx));
+                    continue;
+                }
+            }
+
             codes.add(MqttReasonCode.valueOf(subscription.getQos()));
         }
         return codes;
@@ -221,7 +230,7 @@ public class MqttSubscribeHandler {
                 .collect(Collectors.toSet());
     }
 
-    private List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
+    List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
         long currentTs = System.currentTimeMillis();
         List<RetainedMsg> retainedMessages = getRetainedMessages(topicSubscription);
         List<RetainedMsg> result = new ArrayList<>(retainedMessages.size());
@@ -259,53 +268,75 @@ public class MqttSubscribeHandler {
         return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
     }
 
-    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,
+                                                    Set<TopicSharedSubscription> currentSharedSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
             }
             return;
         }
-        Set<TopicSharedSubscription> topicSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
-        if (CollectionUtils.isEmpty(topicSharedSubscriptions)) {
+        Set<TopicSharedSubscription> newSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
+        if (CollectionUtils.isEmpty(newSharedSubscriptions)) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
             }
             return;
         }
-        ListenableFuture<Boolean> validationSuccessFuture = validateSharedSubscriptions(ctx, topicSharedSubscriptions);
-        DonAsynchron.withCallback(validationSuccessFuture, validationSuccess -> {
-            if (validationSuccess) {
-                msgPersistenceManager.startProcessingSharedSubscriptions(ctx, topicSharedSubscriptions);
-            } else {
-                log.warn("Validation of shared subscriptions failed: {}", topicSharedSubscriptions);
-            }
-        }, throwable -> log.error("Failed to validate shared subscriptions {}", topicSharedSubscriptions, throwable));
+        Set<TopicSharedSubscription> newSubscriptions = filterNewUniqueSubscriptions(newSharedSubscriptions, currentSharedSubscriptions);
+        newSubscriptions.addAll(findSameSubscriptionsWithDifferentQos(ctx, newSharedSubscriptions, currentSharedSubscriptions));
+        msgPersistenceManager.startProcessingSharedSubscriptions(ctx, newSubscriptions);
     }
 
-    private ListenableFuture<Boolean> validateSharedSubscriptions(ClientSessionCtx ctx, Set<TopicSharedSubscription> topicSharedSubscriptions) {
-        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
-            return validateSharedSubscriptions(topicSharedSubscriptions);
+    Set<TopicSharedSubscription> filterNewUniqueSubscriptions(Set<TopicSharedSubscription> newSharedSubscriptions,
+                                                              Set<TopicSharedSubscription> currentSharedSubscriptions) {
+        return newSharedSubscriptions
+                .stream()
+                .filter(sub -> !currentSharedSubscriptions.contains(sub))
+                .collect(Collectors.toSet());
+    }
+
+    Set<TopicSharedSubscription> findSameSubscriptionsWithDifferentQos(ClientSessionCtx ctx,
+                                                                       Set<TopicSharedSubscription> newSharedSubscriptions,
+                                                                       Set<TopicSharedSubscription> currentSharedSubscriptions) {
+        Set<TopicSharedSubscription> differentQosSubscriptions;
+        if (ClientType.APPLICATION == ctx.getClientType()) {
+            differentQosSubscriptions = filterSameSubscriptionsWithDifferentQos(newSharedSubscriptions, currentSharedSubscriptions, this::isQosDifferent);
+            applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, differentQosSubscriptions);
+        } else {
+            differentQosSubscriptions = filterSameSubscriptionsWithDifferentQos(newSharedSubscriptions, currentSharedSubscriptions, this::isQosDifferentAndCurrentIsZero);
         }
-        return Futures.immediateFuture(true);
+        return differentQosSubscriptions;
     }
 
-    private ListenableFuture<Boolean> validateSharedSubscriptions(Set<TopicSharedSubscription> topicSharedSubscriptions) {
-        List<ListenableFuture<Boolean>> futures = new ArrayList<>(topicSharedSubscriptions.size());
-        for (TopicSharedSubscription topicSharedSubscription : topicSharedSubscriptions) {
-            futures.add(Futures.transform(findSharedSubscriptionByTopic(topicSharedSubscription), sharedSubscription -> {
-                if (sharedSubscription == null) {
-                    log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic!", topicSharedSubscription.getTopicFilter());
-                    return false;
-                }
-                return true;
-            }, MoreExecutors.directExecutor()));
-        }
-        return Futures.transform(Futures.allAsList(futures), list -> list.stream().allMatch(bool -> bool), MoreExecutors.directExecutor());
+    boolean isQosDifferentAndCurrentIsZero(TopicSharedSubscription currentSubscription, TopicSharedSubscription newSubscription) {
+        return isQosDifferent(currentSubscription, newSubscription) && currentSubscription.getQos() == 0;
     }
 
-    private ListenableFuture<ApplicationSharedSubscription> findSharedSubscriptionByTopic(TopicSharedSubscription topicSharedSubscription) {
-        return applicationSharedSubscriptionService.findSharedSubscriptionByTopicAsync(topicSharedSubscription.getTopicFilter());
+    boolean isQosDifferent(TopicSharedSubscription currentSubscription, TopicSharedSubscription newSubscription) {
+        return currentSubscription != null && currentSubscription.getQos() != newSubscription.getQos();
+    }
+
+    Set<TopicSharedSubscription> filterSameSubscriptionsWithDifferentQos(Set<TopicSharedSubscription> newSharedSubscriptions,
+                                                                         Set<TopicSharedSubscription> currentSharedSubscriptions,
+                                                                         BiFunction<TopicSharedSubscription, TopicSharedSubscription, Boolean> compareQos) {
+        return newSharedSubscriptions
+                .stream()
+                .filter(currentSharedSubscriptions::contains)
+                .filter(newSubscription -> {
+                    TopicSharedSubscription currentSubscription = currentSharedSubscriptions
+                            .stream()
+                            .filter(currentSub -> currentSub.equals(newSubscription))
+                            .findFirst()
+                            .orElse(null);
+
+                    return compareQos.apply(currentSubscription, newSubscription);
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private ApplicationSharedSubscription findSharedSubscriptionByTopicFilter(String topicFilter) {
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopic(topicFilter);
     }
 
     Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
@@ -317,7 +348,7 @@ public class MqttSubscribeHandler {
                 .keySet();
     }
 
-    private void validateSharedSubscription(TopicSubscription subscription) {
+    void validateSharedSubscription(TopicSubscription subscription) {
         String shareName = subscription.getShareName();
         if (shareName != null && shareName.isEmpty()) {
             throw new DataValidationException("Shared subscription 'shareName' must be at least one character long");
@@ -327,7 +358,7 @@ public class MqttSubscribeHandler {
         }
     }
 
-    private boolean isSharedSubscriptionWithNoLocal(TopicSubscription subscription) {
-        return subscription.getShareName() != null && subscription.getOptions().isNoLocal();
+    boolean isSharedSubscriptionWithNoLocal(TopicSubscription subscription) {
+        return subscription.isSharedSubscription() && subscription.getOptions().isNoLocal();
     }
 }

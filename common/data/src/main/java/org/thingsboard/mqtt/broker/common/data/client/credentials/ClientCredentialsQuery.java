@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.dto;
+package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 
-import java.util.UUID;
+import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class ShortMqttClientCredentials implements HasId {
+public class ClientCredentialsQuery {
 
-    private UUID id;
-    private String name;
-    private ClientType clientType;
-    private ClientCredentialsType credentialsType;
-    private long createdTime;
+    private PageLink pageLink;
+    private List<ClientType> clientTypeList;
+    private List<ClientCredentialsType> credentialsTypeList;
 
 }

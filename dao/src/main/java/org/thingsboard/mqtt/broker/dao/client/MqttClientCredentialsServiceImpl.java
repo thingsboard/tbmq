@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
@@ -136,7 +137,19 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             log.trace("Executing getCredentials, pageLink [{}]", pageLink);
         }
         validatePageLink(pageLink);
-        PageData<MqttClientCredentials> pageData = mqttClientCredentialsDao.findAll(pageLink);
+        return toShortMqttClientCredentialsPageData(mqttClientCredentialsDao.findAll(pageLink));
+    }
+
+    @Override
+    public PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing getCredentialsV2, query [{}]", query);
+        }
+        validatePageLink(query.getPageLink());
+        return toShortMqttClientCredentialsPageData(mqttClientCredentialsDao.findAllV2(query));
+    }
+
+    private PageData<ShortMqttClientCredentials> toShortMqttClientCredentialsPageData(PageData<MqttClientCredentials> pageData) {
         List<ShortMqttClientCredentials> shortMqttCredentials = pageData.getData().stream()
                 .map(MqttClientCredentialsUtil::toShortMqttClientCredentials)
                 .collect(Collectors.toList());

@@ -247,6 +247,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
+            return;
+        }
         String clientId = clientSessionCtx.getClientId();
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing shared subscriptions persisted messages");
         if (log.isDebugEnabled()) {
@@ -532,6 +535,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
+            return;
+        }
         var clientId = clientSessionCtx.getClientId();
         if (log.isDebugEnabled()) {
             log.debug("[{}] Stopping processing shared subscriptions.", clientId);

@@ -15,11 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dto;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
+@EqualsAndHashCode
 public class SharedSubscriptionPublishPacket {
 
     private final String key;

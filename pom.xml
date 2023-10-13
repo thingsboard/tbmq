@@ -56,8 +56,8 @@
         <dbunit.version>2.7.2</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
         <postgresql.driver.version>42.5.0</postgresql.driver.version>
-        <kafka.version>3.4.0</kafka.version>
-        <testcontainers.version>1.17.3</testcontainers.version>
+        <kafka.version>3.5.1</kafka.version>
+        <testcontainers.version>1.18.3</testcontainers.version>
         <winsw.version>2.0.1</winsw.version>
         <surefire.version>3.0.0-M9</surefire.version>
         <jar-plugin.version>3.3.0</jar-plugin.version>

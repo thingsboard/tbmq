@@ -27,6 +27,7 @@ public enum MqttReasonCode {
     FAILURE((byte) 0x80),
     MALFORMED_PACKET((byte) 0x81),
     PROTOCOL_ERROR((byte) 0x82),
+    IMPLEMENTATION_SPECIFIC_ERROR((byte) 0x83),
     NOT_AUTHORIZED((byte) 0x87),
     KEEP_ALIVE_TIMEOUT((byte) 0x8D),
     SESSION_TAKEN_OVER((byte) 0x8E),
