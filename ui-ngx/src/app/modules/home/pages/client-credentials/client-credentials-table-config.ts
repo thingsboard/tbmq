@@ -71,7 +71,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.defaultSortOrder = { property: 'name', direction: Direction.ASC };
     this.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
     this.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
-    this.addDialogStyle = {width: '900px'};
+    this.addDialogStyle = {width: 'fit-content'};
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;

@@ -23,8 +23,6 @@ import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
 import { ClientType } from '@shared/models/client.model';
@@ -62,8 +60,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
               public dialogRef: MatDialogRef<SessionsDetailsDialogComponent>,
               private fb: UntypedFormBuilder,
               private clientSessionService: ClientSessionService,
-              private cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+              private cd: ChangeDetectorRef) {
     super(store, router, dialogRef);
   }
 
@@ -95,7 +92,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       connectionState: [{value: entity ? entity.connectionState : null, disabled: false}],
       disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: false}],
       subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
-      cleanStart: [{value: entity ? entity.cleanStart : null, disabled: false}],
+      cleanStart: [{value: entity ? entity.cleanStart : null, disabled: true}],
       subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
@@ -160,17 +157,5 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private closeDialog(): void {
     this.dialogRef.close();
-  }
-
-  onCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('action.on-copied'),
-        type: 'success',
-        duration: 1000,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      })
-    );
   }
 }

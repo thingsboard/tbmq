@@ -42,6 +42,13 @@
         <input matInput name="topicFilter" formControlName="topicFilter" required placeholder="{{ 'mqtt-client-session.topic' | translate }}"
                [readonly]="topicFilter.get('shareName').value?.length"
                [ngStyle]="{'cursor': topicFilter.get('shareName').value?.length ? 'not-allowed' : 'unset'}">
+        <tb-copy-button matSuffix
+                        [disabled]="isLoading$ | async"
+                        [copyText]="topicFilter.get('topicFilter').value"
+                        [tooltipText]="'action.copy' | translate"
+                        tooltipPosition="above"
+                        [icon]="'content_copy'">
+        </tb-copy-button>
         <mat-error *ngIf="topicFilter.invalid">
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>

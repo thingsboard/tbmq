@@ -13,40 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host ::ng-deep {
-  .tb-checkbox {
-    display: flex;
-    flex-direction: column;
-    height: 30px;
-
-    .checkbox-container {
-      margin-top: 11px;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      background-color: rgba(0, 0, 0, 0.04);
-      height: 60px;
-      width: 100%;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.5);
-    }
-
-    mat-checkbox {
-      padding-top: 25px;
-      padding-left: 14px;
-    }
-
-    .mat-checkbox-disabled .mat-checkbox-label {
-      color: rgba(0, 0, 0, 0.87);
-    }
-
-    .tb-hint {
-      padding-bottom: 15px;
-      padding-left: 14px;
-      font-size: 12px;
-      line-height: 14px;
-      color: #808080;
-    }
+:host {
+  .dialog-toolbar {
+    padding: 8px 16px 0 16px;
   }
-
   .tb-warning {
     background: rgb(255, 244, 229);
     border-radius: 4px;
@@ -54,10 +24,28 @@
     margin: 0;
     color: rgb(102, 60, 0);
   }
-}
 
-::ng-deep .session-details {
-  ::ng-deep .mat-input-element, span {
-    color: rgba(0, 0, 0, 0.38);
+  ::ng-deep {
+    .session-details {
+      ::ng-deep .mat-input-element, span {
+        color: rgba(0, 0, 0, 0.87);
+        cursor: not-allowed;
+      }
+    }
+    .mdc-text-field__input {
+      cursor: not-allowed;
+    }
+    .mat-mdc-icon-button .mat-mdc-button-touch-target {
+      cursor: pointer;
+    }
+    .mat-mdc-checkbox-disabled label {
+      color: rgba(0, 0, 0, 0.87);
+    }
+    mat-checkbox {
+      background: #f2f8f5;
+      padding: 12px 6px;
+      height: 56px;
+      border-bottom: 1px solid rgba(0,0,0,0.38);
+    }
   }
 }
