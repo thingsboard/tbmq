@@ -37,7 +37,6 @@ import {
   connectionStateColor,
   connectionStateTranslationMap,
   DetailedClientSessionInfo,
-  initialSessionFilterConfig,
   SessionFilterConfig,
   SessionQuery
 } from '@shared/models/session.model';
@@ -52,7 +51,7 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
-  sessionFilterConfig: SessionFilterConfig = initialSessionFilterConfig;
+  sessionFilterConfig: SessionFilterConfig = {};
 
   constructor(private clientSessionService: ClientSessionService,
               private translate: TranslateService,

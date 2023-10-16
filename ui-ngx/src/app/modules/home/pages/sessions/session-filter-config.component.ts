@@ -39,7 +39,7 @@ import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
 import {
   ConnectionState,
-  connectionStateTranslationMap, initialSessionFilterConfig,
+  connectionStateTranslationMap,
   SessionFilterConfig,
   sessionFilterConfigEquals
 } from '@shared/models/session.model';
@@ -148,7 +148,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     if (this.panelMode) {
       this.updateSessionConfigForm(this.sessionFilterConfig);
     }
-    this.initialSessionFilterConfig = initialSessionFilterConfig;
+    this.initialSessionFilterConfig = this.sessionFilterConfigForm.getRawValue();
   }
 
   ngOnDestroy(): void {

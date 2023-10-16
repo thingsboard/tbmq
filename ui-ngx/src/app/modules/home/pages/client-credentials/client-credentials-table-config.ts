@@ -32,8 +32,7 @@ import { ClientCredentialsService } from '@core/http/client-credentials.service'
 import {
   clientTypeColor,
   clientTypeIcon,
-  clientTypeTranslationMap,
-  initialClientCredentialsFilterConfig
+  clientTypeTranslationMap
 } from '@shared/models/client.model';
 import {
   ClientCredentialsFilterConfig, ClientCredentialsQuery,
@@ -54,7 +53,7 @@ import { ClientCredentialsComponent } from '@home/pages/client-credentials/clien
 
 export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCredentials, TimePageLink> {
 
-  clientCredentialsFilterConfig: ClientCredentialsFilterConfig = initialClientCredentialsFilterConfig;
+  clientCredentialsFilterConfig: ClientCredentialsFilterConfig = {};
 
   constructor(private store: Store<AppState>,
               private clientCredentialsService: ClientCredentialsService,

@@ -39,9 +39,3 @@ export const clientTypeIcon = new Map<ClientType, string>(
     [ClientType.DEVICE, 'devices_other']
   ]
 );
-
-export const initialClientCredentialsFilterConfig = {
-  credentialsTypeList: null,
-  clientTypeList: null,
-  name: null
-}

@@ -159,12 +159,12 @@ export class SessionQuery {
 
   constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
     this.pageLink = pageLink;
-    this.connectedStatusList = sessionFilter.connectedStatusList;
-    this.clientTypeList = sessionFilter.clientTypeList;
-    this.cleanStartList = sessionFilter.cleanStartList;
-    this.nodeIdList = sessionFilter.nodeIdList;
-    this.subscriptions = sessionFilter.subscriptions;
-    if (isNotEmptyStr(sessionFilter.clientId)) {
+    this.connectedStatusList = sessionFilter?.connectedStatusList;
+    this.clientTypeList = sessionFilter?.clientTypeList;
+    this.cleanStartList = sessionFilter?.cleanStartList;
+    this.nodeIdList = sessionFilter?.nodeIdList;
+    this.subscriptions = sessionFilter?.subscriptions;
+    if (isNotEmptyStr(sessionFilter?.clientId)) {
       this.pageLink.textSearch = sessionFilter.clientId;
     }
   }
@@ -188,13 +188,4 @@ export class SessionQuery {
     }
     return query;
   }
-}
-
-export const initialSessionFilterConfig = {
-  connectedStatusList: null,
-  clientTypeList: null,
-  cleanStartList: null,
-  nodeIdList: null,
-  clientId: null,
-  subscriptions: null
 }

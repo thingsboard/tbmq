@@ -128,10 +128,10 @@ export class ClientCredentialsQuery {
 
   constructor(pageLink: TimePageLink, clientCredentialsFilter: ClientCredentialsFilterConfig) {
     this.pageLink = pageLink;
-    this.credentialsTypeList = clientCredentialsFilter.credentialsTypeList;
-    this.clientTypeList = clientCredentialsFilter.clientTypeList;
-    if (isNotEmptyStr(clientCredentialsFilter.name)) {
-      this.pageLink.textSearch = clientCredentialsFilter.name;
+    this.credentialsTypeList = clientCredentialsFilter?.credentialsTypeList;
+    this.clientTypeList = clientCredentialsFilter?.clientTypeList;
+    if (isNotEmptyStr(clientCredentialsFilter?.name)) {
+      this.pageLink.textSearch = clientCredentialsFilter?.name;
     }
   }
 

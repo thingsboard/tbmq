@@ -106,13 +106,5 @@
                               [entityType]="entityType.KAFKA_BROKER">
       </tb-entity-subtype-list>
     </div>
-    <div class="tb-form-row space-between column-xs">
-      <div class="fixed-title-width" translate>mqtt-client-session.clean-start</div>
-      <mat-chip-listbox multiple formControlName="cleanStartList">
-        <mat-chip-option *ngFor="let value of cleanStartList" [value]="value">
-          {{ value }}
-        </mat-chip-option>
-      </mat-chip-listbox>
-    </div>
   </div>
 </ng-template>
