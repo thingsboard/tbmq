@@ -125,10 +125,7 @@
               <input matInput formControlName="clientId" readonly>
               <tb-copy-button matSuffix
                       [disabled]="isLoading$ | async"
-                      [copyText]="entity?.clientId"
-                      [tooltipText]="'action.copy' | translate"
-                      tooltipPosition="above"
-                      [icon]="'content_copy'">
+                      [copyText]="entity?.clientId">
               </tb-copy-button>
             </mat-form-field>
             <mat-form-field class="mat-block">
@@ -143,10 +140,7 @@
               <input matInput formControlName="clientIpAdr" readonly>
               <tb-copy-button matSuffix
                       [disabled]="isLoading$ | async"
-                      [copyText]="entity?.clientIpAdr"
-                      [tooltipText]="'action.copy' | translate"
-                      tooltipPosition="above"
-                      [icon]="'content_copy'">
+                      [copyText]="entity?.clientIpAdr">
               </tb-copy-button>
             </mat-form-field>
         </div>

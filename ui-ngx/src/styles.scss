@@ -116,8 +116,8 @@ fieldset {
 }
 
 .fields-group {
-  padding: 0 16px 8px;
-  margin-bottom: 10px;
+  padding: 0 8px 8px;
+  margin-bottom: 8px;
   border: 1px groove rgba(0, 0, 0, .25);
   border-radius: 4px;
 
@@ -128,7 +128,7 @@ fieldset {
 
   legend + * {
     display: block;
-    margin-top: 16px;
+    margin-top: 8px;
   }
 }
 
@@ -232,7 +232,7 @@ div {
 }
 
 .tb-hint {
-  padding: 0 16px 16px;
+  padding: 0 8px 8px;
   font-size: var(--mdc-typography-caption-font-size, 12px);
   line-height: var(--mdc-typography-caption-line-height, 20px);
   font-weight: var(--mdc-typography-caption-font-weight, 400);

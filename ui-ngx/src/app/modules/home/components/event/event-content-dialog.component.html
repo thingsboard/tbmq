@@ -26,13 +26,9 @@
 </mat-toolbar>
 <div mat-dialog-content fxLayout="row">
   <div #eventContentEditor class="tb-event-content"></div>
-  <mat-icon class="tb-copy-icon"
-            ngxClipboard
-            (cbOnSuccess)="onCopied()"
-            [cbContent]="data.content"
-            matTooltip="{{'action.copy' | translate}}">
-    content_copy
-  </mat-icon>
+  <tb-copy-button [disabled]="isLoading$ | async"
+                  [copyText]="data.content">
+  </tb-copy-button>
 </div>
 <div mat-dialog-actions fxLayout="row" fxLayoutAlign="flex-end">
   <button mat-button type="button"

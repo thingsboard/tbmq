@@ -37,13 +37,13 @@ export class CopyButtonComponent {
   disabled = false;
 
   @Input()
-  icon: string;
+  icon: string = 'content_copy';
 
   @Input()
-  tooltipText: string;
+  tooltipText: string = this.translate.instant('action.copy');
 
   @Input()
-  tooltipPosition: TooltipPosition;
+  tooltipPosition: TooltipPosition = 'above';
 
   @Input()
   style: {[key: string]: any} = {};
