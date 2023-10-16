@@ -38,6 +38,8 @@ import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
@@ -154,6 +156,12 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     public MqttPublishMessage createPubMsg(PublishMsg pubMsg) {
         return getMqttPublishMessage(pubMsg.isDup(), pubMsg.getQosLevel(), pubMsg.isRetained(),
                 pubMsg.getTopicName(), pubMsg.getPacketId(), pubMsg.getPayload(), pubMsg.getProperties());
+    }
+
+    @Override
+    public MqttPublishMessage createPubMsg(PublishMsgProto msg, int qos, boolean retain, int packetId) {
+        return getMqttPublishMessage(false, qos, retain, msg.getTopicName(), packetId,
+                msg.getPayload().toByteArray(), ProtoConverter.createMqttProperties(msg.getUserPropertiesList()));
     }
 
     @Override

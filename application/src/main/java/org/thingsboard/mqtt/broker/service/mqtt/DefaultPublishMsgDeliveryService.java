@@ -20,11 +20,13 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
@@ -64,6 +66,22 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
+        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+    }
+
+    @Override
+    public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), msg);
+        }
+        msg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(msg, minTopicNameLengthForAliasReplacement);
+
+        int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
+        int qos = Math.min(subscription.getQos(), msg.getQos());
+        boolean retain = subscription.getOptions().isRetain(msg);
+        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, packetId);
+
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }

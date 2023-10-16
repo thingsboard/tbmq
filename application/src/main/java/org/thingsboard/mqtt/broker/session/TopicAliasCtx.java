@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
@@ -96,6 +97,11 @@ public class TopicAliasCtx {
             }
         }
         return publishMsg;
+    }
+
+    public PublishMsgProto createPublishMsgUsingTopicAlias(PublishMsgProto publishMsgProto, int minTopicNameLengthForAliasReplacement) {
+        // TODO: 16.10.23 implement
+        return publishMsgProto;
     }
 
     private void addTopicAliasToProps(MqttProperties properties, int topicAlias) {

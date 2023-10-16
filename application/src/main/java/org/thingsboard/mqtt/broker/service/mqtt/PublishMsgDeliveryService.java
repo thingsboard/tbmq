@@ -15,12 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface PublishMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
+
+    void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto publishMsgProto, Subscription subscription);
 
     void sendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
 
