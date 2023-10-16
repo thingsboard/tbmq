@@ -59,7 +59,6 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -366,25 +365,32 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<Subscription> collectSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+        Map<String, Subscription> map = new HashMap<>();
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
-                filterClientSubscriptions(clientSubscriptionWithTopicFilterList, senderClientId);
-        if (CollectionUtils.isEmpty(filteredClientSubscriptions)) {
-            return null;
-        }
+        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
+            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
+            if (noLocalOptionMet) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] No local option is met for sender client!", senderClientId);
+                }
+                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                continue;
+            }
 
-        return getSubscriptions(filteredClientSubscriptions);
-    }
+            Subscription subscription = convertToSubscription(clientSubsWithTopicFilter);
+            if (subscription == null) {
+                continue;
+            }
 
-    private List<Subscription> getSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions) {
-        List<Subscription> subscriptions = new ArrayList<>(filteredClientSubscriptions.size());
-        for (var filteredClientSubscription : filteredClientSubscriptions) {
-            Subscription subscription = convertToSubscription(filteredClientSubscription);
-            if (subscription != null) {
-                subscriptions.add(subscription);
+            var clientId = subscription.getClientId();
+            var value = map.get(clientId);
+            if (value != null) {
+                map.put(clientId, getSubscriptionWithHigherQos(value, subscription));
+            } else {
+                map.put(clientId, subscription);
             }
         }
-        return subscriptions;
+        return map.isEmpty() ? null : new ArrayList<>(map.values());
     }
 
     private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
@@ -404,31 +410,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getOptions());
     }
 
-    Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
-
-        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
-            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
-            if (noLocalOptionMet) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] No local option is met for sender client!", senderClientId);
-                }
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
-                continue;
-            }
-
-            var clientId = clientSubsWithTopicFilter.getValue().getClientId();
-            var value = map.get(clientId);
-            if (value != null) {
-                map.put(clientId, getSubscriptionWithHigherQos(value, clientSubsWithTopicFilter));
-            } else {
-                map.put(clientId, clientSubsWithTopicFilter);
-            }
-        }
-        return map.values();
-    }
-
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
                                        String senderClientId) {
         return clientSubscriptionWithTopicFilter
@@ -440,9 +421,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
-                                                                          ValueWithTopicFilter<ClientSubscription> second) {
-        return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
+    Subscription getSubscriptionWithHigherQos(Subscription first, Subscription second) {
+        return first.getQos() > second.getQos() ? first : second;
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {

@@ -45,7 +45,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptio
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -97,16 +97,12 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testGetSubscriptionWithHigherQos() {
-        ClientSubscription clientSubscription1 = newClientSubscription("id", 1, null);
-        ClientSubscription clientSubscription2 = newClientSubscription("id", 0, null);
+        Subscription subscription1 = new Subscription("test/+", 1, null);
+        Subscription subscription2 = new Subscription("#", 0, null);
 
-        ValueWithTopicFilter<ClientSubscription> value1 = new ValueWithTopicFilter<>(clientSubscription1, "#");
-        ValueWithTopicFilter<ClientSubscription> value2 = new ValueWithTopicFilter<>(clientSubscription2, "test/+");
+        Subscription result = msgDispatcherService.getSubscriptionWithHigherQos(subscription1, subscription2);
 
-        ValueWithTopicFilter<ClientSubscription> result =
-                msgDispatcherService.getSubscriptionWithHigherQos(value1, value2);
-
-        assertEquals(result, value1);
+        assertEquals(result, subscription1);
     }
 
     @Test
@@ -125,7 +121,7 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testFilterHighestQosClientSubscriptions4() {
+    public void testCollectSubscriptions4() {
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 new ValueWithTopicFilter<>(
                         new ClientSubscription(
@@ -140,27 +136,29 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(1, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, "clientId1");
-        assertTrue(result.isEmpty());
+        List<Subscription> result = msgDispatcherService.collectSubscriptions(before, "clientId1");
+        assertNull(result);
     }
 
     @Test
-    public void testFilterHighestQosClientSubscriptions3() {
+    public void testCollectSubscriptions3() {
+        when(clientSessionCache.getClientSessionInfo("clientId1")).thenReturn(ClientSessionInfo.builder().clientId("clientId1").build());
+
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+")
         );
         assertEquals(1, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
+        List<Subscription> result = msgDispatcherService.collectSubscriptions(before, null);
         assertEquals(1, result.size());
-
-        assertTrue(result.contains(
-                newValueWithTopicFilter("clientId1", 0, "+/test/+")
-        ));
     }
 
     @Test
-    public void testFilterHighestQosClientSubscriptions2() {
+    public void testCollectSubscriptions2() {
+        for (int i = 1; i < 7; i++) {
+            when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
+        }
+
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 0, "#"),
@@ -171,20 +169,26 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
+        List<Subscription> result = msgDispatcherService.collectSubscriptions(before, null);
         assertEquals(3, result.size());
 
-        assertTrue(result.containsAll(
-                List.of(
-                        newValueWithTopicFilter("clientId3", 2, "topic/+/+"),
-                        newValueWithTopicFilter("clientId1", 2, "+/+/res"),
-                        newValueWithTopicFilter("clientId2", 1, "topic/test/+")
-                )
-        ));
+        result.sort(Comparator.comparing(Subscription::getClientId));
+
+        assertEquals("clientId1", result.get(0).getClientId());
+        assertEquals("clientId2", result.get(1).getClientId());
+        assertEquals("clientId3", result.get(2).getClientId());
+
+        assertEquals(2, result.get(0).getQos());
+        assertEquals(1, result.get(1).getQos());
+        assertEquals(2, result.get(2).getQos());
     }
 
     @Test
-    public void testFilterHighestQosClientSubscriptions1() {
+    public void testCollectSubscriptions1() {
+        for (int i = 1; i < 7; i++) {
+            when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
+        }
+
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 1, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 1, "#"),
@@ -195,7 +199,7 @@ public class MsgDispatcherServiceImplTest {
         );
         assertEquals(6, before.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.filterClientSubscriptions(before, null);
+        List<Subscription> result = msgDispatcherService.collectSubscriptions(before, null);
         assertEquals(6, result.size());
     }
 
