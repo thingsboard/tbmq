@@ -311,29 +311,39 @@ public class MsgDispatcherServiceImplTest {
         ClientSessionInfo clientSessionInfo3 = mock(ClientSessionInfo.class);
         ClientSessionInfo clientSessionInfo4 = mock(ClientSessionInfo.class);
         ClientSessionInfo clientSessionInfo5 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo6 = mock(ClientSessionInfo.class);
+        ClientSessionInfo clientSessionInfo7 = mock(ClientSessionInfo.class);
 
         when(clientSessionInfo1.isPersistent()).thenReturn(true);
         when(clientSessionInfo2.isPersistent()).thenReturn(true);
         when(clientSessionInfo5.isPersistent()).thenReturn(false);
+        when(clientSessionInfo6.isPersistent()).thenReturn(true);
+        when(clientSessionInfo7.isPersistent()).thenReturn(true);
 
         when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
         when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
         when(clientSessionInfo5.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo6.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo7.getType()).thenReturn(ClientType.DEVICE);
 
         mockClientSessionGetClientId(clientSessionInfo1, "clientId1");
         mockClientSessionGetClientId(clientSessionInfo2, "clientId2");
+        mockClientSessionGetClientId(clientSessionInfo6, "clientId6");
+        mockClientSessionGetClientId(clientSessionInfo7, "clientId7");
 
         MsgSubscriptions msgSubscriptions = new MsgSubscriptions(
                 List.of(
                         new Subscription("test/topic/1", 1, clientSessionInfo1),
-                        new Subscription("test/+/1", 2, clientSessionInfo2)
+                        new Subscription("test/+/1", 2, clientSessionInfo2),
+                        new Subscription("test/+/1", 1, clientSessionInfo7)
                 ),
                 Set.of(
                         new Subscription("#", 2, clientSessionInfo3),
                         new Subscription("test/#", 0, clientSessionInfo4)
                 ),
                 List.of(
-                        new Subscription("test/topic/#", 1, clientSessionInfo5)
+                        new Subscription("test/topic/#", 1, clientSessionInfo5),
+                        new Subscription("+/topic/1", 2, clientSessionInfo6)
                 )
         );
         QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
@@ -346,7 +356,11 @@ public class MsgDispatcherServiceImplTest {
                 msgDispatcherService.processBasicAndCollectPersistentSubscriptions(msgSubscriptions, publishMsgProto);
 
         assertEquals(persistentMsgSubscriptions.getAllApplicationSharedSubscriptions(), msgSubscriptions.getAllApplicationSharedSubscriptions());
-        assertTrue(persistentMsgSubscriptions.getDeviceSubscriptions().isEmpty());
+
+        assertEquals(2, persistentMsgSubscriptions.getDeviceSubscriptions().size());
+        List<String> devClientIds = getClientIds(persistentMsgSubscriptions.getDeviceSubscriptions().stream());
+        assertTrue(devClientIds.containsAll(List.of("clientId6", "clientId7")));
+
         assertEquals(2, persistentMsgSubscriptions.getApplicationSubscriptions().size());
         List<String> appClientIds = getClientIds(persistentMsgSubscriptions.getApplicationSubscriptions().stream());
         assertTrue(appClientIds.containsAll(List.of("clientId1", "clientId2")));

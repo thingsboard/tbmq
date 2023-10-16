@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class PersistentMsgSubscriptions {
 
-    private final List<Subscription> deviceSubscriptions;
-    private final List<Subscription> applicationSubscriptions;
-    private final Set<Subscription> allApplicationSharedSubscriptions;
+    private List<Subscription> deviceSubscriptions;
+    private List<Subscription> applicationSubscriptions;
+    private Set<Subscription> allApplicationSharedSubscriptions;
 
     public boolean isNotEmpty() {
         return !CollectionUtils.isEmpty(deviceSubscriptions) ||

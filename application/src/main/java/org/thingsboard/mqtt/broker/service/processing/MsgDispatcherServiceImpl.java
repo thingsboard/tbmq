@@ -150,38 +150,26 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
                                                                              PublishMsgProto publishMsgProto) {
-        List<Subscription> applicationSubscriptions = null;
-        List<Subscription> deviceSubscriptions = null;
+        final PersistentMsgSubscriptions persistentSubscriptions = new PersistentMsgSubscriptions(
+                null, null, msgSubscriptions.getAllApplicationSharedSubscriptions()
+        );
         long startTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            int commonSubsSize = msgSubscriptions.getCommonSubscriptions().size();
-            applicationSubscriptions = initArrayList(commonSubsSize);
-            deviceSubscriptions = initArrayList(commonSubsSize);
-            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto,
-                    applicationSubscriptions, deviceSubscriptions);
+            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto, persistentSubscriptions);
         }
-
         if (!CollectionUtils.isEmpty(msgSubscriptions.getTargetDeviceSharedSubscriptions())) {
-            int targetDeviceSharedSubsSize = msgSubscriptions.getTargetDeviceSharedSubscriptions().size();
-            applicationSubscriptions = initSubscriptionListIfNull(applicationSubscriptions, targetDeviceSharedSubsSize);
-            deviceSubscriptions = initSubscriptionListIfNull(deviceSubscriptions, targetDeviceSharedSubsSize);
-            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto,
-                    applicationSubscriptions, deviceSubscriptions);
+            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto, persistentSubscriptions);
         }
 
         if (publishMsgProcessingTimerStats != null) {
             publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(startTime, TimeUnit.NANOSECONDS);
         }
-        return new PersistentMsgSubscriptions(
-                deviceSubscriptions,
-                applicationSubscriptions,
-                msgSubscriptions.getAllApplicationSharedSubscriptions()
-        );
+        return persistentSubscriptions;
     }
 
     private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
-                                      List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
+                                      final PersistentMsgSubscriptions persistentMsgSubscriptions) {
         boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
         if (nonPersistentByPubQos) {
             if (processSubscriptionsInParallel) {
@@ -194,13 +182,25 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 }
             }
         } else {
+            persistentMsgSubscriptions.setDeviceSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getDeviceSubscriptions(), subscriptions.size()));
+            persistentMsgSubscriptions.setApplicationSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getApplicationSubscriptions(), subscriptions.size()));
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
-                        .forEach(subscription -> processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions));
+                        .forEach(subscription -> processSubscription(
+                                subscription,
+                                publishMsgProto,
+                                persistentMsgSubscriptions.getApplicationSubscriptions(),
+                                persistentMsgSubscriptions.getDeviceSubscriptions())
+                        );
             } else {
                 for (Subscription subscription : subscriptions) {
-                    processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions);
+                    processSubscription(
+                            subscription,
+                            publishMsgProto,
+                            persistentMsgSubscriptions.getApplicationSubscriptions(),
+                            persistentMsgSubscriptions.getDeviceSubscriptions()
+                    );
                 }
             }
         }
