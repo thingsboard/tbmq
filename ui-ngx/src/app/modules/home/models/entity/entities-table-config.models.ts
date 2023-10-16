@@ -260,7 +260,7 @@ export const clientTypeCell = (value: ClientType, icon: string, color: string): 
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
   `<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:${color}"></span>
-    <span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; font-weight: 600; color:${color}">
+    <span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; color:${color}">
         ${connectionState}
     </span>`;
 

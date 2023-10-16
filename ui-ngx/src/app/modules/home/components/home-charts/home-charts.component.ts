@@ -22,9 +22,10 @@ import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/tim
 import { TimeService } from '@core/services/time.service';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  chartJsParams,
+  ChartPage,
   ChartTooltipTranslationMap,
   getColor,
-  homeChartJsParams,
   StatsChartType,
   StatsChartTypeTranslationMap,
   TimeseriesData, TOTAL_KEY
@@ -43,7 +44,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('homeChartsContainer', {static: true}) homeChartsContainer: ElementRef;
 
   cardType = HomePageTitleType.MONITORING;
-  chartIdSuf = 'home';
+  chartPage: ChartPage = 'home';
   charts = {};
   statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
@@ -97,7 +98,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   private initCharts(data = null) {
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
-      const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
+      const ctx = document.getElementById(chartType + this.chartPage) as HTMLCanvasElement;
       const color = getColor(chartType, 0);
       const dataSet = {
         data: data ? data[chartType] : null,
@@ -107,9 +108,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         pointBorderColor: color,
         pointBackgroundColor: color,
         pointHoverBackgroundColor: color,
-        pointHoverBorderColor: color
+        pointHoverBorderColor: color,
+        pointRadius: 0
       };
-      const params = {...homeChartJsParams(), ...{data: {datasets: [dataSet]}}};
+      const params = {...chartJsParams(this.chartPage), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params as any);
       this.updateXScale(chartType);
     }

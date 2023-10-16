@@ -24,9 +24,10 @@ import {TimeService} from '@core/services/time.service';
 import {chartKeysTotal, getTimeseriesDataLimit, StatsService} from '@core/http/stats.service';
 import {share, switchMap, takeUntil} from 'rxjs/operators';
 import {
+  chartJsParams,
+  ChartPage,
   ChartTooltipTranslationMap,
   getColor,
-  monitoringChartJsParams,
   ONLY_TOTAL_KEYS,
   StatsChartType,
   StatsChartTypeTranslationMap,
@@ -52,7 +53,7 @@ Chart.register([Zoom]);
 })
 export class MonitoringComponent extends PageComponent {
 
-  chartIdSuf = 'monitoring';
+  chartPage: ChartPage = 'monitoring';
   charts = {};
   timewindow: Timewindow;
   statsCharts = Object.values(StatsChartType);
@@ -173,12 +174,12 @@ export class MonitoringComponent extends PageComponent {
         pointBorderColor: color,
         pointBackgroundColor: color,
         pointHoverBorderColor: color,
-        pointBorderWidth: 0
+        pointRadius: 0
       };
     };
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
-      const ctx = document.getElementById(chartType + this.chartIdSuf) as HTMLCanvasElement;
+      const ctx = document.getElementById(chartType + this.chartPage) as HTMLCanvasElement;
       const datasets = {data: {datasets: []}};
       for (let i = 0; i < this.brokerIds.length; i++) {
         const brokerId = this.brokerIds[i];
@@ -190,7 +191,7 @@ export class MonitoringComponent extends PageComponent {
           datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
         }
       }
-      const params = {...monitoringChartJsParams(), ...datasets};
+      const params = {...chartJsParams(this.chartPage), ...datasets};
       this.charts[chartType] = new Chart(ctx, params);
       this.updateXScale(chartType);
       ctx.addEventListener('dblclick', () => {

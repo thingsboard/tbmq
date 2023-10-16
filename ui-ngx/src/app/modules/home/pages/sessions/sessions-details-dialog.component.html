@@ -58,7 +58,7 @@
           <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-session.connected-status</mat-label>
             <input matInput fxHide formControlName="connectionState" readonly>
-            <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
+            <span [ngStyle]="{ fontWeight: 'bold', color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
               {{ entityForm.get('connectionState')?.value | titlecase }}
             </span>
           </mat-form-field>
