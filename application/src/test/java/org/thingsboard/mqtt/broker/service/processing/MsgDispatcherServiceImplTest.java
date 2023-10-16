@@ -245,6 +245,8 @@ public class MsgDispatcherServiceImplTest {
                 .setTopicName(topic)
                 .build();
 
+        when(sharedSubscriptionCacheService.sharedSubscriptionsInitialized()).thenReturn(true);
+
         when(sharedSubscriptionCacheService.get(
                 Set.of(
                         new TopicSharedSubscription("topic/+", "g1")

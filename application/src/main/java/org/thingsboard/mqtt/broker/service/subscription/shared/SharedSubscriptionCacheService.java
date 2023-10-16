@@ -30,4 +30,6 @@ public interface SharedSubscriptionCacheService {
 
     boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
 
+    boolean sharedSubscriptionsInitialized();
+
 }

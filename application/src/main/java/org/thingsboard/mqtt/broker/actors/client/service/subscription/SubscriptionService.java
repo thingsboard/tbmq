@@ -27,6 +27,7 @@ import java.util.List;
     not thread-safe for operations with the same 'clientId'
  */
 public interface SubscriptionService {
+
     void subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
     void unsubscribe(String clientId, Collection<String> topicFilters);
@@ -34,4 +35,5 @@ public interface SubscriptionService {
     List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
 
     void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
+
 }

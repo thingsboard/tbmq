@@ -240,20 +240,28 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
 
-        Set<TopicSharedSubscription> topicSharedSubscriptions = null;
-        List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
+        if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
+            Set<TopicSharedSubscription> topicSharedSubscriptions = null;
+            List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
 
-        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
-            topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+            for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
+                topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+            }
+
+            SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
+
+            return new MsgSubscriptions(
+                    collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
+                    sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
+                    getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
+            );
+        } else {
+            return new MsgSubscriptions(
+                    collectCommonSubscriptions(clientSubscriptions, senderClientId),
+                    null,
+                    null
+            );
         }
-
-        SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
-
-        return new MsgSubscriptions(
-                collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
-                sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
-                getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
-        );
     }
 
     private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,
