@@ -365,7 +365,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<Subscription> collectSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        Map<String, Subscription> map = new HashMap<>();
+        Map<String, Subscription> map = new HashMap<>(clientSubscriptionWithTopicFilterList.size());
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
             boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
