@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +61,6 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -365,7 +365,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<Subscription> collectSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        Map<String, Subscription> map = new HashMap<>(clientSubscriptionWithTopicFilterList.size());
+        Map<String, Subscription> map = Maps.newHashMapWithExpectedSize(clientSubscriptionWithTopicFilterList.size());
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
             boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
