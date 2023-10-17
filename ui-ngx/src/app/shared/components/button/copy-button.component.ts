@@ -74,7 +74,7 @@ export class CopyButtonComponent {
   }
 
   get matTooltipText(): string {
-    return this.copied ? this.translate.instant('ota-update.copied') : this.tooltipText;
+    return this.copied ? this.translate.instant('action.on-copied') : this.tooltipText;
   }
 
   get matTooltipPosition(): TooltipPosition {
