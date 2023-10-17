@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
@@ -45,7 +46,7 @@ public interface MqttMessageGenerator {
 
     MqttPublishMessage createPubMsg(PublishMsg pubMsg);
 
-    MqttPublishMessage createPubMsg(PublishMsgProto publishMsgProto, int qos, boolean retain, int packetId);
+    MqttPublishMessage createPubMsg(PublishMsgProto publishMsgProto, int qos, boolean retain, String topicName, int packetId, MqttProperties properties);
 
     MqttPublishMessage createPubRetainMsg(int msgId, RetainedMsg retainedMsg);
 

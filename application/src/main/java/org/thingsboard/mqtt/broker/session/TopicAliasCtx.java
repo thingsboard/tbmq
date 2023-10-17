@@ -89,23 +89,32 @@ public class TopicAliasCtx {
                     if (nextTopicAlias == 0) {
                         return publishMsg;
                     }
-                    addTopicAliasToProps(properties, nextTopicAlias);
+                    MqttPropertiesUtil.addTopicAliasToProps(properties, nextTopicAlias);
                     return getPublishMsg(publishMsg, topicName, properties);
                 }
-                addTopicAliasToProps(properties, topicAlias);
+                MqttPropertiesUtil.addTopicAliasToProps(properties, topicAlias);
                 return getPublishMsg(publishMsg, BrokerConstants.EMPTY_STR, properties);
             }
         }
         return publishMsg;
     }
 
-    public PublishMsgProto createPublishMsgUsingTopicAlias(PublishMsgProto publishMsgProto, int minTopicNameLengthForAliasReplacement) {
-        // TODO: 16.10.23 implement
-        return publishMsgProto;
-    }
-
-    private void addTopicAliasToProps(MqttProperties properties, int topicAlias) {
-        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID, topicAlias));
+    public TopicAliasResult getTopicAliasResult(PublishMsgProto publishMsgProto, int minTopicNameLengthForAliasReplacement) {
+        if (enabled) {
+            String topicName = publishMsgProto.getTopicName();
+            if (topicName.length() > minTopicNameLengthForAliasReplacement) {
+                Integer topicAlias = serverMappings.get(topicName);
+                if (topicAlias == null) {
+                    int nextTopicAlias = getNextTopicAlias(topicName);
+                    if (nextTopicAlias == 0) {
+                        return null;
+                    }
+                    return new TopicAliasResult(topicName, nextTopicAlias);
+                }
+                return new TopicAliasResult(BrokerConstants.EMPTY_STR, topicAlias);
+            }
+        }
+        return null;
     }
 
     private PublishMsg getPublishMsg(PublishMsg publishMsg, String topicName, MqttProperties properties) {
