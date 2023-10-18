@@ -50,6 +50,8 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final DeliveryTimerStats deliveryTimerStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+
     @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
     private int minTopicNameLengthForAliasReplacement;
 
@@ -65,7 +67,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
@@ -76,7 +78,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), msg);
         }
         TopicAliasResult topicAliasResult = sessionCtx.getTopicAliasCtx().getTopicAliasResult(msg, minTopicNameLengthForAliasReplacement);
@@ -97,7 +99,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client without flushing {}", sessionCtx.getClientId(), pubMsg);
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
@@ -108,7 +110,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishRetainedMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Retained msg to client {}", sessionCtx.getClientId(), retainedMsg);
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
@@ -118,7 +120,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
         }
         processSendPubRel(sessionCtx, packetId, msg -> retransmissionService.onPubRecReceived(sessionCtx, msg));
@@ -126,7 +128,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, int packetId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending PubRel msg to client without flushing {}", sessionCtx.getClientId(), packetId);
         }
         processSendPubRel(sessionCtx, packetId, msg -> retransmissionService.onPubRecReceivedWithoutFlush(sessionCtx, msg));
