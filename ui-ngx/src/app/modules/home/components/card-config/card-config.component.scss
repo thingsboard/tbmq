@@ -66,3 +66,17 @@
     }
   }
 }
+
+:host ::ng-deep {
+  mat-header-row {
+    height: 30px !important;
+  }
+
+  .mat-row, .mat-header-row {
+    cursor: unset;
+  }
+
+  mat-footer-row, mat-row {
+    height: 22px !important;
+  }
+}

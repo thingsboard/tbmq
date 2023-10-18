@@ -14,13 +14,12 @@
 /// limitations under the License.
 ///
 
-import { EntityTableColumn, EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { EntityTableColumn, EntityTableConfig, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaTopic } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { formatBytes } from '@home/components/entity/entities-table-home.component';
 import { EntityType } from '@shared/models/entity-type.models';
 
 export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePageLink> {

@@ -15,12 +15,12 @@
 ///
 
 import { Component } from '@angular/core';
-import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
+import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaBroker } from '@shared/models/kafka.model';
 import { HomePageTitleType } from '@shared/models/home-page.model';
-import { EntitiesTableHomeNoPagination, formatBytes } from '@home/components/entity/entities-table-home.component';
+import { EntitiesTableHomeNoPagination } from '@home/components/entity/entities-table-home.component';
 
 @Component({
   selector: 'tb-kafka-brokers-table',

@@ -30,7 +30,7 @@ import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
 import { ClientType } from '@shared/models/client.model';
 import { IEntitiesTableComponent } from './entity-table-component.models';
-import { DAY, historyInterval } from "@shared/models/time/time.models";
+import { DAY, historyInterval } from '@shared/models/time/time.models';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -269,3 +269,14 @@ export const clientTypeWarning = (value: string): string =>
     <mat-icon style="height: 18px; font-size: 18px; line-height: 24px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>
     ${value}
   </span>`;
+
+export function formatBytes(bytes, decimals = 1) {
+  if (!+bytes) {
+    return '0 B';
+  }
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
