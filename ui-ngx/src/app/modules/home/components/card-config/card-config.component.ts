@@ -25,7 +25,7 @@ import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { map } from 'rxjs/operators';
-import { EntitiesTableHomeNoPagination } from '@home/components/entity/entities-table-home.component';
+import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 
 @Component({
   selector: 'tb-card-config',

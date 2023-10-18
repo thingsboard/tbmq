@@ -26,7 +26,10 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import {
-  CellActionDescriptor, EntityActionTableColumn, EntityColumn, EntityTableColumn,
+  CellActionDescriptor,
+  EntityActionTableColumn,
+  EntityColumn,
+  EntityTableColumn,
   EntityTableConfig,
   GroupActionDescriptor,
   HeaderActionDescriptor
