@@ -20,6 +20,17 @@ import { FooterComponent } from '@shared/components/footer.component';
 import { LogoComponent } from '@shared/components/logo.component';
 import { TbSnackBarComponent, ToastDirective } from '@shared/components/toast.directive';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
+import {
+  TbBreakPointsProvider,
+  MdLgLayoutDirective,
+  MdLgLayoutAlignDirective,
+  MdLgLayoutGapDirective,
+  MdLgShowHideDirective,
+  GtMdLgLayoutDirective,
+  GtMdLgLayoutAlignDirective,
+  GtMdLgLayoutGapDirective,
+  GtMdLgShowHideDirective
+} from '@shared/layout/layout.directives';
 
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -92,6 +103,9 @@ import { SafePipe } from '@shared/pipe/safe.pipe';
 import { ShortNumberPipe } from '@shared/pipe/short-number.pipe';
 import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
 import { EntitySubTypeListComponent } from "@shared/components/entity/entity-subtype-list.component";
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 
 @NgModule({
   providers: [
@@ -104,7 +118,8 @@ import { EntitySubTypeListComponent } from "@shared/components/entity/entity-sub
     {
       provide: MAT_DATE_LOCALE,
       useValue: 'en-GB'
-    }
+    },
+    TbBreakPointsProvider
   ],
   declarations: [
     FooterComponent,
@@ -143,13 +158,25 @@ import { EntitySubTypeListComponent } from "@shared/components/entity/entity-sub
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,
-    EntitySubTypeListComponent
+    EntitySubTypeListComponent,
+    ToggleHeaderComponent,
+    ToggleSelectComponent,
+    ToggleOption,
+    MdLgLayoutDirective,
+    MdLgLayoutAlignDirective,
+    MdLgLayoutGapDirective,
+    MdLgShowHideDirective,
+    GtMdLgLayoutDirective,
+    GtMdLgLayoutAlignDirective,
+    GtMdLgLayoutGapDirective,
+    GtMdLgShowHideDirective
   ],
   imports: [
     CommonModule,
     RouterModule,
     TranslateModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
     MatCardModule,
@@ -216,6 +243,7 @@ import { EntitySubTypeListComponent } from "@shared/components/entity/entity-sub
     BreadcrumbComponent,
     UserMenuComponent,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
     MatCardModule,
@@ -272,7 +300,18 @@ import { EntitySubTypeListComponent } from "@shared/components/entity/entity-sub
     DatetimeComponent,
     QuickTimeIntervalComponent,
     BooleanPipe,
-    EntitySubTypeListComponent
+    EntitySubTypeListComponent,
+    ToggleHeaderComponent,
+    ToggleSelectComponent,
+    ToggleOption,
+    MdLgLayoutDirective,
+    MdLgLayoutAlignDirective,
+    MdLgLayoutGapDirective,
+    MdLgShowHideDirective,
+    GtMdLgLayoutDirective,
+    GtMdLgLayoutAlignDirective,
+    GtMdLgLayoutGapDirective,
+    GtMdLgShowHideDirective
   ]
 })
 export class SharedModule { }
