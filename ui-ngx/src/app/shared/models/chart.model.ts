@@ -140,16 +140,14 @@ const lineChartParams = {
     scales: {
       x: {
         type: 'timeseries',
+        bounds: 'ticks',
         time: {
-          round: 'second',
-          displayFormats: {
-            minute: 'HH:mm'
-          }
+          round: 'minute',
+          unit: 'minute'
         },
         ticks: {
-          labelOffset: 0,
+          align: 'start',
           maxRotation: 0,
-          crossAlign: 'near',
           font: {
             size: 9
           },
@@ -163,6 +161,7 @@ const lineChartParams = {
         }
       },
       y: {
+        offset: true,
         min: 0,
         suggestedMax: 1,
         ticks: {

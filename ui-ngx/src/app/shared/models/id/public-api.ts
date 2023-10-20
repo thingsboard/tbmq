@@ -16,4 +16,3 @@
 
 export * from './entity-id';
 export * from './has-uuid';
-export * from './tb-resource-id';

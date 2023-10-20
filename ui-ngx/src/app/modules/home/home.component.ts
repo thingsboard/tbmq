@@ -115,7 +115,7 @@ export class HomeComponent extends PageComponent implements OnInit {
   private toggleFullscreenOnF11() {
     $(document).on('keydown',
       (event) => {
-        if (event.which === 122) {
+        if (event.key === 'F11') {
           event.preventDefault();
           this.toggleFullscreen();
         }

@@ -16,13 +16,13 @@
 
 // @ts-nocheck
 
-import {Component} from '@angular/core';
-import {calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType} from '@shared/models/time/time.models';
-import {forkJoin, Observable, Subject, timer} from 'rxjs';
-import {TranslateService} from '@ngx-translate/core';
-import {TimeService} from '@core/services/time.service';
-import {chartKeysTotal, getTimeseriesDataLimit, StatsService} from '@core/http/stats.service';
-import {share, switchMap, takeUntil} from 'rxjs/operators';
+import { Component } from '@angular/core';
+import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
+import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { TimeService } from '@core/services/time.service';
+import { chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
+import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   chartJsParams,
   ChartPage,
@@ -34,15 +34,15 @@ import {
   TimeseriesData,
   TOTAL_KEY
 } from '@shared/models/chart.model';
-import {PageComponent} from '@shared/components/page.component';
-import {AppState} from '@core/core.state';
-import {Store} from '@ngrx/store';
+import { PageComponent } from '@shared/components/page.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import Zoom from 'chartjs-plugin-zoom';
-import {POLLING_INTERVAL} from '@shared/models/home-page.model';
-import {ActivatedRoute} from '@angular/router';
-import {ActionNotificationShow} from '@core/notification/notification.actions';
+import { POLLING_INTERVAL } from '@shared/models/home-page.model';
+import { ActivatedRoute } from '@angular/router';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
 
 Chart.register([Zoom]);
 
@@ -60,8 +60,8 @@ export class MonitoringComponent extends PageComponent {
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   isFullscreen = false;
   chartHeight = 300;
-  chartContainerHeight;
-  fullscreenChart;
+  chartContainerHeight: string;
+  fullscreenChart: string;
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
@@ -94,12 +94,12 @@ export class MonitoringComponent extends PageComponent {
   ngAfterViewInit(): void {
     this.fetchEntityTimeseries(true);
     $(document).on('keydown',
-    (event) => {
-      if ((event.which === 27) && this.isFullscreen) {
-        event.preventDefault();
-        this.onFullScreen();
-      }
-    });
+      (event) => {
+        if ((event.code === 'Escape') && this.isFullscreen) {
+          event.preventDefault();
+          this.onFullScreen();
+        }
+      });
   }
 
   onTimewindowChange() {
@@ -143,7 +143,6 @@ export class MonitoringComponent extends PageComponent {
         } else {
           for (const chartType in StatsChartType) {
             for (let i = 0; i < this.brokerIds.length; i++) {
-              const brokerId = this.brokerIds[i];
               if (!ONLY_TOTAL_KEYS.includes(chartType)) {
                 this.charts[chartType].data.datasets[i].data = data[i][chartType];
               } else {
@@ -246,35 +245,22 @@ export class MonitoringComponent extends PageComponent {
   }
 
   private updateChart(chartType: string) {
-    this.charts[chartType].update();
+    this.charts[chartType].update('none');
   }
 
   private updateXScale(chartType: string) {
-    if (this.isNotZoomed(chartType)) {
-      this.charts[chartType].options.scales.x.min = this.fixedWindowTimeMs.startTimeMs;
-      this.charts[chartType].options.scales.x.max = this.fixedWindowTimeMs.endTimeMs;
-    }
-    if (this.inHourRange()) {
-      this.charts[chartType].options.scales.x.time.unit = 'minute';
-    } else if (this.inDayRange()) {
-      this.charts[chartType].options.scales.x.time.unit = 'hour';
+    if (this.hoursInRange() <= 24) {
+      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'HH:mm';
+    } else if (this.hoursInRange() <= (24 * 30)) {
+      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'MMM-DD HH:mm';
     } else {
-      this.charts[chartType].options.scales.x.time.unit = 'day';
+      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'MMM-DD';
     }
   }
 
-  private inHourRange(): boolean {
+  private hoursInRange(): number {
     const hourMs = 1000 * 60 * 60;
-    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs <= 1;
-  }
-
-  private inDayRange(): boolean {
-    const hourMs = 1000 * 60 * 60;
-    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs <= 24;
-  }
-
-  private isNotZoomed(chartType) {
-    return this.charts[chartType].getZoomLevel() === 1;
+    return (this.fixedWindowTimeMs.endTimeMs - this.fixedWindowTimeMs.startTimeMs) / hourMs;
   }
 
   private checkMaxAllowedDataLength(data) {

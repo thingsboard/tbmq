@@ -15,4 +15,3 @@
 ///
 
 export * from './coercion';
-export * from './tb-inject';
