@@ -69,4 +69,8 @@
   mat-footer-row, mat-row {
     height: 22px !important;
   }
+
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border: none !important;
+  }
 }

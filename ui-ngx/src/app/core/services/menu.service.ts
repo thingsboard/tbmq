@@ -111,6 +111,36 @@ export class MenuService {
         icon: 'mdi:archive-outline'
       },
       {
+        id: 'kafka_management',
+        name: 'kafka.management',
+        type: 'toggle',
+        path: '/kafka',
+        icon: 'apps',
+        pages: [
+          {
+            id: 'kafka_topics',
+            name: 'kafka.topics-title',
+            type: 'link',
+            path: '/kafka/topics',
+            icon: 'topic'
+          },
+          {
+            id: 'kafka_consumer_groups',
+            name: 'kafka.consumer-groups-title',
+            type: 'link',
+            path: '/kafka/consumer-groups',
+            icon: 'filter_alt'
+          },
+          {
+            id: 'kafka_brokers',
+            name: 'kafka.brokers-title',
+            type: 'link',
+            path: '/kafka/brokers',
+            icon: 'mdi:server'
+          }
+        ]
+      },
+      {
         id: 'system_settings',
         name: 'admin.system-settings',
         type: 'toggle',

@@ -21,13 +21,17 @@ import { PageData } from '@shared/models/page/page-data';
 import { KafkaTopic } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
 import { EntityType } from '@shared/models/entity-type.models';
+import { TranslateService } from '@ngx-translate/core';
 
 export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
+              private translate: TranslateService,
               public entityId: string = null) {
     super();
     this.entityType = EntityType.KAFKA_TOPIC;
+    this.tableTitle = this.translate.instant('kafka.topics');
+    this.entityComponent = null;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;

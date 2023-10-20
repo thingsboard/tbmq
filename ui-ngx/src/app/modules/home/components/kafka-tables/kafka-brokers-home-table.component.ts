@@ -24,10 +24,10 @@ import { EntitiesTableHomeNoPagination } from '@home/components/entity/entities-
 
 @Component({
   selector: 'tb-kafka-brokers-table',
-  templateUrl: './kafka-brokers-table.component.html',
-  styleUrls: ['./kafka-brokers-table.component.scss']
+  templateUrl: './kafka-brokers-home-table.component.html',
+  styleUrls: ['./kafka-brokers-home-table.component.scss']
 })
-export class KafkaBrokersTableComponent extends EntitiesTableHomeNoPagination<KafkaBroker> {
+export class KafkaBrokersHomeTableComponent extends EntitiesTableHomeNoPagination<KafkaBroker> {
 
   cardType = HomePageTitleType.KAFKA_BROKERS;
   fetchEntities$ = () => this.kafkaService.getKafkaBrokers(this.pageLink);
