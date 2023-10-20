@@ -36,7 +36,6 @@ import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { QoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { RetainedMessagesComponent } from '@home/pages/retained-messages/retained-messages.component';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
 
@@ -49,7 +48,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     super();
 
     this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
-    this.entityComponent = RetainedMessagesComponent;
+    this.entityComponent = null;
 
     this.detailsPanelEnabled = false;
     this.entityTranslations = entityTypeTranslations.get(EntityType.RETAINED_MESSAGE);
