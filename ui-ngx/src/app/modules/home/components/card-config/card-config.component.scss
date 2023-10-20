@@ -20,11 +20,9 @@
   flex: 1;
 
   .tb-config-icon {
-    font-size: 14px;
-    height: 14px;
-    width: 14px;
+    font-size: inherit;
+    height: 13px;
     margin-left: 4px;
-    line-height: 12px;
     cursor: pointer;
   }
 
@@ -78,5 +76,9 @@
 
   mat-footer-row, mat-row {
     height: 22px !important;
+  }
+
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border: none !important;
   }
 }

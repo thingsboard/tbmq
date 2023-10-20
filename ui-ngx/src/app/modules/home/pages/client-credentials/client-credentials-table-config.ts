@@ -16,8 +16,7 @@
 
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  clientTypeCell,
-  clientTypeWarning,
+  cellWithIcon,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -87,7 +86,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
         const icon = clientTypeIcon.get(clientType);
         const color = clientTypeColor.get(clientType);
-        return clientTypeCell(clientTypeTranslation, icon, color);
+        return cellWithIcon(clientTypeTranslation, icon, color);
       })
     );
 
@@ -125,7 +124,11 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
               (entity) => {
                 if ((entity.credentialsType === CredentialsType.MQTT_BASIC && !this.componentsData.config?.basicAuthEnabled) ||
                   (entity.credentialsType === CredentialsType.SSL && !this.componentsData.config?.sslAuthEnabled)) {
-                  return clientTypeWarning(this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType)));
+                  const value = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
+                  const icon = 'warning';
+                  const backgroundColor = 'rgba(255,236,128,0)';
+                  const iconColor = '#ff9a00';
+                  return cellWithIcon(value,  icon, backgroundColor, iconColor);
                 }
                 return '';
               }, () => null, false

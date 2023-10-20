@@ -17,7 +17,7 @@
 import {
   CellActionDescriptor,
   checkBoxCell,
-  clientTypeCell,
+  cellWithIcon,
   connectedStateCell,
   DateEntityTableColumn,
   EntityTableColumn,
@@ -92,7 +92,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
         const icon = clientTypeIcon.get(clientType);
         const color = clientTypeColor.get(clientType);
-        return clientTypeCell(clientTypeTranslation, icon, color);
+        return cellWithIcon(clientTypeTranslation, icon, color);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%'),

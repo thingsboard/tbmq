@@ -249,26 +249,20 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   }
 }
 
-export const checkBoxCell =
-  (value: boolean): string => `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
+export const checkBoxCell = (value: boolean): string =>
+  `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
 
-export const clientTypeCell = (value: ClientType, icon: string, color: string): string =>
-  `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px; white-space: nowrap">
-    <mat-icon style="height: 18px; font-size: 18px; line-height: 24px" class="material-icons mat-icon">${icon}</mat-icon>
+export const cellWithIcon = (value: string, icon: string, backgroundColor: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
+  `<span style="background: ${backgroundColor}; border-radius: 16px; padding: 8px 8px; white-space: nowrap;">
+    <mat-icon class="material-icons mat-icon" style="color: ${iconColor}; height: 18px; width: 18px; font-size: 18px; line-height: 24px;">
+      ${icon}
+    </mat-icon>
     ${value}
   </span>`;
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
   `<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:${color}"></span>
-    <span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px; color:${color}">
-        ${connectionState}
-    </span>`;
-
-export const clientTypeWarning = (value: string): string =>
-  `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px; white-space: nowrap">
-    <mat-icon style="height: 18px; font-size: 18px; line-height: 24px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>
-    ${value}
-  </span>`;
+   <span style="color:${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
 
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) {
