@@ -47,8 +47,7 @@
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">search</mat-icon>
         </button>
-        <mat-form-field fxFlex="50" fxFlex.xs="100">
-          <mat-label>&nbsp;</mat-label>
+        <mat-form-field fxFlex="40" fxFlex.xs="100" appearance="outline" style="padding-top: 12px">
           <input #searchInput matInput
                  [(ngModel)]="pageLink.textSearch"
                  placeholder="{{ translations.search | translate }}"/>
@@ -61,6 +60,7 @@
       </div>
     </mat-toolbar>
   </div>
+<!--  <div style="height: 140px; overflow: auto">-->
   <div [ngStyle]="{height: calcTableHeight()}">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
