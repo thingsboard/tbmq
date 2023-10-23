@@ -61,7 +61,7 @@
 
     .key {
       font-weight: 400;
-      font-size: 14px;
+      font-size: 0.9rem;
     }
 
     .key-arrow {
@@ -72,30 +72,39 @@
         transform: rotate(315deg);
         font-weight: normal;
         font-style: normal;
-        font-size: 18px;
-        line-height: 18px;
+        font-size: 1.1rem;
+        line-height: 1.1rem;
         margin-left: 6px;
         color: rgba(0, 0, 0, 0.12);
         vertical-align: top;
       }
     }
 
+    .key-container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+
     .value {
-      font-size: 24px;
+      font-size: 1.5rem;
       font-weight: 500;
       color: rgba(0,0,0,0.76);
     }
 
     @media #{$mat-lt-xl} {
+      .key-container {
+        justify-content: flex-start;
+      }
       .key-value {
         flex-direction: row;
         align-items: center;
       }
       .key {
-        font-size: 11px;
+        font-size: 0.7em;
       }
       .value {
-        font-size: 14px;
+        font-size: 0.9em;
       }
     }
   }

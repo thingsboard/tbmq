@@ -19,7 +19,12 @@
   .links {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-gap: 4px;
+    grid-column-gap: 4px;
+    grid-row-gap: 0.5em;
+
+    @media #{$mat-gt-xl} {
+      grid-template-columns: repeat(1, 1fr);
+    }
   }
 
   .link {
@@ -28,8 +33,9 @@
     }
 
     flex: 1 0 45%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     display: flex;
+    align-items: flex-start;
     color: #494949;
     border: 1px solid rgba(0,0,0,0.05);
     border-radius: 8px;
@@ -60,19 +66,22 @@
       align-items:center;
 
       span {
-        font-size: 14px;
+        font-size: 0.9em;
         border: 1px solid transparent;
         padding-left: 4px;
-      }
+        white-space: nowrap;
 
-      @media #{$mat-lt-xl} {
-        span {
-          font-size: 11px;
-          white-space: nowrap;
-        }
-        .icon-container {
-          width: 24px;
-          height: 24px;
+        @media #{$mat-lg} {
+          white-space: normal;
+
+          /*span {
+            font-size: 11px;
+            white-space: nowrap;
+          }
+          .icon-container {
+            width: 24px;
+            height: 24px;
+          }*/
         }
       }
     }

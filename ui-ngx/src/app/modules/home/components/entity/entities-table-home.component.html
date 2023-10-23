@@ -33,11 +33,17 @@
           <mat-icon class="home-page-material-icons">refresh</mat-icon>
         </button>
         <button mat-icon-button
+                [disabled]="isLoading$ | async" (click)="navigate()"
+                matTooltip="{{ 'action.open' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon class="home-page-material-icons">open_in_new</mat-icon>
+        </button>
+        <!--<button mat-icon-button
                 [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
                 matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-        </button>
+        </button>-->
       </div>
     </mat-toolbar>
     <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
@@ -60,8 +66,7 @@
       </div>
     </mat-toolbar>
   </div>
-<!--  <div style="height: 140px; overflow: auto">-->
-  <div [ngStyle]="{height: calcTableHeight()}">
+  <div [ngStyle]="{height: calcTableHeight()}" style="overflow: auto">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
       <ng-container matColumnDef="select" sticky>
@@ -187,6 +192,6 @@
                  [pageIndex]="pageLink.page"
                  [pageSize]="pageLink.pageSize"
                  [pageSizeOptions]="pageSizeOptions"
-                 [hidePageSize]="isMobile"
+                 [hidePageSize]="hidePageSize | async"
                  showFirstLastButtons></mat-paginator>
 </div>

@@ -27,6 +27,11 @@ const TB_BREAKPOINTS = [
     alias: 'gt-md-lg',
     mediaQuery: 'screen and (min-width: 1820px)',
     priority: -600
+  },
+  {
+    alias: 'lt-xmd',
+    mediaQuery: 'screen and (max-width: 1599px)',
+    priority: 1750
   }
 ];
 
@@ -82,4 +87,10 @@ export class GtMdLgLayoutGapDirective extends LayoutGapDirective {
 @Directive({selector: '[fxHide.gt-md-lg]', inputs: ['fxHide.gt-md-lg']})
 export class GtMdLgShowHideDirective extends ShowHideDirective {
   protected inputs = ['fxHide.gt-md-lg'];
+}
+
+// eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
+@Directive({selector: '[fxHide.lt-xmd]', inputs: ['fxHide.lt-xmd']})
+export class LtXmdShowHideDirective extends ShowHideDirective {
+  protected inputs = ['fxHide.lt-xmd'];
 }

@@ -18,6 +18,7 @@
 :host {
   display: flex;
   flex: 1;
+  min-height: 150px;
 
   .tb-config-icon {
     font-size: inherit;
@@ -41,7 +42,7 @@
 
     .mat-row, .mat-header-row {
       cursor: unset;
-      height: 22px;
+      height: 1.375em;
     }
 
     .mat-paginator-container {
@@ -54,13 +55,13 @@
 
     .mat-header-cell {
       color: rgba(0, 0, 0, 0.38);
-      font-size: 12px;
+      font-size: 0.75em;
       font-weight: 400;
       padding: 0;
 
-      @media #{$mat-lt-xl} {
+      /*@media #{$mat-lt-xl} {
         font-size: 10px;
-      }
+      }*/
     }
   }
 }

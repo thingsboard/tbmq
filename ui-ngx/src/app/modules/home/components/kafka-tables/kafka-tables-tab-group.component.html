@@ -29,12 +29,12 @@
   <div [ngSwitch]="kafkaTable.value">
     <ng-template [ngSwitchCase]="KafkaTable.TOPICS" ngSwitchDefault>
       <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig"></tb-entities-table-home>
+        <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig" [cardType]="homePageTitleType.KAFKA_TOPICS"></tb-entities-table-home>
       </div>
     </ng-template>
     <ng-template [ngSwitchCase]="KafkaTable.CONSUMER_GROUPS">
       <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig"></tb-entities-table-home>
+        <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig" [cardType]="homePageTitleType.KAFKA_CONSUMER_GROUPS"></tb-entities-table-home>
       </div>
     </ng-template>
   </div>

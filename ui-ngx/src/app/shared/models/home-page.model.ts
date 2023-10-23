@@ -81,6 +81,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'kafka.brokers',
         tooltip: 'kafka.brokers',
+        link: 'kafka/brokers',
         docsLink: 'user-guide/ui/monitoring/#kafka-brokers'
       }
     ],
@@ -89,6 +90,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'kafka.topics',
         tooltip: 'kafka.topics',
+        link: 'kafka/topics',
         docsLink: 'user-guide/ui/monitoring/#kafka-topics'
       }
     ],
@@ -97,6 +99,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'kafka.consumer-groups',
         tooltip: 'kafka.consumer-groups',
+        link: 'kafka/consumer-groups',
         docsLink: 'user-guide/ui/monitoring/#kafka-consumer-groups'
       }
     ],

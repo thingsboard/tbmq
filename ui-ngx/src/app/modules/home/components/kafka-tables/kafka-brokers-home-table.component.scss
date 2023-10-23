@@ -20,7 +20,7 @@
 
   .tb-kafka-table {
     overflow: auto;
-    height: 150px;
+    min-height: 100px;
 
     .mat-tab {
       overflow: auto;

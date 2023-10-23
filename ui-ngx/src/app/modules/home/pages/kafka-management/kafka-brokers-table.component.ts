@@ -16,9 +16,7 @@
 
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
-import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
 import { KafkaBrokersTableConfig } from '@home/pages/kafka-management/kafka-brokers-table-config';
 

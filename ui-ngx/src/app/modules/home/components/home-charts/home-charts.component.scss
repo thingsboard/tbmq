@@ -22,18 +22,18 @@
     padding-top: 4px;
 
     span {
-      font-size: 14px;
+      font-size: 0.9em;
       font-weight: 500;
       color: rgba(0,0,0,0.54);
       padding-left: 6px;
     }
 
     mat-icon {
-      font-size: 14px;
-      height: 14px;
-      width: 14px;
-      line-height: 16px;
-      padding-left: 4px;
+      font-size: 0.9em;
+      height: 0.9em;
+      width: 0.9em;
+      line-height: 1em;
+      padding-left: 0.25em;
       color: rgba(0,0,0,0.12);
       cursor: default;
     }
@@ -42,10 +42,10 @@
       color: rgba(0,0,0,0.38);
     }
 
-    @media #{$mat-lt-xl} {
+    /*@media #{$mat-lt-xl} {
       span {
         font-size: 11px;
       }
-    }
+    }*/
   }
 }

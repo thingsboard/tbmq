@@ -20,6 +20,7 @@ import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topi
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
+import { HomePageTitleType } from "@shared/models/home-page.model";
 
 @Component({
   selector: 'tb-kafka-tables-tab-group',
@@ -32,6 +33,7 @@ export class KafkaTablesTabGroupComponent implements OnInit {
   public kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsTableConfig;
   public readonly KafkaTable = KafkaTable;
   public readonly kafkaTableTranslationMap = KafkaTableTranslationMap;
+  public readonly homePageTitleType = HomePageTitleType;
 
   constructor(private kafkaService: KafkaService,
               private translate: TranslateService) {

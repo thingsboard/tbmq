@@ -29,7 +29,7 @@ import {
   GtMdLgLayoutDirective,
   GtMdLgLayoutAlignDirective,
   GtMdLgLayoutGapDirective,
-  GtMdLgShowHideDirective
+  GtMdLgShowHideDirective, LtXmdShowHideDirective
 } from '@shared/layout/layout.directives';
 
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -169,7 +169,8 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
     GtMdLgLayoutDirective,
     GtMdLgLayoutAlignDirective,
     GtMdLgLayoutGapDirective,
-    GtMdLgShowHideDirective
+    GtMdLgShowHideDirective,
+    LtXmdShowHideDirective
   ],
   imports: [
     CommonModule,
@@ -311,7 +312,8 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
     GtMdLgLayoutDirective,
     GtMdLgLayoutAlignDirective,
     GtMdLgLayoutGapDirective,
-    GtMdLgShowHideDirective
+    GtMdLgShowHideDirective,
+    LtXmdShowHideDirective
   ]
 })
 export class SharedModule { }

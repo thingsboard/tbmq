@@ -60,7 +60,8 @@
     "hide": "Hide",
     "on-copied": "Copied",
     "copy-id": "Copy Id",
-    "reset": "Reset"
+    "reset": "Reset",
+    "open": "Open"
   },
   "admin": {
     "admins": "Admins",
