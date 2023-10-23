@@ -122,6 +122,8 @@ export class AppComponent {
       this.dialog.open(ChangePasswordDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        hasBackdrop: true,
+        backdropClass: ['tb-fullscreen-backdrop'],
         data: {
           changeDefaultPassword: true,
           isAuthenticated,
