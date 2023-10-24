@@ -92,7 +92,7 @@
         <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
                   [fxHide.lt-lg]="column.mobileHide"
                   *matCellDef="let entity; let row = index"
-                  [matTooltip]="showTooltip(entity)"
+                  [matTooltip]="cellTooltip(entity, column, row)"
                   matTooltipPosition="above"
                   [ngStyle]="cellStyle(entity, column, row)">
           <span [innerHTML]="cellContent(entity, column, row)"></span>

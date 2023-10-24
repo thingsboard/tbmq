@@ -18,9 +18,9 @@ import { EntityTableColumn, EntityTableConfig, formatBytes } from '@home/models/
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
-import { KafkaTopic } from '@shared/models/kafka.model';
+import { KafkaTopic, KafkaTopicsTooltipMap } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { EntityType } from '@shared/models/entity-type.models';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { TranslateService } from '@ngx-translate/core';
 
 export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePageLink> {
@@ -30,21 +30,20 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
               public entityId: string = null) {
     super();
     this.entityType = EntityType.KAFKA_TOPIC;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.KAFKA_TOPIC);
+    this.entityResources = entityTypeResources.get(EntityType.KAFKA_TOPIC);
     this.tableTitle = this.translate.instant('kafka.topics');
     this.entityComponent = null;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.entityTranslations = {
-      noEntities: 'kafka.no-kafka-topic-text',
-      search: 'kafka.topics-search'
-    };
 
     this.entitiesFetchFunction = pageLink => this.fetchKafkaTopics(pageLink);
 
     this.columns.push(
-      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%'),
+      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%', undefined, undefined,
+        undefined, undefined, (entity) => this.showKafkaTopicTooltip(entity)),
       new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%',
         entity => entity.partitions.toString(),
         () => ({color: 'rgba(0,0,0,0.54)'})),
@@ -59,5 +58,33 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
 
   private fetchKafkaTopics(pageLink: TimePageLink): Observable<PageData<KafkaTopic>> {
     return this.kafkaService.getKafkaTopics(pageLink);
+  }
+
+  private showKafkaTopicTooltip(entity: KafkaTopic) {
+    if (entity?.name) {
+      const rowName = entity.name;
+      for (let key in KafkaTopicsTooltipMap) {
+        if (rowName.includes('tbmq.msg.app')) {
+          if (rowName.includes('tbmq.msg.app.shared')) {
+            return KafkaTopicsTooltipMap['tbmq.msg.app.shared'];
+          } else {
+            return KafkaTopicsTooltipMap['tbmq.msg.app'];
+          }
+        }
+        if (rowName.includes('tbmq.client.session')) {
+          if (rowName.includes('tbmq.client.session.event.response')) {
+            return KafkaTopicsTooltipMap['tbmq.client.session.event.response'];
+          } else if (rowName.includes('tbmq.client.session.event.request')) {
+            return KafkaTopicsTooltipMap['tbmq.client.session.event.request'];
+          } else {
+            return KafkaTopicsTooltipMap['tbmq.client.session'];
+          }
+        }
+        if (rowName.includes(key)) {
+          return KafkaTopicsTooltipMap[key];
+        }
+      }
+    }
+    return undefined;
   }
 }

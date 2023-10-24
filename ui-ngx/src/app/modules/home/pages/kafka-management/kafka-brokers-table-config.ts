@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaBroker } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { EntityType } from '@shared/models/entity-type.models';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { TranslateService } from '@ngx-translate/core';
 
 export class KafkaBrokersTableConfig extends EntityTableConfig<KafkaBroker, TimePageLink> {
@@ -30,6 +30,8 @@ export class KafkaBrokersTableConfig extends EntityTableConfig<KafkaBroker, Time
               public entityId: string = null) {
     super();
     this.entityType = EntityType.KAFKA_BROKER;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.KAFKA_BROKER);
+    this.entityResources = entityTypeResources.get(EntityType.KAFKA_BROKER);
     this.tableTitle = this.translate.instant('kafka.brokers')
     this.entityComponent = null;
     this.detailsPanelEnabled = false;
@@ -37,10 +39,6 @@ export class KafkaBrokersTableConfig extends EntityTableConfig<KafkaBroker, Time
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
     this.searchEnabled = false;
-    this.entityTranslations = {
-      noEntities: 'kafka.no-kafka-brokers-text',
-      search: 'kafka.brokers-search'
-    };
 
     this.entitiesFetchFunction = pageLink => this.fetchKafkaBrokers(pageLink);
 

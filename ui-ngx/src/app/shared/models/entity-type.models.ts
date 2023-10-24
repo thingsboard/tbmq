@@ -116,6 +116,46 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         search: 'retained-message.search',
         selectedEntities: 'retained-message.selected-retained-messages'
       }
+    ],
+    [
+      EntityType.KAFKA_TOPIC,
+      {
+        type: 'kafka.topic',
+        typePlural: 'kafka.topics',
+        list: 'kafka.list-of-topics',
+        details: 'details.details',
+        add: 'kafka.add-topic',
+        noEntities: 'kafka.no-kafka-topic-text',
+        search: 'kafka.search-topic',
+        selectedEntities: 'kafka.selected-kafka-topic'
+      }
+    ],
+    [
+      EntityType.KAFKA_CONSUMER_GROUP,
+      {
+        type: 'kafka.consumer-group',
+        typePlural: 'kafka.consumer-groups',
+        list: 'kafka.list-of-consumer-groups',
+        details: 'details.details',
+        add: 'kafka.add-consumer-group',
+        noEntities: 'kafka.no-consumer-groups-text',
+        search: 'kafka.search-consumer-group',
+        selectedEntities: 'kafka.selected-consumer-groups'
+      }
+    ],
+    [
+      EntityType.KAFKA_BROKER,
+      {
+        type: 'kafka.broker',
+        typePlural: 'kafka.brokers',
+        list: 'kafka.list-of-brokers',
+        nameStartsWith: 'kafka.topic-starts-with',
+        details: 'details.details',
+        add: 'kafka.add-broker',
+        noEntities: 'kafka.no-brokers-text',
+        search: 'kafka.search-broker',
+        selectedEntities: 'kafka.selected-brokers'
+      }
     ]
   ]
 );
