@@ -35,7 +35,7 @@
     flex: 1 0 45%;
     flex-wrap: nowrap;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     color: #494949;
     border: 1px solid rgba(0,0,0,0.05);
     border-radius: 8px;
@@ -71,18 +71,16 @@
         padding-left: 4px;
         white-space: nowrap;
 
-        @media #{$mat-lg} {
-          white-space: normal;
-
-          /*span {
+        /*@media #{$mat-lg} {
+          span {
             font-size: 11px;
             white-space: nowrap;
           }
           .icon-container {
             width: 24px;
             height: 24px;
-          }*/
-        }
+          }
+        }*/
       }
     }
   }
