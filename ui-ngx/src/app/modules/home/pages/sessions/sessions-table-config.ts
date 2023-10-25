@@ -205,7 +205,11 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               tasks.push(this.clientSessionService.disconnectClientSession(session.clientId, session.sessionId));
             }
           );
-          forkJoin(tasks).subscribe(() => this.updateTable()); //TODO deaflynx
+          forkJoin(tasks).subscribe(() => {
+            setTimeout(() => {
+              this.updateTable();
+            }, 1000)
+          });
         }
       }
     );
