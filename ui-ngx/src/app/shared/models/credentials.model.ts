@@ -46,7 +46,7 @@ export const credentialsWarningTranslations = new Map<CredentialsType, string>(
 );
 
 export interface ClientCredentials extends BaseData {
-  credentialsId: string;
+  credentialsId?: string;
   name: string;
   clientType: ClientType;
   credentialsType: CredentialsType;

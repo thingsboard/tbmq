@@ -253,12 +253,14 @@ export const checkBoxCell = (value: boolean): string =>
   `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
 
 export const cellWithIcon = (value: string, icon: string, backgroundColor: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
-  `<span style="background: ${backgroundColor}; border-radius: 16px; padding: 8px 8px; white-space: nowrap;">
-    <mat-icon class="material-icons mat-icon" style="color: ${iconColor}; height: 18px; width: 18px; font-size: 18px; line-height: 24px;">
-      ${icon}
-    </mat-icon>
-    ${value}
-  </span>`;
+  `<section style="display: flex; gap: 6px; background: ${backgroundColor};
+                    border-radius: 16px; padding: 8px; white-space: nowrap; width: fit-content;">
+      <span>${value}</span>
+      <mat-icon class="material-icons mat-icon"
+                style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
+        ${icon}
+      </mat-icon>
+  </section>`;
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
   `<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:${color}"></span>
