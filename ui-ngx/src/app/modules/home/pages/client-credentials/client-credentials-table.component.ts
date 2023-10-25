@@ -25,6 +25,7 @@ import {
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
   selector: 'tb-client-credentials-table',
@@ -71,7 +72,8 @@ export class ClientCredentialsTableComponent implements OnInit {
               private translate: TranslateService,
               private datePipe: DatePipe,
               private route: ActivatedRoute,
-              private router: Router) {
+              private router: Router,
+              private dialog: MatDialog) {
   }
 
   ngOnInit(): void {
@@ -83,7 +85,8 @@ export class ClientCredentialsTableComponent implements OnInit {
       this.datePipe,
       this.entityIdValue,
       this.route,
-      this.router
+      this.router,
+      this.dialog
     );
   }
 

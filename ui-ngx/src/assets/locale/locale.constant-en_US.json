@@ -61,7 +61,9 @@
     "on-copied": "Copied",
     "copy-id": "Copy Id",
     "reset": "Reset",
-    "open": "Open"
+    "open": "Open",
+    "next": "Next",
+    "next-with-label": "Next: {{label}}"
   },
   "admin": {
     "admins": "Admins",
@@ -322,6 +324,7 @@
   },
   "mqtt-client-credentials": {
     "add-client-credentials": "Add Client Credentials",
+    "authentication-authorization": "Authentication and Authorization",
     "add-credentials": "Add Credentials",
     "add-authorization-rules": "Add authorization rule",
     "add-authorization-rule-prompt": "Please add authorization rule",

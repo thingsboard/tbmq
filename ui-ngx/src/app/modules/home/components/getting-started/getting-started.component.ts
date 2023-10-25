@@ -35,6 +35,9 @@ import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
+import {
+  ClientCredentialsWizardDialogComponent
+} from "@home/components/wizard/client-credentials-wizard-dialog.component";
 
 @Component({
   selector: 'tb-getting-started',
@@ -126,8 +129,8 @@ export class GettingStartedComponent implements AfterViewInit {
         })
       };
     }
-    const $entity = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<ClientCredentials>,
-      ClientCredentials>(AddEntityDialogComponent, {
+    const $entity = this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<ClientCredentials>,
+      ClientCredentials>(ClientCredentialsWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

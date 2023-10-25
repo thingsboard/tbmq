@@ -44,11 +44,17 @@ import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { ConfigParams } from '@shared/models/config.model';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { deepClone } from '@core/utils';
 import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  ClientCredentialsWizardDialogComponent
+} from "@home/components/wizard/client-credentials-wizard-dialog.component";
+import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
+import { BaseData } from "@shared/models/base-data";
 
 export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCredentials, TimePageLink> {
 
@@ -60,7 +66,8 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
               private datePipe: DatePipe,
               public entityId: string = null,
               private route: ActivatedRoute,
-              private router: Router) {
+              private router: Router,
+              private dialog: MatDialog) {
     super();
 
     this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
@@ -70,6 +77,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
     this.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
     this.addDialogStyle = {width: 'fit-content'};
+    this.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;
@@ -172,5 +180,28 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       filter.credentialsTypeList = clientCredentialsFilterConfig.credentialsTypeList;
     }
     return filter;
+  }
+
+  private clientCredentialsWizard($event: Event) {
+    this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<BaseData>,
+      ClientCredentials>(ClientCredentialsWizardDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+    }).afterClosed().subscribe(
+      (res) => {
+        if (res) {
+          this.updateData();
+          /*this.store.pipe(select(selectUserSettingsProperty( 'notDisplayConnectivityAfterAddDevice'))).pipe(
+            take(1)
+          ).subscribe((settings: boolean) => {
+            if(!settings) {
+              this.checkConnectivity(null, res.id, true);
+            } else {
+              this.config.updateData();
+            }
+          });*/
+        }
+      }
+    );
   }
 }
