@@ -192,6 +192,30 @@
                 </ng-template>
               </mat-cell>
             </ng-container>
+            <ng-container [matColumnDef]="column.key" *ngFor="let column of chipsColumns; trackBy: trackByColumnKey;">
+              <mat-header-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
+                               [fxHide.lt-lg]="column.mobileHide"
+                               *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
+                {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
+              <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
+                        [fxHide.lt-lg]="column.mobileHide"
+                        *matCellDef="let entity; let row = index"
+                        [matTooltip]="cellTooltip(entity, column, row)"
+                        matTooltipPosition="above"
+                        [ngStyle]="cellStyle(entity, column, row)">
+                <mat-chip-set>
+                  <mat-chip *ngFor="let value of cellChipsContent(entity, column, row)"
+                            (click)="cellChipAction(value, entity, column)"
+                            [matTooltip]="cellChipTooltip(value, entity, column)"
+                            removable="false">
+                    <div fxFlex fxLayout="row" fxLayoutGap="8px" style="cursor: pointer;">
+                      <span [ngStyle]="cellChipIconColor(value, entity, column)">&#8226;</span>
+                      <span>{{ value }}</span>
+                    </div>
+                  </mat-chip>
+                </mat-chip-set>
+              </mat-cell>
+            </ng-container>
             <ng-container [matColumnDef]="column.key" *ngFor="let column of actionColumns; trackBy: trackByColumnKey;">
               <mat-header-cell *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
               <mat-cell *matCellDef="let entity; let row = index"

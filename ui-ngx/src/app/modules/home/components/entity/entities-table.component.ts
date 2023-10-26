@@ -45,7 +45,7 @@ import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
   CellActionDescriptor,
-  CellActionDescriptorType,
+  CellActionDescriptorType, ChipsTableColumn,
   EntityActionTableColumn,
   EntityColumn,
   EntityTableColumn,
@@ -82,6 +82,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   actionColumns: Array<EntityActionTableColumn<BaseData>>;
   entityColumns: Array<EntityTableColumn<BaseData>>;
+  chipsColumns: Array<ChipsTableColumn<BaseData>>;
 
   displayedColumns: string[];
 
@@ -513,6 +514,9 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.actionColumns = this.entitiesTableConfig.columns.filter(
       (column) => column instanceof EntityActionTableColumn)
       .map(column => column as EntityActionTableColumn<BaseData>);
+    this.chipsColumns = this.entitiesTableConfig.columns.filter(
+      (column) => column instanceof ChipsTableColumn)
+      .map(column => column as ChipsTableColumn<BaseData>);
 
     this.displayedColumns = [];
 
@@ -576,6 +580,42 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       return res;
     } else {
       return '';
+    }
+  }
+
+  cellChipsContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
+    if (column instanceof ChipsTableColumn) {
+      const col = this.entitiesTableConfig.columns.indexOf(column);
+      const index = row * this.entitiesTableConfig.columns.length + col;
+      let res = column.cellContentFunction(entity, column.key)?.split(',');
+      this.cellContentCache[index] = res;
+      return res;
+    } else {
+      return '';
+    }
+  }
+
+  cellChipAction(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.chipActionFunction(entity, value);
+    } else {
+      return undefined;
+    }
+  }
+
+  cellChipIconColor(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.cellStyleFunction(entity, value);
+    } else {
+      return undefined;
+    }
+  }
+
+  cellChipTooltip(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.cellChipTooltip(entity, value);
+    } else {
+      return undefined;
     }
   }
 

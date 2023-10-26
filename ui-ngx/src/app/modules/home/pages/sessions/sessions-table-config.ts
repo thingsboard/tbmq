@@ -78,6 +78,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.useTimePageLink = true;
     this.forAllTimeEnabled = true;
     this.defaultTimewindowInterval = forAllTimeInterval();
+    this.rowPointer = true;
 
     this.entitiesFetchFunction = pageLink => this.fetchSessions(pageLink);
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);

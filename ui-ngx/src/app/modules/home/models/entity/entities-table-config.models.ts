@@ -46,6 +46,7 @@ export type EntityRowClickFunction<T extends BaseData> = (event: Event, entity: 
 
 export type CellContentFunction<T extends BaseData> = (entity: T, key: string) => string;
 export type CellTooltipFunction<T extends BaseData> = (entity: T, key: string) => string | undefined;
+export type CellChipActionFunction<T extends BaseData> = (entity: T, key: string) => void;
 export type HeaderCellStyleFunction<T extends BaseData> = (key: string) => object;
 export type CellStyleFunction<T extends BaseData> = (entity: T, key: string) => object;
 export type CopyCellContent<T extends BaseData> = (entity: T, key: string, length: number) => object;
@@ -76,7 +77,7 @@ export interface HeaderActionDescriptor {
   onAction: ($event: MouseEvent) => void;
 }
 
-export type EntityTableColumnType = 'content' | 'action';
+export type EntityTableColumnType = 'content' | 'action' | 'chips';
 
 export class BaseEntityTableColumn<T extends BaseData> {
   constructor(public type: EntityTableColumnType,
@@ -133,7 +134,20 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
   }
 }
 
-export type EntityColumn<T extends BaseData> = EntityTableColumn<T> | EntityActionTableColumn<T>;
+export class ChipsTableColumn<T extends BaseData> extends BaseEntityTableColumn<T> {
+  constructor(public key: string,
+              public title: string,
+              public width: string = '0px',
+              public cellContentFunction: CellContentFunction<T> = (entity, property) => entity[property] ? entity[property] : '',
+              public chipActionFunction: CellChipActionFunction<T> = (entity: T, value: string) => ({}),
+              public chipIconFunction: CellContentFunction<T> = (entity: T, value: string) => undefined,
+              public cellStyleFunction: CellStyleFunction<T> = (entity: T, value: string) => ({}),
+              public cellChipTooltip: CellTooltipFunction<T> = () => undefined) {
+    super('chips', key, title, width, false);
+  }
+}
+
+export type EntityColumn<T extends BaseData> = EntityTableColumn<T> | EntityActionTableColumn<T> | ChipsTableColumn<T>;
 
 export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink, L extends BaseData = T> {
 
@@ -254,7 +268,7 @@ export const checkBoxCell = (value: boolean): string =>
 
 export const cellWithIcon = (value: string, icon: string, backgroundColor: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
   `<section style="display: flex; gap: 6px; background: ${backgroundColor};
-                    border-radius: 16px; padding: 8px; white-space: nowrap; width: fit-content;">
+                    border-radius: 16px; padding: 4px 8px; white-space: nowrap; width: fit-content;">
       <span>${value}</span>
       <mat-icon class="material-icons mat-icon"
                 style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
@@ -263,7 +277,7 @@ export const cellWithIcon = (value: string, icon: string, backgroundColor: strin
   </section>`;
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
-  `<span style="width: 8px; height: 8px; border-radius: 16px; display: inline-block; vertical-align: middle; background:${color}"></span>
+  `<span style="vertical-align: bottom; font-size: 3em; color: ${color}">&#8226;</span>
    <span style="color:${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
 
 export function formatBytes(bytes, decimals = 1) {

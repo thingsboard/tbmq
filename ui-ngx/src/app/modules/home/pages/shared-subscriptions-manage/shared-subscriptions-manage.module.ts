@@ -14,17 +14,24 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
-import { DetailedClientSessionInfo } from "@shared/models/session.model";
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SharedModule } from '@shared/shared.module';
+import { HomeComponentsModule } from '@home/components/home-components.module';
+import {
+  SharedSubsriptionsManageTableComponent
+} from "@home/pages/shared-subscriptions-manage/shared-subsriptions-manage-table.component";
 
-export interface SharedSubscription extends BaseData {
-  name: string;
-  partitions: number;
-  topicFilter: string;
-}
+@NgModule({
+  declarations: [
+    SharedSubsriptionsManageTableComponent
+  ],
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+  ]
+})
 
-export interface SharedSubscriptionManage extends BaseData {
-  shareName: string;
-  topicFilter: string;
-  clientSessionInfo: DetailedClientSessionInfo[];
+export class SharedSubscriptionsManageModule {
 }

@@ -97,11 +97,27 @@ export class MenuService {
         icon: 'mdi:book-multiple'
       },
       {
-        id: 'shared_subscriptions',
+        id: 'shared_subscriptions_management',
         name: 'shared-subscription.shared-subscriptions',
-        type: 'link',
+        type: 'toggle',
         path: '/shared-subscriptions',
-        icon: 'mdi:monitor-share'
+        icon: 'mediation',
+        pages: [
+          {
+            id: 'shared_subscriptions',
+            name: 'shared-subscription.manage',
+            type: 'link',
+            path: '/shared-subscriptions/manage',
+            icon: 'lan'
+          },
+          {
+            id: 'application_shared_subscriptions',
+            name: 'shared-subscription.applications',
+            type: 'link',
+            path: '/shared-subscriptions/applications',
+            icon: 'mdi:monitor-share'
+          },
+        ]
       },
       {
         id: 'retained_messages',

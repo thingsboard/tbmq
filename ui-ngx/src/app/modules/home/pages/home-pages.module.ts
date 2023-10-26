@@ -26,6 +26,9 @@ import { HomeOverviewModule } from '@home/pages/home-overview/home-overview.modu
 import { RetainedMessagesModule } from '@home/pages/retained-messages/retained-messages.module';
 import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-management.module';
+import {
+  SharedSubscriptionsManageModule
+} from "@home/pages/shared-subscriptions-manage/shared-subscriptions-manage.module";
 
 @NgModule({
   exports: [
@@ -35,6 +38,7 @@ import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-manage
     SessionsModule,
     UsersModule,
     SharedSubscriptionsModule,
+    SharedSubscriptionsManageModule,
     HomeOverviewModule,
     RetainedMessagesModule,
     MonitoringModule,
