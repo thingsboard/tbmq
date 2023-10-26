@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing.data;
+package org.thingsboard.mqtt.broker.session;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.service.subscription.Subscription;
-
-import java.util.List;
-import java.util.Set;
 
 @Data
 @AllArgsConstructor
-public class PersistentMsgSubscriptions {
+public class TopicAliasResult {
 
-    private List<Subscription> deviceSubscriptions;
-    private List<Subscription> applicationSubscriptions;
-    private Set<Subscription> allApplicationSharedSubscriptions;
+    private String topicName;
+    private int topicAlias;
 
-    public boolean isNotEmpty() {
-        return !CollectionUtils.isEmpty(deviceSubscriptions) ||
-                !CollectionUtils.isEmpty(applicationSubscriptions) ||
-                !CollectionUtils.isEmpty(allApplicationSharedSubscriptions);
-    }
 }

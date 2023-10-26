@@ -165,6 +165,11 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return count > 0;
     }
 
+    @Override
+    public boolean sharedSubscriptionsInitialized() {
+        return !sharedSubscriptionsMap.isEmpty();
+    }
+
     private Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {
         if (subscriptions.isEmpty()) {
             return subscriptions;

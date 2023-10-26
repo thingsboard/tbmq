@@ -35,6 +35,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
     private final Map<String, ClientSessionCtx> clientContextMap = new ConcurrentHashMap<>();
 
     private final StatsManager statsManager;
+    private final boolean isTraceEnabled = log.isTraceEnabled();
 
     @PostConstruct
     public void init() {
@@ -44,7 +45,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
     @Override
     public void registerSession(ClientSessionCtx clientSessionCtx) throws MqttException {
         String clientId = clientSessionCtx.getSessionInfo().getClientInfo().getClientId();
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("Executing registerSession: {}. Current size: {}", clientId, clientContextMap.size());
         }
         clientContextMap.put(clientId, clientSessionCtx);
@@ -52,7 +53,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
 
     @Override
     public void unregisterSession(String clientId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("Executing unregisterSession: {}. Current size: {}", clientId, clientContextMap.size());
         }
         clientContextMap.remove(clientId);
@@ -60,7 +61,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
 
     @Override
     public ClientSessionCtx getClientSessionCtx(String clientId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("Executing getClientSessionCtx: {}", clientId);
         }
         return clientContextMap.get(clientId);
@@ -68,7 +69,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
 
     @Override
     public Collection<ClientSessionCtx> getAllClientSessionCtx() {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("Executing getAllClientSessionCtx");
         }
         return clientContextMap.values();

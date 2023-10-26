@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,9 +60,7 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -151,38 +150,26 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
                                                                              PublishMsgProto publishMsgProto) {
-        List<Subscription> applicationSubscriptions = null;
-        List<Subscription> deviceSubscriptions = null;
+        final PersistentMsgSubscriptions persistentSubscriptions = new PersistentMsgSubscriptions(
+                null, null, msgSubscriptions.getAllApplicationSharedSubscriptions()
+        );
         long startTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            int commonSubsSize = msgSubscriptions.getCommonSubscriptions().size();
-            applicationSubscriptions = initArrayList(commonSubsSize);
-            deviceSubscriptions = initArrayList(commonSubsSize);
-            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto,
-                    applicationSubscriptions, deviceSubscriptions);
+            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto, persistentSubscriptions);
         }
-
         if (!CollectionUtils.isEmpty(msgSubscriptions.getTargetDeviceSharedSubscriptions())) {
-            int targetDeviceSharedSubsSize = msgSubscriptions.getTargetDeviceSharedSubscriptions().size();
-            applicationSubscriptions = initSubscriptionListIfNull(applicationSubscriptions, targetDeviceSharedSubsSize);
-            deviceSubscriptions = initSubscriptionListIfNull(deviceSubscriptions, targetDeviceSharedSubsSize);
-            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto,
-                    applicationSubscriptions, deviceSubscriptions);
+            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto, persistentSubscriptions);
         }
 
         if (publishMsgProcessingTimerStats != null) {
             publishMsgProcessingTimerStats.logNotPersistentMessagesProcessing(startTime, TimeUnit.NANOSECONDS);
         }
-        return new PersistentMsgSubscriptions(
-                deviceSubscriptions,
-                applicationSubscriptions,
-                msgSubscriptions.getAllApplicationSharedSubscriptions()
-        );
+        return persistentSubscriptions;
     }
 
     private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
-                                      List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
+                                      final PersistentMsgSubscriptions persistentMsgSubscriptions) {
         boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
         if (nonPersistentByPubQos) {
             if (processSubscriptionsInParallel) {
@@ -195,13 +182,25 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 }
             }
         } else {
+            persistentMsgSubscriptions.setDeviceSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getDeviceSubscriptions(), subscriptions.size()));
+            persistentMsgSubscriptions.setApplicationSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getApplicationSubscriptions(), subscriptions.size()));
             if (processSubscriptionsInParallel) {
                 subscriptions
                         .parallelStream()
-                        .forEach(subscription -> processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions));
+                        .forEach(subscription -> processSubscription(
+                                subscription,
+                                publishMsgProto,
+                                persistentMsgSubscriptions.getApplicationSubscriptions(),
+                                persistentMsgSubscriptions.getDeviceSubscriptions())
+                        );
             } else {
                 for (Subscription subscription : subscriptions) {
-                    processSubscription(subscription, publishMsgProto, applicationSubscriptions, deviceSubscriptions);
+                    processSubscription(
+                            subscription,
+                            publishMsgProto,
+                            persistentMsgSubscriptions.getApplicationSubscriptions(),
+                            persistentMsgSubscriptions.getDeviceSubscriptions()
+                    );
                 }
             }
         }
@@ -240,20 +239,28 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
 
-        Set<TopicSharedSubscription> topicSharedSubscriptions = null;
-        List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
+        if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
+            Set<TopicSharedSubscription> topicSharedSubscriptions = null;
+            List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
 
-        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
-            topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+            for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
+                topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+            }
+
+            SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
+
+            return new MsgSubscriptions(
+                    collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
+                    sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
+                    getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
+            );
+        } else {
+            return new MsgSubscriptions(
+                    collectCommonSubscriptions(clientSubscriptions, senderClientId),
+                    null,
+                    null
+            );
         }
-
-        SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
-
-        return new MsgSubscriptions(
-                collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
-                sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
-                getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
-        );
     }
 
     private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,
@@ -358,25 +365,32 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<Subscription> collectSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+        Map<String, Subscription> map = Maps.newHashMapWithExpectedSize(clientSubscriptionWithTopicFilterList.size());
 
-        Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions =
-                filterClientSubscriptions(clientSubscriptionWithTopicFilterList, senderClientId);
-        if (CollectionUtils.isEmpty(filteredClientSubscriptions)) {
-            return null;
-        }
+        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
+            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
+            if (noLocalOptionMet) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] No local option is met for sender client!", senderClientId);
+                }
+                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                continue;
+            }
 
-        return getSubscriptions(filteredClientSubscriptions);
-    }
+            Subscription subscription = convertToSubscription(clientSubsWithTopicFilter);
+            if (subscription == null) {
+                continue;
+            }
 
-    private List<Subscription> getSubscriptions(Collection<ValueWithTopicFilter<ClientSubscription>> filteredClientSubscriptions) {
-        List<Subscription> subscriptions = new ArrayList<>(filteredClientSubscriptions.size());
-        for (var filteredClientSubscription : filteredClientSubscriptions) {
-            Subscription subscription = convertToSubscription(filteredClientSubscription);
-            if (subscription != null) {
-                subscriptions.add(subscription);
+            var clientId = subscription.getClientId();
+            var value = map.get(clientId);
+            if (value != null) {
+                map.put(clientId, getSubscriptionWithHigherQos(value, subscription));
+            } else {
+                map.put(clientId, subscription);
             }
         }
-        return subscriptions;
+        return map.isEmpty() ? null : new ArrayList<>(map.values());
     }
 
     private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
@@ -396,31 +410,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getOptions());
     }
 
-    Collection<ValueWithTopicFilter<ClientSubscription>> filterClientSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
-        Map<String, ValueWithTopicFilter<ClientSubscription>> map = new HashMap<>();
-
-        for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
-            boolean noLocalOptionMet = isNoLocalOptionMet(clientSubsWithTopicFilter, senderClientId);
-            if (noLocalOptionMet) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] No local option is met for sender client!", senderClientId);
-                }
-                tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
-                continue;
-            }
-
-            var clientId = clientSubsWithTopicFilter.getValue().getClientId();
-            var value = map.get(clientId);
-            if (value != null) {
-                map.put(clientId, getSubscriptionWithHigherQos(value, clientSubsWithTopicFilter));
-            } else {
-                map.put(clientId, clientSubsWithTopicFilter);
-            }
-        }
-        return map.values();
-    }
-
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
                                        String senderClientId) {
         return clientSubscriptionWithTopicFilter
@@ -432,9 +421,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    ValueWithTopicFilter<ClientSubscription> getSubscriptionWithHigherQos(ValueWithTopicFilter<ClientSubscription> first,
-                                                                          ValueWithTopicFilter<ClientSubscription> second) {
-        return first.getValue().getQosValue() > second.getValue().getQosValue() ? first : second;
+    Subscription getSubscriptionWithHigherQos(Subscription first, Subscription second) {
+        return first.getQos() > second.getQos() ? first : second;
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {

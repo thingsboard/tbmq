@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -366,6 +367,9 @@ public class ProtoConverter {
 
     public static MqttProperties createMqttProperties(List<QueueProtos.UserPropertyProto> userPropertiesList) {
         MqttProperties mqttProperties = new MqttProperties();
+        if (CollectionUtils.isEmpty(userPropertiesList)) {
+            return mqttProperties;
+        }
         UserProperties userProperties = createUserProperties(userPropertiesList);
         mqttProperties.add(userProperties);
         return mqttProperties;

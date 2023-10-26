@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.cluster;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
@@ -28,6 +29,7 @@ import java.net.UnknownHostException;
 @Slf4j
 @Service
 public class ServiceInfoProviderImpl implements ServiceInfoProvider {
+
     @Value("${service.id:#{null}}")
     private String serviceId;
     
@@ -58,7 +60,7 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
         try {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
-            return org.apache.commons.lang3.RandomStringUtils.randomAlphabetic(10);
+            return RandomStringUtils.randomAlphabetic(10);
         }
     }
 }

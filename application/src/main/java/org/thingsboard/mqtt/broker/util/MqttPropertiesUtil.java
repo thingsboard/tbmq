@@ -70,6 +70,10 @@ public class MqttPropertiesUtil {
         return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_PROP_ID);
     }
 
+    public static void addTopicAliasToProps(MqttProperties properties, int topicAlias) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID, topicAlias));
+    }
+
     private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
         MqttProperties.MqttProperty property = properties.getProperty(propertyId);
         return property != null ? (MqttProperties.IntegerProperty) property : null;

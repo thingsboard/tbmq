@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 import java.util.Map;
@@ -176,6 +177,63 @@ public class TopicAliasCtxTest {
         int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
         Assert.assertEquals(1, topicAlias);
         Assert.assertEquals(1, topicAliasCtx.getServerMappings().size());
+    }
+
+    @Test
+    public void givenDisabledTopicAliasCtx_whenGetTopicAliasResult_thenReturnNull() {
+        topicAliasCtx = new TopicAliasCtx(false, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
+        TopicAliasResult topicAliasResult = topicAliasCtx.getTopicAliasResult(null, minTopicNameLengthForAliasReplacement);
+        Assert.assertNull(topicAliasResult);
+    }
+
+    @Test
+    public void givenPubMsgProtoWithSmallTopic_whenGetTopicAliasResult_thenReturnNull() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
+
+        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+                .setTopicName("123456789")
+                .build();
+
+        TopicAliasResult topicAliasResult = topicAliasCtx.getTopicAliasResult(publishMsgProto, minTopicNameLengthForAliasReplacement);
+        Assert.assertNull(topicAliasResult);
+    }
+
+    @Test
+    public void givenPubMsgProtoWithTopicAndMaxAllowedAliases_whenGetTopicAliasResult_thenReturnNull() {
+        topicAliasCtx = new TopicAliasCtx(true, 1, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("qwerty", 1)));
+
+        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+                .setTopicName("12345678900")
+                .build();
+
+        TopicAliasResult topicAliasResult = topicAliasCtx.getTopicAliasResult(publishMsgProto, minTopicNameLengthForAliasReplacement);
+        Assert.assertNull(topicAliasResult);
+    }
+
+    @Test
+    public void givenPubMsgProtoWithTopicAndExisingMapping_whenGetTopicAliasResult_thenReturnTopicAliasResultWithEmptyTopic() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("12345678900", 1)));
+
+        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+                .setTopicName("12345678900")
+                .build();
+
+        TopicAliasResult topicAliasResult = topicAliasCtx.getTopicAliasResult(publishMsgProto, minTopicNameLengthForAliasReplacement);
+        Assert.assertEquals(new TopicAliasResult(BrokerConstants.EMPTY_STR, 1), topicAliasResult);
+        Assert.assertEquals(1, topicAliasCtx.getServerMappings().size());
+    }
+
+    @Test
+    public void givenPubMsgProtoWithTopic_whenGetTopicAliasResult_thenReturnTopicAliasResultWithNewAlias() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("qwerty", 1)));
+
+        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+                .setTopicName("12345678900")
+                .build();
+
+        TopicAliasResult topicAliasResult = topicAliasCtx.getTopicAliasResult(publishMsgProto, minTopicNameLengthForAliasReplacement);
+        Assert.assertEquals(new TopicAliasResult("12345678900", 2), topicAliasResult);
+        Assert.assertEquals(2, topicAliasCtx.getServerMappings().size());
     }
 
     @Test

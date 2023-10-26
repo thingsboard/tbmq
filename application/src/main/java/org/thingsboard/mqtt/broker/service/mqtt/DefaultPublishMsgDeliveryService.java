@@ -16,16 +16,22 @@
 package org.thingsboard.mqtt.broker.service.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.DeliveryTimerStats;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.TopicAliasResult;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
@@ -44,8 +50,14 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final DeliveryTimerStats deliveryTimerStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+
     @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
     private int minTopicNameLengthForAliasReplacement;
+    @Value("${mqtt.write-and-flush:true}")
+    private boolean writeAndFlush;
+    @Value("${mqtt.buffered-msg-count:5}")
+    private int bufferedMsgCount;
 
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
                                             RetransmissionService retransmissionService,
@@ -59,7 +71,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), pubMsg);
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
@@ -69,8 +81,36 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     @Override
+    public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
+        if (isTraceEnabled) {
+            log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), msg);
+        }
+        TopicAliasResult topicAliasResult = sessionCtx.getTopicAliasCtx().getTopicAliasResult(msg, minTopicNameLengthForAliasReplacement);
+        MqttProperties properties = ProtoConverter.createMqttProperties(msg.getUserPropertiesList());
+        if (topicAliasResult != null) {
+            MqttPropertiesUtil.addTopicAliasToProps(properties, topicAliasResult.getTopicAlias());
+        }
+
+        String topicName = topicAliasResult == null ? msg.getTopicName() : topicAliasResult.getTopicName();
+        int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
+        int qos = Math.min(subscription.getQos(), msg.getQos());
+        boolean retain = subscription.getOptions().isRetain(msg);
+        MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
+
+        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        if (writeAndFlush) {
+            sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        } else {
+            sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
+            if (isFlushNeeded(sessionCtx)) {
+                sessionCtx.getChannel().flush();
+            }
+        }
+    }
+
+    @Override
     public void sendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, PublishMsg pubMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client without flushing {}", sessionCtx.getClientId(), pubMsg);
         }
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
@@ -81,7 +121,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishRetainedMsgToClient(ClientSessionCtx sessionCtx, RetainedMsg retainedMsg) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending Retained msg to client {}", sessionCtx.getClientId(), retainedMsg);
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
@@ -91,7 +131,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending PubRel msg to client {}", sessionCtx.getClientId(), packetId);
         }
         processSendPubRel(sessionCtx, packetId, msg -> retransmissionService.onPubRecReceived(sessionCtx, msg));
@@ -99,7 +139,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPubRelMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, int packetId) {
-        if (log.isTraceEnabled()) {
+        if (isTraceEnabled) {
             log.trace("[{}] Sending PubRel msg to client without flushing {}", sessionCtx.getClientId(), packetId);
         }
         processSendPubRel(sessionCtx, packetId, msg -> retransmissionService.onPubRecReceivedWithoutFlush(sessionCtx, msg));
@@ -138,5 +178,9 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
+    }
+
+    private boolean isFlushNeeded(ClientSessionCtx sessionCtx) {
+        return sessionCtx.getMsgIdSeq().getCurrentSeq() % bufferedMsgCount == 0;
     }
 }
