@@ -23,12 +23,20 @@ metadata:
     name: tb-broker-config
 data:
   conf: |
+    export JAVA_OPTS="$JAVA_OPTS -Xmx90g -Xms90g -Xss320k -XX:+AlwaysPreTouch"
+    
     export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
     export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
     export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-heapdump.bin"
     export JAVA_OPTS="$JAVA_OPTS -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
-    export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
+    export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=16"
+    export JAVA_OPTS="$JAVA_OPTS -XX:G1HeapRegionSize=32M -XX:InitiatingHeapOccupancyPercent=30 -XX:+UseLargePages -XX:+UseTransparentHugePages"
     export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
+    
+    # JMX
+    export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999"
+    export JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1"
+    
     export LOG_FILENAME=thingsboard-mqtt-broker.out
     export LOADER_PATH=/usr/share/thingsboard-mqtt-broker/conf
   logback: |
@@ -65,3 +73,75 @@ data:
         </root>
     
     </configuration>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tb-broker-yml-config
+  labels:
+    name: tb-broker-yml-config
+data:
+  TCP_NETTY_WORKER_GROUP_THREADS: "0"
+
+  LISTENER_WS_ENABLED: "false"
+
+  TB_MSG_ALL_CONSUMERS_COUNT: "6"
+  TB_MSG_ALL_THREADS_COUNT: "6"
+  TB_MSG_ALL_PACK_PROCESSING_TIMEOUT: "60000"
+  TB_MSG_ALL_ACK_STRATEGY_TYPE: "RETRY_ALL"
+  TB_MSG_ALL_ACK_STRATEGY_RETRIES: "0"
+  TB_MSG_ALL_PARALLEL_PROCESSING: "true"
+
+  TB_APP_PERSISTED_MSG_THREADS_COUNT: "0"
+  TB_APP_PERSISTED_MSG_SHARED_SUBS_THREADS_COUNT: "0"
+
+  TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT: "0"
+  TB_DEVICE_PERSISTED_MSG_THREADS_COUNT: "0"
+
+  TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS: "4"
+
+  TB_PERSISTED_DOWNLINK_MSG_CONSUMERS_COUNT: "0"
+  TB_PERSISTED_DOWNLINK_MSG_THREADS_COUNT: "0"
+
+  TB_BASIC_DOWNLINK_MSG_CONSUMERS_COUNT: "0"
+  TB_BASIC_DOWNLINK_MSG_THREADS_COUNT: "0"
+
+  TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS: "512"
+  TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES: "16777216"
+  TB_KAFKA_DEFAULT_CONSUMER_FETCH_MAX_BYTES: "134217728"
+
+  TB_KAFKA_DEFAULT_PRODUCER_ACKS: "0"
+  TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE: "512"
+  TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS: "5"
+  TB_KAFKA_DEFAULT_PRODUCER_BUFFER_MEMORY: "33554432"
+  TB_KAFKA_DEFAULT_COMPRESSION_TYPE: "none"
+
+  TB_KAFKA_CONSUMER_STATS_ENABLED: "false"
+
+  TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES: "retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:6;replication.factor:1"
+  TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG: "fetch.min.bytes:128"
+  TB_KAFKA_MSG_ALL_ADDITIONAL_PRODUCER_CONFIG: ""
+
+  ACTORS_SYSTEM_THROUGHPUT: "5"
+  ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE: "1"
+  ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE: "0"
+  ACTORS_RULE_MAIL_THREAD_POOL_SIZE: "1"
+  ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE: "1"
+
+  MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING: "true"
+  MQTT_KEEP_ALIVE_MONITORING_DELAY_MS: "60000"
+
+  MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS: "0"
+  MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS: "0"
+
+  MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS: "6"
+  MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS: "0"
+  MQTT_HANDLER_APP_MSG_CALLBACK_THREADS: "0"
+
+  CACHE_STATS_ENABLED: "false"
+  STATS_ENABLED: "false"
+  APPLICATION_PROCESSOR_STATS_ENABLED: "false"
+  HISTORICAL_DATA_REPORT_ENABLED: "false"
+
+  MQTT_MSG_WRITE_AND_FLUSH: "false"
+  MQTT_BUFFERED_MSG_COUNT: "3"
