@@ -449,6 +449,10 @@ mqtt:
     initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}" # initial delay for the msg retransmission in seconds
     # increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
     period: "${MQTT_RETRANSMISSION_PERIOD:5}"
+  # If enabled, each message is published to subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
+  write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
+  # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false
+  buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
   keep-alive:
     # Schedule monitoring for inactive MQTT clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"

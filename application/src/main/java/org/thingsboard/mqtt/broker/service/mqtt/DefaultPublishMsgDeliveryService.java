@@ -54,6 +54,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
     private int minTopicNameLengthForAliasReplacement;
+    @Value("${mqtt.write-and-flush:true}")
+    private boolean writeAndFlush;
+    @Value("${mqtt.buffered-msg-count:5}")
+    private int bufferedMsgCount;
 
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
                                             RetransmissionService retransmissionService,
@@ -94,7 +98,14 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
 
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
-        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        if (writeAndFlush) {
+            sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        } else {
+            sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
+            if (isFlushNeeded(sessionCtx)) {
+                sessionCtx.getChannel().flush();
+            }
+        }
     }
 
     @Override
@@ -167,5 +178,9 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
             throw e;
         }
+    }
+
+    private boolean isFlushNeeded(ClientSessionCtx sessionCtx) {
+        return sessionCtx.getMsgIdSeq().getCurrentSeq() % bufferedMsgCount == 0;
     }
 }
