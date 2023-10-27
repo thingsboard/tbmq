@@ -15,9 +15,16 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
+import { DetailedClientSessionInfo } from "@shared/models/session.model";
 
 export interface SharedSubscription extends BaseData {
   name: string;
   partitions: number;
   topicFilter: string;
+}
+
+export interface SharedSubscriptionManage extends BaseData {
+  shareName: string;
+  topicFilter: string;
+  clientSessionInfo: DetailedClientSessionInfo[];
 }

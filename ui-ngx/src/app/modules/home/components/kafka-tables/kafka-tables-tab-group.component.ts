@@ -14,11 +14,13 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { KafkaTable, KafkaTableTranslationMap } from '@shared/models/kafka.model';
 import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
+import { TranslateService } from '@ngx-translate/core';
+import { HomePageTitleType } from "@shared/models/home-page.model";
 
 @Component({
   selector: 'tb-kafka-tables-tab-group',
@@ -29,22 +31,16 @@ export class KafkaTablesTabGroupComponent implements OnInit {
 
   public kafkaTopicsTableConfig: KafkaTopicsTableConfig;
   public kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsTableConfig;
-  public selectedTab: KafkaTable;
   public readonly KafkaTable = KafkaTable;
   public readonly kafkaTableTranslationMap = KafkaTableTranslationMap;
+  public readonly homePageTitleType = HomePageTitleType;
 
   constructor(private kafkaService: KafkaService,
-              private cd: ChangeDetectorRef) {
+              private translate: TranslateService) {
   }
 
   ngOnInit() {
-    this.selectedTab = KafkaTable.TOPICS;
-    this.kafkaTopicsTableConfig = new KafkaTopicsTableConfig(this.kafkaService);
-    this.kafkaConsumerGroupsTableConfig = new KafkaConsumerGroupsTableConfig(this.kafkaService);
-  }
-
-  select(table: KafkaTable) {
-    this.selectedTab = table;
-    this.cd.detectChanges();
+    this.kafkaTopicsTableConfig = new KafkaTopicsTableConfig(this.kafkaService, this.translate);
+    this.kafkaConsumerGroupsTableConfig = new KafkaConsumerGroupsTableConfig(this.kafkaService, this.translate);
   }
 }

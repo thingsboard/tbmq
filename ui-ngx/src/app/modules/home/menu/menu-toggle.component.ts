@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
-import {MenuSection} from '@core/services/menu.models';
-import {Router} from '@angular/router';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { MenuSection } from '@core/services/menu.models';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-menu-toggle',
@@ -28,25 +28,33 @@ export class MenuToggleComponent implements OnInit {
 
   @Input() section: MenuSection;
 
+  sectionPages: Array<MenuSection>;
+
   constructor(private router: Router) {
   }
 
   ngOnInit() {
+    this.sectionPages = this.section.pages;
   }
 
   sectionActive(): boolean {
-    return this.router.isActive(this.section.path, false);
+    return this.section.opened;
   }
 
   sectionHeight(): string {
-    if (this.router.isActive(this.section.path, false)) {
-      return this.section.height;
+    if (this.sectionActive()) {
+      return this.sectionPages.length * 40 + 'px';
     } else {
       return '0px';
     }
   }
 
-  trackBySectionPages(index: number, section: MenuSection){
+  trackBySectionPages(index: number, section: MenuSection): string {
     return section.id;
+  }
+
+  toggleSection(event: MouseEvent): void {
+    event.stopPropagation();
+    this.section.opened = !this.section.opened;
   }
 }

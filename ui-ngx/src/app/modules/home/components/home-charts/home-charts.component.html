@@ -19,15 +19,15 @@
   <section fxLayoutAlign="space-between" fxLayoutGap="12px">
     <div *ngFor="let chart of statsCharts">
       <div class="chart-container" fxLayout="column">
-        <section fxFlex="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="2px" style="white-space: nowrap">
+        <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
           <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-          <mat-icon class="home-page-material-icons" style="padding: 0"
+          <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
                     [matTooltip]="chartTooltip(chart)">
             info_outline
           </mat-icon>
         </section>
         <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
-          <canvas [id]="chart+chartIdSuf"></canvas>
+          <canvas [id]="chart+chartPage"></canvas>
         </section>
       </div>
     </div>

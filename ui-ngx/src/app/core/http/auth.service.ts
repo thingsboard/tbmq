@@ -24,7 +24,7 @@ import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { LoginRequest, LoginResponse, PublicLoginRequest } from '@shared/models/login.models';
 import { ActivatedRoute, Router, UrlTree } from '@angular/router';
 import { defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
-import { AdminService } from './admin.service';
+import { UserService } from './user.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { Authority } from '@shared/models/authority.enum';
@@ -46,7 +46,7 @@ export class AuthService {
 
   constructor(private store: Store<AppState>,
               private http: HttpClient,
-              private adminService: AdminService,
+              private adminService: UserService,
               private router: Router,
               private route: ActivatedRoute,
               private zone: NgZone,

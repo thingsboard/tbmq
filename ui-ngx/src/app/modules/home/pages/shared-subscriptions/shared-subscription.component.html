@@ -43,7 +43,7 @@
           {{ 'shared-subscription.name-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field class="mat-block">
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>shared-subscription.topic-filter</mat-label>
         <input matInput formControlName="topicFilter" required>
         <mat-error *ngIf="entityForm.get('topicFilter').hasError('required')">
@@ -51,7 +51,7 @@
         </mat-error>
       </mat-form-field>
       <div class="tb-hint" [innerHTML]="'shared-subscription.hint-topic-filter' | translate"></div>
-      <mat-form-field class="mat-block">
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>shared-subscription.partitions</mat-label>
         <input matInput formControlName="partitions" required type="number" min="1" step="1">
         <mat-error *ngIf="entityForm.get('partitions').hasError('required')">

@@ -14,11 +14,6 @@
 /// limitations under the License.
 ///
 
-export interface ClientInfo {
-  clientId: string;
-  type: ClientType;
-}
-
 export enum ClientType {
   DEVICE = 'DEVICE',
   APPLICATION = 'APPLICATION'
@@ -28,5 +23,19 @@ export const clientTypeTranslationMap = new Map<ClientType, string>(
   [
     [ClientType.DEVICE, 'mqtt-client.type-device'],
     [ClientType.APPLICATION, 'mqtt-client.type-application']
+  ]
+);
+
+export const clientTypeColor = new Map<ClientType, string>(
+  [
+    [ClientType.APPLICATION, 'rgba(1, 116, 242, 0.1)'],
+    [ClientType.DEVICE, 'rgba(111, 1, 242, 0.1)']
+  ]
+);
+
+export const clientTypeIcon = new Map<ClientType, string>(
+  [
+    [ClientType.APPLICATION, 'desktop_mac'],
+    [ClientType.DEVICE, 'devices_other']
   ]
 );

@@ -14,25 +14,15 @@
 /// limitations under the License.
 ///
 
-import {Injectable, NgModule} from '@angular/core';
-import {Resolve, RouterModule, Routes} from '@angular/router';
-import {ProfileComponent} from './profile.component';
-import {ConfirmOnExitGuard} from '@core/guards/confirm-on-exit.guard';
-import {Authority} from '@shared/models/authority.enum';
-import {User} from '@shared/models/user.model';
-import {Observable} from 'rxjs';
-import {AuthService} from "@core/http/auth.service";
+import { inject, NgModule } from '@angular/core';
+import { ResolveFn, RouterModule, Routes } from '@angular/router';
+import { ProfileComponent } from './profile.component';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { Authority } from '@shared/models/authority.enum';
+import { User } from '@shared/models/user.model';
+import { AuthService } from '@core/http/auth.service';
 
-@Injectable()
-export class UserProfileResolver implements Resolve<User> {
-
-  constructor(private authService: AuthService) {
-  }
-
-  resolve(): Observable<User> {
-    return this.authService.getUser();
-  }
-}
+export const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).getUser();
 
 const routes: Routes = [
   {
@@ -55,9 +45,7 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule],
-  providers: [
-    UserProfileResolver
-  ]
+  exports: [RouterModule]
 })
-export class ProfileRoutingModule { }
+export class ProfileRoutingModule {
+}

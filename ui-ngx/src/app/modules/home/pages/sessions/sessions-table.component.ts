@@ -17,11 +17,12 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ClientSessionService } from '@core/http/client-session.service';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'tb-sessions-table',
@@ -63,22 +64,26 @@ export class SessionsTableComponent implements OnInit {
 
   sessionsTableConfig: SessionsTableConfig;
 
-  constructor(private mqttClientSessionService: MqttClientSessionService,
+  constructor(private clientSessionService: ClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private dialog: MatDialog,
-              private dialogService: DialogService) {
+              private dialogService: DialogService,
+              private route: ActivatedRoute,
+              private router: Router) {
   }
 
   ngOnInit(): void {
     this.dirtyValue = !this.activeValue;
     this.sessionsTableConfig = new SessionsTableConfig(
-      this.mqttClientSessionService,
+      this.clientSessionService,
       this.translate,
       this.datePipe,
       this.dialog,
       this.dialogService,
-      this.entityIdValue
+      this.entityIdValue,
+      this.route,
+      this.router
     );
   }
 

@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
-@import '../../../../../theme';
 
 :host {
   .tabs-toolbar {
@@ -23,43 +21,5 @@
     border-radius: 20px;
     background: rgba(0,0,0,0.05);
     width: fit-content;
-  }
-
-  .tb-kafka-table {
-    padding-bottom: 0;
-  }
-}
-
-:host::ng-deep {
-  .tabs-toolbar > button {
-    border-radius: 20px;
-    border: 1px solid transparent;
-    line-height: 28px;
-
-    span {
-      color: rgba(0,0,0,0.38);
-      font-size: 14px;
-
-      @media #{$mat-lt-xl} {
-        font-size: 11px;
-      }
-    }
-  }
-
-  .tabs-toolbar > button:hover {
-    background: rgba(0,0,0,0.1);
-  }
-
-  .tb-active {
-    background: rgba(0, 105, 92, 0.04) !important;
-    border: 1px solid #00695C !important;
-
-    span {
-      color: $tb-primary-color !important;
-    }
-  }
-
-  .mat-form-field-appearance-legacy .mat-form-field-infix {
-    padding: 0 0.1em !important;
   }
 }

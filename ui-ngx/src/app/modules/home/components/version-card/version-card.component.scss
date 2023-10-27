@@ -18,7 +18,7 @@
 
 :host {
   a {
-    font-size: 14px;
+    font-size: 0.9em;
     font-weight: 500;
     color: $tb-primary-color;
     cursor: pointer;
@@ -49,15 +49,15 @@
 
     span {
       color: rgba(0,0,0,0.76);
-      font-size: 20px;
+      font-size: 1.25em;
       font-weight: 600;
     }
 
     .tb-title-link {
       font-style: normal;
       font-weight: 500;
-      font-size: 14px;
-      line-height: 16px;
+      font-size: 0.9em;
+      line-height: 1em;
       letter-spacing: 0.25px;
       color: rgba(0,0,0,0.54);
       position: relative;
@@ -93,25 +93,25 @@
 
   @media #{$mat-lt-xl} {
     .title-container a {
-      font-size: 12px;
+      font-size: 0.9em;
     }
 
     .cards {
       span {
-        font-size: 16px;
+        font-size: 1em;
       }
       .tb-title-link {
-        font-size: 11px;
-        line-height: 13px;
+        font-size: 0.9em;
+        line-height: 1em;
       }
       .tb-title-link-container {
         &::after {
-          font-size: 14px;
-          line-height: 14px;
+          font-size: 0.9em;
+          line-height: 0.9em;
         }
       }
       .mat-raised-button {
-        font-size: 12px;
+        font-size: 0.9em;
       }
     }
   }
@@ -119,7 +119,7 @@
   @media #{$mat-xs} {
     .cards {
       .version-container {
-        padding: 5px;
+        padding: 0.3125em;
       }
     }
   }

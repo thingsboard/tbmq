@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
+@import "../../../../../scss/constants";
 
 :host {
-  mat-card.profile-card {
-    margin: 16px;
+  .mat-mdc-card.profile-card {
+    margin: 8px;
     @media #{$mat-gt-sm} {
       width: 60%;
     }
-    .mat-headline {
+    .mat-headline-5 {
       margin: 0;
     }
     .profile-email {
       font-size: 16px;
       font-weight: 400;
     }
-    .mat-subheader {
+    .mat-mdc-subheader {
       line-height: 24px;
       color: rgba(0,0,0,0.54);
       font-size: 14px;

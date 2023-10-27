@@ -62,76 +62,113 @@ export class MenuService {
     const sections: Array<MenuSection> = [];
     sections.push(
       {
-        id: guid(),
+        id: 'home',
         name: 'home.home',
         type: 'link',
         path: '/home',
-        icon: 'mdi:view-dashboard-outline',
-        isMdiIcon: true
+        icon: 'mdi:view-dashboard-outline'
       },
       {
-        id: guid(),
+        id: 'monitoring',
         name: 'monitoring.monitoring',
         type: 'link',
         path: '/monitoring',
-        icon: 'mdi:monitor-dashboard',
-        isMdiIcon: true
+        icon: 'mdi:monitor-dashboard'
       },
       {
-        id: guid(),
+        id: 'users',
         name: 'user.users',
         type: 'link',
         path: '/users',
-        icon: 'mdi:account-multiple-outline',
-        isMdiIcon: true
+        icon: 'mdi:account-multiple-outline'
       },
       {
-        id: guid(),
+        id: 'client_credentials',
         name: 'mqtt-client-credentials.credentials',
         type: 'link',
         path: '/client-credentials',
-        icon: 'mdi:shield-lock',
-        isMdiIcon: true
+        icon: 'mdi:shield-lock'
       },
       {
-        id: guid(),
+        id: 'sessions',
         name: 'mqtt-client-session.sessions',
         type: 'link',
         path: '/sessions',
-        icon: 'mdi:book-multiple',
-        isMdiIcon: true
+        icon: 'mdi:book-multiple'
       },
       {
-        id: guid(),
+        id: 'shared_subscriptions_management',
         name: 'shared-subscription.shared-subscriptions',
-        type: 'link',
+        type: 'toggle',
         path: '/shared-subscriptions',
-        icon: 'mdi:monitor-share',
-        isMdiIcon: true
+        icon: 'mediation',
+        pages: [
+          {
+            id: 'shared_subscriptions',
+            name: 'shared-subscription.management',
+            type: 'link',
+            path: '/shared-subscriptions/manage',
+            icon: 'lan'
+          },
+          {
+            id: 'application_shared_subscriptions',
+            name: 'shared-subscription.applications',
+            type: 'link',
+            path: '/shared-subscriptions/applications',
+            icon: 'mdi:monitor-share'
+          },
+        ]
       },
       {
-        id: guid(),
+        id: 'retained_messages',
         name: 'retained-message.retained-messages',
         type: 'link',
         path: '/retained-messages',
-        icon: 'mdi:archive-outline',
-        isMdiIcon: true
+        icon: 'mdi:archive-outline'
       },
       {
-        id: guid(),
+        id: 'kafka_management',
+        name: 'kafka.management',
+        type: 'toggle',
+        path: '/kafka',
+        icon: 'apps',
+        pages: [
+          {
+            id: 'kafka_topics',
+            name: 'kafka.topics-title',
+            type: 'link',
+            path: '/kafka/topics',
+            icon: 'topic'
+          },
+          {
+            id: 'kafka_consumer_groups',
+            name: 'kafka.consumer-groups-title',
+            type: 'link',
+            path: '/kafka/consumer-groups',
+            icon: 'filter_alt'
+          },
+          {
+            id: 'kafka_brokers',
+            name: 'kafka.brokers-title',
+            type: 'link',
+            path: '/kafka/brokers',
+            icon: 'mdi:server'
+          }
+        ]
+      },
+      {
+        id: 'system_settings',
         name: 'admin.system-settings',
         type: 'toggle',
         path: '/settings',
-        height: '40px',
         icon: 'settings',
         pages: [
           {
-            id: guid(),
+            id: 'outgoing_mail',
             name: 'admin.outgoing-mail',
             type: 'link',
             path: '/settings/outgoing-mail',
-            icon: 'mdi:email',
-            isMdiIcon: true
+            icon: 'mdi:email'
           }
         ]
       }
@@ -148,50 +185,42 @@ export class MenuService {
       {
         name: 'home.rest-api',
         path: 'rest-api',
-        icon: 'mdi:api',
-        isMdiIcon: true
+        icon: 'mdi:api'
       },
       {
         name: 'home.configuration',
         path: 'install/config',
-        icon: 'mdi:cog-outline',
-        isMdiIcon: true
+        icon: 'mdi:cog-outline'
       },
       {
         name: 'home.integration-with-thingsboard',
         path: 'user-guide/integrations/how-to-connect-thingsboard-to-tbmq',
-        icon: 'input',
-        isMdiIcon: false
+        icon: 'input'
       },
       {
         name: 'home.performance-tests',
         path: 'reference/performance-tests',
-        icon: 'mdi:speedometer',
-        isMdiIcon: true
+        icon: 'mdi:speedometer'
       },
       {
         name: 'home.security',
         path: 'security',
-        icon: 'mdi:security',
-        isMdiIcon: true
+        icon: 'mdi:security'
       },
       {
         name: 'home.mqtt-client-type',
         path: 'user-guide/mqtt-client-type',
-        icon: 'mdi:devices',
-        isMdiIcon: true
+        icon: 'mdi:devices'
       },
       {
         name: 'home.shared-subscriptions',
         path: 'user-guide/shared-subscriptions',
-        icon: 'mdi:monitor-share',
-        isMdiIcon: true
+        icon: 'mdi:monitor-share'
       },
       {
         name: 'home.retained-messages',
         path: 'user-guide/retained-messages',
-        icon: 'mdi:archive-outline',
-        isMdiIcon: true
+        icon: 'mdi:archive-outline'
       }
     ]);
   }

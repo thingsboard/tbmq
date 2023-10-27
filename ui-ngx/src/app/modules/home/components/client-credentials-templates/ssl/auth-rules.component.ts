@@ -22,7 +22,7 @@ import {
   FormBuilder, FormControl,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
   Validator, ValidatorFn,
   Validators
@@ -31,9 +31,9 @@ import { Subject, Subscription } from 'rxjs';
 import { MatChipInputEvent } from "@angular/material/chips";
 import {
   AuthRulePatternsType,
-  AuthRulesMapping, MqttClientCredentials,
-  SslMqttCredentialsAuthRules
-} from "@shared/models/client-crenetials.model";
+  AuthRulesMapping, ClientCredentials,
+  SslCredentialsAuthRules
+} from "@shared/models/credentials.model";
 
 @Component({
   selector: 'tb-auth-rules',
@@ -57,16 +57,16 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   disabled: boolean;
 
   @Input()
-  entity: MqttClientCredentials;
+  entity: ClientCredentials;
 
   authRulePatternsType = AuthRulePatternsType;
-  rulesMappingFormGroup: FormGroup;
+  rulesMappingFormGroup: UntypedFormGroup;
   authRulesMappings: FormArray;
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
 
   private valueChangeSubscription: Subscription = null;
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   get rulesFormArray(): FormArray {
@@ -149,7 +149,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     };
   }
 
-  writeValue(authRulesMapping: SslMqttCredentialsAuthRules): void {
+  writeValue(authRulesMapping: SslCredentialsAuthRules): void {
     if (this.valueChangeSubscription) {
       this.valueChangeSubscription.unsubscribe();
     }

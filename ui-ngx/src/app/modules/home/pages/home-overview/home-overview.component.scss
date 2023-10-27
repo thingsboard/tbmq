@@ -21,7 +21,6 @@
 
   .tb-home-overview {
     width: 100%;
-    background-color: #dcdcdc;
     padding: 12px 12px 8px 12px;
 
     .tb-home-card {
@@ -35,6 +34,8 @@
       gap: 8px;
       border-radius: 10px;
       background-color: #fff;
+      overflow-x: unset;
+      overflow-y: auto;
     }
 
     .tb-home-padding {

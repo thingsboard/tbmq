@@ -37,16 +37,13 @@ export class CopyButtonComponent {
   disabled = false;
 
   @Input()
-  mdiIcon: string;
+  icon: string = 'content_copy';
 
   @Input()
-  icon: string;
+  tooltipText: string = this.translate.instant('action.copy');
 
   @Input()
-  tooltipText: string;
-
-  @Input()
-  tooltipPosition: TooltipPosition;
+  tooltipPosition: TooltipPosition = 'above';
 
   @Input()
   style: {[key: string]: any} = {};
@@ -77,7 +74,7 @@ export class CopyButtonComponent {
   }
 
   get matTooltipText(): string {
-    return this.copied ? this.translate.instant('ota-update.copied') : this.tooltipText;
+    return this.copied ? this.translate.instant('action.on-copied') : this.tooltipText;
   }
 
   get matTooltipPosition(): TooltipPosition {

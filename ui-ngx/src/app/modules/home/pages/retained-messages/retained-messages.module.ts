@@ -18,12 +18,12 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { RetainedMessagesComponent } from "@home/pages/retained-messages/retained-messages.component";
 import { RetainedMessagesRoutingModule } from "@home/pages/retained-messages/retained-messages-routing.module";
+import { RetainedMessagesTableComponent } from '@home/pages/retained-messages/retained-messages-table.component';
 
 @NgModule({
   declarations: [
-    RetainedMessagesComponent
+    RetainedMessagesTableComponent
   ],
   imports: [
     CommonModule,

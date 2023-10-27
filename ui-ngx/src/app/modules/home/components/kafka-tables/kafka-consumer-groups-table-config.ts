@@ -20,22 +20,24 @@ import { Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { KafkaConsumerGroup } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { EntityType } from '@shared/models/entity-type.models';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { TranslateService } from '@ngx-translate/core';
 
 export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsumerGroup, TimePageLink> {
 
   constructor(private kafkaService: KafkaService,
+              private translate: TranslateService,
               public entityId: string = null) {
     super();
     this.entityType = EntityType.KAFKA_CONSUMER_GROUP;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.KAFKA_CONSUMER_GROUP);
+    this.entityResources = entityTypeResources.get(EntityType.KAFKA_CONSUMER_GROUP);
+    this.tableTitle = this.translate.instant('kafka.consumer-groups')
+    this.entityComponent = null;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.entityTranslations = {
-      noEntities: 'kafka.no-kafka-consumer-group-text',
-      search: 'kafka.consumer-groups-search'
-    };
 
     this.entitiesFetchFunction = pageLink => this.fetchKafkaConsumerGroups(pageLink);
 

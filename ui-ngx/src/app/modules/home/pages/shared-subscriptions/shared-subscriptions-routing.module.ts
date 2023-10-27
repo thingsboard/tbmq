@@ -17,34 +17,63 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { SharedSubscriptionsTableConfigResolver } from "@home/pages/shared-subscriptions/shared-subscriptions-table-config-resolver.service";
+import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscriptions/shared-subsriptions-table.component';
+import {
+  SharedSubsriptionsManageTableComponent
+} from "@home/pages/shared-subscriptions-manage/shared-subsriptions-manage-table.component";
 
 const routes: Routes = [
   {
     path: 'shared-subscriptions',
-    component: EntitiesTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'shared-subscription.shared-subscriptions',
       breadcrumb: {
-        label: 'shared-subscription.application-shared-subscriptions',
-        icon: 'mdi:monitor-share',
-        isMdiIcon: true
+        label: 'shared-subscription.shared-subscriptions',
+        icon: 'mediation'
       }
     },
-    resolve: {
-      entitiesTableConfig: SharedSubscriptionsTableConfigResolver
-    }
+    children: [
+      {
+        path: '',
+        children: [],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          redirectTo: {
+            SYS_ADMIN: '/shared-subscriptions/applications'
+          }
+        }
+      },
+      {
+        path: 'manage',
+        component: SharedSubsriptionsManageTableComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'shared-subscription.application-shared-subscriptions',
+          breadcrumb: {
+            label: 'shared-subscription.management',
+            icon: 'lan'
+          }
+        }
+      },
+      {
+        path: 'applications',
+        component: SharedSubsriptionsTableComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'shared-subscription.shared-subscriptions',
+          breadcrumb: {
+            label: 'shared-subscription.applications',
+            icon: 'mdi:monitor-share'
+          }
+        }
+      }
+    ]
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule],
-  providers: [
-    SharedSubscriptionsTableConfigResolver
-  ]
+  exports: [RouterModule]
 })
 
 export class SharedSubscriptionsRoutingModule { }

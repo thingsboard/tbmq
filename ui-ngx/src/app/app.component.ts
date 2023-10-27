@@ -34,6 +34,8 @@ import { isMobileApp } from '@core/utils';
 import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
+import { AuthState } from '@core/auth/auth.models';
 
 @Component({
   selector: 'tb-root',
@@ -52,10 +54,28 @@ export class AppComponent {
               private zone: NgZone,
               private router: Router) {
 
-    console.log(`TBMQ Version: ${env.tbMqttBrokerVersion}`);
+    console.log(`TBMQ Version: ${env.tbmqVersion}`);
 
-    this.matIconRegistry.addSvgIconSetInNamespace('mdi',
-      this.domSanitizer.bypassSecurityTrustResourceUrl('./assets/mdi.svg'));
+    this.matIconRegistry.addSvgIconResolver((name, namespace) => {
+      if (namespace === 'mdi') {
+        return this.domSanitizer.bypassSecurityTrustResourceUrl(`./assets/mdi/${name}.svg`);
+      } else {
+        return null;
+      }
+    });
+
+    for (const svgIcon of Object.keys(svgIcons)) {
+      this.matIconRegistry.addSvgIconLiteral(
+          svgIcon,
+          this.domSanitizer.bypassSecurityTrustHtml(
+              svgIcons[svgIcon]
+          )
+      );
+    }
+
+    for (const svgIcon of Object.keys(svgIconsUrl)) {
+      this.matIconRegistry.addSvgIcon(svgIcon, this.domSanitizer.bypassSecurityTrustResourceUrl(svgIconsUrl[svgIcon]));
+    }
 
     this.storageService.testLocalStorage();
 
@@ -97,26 +117,29 @@ export class AppComponent {
   }
 
   private gotoDefaultPlace(isAuthenticated: boolean) {
-    if (!isMobileApp()) {
-      const authState = getCurrentAuthState(this.store);
-      if (authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1) {
-        this.dialog.open(ChangePasswordDialogComponent, {
-          disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-          backdropClass: ['grey-background'],
-          data: {
-            changeDefaultPassword: true,
-            isAuthenticated,
-            authState
-          }
-        });
-      } else {
-        const url = this.authService.defaultUrl(isAuthenticated, authState);
-        this.zone.run(() => {
-          this.router.navigateByUrl(url);
-        });
-      }
+    const authState = getCurrentAuthState(this.store);
+    if (this.userHasDefaultPassword(authState)) {
+      this.dialog.open(ChangePasswordDialogComponent, {
+        disableClose: true,
+        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        hasBackdrop: true,
+        backdropClass: ['tb-fullscreen-backdrop'],
+        data: {
+          changeDefaultPassword: true,
+          isAuthenticated,
+          authState
+        }
+      });
+    } else {
+      const url = this.authService.defaultUrl(isAuthenticated, authState);
+      this.zone.run(() => {
+        this.router.navigateByUrl(url);
+      });
     }
+  }
+
+  private userHasDefaultPassword(authState: AuthState): boolean {
+    return authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1;
   }
 
 }

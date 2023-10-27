@@ -19,8 +19,8 @@
   span {
     font-style: normal;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 14px;
+    font-size: 0.9em;
+    line-height: 0.9em;
     letter-spacing: 0.25px;
     color: rgba(0, 0, 0, 0.54);
     position: relative;
@@ -36,8 +36,8 @@
       transform: rotate(315deg);
       font-weight: normal;
       font-style: normal;
-      font-size: 18px;
-      line-height: 18px;
+      font-size: 1.1em;
+      line-height: 1.1em;
       margin-left: 6px;
       color: rgba(0, 0, 0, 0.12);
       vertical-align: bottom;
@@ -64,7 +64,7 @@
     }
   }
 
-  @media #{$mat-lt-xl} {
+  /*@media #{$mat-lt-xl} {
     span {
       font-size: 11px;
       line-height: 11px;
@@ -75,5 +75,5 @@
         line-height: 14px;
       }
     }
-  }
+  }*/
 }

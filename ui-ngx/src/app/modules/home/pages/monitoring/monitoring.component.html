@@ -15,11 +15,12 @@
     limitations under the License.
 
 -->
-<mat-toolbar color="primary" class="details-toolbar">
+<mat-toolbar color="primary" class="mat-elevation-z2">
   <span fxFlex></span>
   <tb-timewindow [(ngModel)]="timewindow"
                  (ngModelChange)="onTimewindowChange()"
-                 direction="left"
+                 asButton
+                 flatButton
                  tooltipPosition="left"
                  aggregation="false"
                  timezone="false">

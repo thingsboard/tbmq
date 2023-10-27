@@ -23,7 +23,7 @@ import { HomeChartsComponent } from '@home/components/home-charts/home-charts.co
 import { QuickLinksComponent } from '@home/components/quick-links/quick-links.component';
 import { VersionCardComponent } from '@home/components/version-card/version-card.component';
 import { CardConfigComponent } from '@home/components/card-config/card-config.component';
-import { KafkaBrokersTableComponent } from '@home/components/kafka-tables/kafka-brokers-table.component';
+import { KafkaBrokersHomeTableComponent } from '@home/components/kafka-tables/kafka-brokers-home-table.component';
 import { HomeCardsSessionsCredentialsComponent } from '@home/components/home-cards-sessions-credentials/home-cards-sessions-credentials.component';
 import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables/kafka-tables-tab-group.component';
 import { GettingStartedComponent } from '@home/components/getting-started/getting-started.component';
@@ -39,7 +39,7 @@ import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-cr
     HomeCardsSessionsCredentialsComponent,
     HomeCardsTableComponent,
     CardConfigComponent,
-    KafkaBrokersTableComponent,
+    KafkaBrokersHomeTableComponent,
     KafkaTablesTabGroupComponent,
     GettingStartedComponent,
     EntitiesTableHomeComponent

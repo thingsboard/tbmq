@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
@@ -32,12 +32,12 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: SharedSubscription,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<SharedSubscription>,
-              public fb: FormBuilder,
+              public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
-  buildForm(entity: SharedSubscription): FormGroup {
+  buildForm(entity: SharedSubscription): UntypedFormGroup {
     const form = this.fb.group(
       {
         name: [entity ? entity.name : '', [Validators.required]],

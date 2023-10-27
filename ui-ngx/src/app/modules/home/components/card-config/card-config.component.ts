@@ -22,10 +22,10 @@ import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
-import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
+import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { map } from 'rxjs/operators';
-import { EntitiesTableHomeNoPagination, formatBytes } from '@home/components/entity/entities-table-home.component';
+import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 
 @Component({
   selector: 'tb-card-config',

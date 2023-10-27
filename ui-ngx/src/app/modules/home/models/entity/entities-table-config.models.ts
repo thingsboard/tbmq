@@ -25,11 +25,12 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { Type } from '@angular/core';
 import { EntityAction } from './entity-component.models';
 import { PageLink } from '@shared/models/page/page-link';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
 import { ClientType } from '@shared/models/client.model';
+import { IEntitiesTableComponent } from './entity-table-component.models';
+import { DAY, historyInterval } from '@shared/models/time/time.models';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -45,6 +46,7 @@ export type EntityRowClickFunction<T extends BaseData> = (event: Event, entity: 
 
 export type CellContentFunction<T extends BaseData> = (entity: T, key: string) => string;
 export type CellTooltipFunction<T extends BaseData> = (entity: T, key: string) => string | undefined;
+export type CellChipActionFunction<T extends BaseData> = (entity: T, key: string) => void;
 export type HeaderCellStyleFunction<T extends BaseData> = (key: string) => object;
 export type CellStyleFunction<T extends BaseData> = (entity: T, key: string) => object;
 export type CopyCellContent<T extends BaseData> = (entity: T, key: string, length: number) => object;
@@ -55,7 +57,6 @@ export interface CellActionDescriptor<T extends BaseData> {
   name: string;
   nameFunction?: (entity: T) => string;
   icon?: string;
-  mdiIcon?: string;
   style?: any;
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
@@ -64,8 +65,7 @@ export interface CellActionDescriptor<T extends BaseData> {
 
 export interface GroupActionDescriptor<T extends BaseData> {
   name: string;
-  icon: string;
-  isMdiIcon?: boolean;
+  icon?: string;
   isEnabled: boolean;
   onAction: ($event: MouseEvent, entities: T[]) => void;
 }
@@ -73,12 +73,11 @@ export interface GroupActionDescriptor<T extends BaseData> {
 export interface HeaderActionDescriptor {
   name: string;
   icon: string;
-  isMdiIcon?: boolean;
   isEnabled: () => boolean;
   onAction: ($event: MouseEvent) => void;
 }
 
-export type EntityTableColumnType = 'content' | 'action';
+export type EntityTableColumnType = 'content' | 'action' | 'chips';
 
 export class BaseEntityTableColumn<T extends BaseData> {
   constructor(public type: EntityTableColumnType,
@@ -135,19 +134,37 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
   }
 }
 
-export type EntityColumn<T extends BaseData> = EntityTableColumn<T> | EntityActionTableColumn<T>;
+export class ChipsTableColumn<T extends BaseData> extends BaseEntityTableColumn<T> {
+  constructor(public key: string,
+              public title: string,
+              public width: string = '0px',
+              public cellContentFunction: CellContentFunction<T> = (entity, property) => entity[property] ? entity[property] : '',
+              public chipActionFunction: CellChipActionFunction<T> = (entity: T, value: string) => ({}),
+              public chipIconFunction: CellContentFunction<T> = (entity: T, value: string) => undefined,
+              public cellStyleFunction: CellStyleFunction<T> = (entity: T, value: string) => ({}),
+              public cellChipTooltip: CellTooltipFunction<T> = () => undefined) {
+    super('chips', key, title, width, false);
+  }
+}
+
+export type EntityColumn<T extends BaseData> = EntityTableColumn<T> | EntityActionTableColumn<T> | ChipsTableColumn<T>;
 
 export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink, L extends BaseData = T> {
 
   constructor() {
   }
 
+  private table: IEntitiesTableComponent = null;
+
   componentsData: any = null;
   demoData: any = null;
 
   loadDataOnInit = true;
   onLoadAction: (route: ActivatedRoute) => void = null;
-  table: EntitiesTableComponent = null;
+  useTimePageLink = false;
+  forAllTimeEnabled = false;
+  rowPointer = false;
+  defaultTimewindowInterval = historyInterval(DAY);
   entityType: EntityType = null;
   tableTitle = '';
   selectionEnabled = true;
@@ -165,6 +182,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   addDialogStyle = {};
   defaultSortOrder: SortOrder = {property: 'createdTime', direction: Direction.DESC};
   displayPagination = true;
+  pageMode = true;
   defaultPageSize = 10;
   columns: Array<EntityColumn<L>> = [];
   cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
@@ -194,27 +212,81 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entityAdded: EntityVoidFunction<T> = () => {};
   entityUpdated: EntityVoidFunction<T> = () => {};
   entitiesDeleted: EntityIdsVoidFunction<T> = () => {};
+
+  getTable(): IEntitiesTableComponent {
+    return this.table;
+  }
+
+  setTable(table: IEntitiesTableComponent) {
+    this.table = table;
+    // this.entityDetailsPage = null;
+  }
+
+  /*getEntityDetailsPage(): IEntityDetailsPageComponent {
+    return this.entityDetailsPage;
+  }
+
+  setEntityDetailsPage(entityDetailsPage: IEntityDetailsPageComponent) {
+    this.entityDetailsPage = entityDetailsPage;
+    this.table = null;
+  }*/
+
+  updateData(closeDetails = false) {
+    if (this.table) {
+      this.table.updateData(closeDetails);
+    }
+    // else if (this.entityDetailsPage) {
+    //   this.entityDetailsPage.reload();
+    // }
+  }
+
+  toggleEntityDetails($event: Event, entity: T) {
+    if (this.table) {
+      this.table.toggleEntityDetails($event, entity);
+    }
+  }
+
+  isDetailsOpen(): boolean {
+    if (this.table) {
+      return this.table.isDetailsOpen;
+    } else {
+      return false;
+    }
+  }
+
+  getActivatedRoute(): ActivatedRoute {
+    if (this.table) {
+      return this.table.route;
+    } else {
+      return null;
+    }
+  }
 }
 
-export function checkBoxCell(value: boolean): string {
-  return `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
-}
+export const checkBoxCell = (value: boolean): string =>
+  `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
 
-export function defaultCellStyle(value: string | number): string {
-  return '<span style="background: rgba(111, 116, 242, 0.07); border-radius: 16px; padding: 4px 8px;">' + value + '</span>';
-}
+export const cellWithIcon = (value: string, icon: string, backgroundColor: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
+  `<section style="display: flex; gap: 6px; background: ${backgroundColor};
+                    border-radius: 16px; padding: 4px 8px; white-space: nowrap; width: fit-content;">
+      <span>${value}</span>
+      <mat-icon class="material-icons mat-icon"
+                style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
+        ${icon}
+      </mat-icon>
+  </section>`;
 
-export function credetialsTypeCell(value: string): string {
-  const color = value === 'Basic' ? 'rgba(111,116,242,0.07)' : 'rgba(139,242,111,0.07)';
-  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px;">${value}</span>`;
-}
+export const connectedStateCell = (connectionState: string, color: string): string =>
+  `<span style="vertical-align: bottom; font-size: 3em; color: ${color}">&#8226;</span>
+   <span style="color:${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
 
-export function clientTypeCell(value: ClientType): string {
-  const icon = value.toUpperCase() === ClientType.DEVICE ? 'devices_other' : 'desktop_mac';
-  const color = value.toUpperCase() === ClientType.DEVICE ? 'rgba(1, 116, 242, 0.1)' : 'rgba(111, 1, 242, 0.1)';
-  return `<span style="background: ${color}; border-radius: 16px; padding: 4px 8px; white-space: nowrap"><mat-icon style="height: 18px; font-size: 20px;padding-right: 4px" class="material-icons mat-icon">${icon}</mat-icon>${value}</span>`;
-}
-
-export function clientTypeWarning(value: string) {
-  return `<span style="background: rgba(255,236,128,0); border-radius: 16px; padding: 4px 8px; white-space: nowrap"><mat-icon style="height: 18px; font-size: 20px; padding-right: 4px; color: #ff9a00" class="material-icons mat-icon">warning</mat-icon>${value}</span>`;
+export function formatBytes(bytes, decimals = 1) {
+  if (!+bytes) {
+    return '0 B';
+  }
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }

@@ -25,19 +25,16 @@ import {
   Renderer2,
   SecurityContext,
   SimpleChanges,
-  ViewContainerRef
 } from '@angular/core';
-import {Overlay, OverlayConfig, OverlayRef} from '@angular/cdk/overlay';
-import {ComponentPortal} from '@angular/cdk/portal';
-import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
-import {DomSanitizer, SafeStyle} from '@angular/platform-browser';
+import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Directive({
   selector: '[tb-fullscreen]'
 })
 export class FullscreenDirective implements OnChanges, OnDestroy {
-
-  fullscreenValue = false;
 
   private overlayRef: OverlayRef;
   private parentElement: HTMLElement;
@@ -49,7 +46,7 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   fullscreenElement: HTMLElement;
 
   @Input()
-  fullscreenBackgroundStyle: {[klass: string]: any};
+  fullscreenBackgroundStyle: { [klass: string]: any };
 
   @Input()
   fullscreenBackgroundImage: SafeStyle | string;
@@ -60,7 +57,6 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   constructor(public elementRef: ElementRef,
               private renderer: Renderer2,
               private sanitizer: DomSanitizer,
-              private viewContainerRef: ViewContainerRef,
               private overlay: Overlay) {
   }
 
@@ -114,14 +110,14 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
     if (this.fullscreenBackgroundImage) {
       this.setStyle(this.overlayRef.overlayElement, 'backgroundImage', this.fullscreenBackgroundImage);
     }
-    this.overlayRef.overlayElement.appendChild( targetElement );
+    this.overlayRef.overlayElement.appendChild(targetElement);
     this.fullscreenChanged.emit(true);
   }
 
   private setStyle(el: any, nameAndUnit: string, value: any): void {
     const [name, unit] = nameAndUnit.split('.');
-    let renderValue: string|null =
-      this.sanitizer.sanitize(SecurityContext.STYLE, value as{} | string);
+    let renderValue: string | null =
+      this.sanitizer.sanitize(SecurityContext.STYLE, value as {} | string);
     if (renderValue != null) {
       renderValue = renderValue.toString();
     }
@@ -136,7 +132,7 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   exitFullscreen() {
     const targetElement: HTMLElement = this.fullscreenElement || this.elementRef.nativeElement;
     if (this.parentElement) {
-      this.overlayRef.overlayElement.removeChild( targetElement );
+      this.overlayRef.overlayElement.removeChild(targetElement);
       this.parentElement.appendChild(targetElement);
       this.parentElement = null;
     }

@@ -68,37 +68,43 @@
     <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-        <mat-chip-list #chipListPub formControlName="pubAuthRulePatterns">
-          <mat-chip *ngFor="let rule of pubRulesSet" [value]="rule"
-                    [selectable]="!disabled"
-                    [removable]="!disabled"
-                    (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+        <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
+          <mat-chip-row
+            *ngFor="let rule of pubRulesSet" [value]="rule"
+            [editable]="!disabled"
+            [removable]="!disabled"
+            (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
             {{ rule }}
-            <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-          </mat-chip>
+            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-chip-row>
           <input matInput type="text"
                  placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                  matChipInputAddOnBlur
                  [matChipInputFor]="chipListPub"
                  (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
-        </mat-chip-list>
+        </mat-chip-grid>
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-        <mat-chip-list #chipListSub formControlName="subAuthRulePatterns">
-          <mat-chip *ngFor="let rule of subRulesSet" [value]="rule"
-                    [selectable]="!disabled"
-                    [removable]="!disabled"
-                    (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+        <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
+          <mat-chip-row
+            *ngFor="let rule of subRulesSet" [value]="rule"
+            [editable]="!disabled"
+            [removable]="!disabled"
+            (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
             {{ rule }}
-            <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-          </mat-chip>
+            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-chip-row>
           <input matInput type="text"
                  placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                  matChipInputAddOnBlur
                  [matChipInputFor]="chipListSub"
                  (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
-        </mat-chip-list>
+        </mat-chip-grid>
       </mat-form-field>
     </div>
   </mat-expansion-panel>

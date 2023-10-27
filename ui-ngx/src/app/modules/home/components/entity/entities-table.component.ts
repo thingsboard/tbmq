@@ -26,25 +26,26 @@ import {
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  ViewContainerRef
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
+import { MAX_SAFE_PAGE_SIZE, PageLink, TimePageLink } from '@shared/models/page/page-link';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
-import { catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, map, takeUntil, tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
-import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
+import { forkJoin, merge, Observable, of, Subject, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
   CellActionDescriptor,
-  CellActionDescriptorType,
+  CellActionDescriptorType, ChipsTableColumn,
   EntityActionTableColumn,
   EntityColumn,
   EntityTableColumn,
@@ -58,7 +59,9 @@ import { AddEntityDialogComponent } from './add-entity-dialog.component';
 import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { isDefined, isEqual, isUndefined } from '@core/utils';
+import { isDefined, isEqual, isNotEmptyStr, isUndefined } from '@core/utils';
+import { calculateIntervalStartEndTime, HistoryWindowType, Timewindow } from '@shared/models/time/time.models';
+import { UntypedFormBuilder } from '@angular/forms';
 
 @Component({
   selector: 'tb-entities-table',
@@ -79,6 +82,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   actionColumns: Array<EntityActionTableColumn<BaseData>>;
   entityColumns: Array<EntityTableColumn<BaseData>>;
+  chipsColumns: Array<ChipsTableColumn<BaseData>>;
 
   displayedColumns: string[];
 
@@ -98,6 +102,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   pageLink: PageLink;
   pageMode = true;
   textSearchMode = false;
+  hidePageSize = false;
+  timewindow: Timewindow;
   dataSource: EntitiesDataSource<BaseData>;
 
   cellActionType = CellActionDescriptorType;
@@ -112,9 +118,12 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
+  textSearch = this.fb.control('', {nonNullable: true});
+
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
+  private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               public route: ActivatedRoute,
@@ -124,7 +133,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
               private domSanitizer: DomSanitizer,
               private cd: ChangeDetectorRef,
               private router: Router,
-              private componentFactoryResolver: ComponentFactoryResolver) {
+              private componentFactoryResolver: ComponentFactoryResolver,
+              private fb: UntypedFormBuilder) {
     super(store);
   }
 
@@ -150,6 +160,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
     this.isDetailsOpen = false;
     this.entitiesTableConfig = entitiesTableConfig;
+    this.pageMode = this.entitiesTableConfig.pageMode;
     if (this.entitiesTableConfig.headerComponent) {
       const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
@@ -159,7 +170,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
 
-    this.entitiesTableConfig.table = this;
+    this.entitiesTableConfig.setTable(this);
     this.translations = this.entitiesTableConfig.entityTranslations;
 
     this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
@@ -170,7 +181,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
-          mdiIcon: 'mdi:trash-can-outline',
+          icon: 'mdi:trash-can-outline',
           isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
@@ -179,7 +190,6 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isMdiIcon: true,
           isEnabled: true,
           onAction: ($event, entities) => this.deleteEntities($event, entities)
         }
@@ -205,7 +215,15 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.displayPagination = this.entitiesTableConfig.displayPagination;
     this.defaultPageSize = this.entitiesTableConfig.defaultPageSize;
     this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
-    this.pageLink = new PageLink(10, 0, null, sortOrder);
+
+    if (this.entitiesTableConfig.useTimePageLink) {
+      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
+      const interval = this.getTimePageLinkInterval();
+      this.pageLink = new TimePageLink(10, 0, null, sortOrder,
+        interval.startTime, interval.endTime);
+    } else {
+      this.pageLink = new PageLink(10, 0, null, sortOrder);
+    }
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
     if (this.entitiesTableConfig.onLoadAction) {
@@ -222,19 +240,17 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   ngAfterViewInit() {
-
-    fromEvent(this.searchInputField.nativeElement, 'keyup')
-      .pipe(
-        debounceTime(150),
-        distinctUntilChanged(),
-        tap(() => {
-          if (this.displayPagination) {
-            this.paginator.pageIndex = 0;
-          }
-          this.updateData();
-        })
-      )
-      .subscribe();
+    this.textSearch.valueChanges.pipe(
+      debounceTime(150),
+      distinctUntilChanged((prev, current) => (this.pageLink.textSearch ?? '') === current.trim()),
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      this.pageLink.textSearch = isNotEmptyStr(value) ? value.trim() : null;
+      if (this.displayPagination) {
+        this.paginator.pageIndex = 0;
+      }
+      this.updateData();
+    });
 
     this.updatePaginationSubscriptions();
     this.viewInited = true;
@@ -264,6 +280,11 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     return this.entitiesTableConfig.addEnabled;
   }
 
+  clearSelection() {
+    this.dataSource.selection.clear();
+    this.cd.detectChanges();
+  }
+
   updateData(closeDetails: boolean = true) {
     if (closeDetails) {
       this.isDetailsOpen = false;
@@ -282,7 +303,38 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     } else {
       this.pageLink.sortOrder = null;
     }
+    if (this.entitiesTableConfig.useTimePageLink) {
+      const timePageLink = this.pageLink as TimePageLink;
+      const interval = this.getTimePageLinkInterval();
+      timePageLink.startTime = interval.startTime;
+      timePageLink.endTime = interval.endTime;
+    }
     this.dataSource.loadEntities(this.pageLink);
+  }
+
+  private getTimePageLinkInterval(): { startTime?: number, endTime?: number } {
+    const interval: { startTime?: number, endTime?: number } = {};
+    switch (this.timewindow.history.historyType) {
+      case HistoryWindowType.LAST_INTERVAL:
+        const currentTime = Date.now();
+        interval.startTime = currentTime - this.timewindow.history.timewindowMs;
+        interval.endTime = currentTime;
+        break;
+      case HistoryWindowType.FIXED:
+        interval.startTime = this.timewindow.history.fixedTimewindow.startTimeMs;
+        interval.endTime = this.timewindow.history.fixedTimewindow.endTimeMs;
+        break;
+      case HistoryWindowType.INTERVAL:
+        const startEndTime = calculateIntervalStartEndTime(this.timewindow.history.quickInterval);
+        interval.startTime = startEndTime[0];
+        interval.endTime = startEndTime[1];
+        break;
+      case HistoryWindowType.FOR_ALL_TIME:
+        interval.startTime = null;
+        interval.endTime = null;
+        break;
+    }
+    return interval;
   }
 
   private dataLoaded(col?: number, row?: number) {
@@ -402,9 +454,15 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     });
   }
 
+  onTimewindowChange() {
+    if (this.displayPagination) {
+      this.paginator.pageIndex = 0;
+    }
+    this.updateData();
+  }
+
   enterFilterMode() {
     this.textSearchMode = true;
-    this.pageLink.textSearch = '';
     setTimeout(() => {
       this.searchInputField.nativeElement.focus();
       this.searchInputField.nativeElement.setSelectionRange(0, 0);
@@ -413,16 +471,16 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   exitFilterMode() {
     this.textSearchMode = false;
-    this.pageLink.textSearch = null;
-    if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
-    }
-    this.updateData();
+    this.textSearch.reset();
   }
 
   resetSortAndFilter(update: boolean = true, preserveTimewindow: boolean = false) {
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
+    this.textSearch.reset('', {emitEvent: false});
+    if (this.entitiesTableConfig.useTimePageLink && !preserveTimewindow) {
+      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
+    }
     if (this.displayPagination) {
       this.paginator.pageIndex = 0;
     }
@@ -456,6 +514,9 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.actionColumns = this.entitiesTableConfig.columns.filter(
       (column) => column instanceof EntityActionTableColumn)
       .map(column => column as EntityActionTableColumn<BaseData>);
+    this.chipsColumns = this.entitiesTableConfig.columns.filter(
+      (column) => column instanceof ChipsTableColumn)
+      .map(column => column as ChipsTableColumn<BaseData>);
 
     this.displayedColumns = [];
 
@@ -475,6 +536,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     if (resetData) {
       this.dataSource.reset();
     }
+  }
+
+  cellActionDescriptorsUpdated() {
+    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
   }
 
   headerCellStyle(column: EntityColumn<BaseData>) {
@@ -515,6 +580,42 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       return res;
     } else {
       return '';
+    }
+  }
+
+  cellChipsContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
+    if (column instanceof ChipsTableColumn) {
+      const col = this.entitiesTableConfig.columns.indexOf(column);
+      const index = row * this.entitiesTableConfig.columns.length + col;
+      let res = column.cellContentFunction(entity, column.key)?.split(',');
+      this.cellContentCache[index] = res;
+      return res;
+    } else {
+      return '';
+    }
+  }
+
+  cellChipAction(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.chipActionFunction(entity, value);
+    } else {
+      return undefined;
+    }
+  }
+
+  cellChipIconColor(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.cellStyleFunction(entity, value);
+    } else {
+      return undefined;
+    }
+  }
+
+  cellChipTooltip(value: string, entity: BaseData, column: EntityColumn<BaseData>) {
+    if (column instanceof ChipsTableColumn) {
+      return column.cellChipTooltip(entity, value);
+    } else {
+      return undefined;
     }
   }
 
@@ -561,6 +662,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   trackByEntityId(index: number, entity: any) {
     return entity.id;
+  }
+
+  detectChanges() {
+    this.cd.markForCheck();
   }
 
 }

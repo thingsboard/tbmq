@@ -21,10 +21,8 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ClientSessionService } from '@core/http/client-session.service';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
 import { ClientType } from '@shared/models/client.model';
@@ -48,7 +46,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   implements OnInit, OnDestroy, AfterContentChecked {
 
   entity: DetailedClientSessionInfo;
-  entityForm: FormGroup;
+  entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
 
@@ -60,10 +58,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: SessionsDetailsDialogData,
               public dialogRef: MatDialogRef<SessionsDetailsDialogComponent>,
-              private fb: FormBuilder,
-              private mqttClientSessionService: MqttClientSessionService,
-              private cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+              private fb: UntypedFormBuilder,
+              private clientSessionService: ClientSessionService,
+              private cd: ChangeDetectorRef) {
     super(store, router, dialogRef);
   }
 
@@ -95,7 +92,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       connectionState: [{value: entity ? entity.connectionState : null, disabled: false}],
       disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: false}],
       subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
-      cleanStart: [{value: entity ? entity.cleanStart : null, disabled: false}],
+      cleanStart: [{value: entity ? entity.cleanStart : null, disabled: true}],
       subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
@@ -123,20 +120,20 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private onSave(): void {
     const value = {...this.entity, ...this.subscriptions.value};
-    this.mqttClientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
+    this.clientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
       this.closeDialog();
     });
 
   }
 
   private onRemove(): void {
-    this.mqttClientSessionService.removeClientSession(this.entity.clientId, this.entity.sessionId).subscribe(() => {
+    this.clientSessionService.removeClientSession(this.entity.clientId, this.entity.sessionId).subscribe(() => {
       this.closeDialog();
     });
   }
 
   private onDisconnect(): void {
-    this.mqttClientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe(
+    this.clientSessionService.disconnectClientSession(this.entity.clientId, this.entity.sessionId).subscribe(
       () => {
         this.closeDialog();
     });
@@ -160,17 +157,5 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private closeDialog(): void {
     this.dialogRef.close();
-  }
-
-  onCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('action.on-copied'),
-        type: 'success',
-        duration: 1000,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      })
-    );
   }
 }

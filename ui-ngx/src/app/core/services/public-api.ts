@@ -22,3 +22,5 @@ export * from './title.service';
 export * from './utils.service';
 export * from './window.service';
 export * from './time.service';
+export * from './toast-notification.service';
+export * from './active-component.service';

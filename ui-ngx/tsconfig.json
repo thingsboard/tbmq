@@ -3,31 +3,42 @@
   "compilerOptions": {
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
     "declaration": false,
-    "module": "es2020",
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
+    "downlevelIteration": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
+    "moduleResolution": "node",
     "importHelpers": true,
-    "target": "es5",
+    "target": "ES2022",
+    "module": "es2020",
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "typeRoots": [
       "node_modules/@types",
-      "src/typings/rawloader.typings.d.ts",
-      "src/typings/jquery.typings.d.ts"
+      "src/typings"
     ],
     "paths": {
-      "@app/*": ["src/app/*"],
+      "@app/*": [
+        "src/app/*"
+      ],
       "@env/*": [
         "src/environments/*"
       ],
-      "@core/*": ["src/app/core/*"],
-      "@modules/*": ["src/app/modules/*"],
-      "@shared/*": ["src/app/shared/*"],
-      "@home/*": ["src/app/modules/home/*"],
+      "@core/*": [
+        "src/app/core/*"
+      ],
+      "@modules/*": [
+        "src/app/modules/*"
+      ],
+      "@shared/*": [
+        "src/app/shared/*"
+      ],
+      "@home/*": [
+        "src/app/modules/home/*"
+      ],
       "jszip": [
         "node_modules/jszip/dist/jszip.min.js"
       ],
@@ -40,14 +51,23 @@
       "jquery.terminal": [
         "node_modules/jquery.terminal/js/jquery.terminal.js"
       ],
+      "tooltipster": [
+        "node_modules/tooltipster/dist/js/tooltipster.bundle.min.js"
+      ],
       "jstree": [
         "node_modules/jstree/dist/jstree.min.js"
       ]
     },
     "lib": [
-      "es2018",
-      "es2019",
+      "es2020",
       "dom"
-    ]
+    ],
+    "useDefineForClassFields": false
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": false
   }
 }

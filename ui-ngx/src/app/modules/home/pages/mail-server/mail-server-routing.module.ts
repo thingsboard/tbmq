@@ -34,6 +34,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
+        children: [],
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {
@@ -50,8 +51,7 @@ const routes: Routes = [
           title: 'admin.outgoing-mail-settings',
           breadcrumb: {
             label: 'admin.outgoing-mail',
-            icon: 'mdi:email',
-            isMdiIcon: true
+            icon: 'mdi:email'
           }
         }
       }

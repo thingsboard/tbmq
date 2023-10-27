@@ -20,6 +20,17 @@ import { FooterComponent } from '@shared/components/footer.component';
 import { LogoComponent } from '@shared/components/logo.component';
 import { TbSnackBarComponent, ToastDirective } from '@shared/components/toast.directive';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
+import {
+  TbBreakPointsProvider,
+  MdLgLayoutDirective,
+  MdLgLayoutAlignDirective,
+  MdLgLayoutGapDirective,
+  MdLgShowHideDirective,
+  GtMdLgLayoutDirective,
+  GtMdLgLayoutAlignDirective,
+  GtMdLgLayoutGapDirective,
+  GtMdLgShowHideDirective, LtXmdShowHideDirective
+} from '@shared/layout/layout.directives';
 
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -66,7 +77,6 @@ import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
-import { MatChipDraggableDirective } from '@shared/components/mat-chip-draggable.directive';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { DndModule } from 'ngx-drag-drop';
@@ -87,15 +97,29 @@ import { BooleanPipe } from '@shared/pipe/boolean.pipe';
 import { markedOptionsFactory } from '@shared/components/markdown.factory';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
+import { DateAgoPipe, SelectableColumnsPipe, TruncatePipe } from './pipe/public-api';
+import { TbIconComponent } from './components/icon.component';
+import { SafePipe } from '@shared/pipe/safe.pipe';
+import { ShortNumberPipe } from '@shared/pipe/short-number.pipe';
+import { TbJsonPipe } from '@shared/pipe/tbJson.pipe';
+import { EntitySubTypeListComponent } from "@shared/components/entity/entity-subtype-list.component";
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 
 @NgModule({
   providers: [
     DatePipe,
+    SafePipe,
+    ShortNumberPipe,
+    TbJsonPipe,
+    TruncatePipe,
     MillisecondsToTimeStringPipe,
     {
       provide: MAT_DATE_LOCALE,
       useValue: 'en-GB'
-    }
+    },
+    TbBreakPointsProvider
   ],
   declarations: [
     FooterComponent,
@@ -103,8 +127,14 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    MatChipDraggableDirective,
+    TbIconComponent,
+    SafePipe,
     TbAnchorComponent,
+    SelectableColumnsPipe,
+    DateAgoPipe,
+    ShortNumberPipe,
+    TbJsonPipe,
+    TruncatePipe,
     HelpComponent,
     TbCheckboxComponent,
     TbSnackBarComponent,
@@ -127,13 +157,27 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
-    QuickTimeIntervalComponent
+    QuickTimeIntervalComponent,
+    EntitySubTypeListComponent,
+    ToggleHeaderComponent,
+    ToggleSelectComponent,
+    ToggleOption,
+    MdLgLayoutDirective,
+    MdLgLayoutAlignDirective,
+    MdLgLayoutGapDirective,
+    MdLgShowHideDirective,
+    GtMdLgLayoutDirective,
+    GtMdLgLayoutAlignDirective,
+    GtMdLgLayoutGapDirective,
+    GtMdLgShowHideDirective,
+    LtXmdShowHideDirective
   ],
   imports: [
     CommonModule,
     RouterModule,
     TranslateModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
     MatCardModule,
@@ -186,7 +230,13 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     FooterFabButtonsComponent,
     ToastDirective,
     FullscreenDirective,
-    MatChipDraggableDirective,
+    SelectableColumnsPipe,
+    DateAgoPipe,
+    TbIconComponent,
+    ShortNumberPipe,
+    SafePipe,
+    TbJsonPipe,
+    TruncatePipe,
     TbAnchorComponent,
     HelpComponent,
     TbCheckboxComponent,
@@ -194,6 +244,7 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     BreadcrumbComponent,
     UserMenuComponent,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCheckboxModule,
     MatIconModule,
     MatCardModule,
@@ -249,7 +300,20 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,
-    BooleanPipe
+    BooleanPipe,
+    EntitySubTypeListComponent,
+    ToggleHeaderComponent,
+    ToggleSelectComponent,
+    ToggleOption,
+    MdLgLayoutDirective,
+    MdLgLayoutAlignDirective,
+    MdLgLayoutGapDirective,
+    MdLgShowHideDirective,
+    GtMdLgLayoutDirective,
+    GtMdLgLayoutAlignDirective,
+    GtMdLgLayoutGapDirective,
+    GtMdLgShowHideDirective,
+    LtXmdShowHideDirective
   ]
 })
 export class SharedModule { }

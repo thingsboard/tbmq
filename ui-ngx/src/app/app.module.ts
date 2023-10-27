@@ -27,8 +27,7 @@ import { AppComponent } from './app.component';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  {
-    path: '**',
+  { path: '**',
     redirectTo: 'home'
   }
 ];
@@ -38,8 +37,8 @@ const routes: Routes = [
     RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class PageNotFoundRoutingModule {
-}
+export class PageNotFoundRoutingModule { }
+
 
 @NgModule({
   declarations: [
@@ -54,7 +53,7 @@ export class PageNotFoundRoutingModule {
     HomeModule,
     PageNotFoundRoutingModule
   ],
+  providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule {
-}
+export class AppModule { }

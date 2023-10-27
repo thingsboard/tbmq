@@ -26,7 +26,7 @@
     <artifactId>ui-ngx</artifactId>
     <packaging>jar</packaging>
 
-    <name>Thingsboard MQTT Broker Server UI</name>
+    <name>TBMQ Server UI</name>
     <url>https://thingsboard.io</url>
 
     <properties>
@@ -55,8 +55,8 @@
                             <goal>install-node-and-yarn</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v12.16.1</nodeVersion>
-                            <yarnVersion>v1.22.4</yarnVersion>
+                            <nodeVersion>v16.15.1</nodeVersion>
+                            <yarnVersion>v1.22.17</yarnVersion>
                         </configuration>
                     </execution>
                     <execution>

@@ -19,8 +19,8 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AdminSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UserSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
 import { MailServerService } from '@core/http/mail-server.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
@@ -36,20 +36,20 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class MailServerComponent extends PageComponent implements OnInit, OnDestroy, HasConfirmForm {
 
-  mailSettings: FormGroup;
-  adminSettings: AdminSettings<MailServerSettings>;
+  mailSettings: UntypedFormGroup;
+  adminSettings: UserSettings<MailServerSettings>;
   smtpProtocols = ['smtp', 'smtps'];
   showChangePassword = false;
 
   tlsVersions = ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];
 
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               private router: Router,
               private adminService: MailServerService,
               private translate: TranslateService,
-              public fb: FormBuilder) {
+              public fb: UntypedFormBuilder) {
     super(store);
   }
 
@@ -61,7 +61,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
 
   ngOnInit() {
     this.buildMailServerSettingsForm();
-    this.adminService.getAdminSettings<MailServerSettings>('mail').subscribe(
+    this.adminService.getUserSettings<MailServerSettings>('mail').subscribe(
       (adminSettings) => {
         this.adminSettings = adminSettings;
         if (this.adminSettings.jsonValue && isString(this.adminSettings.jsonValue.enableTls)) {
@@ -78,7 +78,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
   }
 
   ngOnDestroy() {
-    this.destroy$.next();
+    // this.destroy$.next();
     this.destroy$.complete();
     super.ngOnDestroy();
   }
@@ -154,7 +154,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
 
   save(): void {
     this.adminSettings.jsonValue = {...this.adminSettings.jsonValue, ...this.mailSettingsFormValue};
-    this.adminService.saveAdminSettings(this.adminSettings).subscribe(
+    this.adminService.saveUserSettings(this.adminSettings).subscribe(
       (adminSettings) => {
         this.adminSettings = adminSettings;
         this.showChangePassword = true;
@@ -163,7 +163,7 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
     );
   }
 
-  confirmForm(): FormGroup {
+  confirmForm(): UntypedFormGroup {
     return this.mailSettings;
   }
 }
