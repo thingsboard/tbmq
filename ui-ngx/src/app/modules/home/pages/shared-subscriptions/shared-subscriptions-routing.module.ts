@@ -50,7 +50,7 @@ const routes: Routes = [
           auth: [Authority.SYS_ADMIN],
           title: 'shared-subscription.application-shared-subscriptions',
           breadcrumb: {
-            label: 'shared-subscription.manage',
+            label: 'shared-subscription.management',
             icon: 'lan'
           }
         }

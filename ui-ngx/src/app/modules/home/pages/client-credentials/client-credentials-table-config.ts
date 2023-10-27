@@ -183,6 +183,9 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
   }
 
   private clientCredentialsWizard($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
     this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<BaseData>,
       ClientCredentials>(ClientCredentialsWizardDialogComponent, {
       disableClose: true,
@@ -191,17 +194,32 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       (res) => {
         if (res) {
           this.updateData();
-          /*this.store.pipe(select(selectUserSettingsProperty( 'notDisplayConnectivityAfterAddDevice'))).pipe(
+          /*this.store.pipe(select(selectUserSettingsProperty( 'notDisplayCheckAfterAddCredentials'))).pipe(
             take(1)
           ).subscribe((settings: boolean) => {
             if(!settings) {
-              this.checkConnectivity(null, res.id, true);
-            } else {
-              this.config.updateData();
+              this.checkCredentials(null, res, true);
             }
           });*/
         }
       }
     );
+  }
+
+  checkCredentials($event: Event, credentials: ClientCredentials, afterAdd = false) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    /*this.dialog.open<CheckCredentialsDialogComponent, CheckCredentialsDialogData>
+    (CheckCredentialsDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        deviceId,
+        afterAdd
+      }
+    })
+      .afterClosed()
+      .subscribe();*/
   }
 }

@@ -46,7 +46,7 @@ export class SharedSubscriptionsManageTableConfig extends EntityTableConfig<Shar
     this.detailsPanelEnabled = false;
     this.entityTranslations = entityTypeTranslations.get(EntityType.SHARED_SUBSCRIPTION);
     this.entityResources = entityTypeResources.get(EntityType.SHARED_SUBSCRIPTION);
-    this.tableTitle = this.translate.instant('shared-subscription.manage');
+    this.tableTitle = this.translate.instant('shared-subscription.management');
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
     this.deleteEnabled = () => false;
