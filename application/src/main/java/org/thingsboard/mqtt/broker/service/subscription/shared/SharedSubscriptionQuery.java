@@ -15,24 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+@Data
+@Builder
+@AllArgsConstructor
+public class SharedSubscriptionQuery {
 
-public interface SharedSubscriptionCacheService {
-
-    void put(String clientId, Collection<TopicSubscription> topicSubscriptions);
-
-    void remove(String clientId, TopicSubscription topicSubscription);
-
-    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscriptions);
-
-    boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
-
-    boolean sharedSubscriptionsInitialized();
-
-    Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions();
+    private PageLink pageLink;
+    private String shareNameSearch;
+    private String clientIdSearch;
 
 }

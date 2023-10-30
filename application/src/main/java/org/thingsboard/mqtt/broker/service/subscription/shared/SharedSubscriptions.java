@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,4 +41,12 @@ public class SharedSubscriptions {
     public boolean isEmpty() {
         return CollectionUtils.isEmpty(applicationSubscriptions) && CollectionUtils.isEmpty(deviceSubscriptions);
     }
+
+    public List<Subscription> getAllSubscriptions() {
+        List<Subscription> result = new ArrayList<>(applicationSubscriptions.size() + deviceSubscriptions.size());
+        result.addAll(applicationSubscriptions);
+        result.addAll(deviceSubscriptions);
+        return result;
+    }
+
 }

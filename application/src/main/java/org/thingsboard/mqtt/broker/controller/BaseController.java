@@ -45,6 +45,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -68,6 +69,8 @@ public abstract class BaseController {
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
     protected TbQueueAdmin tbQueueAdmin;
+    @Autowired
+    protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
