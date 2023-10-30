@@ -99,11 +99,11 @@ public class TimeseriesMonthsIntegrationTestCase extends AbstractPubSubIntegrati
         long ts1 = System.currentTimeMillis();
         long ts2 = System.currentTimeMillis() - TTL_1_MONTH_MS - ONE_HOUR_MS;
         long ts3 = System.currentTimeMillis() - TTL_1_MONTH_MS * 2 - ONE_HOUR_MS;
-        long ts4 = System.currentTimeMillis() - TTL_1_MONTH_MS * 3;
-        long ts5 = System.currentTimeMillis() - TTL_1_MONTH_MS * 4;
-        long ts6 = System.currentTimeMillis() - TTL_1_MONTH_MS * 5;
-        long ts7 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
-        long ts8 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
+        long ts4 = System.currentTimeMillis() - TTL_1_MONTH_MS * 4;
+        long ts5 = System.currentTimeMillis() - TTL_1_MONTH_MS * 6;
+        long ts6 = System.currentTimeMillis() - TTL_1_MONTH_MS * 8;
+        long ts7 = System.currentTimeMillis() - TTL_1_MONTH_MS * 10;
+        long ts8 = System.currentTimeMillis() - TTL_1_MONTH_MS * 10;
 
         String entityId = RandomStringUtils.randomAlphabetic(10);
         List<TsKvEntry> kvEntries = List.of(
