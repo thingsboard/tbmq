@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 @Getter
@@ -37,6 +38,10 @@ public class Subscription {
         this(topicFilter, qos, clientSessionInfo, null, SubscriptionOptions.newInstance());
     }
 
+    public Subscription(String topicFilter, ClientSessionInfo clientSessionInfo, String shareName) {
+        this(topicFilter, 0, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
+    }
+
     public static Subscription newInstance(String topicFilter, int qos, ClientSession clientSession) {
         return new Subscription(topicFilter, qos, ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession));
     }
@@ -48,4 +53,13 @@ public class Subscription {
     public String getServiceId() {
         return clientSessionInfo.getServiceId();
     }
+
+    public ClientType getClientType() {
+        return clientSessionInfo.getType();
+    }
+
+    public boolean isConnected() {
+        return clientSessionInfo.isConnected();
+    }
+
 }

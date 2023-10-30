@@ -15,24 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+public interface SharedSubscriptionPaginationService {
 
-public interface SharedSubscriptionCacheService {
-
-    void put(String clientId, Collection<TopicSubscription> topicSubscriptions);
-
-    void remove(String clientId, TopicSubscription topicSubscription);
-
-    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscriptions);
-
-    boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
-
-    boolean sharedSubscriptionsInitialized();
-
-    Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions();
+    PageData<SharedSubscriptionDto> getSharedSubscriptions(SharedSubscriptionQuery sharedSubscriptionQuery);
 
 }

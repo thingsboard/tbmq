@@ -25,12 +25,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionDto;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionQuery;
 
 import java.util.List;
 import java.util.Set;
@@ -89,6 +93,26 @@ public class SubscriptionController extends BaseController {
     public Set<TopicSubscription> getClientSubscriptions(@RequestParam String clientId) throws ThingsboardException {
         try {
             return checkNotNull(clientSubscriptionCache.getClientSubscriptions(clientId));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<SharedSubscriptionDto> getSharedSubscriptions(@RequestParam int pageSize,
+                                                                  @RequestParam int page,
+                                                                  @RequestParam(required = false) String textSearch,
+                                                                  @RequestParam(required = false) String sortProperty,
+                                                                  @RequestParam(required = false) String sortOrder,
+                                                                  @RequestParam(required = false) String shareNameSearch,
+                                                                  @RequestParam(required = false) String clientIdSearch) throws ThingsboardException {
+        try {
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(sharedSubscriptionPaginationService.getSharedSubscriptions(
+                    new SharedSubscriptionQuery(pageLink, shareNameSearch, clientIdSearch)
+            ));
         } catch (Exception e) {
             throw handleException(e);
         }

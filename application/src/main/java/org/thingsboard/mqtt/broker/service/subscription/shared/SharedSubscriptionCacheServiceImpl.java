@@ -29,7 +29,9 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,6 +170,11 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     @Override
     public boolean sharedSubscriptionsInitialized() {
         return !sharedSubscriptionsMap.isEmpty();
+    }
+
+    @Override
+    public Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions() {
+        return new HashMap<>(sharedSubscriptionsMap);
     }
 
     private Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {
