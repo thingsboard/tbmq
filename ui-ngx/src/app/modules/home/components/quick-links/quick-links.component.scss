@@ -22,7 +22,7 @@
     grid-column-gap: 4px;
     grid-row-gap: 0.5em;
 
-    @media #{$mat-gt-xl} {
+    @media screen and (min-width: 2000px) {
       grid-template-columns: repeat(1, 1fr);
     }
   }
