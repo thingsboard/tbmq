@@ -114,6 +114,17 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/consumer-group", method = RequestMethod.DELETE)
+    @ApiOperation(value = "Delete Kafka Consumer Group", hidden = true)
+    public void deleteKafkaConsumerGroup(@RequestParam String groupId) throws ThingsboardException {
+        try {
+            tbQueueAdmin.deleteConsumerGroup(groupId);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/config", method = RequestMethod.GET)
     @ResponseBody
     public HomePageConfigDto getBrokerConfig() throws ThingsboardException {

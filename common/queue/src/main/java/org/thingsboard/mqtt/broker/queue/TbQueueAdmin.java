@@ -36,6 +36,8 @@ public interface TbQueueAdmin {
 
     void deleteConsumerGroups(Collection<String> consumerGroups);
 
+    void deleteConsumerGroup(String groupId);
+
     int getNumberOfPartitions(String topic);
 
     PageData<KafkaBroker> getClusterInfo();
