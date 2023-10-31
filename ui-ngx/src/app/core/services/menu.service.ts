@@ -147,13 +147,13 @@ export class MenuService {
             path: '/kafka/consumer-groups',
             icon: 'filter_alt'
           },
-          {
+/*          {
             id: 'kafka_brokers',
             name: 'kafka.brokers-title',
             type: 'link',
             path: '/kafka/brokers',
             icon: 'mdi:server'
-          }
+          }*/
         ]
       },
       {

@@ -22,7 +22,7 @@ import {
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
-  GroupActionDescriptor
+  GroupActionDescriptor, cellWithBackground
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -95,10 +95,14 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const color = clientTypeColor.get(clientType);
         return cellWithIcon(clientTypeTranslation, icon, color);
       }),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%'),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
+        (entity) => cellWithBackground(entity.clientId)),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
+        (entity) => cellWithBackground(entity.clientIpAdr)),
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
+        (entity) => cellWithBackground(entity.subscriptionsCount)),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
+        (entity) => cellWithBackground(entity.nodeId)),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))
@@ -171,7 +175,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
   configureCellActions(): Array<CellActionDescriptor<DetailedClientSessionInfo>> {
     const actions: Array<CellActionDescriptor<DetailedClientSessionInfo>> = [];
-    actions.push(
+    /*actions.push(
       {
         name: this.translate.instant('mqtt-client-session.disconnect-client-sessions'),
         icon: 'mdi:link-off',
@@ -184,7 +188,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         isEnabled: (entity) => (entity.connectionState === ConnectionState.DISCONNECTED),
         onAction: ($event, entity) => this.removeClientSession($event, entity)
       }
-    );
+    );*/
     return actions;
   }
 
