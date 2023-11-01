@@ -20,9 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 public class SharedSubscriptionPaginationServiceImpl implements SharedSubscriptionPaginationService {
 
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    private final ClientSessionCache clientSessionCache;
 
     @Override
     public PageData<SharedSubscriptionDto> getSharedSubscriptions(SharedSubscriptionQuery sharedSubscriptionQuery) {
@@ -113,7 +116,8 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
     }
 
     private ClientSessionState getClientSessionState(Subscription subscription) {
-        return new ClientSessionState(subscription.getClientId(), subscription.getClientType(), subscription.isConnected());
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(subscription.getClientId());
+        return new ClientSessionState(clientSessionInfo.getClientId(), clientSessionInfo.getType(), clientSessionInfo.isConnected());
     }
 
     private Comparator<? super SharedSubscriptionDto> sorted(PageLink pageLink) {

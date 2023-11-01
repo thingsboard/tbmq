@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 import java.util.Map;
@@ -45,17 +46,19 @@ import static org.mockito.Mockito.when;
 public class SharedSubscriptionPaginationServiceImplTest {
 
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    ClientSessionCache clientSessionCache;
     SharedSubscriptionPaginationServiceImpl sharedSubscriptionPaginationService;
 
     @Before
     public void setUp() throws Exception {
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
-        sharedSubscriptionPaginationService = spy(new SharedSubscriptionPaginationServiceImpl(sharedSubscriptionCacheService));
+        clientSessionCache = mock(ClientSessionCache.class);
+        sharedSubscriptionPaginationService = spy(new SharedSubscriptionPaginationServiceImpl(sharedSubscriptionCacheService, clientSessionCache));
     }
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(sharedSubscriptionCacheService);
+        Mockito.reset(sharedSubscriptionCacheService, clientSessionCache);
     }
 
     @Test
@@ -75,18 +78,21 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithTextSearch_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("another/topic/filter", "g1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, true), "g1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("c2", ClientType.APPLICATION, true), "g1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "g1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "g1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(100, 0, "another");
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -132,22 +138,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithSmallerPageSize_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client", ClientType.DEVICE, true), "group"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client"), "group"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "g1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, true), "g1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("c2", ClientType.APPLICATION, true), "g1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "g1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "g1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(2, 0);
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -162,22 +172,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithSortOrderByTopicFilter_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client", ClientType.DEVICE, true), "group"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client"), "group"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "g1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, true), "g1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("c2", ClientType.APPLICATION, true), "g1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "g1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "g1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("topicFilter", SortOrder.Direction.ASC));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -195,22 +209,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithSortOrderByShareName_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client", ClientType.DEVICE, true), "group"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client"), "group"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "g1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, true), "g1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("c2", ClientType.APPLICATION, true), "g1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "g1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "g1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("shareName", SortOrder.Direction.DESC));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -228,22 +246,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithShareNameSearch_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group1"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client", ClientType.DEVICE, true), "group1"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("client"), "group1"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "p1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, true), "p1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("c2", ClientType.APPLICATION, true), "p1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "p1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "p1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("shareName"));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink, "p1", null));
@@ -265,22 +287,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithClientIdSearch_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group1"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("clientTest", ClientType.DEVICE, true), "group1"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("clientTest"), "group1"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "p1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, false), "p1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("test", ClientType.APPLICATION, false), "p1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "p1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("test"), "p1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("clientTest")).thenReturn(getClientSessionInfo("clientTest", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, false));
+        when(clientSessionCache.getClientSessionInfo("test")).thenReturn(getClientSessionInfo("test", ClientType.APPLICATION, false));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("shareName"));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink, null, "test"));
@@ -332,22 +358,26 @@ public class SharedSubscriptionPaginationServiceImplTest {
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithSpecifiedAllFilters_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(
-                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0", ClientType.APPLICATION, true), "s1")),
+                        Set.of(new Subscription("test/topic/filter", getClientSessionInfo("c0"), "s1")),
                         Set.of()
                 ),
                 new TopicSharedSubscription("one/two/three", "group1"), new SharedSubscriptions(
                         Set.of(),
-                        Set.of(new Subscription("one/two/three", getClientSessionInfo("clientTest", ClientType.DEVICE, true), "group1"))
+                        Set.of(new Subscription("one/two/three", getClientSessionInfo("clientTest"), "group1"))
                 ),
                 new TopicSharedSubscription("another/topic/filter", "p1"), new SharedSubscriptions(
                         Set.of(
-                                new Subscription("another/topic/filter", getClientSessionInfo("c1", ClientType.APPLICATION, false), "p1"),
-                                new Subscription("another/topic/filter", getClientSessionInfo("test", ClientType.APPLICATION, false), "p1")
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "p1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("test"), "p1")
                         ),
                         Set.of()
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("clientTest")).thenReturn(getClientSessionInfo("clientTest", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, false));
+        when(clientSessionCache.getClientSessionInfo("test")).thenReturn(getClientSessionInfo("test", ClientType.APPLICATION, false));
 
         PageLink pageLink = new PageLink(3, 0, "/filter", new SortOrder("shareName", SortOrder.Direction.DESC));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink, "1", "test"));
@@ -366,6 +396,11 @@ public class SharedSubscriptionPaginationServiceImplTest {
     @NotNull
     private ClientSessionInfo getClientSessionInfo(String clientId, ClientType clientType, boolean connected) {
         return ClientSessionInfo.builder().clientId(clientId).type(clientType).connected(connected).build();
+    }
+
+    @NotNull
+    private ClientSessionInfo getClientSessionInfo(String clientId) {
+        return ClientSessionInfo.builder().clientId(clientId).build();
     }
 
     @NotNull
