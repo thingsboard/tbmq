@@ -113,7 +113,7 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         nameStartsWith: 'shared-subscription.shared-subscription-name-starts-with',
         details: 'shared-subscription.shared-subscription-details',
         add: 'shared-subscription.add',
-        noEntities: 'shared-subscription.no-shared-subscription-text',
+        noEntities: 'shared-subscription.no-shared-subscription-group-text',
         search: 'shared-subscription.search',
         selectedEntities: 'shared-subscription.selected-shared-subscriptions'
       }

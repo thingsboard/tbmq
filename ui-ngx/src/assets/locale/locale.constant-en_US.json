@@ -477,6 +477,7 @@
     "shared-subscription-name-starts-with": "Application Shared Subscriptions whose names start with '{{prefix}}'",
     "shared-subscription-details": "Application Shared Subscription details",
     "no-shared-subscription-text": "No Application Shared Subscriptions found",
+    "no-shared-subscription-group-text": "No Shared Subscription Groups found",
     "search": "Search by Topic Filter",
     "search-by-name": "Search by Name",
     "selected-shared-subscriptions": "{ count, plural, =1 {1 Application Shared Subscription} other {# Application Shared Subscriptions} } selected",
