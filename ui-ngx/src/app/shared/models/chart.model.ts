@@ -96,7 +96,7 @@ const lineChartParams = {
       afterEvent: (chart, evt) => {
         const {chartArea: {top, bottom}} = chart;
         const {event: {x, y}} = evt;
-        if (y < top || y > bottom || x < 20) {
+        if (y < top || y > bottom || x < 40) {
           chart.corsair = {x, y, draw: false};
           chart.draw();
           return;
@@ -148,9 +148,6 @@ const lineChartParams = {
         ticks: {
           align: 'start',
           maxRotation: 0,
-          font: {
-            size: 9
-          },
           autoSkip: true,
           autoSkipPadding: 6
         },
@@ -168,12 +165,10 @@ const lineChartParams = {
           maxRotation: 0,
           labelOffset: 0,
           autoSkip: true,
-          font: {
-            size: 9
-          },
           callback(label, index) {
             if (Math.floor(label) === label) {
-              return label;
+              const formatter = Intl.NumberFormat('en', { notation: 'compact'});
+              return formatter.format(label);
             }
           }
         }
@@ -284,6 +279,22 @@ function getParams(type) {
           fontStyle: 'normal',
           fontColor: '#000000',
           fontSize: 12
+        },
+        scales: {
+          x: {
+            ticks: {
+              font: {
+                size: 9
+              }
+            }
+          },
+          y: {
+            ticks: {
+              font: {
+                size: 9
+              }
+            }
+          }
         },
         plugins: {
           legend: {

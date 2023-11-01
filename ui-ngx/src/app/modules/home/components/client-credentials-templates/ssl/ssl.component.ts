@@ -110,4 +110,10 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
     this.propagateChange(formValue);
   }
 
+  copyText(key: string): string {
+    if (this.entity?.credentialsValue) {
+      const credentialsValue = JSON.parse(this.entity.credentialsValue);
+      return credentialsValue[key] || ' ';
+    }
+  }
 }

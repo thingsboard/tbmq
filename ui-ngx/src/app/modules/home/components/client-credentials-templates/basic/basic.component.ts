@@ -248,4 +248,11 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
       return hasAtLeastOne ? null : {atLeastOne: true};
     };
   }
+
+  copyText(key: string): string {
+    if (this.entity?.credentialsValue) {
+      const credentialsValue = JSON.parse(this.entity.credentialsValue);
+      return credentialsValue[key] || ' ';
+    }
+  }
 }
