@@ -44,6 +44,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCacheService {
 
+    // TODO: 01.11.23 improve data persistence - probably only clientId is needed in the map since later the current session state is fetched
+
     private final ClientSessionCache clientSessionCache;
     @Getter
     private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptions> sharedSubscriptionsMap = new ConcurrentHashMap<>();
