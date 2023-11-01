@@ -16,13 +16,11 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { SharedSubscription, SharedSubscriptionManage } from '@shared/models/shared-subscription.model';
-import { ClientType } from "@shared/models/client.model";
-import { ConnectionState } from "@shared/models/session.model";
+import { SharedSubscription, SharedSubscriptionGroup, SharedSubscriptionQuery } from '@shared/models/shared-subscription.model';
 
 @Injectable({
   providedIn: 'root'
@@ -48,39 +46,7 @@ export class SharedSubscriptionService {
     return this.http.delete<void>(`/api/app/shared/subs/${sharedSubscriptionId}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getSharedSubscriptionsManage(pageLink: PageLink, config?: RequestConfig): Observable<PageData<SharedSubscriptionManage>> {
-    // return of(emptyPageData<SharedSubscriptionManage>());
-    // @ts-ignore
-    return of({
-      data: [{
-        shareName: 'shareName1',
-        topicFilter: 'filter1',
-        clientSessionInfo: [
-          {
-            clientId: 'tb_mqtt_demo',
-            clientType: ClientType.DEVICE,
-            connectionState: ConnectionState.CONNECTED
-          },
-          {
-            clientId: 'tb_mqtt_demo_2',
-            clientType: ClientType.DEVICE,
-            connectionState: ConnectionState.DISCONNECTED
-          },
-          {
-            clientId: 'tb_mqtt_demo_3',
-            clientType: ClientType.APPLICATION,
-            connectionState: ConnectionState.DISCONNECTED
-          },
-          {
-            clientId: 'fake',
-            clientType: ClientType.APPLICATION,
-            connectionState: ConnectionState.CONNECTED
-          }
-        ]
-      }],
-      hasNext: false,
-      totalElements: 2,
-      totalPages: 1
-    })
+  public getSharedSubscriptionsV2(query: SharedSubscriptionQuery, config?: RequestConfig): Observable<PageData<SharedSubscriptionGroup>> {
+    return this.http.get<PageData<SharedSubscriptionGroup>>(`/api/subscription${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 }

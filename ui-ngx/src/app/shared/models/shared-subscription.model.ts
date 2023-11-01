@@ -15,7 +15,14 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { DetailedClientSessionInfo } from "@shared/models/session.model";
+import { ShortClientSessionInfo } from '@shared/models/session.model';
+import {
+  isDefinedAndNotNull,
+  isEmpty,
+  isEqualIgnoreUndefined, isNotEmptyStr,
+  isUndefinedOrNull
+} from '@core/utils';
+import { TimePageLink } from '@shared/models/page/page-link';
 
 export interface SharedSubscription extends BaseData {
   name: string;
@@ -23,8 +30,60 @@ export interface SharedSubscription extends BaseData {
   topicFilter: string;
 }
 
-export interface SharedSubscriptionManage extends BaseData {
+export interface SharedSubscriptionGroup extends BaseData {
   shareName: string;
   topicFilter: string;
-  clientSessionInfo: DetailedClientSessionInfo[];
+  clients: ShortClientSessionInfo[];
+}
+
+export interface SharedSubscriptionFilterConfig {
+  shareNameSearch?: string;
+  topicFilter?: string;
+  clientIdSearch?: string;
+}
+
+export const sharedSubscriptionFilterConfigEquals = (filter1?: SharedSubscriptionFilterConfig, filter2?: SharedSubscriptionFilterConfig): boolean => {
+  if (filter1 === filter2) {
+    return true;
+  }
+  if ((isUndefinedOrNull(filter1) || isEmpty(filter1)) && (isUndefinedOrNull(filter2) || isEmpty(filter2))) {
+    return true;
+  } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
+    if (!isEqualIgnoreUndefined(filter1.shareNameSearch, filter2.shareNameSearch)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.clientIdSearch, filter2.clientIdSearch)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
+
+export class SharedSubscriptionQuery {
+  pageLink: TimePageLink;
+
+  shareNameSearch: string;
+  clientIdSearch: string;
+  topicFilter: string;
+
+  constructor(pageLink: TimePageLink, filter: SharedSubscriptionFilterConfig) {
+    this.pageLink = pageLink;
+    this.shareNameSearch = filter?.shareNameSearch;
+    this.clientIdSearch = filter?.clientIdSearch;
+    if (isNotEmptyStr(filter?.topicFilter)) {
+      this.pageLink.textSearch = filter.topicFilter;
+    }
+  }
+
+  public toQuery(): string {
+    let query = this.pageLink.toQuery();
+    if (typeof this.shareNameSearch !== 'undefined' && this.shareNameSearch !== null) {
+      query += `&shareNameSearch=${this.shareNameSearch}`;
+    }
+    if (typeof this.clientIdSearch !== 'undefined' && this.clientIdSearch !== null) {
+      query += `&clientIdSearch=${this.clientIdSearch}`;
+    }
+    return query;
+  }
 }

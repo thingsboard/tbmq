@@ -22,7 +22,7 @@ import {
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
-  GroupActionDescriptor, cellWithBackground
+  GroupActionDescriptor, CellActionDescriptorType
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -40,7 +40,7 @@ import {
   SessionFilterConfig,
   SessionQuery
 } from '@shared/models/session.model';
-import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap, clientTypeValueColor } from '@shared/models/client.model';
 import { Direction } from '@shared/models/page/sort-order';
 import { DialogService } from '@core/services/dialog.service';
 import { SessionTableHeaderComponent } from '@home/pages/sessions/session-table-header.component';
@@ -93,16 +93,47 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
         const icon = clientTypeIcon.get(clientType);
         const color = clientTypeColor.get(clientType);
-        return cellWithIcon(clientTypeTranslation, icon, color);
+        const iconColor = clientTypeValueColor.get(clientType);
+        return cellWithIcon(clientTypeTranslation, icon, color, iconColor);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
-        (entity) => cellWithBackground(entity.clientId)),
+        undefined, () => ({'vertical-align': 'baseline'}),
+        true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '18px',
+            'line-height': '18px',
+            height: '18px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: (entity) => !!entity.clientId?.length,
+          onAction: ($event, entity) => entity.clientId,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }
+      ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
-        (entity) => cellWithBackground(entity.clientIpAdr)),
+        undefined, () => ({'vertical-align': 'baseline'}),
+        true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '18px',
+            'line-height': '18px',
+            height: '18px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: (entity) => !!entity.clientIpAdr?.length,
+          onAction: ($event, entity) => entity.clientIpAdr,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
-        (entity) => cellWithBackground(entity.subscriptionsCount)),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%',
-        (entity) => cellWithBackground(entity.nodeId)),
+        (entity) => entity.subscriptionsCount.toString()),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '160px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

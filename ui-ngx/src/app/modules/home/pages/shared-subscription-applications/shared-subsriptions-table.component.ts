@@ -17,18 +17,15 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
+import { DatePipe } from '@angular/common';
+import { SharedSubscriptionsTableConfig } from '@home/pages/shared-subscription-applications/shared-subscriptions-table-config';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
-import {
-  SharedSubscriptionsManageTableConfig
-} from "@home/pages/shared-subscriptions-manage/shared-subscriptions-manage-table-config";
-import { ClientSessionService } from "@core/http/client-session.service";
-import { MatDialog } from "@angular/material/dialog";
 
 @Component({
-  selector: 'tb-shared-subsriptions-manage-table',
-  templateUrl: './shared-subsriptions-manage-table.component.html'
+  selector: 'tb-shared-subsriptions-table',
+  templateUrl: './shared-subsriptions-table.component.html'
 })
-export class SharedSubsriptionsManageTableComponent implements OnInit {
+export class SharedSubsriptionsTableComponent implements OnInit {
 
   @Input()
   detailsMode: boolean;
@@ -62,22 +59,21 @@ export class SharedSubsriptionsManageTableComponent implements OnInit {
 
   @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
 
-  sharedSubscriptionsTableConfig: SharedSubscriptionsManageTableConfig;
+  sharedSubscriptionsTableConfig: SharedSubscriptionsTableConfig;
 
   constructor(private sharedSubscriptionService: SharedSubscriptionService,
               private translate: TranslateService,
-              private dialog: MatDialog,
-              private clientSessionService: ClientSessionService) {
+              private datePipe: DatePipe) {
   }
 
   ngOnInit(): void {
     this.dirtyValue = !this.activeValue;
-    this.sharedSubscriptionsTableConfig = new SharedSubscriptionsManageTableConfig(
+    this.sharedSubscriptionsTableConfig = new SharedSubscriptionsTableConfig(
       this.sharedSubscriptionService,
       this.translate,
-      this.dialog,
-      this.clientSessionService,
+      this.datePipe,
       this.entityIdValue
     );
   }
+
 }

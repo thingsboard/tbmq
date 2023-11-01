@@ -105,7 +105,7 @@ export class MenuService {
         pages: [
           {
             id: 'shared_subscriptions',
-            name: 'shared-subscription.management',
+            name: 'shared-subscription.groups',
             type: 'link',
             path: '/shared-subscriptions/manage',
             icon: 'lan'

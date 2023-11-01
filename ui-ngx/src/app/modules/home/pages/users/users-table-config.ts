@@ -15,6 +15,7 @@
 ///
 
 import {
+  CellActionDescriptorType,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -53,7 +54,23 @@ export class UserTableConfig extends EntityTableConfig<User> {
 
     this.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<User>('email', 'user.email', '25%'),
+      new EntityTableColumn<User>('email', 'user.email', '25%',
+        undefined, () => ({'vertical-align': 'baseline'}),
+        true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '18px',
+            'line-height': '18px',
+            height: '18px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: (entity) => !!entity.email?.length,
+          onAction: ($event, entity) => entity.email,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
       new EntityTableColumn<User>('authority', 'user.role', '25%',
         entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority)),
         undefined, false),

@@ -31,7 +31,8 @@ import { ClientCredentialsService } from '@core/http/client-credentials.service'
 import {
   clientTypeColor,
   clientTypeIcon,
-  clientTypeTranslationMap
+  clientTypeTranslationMap,
+  clientTypeValueColor
 } from '@shared/models/client.model';
 import {
   ClientCredentialsFilterConfig, ClientCredentialsQuery,
@@ -94,7 +95,8 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
         const icon = clientTypeIcon.get(clientType);
         const color = clientTypeColor.get(clientType);
-        return cellWithIcon(clientTypeTranslation, icon, color);
+        const iconColor = clientTypeValueColor.get(clientType);
+        return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       })
     );
 
@@ -136,7 +138,8 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
                   const icon = 'warning';
                   const backgroundColor = 'rgba(255,236,128,0)';
                   const iconColor = '#ff9a00';
-                  return cellWithIcon(value,  icon, backgroundColor, iconColor);
+                  const valueColor = 'inherit';
+                  return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
                 }
                 return '';
               }, () => null, false

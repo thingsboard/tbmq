@@ -15,6 +15,7 @@
 ///
 
 import {
+  CellActionDescriptorType,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -23,7 +24,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { SharedSubscription } from "@shared/models/shared-subscription.model";
-import { SharedSubscriptionComponent } from "@home/pages/shared-subscriptions/shared-subscription.component";
+import { SharedSubscriptionComponent } from "@home/pages/shared-subscription-applications/shared-subscription.component";
 import { SharedSubscriptionService } from "@core/http/shared-subscription.service";
 
 export class SharedSubscriptionsTableConfig extends EntityTableConfig<SharedSubscription> {
@@ -45,7 +46,23 @@ export class SharedSubscriptionsTableConfig extends EntityTableConfig<SharedSubs
     this.columns.push(
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '33%'),
-      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%'),
+      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%',
+        undefined, () => ({'vertical-align': 'baseline'}),
+        true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '18px',
+            'line-height': '18px',
+            height: '18px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: (entity) => !!entity.topicFilter?.length,
+          onAction: ($event, entity) => entity.topicFilter,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
       new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '33%')
     );
 

@@ -41,6 +41,13 @@ export interface DetailedClientSessionInfo extends BaseData {
   sessionEndTs: number;
   clientIpAdr: string;
   subscriptionsCount?: number;
+  connected?: boolean;
+}
+
+export interface ShortClientSessionInfo {
+  clientId: string;
+  clientType: ClientType;
+  connected?: boolean;
 }
 
 export interface TopicSubscription {

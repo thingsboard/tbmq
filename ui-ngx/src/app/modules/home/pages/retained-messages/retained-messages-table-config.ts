@@ -16,6 +16,7 @@
 
 import {
   CellActionDescriptor,
+  CellActionDescriptorType,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
@@ -75,7 +76,23 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
 
     this.columns.push(
       new DateEntityTableColumn<RetainedMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%'),
+      new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%',
+        undefined, () => ({'vertical-align': 'baseline'}),
+        true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '18px',
+            'line-height': '18px',
+            height: '18px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: (entity) => !!entity.topic?.length,
+          onAction: ($event, entity) => entity.topic,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
       new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', (entity) => {
         return entity.qos + ' - ' + this.translate.instant(QoSTranslationMap.get(entity.qos));
       })

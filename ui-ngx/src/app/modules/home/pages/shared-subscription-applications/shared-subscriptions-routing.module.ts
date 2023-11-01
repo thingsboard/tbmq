@@ -17,10 +17,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscriptions/shared-subsriptions-table.component';
+import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscription-applications/shared-subsriptions-table.component';
 import {
-  SharedSubsriptionsManageTableComponent
-} from "@home/pages/shared-subscriptions-manage/shared-subsriptions-manage-table.component";
+  SharedSubsriptionGroupsTableComponent
+} from "@home/pages/shared-subscription-groups/shared-subsription-groups-table.component";
 
 const routes: Routes = [
   {
@@ -45,12 +45,12 @@ const routes: Routes = [
       },
       {
         path: 'manage',
-        component: SharedSubsriptionsManageTableComponent,
+        component: SharedSubsriptionGroupsTableComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'shared-subscription.application-shared-subscriptions',
           breadcrumb: {
-            label: 'shared-subscription.management',
+            label: 'shared-subscription.groups',
             icon: 'lan'
           }
         }

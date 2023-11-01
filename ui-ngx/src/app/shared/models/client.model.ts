@@ -28,8 +28,15 @@ export const clientTypeTranslationMap = new Map<ClientType, string>(
 
 export const clientTypeColor = new Map<ClientType, string>(
   [
-    [ClientType.APPLICATION, 'rgba(1, 116, 242, 0.1)'],
-    [ClientType.DEVICE, 'rgba(111, 1, 242, 0.1)']
+    [ClientType.APPLICATION, '#f4ebf2'],
+    [ClientType.DEVICE, '#ebeef4']
+  ]
+);
+
+export const clientTypeValueColor = new Map<ClientType, string>(
+  [
+    [ClientType.APPLICATION, '#a75b96'],
+    [ClientType.DEVICE, '#002a6e']
   ]
 );
 

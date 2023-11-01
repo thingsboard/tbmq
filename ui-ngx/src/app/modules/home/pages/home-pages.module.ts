@@ -21,14 +21,14 @@ import { ProfileModule } from './profile/profile.module';
 import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
 import { SessionsModule } from '@home/pages/sessions/sessions.module';
 import { UsersModule } from '@home/pages/users/users.module';
-import { SharedSubscriptionsModule } from '@home/pages/shared-subscriptions/shared-subscriptions.module';
+import { SharedSubscriptionsModule } from '@home/pages/shared-subscription-applications/shared-subscriptions.module';
 import { HomeOverviewModule } from '@home/pages/home-overview/home-overview.module';
 import { RetainedMessagesModule } from '@home/pages/retained-messages/retained-messages.module';
 import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-management.module';
 import {
-  SharedSubscriptionsManageModule
-} from "@home/pages/shared-subscriptions-manage/shared-subscriptions-manage.module";
+  SharedSubscriptionGroupsModule
+} from "@home/pages/shared-subscription-groups/shared-subscription-groups.module";
 
 @NgModule({
   exports: [
@@ -38,7 +38,7 @@ import {
     SessionsModule,
     UsersModule,
     SharedSubscriptionsModule,
-    SharedSubscriptionsManageModule,
+    SharedSubscriptionGroupsModule,
     HomeOverviewModule,
     RetainedMessagesModule,
     MonitoringModule,
