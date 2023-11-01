@@ -478,7 +478,7 @@
     "shared-subscription-details": "Application Shared Subscription details",
     "no-shared-subscription-text": "No Application Shared Subscriptions found",
     "search": "Search by Topic Filter",
-    "selected-shared-subscriptions": "{ count, plural, =1 {1 Application shared subscription} other {# Application shared subscriptions} } selected",
+    "selected-shared-subscriptions": "{ count, plural, =1 {1 Application Shared Subscription} other {# Application Shared Subscriptions} } selected",
     "name": "Name",
     "name-required": "Name is required",
     "hint-application-shared-subscription-info": "Info",
