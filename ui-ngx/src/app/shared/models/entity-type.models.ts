@@ -21,6 +21,7 @@ export enum EntityType {
   MQTT_CLIENT_CREDENTIALS = 'MQTT_CLIENT_CREDENTIALS',
   MQTT_SESSION = 'MQTT_SESSION',
   SHARED_SUBSCRIPTION = 'SHARED_SUBSCRIPTION',
+  SHARED_SUBSCRIPTION_GROUP = 'SHARED_SUBSCRIPTION_GROUP',
   RETAINED_MESSAGE = 'RETAINED_MESSAGE',
   KAFKA_TOPIC = 'KAFKA_TOPIC',
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
@@ -91,6 +92,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
     ],
     [
       EntityType.SHARED_SUBSCRIPTION,
+      {
+        type: 'shared-subscription.type-shared-subscription',
+        typePlural: 'shared-subscription.type-shared-subscriptions',
+        list: 'shared-subscription.list-of-shared-subscriptions',
+        nameStartsWith: 'shared-subscription.shared-subscription-name-starts-with',
+        details: 'shared-subscription.shared-subscription-details',
+        add: 'shared-subscription.add',
+        noEntities: 'shared-subscription.no-shared-subscription-text',
+        search: 'shared-subscription.search-by-name',
+        selectedEntities: 'shared-subscription.selected-shared-subscriptions'
+      }
+    ],
+    [
+      EntityType.SHARED_SUBSCRIPTION_GROUP,
       {
         type: 'shared-subscription.type-shared-subscription',
         typePlural: 'shared-subscription.type-shared-subscriptions',
@@ -182,6 +197,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
     ],
     [
       EntityType.SHARED_SUBSCRIPTION,
+      {
+        helpLinkId: 'sharedSubscriptions'
+      }
+    ],
+    [
+      EntityType.SHARED_SUBSCRIPTION_GROUP,
       {
         helpLinkId: 'sharedSubscriptions'
       }

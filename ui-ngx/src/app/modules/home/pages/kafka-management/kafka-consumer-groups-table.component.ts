@@ -20,6 +20,7 @@ import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topi
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
+import { DialogService } from '@core/services/dialog.service';
 
 @Component({
   selector: 'tb-kafka-consumer-groups-table',
@@ -62,6 +63,7 @@ export class KafkaConsumerGroupsTableComponent implements OnInit {
   kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsTableConfig;
 
   constructor(private kafkaService: KafkaService,
+              private dialogService: DialogService,
               private translate: TranslateService) {
   }
 
@@ -70,6 +72,7 @@ export class KafkaConsumerGroupsTableComponent implements OnInit {
     this.kafkaConsumerGroupsTableConfig = new KafkaConsumerGroupsTableConfig(
       this.kafkaService,
       this.translate,
+      this.dialogService,
       this.entityIdValue
     );
   }

@@ -94,7 +94,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const icon = clientTypeIcon.get(clientType);
         const color = clientTypeColor.get(clientType);
         const iconColor = clientTypeValueColor.get(clientType);
-        return cellWithIcon(clientTypeTranslation, icon, color, iconColor);
+        return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
         undefined, () => ({'vertical-align': 'inherit'}),

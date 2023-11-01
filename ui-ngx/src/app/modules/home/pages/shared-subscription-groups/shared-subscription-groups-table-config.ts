@@ -52,11 +52,11 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
               public entityId: string = null) {
     super();
 
-    this.entityType = EntityType.SHARED_SUBSCRIPTION;
+    this.entityType = EntityType.SHARED_SUBSCRIPTION_GROUP;
     this.entityComponent = null;
     this.detailsPanelEnabled = false;
-    this.entityTranslations = entityTypeTranslations.get(EntityType.SHARED_SUBSCRIPTION);
-    this.entityResources = entityTypeResources.get(EntityType.SHARED_SUBSCRIPTION);
+    this.entityTranslations = entityTypeTranslations.get(EntityType.SHARED_SUBSCRIPTION_GROUP);
+    this.entityResources = entityTypeResources.get(EntityType.SHARED_SUBSCRIPTION_GROUP);
     this.tableTitle = this.translate.instant('shared-subscription.groups');
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;

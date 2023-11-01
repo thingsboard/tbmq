@@ -16,11 +16,12 @@
 
 import { Component, OnInit } from '@angular/core';
 import { KafkaTable, KafkaTableTranslationMap } from '@shared/models/kafka.model';
-import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
-import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
 import { HomePageTitleType } from "@shared/models/home-page.model";
+import { DialogService } from '@core/services/dialog.service';
+import { KafkaConsumerGroupsHomeTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-home-table-config';
+import { KafkaTopicsHomeTableConfig } from '@home/components/kafka-tables/kafka-topics-home-table-config';
 
 @Component({
   selector: 'tb-kafka-tables-tab-group',
@@ -29,18 +30,19 @@ import { HomePageTitleType } from "@shared/models/home-page.model";
 })
 export class KafkaTablesTabGroupComponent implements OnInit {
 
-  public kafkaTopicsTableConfig: KafkaTopicsTableConfig;
-  public kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsTableConfig;
+  public kafkaTopicsTableConfig: KafkaTopicsHomeTableConfig;
+  public kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsHomeTableConfig;
   public readonly KafkaTable = KafkaTable;
   public readonly kafkaTableTranslationMap = KafkaTableTranslationMap;
   public readonly homePageTitleType = HomePageTitleType;
 
   constructor(private kafkaService: KafkaService,
+              private dialogService: DialogService,
               private translate: TranslateService) {
   }
 
   ngOnInit() {
-    this.kafkaTopicsTableConfig = new KafkaTopicsTableConfig(this.kafkaService, this.translate);
-    this.kafkaConsumerGroupsTableConfig = new KafkaConsumerGroupsTableConfig(this.kafkaService, this.translate);
+    this.kafkaTopicsTableConfig = new KafkaTopicsHomeTableConfig(this.kafkaService, this.translate);
+    this.kafkaConsumerGroupsTableConfig = new KafkaConsumerGroupsHomeTableConfig(this.kafkaService, this.translate, this.dialogService,);
   }
 }
