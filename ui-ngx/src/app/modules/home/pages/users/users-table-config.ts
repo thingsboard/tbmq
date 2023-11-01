@@ -55,16 +55,16 @@ export class UserTableConfig extends EntityTableConfig<User> {
     this.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<User>('email', 'user.email', '25%',
-        undefined, () => ({'vertical-align': 'baseline'}),
+        undefined, () => ({'vertical-align': 'inherit'}),
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
           icon: 'content_copy',
           style: {
             padding: '0px',
-            'font-size': '18px',
-            'line-height': '18px',
-            height: '18px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
             color: 'rgba(0,0,0,.87)'
           },
           isEnabled: (entity) => !!entity.email?.length,

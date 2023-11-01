@@ -63,17 +63,14 @@
         text-overflow: ellipsis;
       }
 
-      .cell-copy {
+      .mat-cell-copy {
         visibility: hidden;
         transition: visibility 0.1s;
       }
 
-      .cell:hover {
-        .cell-copy:hover {
-          visibility: visible !important;
-        }
+      .mat-cell:hover .mat-cell-copy {
+        visibility: visible !important;
       }
-
     }
   }
 

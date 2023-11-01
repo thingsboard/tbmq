@@ -97,16 +97,17 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
-        undefined, () => ({'vertical-align': 'baseline'}),
+        undefined, () => ({'vertical-align': 'inherit'}),
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientId,
           icon: 'content_copy',
           style: {
             padding: '0px',
-            'font-size': '18px',
-            'line-height': '18px',
-            height: '18px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
             color: 'rgba(0,0,0,.87)'
           },
           isEnabled: (entity) => !!entity.clientId?.length,
@@ -115,16 +116,17 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         }
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
-        undefined, () => ({'vertical-align': 'baseline'}),
+        undefined, () => ({'vertical-align': 'inherit'}),
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientIpAdr,
           icon: 'content_copy',
           style: {
             padding: '0px',
-            'font-size': '18px',
-            'line-height': '18px',
-            height: '18px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
             color: 'rgba(0,0,0,.87)'
           },
           isEnabled: (entity) => !!entity.clientIpAdr?.length,

@@ -66,16 +66,17 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
 
     this.columns.push(
       new EntityTableColumn<SharedSubscriptionGroup>('shareName', 'shared-subscription.share-name', '25%',
-        undefined, () => ({'vertical-align': 'baseline'}),
+        undefined, () => ({'vertical-align': 'inherit'}),
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.shareName,
           icon: 'content_copy',
           style: {
             padding: '0px',
-            'font-size': '18px',
-            'line-height': '18px',
-            height: '18px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
             color: 'rgba(0,0,0,.87)'
           },
           isEnabled: (entity) => !!entity.shareName?.length,
@@ -83,16 +84,17 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
           type: CellActionDescriptorType.COPY_BUTTON
         }),
       new EntityTableColumn<SharedSubscriptionGroup>('topicFilter', 'shared-subscription.topic-filter', '25%',
-        undefined, () => ({'vertical-align': 'baseline'}),
+        undefined, () => ({'vertical-align': 'inherit'}),
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.topicFilter,
           icon: 'content_copy',
           style: {
             padding: '0px',
-            'font-size': '18px',
-            'line-height': '18px',
-            height: '18px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
             color: 'rgba(0,0,0,.87)'
           },
           isEnabled: (entity) => !!entity.topicFilter?.length,
