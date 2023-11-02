@@ -69,18 +69,11 @@ export class MenuService {
         icon: 'mdi:view-dashboard-outline'
       },
       {
-        id: 'monitoring',
-        name: 'monitoring.monitoring',
+        id: 'sessions',
+        name: 'mqtt-client-session.sessions',
         type: 'link',
-        path: '/monitoring',
-        icon: 'mdi:monitor-dashboard'
-      },
-      {
-        id: 'users',
-        name: 'user.users',
-        type: 'link',
-        path: '/users',
-        icon: 'mdi:account-multiple-outline'
+        path: '/sessions',
+        icon: 'mdi:book-multiple'
       },
       {
         id: 'client_credentials',
@@ -90,11 +83,11 @@ export class MenuService {
         icon: 'mdi:shield-lock'
       },
       {
-        id: 'sessions',
-        name: 'mqtt-client-session.sessions',
+        id: 'retained_messages',
+        name: 'retained-message.retained-messages',
         type: 'link',
-        path: '/sessions',
-        icon: 'mdi:book-multiple'
+        path: '/retained-messages',
+        icon: 'mdi:archive-outline'
       },
       {
         id: 'shared_subscriptions_management',
@@ -120,13 +113,6 @@ export class MenuService {
         ]
       },
       {
-        id: 'retained_messages',
-        name: 'retained-message.retained-messages',
-        type: 'link',
-        path: '/retained-messages',
-        icon: 'mdi:archive-outline'
-      },
-      {
         id: 'kafka_management',
         name: 'kafka.management',
         type: 'toggle',
@@ -147,14 +133,28 @@ export class MenuService {
             path: '/kafka/consumer-groups',
             icon: 'filter_alt'
           },
-/*          {
-            id: 'kafka_brokers',
-            name: 'kafka.brokers-title',
-            type: 'link',
-            path: '/kafka/brokers',
-            icon: 'mdi:server'
-          }*/
+          /*          {
+                      id: 'kafka_brokers',
+                      name: 'kafka.brokers-title',
+                      type: 'link',
+                      path: '/kafka/brokers',
+                      icon: 'mdi:server'
+                    }*/
         ]
+      },
+      {
+        id: 'monitoring',
+        name: 'monitoring.monitoring',
+        type: 'link',
+        path: '/monitoring',
+        icon: 'mdi:monitor-dashboard'
+      },
+      {
+        id: 'users',
+        name: 'user.users',
+        type: 'link',
+        path: '/users',
+        icon: 'mdi:account-multiple-outline'
       },
       {
         id: 'system_settings',
