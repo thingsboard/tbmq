@@ -76,7 +76,7 @@ helm repo update
 To install Kafka v3.5.1:
 
 ```
-helm install kafka -f kafka/values-kafka.yaml bitnami/kafka --version 25.3.3
+helm install kafka -f kafka/values-kafka.yml bitnami/kafka --version 25.3.3
 ```
 
 **Note**: it is recommended to execute Kafka installation after installing TBMQ DB (i.e. run `./k8s-install-tbmq.sh`).
