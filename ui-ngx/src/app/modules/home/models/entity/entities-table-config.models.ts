@@ -267,14 +267,15 @@ export const checkBoxCell = (value: boolean): string =>
   `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
 
 export const cellWithIcon = (value: string, icon: string, backgroundColor: string,
-                             iconColor: string = 'rgba(0,0,0,0.54)', valueColor?: string): string =>
-  `<section style="display: flex; gap: 6px; background: ${backgroundColor};
-                    border-radius: 16px; padding: 4px 8px; white-space: nowrap; width: fit-content;">
-      <span style="color: ${valueColor};">${value}</span>
-      <mat-icon class="material-icons mat-icon"
-                style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
-        ${icon}
-      </mat-icon>
+                             iconColor: string = 'rgba(0,0,0,0.54)', valueColor: string = 'inherit'): string =>
+  `<section style="background: ${backgroundColor}; border-radius: 16px; padding: 4px 8px; white-space: nowrap; width: fit-content;">
+    <span style="display: inline-flex; align-items: center; gap: 4px;">
+        <span style="color: ${valueColor};">${value}</span>
+        <mat-icon class="material-icons mat-icon"
+                  style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
+          ${icon}
+        </mat-icon>
+    </span>
   </section>`;
 
 export const cellWithBackground = (value: string | number, backgroundColor: string = 'rgba(111, 116, 242, 0.07)'): string =>

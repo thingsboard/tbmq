@@ -95,9 +95,11 @@
 }
 
 :host ::ng-deep {
-  .mat-mdc-icon-button.mat-mdc-button-base {
-    width: 46px;
-    height: 46px;
-    padding: 0;
+  .mat-cell-copy {
+    .mat-mdc-icon-button.mat-mdc-button-base {
+      width: 46px;
+      height: 46px;
+      padding: 0;
+    }
   }
 }
