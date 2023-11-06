@@ -436,6 +436,8 @@
     "session-id-copied-message": "Session ID has been copied to clipboard",
     "search": "Search by Client ID",
     "selected-sessions": "{ count, plural, =1 {1 Session} other {# Sessions} } selected",
+    "selected-sessions-are-connected": "Selected Sessions are connected. Please disconnect first to remove.",
+    "selected-sessions-are-disconnected": "Selected Sessions are disconnected.",
     "subscriptions": "Subscriptions",
     "subscriptions-short": "Subs",
     "subscriptions-count": "Subscriptions",
@@ -498,6 +500,7 @@
     "shared-subscriptions-management": "Shared subscriptions management",
     "applications": "Application Entities",
     "groups": "Groups",
+    "client": "Client",
     "client-ids": "Clients",
     "share-name": "Share Name"
   },
@@ -703,7 +706,9 @@
     "delete-consumer-group-title": "Are you sure you want to delete the Consumer Groups '{{id}}'?",
     "delete-consumer-groups-title": "Are you sure you want to delete { count, plural, =1 {1 Consumer Group} other {# Consumer Groups} }?",
     "delete-consumer-group-text": "Be careful, after the confirmation the Consumer Groups will be removed and all related data will become unrecoverable.",
-    "delete-consumer-groups-text": "Be careful, after the confirmation all selected Consumer Groups will be removed and all related data will become unrecoverable."
+    "delete-consumer-groups-text": "Be careful, after the confirmation all selected Consumer Groups will be removed and all related data will become unrecoverable.",
+    "selected-consumer-groups-are-connected": "Selected Sessions are connected. Please disconnect first to remove.",
+    "selected-consumer-groups-remove-with-members": "Selected Consumer Groups have Members."
   },
   "getting-started": {
     "getting-started": "Getting started",

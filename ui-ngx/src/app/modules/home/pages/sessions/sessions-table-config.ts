@@ -193,14 +193,14 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         icon: 'mdi:link-off',
         isEnabled: true,
         onAction: ($event, entities) =>
-          this.disconnectClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.CONNECTED))
+          this.disconnectClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.CONNECTED), entities)
       },
       {
         name: this.translate.instant('mqtt-client-session.remove-sessions'),
         icon: 'mdi:trash-can-outline',
         isEnabled: true,
         onAction: ($event, entities) =>
-          this.removeClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.DISCONNECTED))
+          this.removeClientSessions($event, entities.filter(entity => entity.connectionState === ConnectionState.DISCONNECTED), entities)
       }
     );
     return actions;
@@ -225,32 +225,40 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     return actions;
   }
 
-  disconnectClientSessions($event: Event, sessions: Array<DetailedClientSessionInfo>) {
+  disconnectClientSessions($event: Event, filteredSessions: Array<DetailedClientSessionInfo>, sessions: Array<DetailedClientSessionInfo>) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialogService.confirm(
-      this.translate.instant('mqtt-client-session.disconnect-client-sessions-title', {count: sessions.length}),
-      this.translate.instant('mqtt-client-session.disconnect-client-sessions-text'),
-      this.translate.instant('action.no'),
-      this.translate.instant('action.yes'),
-      true
-    ).subscribe((res) => {
-        if (res) {
-          const tasks: Observable<any>[] = [];
-          sessions.forEach(
-            (session) => {
-              tasks.push(this.clientSessionService.disconnectClientSession(session.clientId, session.sessionId));
-            }
-          );
-          forkJoin(tasks).subscribe(() => {
-            setTimeout(() => {
-              this.updateTable();
-            }, 1000)
-          });
+    if (!filteredSessions.length) {
+      const title = this.translate.instant('mqtt-client-session.selected-sessions', {count: sessions.length});
+      const content = this.translate.instant('mqtt-client-session.selected-sessions-are-disconnected');
+      this.dialogService.alert(
+        title,
+        content).subscribe();
+    } else {
+      this.dialogService.confirm(
+        this.translate.instant('mqtt-client-session.disconnect-client-sessions-title', {count: filteredSessions.length}),
+        this.translate.instant('mqtt-client-session.disconnect-client-sessions-text'),
+        this.translate.instant('action.no'),
+        this.translate.instant('action.yes'),
+        true
+      ).subscribe((res) => {
+          if (res) {
+            const tasks: Observable<any>[] = [];
+            filteredSessions.forEach(
+              (session) => {
+                tasks.push(this.clientSessionService.disconnectClientSession(session.clientId, session.sessionId));
+              }
+            );
+            forkJoin(tasks).subscribe(() => {
+              setTimeout(() => {
+                this.updateTable();
+              }, 1000)
+            });
+          }
         }
-      }
-    );
+      );
+    }
   }
 
   disconnectClientSession($event: Event, session: DetailedClientSessionInfo) {
@@ -293,28 +301,40 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     );
   }
 
-  removeClientSessions($event: Event, sessions: Array<DetailedClientSessionInfo>) {
+  removeClientSessions($event: Event, filteredSessions: Array<DetailedClientSessionInfo>, sessions: Array<DetailedClientSessionInfo>) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialogService.confirm(
-      this.translate.instant('mqtt-client-session.remove-sessions-title', {count: sessions.length}),
-      this.translate.instant('mqtt-client-session.remove-sessions-text'),
-      this.translate.instant('action.no'),
-      this.translate.instant('action.yes'),
-      true
-    ).subscribe((res) => {
-        if (res) {
-          const tasks: Observable<any>[] = [];
-          sessions.forEach(
-            (session) => {
-              tasks.push(this.clientSessionService.removeClientSession(session.clientId, session.sessionId));
-            }
-          );
-          forkJoin(tasks).subscribe(() => this.updateTable());
+    if (!filteredSessions.length) {
+      const title = this.translate.instant('mqtt-client-session.selected-sessions', {count: sessions.length});
+      const content = this.translate.instant('mqtt-client-session.selected-sessions-are-connected');
+      this.dialogService.alert(
+        title,
+        content).subscribe();
+    } else {
+      this.dialogService.confirm(
+        this.translate.instant('mqtt-client-session.remove-sessions-title', {count: filteredSessions.length}),
+        this.translate.instant('mqtt-client-session.remove-sessions-text'),
+        this.translate.instant('action.no'),
+        this.translate.instant('action.yes'),
+        true
+      ).subscribe((res) => {
+          if (res) {
+            const tasks: Observable<any>[] = [];
+            filteredSessions.forEach(
+              (session) => {
+                tasks.push(this.clientSessionService.removeClientSession(session.clientId, session.sessionId));
+              }
+            );
+            forkJoin(tasks).subscribe(() =>
+              setTimeout(() => {
+                this.updateTable();
+              }, 1000)
+            );
+          }
         }
-      }
-    );
+      );
+    }
   }
 
   private updateTable() {

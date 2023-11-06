@@ -84,7 +84,7 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
         icon: 'mdi:trash-can-outline',
         isEnabled: true,
         onAction: ($event, entities) =>
-          this.removeGroups($event, entities.filter(entity => entity.members === 0))
+          this.removeGroups($event, entities.filter(entity => entity.members === 0), entities)
       }
     );
     return actions;
@@ -110,27 +110,35 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
     );
   }
 
-  private removeGroups($event: Event, groups: Array<KafkaConsumerGroup>) {
+  private removeGroups($event: Event, filteredGroups: Array<KafkaConsumerGroup>, groups: Array<KafkaConsumerGroup>) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialogService.confirm(
-      this.translate.instant('kafka.delete-consumer-groups-title', {count: groups.length}),
-      this.translate.instant('kafka.delete-consumer-groups-text'),
-      this.translate.instant('action.no'),
-      this.translate.instant('action.yes'),
-      true
-    ).subscribe((res) => {
-        if (res) {
-          const tasks: Observable<any>[] = [];
-          groups.forEach(
-            (group) => {
-              tasks.push(this.kafkaService.deleteConsumerGroup(group.groupId));
-            }
-          );
-          forkJoin(tasks).subscribe(() => this.getTable().updateData());
+    if (!filteredGroups.length) {
+      const title = this.translate.instant('kafka.selected-consumer-groups', {count: groups.length});
+      const content = this.translate.instant('kafka.selected-consumer-groups-remove-with-members');
+      this.dialogService.alert(
+        title,
+        content).subscribe();
+    } else {
+      this.dialogService.confirm(
+        this.translate.instant('kafka.delete-consumer-groups-title', {count: filteredGroups.length}),
+        this.translate.instant('kafka.delete-consumer-groups-text'),
+        this.translate.instant('action.no'),
+        this.translate.instant('action.yes'),
+        true
+      ).subscribe((res) => {
+          if (res) {
+            const tasks: Observable<any>[] = [];
+            filteredGroups.forEach(
+              (group) => {
+                tasks.push(this.kafkaService.deleteConsumerGroup(group.groupId));
+              }
+            );
+            forkJoin(tasks).subscribe(() => this.getTable().updateData());
+          }
         }
-      }
-    );
+      );
+    }
   }
 }
