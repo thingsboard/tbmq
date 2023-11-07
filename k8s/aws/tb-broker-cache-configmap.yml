@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Copyright © 2016-2023 The Thingsboard Authors
 #
@@ -15,11 +14,19 @@
 # limitations under the License.
 #
 
-set -e
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tb-broker-cache-config
+  namespace: thingsboard-mqtt-broker
+  labels:
+    name: tb-broker-cache-config
+data:
+  CACHE_STATS_ENABLED: "true"
+  CACHE_STATS_INTERVAL_SEC: "60"
 
-kubectl apply -f tb-broker-namespace.yml
-kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
+  # Make sure that the REDIS_HOST value does not contain the port (:6379).
+  # Uncomment the following lines to enable Redis cache.
 
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker-cache-configmap.yml
-kubectl apply -f tb-broker.yml
+  #CACHE_TYPE: "redis"
+  #REDIS_HOST: "YOUR_REDIS_ENDPOINT_URL_WITHOUT_PORT"
