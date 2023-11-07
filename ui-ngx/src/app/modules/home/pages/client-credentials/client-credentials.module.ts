@@ -34,6 +34,7 @@ import { ClientCredentialsTableComponent } from '@home/pages/client-credentials/
 import {
   ClientCredentialsWizardDialogComponent
 } from "@home/components/wizard/client-credentials-wizard-dialog.component";
+import { CheckConnectivityDialogComponent } from '@home/pages/client-credentials/check-connectivity-dialog.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +46,8 @@ import {
     ClientCredentialsTableHeaderComponent,
     ClientCredentialsFilterConfigComponent,
     ClientCredentialsTableComponent,
-    ClientCredentialsWizardDialogComponent
+    ClientCredentialsWizardDialogComponent,
+    CheckConnectivityDialogComponent
   ],
   imports: [
     CommonModule,

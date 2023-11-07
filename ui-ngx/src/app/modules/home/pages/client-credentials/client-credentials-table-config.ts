@@ -56,6 +56,10 @@ import {
 } from "@home/components/wizard/client-credentials-wizard-dialog.component";
 import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
 import { BaseData } from "@shared/models/base-data";
+import {
+  CheckConnectivityDialogComponent,
+  CheckConnectivityDialogData
+} from '@home/pages/client-credentials/check-connectivity-dialog.component';
 
 export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCredentials, TimePageLink> {
 
@@ -197,13 +201,9 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       (res) => {
         if (res) {
           this.updateData();
-          /*this.store.pipe(select(selectUserSettingsProperty( 'notDisplayCheckAfterAddCredentials'))).pipe(
-            take(1)
-          ).subscribe((settings: boolean) => {
-            if(!settings) {
-              this.checkCredentials(null, res, true);
-            }
-          });*/
+          if (!localStorage.getItem('notDisplayCheckAfterAddCredentials')) {
+            this.checkCredentials(null, res, true);
+          }
         }
       }
     );
@@ -213,16 +213,16 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     if ($event) {
       $event.stopPropagation();
     }
-    /*this.dialog.open<CheckCredentialsDialogComponent, CheckCredentialsDialogData>
-    (CheckCredentialsDialogComponent, {
+    this.dialog.open<CheckConnectivityDialogComponent, CheckConnectivityDialogData>
+    (CheckConnectivityDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        deviceId,
+        credentials,
         afterAdd
       }
     })
       .afterClosed()
-      .subscribe();*/
+      .subscribe();
   }
 }

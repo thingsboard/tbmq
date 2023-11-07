@@ -106,6 +106,8 @@ import { EntitySubTypeListComponent } from "@shared/components/entity/entity-sub
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
+import { SHARED_MODULE_TOKEN } from '@shared/components/tokens';
 
 @NgModule({
   providers: [
@@ -118,6 +120,10 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
     {
       provide: MAT_DATE_LOCALE,
       useValue: 'en-GB'
+    },
+    {
+      provide: SHARED_MODULE_TOKEN,
+      useValue: SharedModule
     },
     TbBreakPointsProvider
   ],
@@ -170,7 +176,8 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
     GtMdLgLayoutAlignDirective,
     GtMdLgLayoutGapDirective,
     GtMdLgShowHideDirective,
-    LtXmdShowHideDirective
+    LtXmdShowHideDirective,
+    TbMarkdownComponent
   ],
   imports: [
     CommonModule,
@@ -313,7 +320,8 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
     GtMdLgLayoutAlignDirective,
     GtMdLgLayoutGapDirective,
     GtMdLgShowHideDirective,
-    LtXmdShowHideDirective
+    LtXmdShowHideDirective,
+    TbMarkdownComponent
   ]
 })
 export class SharedModule { }

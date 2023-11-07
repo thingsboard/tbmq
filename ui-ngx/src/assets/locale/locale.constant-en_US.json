@@ -63,7 +63,8 @@
     "reset": "Reset",
     "open": "Open",
     "next": "Next",
-    "next-with-label": "Next: {{label}}"
+    "next-with-label": "Next: {{label}}",
+    "dont-show-again": "Do not show again"
   },
   "admin": {
     "admins": "Admins",
@@ -173,7 +174,8 @@
     "proceed": "Proceed",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "id": "ID"
+    "id": "ID",
+    "documentation": "Documentation"
   },
   "details": {
     "details": "Details",
@@ -389,7 +391,18 @@
     "type-ssl": "X.509 Certificate Chain",
     "type-basic-auth": "Basic Auth is disabled",
     "type-ssl-auth": "X.509 Certificate Chain Auth is disabled",
-    "filter-title": "Filter"
+    "filter-title": "Filter",
+    "connectivity": {
+      "check-connectivity": "Check connectivity",
+      "credentials-created-check-connectivity": "Client Credentials created. Let's check connectivity!",
+      "use-following-instructions": "Use the following instructions to Subscribe and Publish using shell",
+      "install-necessary-client-tools": "Install necessary client tools",
+      "execute-following-command": "Execute the following command",
+      "install-curl-windows": "Starting Windows 10 b17063, cURL is available by default",
+      "install-curl-macos": "Starting Mac OS X 10.2 6C115 (Jaguar), cURL is available by default",
+      "install-mqtt-windows": "Use the instructions to download, install, setup and run mosquitto_pub",
+      "mqtts-x509-command": "Use the following documentation to connect the device via MQTT with authorization X509"
+    }
   },
   "mqtt-client-session": {
     "add": "Add session",
