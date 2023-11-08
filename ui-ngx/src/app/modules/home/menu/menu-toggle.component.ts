@@ -17,6 +17,8 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 @Component({
   selector: 'tb-menu-toggle',
@@ -28,33 +30,28 @@ export class MenuToggleComponent implements OnInit {
 
   @Input() section: MenuSection;
 
-  sectionPages: Array<MenuSection>;
-
-  constructor(private router: Router) {
+  constructor(private router: Router,
+              private store: Store<AppState>) {
   }
 
   ngOnInit() {
-    this.sectionPages = this.section.pages;
-  }
-
-  sectionActive(): boolean {
-    return this.section.opened;
   }
 
   sectionHeight(): string {
-    if (this.sectionActive()) {
-      return this.sectionPages.length * 40 + 'px';
+    if (this.section.opened || (!this.section.opened && this.router.url.indexOf(this.section.path) > -1)) {
+      return this.section.pages.length * 40 + 'px';
     } else {
       return '0px';
     }
   }
 
-  trackBySectionPages(index: number, section: MenuSection): string {
-    return section.id;
-  }
-
-  toggleSection(event: MouseEvent): void {
+  toggleSection(event: MouseEvent) {
     event.stopPropagation();
     this.section.opened = !this.section.opened;
+    // this.store.dispatch(new ActionPreferencesUpdateOpenedMenuSection({path: this.section.path, opened: this.section.opened}));
+  }
+
+  trackBySectionPages(index: number, section: MenuSection){
+    return section.id;
   }
 }

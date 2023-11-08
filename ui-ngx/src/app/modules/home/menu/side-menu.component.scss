@@ -49,19 +49,11 @@
     &.tb-active {
       background-color: rgba(255, 255, 255, .15);
     }
-    .mat-icon, img {
+    .mat-icon {
       margin-right: 8px;
       margin-left: 0;
       min-width: 1.125rem;
       min-height: 1.125rem;
-      width: 1.125rem;
-      height: 1.125rem;
-      font-size: 1.125rem;;
-    }
-    img {
-      display: inline-block;
-      color: rgb(255, 255, 255);
-      fill: rgb(255, 255, 255);
     }
     span.mdc-button__label {
       width: 100%;
@@ -69,7 +61,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       display: inline-flex;
-      align-items: center;
       & > span {
         overflow: hidden;
         text-overflow: ellipsis;

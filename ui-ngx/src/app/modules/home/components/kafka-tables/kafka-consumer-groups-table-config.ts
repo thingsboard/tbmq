@@ -44,7 +44,7 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
     this.detailsPanelEnabled = false;
     this.addEnabled = false;
     this.entitiesDeleteEnabled = false;
-    this.entitySelectionEnabled = (entity) => entity.members === 0;
+    // this.entitySelectionEnabled = (entity) => entity.members === 0;
 
     this.entitiesFetchFunction = pageLink => this.fetchKafkaConsumerGroups(pageLink);
     this.groupActionDescriptors = this.configureGroupActions();
