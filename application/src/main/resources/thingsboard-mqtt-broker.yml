@@ -14,12 +14,15 @@
 # limitations under the License.
 #
 
+# HTTP server parameters
 server:
-  shutdown: "${SERVER_SHUTDOWN:graceful}" # graceful or immediate
-  # Server bind address (has no effect if web-environment is disabled).
+  # Shutdown type (graceful or immediate)
+  shutdown: "${SERVER_SHUTDOWN:graceful}"
+  # HTTP Server bind address (has no effect if web-environment is disabled)
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
-  # Server bind port (has no effect if web-environment is disabled).
+  # HTTP Server bind port (has no effect if web-environment is disabled)
   port: "${HTTP_BIND_PORT:8083}"
+  # Log errors with stacktrace when REST API throws exception
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration
   ssl:
@@ -33,7 +36,7 @@ server:
       pem:
         # Path to the server certificate file (holds server certificate or certificate chain, may include server private key)
         cert_file: "${SSL_PEM_CERT:server.pem}"
-        # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file;
+        # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file
         key_file: "${SSL_PEM_KEY:server_key.pem}"
         # Server certificate private key password (optional)
         key_password: "${SSL_PEM_KEY_PASSWORD:server_key_password}"
