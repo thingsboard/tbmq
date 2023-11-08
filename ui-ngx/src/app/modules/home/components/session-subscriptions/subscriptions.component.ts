@@ -88,7 +88,13 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
     } else {
-      this.topicListFormGroup.enable({emitEvent: false});
+      Object.keys(this.subscriptionsFormArray().controls).forEach((control: string) => {
+        const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
+        typedControl.get('shareName').disable();
+        if (typedControl.get('shareName')?.value) {
+          typedControl.disable();
+        }
+      });
     }
   }
 
@@ -101,9 +107,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
         if (topic.shareName?.length) this.shareNameCounter++;
-        if (this.disabled) {
-          topicControl.disable();
-        }
         subscriptionsControls.push(topicControl);
       }
     }
@@ -114,16 +117,16 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   }
 
   removeTopic(index: number) {
-    (this.topicListFormGroup.get('subscriptions') as FormArray).removeAt(index);
+    (this.subscriptionsFormArray()).removeAt(index);
   }
 
   addTopic() {
-    const subscriptionsFormArray = this.topicListFormGroup.get('subscriptions') as FormArray;
-    subscriptionsFormArray.push(this.fb.group({
+    const group = this.fb.group({
       topicFilter: [null, [Validators.required]],
-      shareName: [null],
+      shareName: [{value: null, disabled: true}, []],
       qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
-    }));
+    });
+    this.subscriptionsFormArray().push(group);
   }
 
   validate(control: AbstractControl): ValidationErrors | null {

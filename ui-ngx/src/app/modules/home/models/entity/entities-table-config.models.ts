@@ -283,7 +283,7 @@ export const cellWithBackground = (value: string | number, backgroundColor: stri
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
   `<span style="vertical-align: bottom; font-size: 32px; color: ${color}">&#8226;</span>
-   <span style="color:${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
+   <span style="background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
 
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) {

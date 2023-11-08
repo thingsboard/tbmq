@@ -26,18 +26,6 @@
   }
 
   ::ng-deep {
-    .session-details {
-      ::ng-deep .mat-input-element, span {
-        color: rgba(0, 0, 0, 0.87);
-        cursor: not-allowed;
-      }
-    }
-    .mdc-text-field__input {
-      cursor: not-allowed;
-    }
-    .mat-mdc-icon-button .mat-mdc-button-touch-target {
-      cursor: pointer;
-    }
     .mat-mdc-checkbox-disabled label {
       color: rgba(0, 0, 0, 0.87);
     }
@@ -45,7 +33,19 @@
       background: #f2f8f5;
       padding: 12px 6px;
       height: 56px;
-      border-bottom: 1px solid rgba(0,0,0,0.38);
+    }
+    .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
+      top: 28px;
+      color: rgba(0,0,0,1);
+    }
+
+    .mdc-text-field--disabled .mdc-text-field__input {
+      color: rgba(0, 0, 0, 0.54);
+    }
+
+    .mat-mdc-form-field.mat-form-field-appearance-fill .mdc-text-field--filled,
+      .mat-mdc-form-field.mat-form-field-appearance-fill .mat-mdc-form-field-focus-overlay {
+      background-color: #f2f8f5;
     }
   }
 }

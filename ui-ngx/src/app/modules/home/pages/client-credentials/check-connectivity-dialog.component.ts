@@ -16,11 +16,15 @@
 
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { DialogComponent } from '@shared/components/dialog.component';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ClientCredentials } from '@shared/models/credentials.model';
+import { ClientType } from '@shared/models/client.model';
+import { selectUserDetails } from '@core/auth/auth.selectors';
+import { map } from 'rxjs/operators';
+import { ConfigParams } from '@shared/models/config.model';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;
@@ -29,10 +33,16 @@ export interface CheckConnectivityDialogData {
 
 export interface PublishTelemetryCommand {
   mqtt: {
-    mqtt?: string;
+    mqtt?: {
+      sub?: string,
+      pub?: string
+    };
     mqtts?: string | Array<string>;
     docker?: {
-      mqtt?: string;
+      mqtt?: {
+        sub?: string,
+        pub?: string
+      },
       mqtts?: string | Array<string>;
     };
     sparkplug?: string;
@@ -52,23 +62,16 @@ export class CheckConnectivityDialogComponent extends
   DialogComponent<CheckConnectivityDialogComponent> implements OnInit, OnDestroy {
 
   loadedCommand = false;
-
   status: boolean;
-
   commands: PublishTelemetryCommand;
-
   selectTransportType = NetworkTransportType.MQTT;
-
   NetworkTransportType = NetworkTransportType;
-
   showDontShowAgain: boolean;
   dialogTitle: string;
-
   notShowAgain = false;
-
   mqttTabIndex = 0;
 
-  // private telemetrySubscriber: TelemetrySubscriber;
+  private mqttPort: string;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -86,14 +89,11 @@ export class CheckConnectivityDialogComponent extends
   }
 
   ngOnInit() {
-    this.loadCommands();
-    this.subscribeToLatestTelemetry();
+    this.loadConfig();
   }
 
   ngOnDestroy() {
     super.ngOnDestroy();
-    // this.telemetrySubscriber?.complete();
-    // this.telemetrySubscriber?.unsubscribe();
   }
 
   close(): void {
@@ -122,64 +122,112 @@ export class CheckConnectivityDialogComponent extends
       '```';
   }
 
-  private loadCommands() {
-
-    this.commands = {
-      "mqtt": {
-        "mqtt": "mosquitto_pub -d -q 1 -h demo.thingsboard.io -p 1883 -t v1/devices/me/telemetry -u zACgOfMKhYmD1I0m38NP -m \"{temperature:25}\"",
-        "docker": {
-          "mqtt": "docker run --rm -it thingsboard/mosquitto-clients mosquitto_pub -d -q 1 -h demo.thingsboard.io -p 1883 -t v1/devices/me/telemetry -u zACgOfMKhYmD1I0m38NP -m \"{temperature:25}\""
-        }
-      }
-    };
-    this.loadedCommand = true;
-    /*this.deviceService.getDevicePublishTelemetryCommands(this.data.deviceId.id).subscribe(
-      commands => {
-        this.commands = commands;
-        const commandsProtocols = Object.keys(commands);
-        this.transportTypes.forEach(transport => {
-          const findCommand = commandsProtocols.find(item => item.toUpperCase().startsWith(transport));
-          if (findCommand) {
-            this.allowTransportType.add(transport);
+  private loadConfig() {
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => user?.additionalInfo?.config))
+      .pipe(
+        map((data) => {
+          this.mqttPort = data ? data[ConfigParams.tcpPort] : '1883';
+          this.loadCommands();
+          return true;
           }
-        });
-        this.selectTransportType = this.allowTransportType.values().next().value;
-        this.selectTabIndexForUserOS();
-        this.loadedCommand = true;
-      }
-    );*/
+        ))
+      .subscribe();
   }
 
-  private subscribeToLatestTelemetry() {
-   /* this.store.pipe(select(selectPersistDeviceStateToTelemetry)).pipe(
-      take(1)
-    ).subscribe(persistToTelemetry => {
-      this.telemetrySubscriber = TelemetrySubscriber.createEntityAttributesSubscription(
-        this.telemetryWsService, this.data.deviceId, LatestTelemetry.LATEST_TELEMETRY, this.zone);
-      if (!persistToTelemetry) {
-        const subscriptionCommand = new AttributesSubscriptionCmd();
-        subscriptionCommand.entityType = this.data.deviceId.entityType as EntityType;
-        subscriptionCommand.entityId = this.data.deviceId.id;
-        subscriptionCommand.scope = AttributeScope.SERVER_SCOPE;
-        subscriptionCommand.keys = 'active';
-        this.telemetrySubscriber.subscriptionCommands.push(subscriptionCommand);
-      }
+  private loadCommands() {
+    const credentials = this.data.credentials;
+    const clientType = credentials.clientType;
+    const credentialsValue = JSON.parse(credentials.credentialsValue);
+    const clientId = credentialsValue.clientId;
+    const userName = credentialsValue.userName;
+    const password = this.data.credentials?.password;
+    const subTopic = this.getTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+');
+    const pubTopic = this.getTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic');
+    const hostname = window.location.hostname;
+    const mqttPort = this.mqttPort;
+    const subCommands: string[] = [];
+    const pubCommands: string[] = [];
+    const dockerSubCommands: string[] = [];
+    const dockerPubCommands: string[] = [];
+    const clientInfoCommands: string[] = [];
+    const defaultOptions: string = '-d -q 1';
 
-      this.telemetrySubscriber.subscribe();
-      this.telemetrySubscriber.attributeData$().subscribe(
-        (data) => {
-          const telemetry = data.reduce<Array<AttributeData>>((accumulator, item) => {
-            if (item.key === 'active') {
-              this.status = coerceBooleanProperty(item.value);
-            } else if (item.lastUpdateTs > this.currentTime) {
-              accumulator.push(item);
-            }
-            return accumulator;
-          }, []);
-          this.latestTelemetry = telemetry.sort((a, b) => b.lastUpdateTs - a.lastUpdateTs);
+    if (clientId) clientInfoCommands.push(`-i ${clientId}`);
+    if (userName) clientInfoCommands.push(`-u ${userName}`);
+    if (password) clientInfoCommands.push(`-P ${password}`);
+    const clientInfo = clientInfoCommands.join(' ');
+    const message = "-m 'Hello World'";
+    const network = (hostname === 'localhost' || hostname === '127.0.0.1') ? '--network=host' : '';
+    const cleanSession = clientType === ClientType.APPLICATION ? '-c' : '';
+    subCommands.push(
+      "mosquitto_sub",
+      defaultOptions,
+      `-h ${hostname}`,
+      `-p ${mqttPort}`,
+      `-t ${subTopic}`,
+      clientInfo,
+      cleanSession,
+      '-v'
+    );
+    pubCommands.push(
+      "mosquitto_pub",
+      defaultOptions,
+      `-h ${hostname}`,
+      `-p ${mqttPort}`,
+      `-t ${pubTopic}`,
+      clientInfo,
+      message,
+      cleanSession
+    );
+    dockerSubCommands.push(
+      "docker run --rm",
+      network,
+      "-it thingsboard/mosquitto-clients mosquitto_sub -d -q 1",
+      `-h ${hostname}`,
+      `-p ${mqttPort}`,
+      `-t ${subTopic}`,
+      clientInfo,
+      cleanSession,
+      '-v'
+    );
+    dockerPubCommands.push(
+      "docker run --rm",
+      network,
+      "-it thingsboard/mosquitto-clients mosquitto_pub -d -q 1",
+      `-h ${hostname}`,
+      `-p ${mqttPort}`,
+      `-t ${pubTopic}`,
+      clientInfo,
+      message,
+      cleanSession
+    );
+    const sub = subCommands.join(' ');
+    const pub = pubCommands.join(' ');
+    const dockerSub = dockerSubCommands.join(' ');
+    const dockerPub = dockerPubCommands.join(' ');
+    this.commands = {
+      mqtt: {
+        mqtt: {
+          sub,
+          pub
+        },
+        docker: {
+          mqtt: {
+            sub: dockerSub,
+            pub: dockerPub
+          }
         }
-      );
-    });*/
+      }
+    }
+    this.loadedCommand = true;
   }
 
+  private getTopic(rules: string[], topic: string): string {
+    for (let i= 0; i < rules?.length; i++) {
+      if (rules[i] === ".*") return topic;
+    }
+    return '$YOUR_TOPIC';
+  }
 }

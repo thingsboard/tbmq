@@ -25,7 +25,7 @@ import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms'
 import { ClientSessionService } from '@core/http/client-session.service';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
-import { ClientType } from '@shared/models/client.model';
+import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -49,6 +49,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
+  clientTypeTranslationMap = clientTypeTranslationMap;
+  clientTypeIcon = clientTypeIcon;
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -81,16 +83,16 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private buildSessionForm(entity: DetailedClientSessionInfo): void {
     this.entityForm = this.fb.group({
-      clientId: [{value: entity ? entity.clientId : null, disabled: false}],
-      clientType: [{value: entity ? entity.clientType : null, disabled: false}],
-      clientIpAdr: [{value: entity ? entity.clientIpAdr : null, disabled: false}],
-      nodeId: [{value: entity ? entity.nodeId : null, disabled: false}],
-      keepAliveSeconds: [{value: entity ? entity.keepAliveSeconds : null, disabled: false}],
-      sessionExpiryInterval: [{value: entity ? entity.sessionExpiryInterval : null, disabled: false}],
-      sessionEndTs: [{value: entity ? entity.sessionEndTs : null, disabled: false}],
-      connectedAt: [{value: entity ? entity.connectedAt : null, disabled: false}],
-      connectionState: [{value: entity ? entity.connectionState : null, disabled: false}],
-      disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: false}],
+      clientId: [{value: entity ? entity.clientId : null, disabled: true}],
+      clientType: [{value: entity ? entity.clientType : null, disabled: true}],
+      clientIpAdr: [{value: entity ? entity.clientIpAdr : null, disabled: true}],
+      nodeId: [{value: entity ? entity.nodeId : null, disabled: true}],
+      keepAliveSeconds: [{value: entity ? entity.keepAliveSeconds : null, disabled: true}],
+      sessionExpiryInterval: [{value: entity ? entity.sessionExpiryInterval : null, disabled: true}],
+      sessionEndTs: [{value: entity ? entity.sessionEndTs : null, disabled: true}],
+      connectedAt: [{value: entity ? entity.connectedAt : null, disabled: true}],
+      connectionState: [{value: entity ? entity.connectionState : null, disabled: true}],
+      disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: true}],
       subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
       cleanStart: [{value: entity ? entity.cleanStart : null, disabled: true}],
       subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]

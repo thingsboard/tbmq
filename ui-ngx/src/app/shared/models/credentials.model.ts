@@ -51,6 +51,7 @@ export interface ClientCredentials extends BaseData {
   clientType: ClientType;
   credentialsType: CredentialsType;
   credentialsValue: string;
+  password?: string;
 }
 
 export interface SslMqttCredentials extends SslAuthRulesMapping {

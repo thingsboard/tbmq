@@ -28,18 +28,14 @@ import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Direction } from '@shared/models/page/sort-order';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap, clientTypeValueColor } from '@shared/models/client.model';
 import {
-  clientTypeColor,
-  clientTypeIcon,
-  clientTypeTranslationMap,
-  clientTypeValueColor
-} from '@shared/models/client.model';
-import {
-  ClientCredentialsFilterConfig, ClientCredentialsQuery,
-  credentialsTypeTranslationMap,
-  credentialsWarningTranslations,
   ClientCredentials,
-  CredentialsType
+  ClientCredentialsFilterConfig,
+  ClientCredentialsQuery,
+  CredentialsType,
+  credentialsTypeTranslationMap,
+  credentialsWarningTranslations
 } from '@shared/models/credentials.model';
 import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
@@ -51,11 +47,9 @@ import { deepClone } from '@core/utils';
 import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  ClientCredentialsWizardDialogComponent
-} from "@home/components/wizard/client-credentials-wizard-dialog.component";
-import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
-import { BaseData } from "@shared/models/base-data";
+import { ClientCredentialsWizardDialogComponent } from '@home/components/wizard/client-credentials-wizard-dialog.component';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { BaseData } from '@shared/models/base-data';
 import {
   CheckConnectivityDialogComponent,
   CheckConnectivityDialogData
@@ -201,7 +195,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       (res) => {
         if (res) {
           this.updateData();
-          if (!localStorage.getItem('notDisplayCheckAfterAddCredentials')) {
+          if (!localStorage.getItem('notDisplayCheckAfterAddCredentials') && res.credentialsType === CredentialsType.MQTT_BASIC) {
             this.checkCredentials(null, res, true);
           }
         }

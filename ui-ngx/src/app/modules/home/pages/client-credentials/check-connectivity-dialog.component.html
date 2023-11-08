@@ -48,25 +48,27 @@
             <mat-tab-group [(selectedIndex)]="mqttTabIndex">
               <mat-tab>
                 <ng-template mat-tab-label>
-                  <mat-icon class="tabs-icon" svgIcon="windows"></mat-icon>
-                  Windows
+                  <mat-icon class="tabs-icon" svgIcon="linux"></mat-icon>
+                  Linux
                 </ng-template>
                 <ng-template matTabContent>
                   <div class="tb-form-panel no-padding no-border tb-tab-body">
                     <div class="tb-form-panel stroked">
                       <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.install-necessary-client-tools</div>
-                      <div class="tb-install-instruction-text">
-                        <ng-container *ngTemplateOutlet="seeDocumentation; context:
-                        {doc: {text: 'mqtt-client-credentials.connectivity.install-mqtt-windows',
-                        href: 'https://thingsboard.io/docs/getting-started-guides/helloworld/?connectdevice=mqtt-windows#step-2-connect-device'}}">
-                        </ng-container>
-                      </div>
+                      <tb-markdown usePlainMarkdown containerClass="tb-command-code"
+                                   [data]='createMarkDownCommand("sudo apt-get install curl mosquitto-clients")'></tb-markdown>
                     </div>
                     <ng-container
-                      *ngTemplateOutlet="executeCommand; context: {cmd: {
-                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt,
+                      *ngTemplateOutlet="executeCommandSubscribe; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.sub,
                               secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
-                              doc: {text: 'mqtt-client-credentials.connectivity.mqtts-x509-command', href: 'https://thingsboard.io/docs/user-guide/mqtt-over-ssl/'}}}">
+                              doc: {text: '', href: ''}}}">
+                    </ng-container>
+                    <ng-container
+                      *ngTemplateOutlet="executeCommandPublish; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.pub,
+                              secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
+                              doc: {text: '', href: ''}}}">
                     </ng-container>
                   </div>
                 </ng-template>
@@ -84,31 +86,47 @@
                                    [data]='createMarkDownCommand("brew install mosquitto")'></tb-markdown>
                     </div>
                     <ng-container
-                      *ngTemplateOutlet="executeCommand; context: {cmd: {
-                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt,
+                      *ngTemplateOutlet="executeCommandSubscribe; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.sub,
                               secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
-                              doc: {text: 'mqtt-client-credentials.connectivity.mqtts-x509-command', href: 'https://thingsboard.io/docs/user-guide/mqtt-over-ssl/'}}}">
+                              doc: {text: '', href: ''}}}">
+                    </ng-container>
+                    <ng-container
+                      *ngTemplateOutlet="executeCommandPublish; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.pub,
+                              secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
+                              doc: {text: '', href: ''}}}">
                     </ng-container>
                   </div>
                 </ng-template>
               </mat-tab>
               <mat-tab>
                 <ng-template mat-tab-label>
-                  <mat-icon class="tabs-icon" svgIcon="linux"></mat-icon>
-                  Linux
+                  <mat-icon class="tabs-icon" svgIcon="windows"></mat-icon>
+                  Windows
                 </ng-template>
                 <ng-template matTabContent>
                   <div class="tb-form-panel no-padding no-border tb-tab-body">
                     <div class="tb-form-panel stroked">
                       <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.install-necessary-client-tools</div>
-                      <tb-markdown usePlainMarkdown containerClass="tb-command-code"
-                                   [data]='createMarkDownCommand("sudo apt-get install curl mosquitto-clients")'></tb-markdown>
+                      <div class="tb-install-instruction-text">
+                        <ng-container *ngTemplateOutlet="seeDocumentation; context:
+                        {doc: {text: 'mqtt-client-credentials.connectivity.install-mqtt-windows',
+                        href: 'https://thingsboard.io/docs/getting-started-guides/helloworld/?connectdevice=mqtt-windows#step-2-connect-device'}}">
+                        </ng-container>
+                      </div>
                     </div>
                     <ng-container
-                      *ngTemplateOutlet="executeCommand; context: {cmd: {
-                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt,
+                      *ngTemplateOutlet="executeCommandSubscribe; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.sub,
                               secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
-                              doc: {text: 'mqtt-client-credentials.connectivity.mqtts-x509-command', href: 'https://thingsboard.io/docs/user-guide/mqtt-over-ssl/'}}}">
+                              doc: {text: '', href: ''}}}">
+                    </ng-container>
+                    <ng-container
+                      *ngTemplateOutlet="executeCommandPublish; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.mqtt.pub,
+                              secLabel: 'MQTTs', sec: commands.mqtt.mqtts,
+                              doc: {text: '', href: ''}}}">
                     </ng-container>
                   </div>
                 </ng-template>
@@ -121,10 +139,16 @@
                 <ng-template matTabContent>
                   <div class="tb-form-panel no-padding no-border tb-tab-body">
                     <ng-container
-                      *ngTemplateOutlet="executeCommand; context: {cmd: {
-                              noSecLabel: 'MQTT', noSec: commands.mqtt.docker.mqtt,
+                      *ngTemplateOutlet="executeCommandSubscribe; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.docker.mqtt.sub,
                               secLabel: 'MQTTs', sec: commands.mqtt.docker.mqtts,
-                              doc: {text: 'mqtt-client-credentials.connectivity.mqtts-x509-command', href: 'https://thingsboard.io/docs/user-guide/mqtt-over-ssl/'}}}">
+                              doc: {text: '', href: ''}}}">
+                    </ng-container>
+                    <ng-container
+                      *ngTemplateOutlet="executeCommandPublish; context: {cmd: {
+                              noSecLabel: 'MQTT', noSec: commands.mqtt.docker.mqtt.pub,
+                              secLabel: 'MQTTs', sec: commands.mqtt.docker.mqtts,
+                              doc: {text: '', href: ''}}}">
                     </ng-container>
                   </div>
                 </ng-template>
@@ -134,14 +158,14 @@
         </ng-template>
       </ng-container>
     </div>
-    <div class="tb-form-panel stroked">
+    <!--<div class="tb-form-panel stroked">
       <div fxFlex fxLayout="row">
-        <div class="tb-form-panel-title" translate>device.state</div>
+        <div class="tb-form-panel-title" translate>mqtt-client-session.state</div>
         <div class="status" [ngClass]="{'inactive': !status, 'hide': status === undefined}">
           {{ (status ? 'mqtt-client-session.connected' : 'mqtt-client-session.disconnected') | translate }}
         </div>
       </div>
-    </div>
+    </div>-->
   </section>
 </div>
 <div mat-dialog-actions class="tb-dialog-actions">
@@ -160,10 +184,41 @@
   </div>
 </ng-template>
 
-<ng-template #executeCommand let-cmd="cmd">
+<ng-template #executeCommandPublish let-cmd="cmd">
   <div class="tb-form-panel stroked">
     <div fxLayout="row" fxLayoutAlign="space-between center" [fxHide]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
-      <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.execute-following-command</div>
+      <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.execute-following-command-publish</div>
+      <tb-toggle-header #protocolType value="{{ cmd.noSec ? 'noSec' : 'sec'}}" name="protocolType" useSelectOnMdLg="false"
+                        [fxShow]="cmd.noSec && cmd.sec">
+        <tb-toggle-option value="noSec">{{ cmd.noSecLabel }}</tb-toggle-option>
+        <tb-toggle-option value="sec">{{ cmd.secLabel }}</tb-toggle-option>
+      </tb-toggle-header>
+    </div>
+    <ng-container [ngSwitch]="protocolType.value">
+      <ng-template [ngSwitchCase]="'noSec'">
+        <tb-markdown usePlainMarkdown containerClass="tb-command-code"
+                     [data]=createMarkDownCommand(cmd.noSec)></tb-markdown>
+      </ng-template>
+      <ng-template [ngSwitchCase]="'sec'">
+        <div *ngIf="cmd.sec !== 'Check documentation'; else checkDocumentation">
+          <tb-markdown usePlainMarkdown containerClass="tb-command-code"
+                       [data]=createMarkDownCommand(cmd.sec)></tb-markdown>
+        </div>
+        <ng-template #checkDocumentation>
+          <ng-container
+            *ngTemplateOutlet="seeDocumentation; context:
+                {doc: cmd.doc}">
+          </ng-container>
+        </ng-template>
+      </ng-template>
+    </ng-container>
+  </div>
+</ng-template>
+
+<ng-template #executeCommandSubscribe let-cmd="cmd">
+  <div class="tb-form-panel stroked">
+    <div fxLayout="row" fxLayoutAlign="space-between center" [fxHide]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
+      <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.execute-following-command-subscribe</div>
       <tb-toggle-header #protocolType value="{{ cmd.noSec ? 'noSec' : 'sec'}}" name="protocolType" useSelectOnMdLg="false"
                         [fxShow]="cmd.noSec && cmd.sec">
         <tb-toggle-option value="noSec">{{ cmd.noSecLabel }}</tb-toggle-option>

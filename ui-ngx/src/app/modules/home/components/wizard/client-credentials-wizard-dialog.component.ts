@@ -143,16 +143,21 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   add(): void {
     if (this.allValid()) {
       this.createClientCredentials().subscribe(
-        (device) => this.dialogRef.close(device)
+        (entity) => {
+          const credentialsValue = JSON.parse(this.authenticationFormGroup.get('credentialsValue').value);
+          const password = credentialsValue.password;
+          if (this.clientCredentialsWizardFormGroup.get('credentialsType').value === CredentialsType.MQTT_BASIC) {
+            return this.dialogRef.close({...entity, ...{password}})
+          }
+          return this.dialogRef.close(entity);
+        }
       );
     }
   }
 
-  get deviceClientCredentialsType(): CredentialsType {
+  get clientCredentialsType(): CredentialsType {
     return this.currentClientCredentialsType;
   }
-
-  credentialsValue: string;
 
   private createClientCredentials(): Observable<ClientCredentials> {
     const clientCredentials: ClientCredentials = {

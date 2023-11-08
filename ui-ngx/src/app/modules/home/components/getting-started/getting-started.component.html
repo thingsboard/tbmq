@@ -25,9 +25,7 @@
             <div>{{step.title | translate}}</div>
           </div>
         </ng-template>
-        <div class="tb-markdown-view">
-          <markdown [data]="data"></markdown>
-        </div>
+        <tb-markdown [data]=data usePlainMarkdown containerClass="tb-command-code"></tb-markdown>
         <div style="margin-top: 8px">
           <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'client-device'">
             <button mat-stroked-button color="primary" (click)="addClientCredentials('dev')">

@@ -94,7 +94,6 @@ import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-i
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { BooleanPipe } from '@shared/pipe/boolean.pipe';
-import { markedOptionsFactory } from '@shared/components/markdown.factory';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { DateAgoPipe, SelectableColumnsPipe, TruncatePipe } from './pipe/public-api';
@@ -108,6 +107,11 @@ import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-h
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { SHARED_MODULE_TOKEN } from '@shared/components/tokens';
+import { MarkedOptionsService } from '@shared/components/marked-options.service';
+
+export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
+  return markedOptionsService;
+}
 
 @NgModule({
   providers: [
@@ -227,7 +231,8 @@ import { SHARED_MODULE_TOKEN } from '@shared/components/tokens';
       sanitize: SecurityContext.NONE,
       markedOptions: {
         provide: MarkedOptions,
-        useFactory: markedOptionsFactory
+        useFactory: MarkedOptionsFactory,
+        deps: [MarkedOptionsService]
       }
     })
   ],

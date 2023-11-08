@@ -162,7 +162,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         result[rule] = value.length ? [authRules[rule]] : null;
       }
       if (Array.isArray(value)) {
-        result[rule] = authRules[rule][0].length ? authRules[rule][0].split(',') : null;
+        result[rule] = authRules[rule][0]?.length ? authRules[rule][0].split(',') : null;
       }
     }
     return result;
