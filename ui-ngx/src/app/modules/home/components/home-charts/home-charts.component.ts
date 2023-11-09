@@ -15,7 +15,7 @@
 ///
 
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { Subject, timer } from 'rxjs';
+import { retry, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
@@ -121,6 +121,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     timer(0, POLLING_INTERVAL)
       .pipe(
         switchMap(() => this.statsService.getLatestTimeseries(TOTAL_KEY)),
+        retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => {

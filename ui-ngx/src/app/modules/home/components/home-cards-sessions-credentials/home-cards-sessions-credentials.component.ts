@@ -15,7 +15,7 @@
 ///
 
 import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, retry, Subject, timer } from 'rxjs';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
@@ -61,6 +61,7 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
             this.clientSessionService.getClientSessionsStats(),
             this.clientCredentialsService.getClientCredentialsStatsInfo()
           ])),
+        retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);
