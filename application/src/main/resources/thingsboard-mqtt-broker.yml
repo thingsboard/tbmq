@@ -202,33 +202,43 @@ listener:
       # The max time in seconds to wait until the executor is stopped
       shutdown_timeout: "${WSS_NETTY_SHUTDOWN_TIMEOUT:5}"
 
+# Kafka queue processing parameters
 queue:
   msg-all:
-    # Number of parallel consumers for 'msg-all' topic. Should not be more than the number of partitions in topic.
+    # Number of parallel consumers for 'tbmq.msg.all' topic. Should not be more than the number of partitions in topic
     consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:4}"
+    # Number of threads in the pool to process consumers tasks. Should not be less than number of consumers
     threads-count: "${TB_MSG_ALL_THREADS_COUNT:4}"
+    # Interval in milliseconds to poll messages from 'tbmq.msg.all' topic
     poll-interval: "${TB_MSG_ALL_POLL_INTERVAL:100}"
+    # Timeout in milliseconds for processing the pack of messages from 'tbmq.msg.all' topic
     pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:10000}"
     ack-strategy:
-      type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
-      # For RETRY_ALL only
-      retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
-    # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
+      # Processing strategy for 'tbmq.msg.all' topic. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}"
+    # Enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
     # Helpful when the same client publishes lots of messages in a short amount of time.
-    # It is recommended to count the impact of this parameter before setting it on production.
+    # It is recommended to count the impact of this parameter before setting it on production
     msg-parallel-processing: "${TB_MSG_ALL_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
+    # Number of threads in the pool to process Application consumers tasks
     threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:8}"
+    # Interval in milliseconds to poll messages from Application topics
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
+    # Timeout in milliseconds for processing the pack of messages
     pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
     ack-strategy:
-      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
-      # For RETRY_ALL only
-      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
-    # enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
+      # Processing strategy for Application topics. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}"
+    # Enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
-    # enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
+    # Enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
+    # Number of threads in the pool to process Application shared subscriptions consumers tasks
     shared-subs-threads-count: "${TB_APP_PERSISTED_MSG_SHARED_SUBS_THREADS_COUNT:16}"
   device-persisted-msg:
     # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
