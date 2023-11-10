@@ -169,7 +169,13 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
             session
           }
         }).afterClosed()
-          .subscribe();
+          .subscribe((res) => {
+            if (res) {
+              setTimeout(() => {
+                this.getTable().updateData();
+              }, 1000)
+            }
+          });
       }
     );
   }

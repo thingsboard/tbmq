@@ -179,7 +179,13 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
             session
           }
         }).afterClosed()
-          .subscribe(() => this.updateTable());
+          .subscribe((res) => {
+            if (res) {
+              setTimeout(() => {
+                this.updateTable()
+              }, 1000)
+            }
+          });
       }
     );
     return false;

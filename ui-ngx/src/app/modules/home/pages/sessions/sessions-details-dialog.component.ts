@@ -121,7 +121,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private onSave(): void {
-    const value = {...this.entity, ...this.subscriptions.value};
+    const value = {...this.entity, ...this.subscriptions?.value};
     this.clientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
       this.closeDialog();
     });
@@ -158,6 +158,6 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private closeDialog(): void {
-    this.dialogRef.close();
+    this.dialogRef.close(true);
   }
 }
