@@ -62,7 +62,6 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
     this.addEnabled = false;
     this.deleteEnabled = () => false;
     this.headerComponent = SharedSubscriptionGroupsTableHeaderComponent;
-    this.defaultSortOrder = { property: 'shareName', direction: Direction.ASC };
 
     this.columns.push(
       new EntityTableColumn<SharedSubscriptionGroup>('shareName', 'shared-subscription.share-name', '25%',

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -45,7 +45,7 @@ import { ClientCredentials, SslMqttCredentials } from "@shared/models/credential
     }],
   styleUrls: []
 })
-export class MqttCredentialsSslComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 
   @Input()
   disabled: boolean;
@@ -63,6 +63,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
       certCommonName: [null, [Validators.required]],
       authRulesMapping: [null]
     });
+  }
+
+  ngAfterViewInit(): void {
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe((value) => {

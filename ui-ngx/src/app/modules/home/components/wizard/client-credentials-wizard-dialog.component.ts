@@ -69,8 +69,6 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
 
   authenticationFormGroup: UntypedFormGroup;
 
-  private currentClientCredentialsType = CredentialsType.MQTT_BASIC;
-
   constructor(protected store: Store<AppState>,
               protected router: Router,
               public dialogRef: MatDialogRef<ClientCredentialsWizardDialogComponent, ClientCredentials>,
@@ -153,10 +151,6 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
         }
       );
     }
-  }
-
-  get clientCredentialsType(): CredentialsType {
-    return this.currentClientCredentialsType;
   }
 
   private createClientCredentials(): Observable<ClientCredentials> {

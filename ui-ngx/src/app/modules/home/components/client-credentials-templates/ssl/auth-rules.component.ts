@@ -14,24 +14,27 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterContentInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
   FormArray,
-  FormBuilder, FormControl,
-  FormGroup,
+  FormBuilder,
+  FormControl,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR, UntypedFormGroup,
+  NG_VALUE_ACCESSOR,
+  UntypedFormGroup,
   ValidationErrors,
-  Validator, ValidatorFn,
+  Validator,
+  ValidatorFn,
   Validators
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { MatChipInputEvent } from "@angular/material/chips";
 import {
   AuthRulePatternsType,
-  AuthRulesMapping, ClientCredentials,
+  AuthRulesMapping,
+  ClientCredentials,
   SslCredentialsAuthRules
 } from "@shared/models/credentials.model";
 
@@ -51,7 +54,7 @@ import {
     }],
   styleUrls: ['./auth-rules.component.scss']
 })
-export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
+export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterContentInit {
 
   @Input()
   disabled: boolean;
@@ -80,7 +83,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     });
   }
 
-  ngAfterViewInit() {
+  ngAfterContentInit() {
     if (!this.entity?.credentialsId) {
       this.addRule();
     }

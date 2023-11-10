@@ -16,9 +16,8 @@
 
 import { Component, EventEmitter, forwardRef, Input, OnDestroy, Output } from '@angular/core';
 import {
-  ControlValueAccessor,
+  ControlValueAccessor, FormArray,
   FormBuilder,
-  FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
@@ -28,8 +27,8 @@ import {
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { isDefinedAndNotNull, isEmptyStr, isString } from '@core/utils';
-import { AuthRulePatternsType, AuthRules, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
+import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
+import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ChangeBasicPasswordDialogComponent,
@@ -71,6 +70,10 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
+
+  private authRulesFormArray(): FormArray {
+    return this.credentialsMqttFormGroup.get('authRules') as FormArray;
+  }
 
   constructor(public fb: FormBuilder,
               private dialog: MatDialog) {
@@ -124,14 +127,13 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         for (const rule of Object.keys(valueJson.authRules)) {
           if (valueJson.authRules[rule]?.length) {
             valueJson.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
-            const commaSeparatedRuleValues = valueJson.authRules[rule].join(',');
-            valueJson.authRules[rule] = [commaSeparatedRuleValues];
           }
         }
       }
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
     } else {
-      this.setDefaultAuthRuleValue();
+      this.addValueToAuthRulesSet('pubAuthRulePatterns');
+      this.addValueToAuthRulesSet('subAuthRulePatterns');
     }
   }
 
@@ -140,32 +142,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     this.subRulesSet.clear();
   }
 
-  private setDefaultAuthRuleValue(defaultValue: string = '.*') {
-    const authRulesControl = this.credentialsMqttFormGroup.get('authRules');
-    for (const rule of Object.keys(authRulesControl.value)) {
-      authRulesControl.patchValue({[rule]: defaultValue});
-      this.addValueToAuthRulesSet(rule, defaultValue);
-    }
-  }
-
   updateView(value: BasicCredentials) {
-    value.authRules = this.formatAuthRules(value.authRules);
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
-  }
-
-  private formatAuthRules(authRules: AuthRules): AuthRules {
-    const result = {} as AuthRules;
-    for (const rule of Object.keys(authRules)) {
-      const value = authRules[rule];
-      if (isString(value)) {
-        result[rule] = value.length ? [authRules[rule]] : null;
-      }
-      if (Array.isArray(value)) {
-        result[rule] = authRules[rule][0]?.length ? authRules[rule][0].split(',') : null;
-      }
-    }
-    return result;
   }
 
   changePassword(): void {
@@ -203,7 +182,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     }
   }
 
-  addValueToAuthRulesSet(type: string, value: string) {
+  addValueToAuthRulesSet(type: string, value: string = '.*') {
     switch (type) {
       case 'subAuthRulePatterns':
         this.subRulesSet.add(value);
@@ -231,10 +210,10 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     const rulesArray = [Array.from(set).join(',')];
     switch (type) {
       case AuthRulePatternsType.PUBLISH:
-        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        this.authRulesFormArray().get('pubAuthRulePatterns').setValue(rulesArray);
         break;
       case AuthRulePatternsType.SUBSCRIBE:
-        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        this.authRulesFormArray().get('subAuthRulePatterns').setValue(rulesArray);
         break;
     }
   }

@@ -16,7 +16,7 @@
 
 -->
 <form style="min-width: 500px; padding-top: 8px">
-  <mat-expansion-panel [expanded]="false">
+  <mat-expansion-panel [expanded]="true">
     <mat-expansion-panel-header>
       <mat-panel-title>
         <div translate>mqtt-client-credentials.authorization</div>
@@ -45,9 +45,9 @@
                     {{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}
                   </mat-error>
                 </mat-form-field>
-                <mat-form-field>
+                <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-                  <mat-chip-grid #chipListPub>
+                  <mat-chip-grid #chipListPub [disabled]="disabled">
                     <mat-chip-row
                       *ngFor="let rule of pubRulesArray[$index]"
                       [editable]="!disabled"
@@ -66,9 +66,9 @@
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-grid>
                 </mat-form-field>
-                <mat-form-field>
+                <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-                  <mat-chip-grid #chipListSub>
+                  <mat-chip-grid #chipListSub [disabled]="disabled">
                     <mat-chip-row
                       *ngFor="let rule of subRulesArray[$index]"
                       [editable]="!disabled"
