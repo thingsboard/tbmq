@@ -1039,6 +1039,9 @@ mat-label {
         padding: 8px;
       }
     }
+    @media #{$mat-lt-lg} {
+      max-width: 90vw !important;
+    }
   }
 
   .tb-fullscreen-dialog-gt-xs {
