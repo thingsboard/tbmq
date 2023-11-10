@@ -135,7 +135,7 @@
       }
     }
   }
-  @media #{$mat-md-lg} {
+  /*@media #{$mat-md-lg} {
     .mat-button-toggle-group.mat-button-toggle-group-appearance-standard.tb-toggle-header:not(.tb-ignore-md-lg) {
       height: 24px;
       .mat-button-toggle.mat-button-toggle-appearance-standard {
@@ -157,7 +157,7 @@
         }
       }
     }
-  }
+  }*/
   .tb-toggle-header-select {
     &.mat-mdc-form-field {
       line-height: 16px;
