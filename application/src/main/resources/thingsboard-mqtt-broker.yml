@@ -228,12 +228,12 @@ queue:
     # Interval in milliseconds to poll messages from Application topics
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     # Timeout in milliseconds for processing the pack of messages
-    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
+    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:10000}"
     ack-strategy:
       # Processing strategy for Application topics. Can be: SKIP_ALL, RETRY_ALL
-      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}"
       # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
-      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}"
+      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}"
     # Enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
     # Enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
@@ -253,7 +253,7 @@ queue:
       # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
       retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}"
       # Time in seconds to wait in consumer thread before retries
-      pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:3}"
+      pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
   retained-msg:
     # Interval in milliseconds to poll messages from 'tbmq.msg.retained' topic
     poll-interval: "${TB_RETAINED_MSG_POLL_INTERVAL:100}"
@@ -368,130 +368,130 @@ queue:
     msg-all:
       # Topic for persisting incoming PUBLISH messages
       topic: "${TB_KAFKA_MSG_ALL_TOPIC:tbmq.msg.all}"
-      # Kafka topic properties for `tbmq.msg.all` topic
+      # Kafka topic properties separated by semicolon for `tbmq.msg.all` topic
       topic-properties: "${TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.all` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.all` topic
       additional-consumer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.msg.all` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.all` topic
       additional-producer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_PRODUCER_CONFIG:}"
     application-persisted-msg:
-      # Kafka topic properties for `tbmq.msg.app` topics
+      # Kafka topic properties separated by semicolon for `tbmq.msg.app` topics
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.app` topics
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.app` topics
       additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
-      # Additional Kafka producer configs for `tbmq.msg.app` topics
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.app` topics
       additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
       shared-topic:
-        # Kafka topic properties for application shared subscription topics
+        # Kafka topic properties separated by semicolon for application shared subscription topics
         topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-        # Additional Kafka consumer configs for application shared subscription topics
+        # Additional Kafka consumer configs separated by semicolon for application shared subscription topics
         additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
-        # Additional Kafka producer configs for application shared subscription topics
+        # Additional Kafka producer configs separated by semicolon for application shared subscription topics
         additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_PRODUCER_CONFIG:}"
     device-persisted-msg:
       # Topic for persisting messages related to Device clients before saving them in Database
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:tbmq.msg.persisted}"
-      # Kafka topic properties for `tbmq.msg.persisted` topic
+      # Kafka topic properties separated by semicolon for `tbmq.msg.persisted` topic
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.persisted` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.persisted` topic
       additional-consumer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.msg.persisted` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.persisted` topic
       additional-producer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     retained-msg:
       # Topic for retained messages
       topic: "${TB_KAFKA_RETAINED_MSG_TOPIC:tbmq.msg.retained}"
-      # Kafka topic properties for `tbmq.msg.retained` topic
+      # Kafka topic properties separated by semicolon for `tbmq.msg.retained` topic
       topic-properties: "${TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.retained` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.retained` topic
       additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.msg.retained` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.retained` topic
       additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session:
       # Topic for persisting client sessions
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:tbmq.client.session}"
-      # Kafka topic properties for `tbmq.client.session` topic
+      # Kafka topic properties separated by semicolon for `tbmq.client.session` topic
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.client.session` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.session` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.client.session` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.session` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-subscriptions:
       # Topic for persisting client subscriptions
       topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:tbmq.client.subscriptions}"
-      # Kafka topic properties for `tbmq.client.subscriptions` topic
+      # Kafka topic properties separated by semicolon for `tbmq.client.subscriptions` topic
       topic-properties: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.client.subscriptions` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.subscriptions` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.client.subscriptions` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.subscriptions` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session-event:
       # Topic for sending client session event requests
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
-      # Kafka topic properties for `tbmq.client.session.event.request` topic
+      # Kafka topic properties separated by semicolon for `tbmq.client.session.event.request` topic
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
-      # Additional Kafka consumer configs for ``tbmq.client.session.event.request`` topic
+      # Additional Kafka consumer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1024}"
-      # Additional Kafka producer configs for ``tbmq.client.session.event.request`` topic
+      # Additional Kafka producer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event-response:
       # Prefix for topics for sending client session event responses to Broker nodes
       topic-prefix: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PREFIX:tbmq.client.session.event.response}"
-      # Kafka topic properties for `tbmq.client.session.event.response` topics
+      # Kafka topic properties separated by semicolon for `tbmq.client.session.event.response` topics
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.client.session.event.response` topics
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.session.event.response` topics
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.client.session.event.response` topics
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.session.event.response` topics
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_PRODUCER_CONFIG:}"
     disconnect-client-command:
       # Prefix for topics for sending disconnect client commands to Broker nodes
       topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:tbmq.client.disconnect}"
-      # Kafka topic properties for `tbmq.client.disconnect` topics
+      # Kafka topic properties separated by semicolon for `tbmq.client.disconnect` topics
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.client.disconnect` topics
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.disconnect` topics
       additional-consumer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.client.disconnect` topics
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.disconnect` topics
       additional-producer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_PRODUCER_CONFIG:}"
     basic-downlink-msg:
       # Prefix for topics for non-persistent Device messages that should be transferred to other Broker nodes
       topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.basic}"
-      # Kafka topic properties for `tbmq.msg.downlink.basic` topics
+      # Kafka topic properties separated by semicolon for `tbmq.msg.downlink.basic` topics
       topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.downlink.basic` topics
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.downlink.basic` topics
       additional-consumer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.msg.downlink.basic` topics
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.downlink.basic` topics
       additional-producer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:batch.size:32768}"
     persisted-downlink-msg:
       # Prefix for topics for persistent Device messages that should be transferred to other Broker nodes
       topic-prefix: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.persisted}"
-      # Kafka topic properties for `tbmq.msg.downlink.persisted` topics
+      # Kafka topic properties separated by semicolon for `tbmq.msg.downlink.persisted` topics
       topic-properties: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.msg.downlink.persisted` topics
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.downlink.persisted` topics
       additional-consumer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.msg.downlink.persisted` topics
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.downlink.persisted` topics
       additional-producer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     application-removed-event:
       # Topic for sending events to remove application topics when application clients are changed to be device clients
       topic: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC:tbmq.sys.app.removed}"
-      # Kafka topic properties for `tbmq.sys.app.removed` topic
+      # Kafka topic properties separated by semicolon for `tbmq.sys.app.removed` topic
       topic-properties: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.sys.app.removed` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.app.removed` topic
       additional-consumer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.sys.app.removed` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.app.removed` topic
       additional-producer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     historical-data-total:
       # Topic for sending historical data stats to be summed from each broker
       topic: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC:tbmq.sys.historical.data}"
-      # Kafka topic properties for `tbmq.sys.historical.data` topic
+      # Kafka topic properties separated by semicolon for `tbmq.sys.historical.data` topic
       topic-properties: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
-      # Additional Kafka consumer configs for `tbmq.sys.historical.data` topic
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-consumer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_CONSUMER_CONFIG:}"
-      # Additional Kafka producer configs for `tbmq.sys.historical.data` topic
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-producer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_PRODUCER_CONFIG:}"
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
       tbmq.msg.app.test_client:
-        - key: max.poll.records
-          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
+#        - key: max.poll.records
+#          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
 
 # General service parameters
 service:
