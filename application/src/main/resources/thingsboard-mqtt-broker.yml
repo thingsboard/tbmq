@@ -754,71 +754,95 @@ db:
   # The parameter to specify time interval in milliseconds to periodically check if the connection to the DB is still established
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 
+# Cache parameters
 cache:
-  # caffeine or redis
+  # Cache type: caffeine or redis
   type: "${CACHE_TYPE:caffeine}"
   stats:
+    # Enable/disable cache stats logging
     enabled: "${CACHE_STATS_ENABLED:true}"
+    # Cache stats logging interval in seconds
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
   specs:
     packetIdAndSerialNumber:
+      # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
-      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}"
     mqttClientCredentials:
+      # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
-      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}"
     basicCredentialsPassword:
-      timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}" # it is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
-      maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      # Cache TTL in minutes. It is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
+      timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}"
 
+# Redis configuration parameters
 redis:
-  # standalone or cluster or sentinel
   connection:
+    # Connection type: standalone or cluster or sentinel
     type: "${REDIS_CONNECTION_TYPE:standalone}"
   standalone:
+    # Redis connection host
     host: "${REDIS_HOST:localhost}"
+    # Redis connection port
     port: "${REDIS_PORT:6379}"
+    # Use the default Redis configuration file
     useDefaultClientConfig: "${REDIS_USE_DEFAULT_CLIENT_CONFIG:true}"
-    # this value may be used only if you did not use the default ClientConfig
+    # This value may be used only if you did not use the default ClientConfig, to specify client name
     clientName: "${REDIS_CLIENT_NAME:standalone}"
-    # this value may be used only if you did not use the default ClientConfig
+    # This value may be used only if you did not use the default ClientConfig, to specify connection timeout
     connectTimeout: "${REDIS_CLIENT_CONNECT_TIMEOUT:30000}"
-    # this value may be used only if you did not use the default ClientConfig
+    # This value may be used only if you did not use the default ClientConfig, to specify read timeout
     readTimeout: "${REDIS_CLIENT_READ_TIMEOUT:60000}"
-    # this value may be used only if you did not use the default ClientConfig
+    # This value may be used only if you did not use the default ClientConfig, to use pool config section
     usePoolConfig: "${REDIS_CLIENT_USE_POOL_CONFIG:false}"
   cluster:
-    # Comma-separated list of "host:port" pairs to bootstrap from.
+    # Comma-separated list of "host:port" pairs to bootstrap from
     nodes: "${REDIS_NODES:}"
-    # Maximum number of redirects to follow when executing commands across the cluster.
+    # Maximum number of redirects to follow when executing commands across the cluster
     maxRedirects: "${REDIS_MAX_REDIRECTS:12}"
-    # if set false will be used pool config build from values of the pool config section
+    # If set false will be used pool config build from values of the pool config section
     useDefaultPoolConfig: "${REDIS_CLUSTER_USE_DEFAULT_POOL_CONFIG:true}"
   sentinel:
-    # name of master node
+    # Name of master node
     master: "${REDIS_MASTER:}"
-    # comma-separated list of "host:port" pairs of sentinels
+    # Comma-separated list of "host:port" pairs of sentinels
     sentinels: "${REDIS_SENTINELS:}"
-    # password to authenticate with sentinel
+    # Password to authenticate with sentinel
     password: "${REDIS_SENTINEL_PASSWORD:}"
-    # if set false will be used pool config build from values of the pool config section
+    # If set false will be used pool config build from values of the pool config section
     useDefaultPoolConfig: "${REDIS_SENTINEL_USE_DEFAULT_POOL_CONFIG:true}"
-  # db index
+  # DB index
   db: "${REDIS_DB:0}"
-  # db password
+  # DB password
   password: "${REDIS_PASSWORD:}"
-  # pool config
+  # Pool config
   pool_config:
+    # Maximum number of connections that can be allocated by the connection pool
     maxTotal: "${REDIS_POOL_CONFIG_MAX_TOTAL:128}"
+    # Maximum number of idle connections that can be maintained in the pool without being closed
     maxIdle: "${REDIS_POOL_CONFIG_MAX_IDLE:128}"
+    # Minimum number of idle connections that can be maintained in the pool without being closed
     minIdle: "${REDIS_POOL_CONFIG_MIN_IDLE:16}"
+    # Enable/Disable PING command sent when a connection is borrowed
     testOnBorrow: "${REDIS_POOL_CONFIG_TEST_ON_BORROW:true}"
+    # The property is used to specify whether to test the connection before returning it to the connection pool
     testOnReturn: "${REDIS_POOL_CONFIG_TEST_ON_RETURN:true}"
+    # Indicates whether to use the ping command to monitor the connection validity during idle resource monitoring. Invalid connections will be destroyed
     testWhileIdle: "${REDIS_POOL_CONFIG_TEST_WHILE_IDLE:true}"
+    # Minimum time the connection should be idle before it can be evicted from the connection pool. The value is set in milliseconds
     minEvictableMs: "${REDIS_POOL_CONFIG_MIN_EVICTABLE_MS:60000}"
+    # Specifies the time interval in milliseconds between two consecutive eviction runs
     evictionRunsMs: "${REDIS_POOL_CONFIG_EVICTION_RUNS_MS:30000}"
+    # Maximum time in milliseconds where a client is willing to wait for a connection from the pool when all connections are exhausted
     maxWaitMills: "${REDIS_POOL_CONFIG_MAX_WAIT_MS:60000}"
+    # Specifies the number of connections to test for eviction during each eviction run
     numberTestsPerEvictionRun: "${REDIS_POOL_CONFIG_NUMBER_TESTS_PER_EVICTION_RUN:3}"
+    # Determines the behavior when a thread requests a connection from the pool, but there are no available connections, and the pool cannot create more due to the maxTotal configuration
     blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
 
 stats:
