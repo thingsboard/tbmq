@@ -864,49 +864,64 @@ historical-data-report:
   # Timezone for the historical data stats processing
   zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
+# Metrics management parameters
 management:
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'info' to disable prometheus metrics).
+        # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
         include: '${METRICS_ENDPOINTS_EXPOSE:prometheus}'
 
-# spring CORS configuration
+# Spring CORS configuration
 spring.mvc.cors:
   mappings:
     # Intercept path
     "[/api/**]":
-      #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
+      # Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled
       allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
-      #Comma-separated list of methods to allow. '*' allows all methods.
+      # Comma-separated list of methods to allow. '*' allows all methods
       allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
-      #Comma-separated list of headers to allow in a request. '*' allows all headers.
+      # Comma-separated list of headers to allow in a request. '*' allows all headers
       allowed-headers: "${MVC_CORS_API_ALLOWED_HEADERS:*}"
-      #How long, in seconds, the response from a pre-flight request can be cached by clients.
+      # How long, in seconds, the response from a pre-flight request can be cached by clients
       max-age: "${MVC_CORS_API_MAX_AGE:1800}"
-      #Set whether credentials are supported. When not set, credentials are not supported.
+      # Set whether credentials are supported. When not set, credentials are not supported
       allow-credentials: "${MVC_CORS_API_ALLOW_CREDENTIALS:true}"
 
+# Swagger parameters
 swagger:
+  # General swagger match pattern of swagger UI links
   api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
+  # General swagger match pattern path of swagger UI links
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
+  # Non-security API path match pattern of swagger UI links
   non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
+  # The title on the API doc UI page
   title: "${SWAGGER_TITLE:TBMQ REST API}"
+  # The description on the API doc UI page
   description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
+    # The contact name on the API doc UI page
     name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
+    # The contact URL on the API doc UI page
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
+    # The contact email on the API doc UI page
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:
+    # The license title on the API doc UI page
     title: "${SWAGGER_LICENSE_TITLE:Apache License Version 2.0}"
+    # Link to the license body on the API doc UI page
     url: "${SWAGGER_LICENSE_URL:https://github.com/thingsboard/tbmq/blob/main/LICENSE}"
+  # The version of the API doc to display. Default to the package version
   version: "${SWAGGER_VERSION:}"
 
-# Application info
+# Application info parameters
 app:
   # Application version
-  version: "@project.version@"
+  version: "${APP_VERSION:@project.version@}"
 
+# Analysis parameters
 analysis:
   log:
+    # List of Client Ids separated with comas. Additional events for those clients will be logged
     analyzed-client-ids: "${ANALYSIS_LOG_CLIENT_IDS:}"
