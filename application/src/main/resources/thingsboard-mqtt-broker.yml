@@ -557,7 +557,7 @@ sql:
       # The parameter to specify system TTL(Time To Live) value for time-series records. Value set in seconds. 0 - records are never expired. Default value corresponds to seven days
       ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}"
 
-# SQL DAO Configuration parameters
+# SQL DAO configuration parameters
 spring:
   data:
     jpa:
@@ -870,7 +870,7 @@ management:
     web:
       exposure:
         # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
-        include: '${METRICS_ENDPOINTS_EXPOSE:prometheus}'
+        include: "${METRICS_ENDPOINTS_EXPOSE:prometheus}"
 
 # Spring CORS configuration
 spring.mvc.cors:
