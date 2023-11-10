@@ -845,15 +845,23 @@ redis:
     # Determines the behavior when a thread requests a connection from the pool, but there are no available connections, and the pool cannot create more due to the maxTotal configuration
     blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
 
+# Statistics parameters
 stats:
+  # Enable/disable stats printing to the logs
   enabled: "${STATS_ENABLED:true}"
+  # Period in milliseconds to print stats. Default value corresponds to 1 minute
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
   application-processor:
+    # Enable/disable specific Application clients stats
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
 
+# Historical data statistics parameters
 historical-data-report:
+  # Enable/disable historical data stats reporting and persistence to the time-series
   enabled: "${HISTORICAL_DATA_REPORT_ENABLED:true}"
-  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}" # time in minutes (1-60) to collect historical data statistics. Used in cron expression
+  # Period in minutes (1-60) to collect stats for each broker. Used in cron expression
+  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}"
+  # Timezone for the historical data stats processing
   zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
 management:
