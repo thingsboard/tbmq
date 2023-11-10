@@ -199,7 +199,7 @@ export class MenuService {
       },
       {
         name: 'home.performance-tests',
-        path: 'reference/performance-tests',
+        path: 'reference/100m-connections-performance-test',
         icon: 'mdi:speedometer'
       },
       {

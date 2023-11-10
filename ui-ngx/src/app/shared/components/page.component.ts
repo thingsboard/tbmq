@@ -30,7 +30,7 @@ export abstract class PageComponent implements OnDestroy {
   disabledOnLoadFormControls: Array<AbstractControl> = [];
 
   protected constructor(protected store: Store<AppState>) {
-    this.isLoading$ = this.store.pipe(delay(0), filter(() => !document.hidden), select(selectIsLoading), share());
+    this.isLoading$ = this.store.pipe(filter(() => !document.hidden), delay(0), select(selectIsLoading), share());
   }
 
   protected registerDisableOnLoadFormControl(control: AbstractControl) {

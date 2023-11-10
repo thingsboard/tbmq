@@ -47,7 +47,7 @@
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex floatLabel="always" class="mat-block">
+      <mat-form-field fxFlex floatLabel="always" class="mat-block" hideRequiredMarker>
         <mat-label translate>mqtt-client-session.qos</mat-label>
         <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
           <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">

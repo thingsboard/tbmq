@@ -448,8 +448,8 @@
     "session-id-copied-message": "Session ID has been copied to clipboard",
     "search": "Search by Client ID",
     "selected-sessions": "{ count, plural, =1 {1 Session} other {# Sessions} } selected",
-    "selected-sessions-are-connected": "Selected Sessions are connected. Please disconnect them to remove.",
-    "selected-sessions-are-disconnected": "Selected Sessions are disconnected.",
+    "selected-sessions-are-connected": "Selected Sessions are connected. Please disconnect them before removing.",
+    "selected-sessions-are-disconnected": "Selected Sessions are already disconnected.",
     "subscriptions": "Subscriptions",
     "subscriptions-short": "Subs",
     "subscriptions-count": "Subscriptions",
@@ -657,6 +657,7 @@
   "version": {
     "version": "Version",
     "upgrade": "Upgrade",
+    "upgrade-instructions": "Upgrade instructions",
     "contact-us": "Contact us",
     "available": "Available",
     "current": "Current"
