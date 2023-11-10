@@ -918,7 +918,7 @@ swagger:
 # Application info parameters
 app:
   # Application version
-  version: "${APP_VERSION:@project.version@}"
+  version: "@project.version@"
 
 # Analysis parameters
 analysis:
