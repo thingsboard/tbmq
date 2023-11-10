@@ -613,15 +613,20 @@ security:
     ssl:
       # If enabled the server will try to authenticate client with client certificate chain
       enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
-      # Skip certificate validity check for client certificates.
+      # Skip certificate validity check for client certificates
       skip_validity_check_for_client_cert: "${SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
   # JWT Token parameters
   jwt:
-    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)
-    refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}" # Number of seconds (1 week)
+    # User JWT Token expiration time in seconds (2.5 hours)
+    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}"
+    # User JWT Refresh Token expiration time in seconds (1 week)
+    refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}"
+    # User JWT Token issuer
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
+    # User JWT Token sign key
     tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
   basic:
+    # Enable/Disable basic security options
     enabled: "${SECURITY_BASIC_ENABLED:false}"
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
