@@ -68,6 +68,10 @@
         transition: visibility 0.1s;
       }
 
+      .mat-cell {
+        white-space: nowrap;
+      }
+
       .mat-cell:hover .mat-cell-copy {
         visibility: visible !important;
       }
