@@ -58,7 +58,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   showShareName = false;
   shareNameCounter = 0;
 
-  private propagateChange = null;
+  private propagateChange = (v: any) => {};
   private valueChangeSubscription: Subscription = null;
 
   constructor(protected store: Store<AppState>,
@@ -111,8 +111,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
       }
     }
     this.topicListFormGroup.setControl('subscriptions', this.fb.array(subscriptionsControls));
-    this.valueChangeSubscription = this.topicListFormGroup.valueChanges.subscribe((value) => {
-      this.updateView(value);
+    this.valueChangeSubscription = this.topicListFormGroup.valueChanges.subscribe(() => {
+      this.updateView();
     });
   }
 
@@ -150,7 +150,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return index + ' - ' + name;
   }
 
-  private updateView(value: TopicSubscription[]) {
+  private updateView() {
     this.propagateChange(this.topicListFormGroup.get('subscriptions').value);
   }
 }
