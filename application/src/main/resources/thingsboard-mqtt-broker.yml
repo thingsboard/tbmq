@@ -557,7 +557,7 @@ sql:
       # The parameter to specify system TTL(Time To Live) value for time-series records. Value set in seconds. 0 - records are never expired. Default value corresponds to seven days
       ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}"
 
-# SQL DAO Configuration
+# SQL DAO Configuration parameters
 spring:
   data:
     jpa:
@@ -591,7 +591,7 @@ spring:
       # This property controls the max lifetime in milliseconds of a connection. Only when it is closed will it then be removed. Default is 10 minutes
       maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}"
 
-# General spring parameters
+# General Spring parameters
 spring.lifecycle.timeout-per-shutdown-phase: "${SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE:1m}" # The server will wait for active requests to finish their work up to a specified amount of time before graceful shutdown
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "${SPRING_JPA_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION:true}" # Setting this property to true disables contextual LOB creation and forces the use of Hibernate's own LOB implementation. Fixes Postgres JPA Error
 spring.jpa.properties.hibernate.order_by.default_null_ordering: "${SPRING_JPA_HIBERNATE_ORDER_BY_DEFAULT_NULL_ORDERING:last}" # Default ordering for null values
@@ -631,100 +631,127 @@ security:
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
+# MQTT parameters
 mqtt:
   connect:
+    # Number of threads for clients connection thread pool
     threads: "${MQTT_CONNECT_THREADS:4}"
-  # enable/disable processing of found subscriptions in parallel for published messages.
+  # Enable/disable processing of found subscriptions in parallel for published messages.
   # Helpful when the "PUBLISH" message should be delivered to lots of subscribers.
-  # It is recommended to count the impact of this parameter before setting it on production.
+  # It is recommended to count the impact of this parameter before setting it on production
   msg-subscriptions-parallel-processing: "${MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING:false}"
   pre-connect-queue:
+    # Max number of messages that can be stored in queue before client gets connected and start processing them
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
+  # Max number of PUBLISH or PUBREL messages not yet responded
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   retransmission:
+    # Enable/disable MQTT msg retransmission
     enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"
-    # if set to 0 - uses the number of processors available to the JVM multiplied by 2.
+    # Retransmission scheduler pool size (0 means the number of processors available to the JVM multiplied by 2 will be used)
     scheduler-pool-size: "${MQTT_RETRANSMISSION_SCHEDULER_POOL_SIZE:0}"
-    initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}" # initial delay for the msg retransmission in seconds
-    # increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
+    # Initial delay for the msg retransmission in seconds
+    initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}"
+    # Increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
     period: "${MQTT_RETRANSMISSION_PERIOD:5}"
   # If enabled, each message is published to subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
   write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
   # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false
   buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
   keep-alive:
-    # Schedule monitoring for inactive MQTT clients
+    # Time in milliseconds between subsequent checks for the non-active clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
-    max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}" # in seconds, defaults to 10 minutes, for mqtt 5 clients
+    # Max value in seconds allowed by the server for keep-alive that can be used by clients. Defaults to 10 minutes, used for MQTT v5 clients
+    max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"
   topic:
-    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}" # 0 means the limitation is disabled
-    # max count of topic aliases per connection
-    # 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
+    # Maximum number of segments in topics. If it's too large, processing of topics with too much segments can lead to errors. 0 means limitation is disabled
+    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}"
+    # Max count of topic aliases per connection. 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
     alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"
-    # minimal required topic name length that Broker publishes to client that can be replaced with topic alias
+    # Minimal required topic name length that Broker publishes to client that can be replaced with topic alias
     # (e.g. if topic has more than 50 chars - it can be replaced with alias)
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   shared-subscriptions:
-    processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}" # supported types: ROUND_ROBIN
+    # Processing strategy type - how messages are split between clients in shared subscription. Supported types: ROUND_ROBIN
+    processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}"
   subscription-trie:
-    # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
-    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.
+    # Maximum pause in milliseconds for clearing subscription storage from empty nodes.
+    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
-    # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
+    # Cron job to schedule clearing of empty subscription nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
+    # Timezone for the subscription clearing cron-job
     clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
   retain-msg-trie:
-    # Wait for clients to pause updating retained messages for topics so that application can clear RetainMsgTrie.
-    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail.
+    # Maximum pause in milliseconds for clearing retain msg storage from empty nodes.
+    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_RETAIN_MSG_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
-    # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
+    # Cron job to schedule clearing of empty retain msg nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
+    # Timezone for retain msg clearing cron-job
     clear-nodes-zone: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_ZONE:UTC}"
   retain-msg:
+    # Period in milliseconds to clear retained messages by expiry feature of MQTT
     expiry-processing-period-ms: "${MQTT_RETAIN_MSG_EXPIRY_PROCESSING_PERIOD_MS:60000}"
   client-session-expiry:
-    # Cron specification when to run clearing old and not active client sessions. Defaults to 'every hour'
+    # Cron job to schedule clearing of expired and not active client sessions. Defaults to 'every hour', e.g. at 20:00:00 UTC
     cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"
+    # Timezone for the client sessions clearing cron-job
     zone: "${MQTT_CLIENT_SESSION_EXPIRY_ZONE:UTC}"
-    # Specify max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
+    # Max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
     max-expiry-interval: "${MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL:604800}"
     # Administration TTL in seconds for clearing sessions that do not expire by session expiry interval
     # (e.g. MQTTv3 cleanSession=false or MQTTv5 cleanStart=false && sessionExpiryInterval == 0).
     # The current value corresponds to one week. 0 or negative value means this TTL is disabled
     ttl: "${MQTT_CLIENT_SESSION_EXPIRY_TTL:604800}"
   version-3-1:
+    # Max ClientId length for 3.1 version of protocol
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
   persistent-session:
     device:
       persisted-messages:
+        # Maximum number of PUBLISH messages stored for each persisted DEVICE client
         limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
-        # Specify TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
+        # TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
-        # Cron specification when to run clearing persisted device messages. Defaults to 'every day at 2 o'clock'
         clean-up:
+          # Cron job to schedule clearing of outdated persisted DEVICE messages. Defaults to 'every day at 2 o'clock'
           cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
+          # Timezone for the DEVICE messages clearing cron-job
           zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
+          # Max number of client sessions in one SELECT request
           session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_SESSION_CTX_PAGE_SIZE:1000}"
         sql:
           update-packet-queue:
-            # batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:1}"
+            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:3}"
+            # Batch size for processing packet updates
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE:100}"
+            # Max timeout for packet updates queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_MAX_DELAY:50}"
           delete-packet-queue:
-            # batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:1}"
+            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:3}"
+            # Batch size for processing packet deletes
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_SIZE:100}"
+            # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
+    # Enable/disable publish rate limits per client
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
+    # Limit the maximum publish messages per client on each server for specified time intervals in seconds. Comma separated list of limit:seconds pairs
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
   handler:
+    # Number of threads in thread pool for processing all publish messages callbacks after sending them to Kafka
     all_msg_callback_threads: "${MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing device persisted publish messages callbacks after sending them to Kafka
     device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing application persisted publish messages callbacks after sending them to Kafka
     app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
 
+# DB connectivity parameters
 db:
+  # The parameter to specify time interval in milliseconds to periodically check if the connection to the DB is still established
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 
 cache:
