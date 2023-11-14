@@ -23,8 +23,10 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.basic-downlink-msg")
 public class BasicDownLinkPublishMsgKafkaSettings {
+
     private String topicPrefix;
     private String topicProperties;
     private String additionalProducerConfig;
     private String additionalConsumerConfig;
+
 }
