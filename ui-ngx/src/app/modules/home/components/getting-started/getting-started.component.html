@@ -37,6 +37,11 @@
               <mat-icon>desktop_mac</mat-icon>{{'getting-started.add-app-credentials' | translate}}
             </button>
           </section>
+          <section fxFlex fxLayoutGap="12px" *ngIf="step.id === 'session'">
+            <button mat-stroked-button color="primary" (click)="openSessions()">
+              <mat-icon [svgIcon]="'mdi:book-multiple'"></mat-icon>{{'getting-started.open-sessions' | translate}}
+            </button>
+          </section>
         </div>
       </mat-step>
     </ng-container>

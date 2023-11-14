@@ -732,6 +732,7 @@
     "step-enable-basic-auth": "Enable Basic Authentication",
     "add-dev-credentials": "Add Device Credentials",
     "add-app-credentials": "Add Application Credentials",
-    "credentials-added": "Credentials added successfully"
+    "credentials-added": "Credentials added successfully",
+    "open-sessions": "Session Details"
   }
 }

@@ -1262,6 +1262,14 @@ mat-label {
   .hint {
     margin-bottom: 16px;
   }
+
+  .mat-mdc-form-field-icon-suffix {
+    opacity: 0.54;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
 }
 
 .tb-fullscreen-backdrop {

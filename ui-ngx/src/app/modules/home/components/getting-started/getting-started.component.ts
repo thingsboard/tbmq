@@ -38,6 +38,8 @@ import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   ClientCredentialsWizardDialogComponent
 } from "@home/components/wizard/client-credentials-wizard-dialog.component";
+import { Router } from '@angular/router';
+import { ConnectionState } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-getting-started',
@@ -63,7 +65,8 @@ export class GettingStartedComponent implements AfterViewInit {
               private dialog: MatDialog,
               private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
-              private store: Store<AppState>) {
+              private store: Store<AppState>,
+              private router: Router) {
   }
 
   ngAfterViewInit(): void {
@@ -153,6 +156,15 @@ export class GettingStartedComponent implements AfterViewInit {
         }
       }
     );
+  }
+
+  openSessions() {
+    this.router.navigate(['/sessions'], {queryParams: {
+        connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
+        clientTypeList: [ClientType.APPLICATION],
+        clientId: 'tbmq',
+        openSession: true
+      }});
   }
 
   private getStep(id: string) {

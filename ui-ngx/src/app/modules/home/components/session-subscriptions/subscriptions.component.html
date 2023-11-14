@@ -36,6 +36,9 @@
       <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
         <input name="shareName" formControlName="shareName" matInput>
+        <tb-copy-button [fxHide]="!topicFilter.get('shareName')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+                        [copyText]="topicFilter.get('shareName').value">
+        </tb-copy-button>
       </mat-form-field>
       <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
@@ -62,7 +65,7 @@
               (click)="removeTopic($index)"
               matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"
               matTooltipPosition="above">
-        <mat-icon>close</mat-icon>
+        <mat-icon>remove_circle_outline</mat-icon>
       </button>
     </div>
     <section>
@@ -76,7 +79,7 @@
           [fxShow]="!disabled"
           (click)="addTopic()"
           type="button">
-    <mat-icon>add</mat-icon>
+    <mat-icon>add_circle_outline</mat-icon>
     {{ 'mqtt-client-session.add-subscription' | translate }}
   </button>
 </mat-expansion-panel>

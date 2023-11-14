@@ -48,6 +48,7 @@ import { forAllTimeInterval } from '@shared/models/time/time.models';
 import { ActivatedRoute, Router } from '@angular/router';
 import { deepClone } from '@core/utils';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { tap } from 'rxjs/operators';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -152,6 +153,13 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         delete queryParams.connectedStatusList;
         replaceUrl = true;
       }
+      if (routerQueryParams?.clientTypeList) {
+        this.sessionFilterConfig.clientTypeList = routerQueryParams?.clientTypeList;
+        delete queryParams.clientTypeList;
+      }
+      if (routerQueryParams?.clientId) {
+        this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
+      }
       if (replaceUrl) {
         this.router.navigate([], {
           relativeTo: this.route,
@@ -163,7 +171,18 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     }
     const sessionFilter = this.resolveSessionFilter(this.sessionFilterConfig);
     const query = new SessionQuery(pageLink, sessionFilter);
-    return this.clientSessionService.getShortClientSessionInfosV2(query);
+    return this.clientSessionService.getShortClientSessionInfosV2(query).pipe(
+      tap((res) => {
+        if (this.route.snapshot.queryParams.openSession) {
+          const sessionId = res.data.find(
+            el => el.clientId === this.route.snapshot.queryParams.clientId
+          );
+          if (sessionId) {
+            this.showSessionDetails(null, sessionId);
+          }
+        }
+      })
+    );
   }
 
   private showSessionDetails($event: Event, entity: DetailedClientSessionInfo) {
