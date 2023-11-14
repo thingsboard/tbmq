@@ -101,9 +101,9 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     };
   }
 
-  writeValue(mqttBasic: string) {
-    if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
-      const value = JSON.parse(mqttBasic);
+  writeValue(mqttSsl: string) {
+    if (isDefinedAndNotNull(mqttSsl) && !isEmptyStr(mqttSsl)) {
+      const value = JSON.parse(mqttSsl);
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }

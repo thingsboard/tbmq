@@ -31,6 +31,8 @@ export enum CredentialsType {
   SSL = 'SSL'
 }
 
+export const ANY_CHARACTERS = '.*';
+
 export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
@@ -59,7 +61,7 @@ export interface SslMqttCredentials extends SslAuthRulesMapping {
 }
 
 export interface SslAuthRulesMapping {
-  authRulesMapping: Array<SslCredentialsAuthRules>;
+  authRulesMapping: AuthRulesMapping[];
 }
 
 export interface SslCredentialsAuthRules {
