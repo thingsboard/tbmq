@@ -122,6 +122,7 @@ export interface SessionFilterConfig {
   cleanStartList?: boolean[];
   subscriptions?: number;
   clientId?: string;
+  openSession?: boolean;
 }
 
 export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {

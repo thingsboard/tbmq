@@ -49,6 +49,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { deepClone } from '@core/utils';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { tap } from 'rxjs/operators';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
 
@@ -145,6 +146,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
 
   private fetchSessions(pageLink: TimePageLink): Observable<PageData<DetailedClientSessionInfo>> {
     const routerQueryParams: SessionFilterConfig = this.route.snapshot.queryParams;
+    let openSession = false;
     if (routerQueryParams) {
       const queryParams = deepClone(routerQueryParams);
       let replaceUrl = false;
@@ -159,6 +161,11 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       }
       if (routerQueryParams?.clientId) {
         this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
+        delete queryParams.clientId;
+      }
+      if (routerQueryParams?.openSession) {
+        openSession = coerceBooleanProperty(queryParams.openSession);
+        delete queryParams.openSession;
       }
       if (replaceUrl) {
         this.router.navigate([], {
@@ -173,9 +180,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     const query = new SessionQuery(pageLink, sessionFilter);
     return this.clientSessionService.getShortClientSessionInfosV2(query).pipe(
       tap((res) => {
-        if (this.route.snapshot.queryParams.openSession) {
+        if (openSession) {
           const sessionId = res.data.find(
-            el => el.clientId === this.route.snapshot.queryParams.clientId
+            el => el.clientId === this.sessionFilterConfig.clientId
           );
           if (sessionId) {
             this.showSessionDetails(null, sessionId);
