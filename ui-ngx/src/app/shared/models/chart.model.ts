@@ -96,7 +96,7 @@ const lineChartParams = {
       afterEvent: (chart, evt) => {
         const {chartArea: {top, bottom}} = chart;
         const {event: {x, y}} = evt;
-        if (y < top || y > bottom || x < 40) {
+        if (y < top || y > bottom || x < 20) {
           chart.corsair = {x, y, draw: false};
           chart.draw();
           return;
