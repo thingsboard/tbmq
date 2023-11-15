@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, OnDestroy, Output } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, OnDestroy, Output } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -53,7 +53,7 @@ import { MatChipInputEvent } from '@angular/material/chips';
     }],
   styleUrls: ['./basic.component.scss']
 })
-export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
   @Input()
   disabled: boolean;
@@ -80,16 +80,21 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
       userName: [null],
       password: [null],
       authRules: this.fb.group({
-        pubAuthRulePatterns: [null],
-        subAuthRulePatterns: [null]
+        pubAuthRulePatterns: [[ANY_CHARACTERS], []],
+        subAuthRulePatterns: [[ANY_CHARACTERS], []]
       })
     }, {validators: this.atLeastOne(Validators.required, ['clientId', 'userName'])});
-    this.setDefaultAuthRuleValue();
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe((value) => {
       this.updateView(value);
     });
+  }
+
+  ngAfterViewInit() {
+    this.addValueToAuthRulesSet('pubAuthRulePatterns');
+    this.addValueToAuthRulesSet('subAuthRulePatterns');
+    this.cd.detectChanges();
   }
 
   ngOnDestroy(): void {
@@ -130,24 +135,12 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         }
       }
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
-    } else {
-      this.addValueToAuthRulesSet('pubAuthRulePatterns');
-      this.addValueToAuthRulesSet('subAuthRulePatterns');
-      this.cd.detectChanges();
     }
   }
 
   private clearRuleSets() {
     this.pubRulesSet.clear();
     this.subRulesSet.clear();
-  }
-
-  private setDefaultAuthRuleValue(value: string = ANY_CHARACTERS) {
-    const authRulesControl = this.credentialsMqttFormGroup.get('authRules');
-    for (const rule of Object.keys(authRulesControl.value)) {
-      authRulesControl.patchValue({[rule]: [value]});
-      this.addValueToAuthRulesSet(rule, value);
-    }
   }
 
   updateView(value: BasicCredentials) {
