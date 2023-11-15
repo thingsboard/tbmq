@@ -20,14 +20,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.thingsboard.mqtt-broker</groupId>
-        <version>1.1.1-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
         <artifactId>common</artifactId>
     </parent>
     <groupId>org.thingsboard.mqtt-broker.common</groupId>
     <artifactId>queue</artifactId>
     <packaging>jar</packaging>
 
-    <name>Thingsboard MQTT Broker Queue components</name>
+    <name>TBMQ Queue components</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
