@@ -20,7 +20,7 @@ import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { AuthRulePatternsType, ClientCredentials } from '@shared/models/credentials.model';
+import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
@@ -52,6 +52,20 @@ export interface PublishTelemetryCommand {
 
 export enum NetworkTransportType {
   MQTT = 'MQTT'
+}
+
+export interface MqttCommandConfig {
+  clientId?: string;
+  userName?: string;
+  password?: string;
+  hostname?: string;
+  mqttPort?: string;
+  cleanSession?: boolean;
+  network?: string;
+  message?: string;
+  subTopic?: string;
+  pubTopic?: string;
+  debugQoS?: string;
 }
 
 @Component({
@@ -150,89 +164,65 @@ export class CheckConnectivityDialogComponent extends
   }
 
   private loadCommands() {
-    const credentials = this.data.credentials;
-    const clientType = credentials.clientType;
-    const credentialsValue = JSON.parse(credentials.credentialsValue);
-    const clientId = credentialsValue.clientId;
-    const userName = credentialsValue.userName;
-    const password = this.data.credentials?.password || (credentialsValue.password ? '$YOUR_PASSWORD' : undefined);
-    const subTopic = this.getTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+');
-    const pubTopic = this.getTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic');
-    const hostname = window.location.hostname;
-    const mqttPort = this.mqttPort;
-    const subCommands: string[] = [];
-    const pubCommands: string[] = [];
-    const dockerSubCommands: string[] = [];
-    const dockerPubCommands: string[] = [];
-    const clientInfoCommands: string[] = [];
-    const defaultOptions: string = '-d -q 1';
+    const config = this.setConfig(this.data.credentials);
+    const commonCommands = this.setCommonCommands(config);
 
-    if (clientId) clientInfoCommands.push(`-i '${clientId}'`);
-    if (userName) clientInfoCommands.push(`-u '${userName}'`);
-    if (password) clientInfoCommands.push(`-P '${password}'`);
-    const clientInfo = clientInfoCommands.join(' ');
-    const message = "-m 'Hello World'";
-    const network = (hostname === 'localhost' || hostname === '127.0.0.1') ? '--network=host' : '';
-    const cleanSession = clientType === ClientType.APPLICATION ? '-c' : '';
-    const randomClientId = (clientType === ClientType.APPLICATION && !clientId) ? ('-i tbmq_'+(Math.random().toString(36).slice(2, 7))) : '';
+    const subCommands: string[] = [];
     subCommands.push(
       "mosquitto_sub",
-      defaultOptions,
-      `-h ${hostname}`,
-      `-p ${mqttPort}`,
-      `-t ${subTopic}`,
-      randomClientId,
-      clientInfo,
-      cleanSession,
+      config.debugQoS,
+      `-h ${config.hostname}`,
+      `-p ${config.mqttPort}`,
+      `-t ${config.subTopic}`,
+      commonCommands,
       '-v'
     );
+
+    const pubCommands: string[] = [];
     pubCommands.push(
       "mosquitto_pub",
-      defaultOptions,
-      `-h ${hostname}`,
-      `-p ${mqttPort}`,
-      `-t ${pubTopic}`,
-      clientInfo,
-      message,
-      cleanSession
+      config.debugQoS,
+      `-h ${config.hostname}`,
+      `-p ${config.mqttPort}`,
+      `-t ${config.pubTopic}`,
+      commonCommands,
+      config.message
     );
+
+    const dockerSubCommands: string[] = [];
+    dockerSubCommands.push("docker run --rm");
+    if (config.network) dockerSubCommands.push(config.network);
     dockerSubCommands.push(
-      "docker run --rm",
-      network,
       "-it thingsboard/mosquitto-clients mosquitto_sub -d -q 1",
-      `-h ${hostname}`,
-      `-p ${mqttPort}`,
-      `-t ${subTopic}`,
-      randomClientId,
-      clientInfo,
-      cleanSession,
+      `-h ${config.hostname}`,
+      `-p ${config.mqttPort}`,
+      `-t ${config.subTopic}`,
+      commonCommands,
       '-v'
     );
+
+    const dockerPubCommands: string[] = [];
+    dockerPubCommands.push("docker run --rm");
+    if (config.network) dockerPubCommands.push(config.network);
     dockerPubCommands.push(
-      "docker run --rm",
-      network,
       "-it thingsboard/mosquitto-clients mosquitto_pub -d -q 1",
-      `-h ${hostname}`,
-      `-p ${mqttPort}`,
-      `-t ${pubTopic}`,
-      clientInfo,
-      message,
-      cleanSession
+      `-h ${config.hostname}`,
+      `-p ${config.mqttPort}`,
+      `-t ${config.pubTopic}`,
+      commonCommands,
+      config.message
     );
-    const sub = subCommands.join(' ');
-    const pub = pubCommands.join(' ');
-    const dockerSub = dockerSubCommands.join(' ');
-    const dockerPub = dockerPubCommands.join(' ');
+
     this.commands = {
       mqtt: {
         mqtt: {
-          sub,
-          pub
+          sub: subCommands.join(' '),
+          pub: pubCommands.join(' ')
         },
         docker: {
           mqtt: {
-            sub: dockerSub,
-            pub: dockerPub
+            sub: dockerSubCommands.join(' '),
+            pub: dockerPubCommands.join(' ')
           }
         }
       }
@@ -241,11 +231,65 @@ export class CheckConnectivityDialogComponent extends
     this.loadedCommand = true;
   }
 
-  private getTopic(rules: string[], topic: string): string {
+  private setConfig(credentials: ClientCredentials): MqttCommandConfig {
+    const clientType = credentials.clientType;
+    const credentialsValue = JSON.parse(credentials.credentialsValue);
+    return {
+      clientId: this.setClientId(credentialsValue, clientType),
+      userName: credentialsValue.userName,
+      password: this.setPassword(credentialsValue),
+      subTopic: this.setTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+'),
+      pubTopic: this.setTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic'),
+      hostname: window.location.hostname,
+      mqttPort: this.mqttPort,
+      cleanSession: clientType === ClientType.APPLICATION,
+      network: this.setNetworkCommand(window.location.hostname),
+      message: "-m 'Hello World'",
+      debugQoS: '-d -q 1'
+    }
+  }
+
+  private setClientId(credentialsValue: BasicCredentials, clientType: ClientType): string {
+    if (credentialsValue.clientId) {
+      return credentialsValue.clientId;
+    }
+    if (clientType === ClientType.APPLICATION) {
+      return 'tbmq_' + (Math.random().toString(36).slice(2, 7));
+    }
+    return null;
+  }
+
+  private setPassword(credentialsValue: BasicCredentials): string {
+    if (this.data.credentials?.password) {
+      return this.data.credentials?.password;
+    }
+    if (credentialsValue.password) {
+      return '$YOUR_PASSWORD';
+    }
+    return null;
+  }
+
+  private setNetworkCommand(hostname: string): string {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '--network=host'
+    }
+    return null;
+  }
+
+  private setTopic(rules: string[], topic: string): string {
     for (let i= 0; i < rules?.length; i++) {
       if (rules[i] === ".*") return topic;
     }
     return '$YOUR_TOPIC';
+  }
+
+  private setCommonCommands(config: MqttCommandConfig): string {
+    const clientInfoCommands: string[] = [];
+    if (config.clientId) clientInfoCommands.push(`-i '${config.clientId}'`);
+    if (config.userName) clientInfoCommands.push(`-u '${config.userName}'`);
+    if (config.password) clientInfoCommands.push(`-P '${config.password}'`);
+    if (config.cleanSession) clientInfoCommands.push('-c');
+    return clientInfoCommands.join(' ');
   }
 
   private selectTabIndexForUserOS() {
