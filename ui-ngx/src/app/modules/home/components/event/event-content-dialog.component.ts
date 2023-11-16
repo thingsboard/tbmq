@@ -139,8 +139,8 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
   }
 
   updateEditorSize(editorElement: any, content: string, editor: Ace.Editor) {
-    let newHeight = 400;
-    let newWidth = 600;
+    let newHeight = 50;
+    let newWidth = 400;
     if (content && content.length > 0) {
       const lines = content.split('\n');
       newHeight = 16 * lines.length + 16;
