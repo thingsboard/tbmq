@@ -102,8 +102,4 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
     this.entityForm.patchValue({clientType: entity.clientType});
   }
-
-  onChangePasswordCloseDialog($event: ClientCredentials) {
-    this.updateForm($event);
-  }
 }

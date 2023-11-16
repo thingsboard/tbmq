@@ -68,10 +68,12 @@
       <div class="fixed-title-width" translate>mqtt-client.client-type</div>
       <mat-chip-listbox multiple formControlName="clientTypeList">
         <mat-chip-option *ngFor="let value of clientTypes" [value]="value">
-          <mat-icon style="height: 14px; width: 14px; font-size: 14px; line-height: 16px;" class="material-icons mat-icon">
-            {{ clientTypeIcon.get(value) }}
-          </mat-icon>
-          {{ clientTypeTranslationMap.get(value) | translate }}
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            {{ clientTypeTranslationMap.get(value) | translate }}
+            <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
+              {{ clientTypeIcon.get(value) }}
+            </mat-icon>
+          </span>
         </mat-chip-option>
       </mat-chip-listbox>
     </div>

@@ -18,7 +18,7 @@
 <section [formGroup]="credentialsMqttFormGroup">
   <fieldset class="fields-group">
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
-    <div style="line-height: 9px;" class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
+    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client.client-id</mat-label>
       <input matInput formControlName="clientId">
@@ -56,6 +56,7 @@
             *ngIf="entity?.id"
             type="button"
             [disabled]="disabled" (click)="changePassword()">
+      <mat-icon>lock</mat-icon>
       {{'profile.change-password' | translate}}
     </button>
   </fieldset>
@@ -89,6 +90,9 @@
                  [matChipInputFor]="chipListPub"
                  (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
         </mat-chip-grid>
+        <mat-icon [fxShow]="!pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+          warning
+        </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
@@ -109,6 +113,9 @@
                  [matChipInputFor]="chipListSub"
                  (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
         </mat-chip-grid>
+        <mat-icon [fxShow]="!subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+          warning
+        </mat-icon>
       </mat-form-field>
     </div>
   </mat-expansion-panel>

@@ -48,7 +48,7 @@ import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-creden
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import { MatDialog } from '@angular/material/dialog';
 import { ClientCredentialsWizardDialogComponent } from '@home/components/wizard/client-credentials-wizard-dialog.component';
-import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
 import { BaseData } from '@shared/models/base-data';
 import {
   CheckConnectivityDialogComponent,
@@ -76,6 +76,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
     this.addDialogStyle = {width: 'fit-content'};
     this.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
+    this.onEntityAction = action => this.onAction(action);
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;
@@ -202,20 +203,47 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     );
   }
 
+  private onAction(action: EntityAction<ClientCredentials>): boolean {
+    switch (action.action) {
+      case 'checkConnectivity':
+        this.checkCredentials(action.event, action.entity);
+        return true;
+    }
+    return false;
+  }
+
   checkCredentials($event: Event, credentials: ClientCredentials, afterAdd = false) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<CheckConnectivityDialogComponent, CheckConnectivityDialogData>
-    (CheckConnectivityDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        credentials,
-        afterAdd
-      }
-    })
-      .afterClosed()
-      .subscribe();
+    if (afterAdd) {
+      this.dialog.open<CheckConnectivityDialogComponent, CheckConnectivityDialogData>
+      (CheckConnectivityDialogComponent, {
+        disableClose: true,
+        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        data: {
+          credentials,
+          afterAdd
+        }
+      })
+        .afterClosed()
+        .subscribe();
+    } else {
+      this.clientCredentialsService.getClientCredentials(credentials.id).subscribe(
+        res => {
+          this.dialog.open<CheckConnectivityDialogComponent, CheckConnectivityDialogData>
+          (CheckConnectivityDialogComponent, {
+            disableClose: true,
+            panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+            data: {
+              credentials: res,
+              afterAdd
+            }
+          })
+            .afterClosed()
+            .subscribe();
+        }
+      );
+    }
   }
 }

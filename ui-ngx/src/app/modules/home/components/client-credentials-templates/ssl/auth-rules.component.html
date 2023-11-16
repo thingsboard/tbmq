@@ -65,6 +65,9 @@
                            [matChipInputFor]="chipListPub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-grid>
+                  <mat-icon [fxShow]="!pubRulesArray[$index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
@@ -86,6 +89,9 @@
                            [matChipInputFor]="chipListSub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)">
                   </mat-chip-grid>
+                  <mat-icon [fxShow]="!subRulesArray[$index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
               </div>
               <button mat-icon-button color="warn"

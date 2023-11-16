@@ -57,8 +57,8 @@ export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBa
   buildChangePasswordForm() {
     this.changePassword = this.fb.group({
       currentPassword: [null],
-      newPassword: [null],
-      newPassword2: [null]
+      newPassword: [''],
+      newPassword2: ['']
     });
   }
 
