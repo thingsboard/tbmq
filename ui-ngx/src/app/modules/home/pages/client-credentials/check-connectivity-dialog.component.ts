@@ -20,11 +20,12 @@ import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { ClientCredentials } from '@shared/models/credentials.model';
+import { AuthRulePatternsType, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
 import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { ConfigParams } from '@shared/models/config.model';
+import { getOS } from '@core/utils';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;
@@ -66,6 +67,7 @@ export class CheckConnectivityDialogComponent extends
   commands: PublishTelemetryCommand;
   selectTransportType = NetworkTransportType.MQTT;
   NetworkTransportType = NetworkTransportType;
+  AuthRulePatternsType = AuthRulePatternsType;
   showDontShowAgain: boolean;
   dialogTitle: string;
   notShowAgain = false;
@@ -115,6 +117,17 @@ export class CheckConnectivityDialogComponent extends
     }
   }
 
+  checkCredentials(type: AuthRulePatternsType): boolean {
+    const credentialsValue = JSON.parse(this.data.credentials.credentialsValue);
+    const authRules = credentialsValue.authRules;
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        return !authRules.pubAuthRulePatterns?.length;
+      case AuthRulePatternsType.SUBSCRIBE:
+        return !authRules.subAuthRulePatterns?.length;
+    }
+  }
+
   private createMarkDownSingleCommand(command: string): string {
     return '```bash\n' +
       command +
@@ -142,7 +155,7 @@ export class CheckConnectivityDialogComponent extends
     const credentialsValue = JSON.parse(credentials.credentialsValue);
     const clientId = credentialsValue.clientId;
     const userName = credentialsValue.userName;
-    const password = this.data.credentials?.password;
+    const password = this.data.credentials?.password || (credentialsValue.password ? '$YOUR_PASSWORD' : undefined);
     const subTopic = this.getTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+');
     const pubTopic = this.getTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic');
     const hostname = window.location.hostname;
@@ -154,19 +167,21 @@ export class CheckConnectivityDialogComponent extends
     const clientInfoCommands: string[] = [];
     const defaultOptions: string = '-d -q 1';
 
-    if (clientId) clientInfoCommands.push(`-i ${clientId}`);
-    if (userName) clientInfoCommands.push(`-u ${userName}`);
-    if (password) clientInfoCommands.push(`-P ${password}`);
+    if (clientId) clientInfoCommands.push(`-i '${clientId}'`);
+    if (userName) clientInfoCommands.push(`-u '${userName}'`);
+    if (password) clientInfoCommands.push(`-P '${password}'`);
     const clientInfo = clientInfoCommands.join(' ');
     const message = "-m 'Hello World'";
     const network = (hostname === 'localhost' || hostname === '127.0.0.1') ? '--network=host' : '';
     const cleanSession = clientType === ClientType.APPLICATION ? '-c' : '';
+    const randomClientId = (clientType === ClientType.APPLICATION && !clientId) ? ('-i tbmq_'+(Math.random().toString(36).slice(2, 7))) : '';
     subCommands.push(
       "mosquitto_sub",
       defaultOptions,
       `-h ${hostname}`,
       `-p ${mqttPort}`,
       `-t ${subTopic}`,
+      randomClientId,
       clientInfo,
       cleanSession,
       '-v'
@@ -188,6 +203,7 @@ export class CheckConnectivityDialogComponent extends
       `-h ${hostname}`,
       `-p ${mqttPort}`,
       `-t ${subTopic}`,
+      randomClientId,
       clientInfo,
       cleanSession,
       '-v'
@@ -221,6 +237,7 @@ export class CheckConnectivityDialogComponent extends
         }
       }
     }
+    this.selectTabIndexForUserOS();
     this.loadedCommand = true;
   }
 
@@ -229,5 +246,24 @@ export class CheckConnectivityDialogComponent extends
       if (rules[i] === ".*") return topic;
     }
     return '$YOUR_TOPIC';
+  }
+
+  private selectTabIndexForUserOS() {
+    const currentOS = getOS();
+    switch (currentOS) {
+      case 'linux':
+      case 'android':
+        this.mqttTabIndex = 0;
+        break;
+      case 'macos':
+      case 'ios':
+        this.mqttTabIndex = 1;
+        break;
+      case 'windows':
+        this.mqttTabIndex = 2;
+        break;
+      default:
+        this.mqttTabIndex = 3;
+    }
   }
 }

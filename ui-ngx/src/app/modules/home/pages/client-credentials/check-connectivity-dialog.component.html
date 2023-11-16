@@ -56,7 +56,7 @@
                     <div class="tb-form-panel stroked">
                       <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.install-necessary-client-tools</div>
                       <tb-markdown usePlainMarkdown containerClass="tb-command-code"
-                                   [data]='createMarkDownCommand("sudo apt-get install curl mosquitto-clients")'></tb-markdown>
+                                   [data]='createMarkDownCommand("sudo apt-get install mosquitto-clients")'></tb-markdown>
                     </div>
                     <ng-container
                       *ngTemplateOutlet="executeCommandSubscribe; context: {cmd: {
@@ -112,7 +112,7 @@
                       <div class="tb-install-instruction-text">
                         <ng-container *ngTemplateOutlet="seeDocumentation; context:
                         {doc: {text: 'mqtt-client-credentials.connectivity.install-mqtt-windows',
-                        href: 'https://thingsboard.io/docs/getting-started-guides/helloworld/?connectdevice=mqtt-windows#step-2-connect-device'}}">
+                        href: 'https://mosquitto.org/download/'}}">
                         </ng-container>
                       </div>
                     </div>
@@ -212,6 +212,11 @@
         </ng-template>
       </ng-template>
     </ng-container>
+    <ng-container *ngIf="checkCredentials(AuthRulePatternsType.PUBLISH)">
+      <section class="tb-warning">
+        <span>{{'mqtt-client-credentials.warning-pub' | translate}}</span>
+      </section>
+    </ng-container>
   </div>
 </ng-template>
 
@@ -242,6 +247,11 @@
           </ng-container>
         </ng-template>
       </ng-template>
+    </ng-container>
+    <ng-container *ngIf="checkCredentials(AuthRulePatternsType.SUBSCRIBE)">
+      <section class="tb-warning">
+        <span>{{'mqtt-client-credentials.warning-sub' | translate}}</span>
+      </section>
     </ng-container>
   </div>
 </ng-template>

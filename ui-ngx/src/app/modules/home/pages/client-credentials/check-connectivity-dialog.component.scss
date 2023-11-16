@@ -93,6 +93,15 @@
     min-height: 42px;
   }
 
+  .tb-warning {
+    background: rgb(255, 244, 229);
+    border-radius: 4px;
+    padding: 8px 16px 8px 16px;
+    margin: 0;
+    color: rgb(102, 60, 0);
+    font-size: 14px;
+  }
+
   @media #{$mat-sm} {
     width: 470px;
   }
