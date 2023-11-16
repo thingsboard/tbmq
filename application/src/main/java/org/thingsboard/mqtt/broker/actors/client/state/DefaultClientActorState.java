@@ -22,8 +22,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.UUID;
 
 public class DefaultClientActorState implements ClientActorState {
-    // TODO: move subscription here
-    //    private final Set<TopicSubscription> subscriptions = new HashSet<>();
 
     private final String clientId;
     private final boolean isClientIdGenerated;
