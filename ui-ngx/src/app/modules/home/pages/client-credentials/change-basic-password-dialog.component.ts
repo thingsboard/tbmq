@@ -76,7 +76,8 @@ export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBa
         (credentials) => {
           this.store.dispatch(new ActionNotificationShow({
             message: this.translate.instant('mqtt-client-credentials.password-changed'),
-            type: 'success'
+            type: 'success',
+            duration: 2000
           }));
           this.dialogRef.close(credentials);
         });
