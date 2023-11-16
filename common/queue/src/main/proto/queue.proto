@@ -88,7 +88,6 @@ message ClientSessionInfoProto {
   SessionInfoProto sessionInfo = 2;
 }
 
-// TODO: Create two inner objects (newSessionEvent and updateSessionEvent)
 message ClientSessionEventProto {
   string eventType = 1;
   SessionInfoProto sessionInfo = 2;

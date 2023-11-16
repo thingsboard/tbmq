@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 
-# TODO: test if $JAVA_OPTS works correctly (overriding /var/log/thingsboard-mqtt-broker directory to smth else)
-
 jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
 
 configfile="/config/${pkg.name}.conf"

@@ -47,11 +47,9 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
         keepAliveService.acknowledgeControlPacket(clientSessionCtx.getSessionId());
         switch (msgType) {
             case MQTT_SUBSCRIBE_MSG:
-                // TODO: maybe better to send separate msg to actor
                 messageHandlers.getSubscribeHandler().process(clientSessionCtx, (MqttSubscribeMsg) msg);
                 break;
             case MQTT_UNSUBSCRIBE_MSG:
-                // TODO: maybe better to send separate msg to actor
                 messageHandlers.getUnsubscribeHandler().process(clientSessionCtx, (MqttUnsubscribeMsg) msg);
                 break;
             case MQTT_PUBLISH_MSG:

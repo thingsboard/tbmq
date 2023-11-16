@@ -21,7 +21,6 @@ public interface TbQueueProducer<T extends TbQueueMsg> {
 
     void send(T msg, TbQueueCallback callback);
 
-    // TODO: 11.04.23 review Integer partition usage
     void send(String topic, Integer partition, T msg, TbQueueCallback callback);
 
     void stop();
