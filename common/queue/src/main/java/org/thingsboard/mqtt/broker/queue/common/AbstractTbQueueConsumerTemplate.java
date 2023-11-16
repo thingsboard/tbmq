@@ -32,7 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
 public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> implements TbQueueControlledOffsetConsumer<T> {
 
-    // TODO: use TB consumer template
     private volatile boolean subscribed;
     protected volatile boolean stopped = false;
     protected final Lock consumerLock = new ReentrantLock();
