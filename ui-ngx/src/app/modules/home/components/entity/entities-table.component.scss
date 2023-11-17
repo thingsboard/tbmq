@@ -70,10 +70,11 @@
 
       .mat-cell {
         white-space: nowrap;
+        vertical-align: middle !important;
       }
 
       .mat-cell:hover .mat-cell-copy {
-        visibility: visible !important;
+        visibility: visible;
       }
     }
   }
@@ -96,14 +97,4 @@
 
 :host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {
   opacity: 1 !important;
-}
-
-:host ::ng-deep {
-  .mat-cell-copy {
-    .mat-mdc-icon-button.mat-mdc-button-base {
-      width: 46px;
-      height: 46px;
-      padding: 0;
-    }
-  }
 }

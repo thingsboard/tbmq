@@ -17,12 +17,15 @@
 -->
 <button mat-icon-button
         type="button"
+        [ngClass]="{'mini-button': miniButton}"
         [color]="color"
         [disabled]="disabled"
         [matTooltip]="matTooltipText"
         [matTooltipPosition]="matTooltipPosition"
         (click)="copy($event)">
-  <tb-icon [ngStyle]="style" *ngIf="!copied; else copiedTemplate">{{icon}}</tb-icon>
+  <mat-icon [svgIcon]="mdiIcon" [ngStyle]="style" *ngIf="!copied; else copiedTemplate">
+    {{ icon }}
+  </mat-icon>
   <ng-template #copiedTemplate>
     <mat-icon [ngStyle]="style" class="copied">done</mat-icon>
   </ng-template>

@@ -44,7 +44,7 @@
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>mqtt-client-session.remove-session</span>
     </button>
-    <tb-copy-content-button [cbContent]="entity?.id"></tb-copy-content-button>
+    <tb-copy-content-button title="mqtt-client-session.copy-session-id" [cbContent]="entity?.sessionId"></tb-copy-content-button>
   </div>
   <div mat-dialog-content>
     <section *ngIf="showAppClientShouldBePersistentWarning" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">

@@ -22,7 +22,8 @@
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client.client-id</mat-label>
       <input matInput formControlName="clientId">
-      <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix [copyText]="copyText('clientId')">
+      <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
+                      [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
       <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
         {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
@@ -33,7 +34,8 @@
         <mat-form-field fxFlex class="mat-block">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName">
-          <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix [copyText]="copyText('userName')">
+          <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
+                          [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
             {{ 'mqtt-client-credentials.user-name-required' | translate }}

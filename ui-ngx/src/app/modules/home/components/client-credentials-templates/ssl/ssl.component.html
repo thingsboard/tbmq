@@ -22,7 +22,8 @@
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client-credentials.certificate-common-name</mat-label>
       <input required matInput formControlName="certCommonName">
-      <tb-copy-button [fxShow]="entity?.credentialsValue" matSuffix [copyText]="copyText('certCommonName')">
+      <tb-copy-button [fxShow]="credentialsMqttFormGroup?.get('certCommonName').value?.length" matSuffix
+                      [copyText]="credentialsMqttFormGroup?.get('certCommonName').value">
       </tb-copy-button>
       <mat-error *ngIf="credentialsMqttFormGroup.get('certCommonName').hasError('required')">
         {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
