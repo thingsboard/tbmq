@@ -47,7 +47,7 @@ export class SharedSubscriptionsTableConfig extends EntityTableConfig<SharedSubs
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '33%'),
       new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),

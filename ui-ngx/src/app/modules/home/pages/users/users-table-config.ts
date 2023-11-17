@@ -55,7 +55,7 @@ export class UserTableConfig extends EntityTableConfig<User> {
     this.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<User>('email', 'user.email', '25%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),

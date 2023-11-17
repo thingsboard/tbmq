@@ -66,7 +66,7 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
 
     this.columns.push(
       new EntityTableColumn<SharedSubscriptionGroup>('shareName', 'shared-subscription.share-name', '25%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
@@ -84,7 +84,7 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
           type: CellActionDescriptorType.COPY_BUTTON
         }),
       new EntityTableColumn<SharedSubscriptionGroup>('topicFilter', 'shared-subscription.topic-filter', '25%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),

@@ -99,7 +99,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
@@ -118,7 +118,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         }
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),

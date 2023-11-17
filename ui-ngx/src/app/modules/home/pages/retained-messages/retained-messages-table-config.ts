@@ -77,7 +77,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     this.columns.push(
       new DateEntityTableColumn<RetainedMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%',
-        undefined, () => ({'vertical-align': 'inherit'}),
+        undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
