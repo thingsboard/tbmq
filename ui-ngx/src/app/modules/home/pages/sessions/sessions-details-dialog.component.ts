@@ -121,8 +121,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private onSave(): void {
-    const value = {...this.entity, ...this.subscriptions?.value};
-    this.clientSessionService.updateShortClientSessionInfo(value).subscribe(() => {
+    this.clientSessionService.updateShortClientSessionInfo(this.entity).subscribe(() => {
       this.closeDialog();
     });
 

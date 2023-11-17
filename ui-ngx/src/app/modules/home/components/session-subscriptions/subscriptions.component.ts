@@ -18,13 +18,12 @@ import { Component, forwardRef, Input, OnInit } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
-  FormArray,
+  UntypedFormArray,
   UntypedFormBuilder,
   UntypedFormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ValidationErrors,
-  Validator,
   Validators
 } from '@angular/forms';
 import { PageComponent } from '@shared/components/page.component';
@@ -72,8 +71,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.topicListFormGroup.addControl('subscriptions', this.fb.array([]));
   }
 
-  subscriptionsFormArray(): FormArray {
-    return this.topicListFormGroup.get('subscriptions') as FormArray;
+  subscriptionsFormArray(): UntypedFormArray {
+    return this.topicListFormGroup.get('subscriptions') as UntypedFormArray;
   }
 
   registerOnChange(fn: any): void {
@@ -88,13 +87,15 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
     } else {
-      Object.keys(this.subscriptionsFormArray().controls).forEach((control: string) => {
-        const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
-        typedControl.get('shareName').disable();
-        if (typedControl.get('shareName')?.value) {
-          typedControl.disable();
+      Object.keys(this.subscriptionsFormArray().controls).forEach(
+        (control: string) => {
+          const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
+          typedControl.get('shareName').disable();
+          if (typedControl.get('shareName')?.value) {
+            typedControl.disable();
+          }
         }
-      });
+      );
     }
   }
 
@@ -122,15 +123,15 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   addTopic() {
     const group = this.fb.group({
-      topicFilter: [null, [Validators.required]],
       shareName: [{value: null, disabled: true}, []],
+      topicFilter: [null, [Validators.required]],
       qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
     });
     this.subscriptionsFormArray().push(group);
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
-    return this.topicListFormGroup.valid ? null : {
+    return !this.topicListFormGroup.invalid ? null : {
       topicFilters: {valid: false}
     };
   }
@@ -151,6 +152,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   }
 
   private updateView() {
-    this.propagateChange(this.topicListFormGroup.get('subscriptions').value);
+    this.propagateChange(this.topicListFormGroup.getRawValue().subscriptions);
   }
 }

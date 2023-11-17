@@ -33,24 +33,25 @@
     </section>
     <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start baseline"
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
-      <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" class="mat-block">
+      <mat-form-field fxFlex *ngIf="showShareName" class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
         <input name="shareName" formControlName="shareName" matInput>
+        <mat-icon matSuffix [fxHide]="topicFilter.get('shareName')?.value?.length" color="warn" [matTooltip]="'action.edit-not-allowed' | translate">block</mat-icon>
         <tb-copy-button [fxHide]="!topicFilter.get('shareName')?.value?.length" matSuffix [disabled]="isLoading$ | async"
                         [copyText]="topicFilter.get('shareName').value">
         </tb-copy-button>
       </mat-form-field>
-      <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
-        <input matInput name="topicFilter" formControlName="topicFilter" required placeholder="{{ 'mqtt-client-session.topic' | translate }}">
-        <tb-copy-button matSuffix [disabled]="isLoading$ | async"
+        <input matInput name="topicFilter" formControlName="topicFilter" required>
+        <tb-copy-button [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
                         [copyText]="topicFilter.get('topicFilter').value">
         </tb-copy-button>
         <mat-error *ngIf="topicFilter.invalid">
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex floatLabel="always" class="mat-block" hideRequiredMarker>
+      <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
         <mat-label translate>mqtt-client-session.qos</mat-label>
         <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
           <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
