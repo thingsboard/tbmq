@@ -52,6 +52,9 @@ export const sharedSubscriptionFilterConfigEquals = (filter1?: SharedSubscriptio
     if (!isEqualIgnoreUndefined(filter1.shareNameSearch, filter2.shareNameSearch)) {
       return false;
     }
+    if (!isEqualIgnoreUndefined(filter1.topicFilter, filter2.topicFilter)) {
+      return false;
+    }
     if (!isEqualIgnoreUndefined(filter1.clientIdSearch, filter2.clientIdSearch)) {
       return false;
     }
