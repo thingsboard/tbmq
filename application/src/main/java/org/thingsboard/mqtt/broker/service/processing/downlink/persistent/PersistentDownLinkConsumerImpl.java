@@ -52,7 +52,6 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     private final PersistentDownLinkProcessor processor;
     private final TbQueueAdmin queueAdmin;
 
-    // TODO: don't push msg to kafka if it's the same serviceId
     @Value("${queue.persisted-downlink-msg.consumers-count}")
     private int consumersCount;
     @Value("${queue.persisted-downlink-msg.poll-interval}")
