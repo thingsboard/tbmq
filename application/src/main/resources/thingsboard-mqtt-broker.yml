@@ -212,7 +212,7 @@ queue:
     # Interval in milliseconds to poll messages from 'tbmq.msg.all' topic
     poll-interval: "${TB_MSG_ALL_POLL_INTERVAL:100}"
     # Timeout in milliseconds for processing the pack of messages from 'tbmq.msg.all' topic
-    pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:10000}"
+    pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
       # Processing strategy for 'tbmq.msg.all' topic. Can be: SKIP_ALL, RETRY_ALL
       type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}"
@@ -224,11 +224,11 @@ queue:
     msg-parallel-processing: "${TB_MSG_ALL_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
     # Number of threads in the pool to process Application consumers tasks
-    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:8}"
+    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:16}"
     # Interval in milliseconds to poll messages from Application topics
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     # Timeout in milliseconds for processing the pack of messages
-    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:10000}"
+    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
       # Processing strategy for Application topics. Can be: SKIP_ALL, RETRY_ALL
       type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}"
@@ -330,7 +330,7 @@ queue:
         # The maximum delay in milliseconds between invocations of poll() when using consumer group management
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
         # The maximum number of records returned in a single call to poll()
-        max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:8192}"
+        max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:2000}"
         # The maximum amount of data in bytes per-partition the server will return
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
         # The maximum amount of data in bytes the server should return for a fetch request
@@ -378,14 +378,14 @@ queue:
       # Kafka topic properties separated by semicolon for `tbmq.msg.app` topics
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.app` topics
-      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
+      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.app` topics
       additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
       shared-topic:
         # Kafka topic properties separated by semicolon for application shared subscription topics
         topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
         # Additional Kafka consumer configs separated by semicolon for application shared subscription topics
-        additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
+        additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
         # Additional Kafka producer configs separated by semicolon for application shared subscription topics
         additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_PRODUCER_CONFIG:}"
     device-persisted-msg:
@@ -430,7 +430,7 @@ queue:
       # Kafka topic properties separated by semicolon for `tbmq.client.session.event.request` topic
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
-      additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1024}"
+      additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1000}"
       # Additional Kafka producer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event-response:
@@ -519,7 +519,7 @@ actors:
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"
   client:
     # Number of threads processing the MQTT client actors messages
-    dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
+    dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:8}"
     # Time in seconds to wait until the actor is stopped for clients that did not specify client id
     wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
     # Time in seconds to wait until the actor is stopped for clients that specified client id
