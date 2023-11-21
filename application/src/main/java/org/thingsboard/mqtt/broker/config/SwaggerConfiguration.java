@@ -108,7 +108,7 @@ public class SwaggerConfiguration {
     public Docket thingsboardMqttBrokerApi() {
         TypeResolver typeResolver = new TypeResolver();
         return new Docket(DocumentationType.OAS_30)
-                .groupName("thingsboard-mqtt-broker")
+                .groupName("TBMQ")
                 .apiInfo(apiInfo())
                 .additionalModels(
                         typeResolver.resolve(ThingsboardErrorResponse.class),

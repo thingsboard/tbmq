@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
   FormGroup,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
   Validator, Validators
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { MqttClientCredentials, SslMqttCredentials } from "@shared/models/client-crenetials.model";
+import { ClientCredentials, SslMqttCredentials } from "@shared/models/credentials.model";
 
 @Component({
   selector: 'tb-mqtt-credentials-ssl',
@@ -45,17 +45,17 @@ import { MqttClientCredentials, SslMqttCredentials } from "@shared/models/client
     }],
   styleUrls: []
 })
-export class MqttCredentialsSslComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 
   @Input()
   disabled: boolean;
 
   @Input()
-  entity: MqttClientCredentials;
+  entity: ClientCredentials;
 
-  credentialsMqttFormGroup: FormGroup;
+  credentialsMqttFormGroup: UntypedFormGroup;
 
-  private destroy$ = new Subject();
+  private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder) {
@@ -63,6 +63,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
       certCommonName: [null, [Validators.required]],
       authRulesMapping: [null]
     });
+  }
+
+  ngAfterViewInit(): void {
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe((value) => {
@@ -98,9 +101,9 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
     };
   }
 
-  writeValue(mqttBasic: string) {
-    if (isDefinedAndNotNull(mqttBasic) && !isEmptyStr(mqttBasic)) {
-      const value = JSON.parse(mqttBasic);
+  writeValue(mqttSsl: string) {
+    if (isDefinedAndNotNull(mqttSsl) && !isEmptyStr(mqttSsl)) {
+      const value = JSON.parse(mqttSsl);
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
@@ -110,4 +113,10 @@ export class MqttCredentialsSslComponent implements ControlValueAccessor, Valida
     this.propagateChange(formValue);
   }
 
+  copyText(key: string): string {
+    if (this.entity?.credentialsValue) {
+      const credentialsValue = JSON.parse(this.entity.credentialsValue);
+      return credentialsValue[key] || ' ';
+    }
+  }
 }

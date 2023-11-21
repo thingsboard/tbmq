@@ -15,10 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 public interface BasicDownLinkProcessor {
 
-    void process(String clientId, QueueProtos.PublishMsgProto msg);
+    void process(String clientId, PublishMsgProto msg);
+
+    void process(Subscription subscription, PublishMsgProto msg);
 
 }

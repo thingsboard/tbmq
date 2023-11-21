@@ -46,7 +46,9 @@ import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT
 @Component
 @RequiredArgsConstructor
 public class KafkaClientSessionQueueFactory implements ClientSessionQueueFactory {
+
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
+
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
     private final ClientSessionKafkaSettings clientSessionSettings;

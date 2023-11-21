@@ -17,17 +17,15 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ComponentFactoryResolver,
-  Directive,
   ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -60,10 +58,9 @@ import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-co
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
-import { KafkaTopic, KafkaTopicsTooltipMap } from '@shared/models/kafka.model';
-import { MatTableDataSource } from '@angular/material/table';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
+import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page.model";
 
 @Component({
   selector: 'tb-entities-table-home',
@@ -75,6 +72,9 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   @Input()
   entitiesTableConfig: EntityTableConfig<BaseData>;
+
+  @Input()
+  cardType: HomePageTitleType;
 
   translations: EntityTypeTranslation;
 
@@ -109,7 +109,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
   isFullscreen = false;
-  isMobile = false;
+  hidePageSize: Observable<boolean>;
 
   @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
@@ -120,6 +120,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
+  private homePageTitleResources = homePageTitleConfig;
 
   constructor(protected store: Store<AppState>,
               public route: ActivatedRoute,
@@ -134,7 +135,6 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   ngOnInit() {
-    this.isMobile = this.breakpointObserver.isMatched(MediaBreakpoints['xs']);
     if (this.entitiesTableConfig) {
       this.init(this.entitiesTableConfig);
     } else {
@@ -177,7 +177,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
-          mdiIcon: 'mdi:trash-can-outline',
+          icon: 'mdi:trash-can-outline',
           isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
@@ -186,7 +186,6 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isMdiIcon: true,
           isEnabled: true,
           onAction: ($event, entities) => this.deleteEntities($event, entities)
         }
@@ -209,7 +208,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     }
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.defaultPageSize = window.innerWidth > 1920 ? 15 : 5;
+    this.hidePageSize = this.breakpointObserver.observe(MediaBreakpoints['xs']).pipe(map(({matches}) => matches));
+    this.defaultPageSize = this.calcDefaultPageSize();
     this.pageSizeOptions = [5, 10, 15, 20];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
@@ -572,145 +572,15 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     return entity.id;
   }
 
-  showTooltip(entity: KafkaTopic) {
-    if (entity?.name) {
-      const rowName = entity.name;
-      for (let key in KafkaTopicsTooltipMap) {
-        if (rowName.includes('tbmq.msg.app')) {
-          if (rowName.includes('tbmq.msg.app.shared')) {
-            return KafkaTopicsTooltipMap['tbmq.msg.app.shared'];
-          } else {
-            return KafkaTopicsTooltipMap['tbmq.msg.app'];
-          }
-        }
-        if (rowName.includes('tbmq.client.session')) {
-          if (rowName.includes('tbmq.client.session.event.response')) {
-            return KafkaTopicsTooltipMap['tbmq.client.session.event.response'];
-          } else if (rowName.includes('tbmq.client.session.event.request')) {
-            return KafkaTopicsTooltipMap['tbmq.client.session.event.request'];
-          } else {
-            return KafkaTopicsTooltipMap['tbmq.client.session'];
-          }
-        }
-        if (rowName.includes(key)) {
-          return KafkaTopicsTooltipMap[key];
-        }
-      }
-    }
-    return undefined;
-  }
-
   calcTableHeight(): string {
-    const pageSize = this.paginator?.pageSize;
-    if (this.isFullscreen) return undefined;
-    if (pageSize === 5) return '140px';
-    if (pageSize === 10) return '250px';
-    if (pageSize === 15) return '360px';
-    if (pageSize === 20) return '470px';
-  }
-}
-
-@Directive()
-// tslint:disable-next-line:directive-class-suffix
-export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit, AfterViewInit {
-
-  @ViewChild(MatSort) sort: MatSort;
-
-  columns = [];
-  dataSource: MatTableDataSource<T> = new MatTableDataSource();
-  displayedColumns: Array<string> = [];
-  pageLink: PageLink = new PageLink(999);
-
-  cellContentCache: Array<SafeHtml> = [];
-  cellStyleCache: Array<any> = [];
-
-  abstract fetchEntities$: () => Observable<any>;
-  abstract getColumns();
-
-  constructor(protected domSanitizer: DomSanitizer) {
+    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
   }
 
-  ngOnInit(): void {
-    this.columns = this.getColumns();
-    this.columns.forEach(
-      column => {
-        this.displayedColumns.push(column.key);
-      }
-    );
-    this.updateData();
+  navigate() {
+    this.router.navigate([this.homePageTitleResources.get(this.cardType).link]);
   }
 
-  updateData() {
-    this.loadEntities();
+  private calcDefaultPageSize(): number {
+    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 15 : 5;
   }
-
-  private loadEntities() {
-    this.fetchEntities$().subscribe(
-      data => {
-        this.dataSource = new MatTableDataSource(data.data);
-      }
-    );
-  }
-
-  cellStyle(entity: T, column: EntityColumn<T>, row: number) {
-    const col = this.columns.indexOf(column);
-    const index = row * this.columns.length + col;
-    let res = this.cellStyleCache[index];
-    if (!res) {
-      const widthStyle: any = {width: column.width};
-      if (column.width !== '0px') {
-        widthStyle.minWidth = column.width;
-        widthStyle.maxWidth = column.width;
-      }
-      if (column instanceof EntityTableColumn) {
-        res = {...column.cellStyleFunction(entity, column.key), ...widthStyle};
-      } else {
-        res = widthStyle;
-      }
-      this.cellStyleCache[index] = res;
-    }
-    return res;
-  }
-
-  cellContent(entity: T, column: EntityColumn<T>, row: number) {
-    if (column instanceof EntityTableColumn) {
-      const col = this.columns.indexOf(column);
-      const index = row * this.columns.length + col;
-      let res = this.cellContentCache[index];
-      if (isUndefined(res)) {
-        res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
-        this.cellContentCache[index] = res;
-      }
-      return res;
-    } else {
-      return '';
-    }
-  }
-
-  ngAfterViewInit(): void {
-    if (this.sort) {
-      this.sort.sortChange.subscribe(() => {
-        this.dataSource = new MatTableDataSource(this.dataSource.data.sort(this.sortTable()));
-      });
-    }
-  }
-
-  private sortTable() {
-    if (this.sort?.direction) {
-      let direction = this.sort.direction === 'desc' ? -1 : 1;
-      let active = this.sort.active;
-      return function(a, b) {
-        return ((a[active] < b[active]) ? -1 : (a[active] > b[active]) ? 1 : 0) * direction;
-      };
-    }
-  }
-}
-
-export function formatBytes(bytes, decimals = 1) {
-  if (!+bytes) { return '0 B'; }
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }

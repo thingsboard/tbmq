@@ -247,6 +247,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
+            return;
+        }
         String clientId = clientSessionCtx.getClientId();
         clientLogger.logEvent(clientId, this.getClass(), "Starting processing shared subscriptions persisted messages");
         if (log.isDebugEnabled()) {
@@ -407,7 +410,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
-        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopic(), validateSharedTopicFilter);
+        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopicFilter(), validateSharedTopicFilter);
         String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
         String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
@@ -532,6 +535,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
     @Override
     public void stopProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
+            return;
+        }
         var clientId = clientSessionCtx.getClientId();
         if (log.isDebugEnabled()) {
             log.debug("[{}] Stopping processing shared subscriptions.", clientId);
@@ -774,7 +780,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
-            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset()));
+            result.add(new PersistedPublishMsg(publishMsg, msg.getOffset(), subscription != null));
         }
         return result;
     }

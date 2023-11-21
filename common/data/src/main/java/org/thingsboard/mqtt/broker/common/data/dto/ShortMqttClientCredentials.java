@@ -30,9 +30,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShortMqttClientCredentials implements HasId {
+
     private UUID id;
     private String name;
     private ClientType clientType;
     private ClientCredentialsType credentialsType;
     private long createdTime;
+
 }

@@ -18,7 +18,11 @@ package org.thingsboard.mqtt.broker.service.security.exception;
 import org.springframework.security.core.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtToken;
 
+import java.io.Serial;
+
 public class JwtExpiredTokenException extends AuthenticationException {
+
+    @Serial
     private static final long serialVersionUID = -5959543783324224864L;
 
     private JwtToken token;

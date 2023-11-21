@@ -15,8 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao.exception;
 
+import java.io.Serial;
+
 public class DataValidationException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 7659985660312721830L;
 
     public DataValidationException(String message) {

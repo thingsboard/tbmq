@@ -21,4 +21,6 @@ public class CacheConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
     public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
 
+    public static final String COMMA = ",";
+    public static final String COLON = ":";
 }

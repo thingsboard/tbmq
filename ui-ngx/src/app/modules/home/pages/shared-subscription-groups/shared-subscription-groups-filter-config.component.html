@@ -1,0 +1,78 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<ng-container *ngIf="panelMode; else componentMode">
+  <ng-container *ngTemplateOutlet="sharedSubscriptionFilterPanel"></ng-container>
+</ng-container>
+<ng-template #componentMode>
+  <ng-container *ngIf="buttonMode; else sharedSubscriptionFilter">
+    <button color="primary"
+            matTooltip="{{buttonDisplayValue}}"
+            matTooltipPosition="above"
+            mat-stroked-button
+            (click)="toggleSharedSubscriptionFilterPanel($event)">
+      <mat-icon>filter_list</mat-icon>{{buttonDisplayValue}}
+    </button>
+  </ng-container>
+</ng-template>
+<ng-template #sharedSubscriptionFilterPanel>
+  <form fxLayout="column" class="mat-content mat-padding" (ngSubmit)="update()">
+    <ng-container *ngTemplateOutlet="sharedSubscriptionFilter"></ng-container>
+    <div fxLayout="row" class="tb-panel-actions" fxLayoutAlign="end center">
+      <button type="button"
+              mat-button
+              color="primary"
+              (click)="reset()">
+        {{ 'action.reset' | translate }}
+      </button>
+      <span fxFlex></span>
+      <button type="button"
+              mat-button
+              (click)="cancel()">
+        {{ 'action.cancel' | translate }}
+      </button>
+      <button type="submit"
+              mat-raised-button
+              color="primary"
+              [disabled]="sharedSubscriptionFilterConfigForm.invalid || !sharedSubscriptionFilterConfigForm.dirty">
+        {{ 'action.update' | translate }}
+      </button>
+    </div>
+  </form>
+</ng-template>
+<ng-template #sharedSubscriptionFilter>
+  <div class="tb-form-panel tb-shared-subscription-filter-config-component no-padding no-border" [formGroup]="sharedSubscriptionFilterConfigForm">
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>shared-subscription.share-name</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="shareNameSearch">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>shared-subscription.topic-filter</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="topicFilter">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>shared-subscription.client</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="clientIdSearch">
+      </mat-form-field>
+    </div>
+  </div>
+</ng-template>

@@ -23,7 +23,6 @@ export interface BreadCrumb {
   labelFunction?: () => string;
   ignoreTranslate: boolean;
   icon: string;
-  isMdiIcon: boolean;
   link: any[];
   queryParams: Params;
 }

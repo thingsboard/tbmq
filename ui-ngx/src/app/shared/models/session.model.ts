@@ -14,8 +14,17 @@
 /// limitations under the License.
 ///
 
-import { ClientInfo, ClientType } from '@shared/models/client.model';
+import { ClientType } from '@shared/models/client.model';
 import { BaseData } from '@shared/models/base-data';
+import {
+  isArraysEqualIgnoreUndefined,
+  isDefinedAndNotNull,
+  isEmpty,
+  isEqualIgnoreUndefined,
+  isNotEmptyStr,
+  isUndefinedOrNull
+} from '@core/utils';
+import { TimePageLink } from '@shared/models/page/page-link';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -32,20 +41,13 @@ export interface DetailedClientSessionInfo extends BaseData {
   sessionEndTs: number;
   clientIpAdr: string;
   subscriptionsCount?: number;
+  connected?: boolean;
 }
 
-export interface SessionInfo {
-  serviceId: string;
-  sessionId: string;
-  persistent: boolean;
-  clientInfo: ClientInfo;
-  connectionInfo: ConnectionInfo;
-}
-
-export interface ConnectionInfo {
-  connectedAt: number;
-  disconnectedAt: number;
-  keepAlive: number;
+export interface ShortClientSessionInfo {
+  clientId: string;
+  clientType: ClientType;
+  connected?: boolean;
 }
 
 export interface TopicSubscription {
@@ -111,4 +113,87 @@ export interface ClientSessionStatsInfo {
   connectedCount: number;
   disconnectedCount: number;
   totalCount: number;
+}
+
+export interface SessionFilterConfig {
+  connectedStatusList?: ConnectionState[];
+  clientTypeList?: ClientType[];
+  nodeIdList?: string[];
+  cleanStartList?: boolean[];
+  subscriptions?: number;
+  clientId?: string;
+  openSession?: boolean;
+}
+
+export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {
+  if (filter1 === filter2) {
+    return true;
+  }
+  if ((isUndefinedOrNull(filter1) || isEmpty(filter1)) && (isUndefinedOrNull(filter2) || isEmpty(filter2))) {
+    return true;
+  } else if (isDefinedAndNotNull(filter1) && isDefinedAndNotNull(filter2)) {
+    if (!isArraysEqualIgnoreUndefined(filter1.connectedStatusList, filter2.connectedStatusList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.clientTypeList, filter2.clientTypeList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.cleanStartList, filter2.cleanStartList)) {
+      return false;
+    }
+    if (!isArraysEqualIgnoreUndefined(filter1.nodeIdList, filter2.nodeIdList)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.subscriptions, filter2.subscriptions)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
+
+export class SessionQuery {
+  pageLink: TimePageLink;
+
+  clientId: string;
+  connectedStatusList: ConnectionState[];
+  clientTypeList: ClientType[];
+  cleanStartList: boolean[];
+  nodeIdList: string[];
+  subscriptions: number;
+
+  constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
+    this.pageLink = pageLink;
+    this.connectedStatusList = sessionFilter?.connectedStatusList;
+    this.clientTypeList = sessionFilter?.clientTypeList;
+    this.cleanStartList = sessionFilter?.cleanStartList;
+    this.nodeIdList = sessionFilter?.nodeIdList;
+    this.subscriptions = sessionFilter?.subscriptions;
+    if (isNotEmptyStr(sessionFilter?.clientId)) {
+      this.pageLink.textSearch = sessionFilter.clientId;
+    }
+  }
+
+  public toQuery(): string {
+    let query = this.pageLink.toQuery();
+    if (this.connectedStatusList && this.connectedStatusList.length) {
+      query += `&connectedStatusList=${this.connectedStatusList.join(',')}`;
+    }
+    if (this.clientTypeList && this.clientTypeList.length) {
+      query += `&clientTypeList=${this.clientTypeList.join(',')}`;
+    }
+    if (this.cleanStartList && this.cleanStartList.length) {
+      query += `&cleanStartList=${this.cleanStartList.join(',')}`;
+    }
+    if (this.nodeIdList && this.nodeIdList.length) {
+      query += `&nodeIdList=${this.nodeIdList.join(',')}`;
+    }
+    if (typeof this.subscriptions !== 'undefined' && this.subscriptions !== null) {
+      query += `&subscriptions=${this.subscriptions}`;
+    }
+    return query;
+  }
 }

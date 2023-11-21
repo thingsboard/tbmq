@@ -31,20 +31,20 @@
   <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
   </mat-progress-bar>
   <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
-  <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px" style="padding: 8px 16px 0 16px">
-    <tb-copy-content-button [cbContent]="entity?.id"></tb-copy-content-button>
-    <button mat-raised-button
+  <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px" class="dialog-toolbar">
+    <button mat-raised-button color="primary"
             [disabled]="(isLoading$ | async) || !isConnected()"
             (click)="onEntityAction($event, 'disconnect')">
       <mat-icon svgIcon="mdi:link-off"></mat-icon>
       <span translate>mqtt-client-session.disconnect-client</span>
     </button>
-    <button mat-raised-button
+    <button mat-raised-button color="primary"
             [disabled]="(isLoading$ | async) || isConnected()"
             (click)="onEntityAction($event, 'remove')">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>mqtt-client-session.remove-session</span>
     </button>
+    <tb-copy-content-button title="mqtt-client-session.copy-session-id" [cbContent]="entity?.sessionId"></tb-copy-content-button>
   </div>
   <div mat-dialog-content>
     <section *ngIf="showAppClientShouldBePersistentWarning" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">
@@ -57,26 +57,26 @@
         <div fxFlex class="hint">
           <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-session.connected-status</mat-label>
-            <input matInput fxHide formControlName="connectionState" readonly>
-            <span [ngStyle]="{ color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase()) } ">
-              {{ entityForm.get('connectionState')?.value | titlecase }}
-            </span>
+            <input matInput fxHide formControlName="connectionState">
+            <span style="vertical-align: bottom; font-size: 32px; padding-right: 8px"
+                  [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">&#8226;</span>
+            <span [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">{{ entityForm.get('connectionState')?.value | titlecase }}</span>
           </mat-form-field>
-          <mat-form-field class="mat-block hint">
+          <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-session.keep-alive</mat-label>
-            <input matInput formControlName="keepAliveSeconds" readonly>
+            <input matInput formControlName="keepAliveSeconds">
             <mat-hint translate>mqtt-client-session.hint-keep-alive</mat-hint>
           </mat-form-field>
         </div>
         <div fxFlex>
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client-session.connected-at</mat-label>
-              <input matInput fxHide formControlName="connectedAt" readonly>
+              <input matInput fxHide formControlName="connectedAt">
               <span>{{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}</span>
             </mat-form-field>
             <mat-form-field *ngIf="!isConnected()" class="mat-block">
               <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
-              <input matInput fxHide formControlName="disconnectedAt" readonly>
+              <input matInput fxHide formControlName="disconnectedAt">
               <span>
                 {{ isConnected() ? (entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss') : (entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss') }}
               </span>
@@ -86,33 +86,33 @@
     </fieldset>
     <fieldset class="fields-group">
       <legend class="group-title">{{ 'mqtt-client-session.info' | translate }}</legend>
-      <div fxFlex class="session-details hint" fxLayout="row" fxLayoutGap="10px">
-        <div fxFlex>
+      <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
+        <div fxFlex fxLayoutGap="24px" fxLayout="column" class="hint">
           <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-session.node</mat-label>
-            <input matInput formControlName="nodeId" readonly>
+            <input matInput formControlName="nodeId">
           </mat-form-field>
-          <mat-form-field *ngIf="!isConnected()" class="mat-block hint">
+          <mat-form-field *ngIf="!isConnected()" class="mat-block">
             <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>
-            <input matInput fxHide formControlName="sessionExpiryInterval" readonly>
-            <span>{{ entity?.sessionExpiryInterval }}</span>
+            <input matInput formControlName="sessionExpiryInterval">
             <mat-hint translate>mqtt-client-session.hint-session-expiry-interval</mat-hint>
           </mat-form-field>
         </div>
-        <div fxFlex>
-          <div fxLayout="column" style="padding-top: 6px; margin-bottom: 7px;">
-            <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate" labelPosition="after" disabled>
+        <div fxFlex fxLayout="column" class="hint">
+          <div fxLayout="column">
+            <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate" labelPosition="after">
               {{ 'mqtt-client-session.clean-start' | translate }}
             </mat-checkbox>
-            <div *ngIf="entity?.cleanStart" class="tb-hint" translate>mqtt-client-session.hint-clean-start-true</div>
-            <div *ngIf="!entity?.cleanStart" class="tb-hint" translate>mqtt-client-session.hint-clean-start-false</div>
+            <div class="tb-hint" style="padding: 0 0 6px 14px;">
+              {{(entity?.cleanStart ? 'mqtt-client-session.hint-clean-start-true' : 'mqtt-client-session.hint-clean-start-false') | translate}}
+            </div>
           </div>
-            <mat-form-field *ngIf="!isConnected() && entity?.sessionEndTs > -1" class="mat-block hint">
-              <mat-label translate>mqtt-client-session.session-end</mat-label>
-              <input matInput fxHide formControlName="sessionEndTs" readonly>
-              <span>{{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}</span>
-              <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
-            </mat-form-field>
+          <mat-form-field *ngIf="!isConnected() && entity?.sessionEndTs > -1" class="mat-block">
+            <mat-label translate>mqtt-client-session.session-end</mat-label>
+            <input matInput fxHide formControlName="sessionEndTs">
+            <span>{{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+            <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
+          </mat-form-field>
         </div>
       </div>
     </fieldset>
@@ -120,36 +120,33 @@
       <legend class="group-title">{{ 'mqtt-client-session.client-info' | translate }}</legend>
       <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
         <div fxFlex>
-            <mat-form-field class="mat-block">
+            <mat-form-field class="mat-block fuckingdisabled">
               <mat-label translate>mqtt-client.client-id</mat-label>
-              <input matInput formControlName="clientId" readonly>
-              <button mat-icon-button
-                      aria-label="Copy client ID"
-                      matSuffix
-                      ngxClipboard
-                      [cbContent]="entity?.clientId"
-                      (cbOnSuccess)="onCopied()">
-                <mat-icon style="font-size: 16px; color: dimgray;">content_copy</mat-icon>
-              </button>
+              <input matInput formControlName="clientId">
+              <tb-copy-button matSuffix
+                      [disabled]="isLoading$ | async"
+                      [copyText]="entity?.clientId">
+              </tb-copy-button>
             </mat-form-field>
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client.client-type</mat-label>
-              <input fxHide matInput formControlName="clientType" readonly>
-              <span>{{ entityForm.get('clientType')?.value | titlecase }}</span>
+              <input fxHide matInput formControlName="clientType">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                {{ entityForm.get('clientType')?.value | titlecase }}
+                <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
+                  {{ clientTypeIcon.get(entityForm.get('clientType')?.value) }}
+                </mat-icon>
+              </span>
             </mat-form-field>
         </div>
         <div fxFlex>
             <mat-form-field class="mat-block">
               <mat-label translate>mqtt-client-session.client-ip</mat-label>
-              <input matInput formControlName="clientIpAdr" readonly>
-              <button mat-icon-button
-                      aria-label="Copy Client IP"
-                      matSuffix
-                      ngxClipboard
-                      [cbContent]="entity?.clientIpAdr"
-                      (cbOnSuccess)="onCopied()">
-                <mat-icon style="font-size: 16px; color: dimgray;">content_copy</mat-icon>
-              </button>
+              <input matInput formControlName="clientIpAdr">
+              <tb-copy-button matSuffix
+                      [disabled]="isLoading$ | async"
+                      [copyText]="entity?.clientIpAdr">
+              </tb-copy-button>
             </mat-form-field>
         </div>
       </div>

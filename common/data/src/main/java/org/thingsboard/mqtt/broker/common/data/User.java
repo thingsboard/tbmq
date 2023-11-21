@@ -21,11 +21,13 @@ import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 public class User extends SearchTextBasedWithAdditionalInfo {
 
+    @Serial
     private static final long serialVersionUID = 8250339805336035966L;
 
     @Getter

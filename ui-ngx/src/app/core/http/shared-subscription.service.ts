@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { SharedSubscription } from '@shared/models/shared-subscription.model';
+import { SharedSubscription, SharedSubscriptionGroup, SharedSubscriptionQuery } from '@shared/models/shared-subscription.model';
 
 @Injectable({
   providedIn: 'root'
@@ -44,5 +44,9 @@ export class SharedSubscriptionService {
 
   public deleteSharedSubscription(sharedSubscriptionId: string, config?: RequestConfig): Observable<void> {
     return this.http.delete<void>(`/api/app/shared/subs/${sharedSubscriptionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getSharedSubscriptionsV2(query: SharedSubscriptionQuery, config?: RequestConfig): Observable<PageData<SharedSubscriptionGroup>> {
+    return this.http.get<PageData<SharedSubscriptionGroup>>(`/api/subscription${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 }

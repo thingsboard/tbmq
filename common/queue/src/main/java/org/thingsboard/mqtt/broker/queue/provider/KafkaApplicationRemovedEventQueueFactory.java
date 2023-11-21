@@ -38,6 +38,7 @@ import java.util.Properties;
 @Component
 @RequiredArgsConstructor
 public class KafkaApplicationRemovedEventQueueFactory implements ApplicationRemovedEventQueueFactory {
+
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
 
     private final TbKafkaConsumerSettings consumerSettings;

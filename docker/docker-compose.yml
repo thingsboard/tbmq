@@ -30,21 +30,24 @@ services:
       - ./tb-mqtt-broker/postgres:/var/lib/postgresql/data
   zookeeper:
     restart: always
-    image: "zookeeper:3.8"
+    image: "bitnami/zookeeper:3.8"
     ports:
-      - "2181"
+      - "2181:2181"
     environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888;zookeeper:2181
+      ALLOW_ANONYMOUS_LOGIN: yes
+    volumes:
+      - ./tb-mqtt-broker/zookeeper:/bitnami/zookeeper
   kafka:
     restart: always
-    image: "wurstmeister/kafka:2.13-2.8.1"
+    image: "bitnami/kafka:3.4"
     ports:
-      - "9092"
+      - "9092:9092"
     env_file:
       - kafka.env
     depends_on:
       - zookeeper
+    volumes:
+      - ./tb-mqtt-broker/kafka:/bitnami/kafka
   tb-mqtt-broker-1:
     restart: always
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"
@@ -58,6 +61,7 @@ services:
         max-file: "30"
     environment:
       TB_SERVICE_ID: tb-mqtt-broker-1
+      #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:
@@ -79,6 +83,7 @@ services:
         max-file: "30"
     environment:
       TB_SERVICE_ID: tb-mqtt-broker-2
+      #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:

@@ -22,14 +22,14 @@
     <parent>
         <artifactId>mqtt-broker</artifactId>
         <groupId>org.thingsboard.mqtt-broker</groupId>
-        <version>1.1.1-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>msa</artifactId>
     <packaging>pom</packaging>
 
-    <name>ThingsBoard MQTT Broker Docker Configuration</name>
+    <name>TBMQ Docker Configuration</name>
 
     <modules>
         <module>black-box-tests</module>

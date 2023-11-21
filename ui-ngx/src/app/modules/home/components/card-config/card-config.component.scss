@@ -18,13 +18,12 @@
 :host {
   display: flex;
   flex: 1;
+  min-height: 150px;
 
   .tb-config-icon {
-    font-size: 14px;
-    height: 14px;
-    width: 14px;
+    font-size: inherit;
+    height: 13px;
     margin-left: 4px;
-    line-height: 12px;
     cursor: pointer;
   }
 
@@ -43,7 +42,7 @@
 
     .mat-row, .mat-header-row {
       cursor: unset;
-      height: 22px;
+      height: 1.375em;
     }
 
     .mat-paginator-container {
@@ -56,13 +55,31 @@
 
     .mat-header-cell {
       color: rgba(0, 0, 0, 0.38);
-      font-size: 12px;
+      font-size: 0.75em;
       font-weight: 400;
       padding: 0;
 
-      @media #{$mat-lt-xl} {
+      /*@media #{$mat-lt-xl} {
         font-size: 10px;
-      }
+      }*/
     }
+  }
+}
+
+:host ::ng-deep {
+  mat-header-row {
+    height: 30px !important;
+  }
+
+  .mat-row, .mat-header-row {
+    cursor: unset;
+  }
+
+  mat-footer-row, mat-row {
+    height: 22px !important;
+  }
+
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border: none !important;
   }
 }

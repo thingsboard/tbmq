@@ -42,6 +42,7 @@ import java.util.Properties;
 @Component
 @RequiredArgsConstructor
 public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceMsgQueueFactory {
+
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
 
     private final TbKafkaConsumerSettings consumerSettings;

@@ -33,11 +33,17 @@
           <mat-icon class="home-page-material-icons">refresh</mat-icon>
         </button>
         <button mat-icon-button
+                [disabled]="isLoading$ | async" (click)="navigate()"
+                matTooltip="{{ 'action.open' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon class="home-page-material-icons">open_in_new</mat-icon>
+        </button>
+        <!--<button mat-icon-button
                 [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
                 matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-        </button>
+        </button>-->
       </div>
     </mat-toolbar>
     <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
@@ -47,8 +53,7 @@
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">search</mat-icon>
         </button>
-        <mat-form-field fxFlex="50" fxFlex.xs="100">
-          <mat-label>&nbsp;</mat-label>
+        <mat-form-field fxFlex="40" fxFlex.xs="100" appearance="outline" style="padding-top: 12px">
           <input #searchInput matInput
                  [(ngModel)]="pageLink.textSearch"
                  placeholder="{{ translations.search | translate }}"/>
@@ -61,7 +66,7 @@
       </div>
     </mat-toolbar>
   </div>
-  <div [ngStyle]="{height: calcTableHeight()}">
+  <div [ngStyle]="{height: calcTableHeight()}" style="overflow: auto">
     <table mat-table [dataSource]="dataSource" [trackBy]="trackByEntityId"
                matSort [matSortActive]="pageLink.sortOrder?.property" [matSortDirection]="pageLink.sortDirection()" matSortDisableClear>
       <ng-container matColumnDef="select" sticky>
@@ -87,7 +92,7 @@
         <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
                   [fxHide.lt-lg]="column.mobileHide"
                   *matCellDef="let entity; let row = index"
-                  [matTooltip]="showTooltip(entity)"
+                  [matTooltip]="cellTooltip(entity, column, row)"
                   matTooltipPosition="above"
                   [ngStyle]="cellStyle(entity, column, row)">
           <span [innerHTML]="cellContent(entity, column, row)"></span>
@@ -101,7 +106,7 @@
                   tooltipText="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
                   tooltipPosition="above"
                   [icon]="column.actionCell.icon"
-                  [mdiIcon]="column.actionCell.mdiIcon" [style]="column.actionCell.style">
+                  [style]="column.actionCell.style">
                 </tb-copy-button>
               </ng-template>
               <ng-template ngSwitchDefault>
@@ -110,9 +115,7 @@
                         matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
                         matTooltipPosition="above"
                         (click)="column.actionCell.onAction($event, entity)">
-                  <mat-icon [svgIcon]="column.actionCell.mdiIcon" [ngStyle]="column.actionCell.style">
-                    {{column.actionCell.icon}}
-                  </mat-icon>
+                  <tb-icon [ngStyle]="column.actionCell.style">{{column.actionCell.icon}}</tb-icon>
                 </button>
               </ng-template>
             </ng-container>
@@ -128,8 +131,7 @@
                   matTooltip="{{ column.actionDescriptor.nameFunction ? column.actionDescriptor.nameFunction(entity) : column.actionDescriptor.name }}"
                   matTooltipPosition="above"
                   (click)="column.actionDescriptor.onAction($event, entity)">
-            <mat-icon [svgIcon]="column.actionDescriptor.mdiIcon" [ngStyle]="column.actionDescriptor.style">
-              {{column.actionDescriptor.icon}}</mat-icon>
+            <tb-icon [ngStyle]="column.actionDescriptor.style">{{column.actionDescriptor.icon}}</tb-icon>
           </button>
         </mat-cell>
       </ng-container>
@@ -147,8 +149,7 @@
                  matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
               <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
                       (click)="actionDescriptor.onAction($event, entity)">
-                <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
-                  {{actionDescriptor.icon}}</mat-icon>
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
               </button>
             </div>
           </div>
@@ -163,8 +164,7 @@
                       [disabled]="isLoading$ | async"
                       [fxShow]="actionDescriptor.isEnabled(entity)"
                       (click)="actionDescriptor.onAction($event, entity)">
-                <mat-icon [svgIcon]="actionDescriptor.mdiIcon" [ngStyle]="actionDescriptor.style">
-                  {{actionDescriptor.icon}}</mat-icon>
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
                 <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
               </button>
             </mat-menu>
@@ -192,6 +192,6 @@
                  [pageIndex]="pageLink.page"
                  [pageSize]="pageLink.pageSize"
                  [pageSizeOptions]="pageSizeOptions"
-                 [hidePageSize]="isMobile"
+                 [hidePageSize]="hidePageSize | async"
                  showFirstLastButtons></mat-paginator>
 </div>

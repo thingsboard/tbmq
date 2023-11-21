@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.data.id;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public interface HasId {
+public interface HasId extends Serializable {
 
     UUID getId();
 

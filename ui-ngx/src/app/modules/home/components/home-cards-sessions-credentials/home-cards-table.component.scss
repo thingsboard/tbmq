@@ -33,6 +33,18 @@
       border-radius: 10px;
       border: 1px solid #e0e0e0;
       gap: 10px;
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: 0 4px 10px rgba(23, 33, 90, 0.08);
+        border: 1px solid rgba(0,0,0,0.1);
+
+        .key-arrow {
+          &::after {
+            color: rgba(0, 0, 0, 0.54)
+          }
+        }
+      }
     }
 
     .key-value:first-child {
@@ -49,25 +61,50 @@
 
     .key {
       font-weight: 400;
-      font-size: 14px;
+      font-size: 0.9rem;
+    }
+
+    .key-arrow {
+      &::after {
+        font-family: 'Material Icons';
+        content: 'arrow_forward';
+        display: inline-block;
+        transform: rotate(315deg);
+        font-weight: normal;
+        font-style: normal;
+        font-size: 1.1rem;
+        line-height: 1.1rem;
+        margin-left: 6px;
+        color: rgba(0, 0, 0, 0.12);
+        vertical-align: top;
+      }
+    }
+
+    .key-container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
     }
 
     .value {
-      font-size: 24px;
+      font-size: 1.5rem;
       font-weight: 500;
       color: rgba(0,0,0,0.76);
     }
 
     @media #{$mat-lt-xl} {
+      .key-container {
+        justify-content: flex-start;
+      }
       .key-value {
         flex-direction: row;
         align-items: center;
       }
       .key {
-        font-size: 11px;
+        font-size: 0.9em;
       }
       .value {
-        font-size: 14px;
+        font-size: 1.1em;
       }
     }
   }

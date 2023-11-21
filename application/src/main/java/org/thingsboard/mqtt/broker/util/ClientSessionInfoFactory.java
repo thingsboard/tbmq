@@ -59,6 +59,24 @@ public class ClientSessionInfoFactory {
                 .build();
     }
 
+    public static ClientSessionInfo getClientSessionInfo(boolean connected, String serviceId, boolean cleanStart,
+                                                         ClientType clientType, long connectedAt, long disconnectedAt) {
+        return getClientSessionInfo(null, connected, serviceId, cleanStart, clientType, connectedAt, disconnectedAt);
+    }
+
+    public static ClientSessionInfo getClientSessionInfo(String clientId, boolean connected, String serviceId, boolean cleanStart,
+                                                         ClientType clientType, long connectedAt, long disconnectedAt) {
+        return ClientSessionInfo.builder()
+                .clientId(clientId)
+                .connected(connected)
+                .serviceId(serviceId)
+                .cleanStart(cleanStart)
+                .type(clientType)
+                .connectedAt(connectedAt)
+                .disconnectedAt(disconnectedAt)
+                .build();
+    }
+
     public static ClientSession getClientSession(boolean connected, SessionInfo sessionInfo) {
         return ClientSession.builder()
                 .connected(connected)

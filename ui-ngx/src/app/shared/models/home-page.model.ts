@@ -14,6 +14,9 @@
 /// limitations under the License.
 ///
 
+import { ConnectionState } from '@shared/models/session.model';
+import { ClientType } from '@shared/models/client.model';
+
 export const POLLING_INTERVAL = 1000 * 60;
 export const HOME_CHARTS_DURATION = 1000 * 60 * 11;
 
@@ -23,6 +26,8 @@ export enum HomePageTitleType {
   CLIENT_CREDENTIALS = 'CLIENT_CREDENTIALS',
   CONFIG = 'CONFIG',
   KAFKA_BROKERS = 'KAFKA_BROKERS',
+  KAFKA_TOPICS = 'KAFKA_TOPICS',
+  KAFKA_CONSUMER_GROUPS = 'KAFKA_CONSUMER_GROUPS',
   QUICK_LINKS = 'QUICK_LINKS',
   VERSION = 'VERSION',
   GETTING_STARTED = 'GETTING_STARTED'
@@ -45,7 +50,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         link: 'monitoring'
       }
     ],
-        [
+    [
       HomePageTitleType.SESSION,
       {
         label: 'mqtt-client-session.sessions',
@@ -54,7 +59,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         docsLink: 'user-guide/ui/sessions'
       }
     ],
-        [
+    [
       HomePageTitleType.CLIENT_CREDENTIALS,
       {
         label: 'mqtt-client-credentials.credentials',
@@ -63,7 +68,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         docsLink: 'user-guide/ui/mqtt-client-credentials'
       }
     ],
-        [
+    [
       HomePageTitleType.CONFIG,
       {
         label: 'home.config',
@@ -71,22 +76,41 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
         docsLink: 'user-guide/ui/monitoring/#config'
       }
     ],
-        [
+    [
       HomePageTitleType.KAFKA_BROKERS,
       {
         label: 'kafka.brokers',
         tooltip: 'kafka.brokers',
+        link: 'kafka/brokers',
         docsLink: 'user-guide/ui/monitoring/#kafka-brokers'
       }
     ],
-        [
+    [
+      HomePageTitleType.KAFKA_TOPICS,
+      {
+        label: 'kafka.topics',
+        tooltip: 'kafka.topics',
+        link: 'kafka/topics',
+        docsLink: 'user-guide/ui/monitoring/#kafka-topics'
+      }
+    ],
+    [
+      HomePageTitleType.KAFKA_CONSUMER_GROUPS,
+      {
+        label: 'kafka.consumer-groups',
+        tooltip: 'kafka.consumer-groups',
+        link: 'kafka/consumer-groups',
+        docsLink: 'user-guide/ui/monitoring/#kafka-consumer-groups'
+      }
+    ],
+    [
       HomePageTitleType.VERSION,
       {
         label: 'version.version',
         tooltip: 'version.version'
       }
     ],
-        [
+    [
       HomePageTitleType.QUICK_LINKS,
       {
         label: 'home.quick-links',
@@ -103,30 +127,78 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
   ]
 );
 
-export const SessionsHomeCardConfig = [{
+export enum HomeCardType {
+  SESSION = 'SESSION',
+  CLIENT_CREDENTIALS = 'CLIENT_CREDENTIALS'
+}
+
+export interface HomeCardFilter {
+  key: string;
+  label: string;
+  path: string;
+  value: number;
+  type: HomeCardType;
+  filter: any;
+}
+
+export const SessionsHomeCardConfig: HomeCardFilter[] = [{
   key: 'connectedCount',
   label: 'mqtt-client-session.connected',
-  value: 0
-}, {
-  key: 'disconnectedCount',
-  label: 'mqtt-client-session.disconnected',
-  value: 0
-}, {
-  key: 'totalCount',
-  label: 'home.total',
-  value: 0
-}];
+  path: '/sessions',
+  value: 0,
+  type: HomeCardType.SESSION,
+  filter: {
+    connectedStatusList: [ConnectionState.CONNECTED]
+  }
+},
+  {
+    key: 'disconnectedCount',
+    label: 'mqtt-client-session.disconnected',
+    path: '/sessions',
+    value: 0,
+    type: HomeCardType.SESSION,
+    filter: {
+      connectedStatusList: [ConnectionState.DISCONNECTED]
+    }
+  },
+  {
+    key: 'totalCount',
+    label: 'home.total',
+    path: '/sessions',
+    value: 0,
+    type: HomeCardType.SESSION,
+    filter: {
+      connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED]
+    }
+  }];
 
 export const CredentialsHomeCardConfig = [{
   key: 'deviceCredentialsCount',
   label: 'mqtt-client-credentials.type-devices',
-  value: 0
-}, {
-  key: 'applicationCredentialsCount',
-  label: 'mqtt-client-credentials.type-applications',
-  value: 0
-}, {
-  key: 'totalCount',
-  label: 'home.total',
-  value: 0
-}];
+  path: '/client-credentials',
+  value: 0,
+  type: HomeCardType.CLIENT_CREDENTIALS,
+  filter: {
+    clientTypeList: [ClientType.DEVICE]
+  }
+},
+  {
+    key: 'applicationCredentialsCount',
+    label: 'mqtt-client-credentials.type-applications',
+    path: '/client-credentials',
+    value: 0,
+    type: HomeCardType.CLIENT_CREDENTIALS,
+    filter: {
+      clientTypeList: [ClientType.APPLICATION]
+    }
+  },
+  {
+    key: 'totalCount',
+    label: 'home.total',
+    path: '/client-credentials',
+    value: 0,
+    type: HomeCardType.CLIENT_CREDENTIALS,
+    filter: {
+      clientTypeList: [ClientType.DEVICE, ClientType.APPLICATION]
+    }
+  }];

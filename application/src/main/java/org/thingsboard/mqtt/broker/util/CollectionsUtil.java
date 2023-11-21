@@ -22,6 +22,7 @@ import java.util.TreeSet;
 import java.util.function.BinaryOperator;
 
 public class CollectionsUtil {
+
     public static <T> Set<T> getAddedValues(Collection<T> newValues, Collection<T> oldValues, Comparator<? super T> comparator) {
         return getValues(newValues, oldValues, comparator, (newValuesTreeSet, oldValuesTreeSet) -> {
             newValuesTreeSet.removeAll(oldValuesTreeSet);

@@ -21,9 +21,11 @@ export enum EntityType {
   MQTT_CLIENT_CREDENTIALS = 'MQTT_CLIENT_CREDENTIALS',
   MQTT_SESSION = 'MQTT_SESSION',
   SHARED_SUBSCRIPTION = 'SHARED_SUBSCRIPTION',
+  SHARED_SUBSCRIPTION_GROUP = 'SHARED_SUBSCRIPTION_GROUP',
   RETAINED_MESSAGE = 'RETAINED_MESSAGE',
   KAFKA_TOPIC = 'KAFKA_TOPIC',
-  KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP'
+  KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
+  KAFKA_BROKER = 'KAFKA_BROKER'
 }
 
 export interface EntityTypeTranslation {
@@ -98,6 +100,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         details: 'shared-subscription.shared-subscription-details',
         add: 'shared-subscription.add',
         noEntities: 'shared-subscription.no-shared-subscription-text',
+        search: 'shared-subscription.search-by-name',
+        selectedEntities: 'shared-subscription.selected-shared-subscriptions'
+      }
+    ],
+    [
+      EntityType.SHARED_SUBSCRIPTION_GROUP,
+      {
+        type: 'shared-subscription.type-shared-subscription',
+        typePlural: 'shared-subscription.type-shared-subscriptions',
+        list: 'shared-subscription.list-of-shared-subscriptions',
+        nameStartsWith: 'shared-subscription.shared-subscription-name-starts-with',
+        details: 'shared-subscription.shared-subscription-details',
+        add: 'shared-subscription.add',
+        noEntities: 'shared-subscription.no-shared-subscription-group-text',
         search: 'shared-subscription.search',
         selectedEntities: 'shared-subscription.selected-shared-subscriptions'
       }
@@ -114,6 +130,46 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         noEntities: 'retained-message.no-retained-messages-text',
         search: 'retained-message.search',
         selectedEntities: 'retained-message.selected-retained-messages'
+      }
+    ],
+    [
+      EntityType.KAFKA_TOPIC,
+      {
+        type: 'kafka.topic',
+        typePlural: 'kafka.topics',
+        list: 'kafka.list-of-topics',
+        details: 'details.details',
+        add: 'kafka.add-topic',
+        noEntities: 'kafka.no-kafka-topic-text',
+        search: 'kafka.search-topic',
+        selectedEntities: 'kafka.selected-kafka-topic'
+      }
+    ],
+    [
+      EntityType.KAFKA_CONSUMER_GROUP,
+      {
+        type: 'kafka.consumer-group',
+        typePlural: 'kafka.consumer-groups',
+        list: 'kafka.list-of-consumer-groups',
+        details: 'details.details',
+        add: 'kafka.add-consumer-group',
+        noEntities: 'kafka.no-consumer-groups-text',
+        search: 'kafka.search-consumer-group',
+        selectedEntities: 'kafka.selected-consumer-groups'
+      }
+    ],
+    [
+      EntityType.KAFKA_BROKER,
+      {
+        type: 'kafka.broker',
+        typePlural: 'kafka.brokers',
+        list: 'kafka.list-of-brokers',
+        nameStartsWith: 'kafka.topic-starts-with',
+        details: 'details.details',
+        add: 'kafka.add-broker',
+        noEntities: 'kafka.no-brokers-text',
+        search: 'kafka.search-broker',
+        selectedEntities: 'kafka.selected-brokers'
       }
     ]
   ]
@@ -141,6 +197,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
     ],
     [
       EntityType.SHARED_SUBSCRIPTION,
+      {
+        helpLinkId: 'sharedSubscriptions'
+      }
+    ],
+    [
+      EntityType.SHARED_SUBSCRIPTION_GROUP,
       {
         helpLinkId: 'sharedSubscriptions'
       }

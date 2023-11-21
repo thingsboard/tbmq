@@ -19,12 +19,12 @@ import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { MqttClientCredentials, MqttCredentialsType } from '@shared/models/client-crenetials.model';
+import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { MqttClientCredentialsComponent } from '@home/pages/mqtt-client-credentials/mqtt-client-credentials.component';
+import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
 import { select, Store } from '@ngrx/store';
 import { selectUserDetails } from '@core/auth/auth.selectors';
@@ -35,6 +35,11 @@ import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
+import {
+  ClientCredentialsWizardDialogComponent
+} from "@home/components/wizard/client-credentials-wizard-dialog.component";
+import { Router } from '@angular/router';
+import { ConnectionState } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-getting-started',
@@ -58,9 +63,10 @@ export class GettingStartedComponent implements AfterViewInit {
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
-              private mqttClientCredentialsService: MqttClientCredentialsService,
+              private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
-              private store: Store<AppState>) {
+              private store: Store<AppState>,
+              private router: Router) {
   }
 
   ngAfterViewInit(): void {
@@ -91,16 +97,17 @@ export class GettingStartedComponent implements AfterViewInit {
   }
 
   addClientCredentials(type: string) {
-    const config = new EntityTableConfig<MqttClientCredentials>();
+    const config = new EntityTableConfig<ClientCredentials>();
     config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
-    config.entityComponent = MqttClientCredentialsComponent;
+    config.entityComponent = ClientCredentialsComponent;
     config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.addDialogStyle = {width: 'fit-content'};
     if (type === 'dev') {
       config.demoData = {
         name: 'TBMQ Device Demo',
         clientType: ClientType.DEVICE,
-        credentialsType: MqttCredentialsType.MQTT_BASIC,
+        credentialsType: CredentialsType.MQTT_BASIC,
         credentialsValue: JSON.stringify({
           userName: 'tbmq_dev',
           password: 'tbmq_dev',
@@ -114,7 +121,7 @@ export class GettingStartedComponent implements AfterViewInit {
       config.demoData = {
         name: 'TBMQ Application Demo',
         clientType: ClientType.APPLICATION,
-        credentialsType: MqttCredentialsType.MQTT_BASIC,
+        credentialsType: CredentialsType.MQTT_BASIC,
         credentialsValue: JSON.stringify({
           userName: 'tbmq_app',
           password: 'tbmq_app',
@@ -125,8 +132,8 @@ export class GettingStartedComponent implements AfterViewInit {
         })
       };
     }
-    const $entity = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<MqttClientCredentials>,
-      MqttClientCredentials>(AddEntityDialogComponent, {
+    const $entity = this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<ClientCredentials>,
+      ClientCredentials>(ClientCredentialsWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
@@ -136,7 +143,7 @@ export class GettingStartedComponent implements AfterViewInit {
     $entity.subscribe(
       (entity) => {
         if (entity) {
-          this.mqttClientCredentialsService.saveMqttClientCredentials(entity).subscribe(() => {
+          this.clientCredentialsService.saveClientCredentials(entity).subscribe(() => {
             this.store.dispatch(new ActionNotificationShow(
               {
                 message: this.translate.instant('getting-started.credentials-added'),
@@ -149,6 +156,15 @@ export class GettingStartedComponent implements AfterViewInit {
         }
       }
     );
+  }
+
+  openSessions() {
+    this.router.navigate(['/sessions'], {queryParams: {
+        connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
+        clientTypeList: [ClientType.APPLICATION],
+        clientId: 'tbmq',
+        openSession: true
+      }});
   }
 
   private getStep(id: string) {

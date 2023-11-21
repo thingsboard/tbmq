@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Transient;
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
@@ -27,6 +28,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class DevicePublishMsgCompositeKey implements Serializable {
 
+    @Serial
     @Transient
     private static final long serialVersionUID = -205513485186605469L;
 

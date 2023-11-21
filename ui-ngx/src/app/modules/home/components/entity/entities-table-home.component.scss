@@ -18,6 +18,10 @@
 :host {
   flex-direction: column;
 
+  .mat-table-toolbar-container {
+    height: 45px;
+  }
+
   @media #{$mat-xs} {
     .mat-toolbar {
       height: auto;
@@ -38,15 +42,19 @@
   }
 
   @media #{$mat-lt-xl} {
-    input {
+/*    input {
       font-size: 11px;
-    }
+    }*/
   }
 }
 
 :host ::ng-deep {
   mat-header-row {
     height: 30px !important;
+  }
+
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border: none !important;
   }
 
   .mat-row, .mat-header-row {
@@ -59,6 +67,7 @@
 
   mat-toolbar.mat-table-toolbar {
     padding: 0;
+    background-color: inherit;
     .mat-toolbar-tools {
       padding: 0;
     }
@@ -100,7 +109,7 @@
   }
 
   .mat-form-field {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .mat-drawer-container {
@@ -108,11 +117,28 @@
     border-radius: 20px;
   }
 
-  .mat-table-toolbar-container .mat-icon-button {
+  .mat-icon-button {
     width: 36px;
 
     @media #{$mat-lt-xl} {
       width: 26px;
     }
+  }
+
+  .mat-mdc-text-field-wrapper {
+    height: 35px;
+
+    &.mdc-text-field--outlined .mat-mdc-form-field-infix {
+      padding-top: 6px;
+      padding-bottom: 16px;
+    }
+  }
+
+  .mat-mdc-paginator .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
+    padding-top: 5px;
+  }
+
+  .home-page-material-icons {
+    color: rgba(0,0,0,0.54);
   }
 }

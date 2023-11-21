@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 import { HomeOverviewComponent } from '@home/pages/home-overview/home-overview.component';
-import { AdminsTableConfigResolver } from '@home/pages/admins/admins-table-config-resolver.service';
 
 const routes: Routes = [
   {
@@ -29,12 +28,8 @@ const routes: Routes = [
       title: 'home.home',
       breadcrumb: {
         label: 'home.home',
-        icon: 'mdi:view-dashboard-outline',
-        isMdiIcon: true
+        icon: 'mdi:view-dashboard-outline'
       }
-    },
-    resolve: {
-      kafkaBrokersTableConfig: AdminsTableConfigResolver
     }
   }
 ];

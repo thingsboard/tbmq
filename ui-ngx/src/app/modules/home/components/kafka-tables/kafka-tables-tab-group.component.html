@@ -17,24 +17,24 @@
 -->
 <section>
   <div class="tabs-toolbar">
-    <button mat-button (click)="select(KafkaTable.TOPICS)"
-            [ngClass]="{'tb-active': selectedTab ===  KafkaTable.TOPICS}">
-      {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
-    </button>
-    <button mat-button (click)="select(KafkaTable.CONSUMER_GROUPS)"
-            [ngClass]="{'tb-active': selectedTab ===  KafkaTable.CONSUMER_GROUPS}">
-      {{ kafkaTableTranslationMap.get(KafkaTable.CONSUMER_GROUPS) | translate }}
-    </button>
+    <tb-toggle-header #kafkaTable [value]="KafkaTable.TOPICS">
+      <tb-toggle-option [value]="KafkaTable.TOPICS">
+        {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
+      </tb-toggle-option>
+      <tb-toggle-option [value]="KafkaTable.CONSUMER_GROUPS">
+        {{ kafkaTableTranslationMap.get(KafkaTable.CONSUMER_GROUPS) | translate }}
+      </tb-toggle-option>
+    </tb-toggle-header>
   </div>
-  <div [ngSwitch]="selectedTab">
+  <div [ngSwitch]="kafkaTable.value">
     <ng-template [ngSwitchCase]="KafkaTable.TOPICS" ngSwitchDefault>
       <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig"></tb-entities-table-home>
+        <tb-entities-table-home [entitiesTableConfig]="kafkaTopicsTableConfig" [cardType]="homePageTitleType.KAFKA_TOPICS"></tb-entities-table-home>
       </div>
     </ng-template>
     <ng-template [ngSwitchCase]="KafkaTable.CONSUMER_GROUPS">
       <div class="tb-home-card-container tb-home-padding tb-kafka-table">
-        <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig"></tb-entities-table-home>
+        <tb-entities-table-home [entitiesTableConfig]="kafkaConsumerGroupsTableConfig" [cardType]="homePageTitleType.KAFKA_CONSUMER_GROUPS"></tb-entities-table-home>
       </div>
     </ng-template>
   </div>

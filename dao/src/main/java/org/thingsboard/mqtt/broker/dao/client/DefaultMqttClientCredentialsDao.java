@@ -16,8 +16,12 @@
 package org.thingsboard.mqtt.broker.dao.client;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
@@ -33,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttClientCredentialsEntity, MqttClientCredentials>
         implements MqttClientCredentialsDao {
 
@@ -50,11 +55,17 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
 
     @Override
     public MqttClientCredentials findByCredentialsId(String credentialsId) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find credentials by credentials id {}", credentialsId);
+        }
         return DaoUtil.getData(mqttClientCredentialsRepository.findByCredentialsId(credentialsId));
     }
 
     @Override
     public List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find credentials by credentials ids {}", credentialIds);
+        }
         return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
                 .map(DaoUtil::getData)
                 .collect(Collectors.toList());
@@ -62,13 +73,34 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
 
     @Override
     public PageData<MqttClientCredentials> findAll(PageLink pageLink) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find credentials by pageLink {}", pageLink);
+        }
         return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
     }
 
     @Override
+    public PageData<MqttClientCredentials> findAllV2(ClientCredentialsQuery query) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find credentials by query {}", query);
+        }
+        List<ClientType> clientTypes = CollectionUtils.isEmpty(query.getClientTypeList()) ? null : query.getClientTypeList();
+        List<ClientCredentialsType> clientCredentialsTypes = CollectionUtils.isEmpty(query.getCredentialsTypeList()) ? null : query.getCredentialsTypeList();
+
+        return DaoUtil.toPageData(mqttClientCredentialsRepository.findAllV2(
+                clientTypes,
+                clientCredentialsTypes,
+                Objects.toString(query.getPageLink().getTextSearch(), ""),
+                DaoUtil.toPageable(query.getPageLink())));
+    }
+
+    @Override
     public boolean existsByCredentialsType(ClientCredentialsType credentialsType) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to check if credentials exist by type {}", credentialsType);
+        }
         return mqttClientCredentialsRepository.existsByCredentialsType(credentialsType);
     }
 }

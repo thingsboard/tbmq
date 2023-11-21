@@ -14,12 +14,15 @@
 # limitations under the License.
 #
 
+# HTTP server parameters
 server:
-  shutdown: "${SERVER_SHUTDOWN:graceful}" # graceful or immediate
-  # Server bind address (has no effect if web-environment is disabled).
+  # Shutdown type (graceful or immediate)
+  shutdown: "${SERVER_SHUTDOWN:graceful}"
+  # HTTP Server bind address (has no effect if web-environment is disabled)
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
-  # Server bind port (has no effect if web-environment is disabled).
+  # HTTP Server bind port (has no effect if web-environment is disabled)
   port: "${HTTP_BIND_PORT:8083}"
+  # Log errors with stacktrace when REST API throws exception
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration
   ssl:
@@ -33,7 +36,7 @@ server:
       pem:
         # Path to the server certificate file (holds server certificate or certificate chain, may include server private key)
         cert_file: "${SSL_PEM_CERT:server.pem}"
-        # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file;
+        # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file
         key_file: "${SSL_PEM_KEY:server_key.pem}"
         # Server certificate private key password (optional)
         key_password: "${SSL_PEM_KEY_PASSWORD:server_key_password}"
@@ -50,26 +53,39 @@ server:
         # Password used to access the key
         key_password: "${SSL_KEY_PASSWORD:thingsboard_mqtt_broker}"
 
+# MQTT listeners parameters
 listener:
-  # MQTT server parameters
   tcp:
+    # Enable/disable MQTT TCP port listener
     enabled: "${LISTENER_TCP_ENABLED:true}"
+    # MQTT TCP listener bind address
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
+    # MQTT TCP listener bind port
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
     netty:
-      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
+      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # Netty boss group threads count
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
+      # Netty worker group threads count
       worker_group_thread_count: "${TCP_NETTY_WORKER_GROUP_THREADS:12}"
+      # Max payload size in bytes
       max_payload_size: "${TCP_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      # Enable/disable keep-alive mechanism to periodically probe the other end of a connection
       so_keep_alive: "${TCP_NETTY_SO_KEEPALIVE:true}"
-      shutdown_quiet_period: "${TCP_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
-      shutdown_timeout: "${TCP_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+      # Period in seconds in graceful shutdown during which no new tasks are submitted
+      shutdown_quiet_period: "${TCP_NETTY_SHUTDOWN_QUIET_PERIOD:0}"
+      # The max time in seconds to wait until the executor is stopped
+      shutdown_timeout: "${TCP_NETTY_SHUTDOWN_TIMEOUT:5}"
   ssl:
+    # Enable/disable MQTT SSL port listener
     enabled: "${LISTENER_SSL_ENABLED:false}"
+    # MQTT SSL listener bind address
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
+    # MQTT SSL listener bind port
     bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
     config:
-      # SSL protocol
+      # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_SSL_PROTOCOL:TLSv1.2}"
       # Server SSL credentials
       credentials:
@@ -79,7 +95,7 @@ listener:
         pem:
           # Path to the server certificate file (holds server certificate or certificate chain, may include server private key)
           cert_file: "${LISTENER_SSL_PEM_CERT:mqttserver.pem}"
-          # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file;
+          # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file
           key_file: "${LISTENER_SSL_PEM_KEY:mqttserver_key.pem}"
           # Server certificate private key password (optional)
           key_password: "${LISTENER_SSL_PEM_KEY_PASSWORD:server_key_password}"
@@ -91,37 +107,58 @@ listener:
           store_file: "${LISTENER_SSL_KEY_STORE:mqttserver.jks}"
           # Password used to access the key store
           store_password: "${LISTENER_SSL_KEY_STORE_PASSWORD:server_ks_password}"
-          # Optional alias of the private key; If not set, the platform will load the first private key from the keystore;
+          # Optional alias of the private key. If not set, the platform will load the first private key from the keystore
           key_alias: "${LISTENER_SSL_KEY_ALIAS:}"
-          # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
+          # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password
           key_password: "${LISTENER_SSL_KEY_PASSWORD:server_key_password}"
     netty:
-      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
+      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # Netty boss group threads count
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
+      # Netty worker group threads count
       worker_group_thread_count: "${SSL_NETTY_WORKER_GROUP_THREADS:12}"
+      # Max payload size in bytes
       max_payload_size: "${SSL_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      # Enable/disable keep-alive mechanism to periodically probe the other end of a connection
       so_keep_alive: "${SSL_NETTY_SO_KEEPALIVE:true}"
-      shutdown_quiet_period: "${SSL_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
-      shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+      # Period in seconds in graceful shutdown during which no new tasks are submitted
+      shutdown_quiet_period: "${SSL_NETTY_SHUTDOWN_QUIET_PERIOD:0}"
+      # The max time in seconds to wait until the executor is stopped
+      shutdown_timeout: "${SSL_NETTY_SHUTDOWN_TIMEOUT:5}"
   ws:
+    # Enable/disable MQTT WS port listener
     enabled: "${LISTENER_WS_ENABLED:true}"
+    # MQTT WS listener bind address
     bind_address: "${LISTENER_WS_BIND_ADDRESS:0.0.0.0}"
+    # MQTT WS listener bind port
     bind_port: "${LISTENER_WS_BIND_PORT:8084}"
     netty:
-      sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
-      leak_detector_level: "${WS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5
+      sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
+      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
+      leak_detector_level: "${WS_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # Netty boss group threads count
       boss_group_thread_count: "${WS_NETTY_BOSS_GROUP_THREADS:1}"
+      # Netty worker group threads count
       worker_group_thread_count: "${WS_NETTY_WORKER_GROUP_THREADS:12}"
+      # Max payload size in bytes
       max_payload_size: "${WS_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      # Enable/disable keep-alive mechanism to periodically probe the other end of a connection
       so_keep_alive: "${WS_NETTY_SO_KEEPALIVE:true}"
-      shutdown_quiet_period: "${WS_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
-      shutdown_timeout: "${WS_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+      # Period in seconds in graceful shutdown during which no new tasks are submitted
+      shutdown_quiet_period: "${WS_NETTY_SHUTDOWN_QUIET_PERIOD:0}"
+      # The max time in seconds to wait until the executor is stopped
+      shutdown_timeout: "${WS_NETTY_SHUTDOWN_TIMEOUT:5}"
   wss:
+    # Enable/disable MQTT WSS port listener
     enabled: "${LISTENER_WSS_ENABLED:false}"
+    # MQTT WSS listener bind address
     bind_address: "${LISTENER_WSS_BIND_ADDRESS:0.0.0.0}"
+    # MQTT WSS listener bind port
     bind_port: "${LISTENER_WSS_BIND_PORT:8085}"
     config:
-      # SSL protocol
+      # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_WSS_PROTOCOL:TLSv1.2}"
       # Server SSL credentials
       credentials:
@@ -131,7 +168,7 @@ listener:
         pem:
           # Path to the server certificate file (holds server certificate or certificate chain, may include server private key)
           cert_file: "${LISTENER_WSS_PEM_CERT:ws_mqtt_server.pem}"
-          # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file;
+          # Path to the server certificate private key file. Optional by default. Required if the private key is not present in server certificate file
           key_file: "${LISTENER_WSS_PEM_KEY:ws_mqtt_server_key.pem}"
           # Server certificate private key password (optional)
           key_password: "${LISTENER_WSS_PEM_KEY_PASSWORD:ws_server_key_password}"
@@ -143,268 +180,425 @@ listener:
           store_file: "${LISTENER_WSS_KEY_STORE:ws_mqtt_server.jks}"
           # Password used to access the key store
           store_password: "${LISTENER_WSS_KEY_STORE_PASSWORD:ws_server_ks_password}"
-          # Optional alias of the private key; If not set, the platform will load the first private key from the keystore;
+          # Optional alias of the private key. If not set, the platform will load the first private key from the keystore
           key_alias: "${LISTENER_WSS_KEY_ALIAS:}"
-          # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password;
+          # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password
           key_password: "${LISTENER_WSS_KEY_PASSWORD:ws_server_key_password}"
     netty:
-      sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}" # comma-separated list of subprotocols that the WebSocket can negotiate
-      leak_detector_level: "${WSS_NETTY_LEAK_DETECTOR_LVL:DISABLED}" # DISABLED, SIMPLE, ADVANCED, PARANOID
+      # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5
+      sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
+      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
+      leak_detector_level: "${WSS_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+      # Netty boss group threads count
       boss_group_thread_count: "${WSS_NETTY_BOSS_GROUP_THREADS:1}"
+      # Netty worker group threads count
       worker_group_thread_count: "${WSS_NETTY_WORKER_GROUP_THREADS:12}"
+      # Max payload size in bytes
       max_payload_size: "${WSS_NETTY_MAX_PAYLOAD_SIZE:65536}"
+      # Enable/disable keep-alive mechanism to periodically probe the other end of a connection
       so_keep_alive: "${WSS_NETTY_SO_KEEPALIVE:true}"
-      shutdown_quiet_period: "${WSS_NETTY_SHUTDOWN_QUIET_PERIOD:0}" # in seconds
-      shutdown_timeout: "${WSS_NETTY_SHUTDOWN_TIMEOUT:5}" # in seconds
+      # Period in seconds in graceful shutdown during which no new tasks are submitted
+      shutdown_quiet_period: "${WSS_NETTY_SHUTDOWN_QUIET_PERIOD:0}"
+      # The max time in seconds to wait until the executor is stopped
+      shutdown_timeout: "${WSS_NETTY_SHUTDOWN_TIMEOUT:5}"
 
+# Kafka parameters
 queue:
   msg-all:
-    # Number of parallel consumers for 'msg-all' topic. Should not be more than the number of partitions in topic.
+    # Number of parallel consumers for 'tbmq.msg.all' topic. Should not be more than the number of partitions in topic
     consumers-count: "${TB_MSG_ALL_CONSUMERS_COUNT:4}"
+    # Number of threads in the pool to process consumers tasks. Should not be less than number of consumers
     threads-count: "${TB_MSG_ALL_THREADS_COUNT:4}"
+    # Interval in milliseconds to poll messages from 'tbmq.msg.all' topic
     poll-interval: "${TB_MSG_ALL_POLL_INTERVAL:100}"
-    pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:10000}"
+    # Timeout in milliseconds for processing the pack of messages from 'tbmq.msg.all' topic
+    pack-processing-timeout: "${TB_MSG_ALL_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
-      type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
-      # For RETRY_ALL only
-      retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
-    # enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
+      # Processing strategy for 'tbmq.msg.all' topic. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_MSG_ALL_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_MSG_ALL_ACK_STRATEGY_RETRIES:1}"
+    # Enable/disable processing of consumed messages in parallel (grouped by publishing client id to preserve order).
     # Helpful when the same client publishes lots of messages in a short amount of time.
-    # It is recommended to count the impact of this parameter before setting it on production.
+    # It is recommended to count the impact of this parameter before setting it on production
     msg-parallel-processing: "${TB_MSG_ALL_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
-    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:8}"
+    # Number of threads in the pool to process Application consumers tasks
+    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:16}"
+    # Interval in milliseconds to poll messages from Application topics
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
-    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:2000}"
+    # Timeout in milliseconds for processing the pack of messages
+    pack-processing-timeout: "${TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
-      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}" # SKIP_ALL, RETRY_ALL
-      # For RETRY_ALL only
-      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:1}" # Number of retries, 0 is unlimited
-    # enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
+      # Processing strategy for Application topics. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_APP_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}"
+    # Enable/disable check that application client id contains only alphanumeric chars for Kafka topic creation
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
-    # enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
+    # Enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
+    # Number of threads in the pool to process Application shared subscriptions consumers tasks
     shared-subs-threads-count: "${TB_APP_PERSISTED_MSG_SHARED_SUBS_THREADS_COUNT:16}"
   device-persisted-msg:
-    # Number of parallel consumers for 'device-persisted-msg' topic. Should not be more than the number of partitions in topic.
+    # Number of parallel consumers for 'tbmq.msg.persisted' topic. Should not be more than the number of partitions in topic
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
+    # Number of threads in the pool to process consumers tasks
     threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:2}"
+    # Interval in milliseconds to poll messages from 'tbmq.msg.persisted' topic
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
     ack-strategy:
-      type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}" # SKIP_ALL, RETRY_ALL
-      # For RETRY_ALL only
-      retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}" # Number of retries, 0 is unlimited
-      pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:3}" # Time in seconds to wait in consumer thread before retries
+      # Queue processing strategy. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES:3}"
+      # Time in seconds to wait in consumer thread before retries
+      pause-between-retries: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
   retained-msg:
+    # Interval in milliseconds to poll messages from 'tbmq.msg.retained' topic
     poll-interval: "${TB_RETAINED_MSG_POLL_INTERVAL:100}"
+    # Interval in milliseconds to wait for system messages to be delivered to 'tbmq.msg.retained' topic
     acknowledge-wait-timeout-ms: "${TB_RETAINED_MSG_ACK_WAIT_TIMEOUT_MS:500}"
   client-session:
+    # Interval in milliseconds to poll messages from 'tbmq.client.session' topic
     poll-interval: "${TB_CLIENT_SESSION_POLL_INTERVAL:100}"
+    # Interval in milliseconds to wait for system messages to be delivered to 'tbmq.client.session' topic
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SESSION_ACK_WAIT_TIMEOUT_MS:500}"
   client-subscriptions:
+    # Interval in milliseconds to poll messages from 'tbmq.client.subscriptions' topic
     poll-interval: "${TB_CLIENT_SUBSCRIPTIONS_POLL_INTERVAL:100}"
+    # Interval in milliseconds to wait for system messages to be delivered to 'tbmq.client.subscriptions' topic
     acknowledge-wait-timeout-ms: "${TB_CLIENT_SUBSCRIPTIONS_ACK_WAIT_TIMEOUT_MS:500}"
   client-session-event:
+    # Number of parallel consumers for `tbmq.client.session.event.request` topic
     consumers-count: "${TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT:2}"
+    # Number of pending client session events
     max-pending-requests: "${TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS:10000}"
+    # Interval in milliseconds to poll messages from 'tbmq.client.session.event.request' topic
     poll-interval: "${TB_CLIENT_SESSION_EVENT_POLL_INTERVAL:100}"
+    # Max interval in milliseconds to process 'tbmq.client.session.event.request' messages after consuming them
     batch-wait-timeout-ms: "${TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS:2000}"
   client-session-event-response:
+    # Number of threads for sending event responses to session event requests
     response-sender-threads: "${TB_CLIENT_SESSION_EVENT_RESPONSE_SENDER_THREADS:8}"
+    # Interval in milliseconds to poll messages from 'tbmq.client.session.event.response' topics
     poll-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_POLL_INTERVAL:100}"
+    # Max time in milliseconds for client session events before they are expired
     max-request-timeout: "${TB_CLIENT_SESSION_EVENT_RESPONSE_MAX_REQUEST_TIMEOUT:100000}"
+    # Period in milliseconds to clean-up stale client session events
     cleanup-interval: "${TB_CLIENT_SESSION_EVENT_RESPONSE_CLEANUP_INTERVAL:100}"
   disconnect-client-command:
+    # Interval in milliseconds to poll messages from 'tbmq.client.disconnect' topics
     poll-interval: "${TB_DISCONNECT_CLIENT_COMMAND_POLL_INTERVAL:100}"
   persisted-downlink-msg:
+    # Number of parallel consumers for `tbmq.msg.downlink.persisted` topics
     consumers-count: "${TB_PERSISTED_DOWNLINK_MSG_CONSUMERS_COUNT:2}"
+    # Number of threads in the pool to process consumers tasks
     threads-count: "${TB_PERSISTED_DOWNLINK_MSG_THREADS_COUNT:2}"
+    # Interval in milliseconds to poll messages from 'tbmq.msg.downlink.persisted' topics
     poll-interval: "${TB_PERSISTED_DOWNLINK_MSG_POLL_INTERVAL:100}"
   basic-downlink-msg:
+    # Number of parallel consumers for `tbmq.msg.downlink.basic` topics
     consumers-count: "${TB_BASIC_DOWNLINK_MSG_CONSUMERS_COUNT:2}"
+    # Number of threads in the pool to process consumers tasks
     threads-count: "${TB_BASIC_DOWNLINK_MSG_THREADS_COUNT:2}"
+    # Interval in milliseconds to poll messages from 'tbmq.msg.downlink.basic' topics
     poll-interval: "${TB_BASIC_DOWNLINK_MSG_POLL_INTERVAL:100}"
   application-removed-event:
+    # Interval in milliseconds to poll messages from 'tbmq.sys.app.removed' topic
     poll-interval: "${TB_APPLICATION_REMOVED_EVENT_POLL_INTERVAL:100}"
     processing:
+      # Cron expression to when execute the consuming and processing of messages
       cron: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_CRON:0 0 3 * * *}"
+      # Timezone for the processing cron-job
       zone: "${TB_APPLICATION_REMOVED_EVENT_PROCESSING_ZONE:UTC}"
   historical-data-total:
+    # Interval in milliseconds to poll messages from 'tbmq.sys.historical.data' topic
     poll-interval: "${TB_HISTORICAL_DATA_TOTAL_POLL_INTERVAL:100}"
 
   kafka:
+    # List of kafka bootstrap servers used to establish connection
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
+    # Enable/disable deletion of topics for Application MQTT Clients
     enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
       consumer:
+        # A list of class names or class types, ordered by preference, of supported partition assignment strategies that the client will use to distribute partition ownership amongst consumer instances when group management is used
         partition-assignment-strategy: "${TB_KAFKA_DEFAULT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:org.apache.kafka.clients.consumer.StickyAssignor}"
+        # The timeout in milliseconds used to detect client failures when using Kafka's group management facility
         session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:300000}"
+        # The maximum delay in milliseconds between invocations of poll() when using consumer group management
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
-        max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:8192}"
+        # The maximum number of records returned in a single call to poll()
+        max-poll-records: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS:2000}"
+        # The maximum amount of data in bytes per-partition the server will return
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
+        # The maximum amount of data in bytes the server should return for a fetch request
         fetch-max-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_FETCH_MAX_BYTES:134217728}"
       producer:
+        # The number of acknowledgments the producer requires the leader to have received before considering a request complete
         acks: "${TB_KAFKA_DEFAULT_PRODUCER_ACKS:1}"
+        # Setting a value greater than zero will cause the client to resend any record whose send fails with a potentially transient error
         retries: "${TB_KAFKA_DEFAULT_PRODUCER_RETRIES:1}"
+        # The producer will attempt to batch records together into fewer requests whenever multiple records are being sent to the same partition. Size in bytes
         batch-size: "${TB_KAFKA_DEFAULT_PRODUCER_BATCH_SIZE:16384}"
+        # The producer groups together any records that arrive in between request transmissions into a single batched request, set in milliseconds
         linger-ms: "${TB_KAFKA_DEFAULT_PRODUCER_LINGER_MS:5}"
+        # The total bytes of memory the producer can use to buffer records waiting to be sent to the server
         buffer-memory: "${TB_KAFKA_DEFAULT_PRODUCER_BUFFER_MEMORY:33554432}"
-        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}" # none, gzip, snappy, lz4, zstd
+        # The compression type for all data generated by the producer. Valid values are `none`, `gzip`, `snappy`, `lz4`, or `zstd`
+        compression-type: "${TB_KAFKA_DEFAULT_COMPRESSION_TYPE:none}"
     admin:
+      # List of configs separated by semicolon used for admin kafka client creation
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
     consumer-stats:
+      # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
+      # Statistics printing interval in milliseconds for Kafka's consumer-groups stats
       print-interval-ms: "${TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS:60000}"
+      # Time to wait in milliseconds for the stats-loading requests to Kafka to finish
       kafka-response-timeout-ms: "${TB_KAFKA_CONSUMER_STATS_RESPONSE_TIMEOUT_MS:1000}"
+      # List of configs separated by semicolon used for kafka stats consumer
       consumer-config: "${TB_KAFKA_CONSUMER_STATS_CONSUMER_CONFIG:}"
     home-page:
+      # List of configs separated by semicolon used for kafka admin client for home page
       consumer-config: "${TB_KAFKA_HOME_PAGE_CONSUMER_CONFIG:}"
+      # Time to wait in milliseconds for the home page requests to Kafka to finish
       kafka-response-timeout-ms: "${TB_KAFKA_HOME_PAGE_RESPONSE_TIMEOUT_MS:1000}"
     msg-all:
+      # Topic for persisting incoming PUBLISH messages
       topic: "${TB_KAFKA_MSG_ALL_TOPIC:tbmq.msg.all}"
+      # Kafka topic properties separated by semicolon for `tbmq.msg.all` topic
       topic-properties: "${TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.all` topic
       additional-consumer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.all` topic
       additional-producer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_PRODUCER_CONFIG:}"
     application-persisted-msg:
-      # Configure retention policy according to the persistence requirements for APPLICATION clients
+      # Kafka topic properties separated by semicolon for `tbmq.msg.app` topics
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.app` topics
+      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.app` topics
       additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
       shared-topic:
+        # Kafka topic properties separated by semicolon for application shared subscription topics
         topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
-        additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:512}"
+        # Additional Kafka consumer configs separated by semicolon for application shared subscription topics
+        additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+        # Additional Kafka producer configs separated by semicolon for application shared subscription topics
         additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_SHARED_ADDITIONAL_PRODUCER_CONFIG:}"
     device-persisted-msg:
+      # Topic for persisting messages related to Device clients before saving them in Database
       topic: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC:tbmq.msg.persisted}"
+      # Kafka topic properties separated by semicolon for `tbmq.msg.persisted` topic
       topic-properties: "${TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.persisted` topic
       additional-consumer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.persisted` topic
       additional-producer-config: "${TB_KAFKA_DEVICE_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     retained-msg:
+      # Topic for retained messages
       topic: "${TB_KAFKA_RETAINED_MSG_TOPIC:tbmq.msg.retained}"
+      # Kafka topic properties separated by semicolon for `tbmq.msg.retained` topic
       topic-properties: "${TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.retained` topic
       additional-consumer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.retained` topic
       additional-producer-config: "${TB_KAFKA_RETAINED_MSG_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session:
+      # Topic for persisting client sessions
       topic: "${TB_KAFKA_CLIENT_SESSION_TOPIC:tbmq.client.session}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.session` topic
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.session` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.session` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-subscriptions:
+      # Topic for persisting client subscriptions
       topic: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC:tbmq.client.subscriptions}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.subscriptions` topic
       topic-properties: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.subscriptions` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.subscriptions` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SUBSCRIPTIONS_ADDITIONAL_PRODUCER_CONFIG:retries:3}"
     client-session-event:
+      # Topic for sending client session event requests
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.session.event.request` topic
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
-      additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1024}"
+      # Additional Kafka consumer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
+      additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1000}"
+      # Additional Kafka producer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     client-session-event-response:
+      # Prefix for topics for sending client session event responses to Broker nodes
       topic-prefix: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PREFIX:tbmq.client.session.event.response}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.session.event.response` topics
       topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.session.event.response` topics
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.session.event.response` topics
       additional-producer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_ADDITIONAL_PRODUCER_CONFIG:}"
     disconnect-client-command:
+      # Prefix for topics for sending disconnect client commands to Broker nodes
       topic-prefix: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_TOPIC_PREFIX:tbmq.client.disconnect}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.disconnect` topics
       topic-properties: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.disconnect` topics
       additional-consumer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.disconnect` topics
       additional-producer-config: "${TB_KAFKA_DISCONNECT_CLIENT_COMMAND_ADDITIONAL_PRODUCER_CONFIG:}"
     basic-downlink-msg:
+      # Prefix for topics for non-persistent Device messages that should be transferred to other Broker nodes
       topic-prefix: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.basic}"
+      # Kafka topic properties separated by semicolon for `tbmq.msg.downlink.basic` topics
       topic-properties: "${TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.downlink.basic` topics
       additional-consumer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.downlink.basic` topics
       additional-producer-config: "${TB_KAFKA_BASIC_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:batch.size:32768}"
     persisted-downlink-msg:
+      # Prefix for topics for persistent Device messages that should be transferred to other Broker nodes
       topic-prefix: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PREFIX:tbmq.msg.downlink.persisted}"
+      # Kafka topic properties separated by semicolon for `tbmq.msg.downlink.persisted` topics
       topic-properties: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:12;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.downlink.persisted` topics
       additional-consumer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.msg.downlink.persisted` topics
       additional-producer-config: "${TB_KAFKA_PERSISTED_DOWNLINK_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     application-removed-event:
+      # Topic for sending events to remove application topics when application clients are changed to be device clients
       topic: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC:tbmq.sys.app.removed}"
+      # Kafka topic properties separated by semicolon for `tbmq.sys.app.removed` topic
       topic-properties: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.app.removed` topic
       additional-consumer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.app.removed` topic
       additional-producer-config: "${TB_KAFKA_APPLICATION_REMOVED_EVENT_ADDITIONAL_PRODUCER_CONFIG:}"
     historical-data-total:
+      # Topic for sending historical data stats to be summed from each broker
       topic: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC:tbmq.sys.historical.data}"
+      # Kafka topic properties separated by semicolon for `tbmq.sys.historical.data` topic
       topic-properties: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-consumer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-producer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_PRODUCER_CONFIG:}"
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
-#      tbmq.msg.all:
-#        - key: max.poll.records
-#          value: "${TB_KAFKA_MSG_ALL_MAX_POLL_RECORDS:8192}"
       tbmq.msg.app.test_client:
-        - key: max.poll.records
-          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
+#        - key: max.poll.records
+#          value: "${TB_KAFKA_APP_TEST_CLIENT_MAX_POLL_RECORDS:512}"
 
+# General service parameters
 service:
+  # Unique id for this service (autogenerated if empty)
   id: "${TB_SERVICE_ID:}"
 
 # Actor system parameters
 actors:
   system:
+    # Number of messages the actor system will process per actor before switching to processing of messages for next actor
     throughput: "${ACTORS_SYSTEM_THROUGHPUT:5}"
+    # Thread pool size for actor system scheduler
     scheduler-pool-size: "${ACTORS_SYSTEM_SCHEDULER_POOL_SIZE:1}"
+    # Maximum number of attempts to init the actor before disabling the actor
     max-actor-init-attempts: "${ACTORS_SYSTEM_MAX_ACTOR_INIT_ATTEMPTS:10}"
     processing-metrics:
+      # Enable/disable actors processing metrics
       enabled: "${ACTORS_SYSTEM_PROCESSING_METRICS_ENABLED:false}"
+    # Actors disconnect timeout in milliseconds
     disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
   persisted-device:
+    # Number of threads processing the Device actor's messages
     dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
+    # Minutes to wait before deleting Device actor after disconnect
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"
   client:
-    dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:4}"
+    # Number of threads processing the MQTT client actors messages
+    dispatcher-pool-size: "${ACTORS_SYSTEM_CLIENT_DISPATCHER_POOL_SIZE:8}"
+    # Time in seconds to wait until the actor is stopped for clients that did not specify client id
     wait-before-generated-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_GENERATED_ACTOR_STOP_SECONDS:10}"
+    # Time in seconds to wait until the actor is stopped for clients that specified client id
     wait-before-named-actor-stop-seconds: "${ACTORS_SYSTEM_CLIENT_WAIT_BEFORE_NAMED_ACTOR_STOP_SECONDS:60}"
   rule:
-    # Specify thread pool size for mail sender executor service
+    # Thread pool size for mail sender executor service
     mail_thread_pool_size: "${ACTORS_RULE_MAIL_THREAD_POOL_SIZE:4}"
-    # Specify thread pool size for password reset emails
+    # Thread pool size for password reset emails executor service
     mail_password_reset_thread_pool_size: "${ACTORS_RULE_MAIL_PASSWORD_RESET_THREAD_POOL_SIZE:4}"
 
+# Database time-series parameters
 database:
-  ts_max_intervals: "${DATABASE_TS_MAX_INTERVALS:700}" # Max number of DB queries generated by single API call to fetch telemetry records
+  # Max number of DB queries generated by single API call to fetch time-series records
+  ts_max_intervals: "${DATABASE_TS_MAX_INTERVALS:700}"
 
+# SQL configuration parameters
 sql:
   # Specify whether to sort entities before batch update. Should be enabled for cluster mode to avoid deadlocks
   batch_sort: "${SQL_BATCH_SORT:true}"
-  # Specify partitioning size for timestamp key-value storage. Example: DAYS, MONTHS, YEARS, INDEFINITE.
+  # Specify partitioning size for timestamp key-value storage. Example: DAYS, MONTHS, YEARS, INDEFINITE
   ts_key_value_partitioning: "${SQL_TS_KV_PARTITIONING:DAYS}"
   ts:
+    # Batch size for persisting time-series inserts
     batch_size: "${SQL_TS_BATCH_SIZE:10000}"
+    # Max timeout for time-series entries queue polling. Value set in milliseconds
     batch_max_delay: "${SQL_TS_BATCH_MAX_DELAY_MS:100}"
-    batch_threads: "${SQL_TS_BATCH_THREADS:3}" # batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+    # Number of threads that execute batch insert/update statements for time-series data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+    batch_threads: "${SQL_TS_BATCH_THREADS:3}"
   ttl:
     ts:
+      # The parameter to specify whether to use TTL (Time To Live) for time-series records
       enabled: "${SQL_TTL_TS_ENABLED:true}"
-      execution_interval_ms: "${SQL_TTL_TS_EXECUTION_INTERVAL_MS:86400000}" # Number of milliseconds. The current value corresponds to 1 day
-      ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}" # Number of seconds. Corresponds to 7 days
+      # The parameter to specify the period of execution TTL task for time-series records. Value set in milliseconds. Default value corresponds to one day
+      execution_interval_ms: "${SQL_TTL_TS_EXECUTION_INTERVAL_MS:86400000}"
+      # The parameter to specify system TTL(Time To Live) value for time-series records. Value set in seconds. 0 - records are never expired. Default value corresponds to seven days
+      ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}"
 
-# SQL DAO Configuration
+# SQL DAO configuration parameters
 spring:
   data:
     jpa:
       repositories:
-        enabled: "true"
+        # Enable/Disable the Spring Data JPA repositories support
+        enabled: "${SPRING_DATA_JPA_REPOSITORIES_ENABLED:true}"
   jpa:
-    open-in-view: "false"
+    # Enable/disable OSIV
+    open-in-view: "${SPRING_JPA_OPEN_IN_VIEW:false}"
     hibernate:
-      ddl-auto: "none"
+      # You can set a Hibernate feature that controls the DDL behavior in a more fine-grained way.
+      # The standard Hibernate property values are none, validate, update, create-drop.
+      # Spring Boot chooses a default value for you based on whether it thinks your database is embedded (default create-drop) or not (default none)
+      ddl-auto: "${SPRING_JPA_HIBERNATE_DDL_AUTO:none}"
+    # The name of the database platform to be used by the JPA provider.
+    # This property is used to set the underlying SQL dialect that should be used when interacting with the database
     database-platform: "${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}"
   datasource:
+    # Database driver for Spring JPA
     driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"
+    # Database connection URL
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker}"
+    # Database username
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    # Database user password
     password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
+      # This property allows the number of connections in the pool to increase as demand increases.
+      # At the same time, the property ensures that the pool doesn't grow to the point of exhausting a system's resources, which ultimately affects an application's performance and availability
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
-      maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}" # 10 minutes
+      # This property controls the max lifetime in milliseconds of a connection. Only when it is closed will it then be removed. Default is 10 minutes
+      maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}"
 
-spring.lifecycle.timeout-per-shutdown-phase: "1m"
-
-spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "true"
-spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
+# General Spring parameters
+spring.lifecycle.timeout-per-shutdown-phase: "${SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE:1m}" # The server will wait for active requests to finish their work up to a specified amount of time before graceful shutdown
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation: "${SPRING_JPA_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION:true}" # Setting this property to true disables contextual LOB creation and forces the use of Hibernate's own LOB implementation. Fixes Postgres JPA Error
+spring.jpa.properties.hibernate.order_by.default_null_ordering: "${SPRING_JPA_HIBERNATE_ORDER_BY_DEFAULT_NULL_ORDERING:last}" # Default ordering for null values
+spring.data.redis.repositories.enabled: "${SPRING_DATA_REDIS_REPOSITORIES_ENABLED:false}" # Disables redis repositories scanning
+spring.freemarker.checkTemplateLocation: "${SPRING_FREEMARKER_CHECK_TEMPLATE_LOCATION:false}" # Spring freemarker configuration to check that the templates location exists
+spring.mvc.async.request-timeout: "${SPRING_MVC_ASYNC_REQUEST_TIMEOUT:30000}" # The default timeout for asynchronous requests in milliseconds
+spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATEGY:ANT_PATH_MATCHER}" # For endpoints matching in Swagger
 
 # Security parameters
 security:
@@ -419,193 +613,315 @@ security:
     ssl:
       # If enabled the server will try to authenticate client with client certificate chain
       enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
-      # Skip certificate validity check for client certificates.
+      # Skip certificate validity check for client certificates
       skip_validity_check_for_client_cert: "${SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
   # JWT Token parameters
   jwt:
-    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)
-    refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}" # Number of seconds (1 week)
+    # User JWT Token expiration time in seconds (2.5 hours)
+    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}"
+    # User JWT Refresh Token expiration time in seconds (1 week)
+    refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}"
+    # User JWT Token issuer
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
+    # User JWT Token sign key
     tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
   basic:
+    # Enable/Disable basic security options
     enabled: "${SECURITY_BASIC_ENABLED:false}"
   # Enable/disable case-sensitive username login
   user_login_case_sensitive: "${SECURITY_USER_LOGIN_CASE_SENSITIVE:true}"
 
+# MQTT parameters
 mqtt:
   connect:
+    # Number of threads for clients connection thread pool
     threads: "${MQTT_CONNECT_THREADS:4}"
-  # enable/disable processing of found subscriptions in parallel for published messages.
+  # Enable/disable processing of found subscriptions in parallel for published messages.
   # Helpful when the "PUBLISH" message should be delivered to lots of subscribers.
-  # It is recommended to count the impact of this parameter before setting it on production.
+  # It is recommended to count the impact of this parameter before setting it on production
   msg-subscriptions-parallel-processing: "${MQTT_MSG_SUBSCRIPTIONS_PARALLEL_PROCESSING:false}"
   pre-connect-queue:
+    # Max number of messages that can be stored in queue before client gets connected and start processing them
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
+  # Max number of PUBLISH or PUBREL messages not yet responded
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   retransmission:
+    # Enable/disable MQTT msg retransmission
     enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"
-    # if set to 0 - uses the number of processors available to the JVM multiplied by 2.
+    # Retransmission scheduler pool size (0 means the number of processors available to the JVM multiplied by 2 will be used)
     scheduler-pool-size: "${MQTT_RETRANSMISSION_SCHEDULER_POOL_SIZE:0}"
-    initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}" # initial delay for the msg retransmission in seconds
-    # increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
+    # Initial delay for the msg retransmission in seconds
+    initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}"
+    # Increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
     period: "${MQTT_RETRANSMISSION_PERIOD:5}"
+  # If enabled, each message is published to subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
+  write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
+  # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false
+  buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
   keep-alive:
-    # Schedule monitoring for inactive MQTT clients
+    # Time in milliseconds between subsequent checks for the non-active clients
     monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
-    max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}" # in seconds, defaults to 10 minutes, for mqtt 5 clients
+    # Max value in seconds allowed by the server for keep-alive that can be used by clients. Defaults to 10 minutes, used for MQTT v5 clients
+    max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"
   topic:
-    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}" # 0 means the limitation is disabled
-    # max count of topic aliases per connection
-    # 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
+    # Maximum number of segments in topics. If it's too large, processing of topics with too much segments can lead to errors. 0 means limitation is disabled
+    max-segments-count: "${MQTT_TOPIC_MAX_SEGMENTS_COUNT:0}"
+    # Max count of topic aliases per connection. 0 indicates that the Broker does not accept any Topic Aliases for all connections meaning the 'Topic Alias' feature is disabled
     alias-max: "${MQTT_TOPIC_ALIAS_MAX:10}"
-    # minimal required topic name length that Broker publishes to client that can be replaced with topic alias
+    # Minimal required topic name length that Broker publishes to client that can be replaced with topic alias
     # (e.g. if topic has more than 50 chars - it can be replaced with alias)
     min-length-for-alias-replacement: "${MQTT_TOPIC_MIN_LENGTH_FOR_ALIAS_REPLACEMENT:50}"
   shared-subscriptions:
-    processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}" # supported types: ROUND_ROBIN
+    # Processing strategy type - how messages are split between clients in shared subscription. Supported types: ROUND_ROBIN
+    processing-type: "${MQTT_SHARED_SUBSCRIPTIONS_PROCESSING_TYPE:ROUND_ROBIN}"
   subscription-trie:
-    # Wait for clients to pause subscribing to topics so that application can clear SubscriptionTrie.
-    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail.
+    # Maximum pause in milliseconds for clearing subscription storage from empty nodes.
+    # If wait is unsuccessful the subscribing clients will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_SUB_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
-    # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
+    # Cron job to schedule clearing of empty subscription nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_SUB_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
+    # Timezone for the subscription clearing cron-job
     clear-nodes-zone: "${MQTT_SUB_TRIE_CLEAR_NODES_ZONE:UTC}"
   retain-msg-trie:
-    # Wait for clients to pause updating retained messages for topics so that application can clear RetainMsgTrie.
-    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail.
+    # Maximum pause in milliseconds for clearing retain msg storage from empty nodes.
+    # If wait is unsuccessful retain messages processing will be resumed, but the clear will fail
     wait-for-clear-lock-ms: "${MQTT_RETAIN_MSG_TRIE_WAIT_FOR_CLEAR_LOCK_MS:100}"
-    # Cron specification when to run clearing empty nodes. Defaults to 'every day at midnight'
+    # Cron job to schedule clearing of empty retain msg nodes. Defaults to 'every day at midnight'
     clear-nodes-cron: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_CRON:0 0 0 * * *}"
+    # Timezone for retain msg clearing cron-job
     clear-nodes-zone: "${MQTT_RETAIN_MSG_TRIE_CLEAR_NODES_ZONE:UTC}"
   retain-msg:
+    # Period in milliseconds to clear retained messages by expiry feature of MQTT
     expiry-processing-period-ms: "${MQTT_RETAIN_MSG_EXPIRY_PROCESSING_PERIOD_MS:60000}"
   client-session-expiry:
-    # Cron specification when to run clearing old and not active client sessions. Defaults to 'every hour'
+    # Cron job to schedule clearing of expired and not active client sessions. Defaults to 'every hour', e.g. at 20:00:00 UTC
     cron: "${MQTT_CLIENT_SESSION_EXPIRY_CRON:0 0 * ? * *}"
+    # Timezone for the client sessions clearing cron-job
     zone: "${MQTT_CLIENT_SESSION_EXPIRY_ZONE:UTC}"
-    # Specify max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
+    # Max expiry interval allowed of inactive sessions in seconds. The current value corresponds to one week
     max-expiry-interval: "${MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL:604800}"
     # Administration TTL in seconds for clearing sessions that do not expire by session expiry interval
     # (e.g. MQTTv3 cleanSession=false or MQTTv5 cleanStart=false && sessionExpiryInterval == 0).
     # The current value corresponds to one week. 0 or negative value means this TTL is disabled
     ttl: "${MQTT_CLIENT_SESSION_EXPIRY_TTL:604800}"
   version-3-1:
+    # Max ClientId length for 3.1 version of protocol
     max-client-id-length: "${MQTT_3_1_MAX_CLIENT_ID_LENGTH:1024}"
   persistent-session:
     device:
       persisted-messages:
+        # Maximum number of PUBLISH messages stored for each persisted DEVICE client
         limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
-        # Specify TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
+        # TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
-        # Cron specification when to run clearing persisted device messages. Defaults to 'every day at 2 o'clock'
         clean-up:
+          # Cron job to schedule clearing of outdated persisted DEVICE messages. Defaults to 'every day at 2 o'clock'
           cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
+          # Timezone for the DEVICE messages clearing cron-job
           zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
+          # Max number of client sessions in one SELECT request
           session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_SESSION_CTX_PAGE_SIZE:1000}"
         sql:
           update-packet-queue:
-            # batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:1}"
+            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:3}"
+            # Batch size for processing packet updates
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE:100}"
+            # Max timeout for packet updates queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_MAX_DELAY:50}"
           delete-packet-queue:
-            # batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:1}"
+            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:3}"
+            # Batch size for processing packet deletes
             batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_SIZE:100}"
+            # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
+    # Enable/disable publish rate limits per client
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
+    # Limit the maximum publish messages per client on each server for specified time intervals in seconds. Comma separated list of limit:seconds pairs
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
   handler:
+    # Number of threads in thread pool for processing all publish messages callbacks after sending them to Kafka
     all_msg_callback_threads: "${MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing device persisted publish messages callbacks after sending them to Kafka
     device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing application persisted publish messages callbacks after sending them to Kafka
     app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
 
+# DB connectivity parameters
 db:
+  # The parameter to specify time interval in milliseconds to periodically check if the connection to the DB is still established
   connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
 
+# Cache parameters
 cache:
-  # caffeine only
+  # Cache type: caffeine or redis
   type: "${CACHE_TYPE:caffeine}"
   stats:
+    # Enable/disable cache stats logging
     enabled: "${CACHE_STATS_ENABLED:true}"
+    # Cache stats logging interval in seconds
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
-
-caffeine:
   specs:
     packetIdAndSerialNumber:
+      # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
-      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}" # maxSize: 0 means the cache is disabled
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}"
     mqttClientCredentials:
+      # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
-      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}"
     basicCredentialsPassword:
-      timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}" # it is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
-      maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}" # maxSize: 0 means the cache is disabled
+      # Cache TTL in minutes. It is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
+      timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}"
 
+# Redis configuration parameters
+redis:
+  connection:
+    # Connection type: standalone or cluster or sentinel
+    type: "${REDIS_CONNECTION_TYPE:standalone}"
+  standalone:
+    # Redis connection host
+    host: "${REDIS_HOST:localhost}"
+    # Redis connection port
+    port: "${REDIS_PORT:6379}"
+    # Use the default Redis configuration file
+    useDefaultClientConfig: "${REDIS_USE_DEFAULT_CLIENT_CONFIG:true}"
+    # This value may be used only if you did not use the default ClientConfig, to specify client name
+    clientName: "${REDIS_CLIENT_NAME:standalone}"
+    # This value may be used only if you did not use the default ClientConfig, to specify connection timeout
+    connectTimeout: "${REDIS_CLIENT_CONNECT_TIMEOUT:30000}"
+    # This value may be used only if you did not use the default ClientConfig, to specify read timeout
+    readTimeout: "${REDIS_CLIENT_READ_TIMEOUT:60000}"
+    # This value may be used only if you did not use the default ClientConfig, to use pool config section
+    usePoolConfig: "${REDIS_CLIENT_USE_POOL_CONFIG:false}"
+  cluster:
+    # Comma-separated list of "host:port" pairs to bootstrap from
+    nodes: "${REDIS_NODES:}"
+    # Maximum number of redirects to follow when executing commands across the cluster
+    maxRedirects: "${REDIS_MAX_REDIRECTS:12}"
+    # If set false will be used pool config build from values of the pool config section
+    useDefaultPoolConfig: "${REDIS_CLUSTER_USE_DEFAULT_POOL_CONFIG:true}"
+  sentinel:
+    # Name of master node
+    master: "${REDIS_MASTER:}"
+    # Comma-separated list of "host:port" pairs of sentinels
+    sentinels: "${REDIS_SENTINELS:}"
+    # Password to authenticate with sentinel
+    password: "${REDIS_SENTINEL_PASSWORD:}"
+    # If set false will be used pool config build from values of the pool config section
+    useDefaultPoolConfig: "${REDIS_SENTINEL_USE_DEFAULT_POOL_CONFIG:true}"
+  # DB index
+  db: "${REDIS_DB:0}"
+  # DB password
+  password: "${REDIS_PASSWORD:}"
+  # Pool config
+  pool_config:
+    # Maximum number of connections that can be allocated by the connection pool
+    maxTotal: "${REDIS_POOL_CONFIG_MAX_TOTAL:128}"
+    # Maximum number of idle connections that can be maintained in the pool without being closed
+    maxIdle: "${REDIS_POOL_CONFIG_MAX_IDLE:128}"
+    # Minimum number of idle connections that can be maintained in the pool without being closed
+    minIdle: "${REDIS_POOL_CONFIG_MIN_IDLE:16}"
+    # Enable/Disable PING command sent when a connection is borrowed
+    testOnBorrow: "${REDIS_POOL_CONFIG_TEST_ON_BORROW:true}"
+    # The property is used to specify whether to test the connection before returning it to the connection pool
+    testOnReturn: "${REDIS_POOL_CONFIG_TEST_ON_RETURN:true}"
+    # Indicates whether to use the ping command to monitor the connection validity during idle resource monitoring. Invalid connections will be destroyed
+    testWhileIdle: "${REDIS_POOL_CONFIG_TEST_WHILE_IDLE:true}"
+    # Minimum time the connection should be idle before it can be evicted from the connection pool. The value is set in milliseconds
+    minEvictableMs: "${REDIS_POOL_CONFIG_MIN_EVICTABLE_MS:60000}"
+    # Specifies the time interval in milliseconds between two consecutive eviction runs
+    evictionRunsMs: "${REDIS_POOL_CONFIG_EVICTION_RUNS_MS:30000}"
+    # Maximum time in milliseconds where a client is willing to wait for a connection from the pool when all connections are exhausted
+    maxWaitMills: "${REDIS_POOL_CONFIG_MAX_WAIT_MS:60000}"
+    # Specifies the number of connections to test for eviction during each eviction run
+    numberTestsPerEvictionRun: "${REDIS_POOL_CONFIG_NUMBER_TESTS_PER_EVICTION_RUN:3}"
+    # Determines the behavior when a thread requests a connection from the pool, but there are no available connections, and the pool cannot create more due to the maxTotal configuration
+    blockWhenExhausted: "${REDIS_POOL_CONFIG_BLOCK_WHEN_EXHAUSTED:true}"
+
+# Statistics parameters
 stats:
+  # Enable/disable stats printing to the logs
   enabled: "${STATS_ENABLED:true}"
+  # Period in milliseconds to print stats. Default value corresponds to 1 minute
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
   application-processor:
+    # Enable/disable specific Application clients stats
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
 
+# Historical data statistics parameters
 historical-data-report:
+  # Enable/disable historical data stats reporting and persistence to the time-series
   enabled: "${HISTORICAL_DATA_REPORT_ENABLED:true}"
-  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}" # time in minutes (1-60) to collect historical data statistics. Used in cron expression
+  # Period in minutes (1-60) to collect stats for each broker. Used in cron expression
+  interval: "${HISTORICAL_DATA_REPORT_INTERVAL:1}"
+  # Timezone for the historical data stats processing
   zone: "${HISTORICAL_DATA_REPORT_ZONE:UTC}"
 
+# Metrics management parameters
 management:
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'info' to disable prometheus metrics).
-        include: '${METRICS_ENDPOINTS_EXPOSE:prometheus}'
+        # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
+        include: "${METRICS_ENDPOINTS_EXPOSE:prometheus}"
 
-# spring freemarker configuration
-spring.freemarker.checkTemplateLocation: "false"
-
-# spring CORS configuration
+# Spring CORS configuration
 spring.mvc.cors:
   mappings:
     # Intercept path
     "[/api/**]":
-      #Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled.
+      # Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled
       allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
-      #Comma-separated list of methods to allow. '*' allows all methods.
+      # Comma-separated list of methods to allow. '*' allows all methods
       allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
-      #Comma-separated list of headers to allow in a request. '*' allows all headers.
+      # Comma-separated list of headers to allow in a request. '*' allows all headers
       allowed-headers: "${MVC_CORS_API_ALLOWED_HEADERS:*}"
-      #How long, in seconds, the response from a pre-flight request can be cached by clients.
+      # How long, in seconds, the response from a pre-flight request can be cached by clients
       max-age: "${MVC_CORS_API_MAX_AGE:1800}"
-      #Set whether credentials are supported. When not set, credentials are not supported.
+      # Set whether credentials are supported. When not set, credentials are not supported
       allow-credentials: "${MVC_CORS_API_ALLOW_CREDENTIALS:true}"
 
-# The default timeout for asynchronous requests in milliseconds
-spring.mvc.async.request-timeout: "${SPRING_MVC_ASYNC_REQUEST_TIMEOUT:30000}"
-
-# For endpoints matching in Swagger
-spring.mvc.pathmatch.matching-strategy: "ANT_PATH_MATCHER"
-
+# Swagger parameters
 swagger:
+  # General swagger match pattern of swagger UI links
   api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
+  # General swagger match pattern path of swagger UI links
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
+  # Non-security API path match pattern of swagger UI links
   non_security_path_regex: "${SWAGGER_NON_SECURITY_PATH_REGEX:/api/noauth.*}"
+  # The title on the API doc UI page
   title: "${SWAGGER_TITLE:TBMQ REST API}"
+  # The description on the API doc UI page
   description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
+    # The contact name on the API doc UI page
     name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
+    # The contact URL on the API doc UI page
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
+    # The contact email on the API doc UI page
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:
+    # The license title on the API doc UI page
     title: "${SWAGGER_LICENSE_TITLE:Apache License Version 2.0}"
+    # Link to the license body on the API doc UI page
     url: "${SWAGGER_LICENSE_URL:https://github.com/thingsboard/tbmq/blob/main/LICENSE}"
+  # The version of the API doc to display. Default to the package version
   version: "${SWAGGER_VERSION:}"
 
-# Application info
+# Application info parameters
 app:
   # Application version
   version: "@project.version@"
 
+# Analysis parameters
 analysis:
   log:
+    # List of Client Ids separated with comas. Additional events for those clients will be logged
     analyzed-client-ids: "${ANALYSIS_LOG_CLIENT_IDS:}"

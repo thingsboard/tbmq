@@ -16,11 +16,14 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 public interface DownLinkProxy {
 
-    void sendBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg);
+    void sendBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg);
+
+    void sendBasicMsg(Subscription subscription, PublishMsgProto msg);
 
     void sendPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg);
 

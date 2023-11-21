@@ -23,8 +23,10 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.client-session")
 public class ClientSessionKafkaSettings {
+
     private String topic;
     private String topicProperties;
     private String additionalProducerConfig;
     private String additionalConsumerConfig;
+
 }

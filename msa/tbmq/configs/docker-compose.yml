@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-version: '3.0'
+version: "3.0"
 services:
   postgres:
     restart: always
@@ -47,7 +47,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9093,OUTSIDE://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_RETENTION_BYTES: 1073741824
       KAFKA_LOG_SEGMENT_BYTES: 268435456
       KAFKA_LOG_RETENTION_MS: 300000
@@ -56,7 +56,7 @@ services:
       - ~/.tb-mqtt-broker-data/kafka:/kafka
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:1.1.0"
+    image: "thingsboard/tbmq:1.2.0"
     depends_on:
       - postgres
       - kafka
@@ -71,7 +71,8 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       TB_KAFKA_SERVERS: kafka:9092
-      SECURITY_MQTT_BASIC_ENABLED: 'true'
+      SECURITY_MQTT_BASIC_ENABLED: "true"
+      #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
     volumes:
       - ~/.tb-mqtt-broker-data/log:/var/log/thingsboard-mqtt-broker
       - ~/.tb-mqtt-broker-data/data:/data

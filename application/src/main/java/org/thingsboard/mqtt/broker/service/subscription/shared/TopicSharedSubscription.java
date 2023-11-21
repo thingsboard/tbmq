@@ -15,26 +15,28 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
-@Data
+@Getter
 @RequiredArgsConstructor
 @EqualsAndHashCode(exclude = "qos")
+@ToString
 public class TopicSharedSubscription {
 
-    private final String topic;
+    private final String topicFilter;
     private final String shareName;
     private final int qos;
 
-    public TopicSharedSubscription(String topic, String shareName) {
-        this.topic = topic;
+    public TopicSharedSubscription(String topicFilter, String shareName) {
+        this.topicFilter = topicFilter;
         this.shareName = shareName;
         this.qos = 0;
     }
 
     public String getKey() {
-        return "ss_" + this.shareName + "_" + this.topic;
+        return "ss_" + this.shareName + "_" + this.topicFilter;
     }
 }

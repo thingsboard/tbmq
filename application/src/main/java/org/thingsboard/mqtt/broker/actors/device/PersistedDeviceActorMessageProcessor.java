@@ -19,6 +19,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
@@ -44,6 +46,7 @@ import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -55,11 +58,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
+@Getter
 class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProcessor {
 
     private final String clientId;
@@ -70,12 +75,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final DeviceActorConfiguration deviceActorConfig;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
 
     private final Set<Integer> inFlightPacketIds = Sets.newConcurrentHashSet();
-    private final Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = Maps.newConcurrentMap();
+    private final ConcurrentMap<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = Maps.newConcurrentMap();
 
+    @Setter
     private volatile ClientSessionCtx sessionCtx;
+    @Setter
     private volatile long lastPersistedMsgSentSerialNumber = -1L;
+    @Setter
     private volatile boolean processedAnyMsg = false;
     private volatile UUID stopActorCommandUUID;
 
@@ -89,6 +98,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         this.clientMqttActorManager = systemContext.getClientMqttActorManager();
         this.clientLogger = systemContext.getClientLogger();
         this.deviceActorConfig = systemContext.getDeviceActorConfiguration();
+        this.sharedSubscriptionCacheService = systemContext.getSharedSubscriptionCacheService();
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
@@ -104,9 +114,22 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
+        if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
+            return;
+        }
         PacketIdAndSerialNumber lastPacketIdAndSerialNumber = getLastPacketIdAndSerialNumber();
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
+            boolean anyDeviceClientConnected = sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, topicSharedSubscription);
+            if (anyDeviceClientConnected) {
+                continue;
+            }
+            // It means there was at least one persistent offline subscriber and published message with QoS > 0.
+            // If Subscriber QoS is 0 - publish messages QoS is downgraded to 0, so we can not acknowledge such messages from DB.
+            // They can be received by another subscriber with QoS > 0 or will be deleted by TTL.
+            if (topicSharedSubscription.getQos() == 0) {
+                continue;
+            }
             String key = topicSharedSubscription.getKey();
             List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(key);
             if (CollectionUtils.isEmpty(persistedMessages)) {
@@ -126,8 +149,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         serialNumberService.saveLastSerialNumbers(Map.of(clientId, lastPacketIdAndSerialNumber));
     }
 
-    private void updateMessagesBeforePublish(PacketIdAndSerialNumber lastPacketIdAndSerialNumber, TopicSharedSubscription topicSharedSubscription,
-                                             List<DevicePublishMsg> persistedMessages) {
+    void updateMessagesBeforePublish(PacketIdAndSerialNumber lastPacketIdAndSerialNumber, TopicSharedSubscription topicSharedSubscription,
+                                     List<DevicePublishMsg> persistedMessages) {
         for (DevicePublishMsg devicePublishMessage : persistedMessages) {
             PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getAndIncrementPacketIdAndSerialNumber(lastPacketIdAndSerialNumber);
 
@@ -164,7 +187,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         return new PacketIdAndSerialNumberDto(packetIdAtomic.get(), packetIdAndSerialNumber.getSerialNumber().incrementAndGet());
     }
 
-    private void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
+    void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
         switch (persistedMessage.getPacketType()) {
             case PUBLISH:
                 MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(persistedMessage, System.currentTimeMillis());
@@ -207,7 +230,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             return;
         }
 
-        checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(publishMsg);
+        checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(publishMsg);
         processedAnyMsg = true;
 
         MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
@@ -229,7 +252,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
     }
 
-    private void checkForMissedMsgsAndProcessBeforeFirstIncomingMsg(DevicePublishMsg publishMsg) {
+    void checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(DevicePublishMsg publishMsg) {
         if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
             long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
             if (log.isDebugEnabled()) {
@@ -237,7 +260,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                         clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
             }
 
-            List<DevicePublishMsg> persistedMessages = findMissedPersistedMsgs(publishMsg, nextPersistedSerialNumber);
+            List<DevicePublishMsg> persistedMessages = findMissedPersistedMessages(publishMsg, nextPersistedSerialNumber);
             try {
                 persistedMessages.forEach(this::deliverPersistedMsg);
             } catch (Exception e) {
@@ -247,8 +270,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
     }
 
-    private List<DevicePublishMsg> findMissedPersistedMsgs(DevicePublishMsg publishMsg, long nextPersistedSerialNumber) {
-        return deviceMsgService.findPersistedMessages(clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
+    private List<DevicePublishMsg> findMissedPersistedMessages(DevicePublishMsg publishMsg, long fromSerialNumber) {
+        return deviceMsgService.findPersistedMessages(clientId, fromSerialNumber, publishMsg.getSerialNumber());
     }
 
     private void disconnect(String message) {
@@ -272,9 +295,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
-        var targetClientId = packet.getKey();
+        var targetClientId = getTargetClientId(packet);
 
-        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(targetClientId, packet.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
         future.addListener(() -> {
             try {
                 inFlightPacketIds.remove(msg.getPacketId());
@@ -286,9 +309,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
-        var targetClientId = packet.getKey();
+        var targetClientId = getTargetClientId(packet);
 
-        ListenableFuture<Void> future = deviceMsgService.tryUpdatePacketReceived(targetClientId, packet.getPacketId());
+        ListenableFuture<Void> future = deviceMsgService.tryUpdatePacketReceived(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
         future.addListener(() -> {
             try {
                 inFlightPacketIds.remove(msg.getPacketId());
@@ -303,9 +326,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
-        var targetClientId = packet.getKey();
+        var targetClientId = getTargetClientId(packet);
 
-        ListenableFuture<Void> resultFuture = deviceMsgService.tryRemovePersistedMessage(targetClientId, packet.getPacketId());
+        ListenableFuture<Void> resultFuture = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
         DonAsynchron.withCallback(
                 resultFuture,
                 unused -> {
@@ -317,12 +340,20 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         );
     }
 
-    private SharedSubscriptionPublishPacket getSharedSubscriptionPublishPacket(int packetId) {
-        return sentPacketIdsFromSharedSubscription.getOrDefault(packetId, newSharedSubscriptionPublishPacket(clientId, packetId));
+    private String getTargetClientId(SharedSubscriptionPublishPacket packet) {
+        return packet == null ? clientId : packet.getKey();
     }
 
-    private SharedSubscriptionPublishPacket newSharedSubscriptionPublishPacket(String clientId, int packetId) {
-        return new SharedSubscriptionPublishPacket(clientId, packetId);
+    private int getTargetPacketId(SharedSubscriptionPublishPacket packet, int receivedPacketId) {
+        return packet == null ? receivedPacketId : packet.getPacketId();
+    }
+
+    private SharedSubscriptionPublishPacket getSharedSubscriptionPublishPacket(int packetId) {
+        return sentPacketIdsFromSharedSubscription.get(packetId);
+    }
+
+    private SharedSubscriptionPublishPacket newSharedSubscriptionPublishPacket(String key, int packetId) {
+        return new SharedSubscriptionPublishPacket(key, packetId);
     }
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {

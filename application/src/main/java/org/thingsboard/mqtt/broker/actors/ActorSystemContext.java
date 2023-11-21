@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class ActorSystemContext {
+
     private final TbActorSystem actorSystem;
     private final DeviceMsgService deviceMsgService;
     private final DeviceSessionCtxService deviceSessionCtxService;
@@ -45,6 +47,7 @@ public class ActorSystemContext {
     private final ClientMqttActorManager clientMqttActorManager;
     private final ActorProcessingMetricService actorProcessingMetricService;
     private final ClientLogger clientLogger;
+    private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
 
     private final ClientActorContext clientActorContext;
 

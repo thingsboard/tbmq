@@ -41,6 +41,7 @@ import java.util.Set;
 @Slf4j
 @Service
 public class DeviceActorManagerImpl implements DeviceActorManager {
+
     private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
@@ -57,7 +58,6 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
             deviceActorRef = actorSystem.createRootActor(ActorSystemLifecycle.PERSISTED_DEVICE_DISPATCHER_NAME,
                     new PersistedDeviceActorCreator(actorSystemContext, clientId));
         }
-        // TODO: what if actor stops between 'getActor' and 'tell' methods?
         deviceActorRef.tellWithHighPriority(new DeviceConnectedEventMsg(clientSessionCtx));
     }
 

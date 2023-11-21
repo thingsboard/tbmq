@@ -18,13 +18,12 @@ import { Component, forwardRef, Input, OnInit } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
-  FormArray,
-  FormBuilder,
-  FormGroup,
+  UntypedFormArray,
+  UntypedFormBuilder,
+  UntypedFormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ValidationErrors,
-  Validator,
   Validators
 } from '@angular/forms';
 import { PageComponent } from '@shared/components/page.component';
@@ -53,17 +52,17 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   @Input() disabled: boolean;
 
-  topicListFormGroup: FormGroup;
+  topicListFormGroup: UntypedFormGroup;
   mqttQoSTypes = mqttQoSTypes;
   showShareName = false;
   shareNameCounter = 0;
 
-  private propagateChange = null;
+  private propagateChange = (v: any) => {};
   private valueChangeSubscription: Subscription = null;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
-              private fb: FormBuilder) {
+              private fb: UntypedFormBuilder) {
     super(store);
   }
 
@@ -72,8 +71,8 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.topicListFormGroup.addControl('subscriptions', this.fb.array([]));
   }
 
-  subscriptionsFormArray(): FormArray {
-    return this.topicListFormGroup.get('subscriptions') as FormArray;
+  subscriptionsFormArray(): UntypedFormArray {
+    return this.topicListFormGroup.get('subscriptions') as UntypedFormArray;
   }
 
   registerOnChange(fn: any): void {
@@ -88,7 +87,15 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
     } else {
-      this.topicListFormGroup.enable({emitEvent: false});
+      Object.keys(this.subscriptionsFormArray().controls).forEach(
+        (control: string) => {
+          const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
+          typedControl.get('shareName').disable();
+          if (typedControl.get('shareName')?.value) {
+            typedControl.disable();
+          }
+        }
+      );
     }
   }
 
@@ -101,33 +108,30 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
         if (topic.shareName?.length) this.shareNameCounter++;
-        if (this.disabled) {
-          topicControl.disable();
-        }
         subscriptionsControls.push(topicControl);
       }
     }
     this.topicListFormGroup.setControl('subscriptions', this.fb.array(subscriptionsControls));
-    this.valueChangeSubscription = this.topicListFormGroup.valueChanges.subscribe((value) => {
-      this.updateView(value);
+    this.valueChangeSubscription = this.topicListFormGroup.valueChanges.subscribe(() => {
+      this.updateView();
     });
   }
 
   removeTopic(index: number) {
-    (this.topicListFormGroup.get('subscriptions') as FormArray).removeAt(index);
+    (this.subscriptionsFormArray()).removeAt(index);
   }
 
   addTopic() {
-    const subscriptionsFormArray = this.topicListFormGroup.get('subscriptions') as FormArray;
-    subscriptionsFormArray.push(this.fb.group({
+    const group = this.fb.group({
+      shareName: [{value: null, disabled: true}, []],
       topicFilter: [null, [Validators.required]],
-      shareName: [null],
       qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
-    }));
+    });
+    this.subscriptionsFormArray().push(group);
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
-    return this.topicListFormGroup.valid ? null : {
+    return !this.topicListFormGroup.invalid ? null : {
       topicFilters: {valid: false}
     };
   }
@@ -147,7 +151,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return index + ' - ' + name;
   }
 
-  private updateView(value: TopicSubscription[]) {
-    this.propagateChange(this.topicListFormGroup.get('subscriptions').value);
+  private updateView() {
+    this.propagateChange(this.topicListFormGroup.getRawValue().subscriptions);
   }
 }

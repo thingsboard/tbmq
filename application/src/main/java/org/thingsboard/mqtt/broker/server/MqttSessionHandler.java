@@ -117,12 +117,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
 
         MqttMessageType msgType = msg.fixedHeader().messageType();
-        if (StringUtils.isEmpty(clientId) && msgType == MqttMessageType.CONNECT) {
-            initSession((MqttConnectMessage) msg);
-        }
-
         if (StringUtils.isEmpty(clientId)) {
-            throw new ProtocolViolationException("Received " + msgType + " while session wasn't initialized");
+            if (msgType == MqttMessageType.CONNECT) {
+                initSession((MqttConnectMessage) msg);
+            } else {
+                throw new ProtocolViolationException("Received " + msgType + " while session wasn't initialized");
+            }
         }
 
         clientLogger.logEvent(clientId, this.getClass(), "Received msg " + msgType);

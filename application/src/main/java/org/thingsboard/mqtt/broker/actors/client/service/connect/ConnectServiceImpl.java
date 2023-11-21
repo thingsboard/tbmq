@@ -27,11 +27,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
+import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
@@ -48,6 +49,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -59,6 +62,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
@@ -77,7 +81,8 @@ public class ConnectServiceImpl implements ConnectService {
     private final LastWillService lastWillService;
     private final ClientSessionCtxService clientSessionCtxService;
     private final MsgPersistenceManager msgPersistenceManager;
-    private final MqttMessageHandlerImpl messageHandler;
+    private final MqttMessageHandler messageHandler;
+    private final ClientSubscriptionCache clientSubscriptionCache;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -204,9 +209,17 @@ public class ConnectServiceImpl implements ConnectService {
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.startProcessingPersistedMessages(actorState, connectionAcceptedMsg.isSessionPresent());
+            startProcessingSharedSubscriptionsIfPresent(sessionCtx);
         }
 
         actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
+    }
+
+    private void startProcessingSharedSubscriptionsIfPresent(ClientSessionCtx sessionCtx) {
+        Set<TopicSharedSubscription> subscriptions = clientSubscriptionCache.getClientSharedSubscriptions(sessionCtx.getClientId());
+        if (!CollectionUtils.isEmpty(subscriptions)) {
+            msgPersistenceManager.startProcessingSharedSubscriptions(sessionCtx, subscriptions);
+        }
     }
 
     private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {

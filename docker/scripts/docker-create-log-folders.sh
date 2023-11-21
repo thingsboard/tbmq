@@ -15,4 +15,6 @@
 # limitations under the License.
 #
 
-mkdir -p tb-mqtt-broker/log/ && sudo chown -R 799:799 tb-mqtt-broker/log/
+set -e
+source scripts/compose-utils.sh
+checkFolders --create

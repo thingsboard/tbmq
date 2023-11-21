@@ -23,7 +23,9 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.application-persisted-msg.shared-topic")
 public class ApplicationSharedTopicMsgKafkaSettings {
+
     private String topicProperties;
     private String additionalConsumerConfig;
     private String additionalProducerConfig;
+
 }

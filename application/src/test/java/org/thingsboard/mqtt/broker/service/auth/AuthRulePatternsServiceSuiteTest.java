@@ -99,7 +99,7 @@ public class AuthRulePatternsServiceSuiteTest {
         );
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "qwer1234-abc-p01.4321.ab.abc");
         Set<String> patterns = authRulePatterns.stream()
-                .map(AuthRulePatterns::getPubPatterns).collect(Collectors.toList())
+                .map(AuthRulePatterns::getPubPatterns).toList()
                 .stream().flatMap(List::stream)
                 .map(Pattern::pattern)
                 .collect(Collectors.toSet());
@@ -126,8 +126,8 @@ public class AuthRulePatternsServiceSuiteTest {
     public void testSuccessfulCredentialsParse_Basic1() throws AuthenticationException {
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance("test", "test", null, List.of("test/.*"));
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
-        Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test/.*"));
-        Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test/.*"));
+        Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).toList().contains("test/.*"));
+        Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).toList().contains("test/.*"));
     }
 
     @Test
@@ -136,14 +136,10 @@ public class AuthRulePatternsServiceSuiteTest {
                 List.of("test1/.*"), List.of("test2/.*")
         ));
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
-        Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test1/.*"));
-        Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).collect(Collectors.toList()).contains("test2/.*"));
+        Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).toList().contains("test1/.*"));
+        Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).toList().contains("test2/.*"));
     }
 
-
-    /*
-            validateAuthorizationRule tests
-    */
     @Test
     public void testSuccessfulRuleValidation1() {
         List<AuthRulePatterns> authRulePatterns = List.of(
@@ -197,6 +193,14 @@ public class AuthRulePatternsServiceSuiteTest {
         Assert.assertFalse(authorizationRuleService.isSubAuthorized("2/123", authRulePatterns));
 
         Assert.assertFalse(authorizationRuleService.isPubAuthorized(CLIENT_ID, "3/123", authRulePatterns));
+    }
+
+    @Test
+    public void testSuccessfulRuleValidation5() {
+        boolean pubAuthorized = authorizationRuleService.isPubAuthorized("cl1", "tp1", null);
+        Assert.assertTrue(pubAuthorized);
+        pubAuthorized = authorizationRuleService.isPubAuthorized("cl1", "tp1", List.of());
+        Assert.assertTrue(pubAuthorized);
     }
 
     @Test

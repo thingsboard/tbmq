@@ -13,17 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
+@import '../../../../../scss/constants';
 
 :host {
   width: 100%;
   height: 100%;
+  display: block;
+
+  mat-drawer-container {
+    overflow: clip;
+  }
 
   .tb-entity-table {
     .tb-entity-table-content {
       width: 100%;
       height: 100%;
       background: #fff;
+      overflow: hidden;
+
+      &.tb-outlined-border {
+        box-shadow: 0 0 0 0 rgb(0 0 0 / 20%), 0 0 0 0 rgb(0 0 0 / 14%), 0 0 0 0 rgb(0 0 0 / 12%);
+        border: solid 1px #e0e0e0;
+        border-radius: 4px;
+      }
 
       .mat-toolbar-tools{
         min-height: auto;
@@ -31,6 +43,7 @@
 
       .title-container{
         overflow: hidden;
+        height: 100%;
       }
 
       .tb-entity-table-title {
@@ -49,6 +62,19 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+
+      .mat-cell-copy {
+        visibility: hidden;
+        transition: visibility 0.1s;
+      }
+
+      .mat-cell {
+        white-space: nowrap;
+      }
+
+      .mat-cell:hover .mat-cell-copy {
+        visibility: visible;
+      }
     }
   }
 
@@ -56,6 +82,9 @@
     .mat-toolbar {
       height: auto;
       min-height: 100px;
+      .mat-toolbar-tools{
+        height: auto;
+      }
 
       .tb-entity-table-title{
         padding-bottom: 5px;

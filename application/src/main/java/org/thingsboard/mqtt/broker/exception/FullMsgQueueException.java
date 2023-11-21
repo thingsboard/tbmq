@@ -15,7 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class FullMsgQueueException extends RuntimeException {
+
+    @Serial
     private static final long serialVersionUID = -5938320547872592799L;
 
     public FullMsgQueueException() {

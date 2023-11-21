@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
@@ -84,6 +85,8 @@ public class ConnectServiceImplTest {
     MsgPersistenceManager msgPersistenceManager;
     @MockBean
     MqttMessageHandlerImpl messageHandler;
+    @MockBean
+    ClientSubscriptionCache clientSubscriptionCache;
 
     @SpyBean
     ConnectServiceImpl connectService;

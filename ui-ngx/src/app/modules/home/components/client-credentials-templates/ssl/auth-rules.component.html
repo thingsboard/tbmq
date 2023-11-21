@@ -16,12 +16,12 @@
 
 -->
 <form style="min-width: 500px; padding-top: 8px">
-  <mat-expansion-panel [expanded]="false">
+  <mat-expansion-panel [expanded]="true">
     <mat-expansion-panel-header>
       <mat-panel-title>
         <div translate>mqtt-client-credentials.authorization</div>
       </mat-panel-title>
-      <mat-panel-description *ngIf="rulesMappingFormGroup.dirty && !rulesMappingFormGroup.get('authRulesMapping').value?.length">
+      <mat-panel-description *ngIf="!rulesMappingFormGroup.get('authRulesMapping').value?.length">
         <mat-error translate>mqtt-client-credentials.add-authorization-rule-prompt</mat-error>
       </mat-panel-description>
     </mat-expansion-panel-header>
@@ -33,7 +33,7 @@
       <div *ngFor="let rulesControl of rulesFormArray.controls; let $index = index" formArrayName="authRulesMapping">
           <fieldset class="fields-group">
             <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ ($index +  1) }}</legend>
-            <div [formGroupName]="$index" fxFlex fxLayout="space-around">
+            <div [formGroupName]="$index" fxFlex fxLayoutAlign="flex-start center">
               <div fxFlex fxLayout="column">
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
@@ -45,54 +45,65 @@
                     {{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}
                   </mat-error>
                 </mat-form-field>
-                <mat-form-field>
+                <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-                  <mat-chip-list #chipListPub>
-                    <mat-chip *ngFor="let rule of pubRulesArray[$index]"
-                              [selectable]="!disabled"
-                              [removable]="!disabled"
-                              [value]="rule"
-                              (removed)="removeTopicRule(rule, $index, authRulePatternsType.PUBLISH)">
+                  <mat-chip-grid #chipListPub [disabled]="disabled">
+                    <mat-chip-row
+                      *ngFor="let rule of pubRulesArray[$index]"
+                      [editable]="!disabled"
+                      [removable]="!disabled"
+                      [value]="rule"
+                      (removed)="removeTopicRule(rule, $index, authRulePatternsType.PUBLISH)">
                       {{ rule }}
-                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-                    </mat-chip>
+                      <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </mat-chip-row>
                     <input matInput
                            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            matChipInputAddOnBlur
                            [matChipInputFor]="chipListPub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
-                  </mat-chip-list>
+                  </mat-chip-grid>
+                  <mat-icon [fxShow]="!pubRulesArray[$index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
-                <mat-form-field>
+                <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-                  <mat-chip-list #chipListSub>
-                    <mat-chip *ngFor="let rule of subRulesArray[$index]"
-                              [selectable]="!disabled"
-                              [removable]="!disabled"
-                              [value]="rule"
-                              (removed)="removeTopicRule(rule, $index, authRulePatternsType.SUBSCRIBE)">
+                  <mat-chip-grid #chipListSub [disabled]="disabled">
+                    <mat-chip-row
+                      *ngFor="let rule of subRulesArray[$index]"
+                      [editable]="!disabled"
+                      [removable]="!disabled"
+                      [value]="rule"
+                      (removed)="removeTopicRule(rule, $index, authRulePatternsType.SUBSCRIBE)">
                       {{ rule }}
-                      <mat-icon matChipRemove *ngIf="!disabled">close</mat-icon>
-                    </mat-chip>
+                      <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </mat-chip-row>
                     <input matInput type="text"
                            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            matChipInputAddOnBlur
                            [matChipInputFor]="chipListSub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)">
-                  </mat-chip-list>
+                  </mat-chip-grid>
+                  <mat-icon [fxShow]="!subRulesArray[$index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
               </div>
-              <button mat-button mat-icon-button color="warn"
+              <button mat-icon-button color="warn"
                       [fxShow]="!disabled"
+                      [disabled]="rulesFormArray?.controls?.length === 1"
                       type="button"
-                      style="width: 40px; min-width: 40px;"
                       (click)="removeRule($index)"
                       matTooltip="{{ 'mqtt-client-credentials.remove-rule' | translate }}"
                       matTooltipPosition="above">
-                <mat-icon>close</mat-icon>
+                <mat-icon>remove_circle_outline</mat-icon>
               </button>
             </div>
-            <mat-divider></mat-divider>
           </fieldset>
         </div>
     </div>
@@ -100,7 +111,7 @@
             [fxShow]="!disabled"
             (click)="addRule()"
             type="button">
-      <mat-icon>add</mat-icon>
+      <mat-icon>add_circle_outline</mat-icon>
       {{ 'mqtt-client-credentials.add-authorization-rules' | translate }}
     </button>
   </mat-expansion-panel>

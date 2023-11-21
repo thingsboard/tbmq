@@ -25,6 +25,7 @@
         <directive name="embedStyleSheets" value="false"/>
         <directive name="useXHTML" value="true"/>
         <directive name="formatOutput" value="true"/>
+        <directive name="noopenerAndNoreferrerAnchors" value="true"/>
     </directives>
 
     <common-regexps>

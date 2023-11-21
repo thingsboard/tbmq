@@ -16,7 +16,7 @@
 
 -->
 
-<mat-expansion-panel [expanded]="false">
+<mat-expansion-panel [expanded]="true">
   <mat-expansion-panel-header>
     <mat-panel-title>
       <span>{{ 'mqtt-client-session.subscriptions' | translate }} ({{ subscriptionsFormArray().length }})</span>
@@ -31,38 +31,42 @@
         {{ 'mqtt-client-session.show-share-name' | translate }} ({{ shareNameCounter }})
       </mat-slide-toggle>
     </section>
-    <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="4px" fxLayoutAlign="start center"
+    <div fxFlex [formGroup]="topicFilter" fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start baseline"
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
-      <mat-form-field fxFlex *ngIf="showShareName" floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex *ngIf="showShareName" class="mat-block">
         <mat-label>{{'mqtt-client-session.share-name' | translate}}</mat-label>
-        <input name="shareName" formControlName="shareName" readonly matInput style="cursor:not-allowed">
+        <input name="shareName" formControlName="shareName" matInput>
+        <mat-icon matSuffix [fxHide]="topicFilter.get('shareName')?.value?.length" color="warn" [matTooltip]="'action.edit-not-allowed' | translate">block</mat-icon>
+        <tb-copy-button [fxHide]="!topicFilter.get('shareName')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+                        [copyText]="topicFilter.get('shareName').value">
+        </tb-copy-button>
       </mat-form-field>
-      <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex class="mat-block">
         <mat-label translate>mqtt-client-session.topic-filter</mat-label>
-        <input matInput name="topicFilter" formControlName="topicFilter" required placeholder="{{ 'mqtt-client-session.topic' | translate }}"
-               [readonly]="topicFilter.get('shareName').value?.length"
-               [ngStyle]="{'cursor': topicFilter.get('shareName').value?.length ? 'not-allowed' : 'unset'}">
+        <input matInput name="topicFilter" formControlName="topicFilter" required>
+        <tb-copy-button [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+                        [copyText]="topicFilter.get('topicFilter').value">
+        </tb-copy-button>
         <mat-error *ngIf="topicFilter.invalid">
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex floatLabel="always" hideRequiredMarker class="mat-block">
+      <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
         <mat-label translate>mqtt-client-session.qos</mat-label>
-        <mat-select formControlName="qos" required placeholder="{{ 'mqtt-client-session.qos' | translate }}"
-                    [disabled]="topicFilter.get('shareName').value?.length">
+        <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
           <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
             {{ mqttQoSValue(mqttQoS) }}
           </mat-option>
         </mat-select>
       </mat-form-field>
-      <button mat-button mat-icon-button color="warn"
+      <button mat-icon-button color="warn"
               [disabled]="topicFilter.get('shareName').value?.length > 0"
               [fxShow]="!disabled"
               type="button"
               (click)="removeTopic($index)"
               matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"
               matTooltipPosition="above">
-        <mat-icon>close</mat-icon>
+        <mat-icon>remove_circle_outline</mat-icon>
       </button>
     </div>
     <section>
@@ -71,12 +75,12 @@
       <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.multi-level-wildcards-hint' | translate }}"></div>
     </section>
   </div>
-  <button mat-stroked-button color="primary" *ngIf="!subscriptionsFormArray().disabled"
+  <button mat-stroked-button color="primary"
           class="add-button"
           [fxShow]="!disabled"
           (click)="addTopic()"
           type="button">
-    <mat-icon>add</mat-icon>
+    <mat-icon>add_circle_outline</mat-icon>
     {{ 'mqtt-client-session.add-subscription' | translate }}
   </button>
 </mat-expansion-panel>

@@ -15,35 +15,57 @@
     limitations under the License.
 
 -->
-<form (ngSubmit)="add()" style="min-width: 500px;" [ngStyle]="entitiesTableConfig.addDialogStyle">
-  <mat-toolbar color="primary">
-    <h2 translate>{{ translations.add }}</h2>
-    <span fxFlex></span>
-    <div [tb-help]="helpLinkId()"></div>
-    <button mat-icon-button
-            (click)="cancel()"
-            type="button">
-      <mat-icon class="material-icons">close</mat-icon>
-    </button>
-  </mat-toolbar>
-  <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-  </mat-progress-bar>
-  <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
-  <div mat-dialog-content>
+<mat-toolbar color="primary">
+  <h2 translate>{{ translations.add }}</h2>
+  <span fxFlex></span>
+  <div [tb-help]="helpLinkId()"></div>
+  <button mat-icon-button
+          (click)="cancel()"
+          type="button">
+    <mat-icon class="material-icons">close</mat-icon>
+  </button>
+</mat-toolbar>
+<mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
+</mat-progress-bar>
+<div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
+<div mat-dialog-content [class]="{'no-padding': addDialogOwnerAndGroupWizard}">
+  <mat-horizontal-stepper *ngIf="addDialogOwnerAndGroupWizard; else hideStepperForm"
+                          [linear]="true"
+                          [labelPosition]="labelPosition"
+                          #addGroupEntityWizardStepper
+                          (selectionChange)="changeStep($event)">
+    <ng-template matStepperIcon="edit">
+      <mat-icon>check</mat-icon>
+    </ng-template>
+    <mat-step #detailsFormStep [stepControl]="detailsForm">
+      <ng-template matStepLabel>{{ translations.details | translate}}</ng-template>
+      <tb-anchor #entityDetailsForm></tb-anchor>
+    </mat-step>
+  </mat-horizontal-stepper>
+  <ng-template #hideStepperForm>
     <tb-anchor #entityDetailsForm></tb-anchor>
-  </div>
-  <div mat-dialog-actions fxLayoutAlign="end center">
-    <button mat-button color="primary"
-            type="button"
-            cdkFocusInitial
+  </ng-template>
+</div>
+<div mat-dialog-actions style="padding: 0">
+  <div class="dialog-actions-row" fxFlex fxLayout="row" fxLayoutAlign="end center" *ngIf="addDialogOwnerAndGroupWizard">
+    <button mat-stroked-button *ngIf="selectedIndex > 0"
             [disabled]="(isLoading$ | async)"
-            (click)="cancel()">
-      {{ 'action.cancel' | translate }}
-    </button>
-    <button mat-raised-button color="primary"
-            type="submit"
-            [disabled]="(isLoading$ | async) || detailsForm?.invalid || !detailsForm?.dirty">
-      {{ 'action.add' | translate }}
-    </button>
+            (click)="previousStep()">{{ 'action.back' | translate }}</button>
+    <span fxFlex></span>
+    <button mat-stroked-button
+            color="primary"
+            *ngIf="showNext"
+            [disabled]="(isLoading$ | async)"
+            (click)="nextStep()">{{ 'action.next-with-label' | translate:{label: (getFormLabel(this.selectedIndex+1) | translate)} }}</button>
   </div>
-</form>
+  <mat-divider style="width: 100%"></mat-divider>
+  <div class="dialog-actions-row" fxFlex fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="end center">
+    <button mat-button
+            [disabled]="(isLoading$ | async)"
+            (click)="cancel()">{{ 'action.cancel' | translate }}</button>
+    <button mat-raised-button
+            [disabled]="(isLoading$ | async)"
+            color="primary"
+            (click)="add()">{{ 'action.add' | translate }}</button>
+  </div>
+</div>

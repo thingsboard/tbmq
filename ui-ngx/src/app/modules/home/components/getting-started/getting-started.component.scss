@@ -50,7 +50,7 @@
 
     .step-done:before {
       content: 'check';
-      font-size: 20px;
+      font-size: 1.25em;
       padding-left: 2px;
     }
 
@@ -69,132 +69,6 @@
   a {
     font-weight: 500;
     cursor: pointer;
-  }
-
-  .code-container {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .code {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 20px 8px 20px 8px;
-    max-width: 400px;
-    overflow-x: scroll;
-    white-space: nowrap;
-  }
-
-  .tb-markdown-view {
-    display: block;
-    ::ng-deep {
-      h1 {
-        font-size: 32px;
-        padding-right: 60px;
-      }
-
-      h1, h2, h3, h4, h5, h6 {
-        line-height: normal;
-        font-weight: 500;
-        margin-bottom: 30px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #ccc;
-      }
-
-      p {
-        font-size: 12px;
-        font-weight: 400;
-        line-height: 1.25em;
-        margin: 0;
-      }
-
-      p+p {
-        margin-top: 8px;
-      }
-
-      table {
-        width: 100%;
-        border: 1px solid #ccc;
-        border-spacing: 0;
-        margin-top: 30px;
-        margin-bottom: 30px;
-      }
-
-      thead {
-        background-color: #555;
-        color: #fff;
-      }
-
-      th, td {
-        font-size: .85em;
-        padding: 8px;
-        margin: 0;
-        text-align: left;
-      }
-
-      td[align=center], th[align=center] {
-        text-align: center;
-      }
-
-      td[align=right], th[align=right] {
-        text-align: right;
-      }
-
-      tr:nth-child(even) {
-        background-color: #f7f7f7;
-      }
-
-      code:not([class*=language-]) {
-        background: #f5f5f5;
-        border-radius: 2px;
-        color: #dd4a68;
-        padding: 2px 4px;
-      }
-
-      div.code-wrapper {
-        position: relative;
-        button.clipboard-btn {
-          cursor: pointer;
-          margin: 2px;
-          border: 0;
-          outline: none;
-          position: absolute;
-          top: 5px;
-          right: 0;
-          background: transparent;
-          color: $tb-primary-color;
-          border-radius: 5px;
-          //padding: 3px 6px;
-          line-height: 16px;
-          img {
-            width: 18px;
-          }
-          &:hover {
-            color: #000000;
-          }
-          &:active {
-            background-color: #ececec;
-            box-shadow: inset 1px -1px 4px 0px rgba(0,0,0,0.4);
-          }
-        }
-        &:hover {
-          button.clipboard-btn {
-            opacity: .85;
-          }
-        }
-      }
-
-      th, td {
-        div.code-wrapper {
-          display: inline-block;
-          button.clipboard-btn {
-            top: -5px;
-            right: -30px;
-            padding: 0 3px;
-          }
-        }
-      }
-
-    }
   }
 
   .tb-get-started .mat-vertical-stepper-header {
@@ -224,78 +98,72 @@
     width: 100%;
     white-space: inherit;
     font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(0, 0, 0, 0.76);
+    font-size: 0.9em;
+    line-height: 1.25em;
   }
 
   .tb-get-started .mat-step-label.mat-step-label-selected {
     font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.9em;
+    line-height: 1.25em;
     color: rgba(0, 0, 0, 0.87);
   }
 
   .tb-get-started .mat-vertical-content {
-    p, li {
-      font-style: normal;
-      font-weight: 400;
-      font-size: 14px;
-      line-height: 20px;
-      letter-spacing: 0.2px;
+    p {
       color: rgba(0, 0, 0, 0.54);
+      font-size: 13px;
+      line-height: 1.25em;
+      letter-spacing: 0.2px;
+      padding-right: 0;
+      padding-left: 0;
       text-align: justify;
-      em {
-        font-style: normal;
-        font-weight: 500;
-        font-size: 13px;
-        color: rgba(0, 0, 0, 0.38);
-      }
     }
-    ul {
-      padding-inline-start: 20px;
-    }
-    .tb-bordered-content {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      border-radius: 8px;
-      padding: 18px;
-      p {
-        margin-top: 16px;
-        margin-bottom: 8px;
-      }
-    }
-    .tb-markdown-view {
+    /*.tb-command-code {
       .code-wrapper {
           padding: 0;
           pre[class*=language-] {
             margin: 0;
-            padding: 9px 38px 9px 16px;
-            background: rgba(0, 0, 0, 0.03);
+            //padding: 9px 38px 9px 16px;
+            padding-right: 38px;
+            padding-bottom: 4px;
+            background: #F3F6FA;
+            border: #305680;
             border-radius: 6px;
             border: none;
+            overflow: scroll;
+
+            &::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
           }
-          code[class*="language-"], pre[class*="language-"] {
-            font-family: 'Roboto';
-            font-style: normal;
-            font-weight: 400;
-            font-size: 12px;
-            line-height: 16px;
-            letter-spacing: 0.25px;
-            color: rgba(0, 0, 0, 0.38);
-            overflow: hidden;
-            white-space: break-spaces;
-            word-break: break-word;
-            & * {
-              color: rgba(0, 0, 0, 0.38);
-              cursor: inherit;
-              background: transparent;
+        button.clipboard-btn {
+          right: -2px;
+          p {
+            color: #305680;
+          }
+          p, div {
+            background-color: #F3F6FA;
+          }
+          div {
+            img {
+              display: none;
+            }
+            &:after {
+              content: "";
+              position: initial;
+              display: block;
+              width: 18px;
+              height: 18px;
+              background: #305680;
+              mask-image: url(/assets/copy-code-icon.svg);
+              mask-repeat: no-repeat;
             }
           }
         }
-    }
+      }
+    }*/
   }
 
   .tb-get-started .mat-step-icon-content, .mat-step-icon .mat-icon {
@@ -311,7 +179,11 @@
     width: 13px;
   }
 
-  @media #{$mat-lt-xl} {
+  .mat-mdc-outlined-button {
+    white-space: nowrap;
+  }
+
+  /*@media #{$mat-lt-xl} {
     .tb-get-started {
       .mat-vertical-stepper-header {
         padding: 4px;
@@ -341,7 +213,7 @@
         }
       }
       .mat-step-label.mat-step-label-selected {
-        font-size: 12px;
+        font-size: 0.85em;
       }
       .mat-step-icon {
         width: 20px;
@@ -352,8 +224,63 @@
         width: 11px;
       }
       .mat-raised-button {
-        font-size: 12px;
+        font-size: 0.85em;
+      }
+    }
+  }*/
+}
+
+:host ::ng-deep {
+  .tb-markdown-view {
+    .tb-command-code {
+      .code-wrapper {
+        padding: 0;
+        pre[class*=language-] {
+          margin: 0;
+          background: #f0f6f6;
+          border-color: $tb-primary-color;
+          padding-right: 38px;
+          overflow: scroll;
+          padding-bottom: 4px;
+
+          &::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+        }
+      }
+      button.clipboard-btn {
+        right: -2px;
+        p {
+          color: $tb-primary-color;
+          font-size: unset;
+        }
+        p, div {
+          background-color: #F3F6FA;
+        }
+        div {
+          img {
+            display: none;
+          }
+          &:after {
+            content: "";
+            position: initial;
+            display: block;
+            width: 18px;
+            height: 18px;
+            background: $tb-primary-color;
+            mask-image: url(/assets/copy-code-icon.svg);
+            mask-repeat: no-repeat;
+          }
+        }
       }
     }
   }
+  .mdc-button__label > span {
+    .mat-icon {
+      vertical-align: text-bottom;
+      box-sizing: initial;
+    }
+  }
 }
+

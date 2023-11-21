@@ -29,7 +29,9 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,12 +44,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCacheService {
 
+    // TODO: 01.11.23 improve data persistence - probably only clientId is needed in the map since later the current session state is fetched
+
     private final ClientSessionCache clientSessionCache;
     @Getter
     private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptions> sharedSubscriptionsMap = new ConcurrentHashMap<>();
 
     @Override
     public void put(String clientId, Collection<TopicSubscription> topicSubscriptions) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Executing put of shared subscriptions {}", clientId, topicSubscriptions);
+        }
         if (CollectionUtils.isEmpty(topicSubscriptions)) {
             return;
         }
@@ -74,6 +81,9 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
                 updateSharedSubscriptions(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription, subscription);
             }
         }
+        if (log.isTraceEnabled()) {
+            log.trace("Shared subscriptions updated!");
+        }
     }
 
     private List<TopicSubscription> filterSharedTopicSubscriptions(Collection<TopicSubscription> topicSubscriptions) {
@@ -95,6 +105,9 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
     @Override
     public void remove(String clientId, TopicSubscription topicSubscription) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Executing remove of shared subscription {}", clientId, topicSubscription);
+        }
         TopicSharedSubscription key = getKey(topicSubscription);
         SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(key);
         if (sharedSubscriptions == null) {
@@ -111,8 +124,14 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
                 removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription);
             }
         }
+        if (log.isTraceEnabled()) {
+            log.trace("Shared subscription removed from set!");
+        }
         if (sharedSubscriptions.isEmpty()) {
             sharedSubscriptionsMap.remove(key);
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Shared subscriptions removed completely!", key);
+            }
         }
     }
 
@@ -127,6 +146,37 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         Set<Subscription> deviceSubscriptions = Sets.newConcurrentHashSet(filterSubscriptions(subscriptions.getDeviceSubscriptions()));
 
         return new SharedSubscriptions(applicationSubscriptions, deviceSubscriptions);
+    }
+
+    @Override
+    public boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Executing isAnyOtherDeviceClientConnected!", topicSharedSubscription);
+        }
+        SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(topicSharedSubscription);
+        if (sharedSubscriptions == null) {
+            log.error("Failed to find any shared subscriptions for the key {}", topicSharedSubscription);
+            throw new RuntimeException("Failed to find any shared subscriptions for the key " + topicSharedSubscription);
+        }
+
+        Set<Subscription> deviceSubscriptions = sharedSubscriptions.getDeviceSubscriptions();
+        long count = deviceSubscriptions
+                .stream()
+                .filter(subscription -> !subscription.getClientSessionInfo().getClientId().equals(clientId))
+                .filter(subscription -> findClientSessionInfo(subscription.getClientSessionInfo().getClientId()).isConnected())
+                .filter(subscription -> subscription.getQos() > 0)
+                .count();
+        return count > 0;
+    }
+
+    @Override
+    public boolean sharedSubscriptionsInitialized() {
+        return !sharedSubscriptionsMap.isEmpty();
+    }
+
+    @Override
+    public Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions() {
+        return new HashMap<>(sharedSubscriptionsMap);
     }
 
     private Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {

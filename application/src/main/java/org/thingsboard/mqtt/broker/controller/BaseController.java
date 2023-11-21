@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -44,6 +45,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -67,6 +69,8 @@ public abstract class BaseController {
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
     protected TbQueueAdmin tbQueueAdmin;
+    @Autowired
+    protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -228,5 +232,11 @@ public abstract class BaseController {
             responseEntity = new ResponseEntity<>(defaultErrorStatus);
         }
         response.setResult(responseEntity);
+    }
+
+    TimePageLink createTimePageLink(int pageSize, int page, String textSearch,
+                                    String sortProperty, String sortOrder, Long startTime, Long endTime) throws ThingsboardException {
+        PageLink pageLink = this.createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return new TimePageLink(pageLink, startTime, endTime);
     }
 }

@@ -78,6 +78,7 @@ public class ClientSessionCtx implements SessionContext {
         if (log.isDebugEnabled()) {
             log.debug("[{}] Closing channel...", getClientId());
         }
+        this.channel.flush();
         this.channel.close();
         pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
         pendingPublishes.clear();

@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.ConsumerGroupListing;
-import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
@@ -157,7 +156,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 callback.onFailure(throwable);
             }
         });
-        if (result.values().containsKey(topic)) {
+        if (result.topicNameValues().containsKey(topic)) {
             topics.remove(topic);
         }
     }
@@ -168,11 +167,27 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             log.debug("Deleting Consumer Groups - {}", consumerGroups);
         }
         try {
-            DeleteConsumerGroupsResult result = client.deleteConsumerGroups(consumerGroups);
-            result.all().get();
+            doDeleteConsumerGroups(consumerGroups);
         } catch (Exception e) {
             log.warn("Failed to delete consumer groups {}", consumerGroups, e);
         }
+    }
+
+    @Override
+    public void deleteConsumerGroup(String groupId) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteConsumerGroup {}", groupId);
+        }
+        try {
+            doDeleteConsumerGroups(List.of(groupId));
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn("Failed to delete Kafka consumer group {}", groupId, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException {
+        client.deleteConsumerGroups(consumerGroups).all().get();
     }
 
     @Override

@@ -37,4 +37,8 @@ public class MsgIdSequence {
             }
         }
     }
+
+    public int getCurrentSeq() {
+        return this.msgIdSeq.get();
+    }
 }

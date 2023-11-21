@@ -15,11 +15,11 @@
 ///
 
 import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
+import { forkJoin, Observable, retry, Subject, timer } from 'rxjs';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
-import { MqttClientCredentialsService } from '@core/http/mqtt-client-credentials.service';
-import { MqttClientSessionService } from '@core/http/mqtt-client-session.service';
+import { ClientCredentialsInfo } from '@shared/models/credentials.model';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { ClientSessionService } from '@core/http/client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
 
@@ -39,10 +39,10 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
   sessionConfig = SessionsHomeCardConfig;
   credentialsConfig = CredentialsHomeCardConfig;
 
-  private stopPolling$ = new Subject();
+  private stopPolling$ = new Subject<void>();
 
-  constructor(private mqttClientCredentialsService: MqttClientCredentialsService,
-              private mqttClientSessionService: MqttClientSessionService) {
+  constructor(private clientCredentialsService: ClientCredentialsService,
+              private clientSessionService: ClientSessionService) {
   }
 
   ngAfterViewInit(): void {
@@ -58,9 +58,10 @@ export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnD
       .pipe(
         switchMap(() =>
           forkJoin([
-            this.mqttClientSessionService.getClientSessionsStats(),
-            this.mqttClientCredentialsService.getClientCredentialsStatsInfo()
+            this.clientSessionService.getClientSessionsStats(),
+            this.clientCredentialsService.getClientCredentialsStatsInfo()
           ])),
+        retry(),
         takeUntil(this.stopPolling$),
         shareReplay())
       .subscribe(data => [this.sessionsLatest, this.credentialsLatest] = [...data]);

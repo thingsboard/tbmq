@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.MqttHandler;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
@@ -56,6 +57,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     private DbConnectionChecker dbConnectionChecker;
     @Autowired
     private ClientSessionService clientSessionService;
+    @Autowired
+    private ClientSubscriptionService clientSubscriptionService;
 
     private MqttClient shareSubClient1;
     private MqttClient shareSubClient2;
@@ -81,7 +84,160 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     }
 
     @Test
-    public void givenSharedSubsGroupWith2PersistedClients_whenPubMsgToSharedTopic_thenReceiveEqualMessages() throws Throwable {
+    public void givenSharedSubsGroupWith2ClientsAndQos0_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(true, MqttQoS.AT_MOST_ONCE, MqttQoS.AT_MOST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos1_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(true, MqttQoS.AT_LEAST_ONCE, MqttQoS.AT_LEAST_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2ClientsAndQos2_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(true, MqttQoS.EXACTLY_ONCE, MqttQoS.EXACTLY_ONCE);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2PersistentClientsAndQos2SubAndQos0Pub_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
+        process(false, MqttQoS.EXACTLY_ONCE, MqttQoS.AT_MOST_ONCE);
+    }
+
+    private void process(boolean cleanSession, MqttQoS subQos, MqttQoS pubQos) throws Exception {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), cleanSession);
+        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), cleanSession);
+
+        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), pubQos).get(30, TimeUnit.SECONDS);
+            Thread.sleep(50);
+        }
+
+        boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2PersistentClientsAndQos2SubAndQos0Pub_whenClientsDisconnectedAndPubMsgToSharedTopic_thenConnectClientAndReceiveNoMessages() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+
+        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+
+        shareSubClient1.disconnect();
+        shareSubClient2.disconnect();
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo(shareSubClient1.getClientConfig().getClientId());
+            ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo(shareSubClient2.getClientConfig().getClientId());
+            return !clientSessionInfo1.isConnected() && !clientSessionInfo2.isConnected();
+        });
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(50);
+        }
+
+        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+
+        boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2PersistentClientsAndQos0SubAndQos2Pub_whenClientsDisconnectedAndPubMsgToSharedTopic_thenConnectClientAndReceiveMessagesForPubQosNot0() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+
+        AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
+        AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
+
+        //sub
+        shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
+        shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
+
+        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+
+        shareSubClient1.disconnect();
+        shareSubClient2.disconnect();
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo(shareSubClient1.getClientConfig().getClientId());
+            ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo(shareSubClient2.getClientConfig().getClientId());
+            return !clientSessionInfo1.isConnected() && !clientSessionInfo2.isConnected();
+        });
+
+        //pub
+        MqttClient pubClient = getMqttPubClient();
+        for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
+            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(50);
+        }
+
+        shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+
+        boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+
+        shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+
+        receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
+        await = receivedResponses.await(5, TimeUnit.SECONDS);
+        log.error("The result of awaiting is: [{}]", await);
+
+        //asserts
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
+
+        //disconnect clients
+        disconnectClient(pubClient);
+
+        disconnectClient(shareSubClient1);
+        disconnectClient(shareSubClient2);
+    }
+
+    @Test
+    public void givenSharedSubsGroupWith2PersistedClients_whenPubMsgToSharedTopic_thenReceiveAllMessages() throws Throwable {
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
@@ -105,8 +261,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         log.error("The result of awaiting is: [{}]", await);
 
         //asserts
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
 
         //disconnect clients
         disconnectClient(pubClient);
@@ -161,7 +316,6 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         process("$share/g1/test/+", "$share/g2/test/+");
     }
 
-    // TODO: 02.02.23 verify logic without 2nd subscribe and improve it for persistent clients
     @Test
     public void givenTwoPersistentClients_whenBothGotDisconnectedAndMessagesSent_thenBothConnectedAndFirstOneReceiveAllMessages() throws Throwable {
         dbConnectionChecker.setDbConnected(true);
@@ -177,6 +331,11 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
         shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+
+        Awaitility
+                .await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> clientSubscriptionService.getClientSubscriptionsCount() == 2);
 
         //disconnect
         shareSubClient1.disconnect();
@@ -196,10 +355,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        shareSubClient1.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
         Thread.sleep(100);
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/my/test/data", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);
@@ -246,12 +403,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         log.error("The result of awaiting is: [{}]", await);
 
         //asserts
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1Group1ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2Group1ReceivedMessages.get());
-
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient1Group2ReceivedMessages.get());
-        assertEquals(TOTAL_MSG_COUNT / 2, shareSubClient2Group2ReceivedMessages.get());
-
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1Group1ReceivedMessages.get() + shareSubClient2Group1ReceivedMessages.get());
+        assertEquals(TOTAL_MSG_COUNT, shareSubClient1Group2ReceivedMessages.get() + shareSubClient2Group2ReceivedMessages.get());
         assertEquals(TOTAL_MSG_COUNT, subClientReceivedMessages.get());
 
         //disconnect clients

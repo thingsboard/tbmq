@@ -15,7 +15,7 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { PageComponent } from '@shared/components/page.component';
 import { ChangeDetectorRef, Directive, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Store } from '@ngrx/store';
@@ -34,7 +34,7 @@ export abstract class EntityComponent<T extends BaseData,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit {
 
-  entityForm: FormGroup;
+  entityForm: UntypedFormGroup;
 
   isEditValue: boolean;
 
@@ -79,7 +79,7 @@ export abstract class EntityComponent<T extends BaseData,
   entityAction = new EventEmitter<EntityAction<T>>();
 
   protected constructor(protected store: Store<AppState>,
-                        protected fb: FormBuilder,
+                        protected fb: UntypedFormBuilder,
                         protected entityValue: T,
                         protected entitiesTableConfigValue: C,
                         protected cd: ChangeDetectorRef) {
@@ -124,7 +124,7 @@ export abstract class EntityComponent<T extends BaseData,
     this.entitiesTableConfigValue = entitiesTableConfig;
   }
 
-  abstract buildForm(entity: T): FormGroup;
+  abstract buildForm(entity: T): UntypedFormGroup;
 
   abstract updateForm(entity: T);
 

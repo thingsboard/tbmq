@@ -16,9 +16,10 @@
 
 import { Component, Input } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ClientCredentialsInfo } from '@shared/models/client-crenetials.model';
+import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
-import { HomePageTitleType } from '@shared/models/home-page.model';
+import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-home-cards-table',
@@ -37,11 +38,18 @@ export class HomeCardsTableComponent {
   latestValues: ClientSessionStatsInfo | ClientCredentialsInfo;
 
   @Input()
-  config: any;
+  config: HomeCardFilter;
 
   @Input()
   docsLink: string;
 
   @Input()
   docsTooltip: string;
+
+  constructor(private router: Router) {
+  }
+
+  navigateApplyFilter(item: HomeCardFilter) {
+    this.router.navigate([item.path], {queryParams: item.filter});
+  }
 }

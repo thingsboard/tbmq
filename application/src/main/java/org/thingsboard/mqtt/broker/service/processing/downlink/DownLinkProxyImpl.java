@@ -20,9 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkProcessor;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkProcessor;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 @Slf4j
 @Service
@@ -35,11 +36,20 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     private final PersistentDownLinkProcessor persistentDownLinkProcessor;
 
     @Override
-    public void sendBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg) {
+    public void sendBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
         if (belongsToThisNode(targetServiceId)) {
             basicDownLinkProcessor.process(clientId, msg);
         } else {
             queuePublisher.publishBasicMsg(targetServiceId, clientId, msg);
+        }
+    }
+
+    @Override
+    public void sendBasicMsg(Subscription subscription, PublishMsgProto msg) {
+        if (belongsToThisNode(subscription.getServiceId())) {
+            basicDownLinkProcessor.process(subscription, msg);
+        } else {
+            queuePublisher.publishBasicMsg(subscription.getServiceId(), subscription.getClientId(), createBasicPublishMsg(subscription, msg));
         }
     }
 
@@ -53,6 +63,15 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     }
 
     private boolean belongsToThisNode(String targetServiceId) {
-        return targetServiceId.equals(serviceInfoProvider.getServiceId());
+        return serviceInfoProvider.getServiceId().equals(targetServiceId);
+    }
+
+    private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
+        var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
+        var retain = subscription.getOptions().isRetain(publishMsgProto);
+        return publishMsgProto.toBuilder()
+                .setQos(minQos)
+                .setRetain(retain)
+                .build();
     }
 }

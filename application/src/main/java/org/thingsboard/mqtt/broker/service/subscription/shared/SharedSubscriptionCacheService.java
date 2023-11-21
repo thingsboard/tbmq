@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.subscription.shared;
 import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public interface SharedSubscriptionCacheService {
@@ -26,6 +27,12 @@ public interface SharedSubscriptionCacheService {
 
     void remove(String clientId, TopicSubscription topicSubscription);
 
-    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscription);
+    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscriptions);
+
+    boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
+
+    boolean sharedSubscriptionsInitialized();
+
+    Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions();
 
 }

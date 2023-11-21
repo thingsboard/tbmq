@@ -17,10 +17,12 @@ package org.thingsboard.mqtt.broker.common.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.io.Serial;
 import java.util.UUID;
 
 public abstract class SearchTextBased extends BaseData {
 
+    @Serial
     private static final long serialVersionUID = -539812997348227609L;
 
     public SearchTextBased() {

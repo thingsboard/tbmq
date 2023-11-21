@@ -14,10 +14,12 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {ClipboardService} from 'ngx-clipboard';
-import {TooltipPosition} from '@angular/material/tooltip';
-import {TranslateService} from '@ngx-translate/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ClipboardService } from 'ngx-clipboard';
+import { TooltipPosition } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
+import { ThemePalette } from '@angular/material/core';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 @Component({
   selector: 'tb-copy-button',
@@ -34,25 +36,30 @@ export class CopyButtonComponent {
   copyText: string;
 
   @Input()
+  @coerceBoolean()
   disabled = false;
 
   @Input()
   mdiIcon: string;
 
   @Input()
-  icon: string;
+  icon: string = 'content_copy';
 
   @Input()
-  tooltipText: string;
+  tooltipText: string = this.translate.instant('action.copy');
 
   @Input()
-  tooltipPosition: TooltipPosition;
+  tooltipPosition: TooltipPosition = 'above';
 
   @Input()
   style: {[key: string]: any} = {};
 
   @Input()
-  color: string;
+  color: ThemePalette;
+
+  @Input()
+  @coerceBoolean()
+  miniButton = false;
 
   @Output()
   successCopied = new EventEmitter<string>();
@@ -77,7 +84,7 @@ export class CopyButtonComponent {
   }
 
   get matTooltipText(): string {
-    return this.copied ? this.translate.instant('ota-update.copied') : this.tooltipText;
+    return this.copied ? this.translate.instant('action.on-copied') : this.tooltipText;
   }
 
   get matTooltipPosition(): TooltipPosition {

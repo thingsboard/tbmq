@@ -43,4 +43,8 @@ export class KafkaService {
   public getKafkaConsumerGroups(pageLink: PageLink, config?: RequestConfig): Observable<PageData<KafkaConsumerGroup>> {
     return this.http.get<PageData<KafkaConsumerGroup>>(`/api/app/consumer-groups${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
+
+  public deleteConsumerGroup(groupId: string, config?: RequestConfig) {
+    return this.http.delete(`/api/app/consumer-group?groupId=${groupId}`, defaultHttpOptionsFromConfig(config));
+  }
 }
