@@ -737,5 +737,11 @@
     "add-app-credentials": "Add Application Credentials",
     "credentials-added": "Credentials added successfully",
     "open-sessions": "Session Details"
+  },
+  "ws-client": {
+    "ws-client": "Web Socket Client",
+      "add-pub-message": "Enter message...",
+      "pub": "Publish",
+      "sub": "Subscribe"
   }
 }

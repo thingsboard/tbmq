@@ -116,6 +116,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
 @NgModule({
   providers: [
     DatePipe,
+    DateAgoPipe,
     SafePipe,
     ShortNumberPipe,
     TbJsonPipe,

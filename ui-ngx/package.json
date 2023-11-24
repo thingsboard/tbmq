@@ -109,7 +109,8 @@
     "chart.js": "^4.4.0",
     "chartjs-plugin-annotation": "^3.0.1",
     "chartjs-plugin-zoom": "^2.0.1",
-    "chartjs-adapter-moment": "^1.0.1"
+    "chartjs-adapter-moment": "^1.0.1",
+    "mqtt": "~5.3.0"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "~15.0.0",

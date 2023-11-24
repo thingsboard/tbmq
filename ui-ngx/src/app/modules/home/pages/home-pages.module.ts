@@ -29,6 +29,7 @@ import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-manage
 import {
   SharedSubscriptionGroupsModule
 } from "@home/pages/shared-subscription-groups/shared-subscription-groups.module";
+import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
 
 @NgModule({
   exports: [
@@ -42,7 +43,8 @@ import {
     HomeOverviewModule,
     RetainedMessagesModule,
     MonitoringModule,
-    KafkaManagementModule
+    KafkaManagementModule,
+    WsClientModule
   ]
 })
 export class HomePagesModule {

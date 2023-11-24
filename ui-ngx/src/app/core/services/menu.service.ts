@@ -69,6 +69,13 @@ export class MenuService {
         icon: 'mdi:view-dashboard-outline'
       },
       {
+        id: 'web_socket_client',
+        name: 'ws-client.ws-client',
+        type: 'link',
+        path: '/ws-client',
+        icon: 'mdi:chat'
+      },
+      {
         id: 'sessions',
         name: 'mqtt-client-session.sessions',
         type: 'link',
