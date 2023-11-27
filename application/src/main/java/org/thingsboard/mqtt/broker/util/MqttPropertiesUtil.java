@@ -70,8 +70,24 @@ public class MqttPropertiesUtil {
         return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_PROP_ID);
     }
 
+    public static MqttProperties.IntegerProperty getPayloadFormatProperty(MqttProperties mqttProperties) {
+        return getIntegerProperty(mqttProperties, BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID);
+    }
+
+    public static MqttProperties.StringProperty getContentTypeProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.StringProperty) mqttProperties.getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID);
+    }
+
     public static void addTopicAliasToProps(MqttProperties properties, int topicAlias) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID, topicAlias));
+    }
+
+    public static void addPayloadFormatIndicatorToProps(MqttProperties properties, int payloadFormatIndicator) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID, payloadFormatIndicator));
+    }
+
+    public static void addContentTypeToProps(MqttProperties properties, String contentType) {
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, contentType));
     }
 
     private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
@@ -111,7 +127,7 @@ public class MqttPropertiesUtil {
 
     public static DefaultTbQueueMsgHeaders createHeaders(MqttProperties properties) {
         DefaultTbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();
-        MqttProperties.IntegerProperty pubExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(properties);
+        MqttProperties.IntegerProperty pubExpiryIntervalProperty = getPubExpiryIntervalProperty(properties);
         if (pubExpiryIntervalProperty != null) {
             headers.put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(pubExpiryIntervalProperty.value()));
         }
@@ -184,5 +200,26 @@ public class MqttPropertiesUtil {
 
     private static int msToSeconds(long value) {
         return Math.toIntExact(TimeUnit.MILLISECONDS.toSeconds(value));
+    }
+
+    public static MqttProperties getMqttProperties(PublishMsg publishMsg) {
+        MqttProperties properties = new MqttProperties();
+        MqttProperties.UserProperties userProperties = getUserProperties(publishMsg);
+        if (userProperties != null) {
+            properties.add(userProperties);
+        }
+        MqttProperties.IntegerProperty pubExpiryIntervalProperty = getPubExpiryIntervalProperty(publishMsg);
+        if (pubExpiryIntervalProperty != null) {
+            properties.add(pubExpiryIntervalProperty);
+        }
+        MqttProperties.IntegerProperty payloadFormatProperty = getPayloadFormatProperty(publishMsg.getProperties());
+        if (payloadFormatProperty != null) {
+            properties.add(payloadFormatProperty);
+        }
+        MqttProperties.StringProperty contentTypeProperty = getContentTypeProperty(publishMsg.getProperties());
+        if (contentTypeProperty != null) {
+            properties.add(contentTypeProperty);
+        }
+        return properties;
     }
 }

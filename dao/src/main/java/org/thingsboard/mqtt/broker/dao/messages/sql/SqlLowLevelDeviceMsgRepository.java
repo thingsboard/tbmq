@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.dao.model.sql.DevicePublishMsgEntity;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -38,14 +39,14 @@ import java.util.stream.IntStream;
 public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgRepository {
 
     private static final String INSERT_OR_UPDATE = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain, msg_expiry_interval)" +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain, msg_expiry_interval, payload_format_indicator, content_type)" +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
             "ON CONFLICT (client_id, serial_number) DO UPDATE SET " +
-            "topic = ?, packet_id = ?, packet_type = ?, time = ?, qos = ?, payload = ?, user_properties = ?, retain = ?, msg_expiry_interval = ?;";
+            "topic = ?, packet_id = ?, packet_type = ?, time = ?, qos = ?, payload = ?, user_properties = ?, retain = ?, msg_expiry_interval = ?, payload_format_indicator = ?, content_type = ?;";
 
     private static final String INSERT = "INSERT INTO device_publish_msg " +
-            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain, msg_expiry_interval) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            "(client_id, topic, serial_number, packet_id, packet_type, time, qos, payload, user_properties, retain, msg_expiry_interval, payload_format_indicator, content_type) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     private static final String UPDATE_PACKET_TYPE = "UPDATE device_publish_msg SET packet_type = ? " +
             "WHERE client_id = ? AND packet_id = ?;";
@@ -74,7 +75,9 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
                 ps.setString(9, devicePublishMsgEntity.getUserProperties());
                 ps.setBoolean(10, devicePublishMsgEntity.isRetain());
-                ps.setInt(11, devicePublishMsgEntity.getMsgExpiryInterval());
+                ps.setObject(11, devicePublishMsgEntity.getMsgExpiryInterval(), Types.INTEGER);
+                ps.setObject(12, devicePublishMsgEntity.getPayloadFormatIndicator(), Types.INTEGER);
+                ps.setString(13, devicePublishMsgEntity.getContentType());
             }
 
             @Override
@@ -100,16 +103,20 @@ public class SqlLowLevelDeviceMsgRepository implements LowLevelDeviceMsgReposito
                 ps.setBytes(8, devicePublishMsgEntity.getPayload());
                 ps.setString(9, devicePublishMsgEntity.getUserProperties());
                 ps.setBoolean(10, devicePublishMsgEntity.isRetain());
-                ps.setInt(11, devicePublishMsgEntity.getMsgExpiryInterval());
-                ps.setString(12, devicePublishMsgEntity.getTopic());
-                ps.setInt(13, devicePublishMsgEntity.getPacketId());
-                ps.setString(14, devicePublishMsgEntity.getPacketType().toString());
-                ps.setLong(15, devicePublishMsgEntity.getTime());
-                ps.setInt(16, devicePublishMsgEntity.getQos());
-                ps.setBytes(17, devicePublishMsgEntity.getPayload());
-                ps.setString(18, devicePublishMsgEntity.getUserProperties());
-                ps.setBoolean(19, devicePublishMsgEntity.isRetain());
-                ps.setInt(20, devicePublishMsgEntity.getMsgExpiryInterval());
+                ps.setObject(11, devicePublishMsgEntity.getMsgExpiryInterval(), Types.INTEGER);
+                ps.setObject(12, devicePublishMsgEntity.getPayloadFormatIndicator(), Types.INTEGER);
+                ps.setString(13, devicePublishMsgEntity.getContentType());
+                ps.setString(14, devicePublishMsgEntity.getTopic());
+                ps.setInt(15, devicePublishMsgEntity.getPacketId());
+                ps.setString(16, devicePublishMsgEntity.getPacketType().toString());
+                ps.setLong(17, devicePublishMsgEntity.getTime());
+                ps.setInt(18, devicePublishMsgEntity.getQos());
+                ps.setBytes(19, devicePublishMsgEntity.getPayload());
+                ps.setString(20, devicePublishMsgEntity.getUserProperties());
+                ps.setBoolean(21, devicePublishMsgEntity.isRetain());
+                ps.setObject(22, devicePublishMsgEntity.getMsgExpiryInterval(), Types.INTEGER);
+                ps.setObject(23, devicePublishMsgEntity.getPayloadFormatIndicator(), Types.INTEGER);
+                ps.setString(24, devicePublishMsgEntity.getContentType());
             }
 
             @Override

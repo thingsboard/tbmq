@@ -48,7 +48,7 @@
         <metrics.version>4.0.5</metrics.version>
         <guava.version>31.1-jre</guava.version>
         <curator.version>4.2.0</curator.version>
-        <protobuf.version>3.17.2</protobuf.version>
+        <protobuf.version>3.21.9</protobuf.version>
         <grpc.version>1.42.1</grpc.version>
         <lombok.version>1.18.26</lombok.version>
         <netty.version>4.1.94.Final</netty.version>

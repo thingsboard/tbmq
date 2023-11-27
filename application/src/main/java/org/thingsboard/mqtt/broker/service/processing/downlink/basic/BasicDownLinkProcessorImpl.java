@@ -45,7 +45,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             }
             return;
         }
-        PublishMsg publishMsg = getPublishMsg(clientSessionCtx, msg);
+        PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(clientSessionCtx, msg);
         publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
         clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
     }
@@ -61,18 +61,6 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         }
         publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg, subscription);
         clientLogger.logEvent(subscription.getClientId(), this.getClass(), "Delivered msg to basic client");
-    }
-
-    private PublishMsg getPublishMsg(ClientSessionCtx clientSessionCtx, PublishMsgProto msg) {
-        return PublishMsg.builder()
-                .packetId(clientSessionCtx.getMsgIdSeq().nextMsgId())
-                .topicName(msg.getTopicName())
-                .payload(msg.getPayload().toByteArray())
-                .qosLevel(msg.getQos())
-                .isRetained(msg.getRetain())
-                .isDup(false)
-                .properties(ProtoConverter.createMqttProperties(msg.getUserPropertiesList()))
-                .build();
     }
 
 }
