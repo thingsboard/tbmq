@@ -58,13 +58,12 @@ public class ProtoConverter {
 
     public static QueueProtos.PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg.getProperties());
-        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQosLevel())
                 .setRetain(publishMsg.isRetained())
-                .addAllUserProperties(userPropertyProtos)
+                .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setClientId(sessionInfo.getClientInfo().getClientId());
         if (publishMsg.getByteBuf() != null) {
             builder.setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()));
@@ -83,13 +82,12 @@ public class ProtoConverter {
 
     public static QueueProtos.PublishMsgProto convertToPublishMsgProto(DevicePublishMsg devicePublishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
-        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setTopicName(devicePublishMsg.getTopic())
                 .setQos(devicePublishMsg.getQos())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
-                .addAllUserProperties(userPropertyProtos)
+                .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setRetain(devicePublishMsg.isRetained());
 
         QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
@@ -111,17 +109,9 @@ public class ProtoConverter {
 
     private static PublishMsg convertProtoToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId, int qos, boolean isDup) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(msg.getUserPropertiesList());
-
         if (msg.hasMqttProperties()) {
-            QueueProtos.MqttPropertiesProto mqttPropertiesProto = msg.getMqttProperties();
-            if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
-                MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
-            }
-            if (mqttPropertiesProto.hasContentType()) {
-                MqttPropertiesUtil.addContentTypeToProps(properties, mqttPropertiesProto.getContentType());
-            }
+            addFromProtoToMqttProperties(msg.getMqttProperties(), properties);
         }
-
         return PublishMsg.builder()
                 .topicName(msg.getTopicName())
                 .isRetained(msg.getRetain())
@@ -135,15 +125,8 @@ public class ProtoConverter {
 
     public static DevicePublishMsg protoToDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto publishMsgProto, TbQueueMsgHeaders headers) {
         MqttProperties mqttProperties = createMqttPropertiesWithUserPropsIfPresent(publishMsgProto.getUserPropertiesList());
-
         if (publishMsgProto.hasMqttProperties()) {
-            QueueProtos.MqttPropertiesProto mqttPropertiesProto = publishMsgProto.getMqttProperties();
-            if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
-                MqttPropertiesUtil.addPayloadFormatIndicatorToProps(mqttProperties, mqttPropertiesProto.getPayloadFormatIndicator());
-            }
-            if (mqttPropertiesProto.hasContentType()) {
-                MqttPropertiesUtil.addContentTypeToProps(mqttProperties, mqttPropertiesProto.getContentType());
-            }
+            addFromProtoToMqttProperties(publishMsgProto.getMqttProperties(), mqttProperties);
         }
 
         MqttPropertiesUtil.addMsgExpiryIntervalToProps(mqttProperties, headers);
@@ -163,7 +146,6 @@ public class ProtoConverter {
 
     public static QueueProtos.DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
-        List<QueueProtos.UserPropertyProto> userPropertyProtos = toUserPropertyProtos(userProperties);
         QueueProtos.DevicePublishMsgProto.Builder builder = QueueProtos.DevicePublishMsgProto.newBuilder()
                 .setSerialNumber(devicePublishMsg.getSerialNumber())
                 .setTime(devicePublishMsg.getTime())
@@ -173,7 +155,7 @@ public class ProtoConverter {
                 .setTopicName(devicePublishMsg.getTopic())
                 .setClientId(devicePublishMsg.getClientId())
                 .setPacketType(devicePublishMsg.getPacketType().toString())
-                .addAllUserProperties(userPropertyProtos)
+                .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setRetain(devicePublishMsg.isRetained());
 
         QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
@@ -186,15 +168,8 @@ public class ProtoConverter {
 
     public static DevicePublishMsg protoToDevicePublishMsg(QueueProtos.DevicePublishMsgProto devicePublishMsgProto) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(devicePublishMsgProto.getUserPropertiesList());
-
         if (devicePublishMsgProto.hasMqttProperties()) {
-            QueueProtos.MqttPropertiesProto mqttPropertiesProto = devicePublishMsgProto.getMqttProperties();
-            if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
-                MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
-            }
-            if (mqttPropertiesProto.hasContentType()) {
-                MqttPropertiesUtil.addContentTypeToProps(properties, mqttPropertiesProto.getContentType());
-            }
+            addFromProtoToMqttProperties(devicePublishMsgProto.getMqttProperties(), properties);
         }
 
         return DevicePublishMsg.builder()
@@ -395,13 +370,7 @@ public class ProtoConverter {
     public static RetainedMsg convertProtoToRetainedMsg(QueueProtos.RetainedMsgProto retainedMsgProto) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(retainedMsgProto.getUserPropertiesList());
         if (retainedMsgProto.hasMqttProperties()) {
-            QueueProtos.MqttPropertiesProto mqttPropertiesProto = retainedMsgProto.getMqttProperties();
-            if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
-                MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
-            }
-            if (mqttPropertiesProto.hasContentType()) {
-                MqttPropertiesUtil.addContentTypeToProps(properties, mqttPropertiesProto.getContentType());
-            }
+            addFromProtoToMqttProperties(retainedMsgProto.getMqttProperties(), properties);
         }
         return new RetainedMsg(
                 retainedMsgProto.getTopic(),
@@ -413,12 +382,11 @@ public class ProtoConverter {
     }
 
     public static QueueProtos.RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
-        List<QueueProtos.UserPropertyProto> userPropertyProtos = getUserPropertyProtos(retainedMsg.getProperties());
         QueueProtos.RetainedMsgProto.Builder builder = QueueProtos.RetainedMsgProto.newBuilder()
                 .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
                 .setQos(retainedMsg.getQosLevel())
                 .setTopic(retainedMsg.getTopic())
-                .addAllUserProperties(userPropertyProtos)
+                .addAllUserProperties(getUserPropertyProtos(retainedMsg.getProperties()))
                 .setCreatedTime(retainedMsg.getCreatedTime());
         QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(retainedMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
@@ -496,6 +464,15 @@ public class ProtoConverter {
     private static String getContentTypeFromMqttProperties(MqttProperties mqttProperties) {
         StringProperty contentTypeProperty = MqttPropertiesUtil.getContentTypeProperty(mqttProperties);
         return contentTypeProperty == null ? null : contentTypeProperty.value();
+    }
+
+    private static void addFromProtoToMqttProperties(QueueProtos.MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
+        if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
+            MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
+        }
+        if (mqttPropertiesProto.hasContentType()) {
+            MqttPropertiesUtil.addContentTypeToProps(properties, mqttPropertiesProto.getContentType());
+        }
     }
 
     /**
