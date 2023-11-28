@@ -73,9 +73,7 @@ public class ProtoConverter {
             builder.setPayload(ByteString.copyFrom(publishMsg.getPayload()));
         }
 
-        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(publishMsg.getProperties());
-        String contentType = getContentTypeFromMqttProperties(publishMsg.getProperties());
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(payloadFormatIndicator, contentType);
+        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(publishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -94,9 +92,7 @@ public class ProtoConverter {
                 .addAllUserProperties(userPropertyProtos)
                 .setRetain(devicePublishMsg.isRetained());
 
-        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(devicePublishMsg.getProperties());
-        String contentType = getContentTypeFromMqttProperties(devicePublishMsg.getProperties());
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(payloadFormatIndicator, contentType);
+        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -180,9 +176,7 @@ public class ProtoConverter {
                 .addAllUserProperties(userPropertyProtos)
                 .setRetain(devicePublishMsg.isRetained());
 
-        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(devicePublishMsg.getProperties());
-        String contentType = getContentTypeFromMqttProperties(devicePublishMsg.getProperties());
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(payloadFormatIndicator, contentType);
+        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -426,10 +420,7 @@ public class ProtoConverter {
                 .setTopic(retainedMsg.getTopic())
                 .addAllUserProperties(userPropertyProtos)
                 .setCreatedTime(retainedMsg.getCreatedTime());
-
-        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(retainedMsg.getProperties());
-        String contentType = getContentTypeFromMqttProperties(retainedMsg.getProperties());
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(payloadFormatIndicator, contentType);
+        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(retainedMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -481,7 +472,9 @@ public class ProtoConverter {
         return QueueProtos.UserPropertyProto.newBuilder().setKey(stringPair.key).setValue(stringPair.value).build();
     }
 
-    private static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(Integer payloadFormatIndicator, String contentType) {
+    private static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
+        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(properties);
+        String contentType = getContentTypeFromMqttProperties(properties);
         if (payloadFormatIndicator != null || contentType != null) {
             QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = QueueProtos.MqttPropertiesProto.newBuilder();
             if (payloadFormatIndicator != null) {
