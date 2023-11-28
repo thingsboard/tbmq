@@ -466,7 +466,7 @@ public class ProtoConverter {
         return contentTypeProperty == null ? null : contentTypeProperty.value();
     }
 
-    private static void addFromProtoToMqttProperties(QueueProtos.MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
+    public static void addFromProtoToMqttProperties(QueueProtos.MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
         if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
             MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
         }

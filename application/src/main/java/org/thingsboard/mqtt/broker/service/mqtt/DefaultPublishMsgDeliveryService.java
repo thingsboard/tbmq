@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -92,13 +91,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             MqttPropertiesUtil.addTopicAliasToProps(properties, topicAliasResult.getTopicAlias());
         }
         if (msg.hasMqttProperties()) {
-            QueueProtos.MqttPropertiesProto mqttProperties = msg.getMqttProperties();
-            if (mqttProperties.hasPayloadFormatIndicator()) {
-                MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttProperties.getPayloadFormatIndicator());
-            }
-            if (mqttProperties.hasContentType()) {
-                MqttPropertiesUtil.addContentTypeToProps(properties, mqttProperties.getContentType());
-            }
+            ProtoConverter.addFromProtoToMqttProperties(msg.getMqttProperties(), properties);
         }
 
         String topicName = topicAliasResult == null ? msg.getTopicName() : topicAliasResult.getTopicName();
