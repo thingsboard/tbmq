@@ -87,7 +87,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), msg);
         }
         TopicAliasResult topicAliasResult = sessionCtx.getTopicAliasCtx().getTopicAliasResult(msg, minTopicNameLengthForAliasReplacement);
-        MqttProperties properties = ProtoConverter.createMqttProperties(msg.getUserPropertiesList());
+        MqttProperties properties = ProtoConverter.createMqttPropertiesWithUserPropsIfPresent(msg.getUserPropertiesList());
         if (topicAliasResult != null) {
             MqttPropertiesUtil.addTopicAliasToProps(properties, topicAliasResult.getTopicAlias());
         }

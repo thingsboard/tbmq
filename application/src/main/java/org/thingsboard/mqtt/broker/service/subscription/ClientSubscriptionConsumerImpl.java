@@ -87,7 +87,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     String clientId = msg.getKey();
                     // TODO: replace with events (instead of storing the whole state) - but need to think about the logic when and how to make snapshots (so that we don't need to store all event log)
                     //          also think about order of messages (sub A -> unsub A is different than unsub A -> sub A)
-                    Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
+                    Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
                         encounteredDummyClient = true;
                     } else if (clientSubscriptions.isEmpty()) {
@@ -133,7 +133,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
                         String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
-                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertToClientSubscriptions(msg.getValue());
+                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                         boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
                         if (accepted) {
                             acceptedSubscriptions++;

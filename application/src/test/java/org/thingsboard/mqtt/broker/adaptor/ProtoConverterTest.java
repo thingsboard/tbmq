@@ -123,7 +123,7 @@ public class ProtoConverterTest {
                 .orElse(null);
         assertNotNull(topicSubscriptionProto);
 
-        Set<TopicSubscription> output = ProtoConverter.convertToClientSubscriptions(clientSubscriptionsProto);
+        Set<TopicSubscription> output = ProtoConverter.convertProtoToClientSubscriptions(clientSubscriptionsProto);
 
         TopicSubscription topicSubscription = output
                 .stream()

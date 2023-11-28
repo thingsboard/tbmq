@@ -101,7 +101,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
                     downLinkProxy.sendBasicMsg(
                             targetServiceId,
                             devicePublishMsg.getClientId(),
-                            ProtoConverter.convertToPublishProtoMessage(devicePublishMsg));
+                            ProtoConverter.convertToPublishMsgProto(devicePublishMsg));
                 }
             }
         }
@@ -175,7 +175,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
 
     private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
         return msgs.stream()
-                .map(protoMsg -> ProtoConverter.toDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue(), protoMsg.getHeaders()))
+                .map(protoMsg -> ProtoConverter.protoToDevicePublishMsg(protoMsg.getKey(), protoMsg.getValue(), protoMsg.getHeaders()))
                 .collect(Collectors.toList());
     }
 }

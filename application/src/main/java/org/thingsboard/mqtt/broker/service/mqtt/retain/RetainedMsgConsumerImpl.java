@@ -161,7 +161,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
     }
 
     private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg) {
-        RetainedMsg retainedMsg = ProtoConverter.convertToRetainedMsg(msg.getValue());
+        RetainedMsg retainedMsg = ProtoConverter.convertProtoToRetainedMsg(msg.getValue());
         MqttPropertiesUtil.addMsgExpiryIntervalToProps(retainedMsg.getProperties(), msg.getHeaders());
         return retainedMsg;
     }
