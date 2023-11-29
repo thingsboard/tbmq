@@ -19,11 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.MqttClient;
-import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +75,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
     @After
     public void clear() throws Exception {
         log.warn("After test finish...");
-        TestUtils.clearPersistedClient(persistedClient, getOptions(true));
+        TestUtils.clearPersistedClient(persistedClient, getOptions(true, MSG_EXPIRY_USER_NAME));
         credentialsService.deleteCredentials(deviceCredentials.getId());
     }
 
@@ -87,7 +85,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         AtomicBoolean receivedExpirationMsg = new AtomicBoolean(false);
 
         persistedClient = new MqttClient(SERVER_URI + mqttPort, DEV_MSG_EXPIRY_CLIENT);
-        persistedClient.connect(getOptions(false));
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
         IMqttMessageListener[] listeners = {(topic, msg) -> {
             log.error("[{}] Received msg with id: {}", topic, msg.getId());
             receivedExpirationMsg.set(true);
@@ -98,7 +96,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         persistedClient.disconnect();
 
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
-        pubClient.connect(getOptions(true));
+        pubClient.connect(getOptions(true, MSG_EXPIRY_USER_NAME));
 
         MqttProperties properties = new MqttProperties();
         properties.setMessageExpiryInterval(100L);
@@ -106,7 +104,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         pubClient.publish("expiration/topic", mqttMessage);
         TestUtils.disconnectAndCloseClient(pubClient);
 
-        persistedClient.connect(getOptions(false));
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
 
         boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);
@@ -120,7 +118,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         AtomicBoolean receivedExpirationMsg = new AtomicBoolean(false);
 
         persistedClient = new MqttClient(SERVER_URI + mqttPort, DEV_MSG_EXPIRY_CLIENT);
-        persistedClient.connect(getOptions(false));
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
         IMqttMessageListener[] listeners = {(topic, msg) -> {
             log.error("[{}] Received msg with id: {}", topic, msg.getId());
             receivedExpirationMsg.set(true);
@@ -131,7 +129,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         persistedClient.disconnect();
 
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
-        pubClient.connect(getOptions(true));
+        pubClient.connect(getOptions(true, MSG_EXPIRY_USER_NAME));
 
         MqttProperties properties = new MqttProperties();
         properties.setMessageExpiryInterval(1L);
@@ -141,20 +139,12 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
 
         Thread.sleep(1100);
 
-        persistedClient.connect(getOptions(false));
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
 
         boolean await = receivedResponses.await(1, TimeUnit.SECONDS);
         log.error("The result of awaiting is: [{}]", await);
 
         assertFalse(receivedExpirationMsg.get());
-    }
-
-    @NotNull
-    private MqttConnectionOptions getOptions(boolean cleanStart) {
-        MqttConnectionOptions pubOptions = new MqttConnectionOptions();
-        pubOptions.setCleanStart(cleanStart);
-        pubOptions.setUserName(MSG_EXPIRY_USER_NAME);
-        return pubOptions;
     }
 
 }

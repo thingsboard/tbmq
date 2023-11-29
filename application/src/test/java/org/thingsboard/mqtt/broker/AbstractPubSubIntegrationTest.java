@@ -20,8 +20,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
+import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @ActiveProfiles("test")
@@ -53,6 +56,7 @@ public abstract class AbstractPubSubIntegrationTest {
 
     public static final int ONE_HOUR_MS = 3600000;
     public static final String SERVER_URI = "tcp://localhost:";
+    public static final byte[] PAYLOAD = "testPayload".getBytes(StandardCharsets.UTF_8);
 
     public static final List<UserProperty> USER_PROPERTIES = List.of(
             new UserProperty("myUserPropertyKey", "myUserPropertyValue"),
@@ -91,7 +95,7 @@ public abstract class AbstractPubSubIntegrationTest {
 
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override
-        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
             if (bean instanceof TbKafkaConsumerSettings) {
                 TbKafkaConsumerSettings kafkaSettings = (TbKafkaConsumerSettings) bean;
                 kafkaSettings.setServers(kafka.getBootstrapServers());
@@ -100,8 +104,7 @@ public abstract class AbstractPubSubIntegrationTest {
                 TbKafkaProducerSettings kafkaSettings = (TbKafkaProducerSettings) bean;
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
-            if (bean instanceof TbKafkaAdminSettings) {
-                TbKafkaAdminSettings kafkaAdminSettings = (TbKafkaAdminSettings) bean;
+            if (bean instanceof TbKafkaAdminSettings kafkaAdminSettings) {
                 kafkaAdminSettings.setServers(kafka.getBootstrapServers());
             }
             return bean;
@@ -116,4 +119,16 @@ public abstract class AbstractPubSubIntegrationTest {
         }
     }
 
+    @NotNull
+    protected MqttConnectionOptions getOptions(String username) {
+        return getOptions(true, username);
+    }
+
+    @NotNull
+    protected MqttConnectionOptions getOptions(boolean cleanStart, String username) {
+        MqttConnectionOptions pubOptions = new MqttConnectionOptions();
+        pubOptions.setCleanStart(cleanStart);
+        pubOptions.setUserName(username);
+        return pubOptions;
+    }
 }
