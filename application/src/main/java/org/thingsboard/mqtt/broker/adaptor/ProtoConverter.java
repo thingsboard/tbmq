@@ -440,7 +440,7 @@ public class ProtoConverter {
         return QueueProtos.UserPropertyProto.newBuilder().setKey(stringPair.key).setValue(stringPair.value).build();
     }
 
-    private static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
+    static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
         Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(properties);
         String contentType = getContentTypeFromMqttProperties(properties);
         if (payloadFormatIndicator != null || contentType != null) {
