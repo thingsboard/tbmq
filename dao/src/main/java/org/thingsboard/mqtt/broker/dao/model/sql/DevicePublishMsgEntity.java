@@ -77,6 +77,12 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_EXPIRY_INTERVAL_PROPERTY)
     private Integer msgExpiryInterval;
 
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_FORMAT_INDICATOR_PROPERTY)
+    private Integer payloadFormatIndicator;
+
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CONTENT_TYPE_PROPERTY)
+    private String contentType;
+
     public DevicePublishMsgEntity() {
     }
 
@@ -92,11 +98,23 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.userProperties = JacksonUtil.toString(UserProperties.newInstance(devicePublishMsg.getProperties()));
         this.retain = devicePublishMsg.isRetained();
         this.msgExpiryInterval = getMsgExpiryInterval(devicePublishMsg);
+        this.payloadFormatIndicator = getPayloadFormatIndicator(devicePublishMsg);
+        this.contentType = getContentType(devicePublishMsg);
     }
 
     private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg) {
         MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
-        return property == null ? 0 : property.value();
+        return property == null ? null : property.value();
+    }
+
+    private Integer getPayloadFormatIndicator(DevicePublishMsg devicePublishMsg) {
+        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID);
+        return property == null ? null : property.value();
+    }
+
+    private String getContentType(DevicePublishMsg devicePublishMsg) {
+        MqttProperties.StringProperty property = (MqttProperties.StringProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID);
+        return property == null ? null : property.value();
     }
 
     @Override
@@ -104,6 +122,12 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         MqttProperties properties = UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class));
         if (msgExpiryInterval != null) {
             properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, msgExpiryInterval));
+        }
+        if (payloadFormatIndicator != null) {
+            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID, payloadFormatIndicator));
+        }
+        if (contentType != null) {
+            properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, contentType));
         }
         return DevicePublishMsg.builder()
                 .clientId(clientId)

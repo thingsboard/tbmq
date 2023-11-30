@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 public interface PublishMsgCallback {
+
     void onSuccess();
 
     void onFailure(Throwable t);

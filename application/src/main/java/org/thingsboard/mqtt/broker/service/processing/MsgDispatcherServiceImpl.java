@@ -102,7 +102,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     @Override
     public void persistPublishMsg(SessionInfo sessionInfo, PublishMsg publishMsg, TbQueueCallback callback) {
-        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishProtoMessage(sessionInfo, publishMsg);
+        PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);

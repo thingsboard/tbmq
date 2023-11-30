@@ -91,7 +91,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
                     }
 
                     for (TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto> msg : msgs) {
-                        DevicePublishMsg devicePublishMsg = ProtoConverter.toDevicePublishMsg(msg.getValue());
+                        DevicePublishMsg devicePublishMsg = ProtoConverter.protoToDevicePublishMsg(msg.getValue());
                         MqttPropertiesUtil.addMsgExpiryIntervalToProps(devicePublishMsg.getProperties(), msg.getHeaders());
                         processor.process(msg.getKey(), devicePublishMsg);
                     }

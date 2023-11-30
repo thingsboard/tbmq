@@ -37,6 +37,12 @@ message PublishMsgProto {
   int32 qos = 5;
   string topicName = 6;
   repeated UserPropertyProto userProperties = 7;
+  optional MqttPropertiesProto mqttProperties = 8;
+}
+
+message MqttPropertiesProto {
+  optional int32 payloadFormatIndicator = 1;
+  optional string contentType = 2;
 }
 
 message UserPropertyProto {
@@ -81,6 +87,7 @@ message RetainedMsgProto {
   string topic = 3;
   repeated UserPropertyProto userProperties = 4;
   int64 createdTime = 5;
+  optional MqttPropertiesProto mqttProperties = 6;
 }
 
 message ClientSessionInfoProto {
@@ -119,6 +126,7 @@ message DevicePublishMsgProto {
   string packetType = 8;
   repeated UserPropertyProto userProperties = 9;
   bool retain = 10;
+  optional MqttPropertiesProto mqttProperties = 11;
 }
 
 message ClientPublishMsgProto {
@@ -137,9 +145,6 @@ message ToUsageStatsMsgProto {
   UsageStatsKVProto usageStats = 3;
 }
 
-/**
- * Service Discovery Data Structures;
- */
 message ServiceInfo {
   string serviceId = 1;
 }

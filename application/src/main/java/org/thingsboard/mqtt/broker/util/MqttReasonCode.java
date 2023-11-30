@@ -38,6 +38,7 @@ public enum MqttReasonCode {
     MESSAGE_RATE_TOO_HIGH((byte) 0x96),
     QUOTA_EXCEEDED((byte) 0x97),
     ADMINISTRATIVE_ACTION((byte) 0x98),
+    PAYLOAD_FORMAT_INVALID((byte) 0x99),
     USE_ANOTHER_SERVER((byte) 0x9C),
     SERVER_MOVED((byte) 0x9D),
     SUBSCRIPTION_ID_NOT_SUPPORTED((byte) 0xA1),

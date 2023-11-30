@@ -74,8 +74,6 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1001000)) {
                         try {
-                            // add here upgrade code if needed
-
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002000;");
                         } catch (Exception ignored) {
                         }
@@ -88,8 +86,8 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1002000)) {
                         try {
-                            // add here upgrade code if needed
-
+                            conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN payload_format_indicator int;");
+                            conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN content_type varchar(255);");
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002001;");
                         } catch (Exception ignored) {
                         }

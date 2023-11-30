@@ -90,6 +90,8 @@ public class ModelConstants {
     public static final String DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY = "user_properties";
     public static final String DEVICE_PUBLISH_MSG_RETAIN_PROPERTY = "retain";
     public static final String DEVICE_PUBLISH_MSG_EXPIRY_INTERVAL_PROPERTY = "msg_expiry_interval";
+    public static final String DEVICE_PUBLISH_MSG_PAYLOAD_FORMAT_INDICATOR_PROPERTY = "payload_format_indicator";
+    public static final String DEVICE_PUBLISH_MSG_CONTENT_TYPE_PROPERTY = "content_type";
 
     /**
      * application_shared_subscription constants.

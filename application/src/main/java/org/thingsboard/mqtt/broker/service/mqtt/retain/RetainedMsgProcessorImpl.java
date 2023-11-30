@@ -53,21 +53,8 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
     }
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
-        MqttProperties properties = getMqttProperties(publishMsg);
+        MqttProperties properties = MqttPropertiesUtil.getMqttProperties(publishMsg);
         return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), properties);
-    }
-
-    private static MqttProperties getMqttProperties(PublishMsg publishMsg) {
-        MqttProperties properties = new MqttProperties();
-        MqttProperties.UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg);
-        if (userProperties != null) {
-            properties.add(userProperties);
-        }
-        MqttProperties.IntegerProperty pubExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(publishMsg);
-        if (pubExpiryIntervalProperty != null) {
-            properties.add(pubExpiryIntervalProperty);
-        }
-        return properties;
     }
 
 }
