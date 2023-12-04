@@ -55,7 +55,8 @@ import java.util.List;
 public abstract class AbstractPubSubIntegrationTest {
 
     public static final int ONE_HOUR_MS = 3600000;
-    public static final String SERVER_URI = "tcp://localhost:";
+    public static final String LOCALHOST = "localhost";
+    public static final String SERVER_URI = "tcp://" + LOCALHOST + ":";
     public static final byte[] PAYLOAD = "testPayload".getBytes(StandardCharsets.UTF_8);
 
     public static final List<UserProperty> USER_PROPERTIES = List.of(

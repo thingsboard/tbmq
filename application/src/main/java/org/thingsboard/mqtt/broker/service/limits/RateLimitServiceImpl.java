@@ -16,9 +16,13 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.RateLimitsConfiguration;
 
@@ -32,7 +36,13 @@ import java.util.concurrent.ConcurrentMap;
 public class RateLimitServiceImpl implements RateLimitService {
 
     private final RateLimitsConfiguration rateLimitsConfiguration;
+    private final ClientSessionService clientSessionService;
+    @Getter
     private final ConcurrentMap<String, TbRateLimits> clientLimits = new ConcurrentHashMap<>();
+
+    @Value("${mqtt.sessions-limit:0}")
+    @Setter
+    private int sessionsLimit;
 
     @Override
     public boolean checkLimits(String clientId, UUID sessionId, MqttMessage msg) {
@@ -55,4 +65,20 @@ public class RateLimitServiceImpl implements RateLimitService {
             clientLimits.remove(clientId);
         }
     }
+
+    @Override
+    public boolean checkSessionsLimit() {
+        if (sessionsLimit <= 0) {
+            return true;
+        }
+        int clientSessionsCount = clientSessionService.getClientSessionsCount();
+        if (clientSessionsCount >= sessionsLimit) {
+            if (log.isTraceEnabled()) {
+                log.trace("Client sessions count limit detected! Allowed: [{}], current count: [{}]", sessionsLimit, clientSessionsCount);
+            }
+            return false;
+        }
+        return true;
+    }
+
 }

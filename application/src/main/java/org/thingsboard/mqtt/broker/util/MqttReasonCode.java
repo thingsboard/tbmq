@@ -22,6 +22,7 @@ public enum MqttReasonCode {
     GRANTED_QOS_0((byte) 0x00),
     GRANTED_QOS_1((byte) 0x01),
     GRANTED_QOS_2((byte) 0x02),
+    CONNECTION_REFUSED_SERVER_UNAVAILABLE((byte) 0x03),
     DISCONNECT_WITH_WILL_MSG((byte) 0x04),
     SUCCESS((byte) 0x00),
     FAILURE((byte) 0x80),
