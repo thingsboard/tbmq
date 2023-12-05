@@ -64,6 +64,7 @@ public class DisconnectServiceImpl implements DisconnectService {
             if (log.isTraceEnabled()) {
                 log.trace("[{}] Session wasn't fully initialized. Disconnect reason - {}.", sessionCtx.getSessionId(), reason);
             }
+            closeChannel(sessionCtx);
             return;
         }
 

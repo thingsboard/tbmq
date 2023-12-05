@@ -741,6 +741,10 @@ mqtt:
     enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
     # Limit the maximum publish messages per client on each server for specified time intervals in seconds. Comma separated list of limit:seconds pairs
     client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+  # Limit the total number of sessions (connected + disconnected) stored on the broker, not individually for each server (node) if it is a cluster, but as a collective limit.
+  # For example, when set to 1000 either the single broker node or cluster of 2 or X nodes can store 1000 sessions in total. It is a soft limit meaning a bit more than 1000 sessions can be stored.
+  # A setting of 0 means the limitation is disabled
+  sessions-limit: "${MQTT_SESSIONS_LIMIT:0}"
   handler:
     # Number of threads in thread pool for processing all publish messages callbacks after sending them to Kafka
     all_msg_callback_threads: "${MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS:2}"

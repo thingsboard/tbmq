@@ -24,4 +24,7 @@ public interface RateLimitService {
     boolean checkLimits(String clientId, UUID sessionId, MqttMessage msg);
 
     void remove(String clientId);
+
+    boolean checkSessionsLimit(String clientId);
+
 }

@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
@@ -83,6 +84,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final MsgPersistenceManager msgPersistenceManager;
     private final MqttMessageHandler messageHandler;
     private final ClientSubscriptionCache clientSubscriptionCache;
+    private final RateLimitService rateLimitService;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -114,7 +116,10 @@ public class ConnectServiceImpl implements ConnectService {
             log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
         }
 
-        validate(sessionCtx, msg);
+        boolean proceedWithConnection = shouldProceedWithConnection(sessionCtx, msg);
+        if (!proceedWithConnection) {
+            return;
+        }
 
         int sessionExpiryInterval = getSessionExpiryInterval(msg);
         sessionCtx.setSessionInfo(
@@ -244,31 +249,23 @@ public class ConnectServiceImpl implements ConnectService {
         sendConnectionRefusedMsgAndDisconnect(clientSessionCtx);
     }
 
-    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx clientSessionCtx) {
+    private void sendConnectionRefusedMsgAndDisconnect(ClientSessionCtx ctx) {
         try {
-            MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedServerUnavailable(clientSessionCtx);
-            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
-            clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
+            createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedServerUnavailable(ctx), ctx);
         } catch (Exception e) {
-            log.warn("[{}][{}] Failed to send CONN_ACK response.",
-                    clientSessionCtx.getClientId(), clientSessionCtx.getSessionId());
+            log.warn("[{}][{}] Failed to send CONN_ACK response.", ctx.getClientId(), ctx.getSessionId());
         } finally {
-            disconnect(clientSessionCtx);
+            disconnect(ctx.getClientId(), ctx.getSessionId());
         }
     }
 
-    private void disconnect(ClientSessionCtx clientSessionCtx) {
-        clientMqttActorManager.disconnect(
-                clientSessionCtx.getClientId(), newDisconnectMsg(clientSessionCtx.getSessionId()));
+    private void disconnect(String clientId, UUID sessionId) {
+        clientMqttActorManager.disconnect(clientId, newDisconnectMsg(sessionId));
     }
 
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
         return new MqttDisconnectMsg(sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
-    }
-
-    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
-        return mqttMessageGenerator.createMqttConnAckMsg(code);
     }
 
     private MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent, String assignedClientId,
@@ -306,13 +303,32 @@ public class ConnectServiceImpl implements ConnectService {
                 sessionExpiryInterval);
     }
 
-    void validate(ClientSessionCtx ctx, MqttConnectMsg msg) {
-        if (!msg.isCleanStart() && StringUtils.isEmpty(msg.getClientIdentifier())) {
-            MqttConnectReturnCode code = MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx);
-            MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
-            ctx.getChannel().writeAndFlush(mqttConnAckMsg);
-            throw new MqttException("Client identifier is empty and 'clean session' flag is set to 'false'!");
+    boolean shouldProceedWithConnection(ClientSessionCtx ctx, MqttConnectMsg msg) {
+        if (isPersistentClientWithoutClientId(msg)) {
+            log.warn("[{}] Client identifier is empty and clean session flag is set to false!", ctx.getSessionId());
+            createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx), ctx);
+            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
+            return false;
         }
+        if (!rateLimitService.checkSessionsLimit(msg.getClientIdentifier())) {
+            createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx), ctx);
+            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isPersistentClientWithoutClientId(MqttConnectMsg msg) {
+        return !msg.isCleanStart() && StringUtils.isEmpty(msg.getClientIdentifier());
+    }
+
+    private void createAndSendConnAckMsg(MqttConnectReturnCode code, ClientSessionCtx ctx) {
+        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(code);
+        ctx.getChannel().writeAndFlush(mqttConnAckMsg);
+    }
+
+    private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
+        return mqttMessageGenerator.createMqttConnAckMsg(code);
     }
 
     @PreDestroy

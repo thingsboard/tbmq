@@ -17,10 +17,12 @@ package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -35,7 +37,7 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
-import org.thingsboard.mqtt.broker.exception.MqttException;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -87,6 +89,8 @@ public class ConnectServiceImplTest {
     MqttMessageHandlerImpl messageHandler;
     @MockBean
     ClientSubscriptionCache clientSubscriptionCache;
+    @MockBean
+    RateLimitService rateLimitService;
 
     @SpyBean
     ConnectServiceImpl connectService;
@@ -115,8 +119,15 @@ public class ConnectServiceImplTest {
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
 
+    @After
+    public void tearDown() {
+        Mockito.reset(clientMqttActorManager, mqttMessageGenerator, clientSessionEventService, keepAliveService,
+                serviceInfoProvider, lastWillService, clientSessionCtxService, msgPersistenceManager,
+                messageHandler, clientSubscriptionCache, rateLimitService);
+    }
+
     @Test
-    public void testAcceptConnection() {
+    public void givenConnectionAcceptedMsg_whenAcceptConnection_thenVerifyExecutions() {
         TbActorRef actorRef = mock(TbActorRef.class);
 
         QueuedMqttMessages queuedMqttMessages = mock(QueuedMqttMessages.class);
@@ -134,7 +145,7 @@ public class ConnectServiceImplTest {
     }
 
     @Test
-    public void testRefuseConnection() {
+    public void givenClientSessionContext_whenRefuseConnection_thenVerifyExecutions() {
         connectService.refuseConnection(ctx, null);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(eq(CONNECTION_REFUSED_SERVER_UNAVAILABLE));
@@ -143,7 +154,7 @@ public class ConnectServiceImplTest {
     }
 
     @Test
-    public void testGetKeepAliveSeconds() {
+    public void givenMqtt5Client_whenGetKeepAliveSeconds_thenReturnExpectedValue() {
         connectService.setMaxServerKeepAlive(50);
 
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
@@ -151,24 +162,37 @@ public class ConnectServiceImplTest {
                 UUID.randomUUID(), "id", false, 100, null
         ));
         Assert.assertEquals(50, keepAliveSeconds);
+    }
+
+    @Test
+    public void givenMqtt3Client_whenGetKeepAliveSeconds_thenReturnExpectedValue() {
+        connectService.setMaxServerKeepAlive(50);
 
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_3_1_1);
-        keepAliveSeconds = connectService.getKeepAliveSeconds(actorState, new MqttConnectMsg(
+        int keepAliveSeconds = connectService.getKeepAliveSeconds(actorState, new MqttConnectMsg(
                 UUID.randomUUID(), "id", false, 100, null
         ));
         Assert.assertEquals(100, keepAliveSeconds);
     }
 
-    @Test(expected = MqttException.class)
-    public void testValidate() {
+    @Test
+    public void givenPersistentClientWithoutClientId_whenCheckIfProceedConnection_thenConnectionRefused() {
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "");
-        connectService.validate(ctx, connectMsg);
-
-        verify(channelHandlerContext, times(1)).close();
+        boolean result = connectService.shouldProceedWithConnection(ctx, connectMsg);
+        Assert.assertFalse(result);
     }
 
     @Test
-    public void testGetSessionInfo() {
+    public void givenSessionsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        boolean result = connectService.shouldProceedWithConnection(ctx, connectMsg);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenClientSessionDetails_whenGetSessionInfo_thenReturnExpectedResult() {
         UUID sessionId = UUID.randomUUID();
         String clientId = "clientId";
         MqttConnectMsg msg = getMqttConnectMsg(sessionId, clientId);
