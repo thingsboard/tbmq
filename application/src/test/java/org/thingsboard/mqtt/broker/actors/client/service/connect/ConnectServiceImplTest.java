@@ -184,7 +184,7 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenSessionsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
-        when(rateLimitService.checkSessionsLimit()).thenReturn(false);
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
         boolean result = connectService.shouldProceedWithConnection(ctx, connectMsg);

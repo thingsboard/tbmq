@@ -25,6 +25,6 @@ public interface RateLimitService {
 
     void remove(String clientId);
 
-    boolean checkSessionsLimit();
+    boolean checkSessionsLimit(String clientId);
 
 }

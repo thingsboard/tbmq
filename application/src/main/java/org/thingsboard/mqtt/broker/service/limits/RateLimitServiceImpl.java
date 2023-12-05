@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.RateLimitsConfiguration;
 
@@ -67,7 +68,7 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkSessionsLimit() {
+    public boolean checkSessionsLimit(String clientId) {
         if (sessionsLimit <= 0) {
             return true;
         }
@@ -76,7 +77,8 @@ public class RateLimitServiceImpl implements RateLimitService {
             if (log.isTraceEnabled()) {
                 log.trace("Client sessions count limit detected! Allowed: [{}], current count: [{}]", sessionsLimit, clientSessionsCount);
             }
-            return false;
+            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
+            return clientSessionInfo != null;
         }
         return true;
     }

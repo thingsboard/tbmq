@@ -26,6 +26,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.RateLimitsConfiguration;
 
@@ -95,17 +96,36 @@ public class RateLimitServiceImplTest {
     public void givenNoSessionsLimit_whenCheckSessionsLimit_thenSuccess() {
         rateLimitService.setSessionsLimit(0);
 
-        boolean result = rateLimitService.checkSessionsLimit();
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertTrue(result);
     }
 
     @Test
-    public void givenSessionsLimitSet_whenCheckSessionsLimit_thenFailure() {
+    public void givenSessionsLimitReached_whenCheckSessionsLimit_thenFailure() {
         rateLimitService.setSessionsLimit(1);
         when(clientSessionService.getClientSessionsCount()).thenReturn(1);
 
-        boolean result = rateLimitService.checkSessionsLimit();
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenSessionsLimitNotReached_whenCheckSessionsLimit_thenSuccess() {
+        rateLimitService.setSessionsLimit(5);
+        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenSessionsLimitReached_whenCheckSessionsLimitForExistingClient_thenSuccess() {
+        rateLimitService.setSessionsLimit(1);
+        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(ClientSessionInfo.builder().build());
+
+        boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
+        Assert.assertTrue(result);
     }
 
 }

@@ -255,13 +255,12 @@ public class ConnectServiceImpl implements ConnectService {
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send CONN_ACK response.", ctx.getClientId(), ctx.getSessionId());
         } finally {
-            disconnect(ctx);
+            disconnect(ctx.getClientId(), ctx.getSessionId());
         }
     }
 
-    private void disconnect(ClientSessionCtx clientSessionCtx) {
-        clientMqttActorManager.disconnect(
-                clientSessionCtx.getClientId(), newDisconnectMsg(clientSessionCtx.getSessionId()));
+    private void disconnect(String clientId, UUID sessionId) {
+        clientMqttActorManager.disconnect(clientId, newDisconnectMsg(sessionId));
     }
 
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
@@ -308,12 +307,12 @@ public class ConnectServiceImpl implements ConnectService {
         if (isPersistentClientWithoutClientId(msg)) {
             log.warn("[{}] Client identifier is empty and clean session flag is set to false!", ctx.getSessionId());
             createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx), ctx);
-            disconnect(ctx);
+            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
             return false;
         }
-        if (!rateLimitService.checkSessionsLimit()) {
+        if (!rateLimitService.checkSessionsLimit(msg.getClientIdentifier())) {
             createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx), ctx);
-            disconnect(ctx);
+            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
             return false;
         }
         return true;
