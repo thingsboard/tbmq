@@ -109,7 +109,7 @@ public class DisconnectServiceImplTest {
 
         verify(disconnectService, never()).clearClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, never()).notifyClientDisconnected(clientActorState, 0);
-        verify(disconnectService, never()).closeChannel(ctx);
+        verify(disconnectService, times(1)).closeChannel(ctx);
     }
 
     @Test
