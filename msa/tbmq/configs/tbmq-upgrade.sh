@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 
-function composeVersion() {
+function compose_version() {
   #Checking whether "set -e" shell option should be restored after Compose version check
-  FLAG_SET=false
+  flag_set=false
   if [[ $SHELLOPTS =~ errexit ]]; then
     set +e
-    FLAG_SET=true
+    flag_set=true
   fi
 
   #Checking Compose V1 availability
@@ -44,7 +44,7 @@ function composeVersion() {
 
   echo $COMPOSE_VERSION
 
-  if $FLAG_SET; then set -e; fi
+  if $flag_set; then set -e; fi
 }
 
 set -u
@@ -62,11 +62,8 @@ db_url="jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
 db_username="postgres"
 db_password="postgres"
 
-# Define data directory
-data_dir="$HOME/.tb-mqtt-broker-data/data"
-
-COMPOSE_VERSION=$(composeVersion) || exit $?
-echo 'Docker Compose version is: '$COMPOSE_VERSION
+COMPOSE_VERSION=$(compose_version) || exit $?
+echo "Docker Compose version is: $COMPOSE_VERSION"
 
 docker pull thingsboard/tbmq:$new_version
 
@@ -101,7 +98,7 @@ V2)
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
-    -v $data_dir:/data \
+    -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh
 
@@ -120,7 +117,7 @@ V1)
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
-    -v $data_dir:/data \
+    -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh
 

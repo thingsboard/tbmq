@@ -15,45 +15,49 @@
 # limitations under the License.
 #
 
-set -u
-
-# Function to check if a directory exists
-check_directory_exists() {
-  if [ -d "$1" ]; then
-    return 0
-  else
-    return 1
+function compose_version() {
+  #Checking whether "set -e" shell option should be restored after Compose version check
+  flag_set=false
+  if [[ $SHELLOPTS =~ errexit ]]; then
+    set +e
+    flag_set=true
   fi
+
+  #Checking Compose V1 availability
+  docker-compose version >/dev/null 2>&1
+  if [ $? -eq 0 ]; then status_v1=true; else status_v1=false; fi
+
+  #Checking Compose V2 availability
+  docker compose version >/dev/null 2>&1
+  if [ $? -eq 0 ]; then status_v2=true; else status_v2=false; fi
+
+  COMPOSE_VERSION=""
+
+  if $status_v2; then
+    COMPOSE_VERSION="V2"
+  elif $status_v1; then
+    COMPOSE_VERSION="V1"
+  else
+    echo "Docker Compose plugin is not detected. Please check your environment." >&2
+    exit 1
+  fi
+
+  echo $COMPOSE_VERSION
+
+  if $flag_set; then set -e; fi
 }
 
-# Function to check if all subdirectories are present
-check_subdirectories_exist() {
-  local subdirs=("kafka" "log" "data" "postgres")
-  for subdir in "${subdirs[@]}"; do
-    if ! check_directory_exists "$1/$subdir"; then
-      echo "$subdir directory is missing!"
-      return 1
-    fi
-  done
-  return 0
-}
-
-# Function to check directory permissions
-check_directory_permissions() {
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    local uid_log=$(stat -c "%u" "$1/log")
-    local gid_log=$(stat -c "%g" "$1/log")
-    local uid_data=$(stat -c "%u" "$1/data")
-    local gid_data=$(stat -c "%g" "$1/data")
-    if [[ "$uid_log" == "799" && "$gid_log" == "799" && "$uid_data" == "799" && "$gid_data" == "799" ]]; then
-      return 0
+function create_volume_if_not_exists() {
+    local volume_name=$1
+    if docker volume inspect "$volume_name" >/dev/null 2>&1; then
+        echo "Volume '$volume_name' already exists."
     else
-      return 1
+        docker volume create "$volume_name"
+        echo "Volume '$volume_name' created."
     fi
-  else
-    return 0
-  fi
 }
+
+set -u
 
 # Check if docker-compose.yml is present
 if [ -f "docker-compose.yml" ]; then
@@ -63,44 +67,33 @@ else
   wget https://raw.githubusercontent.com/thingsboard/tbmq/release-1.2.0/msa/tbmq/configs/docker-compose.yml
 fi
 
-# Check if ~/.tb-mqtt-broker-data directory exists
-if check_directory_exists "$HOME/.tb-mqtt-broker-data"; then
-  # Check if all subdirectories are present
-  if check_subdirectories_exist "$HOME/.tb-mqtt-broker-data"; then
-    # Check directory permissions
-    if check_directory_permissions "$HOME/.tb-mqtt-broker-data"; then
-      echo "Directories are present and permissions are correct."
-    else
-      read -r -p "Directory permissions are incorrect. Do you want to correct them? (y/n): " response
-      if [[ "$response" =~ ^[Yy]$ ]]; then
-        echo "Correcting permissions..."
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-          sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
-          sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
-        fi
-        echo "Permissions corrected."
-      else
-        echo "Skipping permission correction."
-      fi
-    fi
-  else
-    echo "Some subdirectories are missing within ~/.tb-mqtt-broker-data. Please create them manually with correct permissions and rerun the script."
-    exit 1
-  fi
+COMPOSE_VERSION=$(compose_version) || exit $?
+echo "Docker Compose version is: $COMPOSE_VERSION"
+
+# Define the string to search for
+search_string="thingsboard/tbmq"
+# Check if the Docker Compose file contains the search_string
+if grep -q "$search_string" docker-compose.yml; then
+    echo "The Docker Compose file is ok, checking volumes..."
 else
-  echo "Creating necessary directories..."
-  mkdir -p "$HOME/.tb-mqtt-broker-data/kafka" "$HOME/.tb-mqtt-broker-data/log" "$HOME/.tb-mqtt-broker-data/data" "$HOME/.tb-mqtt-broker-data/postgres"
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/log"
-    sudo chown -R 799:799 "$HOME/.tb-mqtt-broker-data/data"
-  fi
-  echo "Directories created."
+    echo "The Docker Compose file missing tbmq. Seems the file is invalid for tbmq configuration."
+    exit 1
 fi
 
+create_volume_if_not_exists tbmq-postgres-data
+create_volume_if_not_exists tbmq-kafka-data
+create_volume_if_not_exists tbmq-logs-data
+create_volume_if_not_exists tbmq-data
+
 echo "Starting TBMQ!"
-# Check if "docker-compose" or "docker compose" command should be used
-if command -v docker-compose >/dev/null 2>&1; then
-  docker-compose up -d
-else
+case $COMPOSE_VERSION in
+V2)
   docker compose up -d
-fi
+  ;;
+V1)
+  docker-compose up -d
+  ;;
+*)
+  # unknown option
+  ;;
+esac
