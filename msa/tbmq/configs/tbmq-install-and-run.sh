@@ -48,13 +48,13 @@ function compose_version() {
 }
 
 function create_volume_if_not_exists() {
-    local volume_name=$1
-    if docker volume inspect "$volume_name" >/dev/null 2>&1; then
-        echo "Volume '$volume_name' already exists."
-    else
-        docker volume create "$volume_name"
-        echo "Volume '$volume_name' created."
-    fi
+  local volume_name=$1
+  if docker volume inspect "$volume_name" >/dev/null 2>&1; then
+    echo "Volume '$volume_name' already exists."
+  else
+    docker volume create "$volume_name"
+    echo "Volume '$volume_name' created."
+  fi
 }
 
 set -u
@@ -74,10 +74,10 @@ echo "Docker Compose version is: $COMPOSE_VERSION"
 search_string="thingsboard/tbmq"
 # Check if the Docker Compose file contains the search_string
 if grep -q "$search_string" docker-compose.yml; then
-    echo "The Docker Compose file is ok, checking volumes..."
+  echo "The Docker Compose file is ok, checking volumes..."
 else
-    echo "The Docker Compose file missing tbmq. Seems the file is invalid for tbmq configuration."
-    exit 1
+  echo "The Docker Compose file missing tbmq. Seems the file is invalid for tbmq configuration."
+  exit 1
 fi
 
 create_volume_if_not_exists tbmq-postgres-data
