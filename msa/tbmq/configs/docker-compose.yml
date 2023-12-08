@@ -60,7 +60,7 @@ services:
       SECURITY_MQTT_BASIC_ENABLED: "true"
       #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
     volumes:
-      - tbmq-logs-data:/var/log/thingsboard-mqtt-broker
+      - tbmq-logs:/var/log/thingsboard-mqtt-broker
       - tbmq-data:/data
 
 volumes:
@@ -68,7 +68,7 @@ volumes:
     external: true
   tbmq-kafka-data:
     external: true
-  tbmq-logs-data:
+  tbmq-logs:
     external: true
   tbmq-data:
     external: true
