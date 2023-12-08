@@ -58,10 +58,10 @@ Execute the following command to stop and completely remove deployed docker cont
 In case you want to remove docker volumes for all the containers please execute the following:
 
 ```
-./scripts/docker-delete-volumes.sh
+./scripts/docker-remove-volumes.sh
 ```
 
-**Note:** the above command will remove all your data, so be careful before executing it._
+**Note:** the above command will remove all your data, so be careful before executing it.
 
 It could be useful to update logs (enable DEBUG/TRACE logs) in runtime or change TBMQ or Haproxy configs. In order to do
 this you need to make changes, for example, to the
