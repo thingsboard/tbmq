@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright © 2016-2023 The Thingsboard Authors
 #
@@ -14,27 +15,8 @@
 # limitations under the License.
 #
 
-version: '3.0'
+set -e
+source scripts/compose-utils.sh
+checkVolumes --create
 
-services:
-  # Redis sentinel
-  redis-master:
-    volumes:
-      - redis-sentinel-data-master:/bitnami/redis/data
-  redis-slave:
-    volumes:
-      - redis-sentinel-data-slave:/bitnami/redis/data
-  redis-sentinel:
-    volumes:
-      - redis-sentinel-data-sentinel:/bitnami/redis/data
-
-volumes:
-  redis-sentinel-data-master:
-    external:
-      name: ${REDIS_SENTINEL_DATA_VOLUME_MASTER}
-  redis-sentinel-data-slave:
-    external:
-      name: ${REDIS_SENTINEL_DATA_VOLUME_SLAVE}
-  redis-sentinel-data-sentinel:
-    external:
-      name: ${REDIS_SENTINEL_DATA_VOLUME_SENTINEL}
+scripts/docker-refresh-config.sh

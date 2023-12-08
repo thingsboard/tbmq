@@ -14,29 +14,34 @@
 # limitations under the License.
 #
 
-version: '3.0'
+version: "3.0"
 
 services:
   # Redis standalone
   redis:
     restart: always
+    container_name: "${REDIS_NAME}"
     image: bitnami/redis:7.0
     environment:
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
       ALLOW_EMPTY_PASSWORD: "yes"
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
-      - ./tb-mqtt-broker/redis-data:/bitnami/redis/data
+      - redis-data:/bitnami/redis/data
 
   # TBMQ setup to use redis-standalone
-  tb-mqtt-broker-1:
+  tbmq1:
     env_file:
       - cache-redis.env
     depends_on:
       - redis
-  tb-mqtt-broker-2:
+  tbmq2:
     env_file:
       - cache-redis.env
     depends_on:
       - redis
+
+volumes:
+  redis-data:
+    external: true
