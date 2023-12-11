@@ -62,7 +62,7 @@ if (Test-Path "docker-compose.yml") {
     Write-Host "docker-compose.yml is already present in the current directory. Skipping download."
 } else {
     Write-Host "docker-compose.yml is absent in the current directory. Downloading the file..."
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/feature/installation-improvements/msa/tbmq/configs/docker-compose.yml" -OutFile "docker-compose.yml"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/main/msa/tbmq/configs/docker-compose.yml" -OutFile "docker-compose.yml"
 }
 
 $COMPOSE_VERSION = compose_version
