@@ -23,7 +23,7 @@ COMPOSE_VERSION=$(composeVersion) || exit $?
 
 ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
 
-checkFolders --create || exit $?
+checkVolumes
 
 COMPOSE_ARGS="\
       --env-file ./.env \

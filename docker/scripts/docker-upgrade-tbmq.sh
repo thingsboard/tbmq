@@ -46,13 +46,13 @@ ADDITIONAL_CACHE_ARGS=$(additionalComposeCacheArgs) || exit $?
 
 ADDITIONAL_STARTUP_SERVICES=$(additionalStartupServices) || exit $?
 
-checkFolders --create || exit $?
+checkVolumes
 
 COMPOSE_ARGS_PULL="\
       --env-file ./.env \
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
       pull \
-      tb-mqtt-broker-1"
+      tbmq1"
 
 COMPOSE_ARGS_UP="\
       --env-file ./.env \
@@ -63,7 +63,7 @@ COMPOSE_ARGS_RUN="\
       --env-file ./.env \
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
       run --no-deps --rm -e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} \
-      tb-mqtt-broker-1"
+      tbmq1"
 
 case $COMPOSE_VERSION in
     V2)

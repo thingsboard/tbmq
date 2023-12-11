@@ -14,51 +14,62 @@
 # limitations under the License.
 #
 
-version: '3.0'
+version: "3.0"
 
 services:
   # Redis sentinel
   redis-master:
-    image: 'bitnami/redis:7.0'
+    container_name: "${REDIS_MASTER_NAME}"
+    image: "bitnami/redis:7.0"
     volumes:
-      - ./tb-mqtt-broker/redis-sentinel-data-master:/bitnami/redis/data
+      - redis-sentinel-data-master:/bitnami/redis/data
     environment:
-      - 'REDIS_REPLICATION_MODE=master'
-      - 'REDIS_PASSWORD=thingsboard'
+      - "REDIS_REPLICATION_MODE=master"
+      - "REDIS_PASSWORD=thingsboard"
 
   redis-slave:
-    image: 'bitnami/redis:7.0'
+    container_name: "${REDIS_SLAVE_NAME}"
+    image: "bitnami/redis:7.0"
     volumes:
-      - ./tb-mqtt-broker/redis-sentinel-data-slave:/bitnami/redis/data
+      - redis-sentinel-data-slave:/bitnami/redis/data
     environment:
-      - 'REDIS_REPLICATION_MODE=slave'
-      - 'REDIS_MASTER_HOST=redis-master'
-      - 'REDIS_MASTER_PASSWORD=thingsboard'
-      - 'REDIS_PASSWORD=thingsboard'
+      - "REDIS_REPLICATION_MODE=slave"
+      - "REDIS_MASTER_HOST=redis-master"
+      - "REDIS_MASTER_PASSWORD=thingsboard"
+      - "REDIS_PASSWORD=thingsboard"
     depends_on:
       - redis-master
 
   redis-sentinel:
-    image: 'bitnami/redis-sentinel:7.0'
+    container_name: "${REDIS_SENTINEL_NAME}"
+    image: "bitnami/redis-sentinel:7.0"
     volumes:
-      - ./tb-mqtt-broker/redis-sentinel-data-sentinel:/bitnami/redis/data
+      - redis-sentinel-data-sentinel:/bitnami/redis/data
     environment:
-      - 'REDIS_MASTER_HOST=redis-master'
-      - 'REDIS_MASTER_SET=mymaster'
-      - 'REDIS_SENTINEL_PASSWORD=sentinel'
-      - 'REDIS_MASTER_PASSWORD=thingsboard'
+      - "REDIS_MASTER_HOST=redis-master"
+      - "REDIS_MASTER_SET=mymaster"
+      - "REDIS_SENTINEL_PASSWORD=sentinel"
+      - "REDIS_MASTER_PASSWORD=thingsboard"
     depends_on:
       - redis-master
       - redis-slave
 
   # TBMQ setup to use redis-sentinel
-  tb-mqtt-broker-1:
+  tbmq1:
     env_file:
       - cache-redis-sentinel.env
     depends_on:
       - redis-sentinel
-  tb-mqtt-broker-2:
+  tbmq2:
     env_file:
       - cache-redis-sentinel.env
     depends_on:
       - redis-sentinel
+
+volumes:
+  redis-sentinel-data-master:
+    external: true
+  redis-sentinel-data-slave:
+    external: true
+  redis-sentinel-data-sentinel:
+    external: true

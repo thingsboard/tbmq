@@ -15,11 +15,12 @@
 #
 
 
-version: '3.0'
+version: "3.0"
 
 services:
   postgres:
     restart: always
+    container_name: "${POSTGRES_NAME}"
     image: "postgres:15"
     ports:
       - "5432"
@@ -27,29 +28,20 @@ services:
       POSTGRES_DB: thingsboard_mqtt_broker
       POSTGRES_PASSWORD: postgres
     volumes:
-      - ./tb-mqtt-broker/postgres:/var/lib/postgresql/data
-  zookeeper:
-    restart: always
-    image: "bitnami/zookeeper:3.8"
-    ports:
-      - "2181:2181"
-    environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
-    volumes:
-      - ./tb-mqtt-broker/zookeeper:/bitnami/zookeeper
+      - tbmq-postgres-data:/var/lib/postgresql/data
   kafka:
     restart: always
-    image: "bitnami/kafka:3.4"
+    container_name: "${KAFKA_NAME}"
+    image: "bitnami/kafka:3.5.1"
     ports:
-      - "9092:9092"
+      - "9092"
     env_file:
       - kafka.env
-    depends_on:
-      - zookeeper
     volumes:
-      - ./tb-mqtt-broker/kafka:/bitnami/kafka
-  tb-mqtt-broker-1:
+      - tbmq-kafka-data:/bitnami/kafka
+  tbmq1:
     restart: always
+    container_name: "${TBMQ_1_NAME}"
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"
     ports:
       - "1883"
@@ -60,18 +52,19 @@ services:
         max-size: "200m"
         max-file: "30"
     environment:
-      TB_SERVICE_ID: tb-mqtt-broker-1
+      TB_SERVICE_ID: tbmq1
       #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:
-      - ./tb-mqtt-broker/conf:/config
-      - ./tb-mqtt-broker/log:/var/log/thingsboard-mqtt-broker
+      - tbmq-config:/config
+      - tbmq1-logs:/var/log/thingsboard-mqtt-broker
     depends_on:
       - postgres
       - kafka
-  tb-mqtt-broker-2:
+  tbmq2:
     restart: always
+    container_name: "${TBMQ_2_NAME}"
     image: "${DOCKER_REPO}/${DOCKER_NAME}:${TBMQ_VERSION}"
     ports:
       - "1883"
@@ -82,24 +75,24 @@ services:
         max-size: "200m"
         max-file: "30"
     environment:
-      TB_SERVICE_ID: tb-mqtt-broker-2
+      TB_SERVICE_ID: tbmq2
       #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-broker.env
     volumes:
-      - ./tb-mqtt-broker/conf:/config
-      - ./tb-mqtt-broker/log:/var/log/thingsboard-mqtt-broker
+      - tbmq-config:/config
+      - tbmq2-logs:/var/log/thingsboard-mqtt-broker
     depends_on:
       - postgres
       - kafka
   haproxy:
     restart: always
     container_name: "${LOAD_BALANCER_NAME}"
-    image: thingsboard/haproxy-certbot:1.3.0
+    image: thingsboard/haproxy-certbot:2.2.31-alpine3.18
     volumes:
-      - ./haproxy/config:/config
-      - ./haproxy/letsencrypt:/etc/letsencrypt
-      - ./haproxy/certs.d:/usr/local/etc/haproxy/certs.d
+      - tbmq-haproxy-config:/config
+      - tbmq-haproxy-letsencrypt:/etc/letsencrypt
+      - tbmq-haproxy-certs-d:/usr/local/etc/haproxy/certs.d
     ports:
       - "8083:8083"
       - "443:443"
@@ -112,5 +105,23 @@ services:
       MQTT_PORT: 1883
       FORCE_HTTPS_REDIRECT: "false"
     links:
-      - tb-mqtt-broker-1
-      - tb-mqtt-broker-2
+      - tbmq1
+      - tbmq2
+
+volumes:
+  tbmq-postgres-data:
+    external: true
+  tbmq-kafka-data:
+    external: true
+  tbmq1-logs:
+    external: true
+  tbmq2-logs:
+    external: true
+  tbmq-config:
+    external: true
+  tbmq-haproxy-config:
+    external: true
+  tbmq-haproxy-letsencrypt:
+    external: true
+  tbmq-haproxy-certs-d:
+    external: true

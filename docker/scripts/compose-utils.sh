@@ -15,6 +15,31 @@
 # limitations under the License.
 #
 
+readonly REDIS_VOLUME="redis-data"
+readonly REDIS_CLUSTER_VOLUMES=(
+  "redis-cluster-data-0"
+  "redis-cluster-data-1"
+  "redis-cluster-data-2"
+  "redis-cluster-data-3"
+  "redis-cluster-data-4"
+  "redis-cluster-data-5"
+)
+readonly REDIS_SENTINEL_VOLUMES=(
+  "redis-sentinel-data-master"
+  "redis-sentinel-data-slave"
+  "redis-sentinel-data-sentinel"
+)
+readonly MY_VOLUMES=(
+  "tbmq-postgres-data"
+  "tbmq-kafka-data"
+  "tbmq1-logs"
+  "tbmq2-logs"
+  "tbmq-config"
+  "tbmq-haproxy-config"
+  "tbmq-haproxy-letsencrypt"
+  "tbmq-haproxy-certs-d"
+)
+
 function additionalComposeCacheArgs() {
   source .env
   CACHE_COMPOSE_ARGS=""
@@ -61,39 +86,120 @@ function additionalStartupServices() {
   echo $ADDITIONAL_STARTUP_SERVICES
 }
 
-function permissionList() {
-  PERMISSION_LIST="
-      799  799  tb-mqtt-broker/log
-      999  999  tb-mqtt-broker/postgres
-      1001  1001  tb-mqtt-broker/kafka
-      1001  1001  tb-mqtt-broker/zookeeper
-      "
+function volume_exists() {
+  docker volume inspect $1 &>/dev/null
+}
 
+function delete_volume() {
+  docker volume rm $1
+}
+
+function checkVolumes() {
+  # Source environment variables
   source .env
 
-  CACHE="${CACHE:-redis}"
+  if [[ "$1" == "--create" ]]; then
+    case $CACHE in
+    redis)
+      if ! volume_exists $REDIS_VOLUME; then
+        docker volume create $REDIS_VOLUME
+      fi
+      ;;
+    redis-cluster)
+      for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+        if ! volume_exists $volume; then
+          docker volume create $volume
+        fi
+      done
+      ;;
+    redis-sentinel)
+      for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+        if ! volume_exists $volume; then
+          docker volume create $volume
+        fi
+      done
+      ;;
+    *)
+      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+      exit 1
+      ;;
+    esac
+  else
+    case $CACHE in
+    redis)
+      if ! volume_exists $REDIS_VOLUME; then
+        echo "Volume $REDIS_VOLUME is absent." >&2
+        exit 1
+      fi
+      ;;
+    redis-cluster)
+      for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+        if ! volume_exists $volume; then
+          echo "Volume $volume is absent." >&2
+          exit 1
+        fi
+      done
+      ;;
+    redis-sentinel)
+      for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+        if ! volume_exists $volume; then
+          echo "Volume $volume is absent." >&2
+          exit 1
+        fi
+      done
+      ;;
+    *)
+      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+      exit 1
+      ;;
+    esac
+  fi
+
+  # Create additional volumes if needed
+  for volume in "${MY_VOLUMES[@]}"; do
+    if [[ "$1" == "--create" ]]; then
+      if ! volume_exists $volume; then
+        docker volume create $volume
+      fi
+    else
+      if ! volume_exists $volume; then
+        echo "Volume $volume is absent." >&2
+        exit 1
+      fi
+    fi
+  done
+
+  # Display a message if volumes are present and no --create flag provided
+  if [[ "$1" != "--create" ]]; then
+    echo "All volumes are present."
+  fi
+}
+
+function deleteVolumes() {
+  source .env
+
+  function delete_if_exists() {
+    local volume_name=$1
+    if volume_exists "$volume_name"; then
+      if ! delete_volume "$volume_name"; then
+        echo "Failed to delete volume: $volume_name" >&2
+      fi
+    fi
+  }
+
   case $CACHE in
   redis)
-    PERMISSION_LIST="$PERMISSION_LIST
-          1001 1001 tb-mqtt-broker/redis-data
-          "
+    delete_if_exists "$REDIS_VOLUME"
     ;;
   redis-cluster)
-    PERMISSION_LIST="$PERMISSION_LIST
-          1001 1001 tb-mqtt-broker/redis-cluster-data-0
-          1001 1001 tb-mqtt-broker/redis-cluster-data-1
-          1001 1001 tb-mqtt-broker/redis-cluster-data-2
-          1001 1001 tb-mqtt-broker/redis-cluster-data-3
-          1001 1001 tb-mqtt-broker/redis-cluster-data-4
-          1001 1001 tb-mqtt-broker/redis-cluster-data-5
-          "
+    for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+      delete_if_exists "$volume"
+    done
     ;;
   redis-sentinel)
-    PERMISSION_LIST="$PERMISSION_LIST
-          1001 1001 tb-mqtt-broker/redis-sentinel-data-master
-          1001 1001 tb-mqtt-broker/redis-sentinel-data-slave
-          1001 1001 tb-mqtt-broker/redis-sentinel-data-sentinel
-          "
+    for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+      delete_if_exists "$volume"
+    done
     ;;
   *)
     echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
@@ -101,33 +207,10 @@ function permissionList() {
     ;;
   esac
 
-  echo "$PERMISSION_LIST"
-}
-
-function checkFolders() {
-  EXIT_CODE=0
-  PERMISSION_LIST=$(permissionList) || exit $?
-  set -e
-  while read -r USR GRP DIR; do
-    if [ -z "$DIR" ]; then # skip empty lines
-      continue
-    fi
-    MESSAGE="Checking user ${USR} group ${GRP} dir ${DIR}"
-    if [[ -d "$DIR" ]] &&
-      [[ $(ls -ldn "$DIR" | awk '{print $3}') -eq "$USR" ]] &&
-      [[ $(ls -ldn "$DIR" | awk '{print $4}') -eq "$GRP" ]]; then
-      MESSAGE="$MESSAGE OK"
-    else
-      if [ "$1" = "--create" ]; then
-        echo "Create and chown: user ${USR} group ${GRP} dir ${DIR}"
-        mkdir -p "$DIR" && sudo chown -R "$USR":"$GRP" "$DIR"
-      else
-        echo "$MESSAGE FAILED"
-        EXIT_CODE=1
-      fi
-    fi
-  done < <(echo "$PERMISSION_LIST")
-  return $EXIT_CODE
+  # Delete other volumes
+  for volume in "${MY_VOLUMES[@]}"; do
+    delete_if_exists "$volume"
+  done
 }
 
 function composeVersion() {

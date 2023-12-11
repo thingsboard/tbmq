@@ -1,17 +1,3 @@
-tb-mqtt-broker/log/**
-tb-mqtt-broker/postgres/**
-tb-mqtt-broker/redis-cluster-data-0/**
-tb-mqtt-broker/redis-cluster-data-1/**
-tb-mqtt-broker/redis-cluster-data-2/**
-tb-mqtt-broker/redis-cluster-data-3/**
-tb-mqtt-broker/redis-cluster-data-4/**
-tb-mqtt-broker/redis-cluster-data-5/**
-tb-mqtt-broker/redis-sentinel-data-master/**
-tb-mqtt-broker/redis-sentinel-data-slave/**
-tb-mqtt-broker/redis-sentinel-data-sentinel/**
-tb-mqtt-broker/redis-data/**
-tb-mqtt-broker/kafka/**
-tb-mqtt-broker/zookeeper/**
 !.env
 */.idea/**
 .idea/**

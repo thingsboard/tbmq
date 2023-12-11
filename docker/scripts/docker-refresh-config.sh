@@ -14,14 +14,8 @@
 # limitations under the License.
 #
 
-version: '3.0'
+set -e
 
-services:
-  redis:
-    volumes:
-      - redis-data:/bitnami/redis/data
+docker run --rm -v tbmq-config:/config -v ./tb-mqtt-broker/conf:/src-config busybox sh -c "cp /src-config/* /config"
 
-volumes:
-  redis-data:
-    external:
-      name: ${REDIS_DATA_VOLUME}
+docker run --rm -v tbmq-haproxy-config:/config -v ./haproxy/config:/src-config busybox sh -c "cp /src-config/haproxy.cfg /config"

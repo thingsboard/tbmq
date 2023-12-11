@@ -17,4 +17,4 @@
 
 set -e
 source scripts/compose-utils.sh
-checkFolders --create
+deleteVolumes
