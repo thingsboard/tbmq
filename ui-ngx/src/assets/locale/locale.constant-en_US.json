@@ -17,6 +17,7 @@
     "saveAs": "Save as",
     "skip": "Skip",
     "cancel": "Cancel",
+    "clear": "Clear",
     "ok": "OK",
     "delete": "Delete",
     "add": "Add",
@@ -66,7 +67,8 @@
     "open": "Open",
     "next": "Next",
     "next-with-label": "Next: {{label}}",
-    "dont-show-again": "Do not show again"
+    "dont-show-again": "Do not show again",
+    "set": "Set"
   },
   "admin": {
     "admins": "Admins",
@@ -813,18 +815,6 @@
       "correlation-data": "Correlation Data",
       "correlation-data-hint": "The Correlation Data is used by the sender of the Request Message to identify which request the Response Message is for when it is received",
       "user-properties": "User Properties"
-    },
-    "subscription": {
-      "topic": "Topic",
-      "subscription": "Subscription",
-      "rh": "Retain Handling MQTT 5.0",
-      "rh-hint": "Specifies whether retained messages are sent when the subscription is established",
-      "nl": "No Local MQTT 5.0",
-      "nl-hint": "If the value is true, Application Messages MUST NOT be forwarded to a connection with a ClientID equal to the ClientID of the publishing connection",
-      "rap": "Retain as Published MQTT 5.0 flag",
-      "rap-hint": "If true, Application Messages forwarded using this subscription keep the RETAIN flag they were published with. If false, Application Messages forwarded using this subscription have the RETAIN flag set to 0.",
-      "subscription-identifier": "Subscription Identifier",
-      "color": "Color"
     }
   },
   "ws-client": {
@@ -846,7 +836,17 @@
     "subscriptions": {
       "add-subscription": "Add Subscription",
       "delete-subscription": "Delete Subscription",
-      "subscriptions": "Subscriptions"
+      "subscriptions": "Subscriptions",
+      "topic": "Topic",
+      "subscription": "Subscription",
+      "rh": "Retain Handling MQTT 5.0",
+      "rh-hint": "Specifies whether retained messages are sent when the subscription is established",
+      "nl": "No Local MQTT 5.0 flag",
+      "nl-hint": "If the value is true, Application Messages MUST NOT be forwarded to a connection with a ClientID equal to the ClientID of the publishing connection",
+      "rap": "Retain as Published MQTT 5.0 flag",
+      "rap-hint": "If true, Application Messages forwarded using this subscription keep the RETAIN flag they were published with. If false, Application Messages forwarded using this subscription have the RETAIN flag set to 0.",
+      "subscription-identifier": "Subscription Identifier",
+      "color": "Color"
     }
   }
 }

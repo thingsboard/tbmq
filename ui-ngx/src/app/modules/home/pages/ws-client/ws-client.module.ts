@@ -25,6 +25,7 @@ import { ConnectionsComponent } from '@home/pages/ws-client/connections.componen
 import { WsClientConnectionDialogComponent } from '@home/pages/ws-client/ws-client-connection-dialog.component';
 import { MessagesComponent } from '@home/pages/ws-client/messages.component';
 import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.component';
+import { WsClientSubscriptionDialogComponent } from '@home/components/client-credentials-templates/ws-client-subscription-dialog.component';
 
 @NgModule({
   declarations: [
@@ -32,6 +33,7 @@ import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.co
     WsClientMessangerComponent,
     ConnectionsComponent,
     WsClientConnectionDialogComponent,
+    WsClientSubscriptionDialogComponent,
     MessagesComponent,
     WsClientTableComponent
   ],
@@ -42,7 +44,8 @@ import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.co
     WsClientRoutingModule
   ],
   exports: [
-    WsClientConnectionDialogComponent
+    WsClientConnectionDialogComponent,
+    WsClientSubscriptionDialogComponent
   ]
 })
 

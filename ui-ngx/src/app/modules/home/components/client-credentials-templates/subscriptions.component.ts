@@ -19,6 +19,12 @@ import { FormBuilder, } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import { Connection } from '@shared/models/ws-client.model';
+import { isDefinedAndNotNull } from '@core/utils';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  AddWsClientSubscriptionDialogData,
+  WsClientSubscriptionDialogComponent
+} from '@home/components/client-credentials-templates/ws-client-subscription-dialog.component';
 
 @Component({
   selector: 'tb-ws-client-subscriptions',
@@ -34,6 +40,7 @@ export class SubscriptionsComponent {
 
   constructor(public fb: FormBuilder,
               public cd: ChangeDetectorRef,
+              private dialog: MatDialog,
               private wsClientService: WsClientService,
               private translate: TranslateService) {
     /*wsClientService.getSubscriptions().subscribe(res => {
@@ -50,11 +57,23 @@ export class SubscriptionsComponent {
           );
         }
       }
-    )
+    );
   }
 
   addSubscription() {
-
+    const data = {
+      subscription: null
+    };
+    this.dialog.open<WsClientSubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(WsClientSubscriptionDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data
+    }).afterClosed()
+      .subscribe((res) => {
+        if (isDefinedAndNotNull(res)) {
+          this.wsClientService.addSubscription(res);
+        }
+      });
   }
 
   editSubscription(subscription) {
