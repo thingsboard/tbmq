@@ -17,12 +17,13 @@
 @import '../theme.scss';
 
 $primary-color: rgba(mat.get-color-from-palette($tb-primary, 50), 0.4);
-$border: 1px solid mat.get-color-from-palette($tb-primary);
+$border: 1px solid rgba(0,0,0,0.15);
+
 
 :host {
-  .tb-alarm-comments {
-    background-color: $primary-color;
-    max-width: 600px;
+  .tb-ws-client-messages {
+    //background-color: $primary-color;
+    //max-width: 600px;
     width: 100%;
 
     .comment-input {
@@ -115,8 +116,8 @@ $border: 1px solid mat.get-color-from-palette($tb-primary);
 
     .comments-container {
       border: $border;
-      border-top: none;
-      border-radius: 0px 0px 8px 8px;
+      border-radius: 8px;
+      overflow: auto;
 
       &.activity-only {
         border: none;
@@ -128,7 +129,40 @@ $border: 1px solid mat.get-color-from-palette($tb-primary);
       }
     }
 
+    .comment-container {
+      max-width: 50%;
+    }
+
+    .sub-message {
+      border: 1px solid rgba(0,0,0,0.16);
+      border-radius: 8px 8px 8px 0;
+      background-color: rgba(0,0,0,0.03);
+    }
+    .sub-message-container {
+      align-self: flex-start;
+    }
+    .sub-message-time {
+      text-align: start;
+    }
+
+    .pub-message {
+      border: 1px solid rgba(31,139,77,0.16);
+      border-radius: 8px 8px 0 8px;
+      background-color: rgba(31,139,77,0.08);
+    }
+    .pub-message-container {
+      align-self: flex-end;
+    }
+    .pub-message-time {
+      text-align: end;
+    }
+
+    .message-container {
+      max-width: 100%;
+    }
+
     .user-comment {
+      overflow: auto;
       padding: 4px;
       border-radius: 8px;
       &:hover {
@@ -137,10 +171,10 @@ $border: 1px solid mat.get-color-from-palette($tb-primary);
     }
 
     .user-avatar {
-      width: 28px;
-      min-width: 28px;
-      height: 28px;
-      min-height: 28px;
+      width: 14px;
+      min-width: 14px;
+      height: 14px;
+      min-height: 14px;
       border-radius: 50%;
       font-weight: 700;
       color: white;
@@ -166,13 +200,6 @@ $border: 1px solid mat.get-color-from-palette($tb-primary);
       }
     }
 
-    .system-comment {
-      margin-left: 38px;
-      @media #{$mat-xs} {
-        margin-left: 0;
-      }
-    }
-
     .system-text {
       font-weight: 500;
       font-size: 14px;
@@ -181,7 +208,7 @@ $border: 1px solid mat.get-color-from-palette($tb-primary);
     }
 
     .text {
-      white-space: pre-line;
+      white-space: pre;
       word-break: break-word;
       font-size: 16px;
       letter-spacing: 0.15px;

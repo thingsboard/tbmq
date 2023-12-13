@@ -18,22 +18,31 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routing.module';
-import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
 import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
-import { ClientMessangerComponent } from '@home/pages/ws-client/client-messanger.component';
+import { WsClientMessangerComponent } from '@home/pages/ws-client/ws-client-messanger.component';
+import { ConnectionsComponent } from '@home/pages/ws-client/connections.component';
+import { WsClientConnectionDialogComponent } from '@home/pages/ws-client/ws-client-connection-dialog.component';
+import { MessagesComponent } from '@home/pages/ws-client/messages.component';
+import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.component';
 
 @NgModule({
   declarations: [
     WsClientComponent,
-    ClientMessangerComponent
+    WsClientMessangerComponent,
+    ConnectionsComponent,
+    WsClientConnectionDialogComponent,
+    MessagesComponent,
+    WsClientTableComponent
   ],
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
     WsClientRoutingModule
+  ],
+  exports: [
+    WsClientConnectionDialogComponent
   ]
 })
 

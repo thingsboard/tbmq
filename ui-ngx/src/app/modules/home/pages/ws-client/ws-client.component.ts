@@ -16,106 +16,87 @@
 
 // @ts-nocheck
 
-import { ChangeDetectorRef, Component } from '@angular/core';
-import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
-import { forkJoin, Observable, Subject, timer } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
-import { TimeService } from '@core/services/time.service';
-import { chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
-import { share, switchMap, takeUntil } from 'rxjs/operators';
-import {
-  chartJsParams,
-  ChartPage,
-  ChartTooltipTranslationMap,
-  getColor,
-  ONLY_TOTAL_KEYS,
-  StatsChartType,
-  StatsChartTypeTranslationMap,
-  TimeseriesData,
-  TOTAL_KEY
-} from '@shared/models/chart.model';
+import { Component } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import Chart from 'chart.js/auto';
-import 'chartjs-adapter-moment';
-import Zoom from 'chartjs-plugin-zoom';
-import { POLLING_INTERVAL } from '@shared/models/home-page.model';
-import { ActivatedRoute } from '@angular/router';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-
-Chart.register([Zoom]);
+import { WsClientService } from '@core/http/ws-client.service';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  WsClientConnectionDialogComponent,
+  AddWsClientConnectionDialogData
+} from '@home/pages/ws-client/ws-client-connection-dialog.component';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
-  selector: 'tb-monitoring',
+  selector: 'tb-ws-client',
   templateUrl: './ws-client.component.html',
   styleUrls: ['./ws-client.component.scss']
 })
 export class WsClientComponent extends PageComponent {
 
-  clients = [];
-  subscriptions = [];
-  client;
-  subscription;
-  clientForm: UntypedFormGroup;
-  subscriptionForm: UntypedFormGroup;
-  selectedTabIndex: 0;
+  clients:any = [];
+  client: any;
 
-  private destroy$ = new Subject();
+  subscriptions: any = [];
+  subscription: any;
 
   constructor(protected store: Store<AppState>,
-              private translate: TranslateService,
-              private cd: ChangeDetectorRef,
-              private fb: UntypedFormBuilder,
-              private route: ActivatedRoute) {
+              private dialog: MatDialog,
+              private wsClientService: WsClientService) {
     super(store);
-    // this.clients.push(this.client);
-    this.clientForm = this.fb.group({
-      name: [null, [Validators.required]],
-      uri: ['ws://', [Validators.required]],
-      host: [window.location.hostname + ":", [Validators.required]],
-      port: ['8084', [Validators.required]],
-      path: ['/mqtt', [Validators.required]],
-      clientId: ['tbmq_dev', [Validators.required]],
-      username: ['tbmq_dev', [Validators.required]],
-      password: ['tbmq_dev', [Validators.required]]
-    });
-    this.subscriptionForm = this.fb.group({
-      qos: [1, [Validators.required]],
-      topic: ['testtopic/#', [Validators.required]],
-      retain: [true, [Validators.required]]
+    this.wsClientService.allConnections$.subscribe(value => {
+      this.clients = value;
+    })
+    this.wsClientService.getConnections().subscribe(value => {
+      const data = value.data;
+      this.clients = data;
+      if (data?.length) {
+        this.client = data[0];
+      } else {
+        this.client = null;
+      }
     });
   }
 
-  connectClient() {
-    this.client = this.clientForm.getRawValue();
-    this.clients.push(this.clientForm.getRawValue());
+  addConnection() {
+    const data = {
+      connection: {
+        "name": "Works 33",
+        "uri": "ws://",
+        "host": "localhost:",
+        "port": 8084,
+        "path": "/mqtt",
+        "clientId": null,
+        "username": null,
+        "password": "tbmq_dev",
+        "keepAlive": 60,
+        "reconnectPeriod": 1000,
+        "connectTimeout": 30000,
+        "clean": true,
+        "protocolVersion": "5",
+        "properties": {
+          "sessionExpiryInterval": null,
+          "receiveMaximum": null,
+          "maximumPacketSize": null,
+          "topicAliasMaximum": null,
+          "requestResponseInformation": null,
+          "requestProblemInformation": null,
+          "userProperties": null
+        },
+        "userProperties": null,
+        "will": null
+      }
+    };
+    this.dialog.open<WsClientConnectionDialogComponent, AddWsClientConnectionDialogData>(WsClientConnectionDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data
+    }).afterClosed()
+      .subscribe((res) => {
+        if (isDefinedAndNotNull(res)) {
+          this.wsClientService.addConnection(res);
+        }
+      });
   }
-
-  saveClient() {
-  }
-
-  createSubscription() {
-    this.subscription = this.subscriptionForm.getRawValue();
-    this.subscriptions.push(this.subscriptionForm.getRawValue());
-  }
-
-  changeSubscription(subsciption){
-    this.subscription = subsciption;
-  }
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  onTabChanged(ev) {
-    const clientId = ev.tab.textLabel;
-    const client = this.clients[ev.index];
-    this.clientForm.patchValue(client);
-    this.client = client;
-    console.log('ev', ev);
-  }
-
 }

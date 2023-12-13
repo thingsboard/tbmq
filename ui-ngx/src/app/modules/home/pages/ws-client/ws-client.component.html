@@ -15,177 +15,33 @@
     limitations under the License.
 
 -->
-<!--mat-toolbar class="mat-elevation-z2">
-  <button mat-button color="primary"
-          (click)="pubMessage()"
-          type="button"
-          [disabled]="(isLoading$ | async)"
-          cdkFocusInitial>
-    {{ 'ws-client.publish' | translate }}
-  </button>
-  <button mat-button color="primary"
-          (click)="subMessage()"
-          type="button"
-          [disabled]="(isLoading$ | async)"
-          cdkFocusInitial>
-    {{ 'ws-client.subscribe' | translate }}
-  </button>
-</mat-toolbar>-->
-<div fxFlex fxLayout="column" fxLayoutGap="8px">
-  <div fxFlex fxLayout="row" fxLayoutAlign="start center" *ngIf="clients">
-    <div class="mat-padding">
-      <mat-tab-group style="height: 50px" dynamicHeight mat-stretch-tabs="false" mat-align-tabs="start"
-                     color="primary"
-                     (selectedTabChange)="onTabChanged($event);"
-                     [(selectedIndex)]="selectedTabIndex">
-        <ng-container >
-          <mat-tab *ngFor="let CL of clients" label="{{ CL.name }}"></mat-tab>
-        </ng-container>
-      </mat-tab-group>
-    </div>
-  </div>
-  <div fxFlex fxLayout="columm">
-    <div fxFlex fxLayout="row" class="mat-padding" fxLayoutGap="16px">
-      <div fxFlex fxLayout="column" fxLayoutGap="16px" class="mat-padding">
-        <div fxLayout="column">
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>
-                <span class="mat-headline-5" translate>Connection</span>
-              </mat-card-title>
-              <span fxFlex></span>
-              <div tb-help="outgoingMailSettings"></div>
-            </mat-card-header>
-            <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-            </mat-progress-bar>
-            <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
-            <mat-card-content style="padding-top: 16px;">
-              <fieldset class="fields-group" fxLayout="column">
-                <legend class="group-title" translate>Client</legend>
-                <section>
-                  <form [formGroup]="clientForm">
-                    <fieldset [disabled]="(isLoading$ | async)">
-                      <mat-form-field class="mat-block">
-                        <mat-label translate>name</mat-label>
-                        <input matInput formControlName="name">
-                      </mat-form-field>
-                      <section fxFlex fxLayout="row" fxLayoutGap="8px">
-                        <mat-form-field fxFlex class="mat-block">
-                          <mat-label translate>uri</mat-label>
-                          <mat-select formControlName="uri">
-                            <mat-option value="ws://">ws://</mat-option>
-                            <mat-option value="wss://">wss://</mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        <mat-form-field fxFlex class="mat-block">
-                          <mat-label translate>host</mat-label>
-                          <input matInput formControlName="host">
-                        </mat-form-field>
-                      </section>
-                      <section fxFlex fxLayout="row" fxLayoutGap="8px">
-                        <mat-form-field fxFlex class="mat-block">
-                          <mat-label translate>port</mat-label>
-                          <input matInput formControlName="port">
-                        </mat-form-field>
-                        <mat-form-field fxFlex class="mat-block">
-                          <mat-label translate>path</mat-label>
-                          <input matInput formControlName="path">
-                        </mat-form-field>
-                      </section>
-                      <mat-form-field class="mat-block">
-                        <mat-label translate>client-id</mat-label>
-                        <input matInput formControlName="clientId">
-                      </mat-form-field>
-                      <mat-form-field class="mat-block">
-                        <mat-label translate>username</mat-label>
-                        <input matInput formControlName="username">
-                      </mat-form-field>
-                      <mat-form-field class="mat-block">
-                        <mat-label translate>password</mat-label>
-                        <input matInput formControlName="password" type="password">
-                      </mat-form-field>
-                    </fieldset>
-                  </form>
-                </section>
-              </fieldset>
-              <div fxLayout="row" fxLayoutAlign="end center" fxLayout.xs="column" fxLayoutAlign.xs="end" fxLayoutGap="16px">
-                <button mat-raised-button color="primary"
-                        [disabled]="true"
-                        (click)="saveClient()">
-                  <mat-icon>check</mat-icon>
-                  {{ 'Save Client' | translate }}
-                </button>
-                <button mat-raised-button color="primary"
-                        [disabled]="clientForm.invalid"
-                        (click)="connectClient()">
-                  <mat-icon>add_circle_outline</mat-icon>
-                  {{ 'Add Client' | translate }}
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
+<ng-container *ngIf="clients?.length; else noConnections">
+  <ng-container *ngTemplateOutlet="connections"></ng-container>
+</ng-container>
+
+<ng-template #connections>
+  <section class="tb-ws-client">
+    <div fxFlex fxLayout="row" fxLayoutGap="8px">
+      <div fxFlex="30" fxLayout="column" fxLayoutGap="8px">
+        <tb-ws-client-connections></tb-ws-client-connections>
+        <tb-ws-client-subscriptions></tb-ws-client-subscriptions>
       </div>
-      <div class="mat-padding" fxLayout="column">
-        <div fxFlex fxLayout="column" fxLayoutGap="16px">
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-card-title>
-                <span class="mat-headline-5" translate>Subscriptions</span>
-              </mat-card-title>
-              <span fxFlex></span>
-              <div tb-help="outgoingMailSettings"></div>
-            </mat-card-header>
-            <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-            </mat-progress-bar>
-            <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
-            <mat-card-content style="padding-top: 16px;">
-              <fieldset class="fields-group" fxLayout="column">
-                <legend class="group-title" translate>Topic Filter</legend>
-                <section>
-                  <form [formGroup]="subscriptionForm">
-                    <mat-form-field class="mat-block">
-                      <mat-label translate>topic</mat-label>
-                      <input matInput formControlName="topic">
-                    </mat-form-field>
-                    <mat-form-field fxFlex class="mat-block">
-                      <mat-label translate>qos</mat-label>
-                      <mat-select formControlName="qos">
-                        <mat-option value=0>0</mat-option>
-                        <mat-option value=1>1</mat-option>
-                        <mat-option value=2>2</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                    <mat-checkbox formControlName="retain" style="padding-bottom: 16px;">
-                      {{ 'retain' | translate }}
-                    </mat-checkbox>
-                  </form>
-                </section>
-              </fieldset>
-              <div fxLayout="row" fxLayoutAlign="end center" fxLayout.xs="column" fxLayoutAlign.xs="end" fxLayoutGap="16px">
-                <button mat-raised-button color="primary"
-                        (click)="createSubscription()"
-                        [disabled]="(isLoading$ | async) || subscriptionForm.invalid || !client">
-                  <mat-icon>add_circle_outline</mat-icon>
-                  {{ 'Add Subscription Topic' | translate }}
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-        <section>
-          <div *ngFor="let sub of subscriptions" class="mat-padding">
-            <button mat-stroked-button class="mat-padding" (click)="changeSubscription(sub)">{{sub.topic}}</button>
-          </div>
-        </section>
-      </div>
-      <div fxFlex fxLayoutGap="16px" class="mat-padding">
-        <tb-ws-client-comment [connection]="client"
-                              [clients]="clients"
+      <tb-ws-client-messanger [clients]="clients"
                               [subscriptions]="subscriptions"
                               [subscription]="subscription">
-        </tb-ws-client-comment>
+      </tb-ws-client-messanger>
+    </div>
+  </section>
+</ng-template>
+<ng-template #noConnections>
+  <section style="width: 100%; height: 100%; background: #a9a8a8">
+    <div class="add-connection-container">
+      <div class="add-connection-btn" fxFlex fxLayout="row" fxLayoutAlign="flex-start center"
+           (click)="addConnection()">
+        <mat-icon class="mat-icon tb-mat-64">add</mat-icon>
+        <span translate>ws-client.connections.add-connection</span>
       </div>
     </div>
-  </div>
-</div>
+  </section>
+</ng-template>
+

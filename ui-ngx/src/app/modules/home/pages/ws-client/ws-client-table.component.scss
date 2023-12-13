@@ -1,0 +1,140 @@
+/**
+ * Copyright © 2016-2023 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import './../scss/constants';
+
+:host {
+  flex-direction: column;
+
+  .mat-table-toolbar-container {
+    height: 42px;
+  }
+
+  .tb-side-menu {
+    padding-right: 8px;
+  }
+
+  .tb-side-menu > li {
+    border: solid 1px #e0e0e0;
+    height: 60px;
+    padding: 4px 12px 4px 12px;
+    border-radius: 8px;
+
+    &.active {
+      border : solid 1px rgba(31, 139, 77, 0.5);
+      background: rgba(31, 139, 77, 0.04);
+    }
+  }
+
+}
+
+:host ::ng-deep {
+
+  .mat-icon {
+    color: rgba(0,0,0,0.38);
+  }
+
+  mat-footer-row, mat-header-row, mat-row {
+    border-bottom-width: 10px;
+  }
+
+  mat-header-row {
+    height: 30px !important;
+  }
+
+  .mat-mdc-cell, .mat-mdc-header-cell {
+    border: none !important;
+  }
+
+  .mat-row, .mat-header-row {
+    cursor: unset;
+  }
+
+  mat-footer-row, mat-row {
+    height: 22px !important;
+  }
+
+  mat-toolbar.mat-table-toolbar {
+    padding: 0;
+    background-color: inherit;
+    .mat-toolbar-tools {
+      padding: 0;
+    }
+  }
+
+  .mat-row:not(.mat-row-select), .mat-header-row:not(.mat-row-select) {
+    mat-cell:first-child, mat-footer-cell:first-child, mat-header-cell:first-child {
+      padding: 0;
+    }
+    mat-cell:nth-child(n+2):nth-last-child(n+2), mat-footer-cell:nth-child(n+2):nth-last-child(n+2), mat-header-cell:nth-child(n+2):nth-last-child(n+2) {
+      padding: 0 28px 0 0;
+    }
+
+    .mat-header-cell {
+      color: rgba(0, 0, 0, 0.38);
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0;
+
+      @media #{$mat-lt-xl} {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .mat-mini-fab {
+    color: rgba(0, 0, 0, 0.87);
+    height: 30px;
+    width: 30px;
+    background-color: transparent !important;
+  }
+
+  /*.material-icons {
+    font-size: 20px;
+  }*/
+
+  .mat-toolbar-single-row {
+    height: 35px;
+  }
+
+  .mat-form-field {
+    font-size: 14px;
+  }
+
+  .mat-drawer-container {
+    background-color: #fff;
+    border-radius: 20px;
+  }
+
+
+
+  .mat-mdc-text-field-wrapper {
+    height: 35px;
+
+    &.mdc-text-field--outlined .mat-mdc-form-field-infix {
+      padding-top: 6px;
+      padding-bottom: 16px;
+    }
+  }
+
+  .mat-mdc-paginator .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
+    padding-top: 5px;
+  }
+
+  /*.home-page-material-icons {
+    color: rgba(0,0,0,0.54);
+    font-size: 24px !important;
+  }*/
+}

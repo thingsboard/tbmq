@@ -910,6 +910,9 @@ mat-label {
     &.tb-mat-32 {
       @include tb-mat-icon-size(32);
     }
+    &.tb-mat-64 {
+      @include tb-mat-icon-size(64);
+    }
     &.tb-mat-96 {
       @include tb-mat-icon-size(96);
     }

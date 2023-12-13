@@ -1,0 +1,86 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section *ngIf="client">
+  <mat-toolbar>
+    <section fxFlex fxLayoutGap="8px" fxLayoutAlign="flex-start center">
+      <span class="title">{{client?.name}}</span>
+      <span class="status" [ngClass]="{'disconnected': !client?.connected}">
+        {{(client?.connected ? 'mqtt-client-session.connected' : 'mqtt-client-session.disconnected') | translate}}
+      </span>
+    </section>
+  </mat-toolbar>
+  <section class="mat-padding">
+    <div fxFlex fxLayout="column" fxLayoutGap="8px">
+      <tb-ws-client-messages></tb-ws-client-messages>
+      <div class="container">
+        <div fxFlex [formGroup]="messangerFormGroup"
+             fxLayout="column" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
+            <mat-form-field class="mat-block">
+              <mat-label translate>mqtt-client-session.topic</mat-label>
+              <input matInput formControlName="topic">
+            </mat-form-field>
+            <mat-form-field class="mat-block" hideRequiredMarker>
+              <mat-label translate>connection.last-will.qos</mat-label>
+              <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+                <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
+                  {{ mqttQoSValue(mqttQoS) }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <section >
+              <mat-slide-toggle formControlName="retain">
+                <span translate>connection.last-will.retain</span>
+              </mat-slide-toggle>
+            </section>
+            <section>
+              <button mat-stroked-button
+                      [matTooltip]="'ws-client.connections.show-meta' | translate"
+                      aria-label="Show message meta data">
+                <span translate>ws-client.connections.meta</span>
+              </button>
+            </section>
+          </section>
+          <div fxLayout="column">
+            <div style="background-color: white" class="comment-input newest-first">
+              <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px" class="inner-wrap">
+                <tb-ws-json-object-edit
+                  style="width: 100%;"
+                  formControlName="value"
+                  label="{{ 'value.json-value' | translate }}"
+                  [jsonRequired]="false"
+                  [fillHeight]="false">
+                </tb-ws-json-object-edit>
+                <button mat-icon-button
+                        type="button"
+                        matSuffix
+                        (click)="saveComment()">
+                  <mat-icon color="primary">send</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+
+
+

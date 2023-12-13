@@ -13,42 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
 
-:host {
-  .tb-ws-client {
-    display: flex;
-    padding: 12px 12px 8px 12px;
+:host::ng-deep {
+  border-radius: 4px;
+  background: #fff;
 
-    div:first-child {
-      height: inherit;
-    }
+  .mat-toolbar {
+    background-color: #fff;
+  }
+  .container {
+    background-color: #fff;
+    padding: 0 16px 0 16px;
   }
 
-  .add-connection-container {
-    margin: 0;
-    position: absolute;
-    top: 50%;
-    left: 40%;
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
+  .tb-side-menu,
+  .tb-side-menu ul {
+    padding: 0;
+    margin-top: 0;
+    list-style: none;
   }
 
-  .add-connection-btn {
-    padding: 16px;
-    border: 2px dashed rgba(0, 0, 0, 0.16);
+  .tb-side-menu > li {
+    border: solid 1px #e0e0e0;
+    height: 60px;
+    padding: 4px 12px 4px 12px;
     border-radius: 8px;
-    color: rgba(0, 0, 0, 0.38);
-
-    &:hover {
-      cursor: pointer;
-      color: rgba(0, 0, 0, 0.54);
-      border: 2px dashed rgba(0, 0, 0, 0.38);
-    }
-
-    span {
-      color: inherit;
-      font-size: 24px;
-    }
   }
 }

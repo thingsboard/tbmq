@@ -1,0 +1,77 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<form [formGroup]="formGroup">
+  <mat-form-field class="mat-block">
+    <mat-label translate>connection.last-will.topic</mat-label>
+    <input matInput formControlName="topic">
+  </mat-form-field>
+  <section>
+    <mat-label translate>connection.last-will.payload</mat-label>
+    <tb-value-input formControlName="payload">
+    </tb-value-input>
+  </section>
+  <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
+    <mat-label translate>connection.last-will.qos</mat-label>
+    <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+      <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
+        {{ mqttQoSValue(mqttQoS) }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <section>
+    <mat-slide-toggle formControlName="retain">
+      <span translate>connection.last-will.retain</span>
+    </mat-slide-toggle>
+  </section>
+  <section formGroupName="properties">
+    <mat-form-field class="mat-block">
+      <mat-label translate>connection.last-will.will-delay-interval</mat-label>
+      <input matInput formControlName="willDelayInterval" type="number" min="0">
+    </mat-form-field>
+    <section class="slider">
+      <mat-slide-toggle formControlName="payloadFormatIndicator">
+        <span translate>connection.last-will.payload-format-indicator</span>
+      </mat-slide-toggle>
+      <mat-hint translate>connection.last-will.payload-format-indicator-hint</mat-hint>
+    </section>
+    <mat-form-field class="mat-block">
+      <mat-label translate>connection.last-will.message-expiry-interval</mat-label>
+      <input matInput formControlName="messageExpiryInterval" type="number" min="0">
+      <mat-hint translate>connection.last-will.message-expiry-interval-hint</mat-hint>
+    </mat-form-field>
+    <mat-form-field class="mat-block">
+      <mat-label translate>connection.last-will.content-type</mat-label>
+      <input matInput formControlName="contentType">
+      <mat-hint translate>connection.last-will.content-type-hint</mat-hint>
+    </mat-form-field>
+    <!--<mat-form-field class="mat-block">
+      <mat-label translate>connection.last-will.response-topic</mat-label>
+      <input matInput formControlName="responseTopic">
+      <mat-hint translate>connection.last-will.response-topic-hint</mat-hint>
+    </mat-form-field>
+    <mat-form-field class="mat-block">
+      <mat-label translate>connection.last-will.correlation-data</mat-label>
+      <input matInput formControlName="correlationData">
+      <mat-hint translate>connection.last-will.correlation-data-hint</mat-hint>
+    </mat-form-field>-->
+    <fieldset class="fields-group">
+      <legend class="group-title" translate>connection.last-will.user-properties</legend>
+      <tb-user-properties formControlName="userProperties"></tb-user-properties>
+    </fieldset>
+  </section>
+</form>

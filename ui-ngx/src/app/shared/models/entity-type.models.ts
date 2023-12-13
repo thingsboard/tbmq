@@ -25,7 +25,9 @@ export enum EntityType {
   RETAINED_MESSAGE = 'RETAINED_MESSAGE',
   KAFKA_TOPIC = 'KAFKA_TOPIC',
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
-  KAFKA_BROKER = 'KAFKA_BROKER'
+  KAFKA_BROKER = 'KAFKA_BROKER',
+  WS_CONNECTION = 'WS_CONNECTION',
+  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION'
 }
 
 export interface EntityTypeTranslation {
@@ -170,6 +172,34 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         noEntities: 'kafka.no-brokers-text',
         search: 'kafka.search-broker',
         selectedEntities: 'kafka.selected-brokers'
+      }
+    ],
+    [
+      EntityType.WS_CONNECTION,
+      {
+        type: 'ws-client.connections.connection',
+        typePlural: 'ws-client.connections.connections',
+        list: 'ws-client.connections.list-of-connections',
+        nameStartsWith: 'ws-client.connections.connection-starts-with',
+        details: 'ws-client.connections.details',
+        add: 'ws-client.connections.add-connection',
+        noEntities: 'ws-client.connections.no-connections-text',
+        search: 'ws-client.connections.search-connection',
+        selectedEntities: 'ws-client.connections.selected-connections'
+      }
+    ],
+    [
+      EntityType.WS_SUBSCRIPTION,
+      {
+        type: 'ws-client.subscriptions.subscription',
+        typePlural: 'ws-client.subscriptions.subscription',
+        list: 'ws-client.subscriptions.list-of-subscriptions',
+        nameStartsWith: 'ws-client.subscriptions.subscription-starts-with',
+        details: 'ws-client.subscriptions.details',
+        add: 'ws-client.subscriptions.add-subscription',
+        noEntities: 'ws-client.subscriptions.no-subscriptions-text',
+        search: 'ws-client.subscriptions.search-subscription',
+        selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
       }
     ]
   ]

@@ -1,0 +1,114 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div fxFlex fxLayout="column" fxLayoutGap="4px">
+  <div class="mat-table-toolbar-container">
+    <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
+      <div class="mat-toolbar-tools" fxLayoutGap="4px">
+        <h2 *ngIf="entitiesTableConfig.tableTitle">{{ entitiesTableConfig.tableTitle }}</h2>
+        <span fxFlex></span>
+        <button *ngIf="entitiesTableConfig.addEnabled" mat-icon-button
+                (click)="entitiesTableConfig.addEntity()"
+                [matTooltip]="'ws-client.connections.add-connection' | translate"
+                aria-label="Add Websocket Client Connection">
+          <mat-icon>add</mat-icon>
+        </button>
+        <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
+                [disabled]="isLoading$ | async" (click)="enterFilterMode()"
+                matTooltip="{{ translations.search | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>search</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+    <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
+      <div class="mat-toolbar-tools" style="justify-content: right;">
+        <button mat-icon-button
+                matTooltip="{{ translations.search | translate }}"
+                matTooltipPosition="above">
+          <mat-icon class="home-page-material-icons">search</mat-icon>
+        </button>
+        <mat-form-field fxFlex="100" appearance="outline" style="padding-top: 12px">
+          <input #searchInput matInput
+                 [(ngModel)]="pageLink.textSearch"
+                 placeholder="{{ translations.search | translate }}"/>
+        </mat-form-field>
+        <button mat-icon-button (click)="exitFilterMode()"
+                matTooltip="{{ 'action.close' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon class="home-page-material-icons">close</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+  </div>
+  <section>
+    <ul style="overflow: auto" [ngStyle]="{height: calcTableHeight()}" class="tb-side-menu"
+        fxFlex fxLayout="column" fxLayoutAlign="start stretch" fxLayoutGap="8px">
+      <li [ngClass]="{'active': index === selectedRow}"
+          *ngFor="let connection of dataArray; index as index">
+        <section fxFlex fxLayout="row" fxLayoutAlign="space-between center">
+          <section>
+            <a mat-button (click)="onRowClick($event, connection, index)">
+              <span>{{connection.name}}</span>
+            </a>
+          </section>
+          <div fxFlex fxLayout="row" fxLayoutAlign="end">
+            <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(connection) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(connection)"
+                      *ngIf="actionDescriptor.isEnabled(connection)"
+                      (click)="actionDescriptor.onAction($event, connection)">
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+              </button>
+            </div>
+          </div>
+          <!--<section style="padding-top: 2px; padding-bottom: 2px">
+            <button mat-icon-button
+                    (click)="onConnect(connection)"
+                    [matTooltip]="(connection.connected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect') | translate"
+                    matTooltipPosition="above">
+              <mat-icon [color]="connection?.connected ? 'primary' : null">play_arrow</mat-icon>
+            </button>
+            <button mat-icon-button
+                    (click)="editConnection(connection)"
+                    [matTooltip]="'action.edit' | translate"
+                    matTooltipPosition="above">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button
+                    (click)="deleteConnection(connection)"
+                    [matTooltip]="'action.delete' | translate"
+                    matTooltipPosition="above">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </section>-->
+        </section>
+      </li>
+    </ul>
+  </section>
+  <div fxFlex></div>
+  <!--<section style="align-self: end">
+    <mat-divider *ngIf="displayPagination"></mat-divider>
+    <mat-paginator *ngIf="displayPagination"
+                   [length]="dataSource.total() | async"
+                   [pageIndex]="pageLink.page"
+                   [pageSize]="pageLink.pageSize"
+                   [pageSizeOptions]="pageSizeOptions"
+                   [hidePageSize]="hidePageSize | async"
+                   showFirstLastButtons></mat-paginator>
+  </section>-->
+</div>
