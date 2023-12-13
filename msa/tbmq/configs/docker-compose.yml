@@ -44,7 +44,7 @@ services:
       - tbmq-kafka-data:/bitnami/kafka
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:1.2.0"
+    image: "thingsboard/tbmq:1.2.1"
     depends_on:
       - postgres
       - kafka

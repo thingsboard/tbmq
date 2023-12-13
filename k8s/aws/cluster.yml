@@ -22,11 +22,11 @@ availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 metadata:
   name: tbmq
   region: us-east-1
-  version: "1.25"
+  version: "1.28"
 
 managedNodeGroups:
   - name: managed
-    instanceType: m6a.large
+    instanceType: m7a.large
     desiredCapacity: 2
     maxSize: 2
     minSize: 1
