@@ -87,9 +87,11 @@ Write-Host "Starting TBMQ!"
 switch ($COMPOSE_VERSION) {
     "V2" {
         docker compose up -d
+        docker compose logs -f
     }
     "V1" {
         docker-compose up -d
+        docker-compose logs -f
     }
     default {
         # unknown option

@@ -89,9 +89,11 @@ echo "Starting TBMQ!"
 case $COMPOSE_VERSION in
 V2)
   docker compose up -d
+  docker compose logs -f
   ;;
 V1)
   docker-compose up -d
+  docker-compose logs -f
   ;;
 *)
   # unknown option
