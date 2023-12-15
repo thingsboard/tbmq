@@ -10,25 +10,25 @@ per single cluster node with low latency delivery.
 In the cluster mode, its capabilities are further enhanced, enabling it to support more than [100M
 concurrently connected clients](https://thingsboard.io/docs/mqtt-broker/reference/100m-connections-performance-test/).
 
-Within the ThingsBoard company, our expertise and understanding of diverse IoT requirements and use cases have enabled
-us
-to discern two primary scenarios in which our clients develop their solutions.
-The first scenario entails numerous devices generating a substantial volume of messages that are consumed by specific
+Within the ThingsBoard company, our extensive expertise and clear understanding of diverse IoT requirements and use
+cases have helped us to identify two main scenarios in which our clients develop their solutions.
+In the first scenario, numerous devices are generating a substantial volume of messages that are consumed by specific
 applications, resulting in a fan-in pattern.
-Conversely, the second scenario involves numerous devices subscribing to specific updates or notifications,
-leading to a few incoming requests that necessitate a high volume of outgoing data, known as a fan-out pattern.
-Acknowledging these scenarios, we purposefully designed TBMQ to be exceptionally well-suited for both.
+On the other hand, the second scenario involves numerous devices subscribing to specific updates or notifications.
+This leads to a few incoming requests that cause a high volume of outgoing data. This case is known as a fan-out
+pattern.
+Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for both.
 
-Moreover, our design principles focused on ensuring the broker’s reliability, speed, and efficiency while addressing
-crucial requirements.
-These include the imperative of facilitating rapid message consumption and persistence, guaranteeing low-latency
-delivery of messages to clients,
-and providing the ability to withstand peak loads from publishing clients, all while ensuring backup storage for offline
+Our design principles focused on ensuring the broker's fault tolerance and high availability.
+We wanted to implement a reliable mechanism for message processing, capable of handling any potential failures that may
+arise among the participants in the data flow.
+Additionally, we prioritized supporting distributed and partitioned processing, allowing for effortless horizontal
+scalability as our operations grow.
+We wanted our broker to support high-throughput processing, guaranteeing low-latency delivery of messages to clients,
+and providing the ability to withstand peak loads from publishing clients while ensuring backup storage for offline
 clients.
-Additionally, we prioritized supporting distributed and partitioned processing, allowing for seamless scalability as our
-operations expand.
-Crucially, we sought to implement a fault-tolerant mechanism for message processing, capable of handling potential
-failures that may arise among the participants in the data flow.
+Ensuring data durability and replication was crucial in our design. We aimed for a system where once the broker
+acknowledges receiving a message, it remains safe and won't be lost.
 
 TBMQ provides compatibility with both MQTT v3.x and v5.0 protocols.
 Last but not least, it had been running in production for more than a year before being open-sourced.
