@@ -50,10 +50,10 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
                 sessionInfo = getSessionInfo(eventProto);
                 ConnectionRequestInfo connectionRequestInfo = getConnectionRequestInfo(msg);
                 return new ConnectionRequestMsg(callback, sessionInfo, connectionRequestInfo);
-            case DISCONNECTED:
+            case DISCONNECTION_REQUEST:
                 sessionInfo = getSessionInfo(eventProto);
                 return new SessionDisconnectedMsg(callback, sessionInfo.getSessionId(), sessionInfo.getSessionExpiryInterval());
-            case TRY_CLEAR_SESSION_REQUEST:
+            case CLEAR_SESSION_REQUEST:
                 sessionInfo = getSessionInfo(eventProto);
                 return new ClearSessionMsg(callback, sessionInfo.getSessionId());
             case REMOVE_APPLICATION_TOPIC_REQUEST:

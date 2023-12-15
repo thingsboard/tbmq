@@ -59,20 +59,19 @@ import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.RESPONSE_T
 @Service
 @RequiredArgsConstructor
 public class DefaultClientSessionEventService implements ClientSessionEventService {
+
     private final ConcurrentMap<UUID, EventFuture> pendingRequests = new ConcurrentHashMap<>();
-
     private final ExecutorService responseConsumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-event-response-consumer"));
-    private ScheduledExecutorService cleanupStaleRequestsScheduler;
-
-    private volatile boolean stopped = false;
     private final AtomicLong tickTs = new AtomicLong();
     private final AtomicLong nextCleanupMs = new AtomicLong();
     private final AtomicLong tickSize = new AtomicLong();
 
+    private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientSessionEventFactory eventFactory;
 
     @Value("${queue.client-session-event.max-pending-requests}")
     private long maxPendingRequests;
-
     @Value("${queue.client-session-event-response.poll-interval}")
     private long pollDuration;
     @Value("${queue.client-session-event-response.cleanup-interval}")
@@ -80,12 +79,11 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     @Value("${queue.client-session-event-response.max-request-timeout}")
     private long maxRequestTimeout;
 
-    private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
-    private final ServiceInfoProvider serviceInfoProvider;
-    private final ClientSessionEventFactory eventFactory;
-
+    private ScheduledExecutorService cleanupStaleRequestsScheduler;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventProducer;
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseConsumer;
+
+    private volatile boolean stopped = false;
 
     @PostConstruct
     public void init() {
@@ -194,7 +192,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
             while (!stopped) {
                 try {
                     List<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseList = eventResponseConsumer.poll(pollDuration);
-                    if (eventResponseList.size() > 0) {
+                    if (!eventResponseList.isEmpty()) {
                         if (log.isTraceEnabled()) {
                             log.trace("Read {} event responses.", eventResponseList.size());
                         }

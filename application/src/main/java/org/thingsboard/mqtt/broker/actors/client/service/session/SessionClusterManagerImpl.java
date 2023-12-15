@@ -212,10 +212,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                 UUID currentSessionId = getSessionIdFromClientSession(clientSession);
                 if (!sessionId.equals(currentSessionId)) {
                     log.info("[{}][{}] Ignoring {} for session - {}.",
-                            clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST, sessionId);
+                            clientId, currentSessionId, ClientSessionEventType.CLEAR_SESSION_REQUEST, sessionId);
                 } else if (clientSession.isConnected()) {
                     log.info("[{}][{}] Session is connected now, ignoring {}.",
-                            clientId, currentSessionId, ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST);
+                            clientId, currentSessionId, ClientSessionEventType.CLEAR_SESSION_REQUEST);
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);

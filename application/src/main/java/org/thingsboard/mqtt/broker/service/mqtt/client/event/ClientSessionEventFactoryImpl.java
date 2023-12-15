@@ -45,7 +45,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
                 .build();
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(disconnectSessionInfo))
-                .setEventType(ClientSessionEventType.DISCONNECTED.toString())
+                .setEventType(ClientSessionEventType.DISCONNECTION_REQUEST.toString())
                 .build();
     }
 
@@ -53,7 +53,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     public QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
-                .setEventType(ClientSessionEventType.TRY_CLEAR_SESSION_REQUEST.toString())
+                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
                 .build();
     }
 
