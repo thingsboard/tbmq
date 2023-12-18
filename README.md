@@ -10,11 +10,12 @@ per single cluster node with low latency delivery.
 In the cluster mode, its capabilities are further enhanced, enabling it to support more than [100M
 concurrently connected clients](https://thingsboard.io/docs/mqtt-broker/reference/100m-connections-performance-test/).
 
-Within the ThingsBoard company, our extensive expertise and clear understanding of diverse IoT requirements and use
-cases have helped us to identify two main scenarios in which our clients develop their solutions.
+At ThingsBoard, we've gained a lot of experience in building scalable IoT applications,
+which has helped us identify two main scenarios for MQTT-based solutions.
 In the first scenario, numerous devices are generating a substantial volume of messages that are consumed by specific
 applications, resulting in a fan-in pattern.
-On the other hand, the second scenario involves numerous devices subscribing to specific updates or notifications.
+On the other hand, the second scenario involves numerous devices subscribing to specific updates or notifications that
+must be delivered.
 This leads to a few incoming requests that cause a high volume of outgoing data. This case is known as a fan-out
 pattern.
 Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for both.
