@@ -30,28 +30,9 @@ export const fontWeights = ['normal', 'bold', 'bolder', 'lighter', '100', '200',
 type fontWeightTuple = typeof fontWeights;
 export type fontWeight = fontWeightTuple[number];
 
-export const fontWeightTranslations = new Map<fontWeight, string>(
-  [
-    ['normal', 'widgets.widget-font.font-weight-normal'],
-    ['bold', 'widgets.widget-font.font-weight-bold'],
-    ['bolder', 'widgets.widget-font.font-weight-bolder'],
-    ['lighter', 'widgets.widget-font.font-weight-lighter']
-  ]
-);
-
 export const fontStyles = ['normal', 'italic', 'oblique'] as const;
 type fontStyleTuple = typeof fontStyles;
 export type fontStyle = fontStyleTuple[number];
-
-export const fontStyleTranslations = new Map<fontStyle, string>(
-  [
-    ['normal', 'widgets.widget-font.font-style-normal'],
-    ['italic', 'widgets.widget-font.font-style-italic'],
-    ['oblique', 'widgets.widget-font.font-style-oblique']
-  ]
-);
-
-export const commonFonts = ['Roboto', 'monospace', 'sans-serif', 'serif'];
 
 export interface Font {
   size: number;
@@ -67,14 +48,6 @@ export enum ColorType {
   range = 'range',
   function = 'function'
 }
-
-export const colorTypeTranslations = new Map<ColorType, string>(
-  [
-    [ColorType.constant, 'widgets.color.color-type-constant'],
-    [ColorType.range, 'widgets.color.color-type-range'],
-    [ColorType.function, 'widgets.color.color-type-function']
-  ]
-);
 
 export interface ColorRange {
   from?: number;

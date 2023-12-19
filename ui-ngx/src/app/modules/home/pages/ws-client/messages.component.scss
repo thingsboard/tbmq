@@ -135,8 +135,11 @@ $border: 1px solid rgba(0,0,0,0.15);
 
     .sub-message {
       border: 1px solid rgba(0,0,0,0.16);
-      border-radius: 8px 8px 8px 0;
+      border-radius: 0 8px 8px 0;
       background-color: rgba(0,0,0,0.03);
+      width: 250px;
+      max-height: 250px;
+      overflow: auto;
     }
     .sub-message-container {
       align-self: flex-start;
@@ -147,7 +150,7 @@ $border: 1px solid rgba(0,0,0,0.15);
 
     .pub-message {
       border: 1px solid rgba(31,139,77,0.16);
-      border-radius: 8px 8px 0 8px;
+      border-radius: 8px 0 0 8px;
       background-color: rgba(31,139,77,0.08);
     }
     .pub-message-container {
@@ -181,11 +184,26 @@ $border: 1px solid rgba(0,0,0,0.15);
       font-size: 13px;
     }
 
-    .user-name {
-      font-size: 16px;
-      color: rgba(0, 0, 0, 0.76);
+    .topic {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.38);
       font-weight: 500;
       letter-spacing: 0.25px;
+    }
+
+    .details {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.38);
+      font-weight: 400;
+      letter-spacing: 0.25px;
+    }
+
+    .retain {
+      font-size: 14px;
+      border-radius: 4px;
+      padding: 2px 4px 2px 4px;
+      color: rgba(0, 0, 0, 0.76);
+      background: #DBDBDB;
     }
 
     .time {

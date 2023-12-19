@@ -41,97 +41,97 @@
   </div>-->
   <div mat-dialog-content>
     <mat-form-field class="mat-block">
-      <mat-label translate>connection.name</mat-label>
+      <mat-label translate>ws-client.connections.name</mat-label>
       <input matInput formControlName="name">
     </mat-form-field>
     <fieldset class="fields-group" fxLayout="column">
-      <legend class="group-title" translate>connection.address</legend>
+      <legend class="group-title" translate>ws-client.connections.address</legend>
       <section fxFlex fxLayout="row" fxLayoutGap="8px">
         <mat-form-field fxFlex class="mat-block">
-          <mat-label translate>connection.protocol</mat-label>
-          <mat-select formControlName="uri">
+          <mat-label translate>ws-client.connections.protocol</mat-label>
+          <mat-select formControlName="protocol">
             <mat-option value="ws://">ws://</mat-option>
             <mat-option value="wss://">wss://</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field fxFlex class="mat-block">
-          <mat-label translate>connection.host</mat-label>
+          <mat-label translate>ws-client.connections.host</mat-label>
           <input matInput formControlName="host">
         </mat-form-field>
         <mat-form-field fxFlex class="mat-block">
-          <mat-label translate>connection.port</mat-label>
+          <mat-label translate>ws-client.connections.port</mat-label>
           <input matInput formControlName="port">
         </mat-form-field>
         <mat-form-field fxFlex class="mat-block">
-          <mat-label translate>connection.path</mat-label>
+          <mat-label translate>ws-client.connections.path</mat-label>
           <input matInput formControlName="path">
         </mat-form-field>
       </section>
     </fieldset>
-      <section>
-        <fieldset class="fields-group" fxLayout="column">
-          <legend class="group-title" translate>mqtt-client-credentials.client-credentials</legend>
-          <div fxFlex fxLayout="row" fxLayoutAlign="center" fxLayoutGap="16px">
-            <section fxFlex>
-              <tb-client-credentials-autocomplete
-                formControlName="autocomplete"
-                subscriptSizing="dynamic"
-                [ngModel]="selectedExistingCredentials"
-                (ngModelChange)="clientCredentialsChanged($event)"
-                [editProfileEnabled]="false">
-              </tb-client-credentials-autocomplete>
-            </section>
-            <mat-divider vertical class="mat-divider mat-divider-vertical" style="margin-right: 8px;">
-            </mat-divider>
-            <section fxFlex fxLayout="column">
-              <mat-form-field class="mat-block">
-                <mat-label translate>connection.client-id</mat-label>
-                <input matInput formControlName="clientId">
-              </mat-form-field>
-              <mat-form-field class="mat-block">
-                <mat-label translate>connection.username</mat-label>
-                <input matInput formControlName="username">
-              </mat-form-field>
-              <mat-form-field class="mat-block">
-                <mat-label translate>connection.password</mat-label>
-                <input matInput formControlName="password" type="password">
-                <mat-icon [fxShow]="displayPasswordWarning" matSuffix style="color: #ff9a00" [matTooltip]="'connection.password-warning' | translate">
-                  warning
-                </mat-icon>
-              </mat-form-field>
-            </section>
-          </div>
-        </fieldset>
-        <section fxFlex fxLayoutGap="8px">
+    <section>
+      <fieldset class="fields-group" fxLayout="column">
+        <legend class="group-title" translate>mqtt-client-credentials.client-credentials</legend>
+        <div fxFlex fxLayout="row" fxLayoutAlign="center" fxLayoutGap="16px">
+          <section fxFlex>
+            <tb-client-credentials-autocomplete
+              formControlName="autocomplete"
+              subscriptSizing="dynamic"
+              [ngModel]="selectedExistingCredentials"
+              (ngModelChange)="clientCredentialsChanged($event)"
+              [editProfileEnabled]="false">
+            </tb-client-credentials-autocomplete>
+          </section>
+          <mat-divider vertical class="mat-divider mat-divider-vertical" style="margin-right: 8px;">
+          </mat-divider>
+          <section fxFlex fxLayout="column">
+            <mat-form-field class="mat-block">
+              <mat-label translate>ws-client.connections.client-id</mat-label>
+              <input matInput formControlName="clientId">
+            </mat-form-field>
+            <mat-form-field class="mat-block">
+              <mat-label translate>ws-client.connections.username</mat-label>
+              <input matInput formControlName="username">
+            </mat-form-field>
+            <mat-form-field class="mat-block">
+              <mat-label translate>ws-client.connections.password</mat-label>
+              <input matInput formControlName="password" type="password">
+              <mat-icon [fxShow]="displayPasswordWarning" matSuffix style="color: #ff9a00" [matTooltip]="'ws-client.connections.password-warning' | translate">
+                warning
+              </mat-icon>
+            </mat-form-field>
+          </section>
+        </div>
+      </fieldset>
+      <section fxFlex fxLayoutGap="8px">
           <mat-accordion multi="true" class="mat-body-2">
             <mat-expansion-panel>
               <mat-expansion-panel-header>
                 <mat-panel-title>
-                  {{ 'connection.advanced' | translate }}
+                  {{ 'ws-client.connections.advanced' | translate }}
                 </mat-panel-title>
               </mat-expansion-panel-header>
               <mat-form-field class="mat-block">
-                <mat-label translate>connection.keep-alive</mat-label>
+                <mat-label translate>ws-client.connections.keep-alive</mat-label>
                 <input matInput formControlName="keepAlive" type="number" min="0">
               </mat-form-field>
               <mat-form-field class="mat-block">
-                <mat-label translate>connection.connect-timeout</mat-label>
+                <mat-label translate>ws-client.connections.connect-timeout</mat-label>
                 <input matInput formControlName="connectTimeout" type="number" min="0">
               </mat-form-field>
               <mat-form-field class="mat-block">
-                <mat-label translate>connection.reconnect-period</mat-label>
+                <mat-label translate>ws-client.connections.reconnect-period</mat-label>
                 <input matInput formControlName="reconnectPeriod" type="number" min="0">
-                <mat-hint translate>connection.reconnect-period-hint</mat-hint>
+                <mat-hint translate>ws-client.connections.reconnect-period-hint</mat-hint>
               </mat-form-field>
               <section class="slider">
                 <mat-slide-toggle formControlName="clean">
-                  <span translate>connection.clean-session</span>
+                  <span translate>ws-client.connections.clean-session</span>
                 </mat-slide-toggle>
-                <mat-hint translate>connection.clean-session-hint</mat-hint>
+                <mat-hint translate>ws-client.connections.clean-session-hint</mat-hint>
               </section>
               <section>
                 <mat-form-field fxFlex class="mat-block">
-                  <mat-label translate>connection.mqtt-version</mat-label>
+                  <mat-label translate>ws-client.connections.mqtt-version</mat-label>
                   <mat-select formControlName="protocolVersion">
                     <mat-option value='3'>3</mat-option>
                     <mat-option value='3.1.1'>3.1.1</mat-option>
@@ -141,34 +141,34 @@
               </section>
               <section formGroupName="properties">
                 <mat-form-field class="mat-block">
-                  <mat-label translate>connection.session-expiry-interval</mat-label>
+                  <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
                   <input matInput formControlName="sessionExpiryInterval" type="number" min="0">
                 </mat-form-field>
                 <!--<mat-form-field class="mat-block">
-                  <mat-label translate>connection.receive-maximum</mat-label>
+                  <mat-label translate>ws-client.connections.receive-maximum</mat-label>
                   <input matInput formControlName="receiveMaximum" type="number" min="0">
                 </mat-form-field>-->
                 <mat-form-field class="mat-block">
-                  <mat-label translate>connection.maximum-packet-size</mat-label>
+                  <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
                   <input matInput formControlName="maximumPacketSize" type="number" min="0">
-                  <mat-hint translate>connection.maximum-packet-size-hint</mat-hint>
+                  <mat-hint translate>ws-client.connections.maximum-packet-size-hint</mat-hint>
                 </mat-form-field>
                 <mat-form-field class="mat-block">
-                  <mat-label translate>connection.topic-alias-maximum</mat-label>
+                  <mat-label translate>ws-client.connections.topic-alias-maximum</mat-label>
                   <input matInput formControlName="topicAliasMaximum" type="number" min="0">
-                  <mat-hint translate>connection.topic-alias-maximum-hint</mat-hint>
+                  <mat-hint translate>ws-client.connections.topic-alias-maximum-hint</mat-hint>
                 </mat-form-field>
                 <!--<section class="slider">
                   <mat-slide-toggle formControlName="requestResponseInformation">
-                    <span translate>connection.request-response-information</span>
+                    <span translate>ws-client.connections.request-response-information</span>
                   </mat-slide-toggle>
-                  <mat-hint translate>connection.request-response-information-hint</mat-hint>
+                  <mat-hint translate>ws-client.connections.request-response-information-hint</mat-hint>
                 </section>
                 <section class="slider">
                   <mat-slide-toggle formControlName="requestProblemInformation">
-                    <span translate>connection.request-problem-information</span>
+                    <span translate>ws-client.connections.request-problem-information</span>
                   </mat-slide-toggle>
-                  <mat-hint translate>connection.request-problem-information-hint</mat-hint>
+                  <mat-hint translate>ws-client.connections.request-problem-information-hint</mat-hint>
                 </section>-->
               </section>
             </mat-expansion-panel>
@@ -177,7 +177,7 @@
             <mat-expansion-panel>
               <mat-expansion-panel-header>
                 <mat-panel-title>
-                  {{ 'connection.user-properties' | translate }}
+                  {{ 'ws-client.connections.user-properties' | translate }}
                 </mat-panel-title>
               </mat-expansion-panel-header>
               <tb-user-properties formControlName="userProperties"></tb-user-properties>
@@ -187,14 +187,14 @@
             <mat-expansion-panel>
               <mat-expansion-panel-header>
                 <mat-panel-title>
-                  {{ 'connection.last-will.last-will' | translate }}
+                  {{ 'ws-client.connections.last-will.last-will' | translate }}
                 </mat-panel-title>
               </mat-expansion-panel-header>
               <tb-last-will formControlName="will"></tb-last-will>
             </mat-expansion-panel>
           </mat-accordion>
         </section>
-      </section>
+    </section>
   </div>
   <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
     <button mat-button color="primary"

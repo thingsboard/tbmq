@@ -87,8 +87,8 @@ export class WsClientConnectionDialogComponent extends DialogComponent<WsClientC
   private buildSessionForm(): void {
     this.clientForm = this.fb.group({
       name: ['TBMQ Client', [Validators.required]],
-      uri: ['ws://', [Validators.required]],
-      host: [window.location.hostname + ":", [Validators.required]],
+      protocol: ['ws://', [Validators.required]],
+      host: [window.location.hostname, [Validators.required]],
       port: [8084, [Validators.required]],
       path: ['/mqtt', [Validators.required]],
       clientId: ['tbmq_dev', []],

@@ -67,7 +67,11 @@ export class ConnectionsComponent implements OnInit, OnDestroy {
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.addConnection(res);
+          /*this.wsClientService.saveConnection(res).subscribe(
+            res => {
+              this.wsConnectionsTableConfig.getTable().updateData();
+            }
+          );*/
         }
       });
   }

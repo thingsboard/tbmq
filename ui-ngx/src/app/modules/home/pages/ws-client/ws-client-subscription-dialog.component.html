@@ -86,7 +86,7 @@
     </button>
     <button mat-raised-button color="primary"
             (click)="onSave()"
-            [disabled]="(isLoading$ | async) || formGroup.invalid || !formGroup.dirty"
+            [disabled]="(isLoading$ | async) || formGroup?.invalid || !formGroup?.dirty"
             matTooltip="{{ 'action.add' | translate }}"
             matTooltipPosition="above">
       {{ 'action.add' | translate }}

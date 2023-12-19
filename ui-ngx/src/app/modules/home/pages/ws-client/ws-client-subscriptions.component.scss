@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  display: flex;
-  border-radius: 4px;
+:host::ng-deep {
   background-color: #fff;
+  border-radius: 4px;
 
   .mat-toolbar {
     background-color: #fff;
-    border-radius: 4px;
   }
   .container {
-    padding: 0 16px 0 16px;
-  }
-
-  .color-badge {
-    display: inline;
-    width: 4px;
-    padding-right: 4px;
+    background-color: #fff;
   }
 
   .tb-side-menu,
@@ -44,11 +36,5 @@
     height: 60px;
     padding: 4px 12px 4px 12px;
     border-radius: 8px;
-  }
-}
-
-:host ::ng-deep {
-  .mat-icon {
-    color: rgba(0,0,0,0.38);
   }
 }

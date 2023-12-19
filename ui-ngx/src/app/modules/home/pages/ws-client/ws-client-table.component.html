@@ -58,15 +58,27 @@
   <section>
     <ul style="overflow: auto" [ngStyle]="{height: calcTableHeight()}" class="tb-side-menu"
         fxFlex fxLayout="column" fxLayoutAlign="start stretch" fxLayoutGap="8px">
-      <li [ngClass]="{'active': index === selectedRow}"
+      <li [ngClass]="{'active': (index === selectedRow && selectionEnabled)}"
           *ngFor="let connection of dataArray; index as index">
-        <section fxFlex fxLayout="row" fxLayoutAlign="space-between center">
-          <section>
+        <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
+                 (mouseenter)="onCommentMouseEnter(index)"
+                 (mouseleave)="onCommentMouseLeave(index)">
+          <section [ngStyle]="{borderLeft: (hasColorBadge ? ('4px solid ' + connection.color) : 'unset')}">
             <a mat-button (click)="onRowClick($event, connection, index)">
               <span>{{connection.name}}</span>
             </a>
           </section>
           <div fxFlex fxLayout="row" fxLayoutAlign="end">
+            <div *ngFor="let actionDescriptor of cellHiddenActionDescriptors" matTooltipPosition="above"
+                 class="action-buttons"
+                 [ngClass]="{ 'show-buttons': connection?.showActions }"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(connection) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(connection)"
+                      *ngIf="actionDescriptor.isEnabled(connection)"
+                      (click)="actionDescriptor.onAction($event, connection)">
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+              </button>
+            </div>
             <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
                  matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(connection) : actionDescriptor.name }}">
               <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(connection)"
@@ -76,26 +88,6 @@
               </button>
             </div>
           </div>
-          <!--<section style="padding-top: 2px; padding-bottom: 2px">
-            <button mat-icon-button
-                    (click)="onConnect(connection)"
-                    [matTooltip]="(connection.connected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect') | translate"
-                    matTooltipPosition="above">
-              <mat-icon [color]="connection?.connected ? 'primary' : null">play_arrow</mat-icon>
-            </button>
-            <button mat-icon-button
-                    (click)="editConnection(connection)"
-                    [matTooltip]="'action.edit' | translate"
-                    matTooltipPosition="above">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button
-                    (click)="deleteConnection(connection)"
-                    [matTooltip]="'action.delete' | translate"
-                    matTooltipPosition="above">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </section>-->
         </section>
       </li>
     </ul>

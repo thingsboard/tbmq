@@ -19,9 +19,17 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { RequestConfig } from '@core/http/http-utils';
 import { PageData } from '@shared/models/page/page-data';
-import { Connection, ConnectionDetailed } from '@shared/models/ws-client.model';
+import {
+  Connection,
+  ConnectionDetailed,
+  SubscriptionTopicFilter,
+  SubscriptionTopicFilterDetailed
+} from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
 import mqtt from 'mqtt';
+import { MessagesDisplayData } from "@home/pages/ws-client/messages.component";
+import { DateAgoPipe } from "@shared/pipe/date-ago.pipe";
+import { DatePipe } from "@angular/common";
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +40,7 @@ export class WsClientService {
   private subscriptions = [];
 
   private connection$ = new BehaviorSubject<any>(null);
+  private message$ = new BehaviorSubject<any>(null);
   private connections$ = new BehaviorSubject<any>(this.connections);
 
   private subscription$ = new BehaviorSubject<any>(null);
@@ -42,35 +51,126 @@ export class WsClientService {
   selectedSubscription$ = this.subscription$.asObservable();
   allSubscriptions$ = this.subscriptions$.asObservable();
 
+  newMessage$ = this.message$.asObservable();
+
   mqttJsClients: any[] = [];
   mqttJsClient: any;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private datePipe: DatePipe,
+              private dateAgoPipe: DateAgoPipe) {
   }
 
-  connectClient(client) {
-    const findConnection = this.connections.find(el => el.id === client.id);
-    if (!findConnection) {
-      this.createMqttJsClient(client);
+  connectClient(connection) {
+    const mqttJsConnection = this.findMqttJsConnection(connection);
+    if (mqttJsConnection) {
+      mqttJsConnection.connect();
+      this.subscribeConnectionForTopics(mqttJsConnection);
+    } else {
+      this.getConnection(connection.id).subscribe(
+        res => {
+          this.createMqttJsClient(res);
+        }
+      );
     }
   }
 
-  createMqttJsClient(client) {
-    const host = client?.uri + client?.host + client?.port + client?.path;
+  disconnectClient(connection) {
+    const mqttJsConnection = this.findMqttJsConnection(connection);
+    if (mqttJsConnection) {
+      mqttJsConnection.disconnect();
+    }
+  }
+
+  private createMqttJsClient(connection) {
+    const host = connection?.protocol + connection?.host + ":" + connection?.port + connection?.path;
+    /*const options = {};
+    for (let [key, value] of Object.entries(connection)) {
+      options[key] = value;
+    }*/
     const options = {
-      keepalive: 3660,
+      id: connection.id,
       clientId: 'tbmq_dev', // this.client?.clientId,
       username: 'tbmq_dev', // this.client?.username,
       password: 'tbmq_dev', // this.client?.password,
       protocolId: 'MQTT'
     };
+    /*const options = {
+      id: connection.id,
+      keepalive: 60,
+      clientId: connection.clientId,
+      username: connection.username,
+      password: connection.password,
+      protocolId: 'MQTT',
+      protocolVersion: 4,
+      clean: true,
+      reconnectPeriod: 1000,
+      connectTimeout: 30 * 1000,
+      will: {
+        topic: 'WillMsg',
+        payload: 'Connection Closed abnormally..!',
+        qos: 0,
+        retain: false
+      },
+    }*/
     // @ts-ignore
     const mqttJsClient = mqtt.connect(host, options);
     this.mqttJsClient = mqttJsClient;
     this.mqttJsClients.push(mqttJsClient);
+    this.subscribeConnectionForTopics(mqttJsClient);
   }
 
-  getMqttJsClient() {
+  private findMqttJsConnection(mqttJsConnection) {
+    return this.mqttJsClients.find(el => el.options.id === mqttJsConnection.id);
+  }
+
+  private subscribeConnectionForTopics(mqttJsConnection) {
+    this.getSubscriptions(mqttJsConnection.options.id).subscribe(
+      res => {
+        for (let i = 0; i < res.data?.length; i++) {
+          const subscription = res.data[i];
+          this.createSubscription(mqttJsConnection, subscription);
+        }
+      }
+    );
+    mqttJsConnection.on('message', (topic, message, packet) => {
+      if (message) {
+        const data: any = new TextDecoder("utf-8").decode(message);
+        if (data?.length) {
+          let message: string;
+          let isSubMessage: string;
+          try {
+            const res = JSON.parse(data);
+            message = res.value;
+            isSubMessage = 'pub';
+          } catch (error) {
+            message = data;
+            isSubMessage = 'sub';
+          }
+          this.message$.next({
+            message: data,
+            topic,
+            connection: mqttJsConnection,
+            type: 'sub'
+          });
+        }
+      }
+    });
+  }
+
+  publishMessage(res) {
+    this.message$.next({
+      message: res.message,
+      topic: res.topic,
+      type: res.type
+    });
+  }
+
+  private createSubscription(mqttJsConnection, subscription) {
+    mqttJsConnection.subscribe(subscription.topic, {qos: 1});
+  }
+
+  getMqttJsConnection() {
     return this.mqttJsClient;
   }
 
@@ -90,15 +190,17 @@ export class WsClientService {
     this.connection$.next(connection);
   }
 
-  public getConnectionMessages(id?: string, config?: RequestConfig): Observable<PageData<any>> {
+  public getConnectionMessages(id?: number, config?: RequestConfig): Observable<PageData<MessagesDisplayData>> {
     // return this.http.get<PageData<Connection>>(`/api/`, defaultHttpOptionsFromConfig(config));
     const mockData = {
       data: [
-        {
+        [{
           commentId: '1',
-          displayName: 'clientId1',
-          createdTime: 0,
-          createdDateAgo: 'testtopic1',
+          displayName: 'topic1_1',
+          qos: 1,
+          retain: false,
+          createdTime: this.datePipe.transform(1702979233, 'yyyy-MM-dd HH:mm:ss'),
+          createdDateAgo: this.dateAgoPipe.transform(1702979233),
           edit: false,
           isEdited: false,
           editedTime: 'string',
@@ -106,14 +208,33 @@ export class WsClientService {
           showActions: false,
           commentText: 'Comment 1',
           isSystemComment: false,
-          avatarBgColor: 'red',
+          avatarBgColor: 'yellow',
           type: 'sub'
         },
-        {
+          {
+            commentId: '1',
+            displayName: 'topic1_2',
+            qos: 1,
+            retain: false,
+            createdTime: this.datePipe.transform(1702979233, 'yyyy-MM-dd HH:mm:ss'),
+            createdDateAgo: this.dateAgoPipe.transform(1702979233),
+            edit: false,
+            isEdited: false,
+            editedTime: 'string',
+            editedDateAgo: 'string',
+            showActions: false,
+            commentText: 'Comment 1',
+            isSystemComment: false,
+            avatarBgColor: 'yellow',
+            type: 'pub'
+          }],
+        [{
           commentId: '3',
-          displayName: 'clientId3',
-          createdTime: 0,
-          createdDateAgo: 'testtopic3',
+          displayName: 'topic3',
+          qos: 0,
+          retain: true,
+          createdTime: this.datePipe.transform(1702979233, 'yyyy-MM-dd HH:mm:ss'),
+          createdDateAgo: this.dateAgoPipe.transform(1702979233),
           edit: false,
           isEdited: false,
           editedTime: 'string',
@@ -121,14 +242,16 @@ export class WsClientService {
           showActions: false,
           commentText: 'Comment 3',
           isSystemComment: false,
-          avatarBgColor: 'red',
+          avatarBgColor: 'green',
           type: 'sub'
-        },
-        {
+        }],
+        [{
           commentId: '2',
-          displayName: 'clientId2',
-          createdTime: 0,
-          createdDateAgo: 'testtopic2',
+          displayName: 'topic2',
+          qos: 2,
+          retain: true,
+          createdTime: this.datePipe.transform(1702979233, 'yyyy-MM-dd HH:mm:ss'),
+          createdDateAgo: this.dateAgoPipe.transform(1702979233),
           edit: false,
           isEdited: false,
           editedTime: 'string',
@@ -136,14 +259,16 @@ export class WsClientService {
           showActions: false,
           commentText: 'Comment 2',
           isSystemComment: false,
-          avatarBgColor: 'red',
+          avatarBgColor: 'pink',
           type: 'sub'
-        },
-        {
+        }],
+        [{
           commentId: '4',
-          displayName: 'clientId1',
-          createdTime: 0,
-          createdDateAgo: 'testtopic4',
+          displayName: 'topic4',
+          qos: 0,
+          retain: true,
+          createdTime: this.datePipe.transform(1702979233, 'yyyy-MM-dd HH:mm:ss'),
+          createdDateAgo: this.dateAgoPipe.transform(1702979233),
           edit: false,
           isEdited: false,
           editedTime: 'string',
@@ -153,13 +278,19 @@ export class WsClientService {
           isSystemComment: false,
           avatarBgColor: 'blue',
           type: 'pub'
-        }
+        }]
       ],
       'totalPages': 1,
       'totalElements': 4,
       'hasNext': false
     };
-    return of(mockData);
+    const result = mockData.data[id-1];
+    return of({
+      'totalPages': 1,
+      'totalElements': 4,
+      'hasNext': false,
+      data: result
+    });
   }
 
   public getConnections(pageLink?: PageLink, config?: RequestConfig): Observable<PageData<Connection>> {
@@ -167,62 +298,62 @@ export class WsClientService {
     const mockData = {
       data: [
         {
-          id: '62397b5f-d04c-4d2e-957b-29209348cad3',
-          name: 'TBMQ Device Demo',
+          id: '1',
+          name: 'TBMQ 1',
           createdTime: 1701696568854,
-          connected: true
+          connected: false
         },
         {
-          id: '8702ecc5-824e-4304-81ff-da2093574995',
-          name: 'TBMQ Application Demo',
+          id: '2',
+          name: 'Demo 2',
           createdTime: 1701696566405,
           connected: false
         },
         {
-          id: '83508373-9b58-40d3-8fcb-0f25e6aa2999',
-          name: 'Yes P',
+          id: '3',
+          name: 'Yes 3',
           createdTime: 1701418253485,
-          connected: true
+          connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d5220cd',
-          name: 'Credentials TLS Demo',
+          id: '4',
+          name: 'Demo 4',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522052',
-          name: 'D2',
+          id: '5',
+          name: 'D 5',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522012',
-          name: 'TYR 23',
+          id: '6',
+          name: 'TYR 6',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522034',
-          name: 'YTR 868',
+          id: '7',
+          name: 'YTR 7',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522099',
-          name: 'RER 34',
+          id: '8',
+          name: 'RER 8',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522088',
-          name: 'DBS 4',
+          id: '9',
+          name: 'DBS 9',
           createdTime: 1700486480079,
           connected: false
         },
         {
-          id: 'a6d1871e-55df-4dca-94c9-066e5d522077',
-          name: 'MHG 98',
+          id: '10',
+          name: 'MHG 10',
           createdTime: 1700486480079,
           connected: false
         }
@@ -236,15 +367,58 @@ export class WsClientService {
 
   public getConnection(id: string, config?: RequestConfig): Observable<ConnectionDetailed> {
     // return this.http.get<Connection>(`/api/${id}`, defaultHttpOptionsFromConfig(config));
-    const mockData = {
-      'name': 'Works 33',
-      'uri': 'ws://',
-      'host': 'localhost:',
+    const allData = [
+      {
+        id: '1',
+        name: 'TBMQ 1',
+        createdTime: 1701696568854,
+        connected: false,
+        clientId: 'tbmq_dev',
+        username: 'tbmq_dev',
+        password: 'tbmq_dev'
+      },
+      {
+        id: '2',
+        name: 'TBMQ 2',
+        createdTime: 1701696566405,
+        connected: false,
+        clientId: 'tbmq_dev2',
+        username: 'tbmq_dev2',
+        password: 'tbmq_dev2'
+      },
+      {
+        id: '3',
+        name: 'TBMQ 3',
+        createdTime: 1701418253485,
+        connected: false,
+        clientId: 'tbmq_dev3',
+        username: 'tbmq_dev3',
+        password: 'tbmq_dev3'
+      },
+      {
+        id: '4',
+        name: 'TBMQ 4',
+        createdTime: 1700486480079,
+        connected: true,
+        clientId: 'tbmq_dev4',
+        username: 'tbmq_dev4',
+        password: 'tbmq_dev4'
+      },
+      {
+        id: '5',
+        name: 'TBMQ 5',
+        createdTime: 1700486480079,
+        connected: false,
+        clientId: 'tbmq_dev5',
+        username: 'tbmq_dev5',
+        password: 'tbmq_dev5'
+      }
+    ];
+    const mockConnection = {
+      'protocol': 'ws://',
+      'host': 'localhost',
       'port': 8084,
       'path': '/mqtt',
-      'clientId': 'tbmq_dev',
-      'username': 'tbmq_dev',
-      'password': 'tbmq_dev',
       'keepAlive': 60,
       'reconnectPeriod': 1000,
       'connectTimeout': 30000,
@@ -260,73 +434,109 @@ export class WsClientService {
         'userProperties': null
       },
       'userProperties': null,
-      'will': null,
-      'subscriptions': [
-        {
-          topic: 'test1',
-          qos: 1,
-          retain: false,
-          color: 'yellow'
-        },
-        {
-          topic: 'test2',
-          qos: 2,
-          retain: false,
-          color: 'blue'
-        },
-        {
-          topic: 'test3',
-          qos: 0,
-          retain: true,
-          color: 'green'
-        }
-      ]
+      'will': null
     };
-    return of(mockData);
+    const target = allData.find(el => el.id == id);
+    const result = {...target, ...mockConnection};
+    return of(result);
   }
 
-  public saveConnection(entity: any, config?: RequestConfig): Observable<Connection> {
-    const mockData = {
+  public saveConnection(entity: any, config?: RequestConfig): Observable<ConnectionDetailed> {
+    const id = {
       id: '62397b5f-d04c-4d2e-957b-29209348cad3',
       name: 'TBMQ Device Demo',
       createdTime: 1701696568854
     };
-    return of(mockData);
+    const result = {...entity, ...id};
+    return of(result);
   }
 
-  public getSubscriptions(config?: RequestConfig): Observable<any> {
+  public getSubscriptions(connectionId: any,config?: RequestConfig): Observable<PageData<SubscriptionTopicFilter>> {
     // return this.http.get<PageData<any>>(`/api/`, defaultHttpOptionsFromConfig(config));
-    const mockData = [
+    const allData = [
       {
-        id: '62397b5f-d04c-4d2e-957b-29209348cad3',
-        topic: 'Sub 1',
-        createdTime: 1701696568854,
-        connected: true,
-        'color': 'blue'
+        id: 1,
+        data: [
+          {
+            name: 'testtopic88',
+            topic: 'testtopic88',
+            color: 'blue',
+            qos: 1
+          },
+          {
+            name: 'testtopic2',
+            topic: 'testtopic2',
+            color: 'green',
+            qos: 1
+          },
+          {
+            name: 'testtopic3',
+            topic: 'testtopic3',
+            color: 'green',
+            qos: 1
+          },
+          {
+            name: 'testtopic4',
+            topic: 'testtopic4',
+            color: 'orange',
+            qos: 1
+          }
+        ]
       },
       {
-        id: '8702ecc5-824e-4304-81ff-da2093574995',
-        topic: 'Sub 2',
-        createdTime: 1701696566405,
-        connected: false,
-        'color': 'green'
+        id: 2,
+        data: [
+          {
+            name: '2testtopic',
+            topic: '2testtopic',
+            color: 'pink',
+            qos: 1
+          }
+        ]
       },
       {
-        id: '83508373-9b58-40d3-8fcb-0f25e6aa2999',
-        topic: 'Sub 3',
-        createdTime: 1701418253485,
-        connected: true,
-        'color': 'green'
-      },
-      {
-        id: 'a6d1871e-55df-4dca-94c9-066e5d5220cd',
-        topic: 'Sub 4',
-        createdTime: 1700486480079,
-        connected: false,
-        'color': 'orange'
+        id: 3,
+        data: [
+          {
+            name: '3testtopic1',
+            topic: '3testtopic1',
+            color: 'blue',
+            qos: 1
+          },
+          {
+            name: '3testtopic2',
+            topic: '3testtopic2',
+            color: 'yellow',
+            qos: 1
+          }
+        ]
       }
     ];
-    return of(mockData);
+    const target = allData.find(el => el.id == connectionId);
+    const result = {
+      totalPages: 1,
+      totalElements: 4,
+      hasNext: false,
+      data: target?.data
+    };
+    return of(result);
+  }
+
+  public saveSubscription(): Observable<SubscriptionTopicFilterDetailed> {
+    const result = {
+        topic: 'testtopic',
+        color: 'pink',
+        qos: 1,
+        nl: false,
+        rap: true,
+        rh: true,
+        subscriptionIdentifier: 1
+      };
+    return of(result);
+  }
+
+  public clearHistory(id) {
+    return of(null);
   }
 
 }

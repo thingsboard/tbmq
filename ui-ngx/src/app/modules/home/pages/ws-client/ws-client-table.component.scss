@@ -18,6 +18,17 @@
 :host {
   flex-direction: column;
 
+  .action-buttons {
+    visibility: hidden;
+    .mat-icon {
+      color: rgba(0, 0, 0, 0.38);
+    }
+  }
+
+  .show-buttons {
+    visibility: visible;
+  }
+
   .mat-table-toolbar-container {
     height: 42px;
   }

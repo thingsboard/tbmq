@@ -125,10 +125,10 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
         onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data')
       },
       {
-        name: this.translate.instant('retained-message.show-user-properties'),
+        name: this.translate.instant('retained-message.user-properties'),
         icon: 'mdi:code-brackets',
         isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.user-properties')
       },
       {
         name: this.translate.instant('action.delete'),

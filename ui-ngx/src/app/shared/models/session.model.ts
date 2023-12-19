@@ -82,6 +82,14 @@ export const mqttQoSTypes = [
   }
 ];
 
+export const mqttQoSValuesMap = new Map<MqttQoS, number>(
+  [
+    [MqttQoS.AT_MOST_ONCE, 0],
+    [MqttQoS.AT_LEAST_ONCE, 1],
+    [MqttQoS.EXACTLY_ONCE, 2]
+  ]
+);
+
 export const QoSTranslationMap = new Map<number, string>(
   [
     [0, 'mqtt-client-session.qos-at-most-once'],

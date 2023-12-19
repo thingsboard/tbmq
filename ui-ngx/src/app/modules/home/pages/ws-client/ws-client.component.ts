@@ -64,7 +64,7 @@ export class WsClientComponent extends PageComponent {
       connection: {
         "name": "Works 33",
         "uri": "ws://",
-        "host": "localhost:",
+        "host": "localhost",
         "port": 8084,
         "path": "/mqtt",
         "clientId": null,

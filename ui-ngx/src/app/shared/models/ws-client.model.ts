@@ -23,7 +23,7 @@ export interface Connection extends BaseData {
 }
 
 export interface ConnectionDetailed extends Connection {
-  uri: string;
+  protocol: string;
   host: string;
   port: number;
   path: string;
@@ -52,4 +52,17 @@ export interface ConnectionProperties {
 
 export interface ConnectionWill {
 
+}
+
+export interface SubscriptionTopicFilter extends BaseData {
+  topic: string;
+  qos: number;
+  color?: string;
+}
+
+export interface SubscriptionTopicFilterDetailed extends SubscriptionTopicFilter {
+  nl: boolean;
+  rap: boolean;
+  rh: boolean;
+  subscriptionIdentifier: number;
 }

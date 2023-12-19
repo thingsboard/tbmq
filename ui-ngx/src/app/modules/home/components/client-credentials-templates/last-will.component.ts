@@ -76,8 +76,7 @@ export class LastWillComponent implements ControlValueAccessor, Validator, OnDes
         messageExpiryInterval: [null, []],
         contentType: [null, []],
         responseTopic: [null, []],
-        correlationData: [null, []],
-        userProperties: [null, []]
+        correlationData: [null, []]
       })
     });
   }
@@ -104,7 +103,7 @@ export class LastWillComponent implements ControlValueAccessor, Validator, OnDes
   }
 
   validate(): ValidationErrors | null {
-    return this.formGroup.valid ? null : {userProperties: true};
+    return this.formGroup.valid ? null : {lastWill: true};
   }
 
   writeValue(value: LastWill): void {

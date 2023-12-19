@@ -23,72 +23,59 @@ import { TimePageLink } from '@shared/models/page/page-link';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection } from '@shared/models/ws-client.model';
+import { SubscriptionTopicFilter } from '@shared/models/ws-client.model';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
-import { tap } from "rxjs/operators";
-import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
+import {
+  AddWsClientSubscriptionDialogData,
+  WsClientSubscriptionDialogComponent
+} from "@home/pages/ws-client/ws-client-subscription-dialog.component";
 
-export class WsConnectionsTableConfig extends EntityTableConfig<Connection, TimePageLink> {
+export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTopicFilter, TimePageLink> {
 
   constructor(private wsClientService: WsClientService,
               private translate: TranslateService,
               private dialog: MatDialog,
               public entityId: string = null) {
     super();
-    this.entityType = EntityType.WS_CONNECTION;
-    this.entityTranslations = entityTypeTranslations.get(EntityType.WS_CONNECTION);
-    this.entityResources = entityTypeResources.get(EntityType.WS_CONNECTION);
-    this.tableTitle = this.translate.instant('ws-client.connections.connections');
+    this.entityType = EntityType.WS_SUBSCRIPTION;
+    this.entityTranslations = entityTypeTranslations.get(EntityType.WS_SUBSCRIPTION);
+    this.entityResources = entityTypeResources.get(EntityType.WS_SUBSCRIPTION);
+    this.tableTitle = this.translate.instant('ws-client.subscriptions.subscriptions');
     this.entityComponent = null;
     this.detailsPanelEnabled = false;
-    this.selectionEnabled = true;
+    this.selectionEnabled = false;
     this.addEnabled = true;
+    this.showColorBadge = true;
     this.entitiesDeleteEnabled = false;
     this.displayPagination = false;
-    this.columns.push(new EntityTableColumn<Connection>('name', 'kafka.name'));
-    this.entitiesFetchFunction = pageLink => this.fetchConnections(pageLink);
+    this.columns.push(new EntityTableColumn<SubscriptionTopicFilter>('topic', 'mqtt-client-session.topic'));
+    this.entitiesFetchFunction = pageLink => this.fetchSubscriptions();
+    this.handleRowClick = (event, entity) => false;
 
-    this.cellActionDescriptors = this.configureCellActions();
     this.cellHiddenActionDescriptors = this.configureCellHiddenActions();
     this.addEntity = () => {
-      this.addConnection(null);
+      this.addSubscription(null);
       return of(null);
     };
-    this.handleRowClick = ($event, entity) => this.selectConnection($event, entity);
   }
 
-  fetchConnections(pageLink: TimePageLink) {
-    return this.wsClientService.getConnections(pageLink).pipe(
-      tap(res => {
-        if (res.data?.length) {
-          const targetConnection = res.data[0];
-          this.wsClientService.getConnection(targetConnection.id).subscribe(
-            connection => {
-              this.selectConnection(null, connection);
-            }
-          )
-        }
-      })
-    )
+  fetchSubscriptions() {
+    return this.wsClientService.getSubscriptions(this.entityId);
   }
 
-  selectConnection($event, entity) {
+  addSubscription($event: Event) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.selectConnection(entity);
-    return true;
-  }
-
-  addConnection($event: Event) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.dialog.open<ConnectionWizardDialogComponent, any>(ConnectionWizardDialogComponent, {
+    const data = {
+      subscription: null
+    };
+    this.dialog.open<WsClientSubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(WsClientSubscriptionDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
@@ -101,30 +88,8 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
       });
   }
 
-  configureCellActions(): Array<CellActionDescriptor<Connection>> {
-    const actions: Array<CellActionDescriptor<Connection>> = [];
-    actions.push(
-      {
-        name: this.translate.instant('ws-client.connections.disconnect'),
-        icon: 'toggle_on',
-        style: {
-          color: 'rgba(25,128,56,1)',
-        },
-        isEnabled: (entity) => !!entity.connected,
-        onAction: ($event, entity) => this.disconnect($event, entity)
-      },
-      {
-        name: this.translate.instant('ws-client.connections.connect'),
-        icon: 'toggle_off',
-        isEnabled: (entity) => !entity.connected,
-        onAction: ($event, entity) => this.connect($event, entity)
-      }
-    );
-    return actions;
-  }
-
-  configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
-    const actions: Array<CellActionDescriptor<Connection>> = [];
+  configureCellHiddenActions(): Array<CellActionDescriptor<SubscriptionTopicFilter>> {
+    const actions: Array<CellActionDescriptor<SubscriptionTopicFilter>> = [];
     actions.push(
       {
         name: this.translate.instant('mqtt-client-session.remove-session'),
@@ -142,18 +107,10 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
     return actions;
   }
 
-  connect($event, entity) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.wsClientService.connectClient(entity);
-  }
-
   disconnect($event, entity) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.disconnectClient(entity);
   }
 
   remove($event, entity) {

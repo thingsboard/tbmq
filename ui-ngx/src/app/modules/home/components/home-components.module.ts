@@ -28,7 +28,6 @@ import {
 } from '@home/components/client-credentials-templates/client-credentials-autocomplete.component';
 import { UserPropertiesComponent } from '@home/components/client-credentials-templates/user-properties.component';
 import { LastWillComponent } from '@home/components/client-credentials-templates/last-will.component';
-import { SubscriptionsComponent } from '@home/components/client-credentials-templates/subscriptions.component';
 
 @NgModule({
   declarations:
@@ -40,8 +39,7 @@ import { SubscriptionsComponent } from '@home/components/client-credentials-temp
       EventContentDialogComponent,
       ClientCredentialsAutocompleteComponent,
       UserPropertiesComponent,
-      LastWillComponent,
-      SubscriptionsComponent
+      LastWillComponent
     ],
   imports: [
     CommonModule,
@@ -55,8 +53,7 @@ import { SubscriptionsComponent } from '@home/components/client-credentials-temp
     EntityDetailsPanelComponent,
     ClientCredentialsAutocompleteComponent,
     UserPropertiesComponent,
-    LastWillComponent,
-    SubscriptionsComponent
+    LastWillComponent
   ]
 })
 export class HomeComponentsModule {

@@ -30,22 +30,22 @@
       <div class="container">
         <div fxFlex [formGroup]="messangerFormGroup"
              fxLayout="column" fxLayoutGap="8px">
-          <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
-            <mat-form-field class="mat-block">
+          <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="space-between center">
+            <mat-form-field fxFlex="55" class="mat-block">
               <mat-label translate>mqtt-client-session.topic</mat-label>
               <input matInput formControlName="topic">
             </mat-form-field>
             <mat-form-field class="mat-block" hideRequiredMarker>
-              <mat-label translate>connection.last-will.qos</mat-label>
+              <mat-label translate>mqtt-client-session.qos</mat-label>
               <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
                 <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
                   {{ mqttQoSValue(mqttQoS) }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <section >
+            <section>
               <mat-slide-toggle formControlName="retain">
-                <span translate>connection.last-will.retain</span>
+                <span translate>ws-client.last-will.retain</span>
               </mat-slide-toggle>
             </section>
             <section>
@@ -69,7 +69,7 @@
                 <button mat-icon-button
                         type="button"
                         matSuffix
-                        (click)="saveComment()">
+                        (click)="publishMessage()">
                   <mat-icon color="primary">send</mat-icon>
                 </button>
               </div>

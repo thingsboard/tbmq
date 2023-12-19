@@ -18,63 +18,55 @@
 <div fxFlex fxLayout="column" fxLayoutGap="8px">
     <div fxFlex fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="space-between center">
         <tb-toggle-select appearance="fill"
+                          (ngModelChange)="onChange($event)"
                           [ngModelOptions]="{ standalone: true }"
                           [options]="headerOptions"
                           [(ngModel)]="selectedOption">
         </tb-toggle-select>
         <section fxLayoutGap="8px">
-            <button mat-icon-button
+            <button mat-stroked-button color="primary"
                     [matTooltip]="'ws-client.connections.clear-connection-history' | translate"
+                    (click)="clearHistory()"
                     aria-label="Clear history">
-                <mat-icon svgIcon="mdi:history"></mat-icon>
-<!--                <span translate>ws-client.connections.clear-connection-history</span>-->
+                <span translate>ws-client.connections.clear-connection-history</span>
             </button>
         </section>
     </div>
     <div class="tb-ws-client-messages">
-        <div class="comments-container asc" fxLayout="column" fxLayoutGap="12px" style="padding: 24px">
+        <div class="comments-container asc" fxLayout="column" fxLayoutGap="12px" style="padding: 24px; overflow: auto; height: 500px">
             <div fxFlex *ngFor="let displayDataElement of displayData; index as i"
                  class="comment-container sub-message-container"
                  [ngClass]="{'pub-message-container': isPubMessage(displayDataElement)}">
                 <section class="sub-message"
-                        [ngClass]="{'pub-message': isPubMessage(displayDataElement)}">
+                       [ngStyle]="{borderLeft: '5px solid ' + (!isPubMessage(displayDataElement) ? displayDataElement.avatarBgColor : 'unset')}"
+                       [ngClass]="{'pub-message': isPubMessage(displayDataElement)}">
                     <div class="user-comment" fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px"
                          (mouseenter)="onCommentMouseEnter(displayDataElement?.commentId, i)"
                          (mouseleave)="onCommentMouseLeave(i)">
-                        <div class="user-avatar" fxLayout="row" fxLayoutAlign="center center" fxFlexAlign="start" fxHide.xs
-                             [style.background-color]="displayDataElement?.avatarBgColor">
-                        </div>
-                        <div fxLayout="column" fxLayoutGap="5px">
-                            <div fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="start center">
-<!--                                <span class="user-name">{{ displayDataElement?.displayName }}</span>-->
-                                <span class="time"
-                                      [matTooltip]="displayDataElement?.createdTime"
-                                      matTooltipPosition="right">
-                              {{ displayDataElement?.createdDateAgo }}
-                            </span>
+                        <div style="width: 100%">
+                            <div fxFlex fxLayoutGap="8px" fxLayoutAlign="space-between center">
+                              <span class="topic">{{ displayDataElement?.displayName }}</span>
+                              <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="4px">
+                                <span class="details">
+                                  {{'mqtt-client-session.qos' | translate }}: {{ displayDataElement?.qos }}
+                                </span>
+                                <span *ngIf="displayDataElement?.retain" class="retain"
+                                      [matTooltip]="'ws-client.last-will.retain' | translate">
+                                  {{'ws-client.last-will.retain' | translate}}
+                                </span>
+                                <ng-container *ngTemplateOutlet="messageMenu; context: {displayDataElement}">
+                                </ng-container>
+                              </section>
                             </div>
                             <pre>{{displayDataElement?.commentText | json}}</pre>
-                        </div>
-                        <div fxLayout="row" fxLayout.xs="column"  class="action-buttons"
-                             [ngClass]="{ 'show-buttons': displayDataElement?.showActions }">
-                            <button mat-icon-button
-                                    type="button"
-                                    (click)="resendMessage(displayDataElement?.commentId)">
-                                <mat-icon class="material-icons">history</mat-icon>
-                            </button>
-                            <button mat-icon-button
-                                    type="button"
-                                    (click)="copyMessage(displayDataElement?.commentId)">
-                                <mat-icon class="material-icons">content_copy</mat-icon>
-                            </button>
                         </div>
                     </div>
                 </section>
                 <section class="sub-message-time" [ngClass]="{'pub-message-time': isPubMessage(displayDataElement)}">
                     <span class="time"
-                          matTooltip="{{ displayDataElement?.editedDateAgo }} {{ displayDataElement?.editedTime }}"
+                          matTooltip="{{ displayDataElement?.createdTime }}"
                           matTooltipPosition="right">
-                          {{ displayDataElement?.createdTime | date }}
+                          {{ displayDataElement?.createdDateAgo }}
                     </span>
                 </section>
             </div>
@@ -82,3 +74,26 @@
     </div>
 </div>
 
+
+
+<ng-template #messageMenu let-displayDataElement="displayDataElement">
+  <button mat-icon-button [matMenuTriggerFor]="menu"
+          style="color: rgba(0, 0, 0, 0.38)"
+          class="tb-mat-20">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu" xPosition="before">
+    <button mat-menu-item *ngIf="isPubMessage(displayDataElement)">
+      <tb-icon>history</tb-icon>
+      <span translate>action.send-again</span>
+    </button>
+    <button mat-menu-item>
+      <mat-icon>content_copy</mat-icon>
+      <span translate>action.copy</span>
+    </button>
+    <button mat-menu-item>
+      <mat-icon>delete</mat-icon>
+      <span translate>action.delete</span>
+    </button>
+  </mat-menu>
+</ng-template>

@@ -61,6 +61,7 @@ export interface CellActionDescriptor<T extends BaseData> {
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
   type?: CellActionDescriptorType;
+  showOnHover?: boolean;
 }
 
 export interface GroupActionDescriptor<T extends BaseData> {
@@ -174,6 +175,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entitiesDeleteEnabled = true;
   detailsPanelEnabled = true;
   hideDetailsTabsOnEdit = true;
+  showColorBadge = false;
   actionsColumnTitle = null;
   entityTranslations: EntityTypeTranslation;
   entityResources: EntityTypeResource<T>;
@@ -186,6 +188,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultPageSize = 10;
   columns: Array<EntityColumn<L>> = [];
   cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
+  cellHiddenActionDescriptors: Array<CellActionDescriptor<L>> = [];
   groupActionDescriptors: Array<GroupActionDescriptor<L>> = [];
   headerActionDescriptors: Array<HeaderActionDescriptor> = [];
   addActionDescriptors: Array<HeaderActionDescriptor> = [];

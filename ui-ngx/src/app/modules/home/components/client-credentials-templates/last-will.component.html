@@ -17,16 +17,16 @@
 -->
 <form [formGroup]="formGroup">
   <mat-form-field class="mat-block">
-    <mat-label translate>connection.last-will.topic</mat-label>
+    <mat-label translate>ws-client.last-will.topic</mat-label>
     <input matInput formControlName="topic">
   </mat-form-field>
   <section>
-    <mat-label translate>connection.last-will.payload</mat-label>
+    <mat-label translate>ws-client.last-will.payload</mat-label>
     <tb-value-input formControlName="payload">
     </tb-value-input>
   </section>
   <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
-    <mat-label translate>connection.last-will.qos</mat-label>
+    <mat-label translate>ws-client.last-will.qos</mat-label>
     <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
       <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
         {{ mqttQoSValue(mqttQoS) }}
@@ -35,43 +35,29 @@
   </mat-form-field>
   <section>
     <mat-slide-toggle formControlName="retain">
-      <span translate>connection.last-will.retain</span>
+      <span translate>ws-client.last-will.retain</span>
     </mat-slide-toggle>
   </section>
   <section formGroupName="properties">
     <mat-form-field class="mat-block">
-      <mat-label translate>connection.last-will.will-delay-interval</mat-label>
+      <mat-label translate>ws-client.last-will.will-delay-interval</mat-label>
       <input matInput formControlName="willDelayInterval" type="number" min="0">
     </mat-form-field>
     <section class="slider">
       <mat-slide-toggle formControlName="payloadFormatIndicator">
-        <span translate>connection.last-will.payload-format-indicator</span>
+        <span translate>ws-client.last-will.payload-format-indicator</span>
       </mat-slide-toggle>
-      <mat-hint translate>connection.last-will.payload-format-indicator-hint</mat-hint>
+      <mat-hint translate>ws-client.last-will.payload-format-indicator-hint</mat-hint>
     </section>
     <mat-form-field class="mat-block">
-      <mat-label translate>connection.last-will.message-expiry-interval</mat-label>
+      <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
       <input matInput formControlName="messageExpiryInterval" type="number" min="0">
-      <mat-hint translate>connection.last-will.message-expiry-interval-hint</mat-hint>
+      <mat-hint translate>ws-client.last-will.message-expiry-interval-hint</mat-hint>
     </mat-form-field>
     <mat-form-field class="mat-block">
-      <mat-label translate>connection.last-will.content-type</mat-label>
+      <mat-label translate>ws-client.last-will.content-type</mat-label>
       <input matInput formControlName="contentType">
-      <mat-hint translate>connection.last-will.content-type-hint</mat-hint>
+      <mat-hint translate>ws-client.last-will.content-type-hint</mat-hint>
     </mat-form-field>
-    <!--<mat-form-field class="mat-block">
-      <mat-label translate>connection.last-will.response-topic</mat-label>
-      <input matInput formControlName="responseTopic">
-      <mat-hint translate>connection.last-will.response-topic-hint</mat-hint>
-    </mat-form-field>
-    <mat-form-field class="mat-block">
-      <mat-label translate>connection.last-will.correlation-data</mat-label>
-      <input matInput formControlName="correlationData">
-      <mat-hint translate>connection.last-will.correlation-data-hint</mat-hint>
-    </mat-form-field>-->
-    <fieldset class="fields-group">
-      <legend class="group-title" translate>connection.last-will.user-properties</legend>
-      <tb-user-properties formControlName="userProperties"></tb-user-properties>
-    </fieldset>
   </section>
 </form>

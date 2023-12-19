@@ -82,6 +82,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
   headerActionDescriptors: Array<HeaderActionDescriptor>;
   groupActionDescriptors: Array<GroupActionDescriptor<BaseData>>;
   cellActionDescriptors: Array<CellActionDescriptor<BaseData>>;
+  cellHiddenActionDescriptors: Array<CellActionDescriptor<BaseData>>;
 
   actionColumns: Array<EntityActionTableColumn<BaseData>>;
   entityColumns: Array<EntityTableColumn<BaseData>>;
@@ -95,8 +96,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
 
   cellStyleCache: Array<any> = [];
 
-  selectionEnabled;
-
+  selectionEnabled: boolean;
   defaultPageSize = 5;
   displayPagination = true;
   pageSizeOptions;
@@ -115,7 +115,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
   @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
   @ViewChild('searchInput') searchInputField: ElementRef;
-  @ViewChild(MatPaginator) paginator: MatPaginator;
+  // @ViewChild(MatPaginator) paginator: MatPaginator;
 
   @ViewChild(MatSort) sort: MatSort;
   private sortSubscription: Subscription;
@@ -125,8 +125,8 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
 
   // TEST //
   dataArray;
-
-  selectedRow;
+  hasColorBadge: boolean;
+  selectedRow = 0;
 
   constructor(protected store: Store<AppState>,
               public route: ActivatedRoute,
@@ -179,6 +179,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
     this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
     this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.cellHiddenActionDescriptors = [...this.entitiesTableConfig.cellHiddenActionDescriptors];
 
     if (this.entitiesTableConfig.entitiesDeleteEnabled) {
       this.cellActionDescriptors.push(
@@ -202,7 +203,8 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     const enabledGroupActionDescriptors =
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
-    this.selectionEnabled = this.entitiesTableConfig.selectionEnabled && enabledGroupActionDescriptors.length;
+    this.selectionEnabled = this.entitiesTableConfig.selectionEnabled; // && enabledGroupActionDescriptors.length;
+    this.hasColorBadge = this.entitiesTableConfig.showColorBadge; // && enabledGroupActionDescriptors.length;
 
     this.columnsUpdated();
 
@@ -246,7 +248,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
         distinctUntilChanged(),
         tap(() => {
           if (this.displayPagination) {
-            this.paginator.pageIndex = 0;
+            // this.paginator.pageIndex = 0;
           }
           this.updateData();
         })
@@ -269,11 +271,11 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     if (this.displayPagination) {
       // this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? this.paginator.page : this.sort.sortChange) as Observable<any>)
+    /*this.updateDataSubscription = ((this.displayPagination ? this.paginator.page : this.sort.sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
-      .subscribe();
+      .subscribe();*/
   }
 
   addEnabled() {
@@ -285,8 +287,8 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator.pageIndex;
-      this.pageLink.pageSize = this.paginator.pageSize;
+      // this.pageLink.page = this.paginator.pageIndex;
+      // this.pageLink.pageSize = this.paginator.pageSize;
     } else {
       this.pageLink.page = 0;
     }
@@ -433,7 +435,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      // this.paginator.pageIndex = 0;
     }
     if (updateData) {
       this.updateData();
@@ -444,7 +446,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      // this.paginator.pageIndex = 0;
     }
     const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
     this.sort.active = sortable.id;
@@ -479,9 +481,9 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
 
     this.displayedColumns = [];
 
-    if (this.selectionEnabled) {
+    /*if (this.selectionEnabled) {
       this.displayedColumns.push('select');
-    }
+    }*/
     this.entitiesTableConfig.columns.forEach(
       (column) => {
         this.displayedColumns.push(column.key);
@@ -605,5 +607,13 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
 
   deleteConnection(connection) {
 
+  }
+
+  onCommentMouseEnter(displayDataIndex: number): void {
+    this.dataArray[displayDataIndex].showActions = true;
+  }
+
+  onCommentMouseLeave(displayDataIndex: number): void {
+    this.dataArray[displayDataIndex].showActions = false;
   }
 }

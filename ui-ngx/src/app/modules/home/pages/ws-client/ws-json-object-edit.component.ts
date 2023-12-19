@@ -250,7 +250,8 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
 
   updateView() {
     const editorValue = this.jsonEditor.getValue();
-    if (this.contentValue !== editorValue) {
+    this.propagateChange(editorValue)
+    /*if (this.contentValue !== editorValue) {
       this.contentValue = editorValue;
       let data = null;
       this.objectValid = false;
@@ -279,7 +280,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
       this.modelValue = data;
       this.propagateChange(data);
       this.cd.markForCheck();
-    }
+    }*/
   }
 
   onFullscreen() {

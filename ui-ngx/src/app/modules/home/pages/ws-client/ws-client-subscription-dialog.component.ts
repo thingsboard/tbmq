@@ -62,7 +62,7 @@ export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClien
   }
 
   ngOnInit(): void {
-    this.entity = this.data.connection;
+    this.entity = this.data.subscription;
     this.buildForms(this.entity);
   }
 

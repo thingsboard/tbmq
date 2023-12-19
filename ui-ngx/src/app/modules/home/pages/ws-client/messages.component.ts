@@ -20,10 +20,14 @@ import { DialogService } from '@core/services/dialog.service';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
+import { DateAgoPipe } from '@app/shared/pipe/date-ago.pipe';
+import { map } from "rxjs/operators";
 
 export interface MessagesDisplayData {
   commentId?: string,
   displayName?: string,
+  qos?: number,
+  retain?: boolean,
   createdTime: string,
   createdDateAgo?: string,
   edit?: boolean,
@@ -66,15 +70,63 @@ export class MessagesComponent implements OnInit {
   messangerFormGroup: UntypedFormGroup;
   displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
 
+  connection;
+
   constructor(private dialogService: DialogService,
               private fb: UntypedFormBuilder,
               private wsClientService: WsClientService,
+              public dateAgoPipe: DateAgoPipe,
               private translate: TranslateService) {
-    this.wsClientService.getConnectionMessages().subscribe(
+    this.wsClientService.selectedConnection$.subscribe(
       res => {
-        this.displayData = res.data;
+        this.connection = res;
+        this.onChange('all');
       }
     )
+    this.wsClientService.newMessage$.subscribe(
+      res => {
+        const commentText = res?.message;
+        if (commentText) {
+          this.connection = res?.connection;
+          const message = {
+            commentId: '12345',
+            displayName: 'clientId1',
+            createdTime: '0',
+            createdDateAgo: this.dateAgoPipe.transform('1702979233'),
+            edit: false,
+            isEdited: false,
+            editedTime: 'string',
+            editedDateAgo: 'string',
+            showActions: false,
+            commentText: commentText,
+            isSystemComment: false,
+            avatarBgColor: 'red',
+            type: res.type
+          };
+          console.log('new message', res);
+          this.displayData.push(message);
+        }
+      }
+    );
+  }
+
+  onChange(e) {
+    this.wsClientService.getConnectionMessages(this.connection.id)
+      .pipe(map(el => el.data))
+      .subscribe(messages => {
+        switch (e) {
+          case 'all':
+            this.displayData = messages;
+            break;
+          case 'published':
+            this.displayData = messages.filter(el => el.type === 'pub');
+            break;
+          case 'received':
+            this.displayData = messages.filter(el => el.type === 'sub');
+            break;
+        }
+      }
+    );
   }
 
   ngOnInit() {
@@ -87,6 +139,10 @@ export class MessagesComponent implements OnInit {
         meta: [null, []]
       }
     );
+  }
+
+  clearHistory() {
+    this.wsClientService.clearHistory(this.connection.id).subscribe();
   }
 
   saveEditedComment(commentId: string): void {

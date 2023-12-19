@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
@@ -23,22 +23,18 @@ import { DialogService } from '@core/services/dialog.service';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { DatePipe } from '@angular/common';
 import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
-import mqtt from 'mqtt';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
+import { MqttQoS, MqttQoSType, mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
 import { WsClientService } from '@core/http/ws-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MessagesDisplayData } from './messages.component';
-
-export interface AlarmComment {
-
-}
+import mqtt from 'mqtt';
 
 @Component({
   selector: 'tb-ws-client-messanger',
   templateUrl: './ws-client-messanger.component.html',
   styleUrls: ['./ws-client-messanger.component.scss']
 })
-export class WsClientMessangerComponent implements OnInit, OnChanges {
+export class WsClientMessangerComponent implements OnInit {
 
   client: any;
 
@@ -57,7 +53,7 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
   messangerFormGroup: UntypedFormGroup;
   mqttJsClients: any[] = [];
 
-  alarmComments: Array<AlarmComment>;
+  alarmComments: Array<any>;
 
   displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
 
@@ -78,13 +74,14 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
               private wsClientService: WsClientService,
               public fb: FormBuilder,
               private dialogService: DialogService) {
+
   }
 
   ngOnInit() {
     this.messangerFormGroup = this.fb.group(
       {
-        value: ['null', []],
-        topic: ['testtopic/1', []],
+        value: [null, []],
+        topic: ['testtopic', []],
         qos: [MqttQoS.AT_LEAST_ONCE, []],
         retain: [false, []],
         meta: [null, []]
@@ -96,10 +93,9 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
           this.wsClientService.getConnection(value.id).subscribe(
             res => {
               this.client = res;
-              this.wsClientService.connectClient(res);
-              console.log('this.wsClientService.getMqttJsClient()', this.wsClientService.getMqttJsClient())
+              /*this.wsClientService.connectClient(res);
               this.connectMqttJsClient(this.wsClientService.getMqttJsClient());
-              this.subscribeForTopics(res.subscriptions);
+              this.subscribeForTopics(res.subscriptions);*/
             }
           );
         }
@@ -108,25 +104,43 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
     this.wsClientService.selectedSubscription$.subscribe(
       value => {
         if (isDefinedAndNotNull(value)) {
-          this.initSubs(value);
+          // this.initSubs(value);
         }
       }
     )
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName of Object.keys(changes)) {
-      const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'subscription' && change.currentValue) {
-          // this.initClient(change.currentValue?.topic);
-        }
-      }
-    }
+  test() {
+    const host = 'ws://localhost:8084/mqtt';
+    /*const options = {};
+    for (let [key, value] of Object.entries(connection)) {
+      options[key] = value;
+    }*/
+    const options = {
+      clientId: 'tbmq_dev', // this.client?.clientId,
+      username: 'tbmq_dev', // this.client?.username,
+      password: 'tbmq_dev', // this.client?.password,
+      protocolId: 'MQTT',
+      clean: false,
+      keepalive: 60
+    };
+    // @ts-ignore
+    /*const mqttJsClient = mqtt.connect(host, options);
+    mqttJsClient.on('connect', () => {
+      console.log(`Client connected`)
+      // Subscribe
+    })
+    mqttJsClient.subscribe('testtopic', { qos: 1, nl: false })
+    mqttJsClient.on('message', (topic, message, packet) => {
+      console.log('999 888', topic, new TextDecoder("utf-8").decode(message));
+    });*/
+
+    // mqttJsClient.subscribe('testtopic', {qos: 1});
+
   }
 
   private initSubs(subs: any) {
-    const host = this.client?.uri + this.client?.host + this.client?.port + this.client?.path;
+    const host = this.client?.protocol + this.client?.host + ":" + this.client?.port + this.client?.path;
     const options = {
       keepalive: 3660,
       clientId: 'tbmq_dev', // this.client?.clientId,
@@ -135,13 +149,13 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
       protocolId: 'MQTT'
     }
     if (this.mqttJsClient) {
-      this.subscribeForTopic(subs);
+      // this.subscribeForTopic(subs);
     } else {
-      const client = this.createMqttJsClient(host, options);
-      this.mqttJsClient = client;
-      this.mqttJsClients.push(client);
-      this.connectMqttJsClient(client);
-      this.subscribeForTopic(subs);
+      // const client = this.createMqttJsClient(host, options);
+      // this.mqttJsClient = client;
+      // this.mqttJsClients.push(client);
+      // this.connectMqttJsClient(client);
+      // this.subscribeForTopic(subs);
     }
 
   }
@@ -151,7 +165,7 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
   }
 
   subscribeForTopics(subscriptions: any[]) {
-    for (let i = 0; i < subscriptions.length; i++) {
+    for (let i = 0; i < subscriptions?.length; i++) {
       this.subscribeForTopic(subscriptions[i]);
       this.wsClientService.addSubscription(subscriptions[i]);
     }
@@ -160,7 +174,7 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
   subscribeForTopic(subscription) {
     const topic = subscription.topic;
     const qos = 1;
-    this.wsClientService.getMqttJsClient().subscribe('testtopic', { qos: 1 }, (mess) => {
+    this.wsClientService.getMqttJsConnection().subscribe('testtopic', { qos: 1 }, (mess) => {
       if (mess) {
         this.displayData.push(mess);
         console.log('message', mess)
@@ -194,7 +208,7 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
         avatarBgColor: this.subscription?.color,
         type: 'sub'
       }
-      this.displayData.push(comment);
+      // this.displayData.push(comment);
       console.log(`Received Message: ${message.toString()} On topic: ${topic}`)
     });
     client.on('error', (err) => {
@@ -247,42 +261,40 @@ export class WsClientMessangerComponent implements OnInit, OnChanges {
     }
   }
 
-  saveComment(): void {
+  publishMessage(): void {
     const commentInputValue: string = this.messangerFormGroup.get('value').value;
-    // if (commentInputValue) {
-    //   this.mqttJsClient.publish(this.messangerFormGroup.get('topic').value, commentInputValue, { qos: 1, retain: false })
-    // }
-
-    this.mqttJsClient.publish(this.messangerFormGroup.get('topic').value, commentInputValue, { qos: 1, retain: false })
-
-    /*const commentText = {
-      "id": "22e2a2bd-c0e2-4458-bd45-7735a848c4c6",
-      "createdTime": 1697194451985,
-      "additionalInfo": {
-        "lastLoginTs": 1701250722871,
-        "lang": "en_US"
-      },
-      "email": "sysadmin@thingsboard.org",
-      "authority": "SYS_ADMIN",
-      "firstName": null,
-      "lastName": null
-    };
-    const comment: MessagesDisplayData = {
-      commentId: '123',
-      displayName: this.client?.clientId,
-      createdTime: this.datePipe.transform(Date.now()),
-      createdDateAgo: 'testtopic/1',
-      edit: false,
-      isEdited: false,
-      editedTime: 'string',
-      editedDateAgo: 'string',
-      showActions: false,
-      commentText,
-      isSystemComment: false,
-      avatarBgColor: 'blue',
-      type: 'pub'
+    if (commentInputValue) {
+      const topic = this.messangerFormGroup.get('topic').value;
+      const value = this.messangerFormGroup.get('value').value;
+      const qos = mqttQoSValuesMap.get(this.messangerFormGroup.get('qos').value);
+      const retain = this.messangerFormGroup.get('retain').value;
+      const message = JSON.stringify({
+        value: commentInputValue,
+        type: 'pub'
+      })
+      this.wsClientService.getMqttJsConnection().publish(topic, commentInputValue, { qos, retain });
+      /*const comment: MessagesDisplayData = {
+        commentId: '123',
+        displayName: this.client?.clientId,
+        createdTime: this.datePipe.transform(Date.now()),
+        createdDateAgo: topic,
+        edit: false,
+        isEdited: false,
+        editedTime: 'string',
+        editedDateAgo: 'string',
+        showActions: false,
+        commentText: commentInputValue,
+        isSystemComment: false,
+        avatarBgColor: this.subscription?.color,
+        type: 'pub'
+      }
+      this.displayData.push(comment);*/
+      this.wsClientService.publishMessage({
+        message: commentInputValue,
+        topic,
+        type: 'pub'
+      });
     }
-    this.displayData.push(comment);*/
   }
 
   onCommentMouseEnter(commentId: string, displayDataIndex: number): void {
