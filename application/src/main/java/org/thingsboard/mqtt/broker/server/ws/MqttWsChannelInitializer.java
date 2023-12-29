@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.AbstractMqttWsChannelInitializer;
 import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 
@@ -46,6 +47,6 @@ public class MqttWsChannelInitializer extends AbstractMqttWsChannelInitializer {
 
     @Override
     public String getChannelInitializerName() {
-        return "WS";
+        return BrokerConstants.WS;
     }
 }

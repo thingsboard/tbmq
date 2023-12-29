@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
@@ -39,6 +40,7 @@ public class ClientSessionCtx implements SessionContext {
 
     private final UUID sessionId;
     private final SslHandler sslHandler;
+    private final String initializerName;
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
@@ -57,16 +59,18 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile TopicAliasCtx topicAliasCtx;
 
+    @Setter
     private ChannelHandlerContext channel;
 
-    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMsgs) {
-        this.sessionId = sessionId;
-        this.sslHandler = sslHandler;
-        this.pubResponseProcessingCtx = new PubResponseProcessingCtx(maxInFlightMsgs);
+    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMessages) {
+        this(sessionId, sslHandler, BrokerConstants.TCP, maxInFlightMessages);
     }
 
-    public void setChannel(ChannelHandlerContext channel) {
-        this.channel = channel;
+    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, String initializerName, int maxInFlightMessages) {
+        this.sessionId = sessionId;
+        this.sslHandler = sslHandler;
+        this.initializerName = initializerName;
+        this.pubResponseProcessingCtx = new PubResponseProcessingCtx(maxInFlightMessages);
     }
 
     public String getClientId() {

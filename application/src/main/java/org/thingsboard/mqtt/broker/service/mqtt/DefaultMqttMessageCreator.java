@@ -36,10 +36,15 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
@@ -58,6 +63,10 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SSL;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.TCP;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.WS;
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.WSS;
 
 @Service
 public class DefaultMqttMessageCreator implements MqttMessageGenerator {
@@ -68,6 +77,14 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     private int tcpMaxPayloadSize;
     @Value("${listener.ssl.netty.max_payload_size}")
     private int sslMaxPayloadSize;
+    @Value("${listener.ws.netty.max_payload_size}")
+    private int wsMaxPayloadSize;
+    @Value("${listener.wss.netty.max_payload_size}")
+    private int wssMaxPayloadSize;
+
+    @Setter
+    @Value("${mqtt.response-info:}")
+    private String serverResponseInfo;
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
@@ -79,10 +96,15 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     }
 
     @Override
-    public MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent,
-                                                   String assignedClientId, int keepAliveTimeSeconds,
-                                                   int sessionExpiryInterval, int maxTopicAlias,
-                                                   String responseInfo) {
+    public MqttConnAckMessage createMqttConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
+        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
+        var sessionPresent = msg.isSessionPresent();
+        var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
+        var sessionExpiryInterval = actorState.getCurrentSessionCtx().getSessionInfo().getSessionExpiryInterval();
+        var maxTopicAlias = actorState.getCurrentSessionCtx().getTopicAliasCtx().getMaxTopicAlias();
+        int requestResponseInfo = MqttPropertiesUtil.getRequestResponseInfoPropertyValue(msg.getProperties());
+        String responseInfo = getResponseInfo(requestResponseInfo);
+
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
 
@@ -90,10 +112,9 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         if (assignedClientId != null) {
             MqttPropertiesUtil.addAssignedClientIdToProps(properties, assignedClientId);
         }
-        MqttPropertiesUtil.addKeepAliveTimeToProps(properties, keepAliveTimeSeconds);
+        MqttPropertiesUtil.addKeepAliveTimeToProps(properties, msg.getKeepAliveTimeSeconds());
         MqttPropertiesUtil.addSubsIdentifierAvailableToProps(properties);
-        // TODO: correct max packet size value assignment based on the listener chosen
-        MqttPropertiesUtil.addMaxPacketSizeToProps(properties, tcpMaxPayloadSize, sslMaxPayloadSize);
+        MqttPropertiesUtil.addMaxPacketSizeToProps(properties, getMaxPayloadSizeByProtocol(sessionCtx.getInitializerName()));
         MqttPropertiesUtil.addSessionExpiryIntervalToProps(properties, sessionExpiryInterval);
         MqttPropertiesUtil.addMaxTopicAliasToProps(properties, maxTopicAlias);
         if (responseInfo != null) {
@@ -205,4 +226,22 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
             return new MqttMessage(mqttFixedHeader, variableHeader);
         }
     }
+
+    String getResponseInfo(int requestResponseInfo) {
+        if (requestResponseInfo == 1 && StringUtils.isNotEmpty(serverResponseInfo)) {
+            return serverResponseInfo;
+        }
+        return null;
+    }
+
+    private int getMaxPayloadSizeByProtocol(String initializerName) {
+        return switch (initializerName) {
+            case TCP -> tcpMaxPayloadSize;
+            case SSL -> sslMaxPayloadSize;
+            case WS -> wsMaxPayloadSize;
+            case WSS -> wssMaxPayloadSize;
+            default -> throw new RuntimeException("Unexpected value: " + initializerName);
+        };
+    }
+
 }

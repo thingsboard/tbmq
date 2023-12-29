@@ -196,20 +196,8 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
-        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        var sessionPresent = msg.isSessionPresent();
-        var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
-        var sessionExpiryInterval = actorState.getCurrentSessionCtx().getSessionInfo().getSessionExpiryInterval();
-        var maxTopicAlias = actorState.getCurrentSessionCtx().getTopicAliasCtx().getMaxTopicAlias();
-        int requestResponseInfo = MqttPropertiesUtil.getRequestResponseInfoPropertyValue(msg.getProperties());
-        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(
-                sessionPresent,
-                assignedClientId,
-                msg.getKeepAliveTimeSeconds(),
-                sessionExpiryInterval,
-                maxTopicAlias,
-                getResponseInfo(requestResponseInfo));
-        sessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
+        MqttConnAckMessage mqttConnAckMsg = mqttMessageGenerator.createMqttConnAckMsg(actorState, msg);
+        actorState.getCurrentSessionCtx().getChannel().writeAndFlush(mqttConnAckMsg);
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, Throwable t) {
@@ -235,18 +223,6 @@ public class ConnectServiceImpl implements ConnectService {
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
         return new MqttDisconnectMsg(sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
-    }
-
-    private MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent, String assignedClientId,
-                                                    int keepAliveTimeSeconds, int sessionExpiryInterval,
-                                                    int maxTopicAlias, String responseInfo) {
-        return mqttMessageGenerator.createMqttConnAckMsg(
-                sessionPresent,
-                assignedClientId,
-                keepAliveTimeSeconds,
-                sessionExpiryInterval,
-                maxTopicAlias,
-                responseInfo);
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {
@@ -332,13 +308,6 @@ public class ConnectServiceImpl implements ConnectService {
             keepAliveSeconds = maxServerKeepAlive;
         }
         return keepAliveSeconds;
-    }
-
-    String getResponseInfo(int requestResponseInfo) {
-        if (requestResponseInfo == 1 && StringUtils.isNotEmpty(serverResponseInfo)) {
-            return serverResponseInfo;
-        }
-        return null;
     }
 
     @PreDestroy

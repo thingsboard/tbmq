@@ -163,11 +163,8 @@ public class MqttPropertiesUtil {
         );
     }
 
-    public static void addMaxPacketSizeToProps(MqttProperties properties, int tcpMaxPayloadSize, int sslMaxPayloadSize) {
-        properties.add(new MqttProperties.IntegerProperty(
-                BrokerConstants.MAXIMUM_PACKET_SIZE_PROP_ID,
-                Math.min(tcpMaxPayloadSize, sslMaxPayloadSize))
-        );
+    public static void addMaxPacketSizeToProps(MqttProperties properties, int maxPacketSize) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.MAXIMUM_PACKET_SIZE_PROP_ID, maxPacketSize));
     }
 
     public static void addSessionExpiryIntervalToProps(MqttProperties properties, int sessionExpiryInterval) {
