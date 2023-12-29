@@ -15,22 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
 import java.util.UUID;
 
+@Getter
 @Slf4j
 public abstract class SessionDependentMsg extends AbstractTimedMsg implements TbActorMsg {
+
     private final UUID sessionId;
 
     public SessionDependentMsg(UUID sessionId) {
         this.sessionId = sessionId;
-    }
-
-    public UUID getSessionId() {
-        return sessionId;
     }
 
     @Override

@@ -17,11 +17,9 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
-import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
-import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,45 +36,20 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = KeepAliveIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = ResponseInfoIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.keep-alive.monitoring-delay-ms=200",
-        "mqtt.keep-alive.max-keep-alive=600"
+        "mqtt.response-info=test/"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class KeepAliveIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class ResponseInfoIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @Test
-    public void givenKeepAliveAsZero_whenProcessingKeepAlive_thenClientIsNotDisconnected() throws Throwable {
+    public void givenRequestResponseInfoIsFalse_whenProcessingConnect_thenResponseInfoValueIsNotReturned() throws Throwable {
         MqttConnectionOptions options = new MqttConnectionOptions();
-        options.setKeepAliveInterval(0);
-        options.setCleanStart(true);
-        options.setSessionExpiryInterval(1000L);
+        options.setRequestResponseInfo(false);
 
-        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "keepAliveClient");
-        client.connect(options);
-
-        IMqttMessageListener[] listeners = {(topic, message) -> {
-        }};
-        MqttSubscription[] subscriptions = {new MqttSubscription("test/topic", 2)};
-        client.subscribe(subscriptions, listeners);
-
-        Thread.sleep(1000);
-
-        boolean connected = client.isConnected();
-        Assert.assertTrue(connected);
-
-        client.disconnect();
-        client.close();
-    }
-
-    @Test
-    public void givenClientConnectingWithKeepAlive_whenSetToMoreThanMaxAllowed_thenMaxValueAssigned() throws Throwable {
-        MqttConnectionOptions options = new MqttConnectionOptions();
-        options.setKeepAliveInterval(601);
-
-        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "maxKeepAliveClient");
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "responseInfoNullClient");
         IMqttToken iMqttToken = client.connectWithResult(options);
 
         Awaitility.await()
@@ -84,7 +57,26 @@ public class KeepAliveIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 .until(client::isConnected);
 
         MqttProperties responseProperties = iMqttToken.getResponseProperties();
-        Assert.assertEquals(600, responseProperties.getServerKeepAlive().intValue());
+        Assert.assertNull(responseProperties.getResponseInfo());
+
+        client.disconnect();
+        client.close();
+    }
+
+    @Test
+    public void givenRequestResponseInfoIsTrue_whenProcessingConnect_thenResponseInfoValueIsReturned() throws Throwable {
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setRequestResponseInfo(true);
+
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "responseInfoClient");
+        IMqttToken iMqttToken = client.connectWithResult(options);
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(client::isConnected);
+
+        MqttProperties responseProperties = iMqttToken.getResponseProperties();
+        Assert.assertEquals("test/", responseProperties.getResponseInfo());
 
         client.disconnect();
         client.close();

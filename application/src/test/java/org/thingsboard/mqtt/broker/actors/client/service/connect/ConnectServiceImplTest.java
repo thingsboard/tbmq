@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.After;
 import org.junit.Assert;
@@ -208,8 +209,29 @@ public class ConnectServiceImplTest {
         Assert.assertEquals(expectedSessionInfo, actualSessionInfo);
     }
 
+    @Test
+    public void givenServerResponseInfoNull_whenRequestResponseInfoIsZero_thenResponseInfoIsNotReturned() {
+        connectService.setServerResponseInfo(null);
+        String responseInfo = connectService.getResponseInfo(0);
+        Assert.assertNull(responseInfo);
+    }
+
+    @Test
+    public void givenServerResponseInfoNotNull_whenRequestResponseInfoIsZero_thenResponseInfoIsNotReturned() {
+        connectService.setServerResponseInfo("test/");
+        String responseInfo = connectService.getResponseInfo(0);
+        Assert.assertNull(responseInfo);
+    }
+
+    @Test
+    public void givenServerResponseInfoNotNull_whenRequestResponseInfoIsSet_thenResponseInfoIsReturned() {
+        connectService.setServerResponseInfo("test/");
+        String responseInfo = connectService.getResponseInfo(1);
+        Assert.assertEquals("test/", responseInfo);
+    }
+
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
-        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000);
+        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000, new MqttProperties());
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId) {

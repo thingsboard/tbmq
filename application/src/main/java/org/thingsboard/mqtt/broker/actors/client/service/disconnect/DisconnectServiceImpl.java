@@ -98,7 +98,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     private int getSessionExpiryInterval(MqttProperties properties) {
         MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
-                .getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value());
+                .getProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
         if (property != null) {
             return property.value();
         }

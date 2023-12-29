@@ -157,7 +157,7 @@ public class MqttSubscribeHandler {
         var subscriptionsCount = msg.getTopicSubscriptions().size();
         List<MqttReasonCode> codes = new ArrayList<>(subscriptionsCount);
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            MqttProperties.MqttProperty subscriptionIdProperty = getSubscriptionIdProperty(msg.getProperties());
+            MqttProperties.MqttProperty subscriptionIdProperty = MqttPropertiesUtil.getSubscriptionIdProperty(msg.getProperties());
             if (subscriptionIdProperty != null) {
                 log.warn("[{}] Subscription id MQTT property present, server not support this!", ctx.getClientId());
                 for (int i = 0; i < subscriptionsCount; i++) {
@@ -166,10 +166,6 @@ public class MqttSubscribeHandler {
             }
         }
         return codes;
-    }
-
-    private MqttProperties.MqttProperty getSubscriptionIdProperty(MqttProperties properties) {
-        return properties.getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value());
     }
 
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions, MqttSubAckMessage subAckMessage) {
