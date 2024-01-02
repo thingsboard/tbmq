@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import 'constants';
+@import '../../../../../theme';
 
 :host {
   display: flex;
@@ -21,14 +23,14 @@
   background: #fff;
   border-radius: 4px;
 
-  .mat-toolbar {
-    background-color: transparent;
+  .toolbar {
+    background-color: unset;
+    padding: 16px;
 
     .title {
       font-size: 20px;
       font-weight: 600;
     }
-
     .status {
       font-size: 14px;
       color: rgba(25, 128, 56, 1);
@@ -46,5 +48,16 @@
   .container {
     background-color: #fff;
     padding: 0 16px 0 16px;
+  }
+
+  ::ng-deep {
+    .mat-mdc-slide-toggle.mat-mdc-slide-toggle-checked:not(.mat-disabled) {
+      .mdc-switch__shadow {
+        background-color: $tb-primary-color;
+      }
+      .mdc-switch__track::after {
+        background-color: $tb-primary-color !important;
+      }
+    }
   }
 }

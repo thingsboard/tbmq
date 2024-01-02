@@ -15,21 +15,4 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="column">
-  <div fxFlex class="container">
-    <ng-container *ngIf="connection; else noData">
-      <ng-container *ngTemplateOutlet="data"></ng-container>
-    </ng-container>
-  </div>
-</div>
-
-<ng-template #data>
-  <section class="mat-padding">
-    <tb-ws-client-table [entitiesTableConfig]="wsSubscriptionsTableConfig"></tb-ws-client-table>
-  </section>
-</ng-template>
-<ng-template #noData>
-  <section fxLayoutAlign="center center" style="height: 100%">
-    <img src="/src/assets/home/no_data_bg.svg">
-  </section>
-</ng-template>
+<tb-ws-client-table [entitiesTableConfig]="wsSubscriptionsTableConfig"></tb-ws-client-table>

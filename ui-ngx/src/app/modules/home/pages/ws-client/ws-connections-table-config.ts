@@ -51,7 +51,7 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
     this.entitiesFetchFunction = pageLink => this.fetchConnections(pageLink);
 
     this.cellActionDescriptors = this.configureCellActions();
-    this.cellHiddenActionDescriptors = this.configureCellHiddenActions();
+    this.cellMoreActionDescriptors = this.configureCellMoreActions();
     this.addEntity = () => {
       this.addConnection(null);
       return of(null);
@@ -106,16 +106,19 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
     actions.push(
       {
         name: this.translate.instant('ws-client.connections.disconnect'),
-        icon: 'toggle_on',
+        icon: 'mdi:toggle-switch',
         style: {
-          color: 'rgba(25,128,56,1)',
+          color: 'rgba(25,128,56,1)'
         },
         isEnabled: (entity) => !!entity.connected,
         onAction: ($event, entity) => this.disconnect($event, entity)
       },
       {
         name: this.translate.instant('ws-client.connections.connect'),
-        icon: 'toggle_off',
+        icon: 'mdi:toggle-switch-off',
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        },
         isEnabled: (entity) => !entity.connected,
         onAction: ($event, entity) => this.connect($event, entity)
       }
@@ -123,17 +126,17 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
     return actions;
   }
 
-  configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
+  configureCellMoreActions(): Array<CellActionDescriptor<Connection>> {
     const actions: Array<CellActionDescriptor<Connection>> = [];
     actions.push(
       {
-        name: this.translate.instant('mqtt-client-session.remove-session'),
+        name: this.translate.instant('action.edit'),
         icon: 'edit',
         isEnabled: () => true,
         onAction: ($event, entity) => this.edit($event, entity)
       },
       {
-        name: this.translate.instant('mqtt-client-session.remove-session'),
+        name: this.translate.instant('action.delete'),
         icon: 'delete',
         isEnabled: () => true,
         onAction: ($event, entity) => this.remove($event, entity)

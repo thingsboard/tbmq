@@ -82,6 +82,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
   headerActionDescriptors: Array<HeaderActionDescriptor>;
   groupActionDescriptors: Array<GroupActionDescriptor<BaseData>>;
   cellActionDescriptors: Array<CellActionDescriptor<BaseData>>;
+  cellMoreActionDescriptors: Array<CellActionDescriptor<BaseData>>;
   cellHiddenActionDescriptors: Array<CellActionDescriptor<BaseData>>;
 
   actionColumns: Array<EntityActionTableColumn<BaseData>>;
@@ -179,6 +180,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
     this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
     this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
     this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.cellMoreActionDescriptors = [...this.entitiesTableConfig.cellMoreActionDescriptors];
     this.cellHiddenActionDescriptors = [...this.entitiesTableConfig.cellHiddenActionDescriptors];
 
     if (this.entitiesTableConfig.entitiesDeleteEnabled) {
@@ -586,7 +588,7 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
   }
 
   calcTableHeight(): string {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '335px' : '335px';
+    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '34vh';
   }
 
   navigate() {

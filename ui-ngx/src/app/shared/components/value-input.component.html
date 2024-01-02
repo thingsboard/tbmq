@@ -17,7 +17,7 @@
 -->
 <form #inputForm="ngForm">
   <section fxLayout="row" fxLayoutGap="8px">
-    <mat-form-field fxFlex="40" class="mat-block tb-value-type">
+    <mat-form-field [fxFlex]="flexCorrelation[0]" class="mat-block tb-value-type">
       <mat-label translate>value.type</mat-label>
       <mat-select [disabled]="disabled" matInput name="valueType" [(ngModel)]="valueType" (ngModelChange)="onValueTypeChanged()">
         <mat-select-trigger>
@@ -30,14 +30,14 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-form-field *ngIf="valueType === valueTypeEnum.STRING" fxFlex="60" class="mat-block">
+    <mat-form-field *ngIf="valueType === valueTypeEnum.STRING" [fxFlex]="flexCorrelation[1]" class="mat-block">
       <mat-label translate>value.string-value</mat-label>
-      <input [disabled]="disabled" matInput required name="value" #value="ngModel" [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>
+      <input [disabled]="disabled" matInput [required]="required" name="value" #value="ngModel" [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>
       <mat-error *ngIf="value.hasError('required')">
         {{ (requiredText ? requiredText : 'value.string-value-required') | translate }}
       </mat-error>
     </mat-form-field>
-    <div fxLayout="row" fxLayoutAlign="center" fxFlex="60" *ngIf="valueType === valueTypeEnum.JSON" class="mat-block">
+    <div fxLayout="row" fxLayoutAlign="center" [fxFlex]="flexCorrelation[1]" *ngIf="valueType === valueTypeEnum.JSON" class="mat-block">
       <mat-form-field fxFlex class="mat-block">
         <mat-label translate>value.json-value</mat-label>
         <input [disabled]="disabled" matInput tb-json-to-string required name="value" #value="ngModel"

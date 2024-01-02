@@ -27,6 +27,9 @@ import { MqttQoS, MqttQoSType, mqttQoSTypes, mqttQoSValuesMap } from '@shared/mo
 import { WsClientService } from '@core/http/ws-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MessagesDisplayData } from './messages.component';
+import { MatDialog } from '@angular/material/dialog';
+import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
+import { PublishMessageProperties } from '@shared/models/ws-client.model';
 import mqtt from 'mqtt';
 
 @Component({
@@ -73,7 +76,7 @@ export class WsClientMessangerComponent implements OnInit {
               private dateAgoPipe: DateAgoPipe,
               private wsClientService: WsClientService,
               public fb: FormBuilder,
-              private dialogService: DialogService) {
+              private dialog: MatDialog) {
 
   }
 
@@ -83,7 +86,7 @@ export class WsClientMessangerComponent implements OnInit {
         value: [null, []],
         topic: ['testtopic', []],
         qos: [MqttQoS.AT_LEAST_ONCE, []],
-        retain: [false, []],
+        retain: [true, []],
         meta: [null, []]
       }
     );
@@ -310,5 +313,21 @@ export class WsClientMessangerComponent implements OnInit {
 
   onCommentMouseLeave(displayDataIndex: number): void {
     this.displayData[displayDataIndex].showActions = false;
+  }
+
+  clearHistory() {
+    this.wsClientService.clearHistory(this.client.id).subscribe();
+  }
+
+  openPublishMessageProperties() {
+    this.dialog.open<PropertiesDialogComponent, null, PublishMessageProperties>(PropertiesDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+    }).afterClosed()
+      .subscribe((res) => {
+        if (isDefinedAndNotNull(res)) {
+
+        }
+      });
   }
 }

@@ -28,6 +28,7 @@ import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.co
 import { WsClientSubscriptionDialogComponent } from '@home/pages/ws-client/ws-client-subscription-dialog.component';
 import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
 import { WsClientSubscriptionsComponent } from "@home/pages/ws-client/ws-client-subscriptions.component";
+import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { WsClientSubscriptionsComponent } from "@home/pages/ws-client/ws-client-
     ConnectionWizardDialogComponent,
     MessagesComponent,
     WsClientTableComponent,
-    WsClientSubscriptionsComponent
+    WsClientSubscriptionsComponent,
+    PropertiesDialogComponent
   ],
   imports: [
     CommonModule,
@@ -52,7 +54,8 @@ import { WsClientSubscriptionsComponent } from "@home/pages/ws-client/ws-client-
     WsClientSubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     WsClientTableComponent,
-    WsClientSubscriptionsComponent
+    WsClientSubscriptionsComponent,
+    PropertiesDialogComponent
   ]
 })
 

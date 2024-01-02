@@ -27,13 +27,13 @@ import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
-import { deepTrim, isDefinedAndNotNull } from '@core/utils';
+import { clientIdRandom, deepTrim, isDefinedAndNotNull, randomAlphanumeric } from '@core/utils';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from "@shared/models/credentials.model";
 import { ClientCredentialsService } from "@core/http/client-credentials.service";
 import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
 import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
 import { BaseData } from "@shared/models/base-data";
-import { ConnectionDetailed } from "@shared/models/ws-client.model";
+import { addressProtocols, ConnectionDetailed, mqttVersions } from '@shared/models/ws-client.model';
 import { WsClientService } from "@core/http/ws-client.service";
 
 @Component({
@@ -54,6 +54,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   credentialsOptionalStep = true;
 
   showNext = true;
+  useExistingCredentials = false;
 
   CredentialsType = CredentialsType;
 
@@ -67,6 +68,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   clientTypes = Object.values(ClientType);
 
+  addressProtocols = addressProtocols;
+  mqttVersions = mqttVersions;
   displayPasswordWarning: boolean;
   selectedExistingCredentials: ClientCredentials;
   connectionFormGroup: UntypedFormGroup;
@@ -91,26 +94,23 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       .pipe(map(({matches}) => matches ? 'end' : 'bottom'));
 
     this.connectionFormGroup = this.fb.group({
-      name: [null, [Validators.required]],
+      name: [randomAlphanumeric(5), [Validators.required]],
       protocol: ['ws://', [Validators.required]],
       host: [window.location.hostname, [Validators.required]],
       port: [8084, [Validators.required]],
       path: ['/mqtt', [Validators.required]],
-      clientId: ['tbmq_dev', []],
-      username: ['tbmq_dev', []],
-      password: ['tbmq_dev', []],
-      keepAlive: [60, [Validators.required]],
+      clientId: [clientIdRandom, [Validators.required]],
+      username: [null, []],
+      password: [null, []],
+      keepAlive: [0, [Validators.required]],
       reconnectPeriod: [1000, [Validators.required]],
       connectTimeout: [30 * 1000, [Validators.required]],
       clean: [true, []],
-      protocolVersion: ['5', []],
+      protocolVersion: [5, []],
       properties: this.fb.group({
         sessionExpiryInterval: [null, []],
-        receiveMaximum: [null, []],
         maximumPacketSize: [null, []],
-        topicAliasMaximum: [null, []],
-        requestResponseInformation: [null, []],
-        requestProblemInformation: [null, []]
+        topicAliasMaximum: [null, []]
       }),
       autocomplete: [null, []]
     });
@@ -199,7 +199,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (credentials?.credentialsValue) {
       const credentialsValue = JSON.parse(credentials.credentialsValue);
       this.connectionFormGroup.patchValue({
-        clientId: credentialsValue.clientId,
+        clientId: credentialsValue.clientId || clientIdRandom,
         username: credentialsValue.userName,
         password: null
       });
@@ -213,10 +213,13 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('password').updateValueAndValidity();
     } else {
       this.connectionFormGroup.patchValue({
-        clientId: null,
-        username: null
-      })
+        clientId: clientIdRandom,
+        username: null,
+        password: null
+      });
+      if (this.displayPasswordWarning) this.displayPasswordWarning = false;
+      this.connectionFormGroup.get('password').clearValidators();
+      this.connectionFormGroup.get('password').updateValueAndValidity();
     }
   }
-
 }

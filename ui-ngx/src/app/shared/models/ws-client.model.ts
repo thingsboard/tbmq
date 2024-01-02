@@ -16,6 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { UserProperties } from '@home/components/client-credentials-templates/user-properties.component';
+import { MqttQoS } from '@shared/models/session.model';
 
 export interface Connection extends BaseData {
   name: string;
@@ -54,6 +55,24 @@ export interface ConnectionWill {
 
 }
 
+export interface PublishMessage extends PublishMessageProperties {
+  topic: string;
+  qos: number;
+  retain: boolean;
+  payload: any;
+}
+
+export interface PublishMessageProperties {
+  contentType?: string;
+  payloadFormatIndicator?: boolean;
+  messageExpiryInterval?: number;
+  topicAlias?: number;
+  subscriptionIdentifier?: number;
+  correlationData?: string;
+  responseTopic?: string;
+  userProperties?: UserProperties;
+}
+
 export interface SubscriptionTopicFilter extends BaseData {
   topic: string;
   qos: number;
@@ -66,3 +85,42 @@ export interface SubscriptionTopicFilterDetailed extends SubscriptionTopicFilter
   rh: boolean;
   subscriptionIdentifier: number;
 }
+
+export const addressProtocols = [
+  {
+    value: 'ws://'
+  },
+  {
+    value: 'wss://'
+  }
+];
+
+export const mqttVersions = [
+  {
+    value: 3,
+    name: 'MQTT 3.1'
+  },
+  {
+    value: 4,
+    name: 'MQTT 3.1.1'
+  },
+  {
+    value: 5,
+    name: 'MQTT 5'
+  }
+];
+
+export const rhOptions = [
+  {
+    value: 0,
+    name: '0 - Send retained messages at the time of the subscribe'
+  },
+  {
+    value: 1,
+    name: '1 - Send retained messages at subscribe only if the subscription does not currently exist'
+  },
+  {
+    value: 2,
+    name: '2 - Do not send retained messages at the time of the subscribe'
+  }
+];

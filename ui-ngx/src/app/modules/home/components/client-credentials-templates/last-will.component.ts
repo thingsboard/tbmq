@@ -54,6 +54,9 @@ export class LastWillComponent implements ControlValueAccessor, Validator, OnDes
   @Input()
   disabled: boolean;
 
+  @Input()
+  mqttVersion: number;
+
   formGroup: UntypedFormGroup;
   mqttQoSTypes = mqttQoSTypes;
 

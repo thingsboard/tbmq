@@ -51,10 +51,12 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
     this.entitiesDeleteEnabled = false;
     this.displayPagination = false;
     this.columns.push(new EntityTableColumn<SubscriptionTopicFilter>('topic', 'mqtt-client-session.topic'));
+    this.noDataLabel = 'ws-client.subscriptions.no-subscriptions';
     this.entitiesFetchFunction = pageLink => this.fetchSubscriptions();
     this.handleRowClick = (event, entity) => false;
 
     this.cellHiddenActionDescriptors = this.configureCellHiddenActions();
+    this.cellMoreActionDescriptors = this.configureCellMoreActions();
     this.addEntity = () => {
       this.addSubscription(null);
       return of(null);
@@ -92,13 +94,26 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
     const actions: Array<CellActionDescriptor<SubscriptionTopicFilter>> = [];
     actions.push(
       {
-        name: this.translate.instant('mqtt-client-session.remove-session'),
+        name: this.translate.instant('action.copy'),
+        icon: 'content_copy',
+        isEnabled: () => true,
+        onAction: ($event, entity) => this.copy($event, entity)
+      }
+    );
+    return actions;
+  }
+
+  configureCellMoreActions(): Array<CellActionDescriptor<SubscriptionTopicFilter>> {
+    const actions: Array<CellActionDescriptor<SubscriptionTopicFilter>> = [];
+    actions.push(
+      {
+        name: this.translate.instant('action.edit'),
         icon: 'edit',
         isEnabled: () => true,
         onAction: ($event, entity) => this.edit($event, entity)
       },
       {
-        name: this.translate.instant('mqtt-client-session.remove-session'),
+        name: this.translate.instant('action.delete'),
         icon: 'delete',
         isEnabled: () => true,
         onAction: ($event, entity) => this.remove($event, entity)
@@ -121,6 +136,13 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
   }
 
   edit($event, entity) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+
+  }
+
+  copy($event, entity) {
     if ($event) {
       $event.stopPropagation();
     }

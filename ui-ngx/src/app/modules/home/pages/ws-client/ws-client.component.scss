@@ -16,8 +16,10 @@
 @import 'constants';
 
 :host {
+
   .tb-ws-client {
-    display: flex;
+    height: 90vh;
+
     padding: 12px 12px 8px 12px;
 
     div:first-child {

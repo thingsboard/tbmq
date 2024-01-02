@@ -40,6 +40,10 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
 
   @Input() disabled: boolean;
 
+  @Input() required: boolean;
+
+  @Input() flexCorrelation: number[] = [40, 60];
+
   @Input() requiredText: string;
 
   @ViewChild('inputForm', {static: true}) inputForm: NgForm;

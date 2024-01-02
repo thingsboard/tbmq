@@ -22,11 +22,12 @@
 <ng-template #connections>
   <section class="tb-ws-client">
     <div fxFlex fxLayout="row" fxLayoutGap="8px">
-      <div fxFlex="30" fxLayout="column" fxLayoutGap="8px">
-        <tb-ws-client-connections></tb-ws-client-connections>
-        <tb-ws-client-subscriptions></tb-ws-client-subscriptions>
+      <div fxFlex="30" fxLayout="column" fxLayoutGap="8px" style="height: 90vh; max-height: 90vh;">
+        <tb-ws-client-connections fxFlex></tb-ws-client-connections>
+        <tb-ws-client-subscriptions fxFlex></tb-ws-client-subscriptions>
       </div>
-      <tb-ws-client-messanger [clients]="clients"
+      <tb-ws-client-messanger style="height: 90vh; max-height: 90vh;"
+                              [clients]="clients"
                               [subscriptions]="subscriptions"
                               [subscription]="subscription">
       </tb-ws-client-messanger>

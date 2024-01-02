@@ -27,7 +27,9 @@
     margin-bottom: 16px;
   }
 
-
+  .slider {
+    padding: 4px 0 16px 4px;
+  }
 }
 
 :host-context(.mat-mdc-dialog-container) {

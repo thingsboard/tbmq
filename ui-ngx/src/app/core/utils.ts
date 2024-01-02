@@ -531,7 +531,10 @@ export const getOS = (): string => {
   return os;
 };
 
-
 export const camelCase = (str: string): string => {
   return _.camelCase(str);
 };
+
+export const clientIdRandom = 'tbmq_' + randomAlphanumeric(8);
+
+export const randomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16);

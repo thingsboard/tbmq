@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MqttQoS } from '@shared/models/session.model';
 import { DialogService } from '@core/services/dialog.service';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
@@ -22,6 +22,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import { DateAgoPipe } from '@app/shared/pipe/date-ago.pipe';
 import { map } from "rxjs/operators";
+import { isLiteralObject } from '@core/utils';
+import { UserProperties } from '@shared/models/retained-message.model';
 
 export interface MessagesDisplayData {
   commentId?: string,
@@ -39,6 +41,8 @@ export interface MessagesDisplayData {
   isSystemComment?: boolean,
   avatarBgColor?: string
   type?: string;
+  contentType?: string;
+  userProperties?: UserProperties;
 }
 
 @Component({
@@ -47,6 +51,9 @@ export interface MessagesDisplayData {
   styleUrls: ['./messages.component.scss']
 })
 export class MessagesComponent implements OnInit {
+
+  @ViewChild('eventContentEditor', {static: true})
+  eventContentEditorElmRef: ElementRef;
 
   headerOptions = [
     {
@@ -141,10 +148,6 @@ export class MessagesComponent implements OnInit {
     );
   }
 
-  clearHistory() {
-    this.wsClientService.clearHistory(this.connection.id).subscribe();
-  }
-
   saveEditedComment(commentId: string): void {
   }
 
@@ -186,6 +189,14 @@ export class MessagesComponent implements OnInit {
 
   private getDataElementByCommentId(commentId: string): MessagesDisplayData {
     return this.displayData.find(commentDisplayData => commentDisplayData.commentId === commentId);
+  }
+
+  isJson(str) {
+    try {
+      return isLiteralObject(JSON.parse(str));
+    } catch (e) {
+      return false;
+    }
   }
 
 }

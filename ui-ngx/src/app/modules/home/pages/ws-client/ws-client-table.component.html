@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="column" fxLayoutGap="4px">
+<div class="table-container">
   <div class="mat-table-toolbar-container">
     <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
       <div class="mat-toolbar-tools" fxLayoutGap="4px">
@@ -36,18 +36,19 @@
       </div>
     </mat-toolbar>
     <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
-      <div class="mat-toolbar-tools" style="justify-content: right;">
+      <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="4px"
+           class="mat-toolbar-tools search-mode">
         <button mat-icon-button
+                class="tb-mat-32"
                 matTooltip="{{ translations.search | translate }}"
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">search</mat-icon>
         </button>
-        <mat-form-field fxFlex="100" appearance="outline" style="padding-top: 12px">
-          <input #searchInput matInput
-                 [(ngModel)]="pageLink.textSearch"
-                 placeholder="{{ translations.search | translate }}"/>
-        </mat-form-field>
+        <input #searchInput fxFlex
+               [(ngModel)]="pageLink.textSearch"
+               placeholder="{{ translations.search | translate }}"/>
         <button mat-icon-button (click)="exitFilterMode()"
+                class="tb-mat-32"
                 matTooltip="{{ 'action.close' | translate }}"
                 matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">close</mat-icon>
@@ -55,35 +56,56 @@
       </div>
     </mat-toolbar>
   </div>
+  <ng-container *ngIf="dataArray?.length; else noData">
+    <ng-container *ngTemplateOutlet="data"></ng-container>
+  </ng-container>
+</div>
+
+<ng-template #data>
   <section>
     <ul style="overflow: auto" [ngStyle]="{height: calcTableHeight()}" class="tb-side-menu"
-        fxFlex fxLayout="column" fxLayoutAlign="start stretch" fxLayoutGap="8px">
+        fxFlex fxLayout="column" fxLayoutAlign="flex-start stretch" fxLayoutGap="8px">
       <li [ngClass]="{'active': (index === selectedRow && selectionEnabled)}"
-          *ngFor="let connection of dataArray; index as index">
+          *ngFor="let entity of dataArray; index as index">
         <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
                  (mouseenter)="onCommentMouseEnter(index)"
                  (mouseleave)="onCommentMouseLeave(index)">
-          <section [ngStyle]="{borderLeft: (hasColorBadge ? ('4px solid ' + connection.color) : 'unset')}">
-            <a mat-button (click)="onRowClick($event, connection, index)">
-              <span>{{connection.name}}</span>
-            </a>
+          <section fxLayout="row" fxLayoutGap="8px">
+            <div *ngIf="entity.color" class="label-color" [ngStyle]="{backgroundColor: entity.color}"></div>
+            <span class="label" (click)="onRowClick($event, entity, index)">{{entity.name}}</span>
           </section>
           <div fxFlex fxLayout="row" fxLayoutAlign="end">
             <div *ngFor="let actionDescriptor of cellHiddenActionDescriptors" matTooltipPosition="above"
                  class="action-buttons"
-                 [ngClass]="{ 'show-buttons': connection?.showActions }"
-                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(connection) : actionDescriptor.name }}">
-              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(connection)"
-                      *ngIf="actionDescriptor.isEnabled(connection)"
-                      (click)="actionDescriptor.onAction($event, connection)">
+                 [ngClass]="{ 'show-buttons': entity?.showActions }"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                      *ngIf="actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
                 <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
               </button>
             </div>
+            <div *ngIf="cellMoreActionDescriptors.length">
+              <button mat-icon-button
+                      (click)="$event.stopPropagation()"
+                      [matMenuTriggerFor]="cellMoreActionsMenu">
+                <mat-icon class="material-icons">more_vert</mat-icon>
+              </button>
+              <mat-menu #cellMoreActionsMenu="matMenu" xPosition="before" yPosition="above">
+                <button mat-menu-item *ngFor="let actionDescriptor of cellMoreActionDescriptors"
+                        [disabled]="isLoading$ | async"
+                        [fxShow]="actionDescriptor.isEnabled(entity)"
+                        (click)="actionDescriptor.onAction($event, entity)">
+                  <mat-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</mat-icon>
+                  <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
+                </button>
+              </mat-menu>
+            </div>
             <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
-                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(connection) : actionDescriptor.name }}">
-              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(connection)"
-                      *ngIf="actionDescriptor.isEnabled(connection)"
-                      (click)="actionDescriptor.onAction($event, connection)">
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                      *ngIf="actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
                 <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
               </button>
             </div>
@@ -92,15 +114,11 @@
       </li>
     </ul>
   </section>
-  <div fxFlex></div>
-  <!--<section style="align-self: end">
-    <mat-divider *ngIf="displayPagination"></mat-divider>
-    <mat-paginator *ngIf="displayPagination"
-                   [length]="dataSource.total() | async"
-                   [pageIndex]="pageLink.page"
-                   [pageSize]="pageLink.pageSize"
-                   [pageSizeOptions]="pageSizeOptions"
-                   [hidePageSize]="hidePageSize | async"
-                   showFirstLastButtons></mat-paginator>
-  </section>-->
-</div>
+</ng-template>
+<ng-template #noData>
+  <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px"
+           class="no-data" [ngStyle]="{height: calcTableHeight()}">
+    <img src="assets/home/no_data_bg.svg">
+    <span *ngIf="entitiesTableConfig.noDataLabel">{{ entitiesTableConfig.noDataLabel | translate }}</span>
+  </section>
+</ng-template>

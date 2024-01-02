@@ -16,69 +16,67 @@
 
 -->
 <section *ngIf="client">
-  <mat-toolbar>
-    <section fxFlex fxLayoutGap="8px" fxLayoutAlign="flex-start center">
-      <span class="title">{{client?.name}}</span>
-      <span class="status" [ngClass]="{'disconnected': !client?.connected}">
-        {{(client?.connected ? 'mqtt-client-session.connected' : 'mqtt-client-session.disconnected') | translate}}
-      </span>
+  <section class="toolbar" fxFlex fxLayoutGap="8px" fxLayoutAlign="flex-start center">
+    <span class="title">{{client?.name}}</span>
+    <span class="status" [ngClass]="{'disconnected': !client?.connected}">
+      {{(client?.connected ? 'mqtt-client-session.connected' : 'mqtt-client-session.disconnected') | translate}}
+    </span>
+    <span fxFlex></span>
+    <section fxLayoutGap="8px">
+      <button mat-stroked-button color="primary"
+              [matTooltip]="'ws-client.connections.clear-connection-history' | translate"
+              (click)="clearHistory()"
+              aria-label="Clear history">
+        <span translate>ws-client.connections.clear-connection-history</span>
+      </button>
     </section>
-  </mat-toolbar>
-  <section class="mat-padding">
-    <div fxFlex fxLayout="column" fxLayoutGap="8px">
-      <tb-ws-client-messages></tb-ws-client-messages>
-      <div class="container">
-        <div fxFlex [formGroup]="messangerFormGroup"
-             fxLayout="column" fxLayoutGap="8px">
-          <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="space-between center">
-            <mat-form-field fxFlex="55" class="mat-block">
-              <mat-label translate>mqtt-client-session.topic</mat-label>
-              <input matInput formControlName="topic">
-            </mat-form-field>
-            <mat-form-field class="mat-block" hideRequiredMarker>
-              <mat-label translate>mqtt-client-session.qos</mat-label>
-              <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-                <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-                  {{ mqttQoSValue(mqttQoS) }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-            <section>
-              <mat-slide-toggle formControlName="retain">
-                <span translate>ws-client.last-will.retain</span>
-              </mat-slide-toggle>
-            </section>
-            <section>
-              <button mat-stroked-button
-                      [matTooltip]="'ws-client.connections.show-meta' | translate"
-                      aria-label="Show message meta data">
-                <span translate>ws-client.connections.meta</span>
-              </button>
-            </section>
+  </section>
+  <div fxFlex fxLayout="column" fxLayoutGap="16px">
+    <tb-ws-client-messages fxFlex></tb-ws-client-messages>
+    <div class="container">
+      <div fxFlex [formGroup]="messangerFormGroup" fxLayout="column" fxLayoutGap="16px">
+        <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="space-between center">
+          <mat-form-field fxFlex="50" subscriptSizing="dynamic">
+            <mat-label translate>mqtt-client-session.topic</mat-label>
+            <input matInput formControlName="topic">
+          </mat-form-field>
+          <mat-form-field fxFlex hideRequiredMarker subscriptSizing="dynamic">
+            <mat-label translate>mqtt-client-session.qos</mat-label>
+            <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+              <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
+                {{ mqttQoSValue(mqttQoS) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <section style="border: 1px solid rgba(0,0,0,0.12); height: 36px; padding: 8px 16px 8px 12px; border-radius: 4px">
+            <mat-slide-toggle formControlName="retain" color="success">
+              {{ 'ws-client.last-will.retain' | translate }}
+            </mat-slide-toggle>
           </section>
-          <div fxLayout="column">
-            <div style="background-color: white" class="comment-input newest-first">
-              <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px" class="inner-wrap">
-                <tb-ws-json-object-edit
-                  style="width: 100%;"
-                  formControlName="value"
-                  label="{{ 'value.json-value' | translate }}"
-                  [jsonRequired]="false"
-                  [fillHeight]="false">
-                </tb-ws-json-object-edit>
-                <button mat-icon-button
-                        type="button"
-                        matSuffix
-                        (click)="publishMessage()">
-                  <mat-icon color="primary">send</mat-icon>
-                </button>
-              </div>
-            </div>
+          <button mat-stroked-button color="primary"
+                  [matTooltip]="'ws-client.connections.show-meta' | translate"
+                  (click)="openPublishMessageProperties()"
+                  aria-label="Show message meta data">
+            <span translate>ws-client.connections.properties</span>
+          </button>
+        </section>
+        <div fxLayout="column">
+          <div style="background: #fff" fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
+            <tb-ws-json-object-edit
+              style="width: 100%;"
+              formControlName="value"
+              label="{{ 'value.json-value' | translate }}"
+              [jsonRequired]="false"
+              [fillHeight]="false">
+            </tb-ws-json-object-edit>
+            <button mat-icon-button (click)="publishMessage()">
+              <mat-icon color="primary">send</mat-icon>
+            </button>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 </section>
 
 

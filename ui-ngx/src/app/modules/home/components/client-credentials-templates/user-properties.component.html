@@ -16,37 +16,37 @@
 
 -->
 <form [formGroup]="userPropertiesFormGroup">
-  <div fxLayout="column">
-    <div *ngFor="let control of userPropertiesFormArray.controls; let $index = index"
-         formArrayName="userProperties">
-      <div [formGroupName]="$index" fxFlex fxLayoutAlign="flex-start center">
-        <div fxFlex fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="center center">
-          <mat-form-field class="mat-block">
-            <mat-label translate>ws-client.connections.key</mat-label>
-            <input matInput formControlName="key">
-          </mat-form-field>
-          <mat-form-field class="mat-block">
-            <mat-label translate>ws-client.connections.value</mat-label>
-            <input matInput formControlName="value" type="text">
-          </mat-form-field>
-          <button mat-icon-button color="warn"
-                  type="button"
-                  (click)="removeRule($index)"
-                  matTooltip="{{ 'ws-client.connections.add-user-properties' | translate }}"
-                  matTooltipPosition="above">
-            <mat-icon>remove_circle_outline</mat-icon>
-          </button>
+  <fieldset class="fields-group" fxLayout="column">
+    <legend class="group-title" translate>ws-client.connections.user-properties</legend>
+    <div fxLayout="column">
+      <section class="container">
+        <div formArrayName="userProperties" *ngFor="let control of userPropertiesFormArray.controls; let $index = index">
+            <div [formGroupName]="$index" fxFlex fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="center center">
+              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+                <mat-label translate>ws-client.connections.key</mat-label>
+                <input matInput formControlName="key">
+              </mat-form-field>
+              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+                <mat-label translate>ws-client.connections.value</mat-label>
+                <input matInput formControlName="value" type="text">
+              </mat-form-field>
+              <button mat-icon-button color="warn" type="button" (click)="removeRule($index)"
+                      matTooltip="{{ 'ws-client.connections.remove-user-property' | translate }}"
+                      matTooltipPosition="above">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
         </div>
+      </section>
+      <div class="mat-block">
+        <button mat-stroked-button color="primary"
+                [fxShow]="!disabled"
+                (click)="addRule()"
+                type="button">
+          <mat-icon>add_circle_outline</mat-icon>
+          {{ 'ws-client.connections.add-user-property' | translate }}
+        </button>
       </div>
     </div>
-  </div>
-  <div class="mat-block">
-    <button mat-stroked-button color="primary"
-            [fxShow]="!disabled"
-            (click)="addRule()"
-            type="button">
-      <mat-icon>add_circle_outline</mat-icon>
-      {{ 'action.add' | translate }}
-    </button>
-  </div>
+  </fieldset>
 </form>

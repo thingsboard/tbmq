@@ -16,40 +16,28 @@
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
-import { TranslateService } from '@ngx-translate/core';
-import { WsClientService } from '@core/http/ws-client.service';
+import { Subject } from 'rxjs';
+import { mqttQoSTypes } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { ConnectionDetailed, rhOptions } from '@shared/models/ws-client.model';
-import { randomColor } from '@core/utils';
-
-export interface AddWsClientSubscriptionDialogData {
-  subscription: any;
-}
+import { ConnectionDetailed } from '@shared/models/ws-client.model';
 
 @Component({
-  selector: 'tb-ws-client-subscription',
-  templateUrl: './ws-client-subscription-dialog.component.html',
-  styleUrls: ['./ws-client-subscription-dialog.component.scss']
+  selector: 'tb-ws-client-properties',
+  templateUrl: './properties-dialog.component.html',
+  styleUrls: ['./properties-dialog.component.scss']
 })
-export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClientSubscriptionDialogComponent>
+export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
   entity: any;
 
-  subscriptions = [];
-  subscription;
-
-  rhOptions = rhOptions;
   mqttQoSTypes = mqttQoSTypes;
 
-  private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();
 
   constructor(public fb: FormBuilder,
@@ -57,14 +45,12 @@ export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClien
               protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: any,
-              public dialogRef: MatDialogRef<WsClientSubscriptionDialogComponent>,
-              private wsClientService: WsClientService,
-              private translate: TranslateService) {
+              public dialogRef: MatDialogRef<null>) {
     super(store, router, dialogRef);
   }
 
   ngOnInit(): void {
-    this.entity = this.data.subscription;
+    this.entity = this.data;
     this.buildForms(this.entity);
   }
 
@@ -73,21 +59,22 @@ export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClien
   }
 
   private buildForms(entity: ConnectionDetailed): void {
-    this.buildSessionForm();
+    this.buildForm();
     if (entity) {
       this.updateFormsValues(entity);
     }
   }
 
-  private buildSessionForm(): void {
+  private buildForm(): void {
     this.formGroup = this.fb.group({
-      topic: ['testtopic', []],
-      qos: [MqttQoS.AT_LEAST_ONCE, []],
-      nl: [null, []],
-      rap: [null, []],
-      rh: [null, []],
+      payloadFormatIndicator: [null, []],
+      contentType: [null, []],
+      messageExpiryInterval: [null, []],
+      topicAlias: [null, []],
       subscriptionIdentifier: [null, []],
-      color: [randomColor(), []]
+      correlationData: [null, []],
+      responseTopic: [null, []],
+      userProperties: [null, []]
     });
   }
 
@@ -97,15 +84,7 @@ export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClien
   }
 
   private updateFormsValues(entity: any): void {
-    this.formGroup.patchValue({topic: entity.topic});
-  }
-
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    const index = mqttQoSTypes.findIndex(object => {
-      return object.value === mqttQoSValue.value;
-    });
-    const name = this.translate.instant(mqttQoSValue.name);
-    return index + ' - ' + name;
+    this.formGroup.patchValue({});
   }
 
   onSave() {

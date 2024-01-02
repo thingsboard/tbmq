@@ -28,7 +28,7 @@ const routes: Routes = [
       title: 'retained-message.retained-messages',
       breadcrumb: {
         label: 'retained-message.retained-messages',
-        icon: 'mdi:archive-outline'
+        icon: 'mdi:archive'
       }
     }
   }

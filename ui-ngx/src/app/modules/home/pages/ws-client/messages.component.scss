@@ -22,124 +22,67 @@ $border: 1px solid rgba(0,0,0,0.15);
 
 :host {
   .tb-ws-client-messages {
-    //background-color: $primary-color;
-    //max-width: 600px;
+    background-color: rgba(244,245,246,1);
     width: 100%;
 
-    .comment-input {
-      position: sticky;
-      z-index: 1;
-
-      .inner-wrap {
-        border: $border;
-        padding: 0 24px;
-        background-color: $primary-color;
-      }
-
-      &.oldest-first {
-        bottom: -24px;
-        box-shadow: 0px -4px 12px rgba(0, 0, 0, 0.04);
-
-        .inner-wrap {
-          border-radius: 0 0 8px 8px;
-        }
-
-        &.activity-only {
-          bottom: -1px;
-
-          .inner-wrap {
-            border: none
-          }
-        }
-      }
-
-      &.newest-first {
-        top: 24px;
-        box-shadow: 0 8px 10px rgba(23, 33, 90, 0.08);
-
-        .inner-wrap {
-          border-top: none;
-        }
-
-        &.activity-only {
-          top: 48px;
-          box-shadow: 0 8px 10px rgba(23, 33, 90, 0.08);
-
-          .inner-wrap {
-            border: none;
-          }
-        }
-      }
-    }
-
-    .header {
-      z-index: 1;
-      position: sticky;
-      top: -24px;
-      background-color: white;
-
-      &.activity-only {
-        top: 0;
-      }
-
-      &-container {
-        padding: 0 24px;
-        background-color: $primary-color;
-        border: $border;
-        border-bottom: none;
-        border-radius: 8px 8px 0px 0px;
-
-        &.activity-only {
-          border: none;
-        }
-
-        &.asc {
-          border-bottom: $border;
-          box-shadow: 0px 4px 10px rgba(23, 33, 90, 0.08);
-
-          &.activity-only {
-            border: none;
-          }
-        }
-
-        .header-title {
-          color: rgba(0, 0, 0, 0.76);
-          letter-spacing: 0.25px;
-          font-weight: 500;
-        }
-
-        .mat-icon {
-          color: rgba(0, 0, 0, 0.38);
-        }
-      }
-    }
-
-    .comments-container {
+    .messages-container {
       border: $border;
-      border-radius: 8px;
+      border-radius: unset;
       overflow: auto;
-
-      &.activity-only {
-        border: none;
-      }
-
-      &.asc {
-        border-bottom: none;
-        border-radius: unset;
-      }
+      padding: 16px;
+      height: 500px;
     }
-
-    .comment-container {
+    .message-container {
       max-width: 50%;
+    }
+    .message {
+      min-width: 20vw;
+      max-width: 35vw;
+      overflow: auto;
+      padding: 4px;
+      border-radius: 8px;
+
+      pre {
+        margin: 0;
+        &.is-string {
+          white-space: initial;
+        }
+      }
+
+      .message-properties {
+        color: rgba(0, 0, 0, 0.38);
+        font-weight: 500;
+        line-height: 20px;
+        letter-spacing: 0.25px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(31, 139, 77, 0.04);
+      }
+
+      .user-properties section {
+        padding: 8px 12px 8px 12px;
+
+        color: #000;
+        background-color: #fff;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        overflow: auto;
+
+        >span {
+          font-weight: 400;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+      }
     }
 
     .sub-message {
+      padding: 8px 8px 8px 16px;
       border: 1px solid rgba(0,0,0,0.16);
       border-radius: 0 8px 8px 0;
-      background-color: rgba(0,0,0,0.03);
-      width: 250px;
-      max-height: 250px;
-      overflow: auto;
+      background-color: #fff;
+      //overflow: auto;
     }
     .sub-message-container {
       align-self: flex-start;
@@ -149,6 +92,7 @@ $border: 1px solid rgba(0,0,0,0.15);
     }
 
     .pub-message {
+      padding: 8px 8px 8px 12px;
       border: 1px solid rgba(31,139,77,0.16);
       border-radius: 8px 0 0 8px;
       background-color: rgba(31,139,77,0.08);
@@ -160,44 +104,18 @@ $border: 1px solid rgba(0,0,0,0.15);
       text-align: end;
     }
 
-    .message-container {
-      max-width: 100%;
-    }
-
-    .user-comment {
-      overflow: auto;
-      padding: 4px;
-      border-radius: 8px;
-      &:hover {
-        background-color: $primary-color;
-      }
-    }
-
-    .user-avatar {
-      width: 14px;
-      min-width: 14px;
-      height: 14px;
-      min-height: 14px;
-      border-radius: 50%;
-      font-weight: 700;
-      color: white;
-      font-size: 13px;
-    }
-
     .topic {
       font-size: 14px;
       color: rgba(0, 0, 0, 0.38);
       font-weight: 500;
       letter-spacing: 0.25px;
     }
-
     .details {
       font-size: 14px;
       color: rgba(0, 0, 0, 0.38);
       font-weight: 400;
       letter-spacing: 0.25px;
     }
-
     .retain {
       font-size: 14px;
       border-radius: 4px;
@@ -205,7 +123,6 @@ $border: 1px solid rgba(0,0,0,0.15);
       color: rgba(0, 0, 0, 0.76);
       background: #DBDBDB;
     }
-
     .time {
       font-size: 14px;
       font-weight: 400;
@@ -216,50 +133,6 @@ $border: 1px solid rgba(0,0,0,0.15);
       &:hover {
         background: rgba(0, 0, 0, 0.04);
       }
-    }
-
-    .system-text {
-      font-weight: 500;
-      font-size: 14px;
-      letter-spacing: 0.25px;
-      color: rgba(0, 0, 0, 0.38);
-    }
-
-    .text {
-      white-space: pre;
-      word-break: break-word;
-      font-size: 16px;
-      letter-spacing: 0.15px;
-      color: rgba(0, 0, 0, 0.54);
-    }
-
-    .action-buttons {
-      visibility: hidden;
-      .mat-icon {
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    .show-buttons {
-      visibility: visible;
-    }
-
-    .green-button {
-      color: #00695C;
-    }
-
-    .red-button {
-      color: #D12730;
-    }
-
-    .mat-form-field {
-      font-size: 16px;
-      letter-spacing: 0.15px;
-      color: rgba(0, 0, 0, 0.76);
-    }
-
-    textarea {
-      letter-spacing: 0.15px;
     }
   }
 }
