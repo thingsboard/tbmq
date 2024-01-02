@@ -74,10 +74,10 @@ This project is released under [Apache 2.0 License](./LICENSE).
 - Assigned ClientID
 - Server reference
 - The payload format and content types
+- Request / Response & Correlation Data
 
 ## MQTT 5 features in active development:
 
 - AUTH packet & Enhanced Authentication
-- Request / Response & Correlation Data
 - Flow Control
 - Subscription Identifiers
