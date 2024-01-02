@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
@@ -29,12 +30,15 @@ public class ConnectionAcceptedMsg extends SessionDependentMsg {
     private final boolean sessionPresent;
     private final PublishMsg lastWillMsg;
     private final int keepAliveTimeSeconds;
+    private final MqttProperties properties;
 
-    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent, PublishMsg lastWillMsg, int keepAliveTimeSeconds) {
+    public ConnectionAcceptedMsg(UUID sessionId, boolean sessionPresent, PublishMsg lastWillMsg,
+                                 int keepAliveTimeSeconds, MqttProperties properties) {
         super(sessionId);
         this.sessionPresent = sessionPresent;
         this.lastWillMsg = lastWillMsg;
         this.keepAliveTimeSeconds = keepAliveTimeSeconds;
+        this.properties = properties;
     }
 
     @Override

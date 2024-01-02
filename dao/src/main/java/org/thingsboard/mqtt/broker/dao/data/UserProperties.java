@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,7 +63,7 @@ public class UserProperties {
     }
 
     private static MqttProperties.UserProperties getUserProperties(MqttProperties mqttProperties) {
-        return (MqttProperties.UserProperties) mqttProperties.getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
+        return (MqttProperties.UserProperties) mqttProperties.getProperty(BrokerConstants.USER_PROPERTY_PROP_ID);
     }
 
     private static UserProperties getUserProperties(MqttProperties.UserProperties userProperties) {

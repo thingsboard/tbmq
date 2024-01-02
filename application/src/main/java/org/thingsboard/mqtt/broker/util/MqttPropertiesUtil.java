@@ -28,6 +28,10 @@ import java.util.concurrent.TimeUnit;
 
 public class MqttPropertiesUtil {
 
+    /**
+     * Expiry helpful methods
+     */
+
     public static boolean isRetainedMsgExpired(RetainedMsg retainedMsg, long currentTs) {
         MqttProperties.IntegerProperty property = getPubExpiryIntervalProperty(retainedMsg);
         if (property != null && property.value() > 0) {
@@ -45,6 +49,10 @@ public class MqttPropertiesUtil {
     public static boolean isRetainedMsgNotExpired(RetainedMsg retainedMsg, long currentTs) {
         return !isRetainedMsgExpired(retainedMsg, currentTs);
     }
+
+    /**
+     * Get properties
+     */
 
     public static MqttProperties.IntegerProperty getPubExpiryIntervalProperty(RetainedMsg retainedMsg) {
         return getPubExpiryIntervalProperty(retainedMsg.getProperties());
@@ -66,6 +74,19 @@ public class MqttPropertiesUtil {
         return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_MAX_PROP_ID);
     }
 
+    public static int getRequestResponseInfoPropertyValue(MqttProperties properties) {
+        MqttProperties.IntegerProperty requestResponseInfoProp = getIntegerProperty(properties, BrokerConstants.REQUEST_RESPONSE_INFO_PROP_ID);
+        return requestResponseInfoProp == null ? 0 : requestResponseInfoProp.value();
+    }
+
+    public static MqttProperties.MqttProperty getSubscriptionIdProperty(MqttProperties properties) {
+        return properties.getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+    }
+
+    public static MqttProperties.IntegerProperty getSessionExpiryIntervalProperty(MqttProperties properties) {
+        return getIntegerProperty(properties, BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
+    }
+
     public static MqttProperties.IntegerProperty getTopicAliasProperty(MqttProperties properties) {
         return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_PROP_ID);
     }
@@ -77,6 +98,41 @@ public class MqttPropertiesUtil {
     public static MqttProperties.StringProperty getContentTypeProperty(MqttProperties mqttProperties) {
         return (MqttProperties.StringProperty) mqttProperties.getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID);
     }
+
+    public static MqttProperties.BinaryProperty getCorrelationDataProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.BinaryProperty) mqttProperties.getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID);
+    }
+
+    public static MqttProperties.StringProperty getResponseTopicProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.StringProperty) mqttProperties.getProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID);
+    }
+
+    public static String getResponseTopicValue(MqttProperties mqttProperties) {
+        MqttProperties.StringProperty property = getResponseTopicProperty(mqttProperties);
+        return property == null ? null : property.value();
+    }
+
+    public static byte[] getCorrelationDataValue(MqttProperties mqttProperties) {
+        MqttProperties.BinaryProperty property = getCorrelationDataProperty(mqttProperties);
+        return property == null ? null : property.value();
+    }
+
+    private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
+        MqttProperties.MqttProperty property = properties.getProperty(propertyId);
+        return property != null ? (MqttProperties.IntegerProperty) property : null;
+    }
+
+    public static MqttProperties.UserProperties getUserProperties(PublishMsg publishMsg) {
+        return getUserProperties(publishMsg.getProperties());
+    }
+
+    public static MqttProperties.UserProperties getUserProperties(MqttProperties properties) {
+        return (MqttProperties.UserProperties) properties.getProperty(BrokerConstants.USER_PROPERTY_PROP_ID);
+    }
+
+    /**
+     * Add properties
+     */
 
     public static void addTopicAliasToProps(MqttProperties properties, int topicAlias) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID, topicAlias));
@@ -90,17 +146,12 @@ public class MqttPropertiesUtil {
         properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, contentType));
     }
 
-    private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
-        MqttProperties.MqttProperty property = properties.getProperty(propertyId);
-        return property != null ? (MqttProperties.IntegerProperty) property : null;
+    public static void addResponseTopicToProps(MqttProperties properties, String responseTopic) {
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID, responseTopic));
     }
 
-    public static MqttProperties.UserProperties getUserProperties(PublishMsg publishMsg) {
-        return getUserProperties(publishMsg.getProperties());
-    }
-
-    public static MqttProperties.UserProperties getUserProperties(MqttProperties properties) {
-        return (MqttProperties.UserProperties) properties.getProperty(BrokerConstants.USER_PROPERTIES_ID);
+    public static void addCorrelationDataToProps(MqttProperties properties, byte[] correlationData) {
+        properties.add(new MqttProperties.BinaryProperty(BrokerConstants.CORRELATION_DATA_PROP_ID, correlationData));
     }
 
     public static void addMsgExpiryIntervalToProps(MqttProperties properties, TbQueueMsgHeaders headers) {
@@ -116,6 +167,50 @@ public class MqttPropertiesUtil {
     public static void addMsgExpiryIntervalToPublish(MqttProperties properties, int messageExpiryInterval) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval));
     }
+
+    public static void addAssignedClientIdToProps(MqttProperties properties, String assignedClientId) {
+        properties.add(new MqttProperties.StringProperty(
+                BrokerConstants.ASSIGNED_CLIENT_IDENTIFIER_PROP_ID,
+                assignedClientId)
+        );
+    }
+
+    public static void addKeepAliveTimeToProps(MqttProperties properties, int keepAliveTimeSeconds) {
+        properties.add(new MqttProperties.IntegerProperty(
+                BrokerConstants.SERVER_KEEP_ALIVE_PROP_ID,
+                keepAliveTimeSeconds)
+        );
+    }
+
+    public static void addSubsIdentifierAvailableToProps(MqttProperties properties) {
+        properties.add(new MqttProperties.IntegerProperty(
+                BrokerConstants.SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID,
+                0) // TODO: 14/10/2022 after impl MQTT 5 SubscriptionId feature change this to 1 or remove completely
+        );
+    }
+
+    public static void addMaxPacketSizeToProps(MqttProperties properties, int maxPacketSize) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.MAXIMUM_PACKET_SIZE_PROP_ID, maxPacketSize));
+    }
+
+    public static void addSessionExpiryIntervalToProps(MqttProperties properties, int sessionExpiryInterval) {
+        properties.add(new MqttProperties.IntegerProperty(
+                BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID,
+                sessionExpiryInterval)
+        );
+    }
+
+    public static void addMaxTopicAliasToProps(MqttProperties properties, int maxTopicAlias) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.TOPIC_ALIAS_MAX_PROP_ID, maxTopicAlias));
+    }
+
+    public static void addResponseInfoToProps(MqttProperties properties, String responseInfo) {
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_INFORMATION_PROP_ID, responseInfo));
+    }
+
+    /**
+     * Helpful methods
+     */
 
     public static DefaultTbQueueMsgHeaders createHeaders(PublishMsg publishMsg) {
         return createHeaders(publishMsg.getProperties());
@@ -220,6 +315,15 @@ public class MqttPropertiesUtil {
         if (contentTypeProperty != null) {
             properties.add(contentTypeProperty);
         }
+        MqttProperties.StringProperty responseTopicProperty = getResponseTopicProperty(publishMsg.getProperties());
+        if (responseTopicProperty != null) {
+            properties.add(responseTopicProperty);
+        }
+        MqttProperties.BinaryProperty correlationDataProperty = getCorrelationDataProperty(publishMsg.getProperties());
+        if (correlationDataProperty != null) {
+            properties.add(correlationDataProperty);
+        }
         return properties;
     }
+
 }

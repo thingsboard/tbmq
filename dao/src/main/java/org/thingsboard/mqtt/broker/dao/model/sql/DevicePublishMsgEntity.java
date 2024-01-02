@@ -83,6 +83,12 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CONTENT_TYPE_PROPERTY)
     private String contentType;
 
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTY)
+    private String responseTopic;
+
+    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CORRELATION_DATA_PROPERTY, columnDefinition = "BINARY")
+    private byte[] correlationData;
+
     public DevicePublishMsgEntity() {
     }
 
@@ -100,6 +106,8 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.msgExpiryInterval = getMsgExpiryInterval(devicePublishMsg);
         this.payloadFormatIndicator = getPayloadFormatIndicator(devicePublishMsg);
         this.contentType = getContentType(devicePublishMsg);
+        this.responseTopic = getResponseTopic(devicePublishMsg);
+        this.correlationData = getCorrelationData(devicePublishMsg);
     }
 
     private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg) {
@@ -117,6 +125,16 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         return property == null ? null : property.value();
     }
 
+    private String getResponseTopic(DevicePublishMsg devicePublishMsg) {
+        MqttProperties.StringProperty property = (MqttProperties.StringProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID);
+        return property == null ? null : property.value();
+    }
+
+    private byte[] getCorrelationData(DevicePublishMsg devicePublishMsg) {
+        MqttProperties.BinaryProperty property = (MqttProperties.BinaryProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID);
+        return property == null ? null : property.value();
+    }
+
     @Override
     public DevicePublishMsg toData() {
         MqttProperties properties = UserProperties.mapToMqttProperties(JacksonUtil.fromString(userProperties, UserProperties.class));
@@ -128,6 +146,12 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         }
         if (contentType != null) {
             properties.add(new MqttProperties.StringProperty(BrokerConstants.CONTENT_TYPE_PROP_ID, contentType));
+        }
+        if (responseTopic != null) {
+            properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID, responseTopic));
+        }
+        if (correlationData != null) {
+            properties.add(new MqttProperties.BinaryProperty(BrokerConstants.CORRELATION_DATA_PROP_ID, correlationData));
         }
         return DevicePublishMsg.builder()
                 .clientId(clientId)

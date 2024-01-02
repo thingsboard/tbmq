@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.connect;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.After;
 import org.junit.Assert;
@@ -209,7 +210,7 @@ public class ConnectServiceImplTest {
     }
 
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
-        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000);
+        return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000, new MqttProperties());
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId) {

@@ -23,6 +23,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -126,7 +127,7 @@ public class DefaultLastWillService implements LastWillService {
 
         MqttProperties properties = lastWillMsgWithSessionInfo.getPublishMsg().getProperties();
         MqttProperties.IntegerProperty willDelayProperty =
-                (MqttProperties.IntegerProperty) properties.getProperty(MqttProperties.MqttPropertyType.WILL_DELAY_INTERVAL.value());
+                (MqttProperties.IntegerProperty) properties.getProperty(BrokerConstants.WILL_DELAY_INTERVAL_PROP_ID);
         if (willDelayProperty != null) {
             if (!sessionInfo.isCleanStart() && sessionExpiryInterval == 0) {
                 return willDelayProperty.value();

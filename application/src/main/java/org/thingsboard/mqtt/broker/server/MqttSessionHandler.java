@@ -70,11 +70,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private InetSocketAddress address;
 
     public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger,
-                              RateLimitService rateLimitService, SslHandler sslHandler, int maxInFlightMsgs) {
+                              RateLimitService rateLimitService, SslHandler sslHandler,
+                              String initializerName, int maxInFlightMessages) {
         this.clientMqttActorManager = clientMqttActorManager;
         this.clientLogger = clientLogger;
         this.rateLimitService = rateLimitService;
-        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler, maxInFlightMsgs);
+        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler, initializerName, maxInFlightMessages);
     }
 
     @Override

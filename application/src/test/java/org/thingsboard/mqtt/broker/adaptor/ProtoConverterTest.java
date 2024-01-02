@@ -151,16 +151,22 @@ public class ProtoConverterTest {
                 .newBuilder()
                 .setContentType("testCT")
                 .setPayloadFormatIndicator(1)
+                .setCorrelationData(ByteString.copyFromUtf8("test"))
+                .setResponseTopic("test/")
                 .build();
         MqttProperties properties = new MqttProperties();
 
         assertNull(properties.getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
         assertNull(properties.getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID));
+        assertNull(properties.getProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID));
+        assertNull(properties.getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID));
 
         ProtoConverter.addFromProtoToMqttProperties(build, properties);
 
         assertNotNull(properties.getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
         assertNotNull(properties.getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID));
+        assertNotNull(properties.getProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID));
+        assertNotNull(properties.getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID));
     }
 
     @Test
@@ -175,6 +181,20 @@ public class ProtoConverterTest {
         QueueProtos.MqttPropertiesProto proto = mqttPropsProtoBuilder.build();
         assertEquals("test", proto.getContentType());
         assertEquals(1, proto.getPayloadFormatIndicator());
+    }
+
+    @Test
+    public void givenMqttPropertiesWithResponseTopicAndCorrelationData_whenGetMqttPropsProtoBuilder_thenGetExpectedResult() {
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.BinaryProperty(BrokerConstants.CORRELATION_DATA_PROP_ID, "test".getBytes(StandardCharsets.UTF_8)));
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_TOPIC_PROP_ID, "test/"));
+
+        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = ProtoConverter.getMqttPropsProtoBuilder(properties);
+
+        assertNotNull(mqttPropsProtoBuilder);
+        QueueProtos.MqttPropertiesProto proto = mqttPropsProtoBuilder.build();
+        assertEquals("test/", proto.getResponseTopic());
+        assertEquals("test", proto.getCorrelationData().toString(StandardCharsets.UTF_8));
     }
 
     @Test

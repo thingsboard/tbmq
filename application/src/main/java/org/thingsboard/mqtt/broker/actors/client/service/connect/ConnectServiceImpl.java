@@ -67,8 +67,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -97,6 +95,9 @@ public class ConnectServiceImpl implements ConnectService {
     private int maxExpiryInterval;
     @Value("${mqtt.topic.alias-max:10}")
     private int maxTopicAlias;
+    @Setter
+    @Value("${mqtt.response-info:}")
+    private String serverResponseInfo;
 
     @PostConstruct
     public void init() {
@@ -128,7 +129,8 @@ public class ConnectServiceImpl implements ConnectService {
         );
 
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(msg));
-        keepAliveService.registerSession(clientId, sessionId, getKeepAliveSeconds(actorState, msg));
+        int keepAliveSeconds = getKeepAliveSeconds(actorState, msg);
+        keepAliveService.registerSession(clientId, sessionId, keepAliveSeconds);
 
         ListenableFuture<ConnectionResponse> connectFuture = clientSessionEventService.requestConnection(sessionCtx.getSessionInfo());
         Futures.addCallback(connectFuture, new FutureCallback<>() {
@@ -148,7 +150,8 @@ public class ConnectServiceImpl implements ConnectService {
                                 sessionId,
                                 connectionResponse.isSessionPresent(),
                                 msg.getLastWillMsg(),
-                                msg.getKeepAliveTimeSeconds())
+                                keepAliveSeconds,
+                                msg.getProperties())
                 );
             }
 
@@ -157,41 +160,6 @@ public class ConnectServiceImpl implements ConnectService {
                 refuseConnection(sessionCtx, t);
             }
         }, connectHandlerExecutor);
-    }
-
-    private TopicAliasCtx getTopicAliasCtx(MqttConnectMsg msg) {
-        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
-        if (property != null) {
-            int value = Math.min(property.value(), maxTopicAlias);
-            if (log.isDebugEnabled()) {
-                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, msg.getClientIdentifier());
-            }
-            return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
-        }
-        return TopicAliasCtx.DISABLED_TOPIC_ALIASES;
-    }
-
-    private int getSessionExpiryInterval(MqttConnectMsg msg) {
-        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) msg.getProperties()
-                .getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value());
-        if (property != null) {
-            return Math.min(property.value(), maxExpiryInterval);
-        }
-        return 0;
-    }
-
-    int getKeepAliveSeconds(ClientActorStateInfo actorState, MqttConnectMsg msg) {
-        var clientId = actorState.getClientId();
-        var mqttVersion = actorState.getCurrentSessionCtx().getMqttVersion();
-
-        var keepAliveSeconds = msg.getKeepAliveTimeSeconds();
-        if (MqttVersion.MQTT_5 == mqttVersion && keepAliveSeconds > maxServerKeepAlive) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
-            }
-            keepAliveSeconds = maxServerKeepAlive;
-        }
-        return keepAliveSeconds;
     }
 
     @Override
@@ -228,19 +196,8 @@ public class ConnectServiceImpl implements ConnectService {
     }
 
     private void pushConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg) {
-        ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
-        var sessionPresent = msg.isSessionPresent();
-        var assignedClientId = actorState.isClientIdGenerated() ? actorState.getClientId() : null;
-        var keepAliveSecs = Math.min(msg.getKeepAliveTimeSeconds(), maxServerKeepAlive);
-        var sessionExpiryInterval = actorState.getCurrentSessionCtx().getSessionInfo().getSessionExpiryInterval();
-        var maxTopicAlias = actorState.getCurrentSessionCtx().getTopicAliasCtx().getMaxTopicAlias();
-        MqttConnAckMessage mqttConnAckMsg = createMqttConnAckMsg(
-                sessionPresent,
-                assignedClientId,
-                keepAliveSecs,
-                sessionExpiryInterval,
-                maxTopicAlias);
-        sessionCtx.getChannel().writeAndFlush(mqttConnAckMsg);
+        MqttConnAckMessage mqttConnAckMsg = mqttMessageGenerator.createMqttConnAckMsg(actorState, msg);
+        actorState.getCurrentSessionCtx().getChannel().writeAndFlush(mqttConnAckMsg);
     }
 
     void refuseConnection(ClientSessionCtx clientSessionCtx, Throwable t) {
@@ -266,18 +223,6 @@ public class ConnectServiceImpl implements ConnectService {
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId) {
         return new MqttDisconnectMsg(sessionId,
                 new DisconnectReason(DisconnectReasonType.ON_ERROR, BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG));
-    }
-
-    private MqttConnAckMessage createMqttConnAckMsg(boolean sessionPresent, String assignedClientId,
-                                                    int keepAliveTimeSeconds, int sessionExpiryInterval,
-                                                    int maxTopicAlias) {
-        return mqttMessageGenerator.createMqttConnAckMsg(
-                CONNECTION_ACCEPTED,
-                sessionPresent,
-                assignedClientId,
-                keepAliveTimeSeconds,
-                sessionExpiryInterval,
-                maxTopicAlias);
     }
 
     private void logConnectionRefused(Throwable t, ClientSessionCtx clientSessionCtx) {
@@ -329,6 +274,40 @@ public class ConnectServiceImpl implements ConnectService {
 
     private MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode code) {
         return mqttMessageGenerator.createMqttConnAckMsg(code);
+    }
+
+    private TopicAliasCtx getTopicAliasCtx(MqttConnectMsg msg) {
+        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
+        if (property != null) {
+            int value = Math.min(property.value(), maxTopicAlias);
+            if (log.isDebugEnabled()) {
+                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, msg.getClientIdentifier());
+            }
+            return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
+        }
+        return TopicAliasCtx.DISABLED_TOPIC_ALIASES;
+    }
+
+    private int getSessionExpiryInterval(MqttConnectMsg msg) {
+        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(msg.getProperties());
+        if (property != null) {
+            return Math.min(property.value(), maxExpiryInterval);
+        }
+        return 0;
+    }
+
+    int getKeepAliveSeconds(ClientActorStateInfo actorState, MqttConnectMsg msg) {
+        var clientId = actorState.getClientId();
+        var mqttVersion = actorState.getCurrentSessionCtx().getMqttVersion();
+
+        var keepAliveSeconds = msg.getKeepAliveTimeSeconds();
+        if (MqttVersion.MQTT_5 == mqttVersion && keepAliveSeconds > maxServerKeepAlive) {
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Client's keep alive value is greater than allowed, setting keepAlive to server's value {}s", clientId, maxServerKeepAlive);
+            }
+            keepAliveSeconds = maxServerKeepAlive;
+        }
+        return keepAliveSeconds;
     }
 
     @PreDestroy

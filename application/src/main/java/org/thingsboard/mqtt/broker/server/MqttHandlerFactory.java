@@ -19,5 +19,5 @@ import io.netty.handler.ssl.SslHandler;
 
 public interface MqttHandlerFactory {
 
-    MqttSessionHandler create(SslHandler sslHandler);
+    MqttSessionHandler create(SslHandler sslHandler, String initializerName);
 }

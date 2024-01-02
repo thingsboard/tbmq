@@ -51,7 +51,7 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
         pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
 
-        MqttSessionHandler handler = handlerFactory.create(sslHandler);
+        MqttSessionHandler handler = handlerFactory.create(sslHandler, getChannelInitializerName());
 
         pipeline.addLast(handler);
         ch.closeFuture().addListener(handler);

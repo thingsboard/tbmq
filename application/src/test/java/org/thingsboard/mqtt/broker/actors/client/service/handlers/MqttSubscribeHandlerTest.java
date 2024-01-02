@@ -456,7 +456,7 @@ public class MqttSubscribeHandlerTest {
     private MqttSubscribeMsg getMqttSubscribeMsg() {
         List<TopicSubscription> topicSubscriptions = getTopicSubscriptions();
         MqttProperties properties = new MqttProperties();
-        properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(), 1));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, 1));
         return new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions, properties);
     }
 

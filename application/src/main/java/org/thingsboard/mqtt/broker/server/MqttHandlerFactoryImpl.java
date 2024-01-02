@@ -35,7 +35,7 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     private int maxInFlightMsgs;
 
     @Override
-    public MqttSessionHandler create(SslHandler sslHandler) {
-        return new MqttSessionHandler(actorManager, clientLogger, rateLimitService, sslHandler, maxInFlightMsgs);
+    public MqttSessionHandler create(SslHandler sslHandler, String initializerName) {
+        return new MqttSessionHandler(actorManager, clientLogger, rateLimitService, sslHandler, initializerName, maxInFlightMsgs);
     }
 }

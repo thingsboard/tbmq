@@ -100,7 +100,8 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1002001)) {
                         try {
-
+                            conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN response_topic varchar(255);");
+                            conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN correlation_data bytea;");
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002002;");
                         } catch (Exception ignored) {
                         }

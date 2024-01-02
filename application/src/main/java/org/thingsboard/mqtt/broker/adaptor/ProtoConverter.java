@@ -443,13 +443,21 @@ public class ProtoConverter {
     static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
         Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(properties);
         String contentType = getContentTypeFromMqttProperties(properties);
-        if (payloadFormatIndicator != null || contentType != null) {
+        String responseTopic = MqttPropertiesUtil.getResponseTopicValue(properties);
+        byte[] correlationData = MqttPropertiesUtil.getCorrelationDataValue(properties);
+        if (payloadFormatIndicator != null || contentType != null || responseTopic != null || correlationData != null) {
             QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = QueueProtos.MqttPropertiesProto.newBuilder();
             if (payloadFormatIndicator != null) {
                 mqttPropertiesBuilder.setPayloadFormatIndicator(payloadFormatIndicator);
             }
             if (contentType != null) {
                 mqttPropertiesBuilder.setContentType(contentType);
+            }
+            if (responseTopic != null) {
+                mqttPropertiesBuilder.setResponseTopic(responseTopic);
+            }
+            if (correlationData != null) {
+                mqttPropertiesBuilder.setCorrelationData(ByteString.copyFrom(correlationData));
             }
             return mqttPropertiesBuilder;
         }
@@ -472,6 +480,12 @@ public class ProtoConverter {
         }
         if (mqttPropertiesProto.hasContentType()) {
             MqttPropertiesUtil.addContentTypeToProps(properties, mqttPropertiesProto.getContentType());
+        }
+        if (mqttPropertiesProto.hasResponseTopic()) {
+            MqttPropertiesUtil.addResponseTopicToProps(properties, mqttPropertiesProto.getResponseTopic());
+        }
+        if (mqttPropertiesProto.hasCorrelationData()) {
+            MqttPropertiesUtil.addCorrelationDataToProps(properties, mqttPropertiesProto.getCorrelationData().toByteArray());
         }
     }
 

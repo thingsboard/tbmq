@@ -22,6 +22,8 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.util.MqttReasonCode;
@@ -32,9 +34,7 @@ public interface MqttMessageGenerator {
 
     MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode);
 
-    MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode, boolean sessionPresent,
-                                            String assignedClientId, int keepAliveTimeSeconds, int sessionExpiryInterval,
-                                            int maxTopicAlias);
+    MqttConnAckMessage createMqttConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg);
 
     MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
 

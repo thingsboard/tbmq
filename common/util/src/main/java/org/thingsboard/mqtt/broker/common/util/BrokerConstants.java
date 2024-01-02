@@ -21,6 +21,11 @@ import java.util.List;
 
 public class BrokerConstants {
 
+    public static final String TCP = "TCP";
+    public static final String SSL = "SSL";
+    public static final String WS = "WS";
+    public static final String WSS = "WSS";
+
     public static final String ENTITY_ID_TOTAL = "total";
     public static final String INCOMING_MSGS = "incomingMsgs";
     public static final String OUTGOING_MSGS = "outgoingMsgs";
@@ -58,12 +63,29 @@ public class BrokerConstants {
 
     public static final String MESSAGE_EXPIRY_INTERVAL = "messageExpiryInterval";
     public static final String CREATED_TIME = "createdTime";
+
     public static final int PAYLOAD_FORMAT_INDICATOR_PROP_ID = 1;
     public static final int PUB_EXPIRY_INTERVAL_PROP_ID = 2;
     public static final int CONTENT_TYPE_PROP_ID = 3;
+    public static final int RESPONSE_TOPIC_PROP_ID = 8;
+    public static final int CORRELATION_DATA_PROP_ID = 9;
+    public static final int SUBSCRIPTION_IDENTIFIER_PROP_ID = 11;
+    public static final int SESSION_EXPIRY_INTERVAL_PROP_ID = 17;
+    public static final int ASSIGNED_CLIENT_IDENTIFIER_PROP_ID = 18;
+    public static final int SERVER_KEEP_ALIVE_PROP_ID = 19;
+    public static final int REQUEST_PROBLEM_INFORMATION_PROP_ID = 23;
+    public static final int WILL_DELAY_INTERVAL_PROP_ID = 24;
+    public static final int REQUEST_RESPONSE_INFO_PROP_ID = 25;
+    public static final int RESPONSE_INFORMATION_PROP_ID = 26;
     public static final int TOPIC_ALIAS_MAX_PROP_ID = 34;
     public static final int TOPIC_ALIAS_PROP_ID = 35;
-    public static final int USER_PROPERTIES_ID = 38;
+    public static final int MAXIMUM_QOS_PROP_ID = 36;
+    public static final int RETAIN_AVAILABLE_PROP_ID = 37;
+    public static final int USER_PROPERTY_PROP_ID = 38;
+    public static final int MAXIMUM_PACKET_SIZE_PROP_ID = 39;
+    public static final int WILDCARD_SUBSCRIPTION_AVAILABLE_PROP_ID = 40;
+    public static final int SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID = 41;
+    public static final int SHARED_SUBSCRIPTION_AVAILABLE_PROP_ID = 42;
 
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";

@@ -22,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -104,8 +105,7 @@ public class DefaultLastWillServiceTest {
 
     private PublishMsg getPublishMsg() {
         MqttProperties properties = new MqttProperties();
-        int propertyId = MqttProperties.MqttPropertyType.WILL_DELAY_INTERVAL.value();
-        properties.add(new MqttProperties.IntegerProperty(propertyId, 100));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.WILL_DELAY_INTERVAL_PROP_ID, 100));
         return PublishMsg
                 .builder()
                 .properties(properties)
