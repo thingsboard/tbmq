@@ -43,6 +43,8 @@ message PublishMsgProto {
 message MqttPropertiesProto {
   optional int32 payloadFormatIndicator = 1;
   optional string contentType = 2;
+  optional string responseTopic = 3;
+  optional bytes correlationData = 4;
 }
 
 message UserPropertyProto {

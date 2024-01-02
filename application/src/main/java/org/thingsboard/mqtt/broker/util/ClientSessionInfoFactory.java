@@ -74,6 +74,7 @@ public class ClientSessionInfoFactory {
                 .type(clientType)
                 .connectedAt(connectedAt)
                 .disconnectedAt(disconnectedAt)
+                .clientIpAdr(BrokerConstants.LOCAL_ADR)
                 .build();
     }
 
