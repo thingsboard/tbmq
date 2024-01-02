@@ -88,10 +88,7 @@ CREATE TABLE IF NOT EXISTS device_publish_msg (
     msg_expiry_interval int,
     payload_format_indicator int,
     content_type varchar(255),
-    response_topic varchar
-(
-    255
-),
+    response_topic varchar(255),
     correlation_data bytea,
     CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, serial_number)
 );
