@@ -159,16 +159,16 @@ public class MqttPublishHandler {
     }
 
     boolean processExactlyOnceAndCheckIfAlreadyPublished(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs(), msgId);
+        addAwaiting(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages(), msgId);
         return prepareForPubRelPacketAndCheckIfAlreadyProcessed(ctx, actorRef, msgId);
     }
 
     void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs(), msgId);
+        addAwaiting(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages(), msgId);
     }
 
-    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMsgs, int msgId) {
-        qosPublishResponseMsgs.addAwaiting(msgId);
+    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMessages, int msgId) {
+        qosPublishResponseMessages.addAwaiting(msgId);
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
@@ -196,7 +196,7 @@ public class MqttPublishHandler {
 
     public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
         MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs().finish(msgId);
+        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().finish(msgId);
         for (var finishedMsgId : finishedMsgIds) {
             ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code));
         }
@@ -205,7 +205,7 @@ public class MqttPublishHandler {
 
     public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
         MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs().finishAll(msgId);
+        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().finishAll(msgId);
         for (var finishedMsgId : finishedMsgIds) {
             ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
         }

@@ -20,11 +20,11 @@ import lombok.Getter;
 @Getter
 public class PubResponseProcessingCtx {
 
-    private final OrderedProcessingQueue qos1PubAckResponseMsgs;
-    private final OrderedProcessingQueue qos2PubRecResponseMsgs;
+    private final OrderedProcessingQueue qos1PubAckResponseMessages;
+    private final OrderedProcessingQueue qos2PubRecResponseMessages;
 
     public PubResponseProcessingCtx(int maxAwaitingQueueSize) {
-        this.qos1PubAckResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
-        this.qos2PubRecResponseMsgs = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+        this.qos1PubAckResponseMessages = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
+        this.qos2PubRecResponseMessages = new OrderedProcessingQueueImpl(maxAwaitingQueueSize);
     }
 }
