@@ -207,7 +207,7 @@ public class MqttPublishHandler {
         MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
         List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs().finishAll(msgId);
         for (var finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
+            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
         }
         ctx.getChannel().flush();
 
