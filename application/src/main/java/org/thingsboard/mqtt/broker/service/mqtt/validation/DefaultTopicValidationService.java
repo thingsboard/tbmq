@@ -25,12 +25,12 @@ import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MULTI_LEVE
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SINGLE_LEVEL_WILDCARD;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.TOPIC_DELIMITER;
 
+@Setter
 @Service
 public class DefaultTopicValidationService implements TopicValidationService {
 
     static final int MAX_SIZE_BYTES = 65535;
 
-    @Setter
     @Value("${mqtt.topic.max-segments-count}")
     private int maxSegmentsCount;
 

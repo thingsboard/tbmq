@@ -125,7 +125,7 @@ public class MqttPublishHandler {
         persistPubMsg(ctx, publishMsg, actorRef);
     }
 
-    private boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
+    boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
         try {
             topicValidationService.validateTopic(publishMsg.getTopicName());
         } catch (DataValidationException e) {

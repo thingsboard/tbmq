@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,14 +35,11 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +48,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MqttPublishHandler.class)
@@ -90,38 +89,58 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
-    public void testValidateClientAccess() {
+    public void givenClientContextAndAllowPublishToTopic_whenValidateClientAccess_thenSuccess() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }
 
     @Test(expected = MqttException.class)
-    public void testValidateClientAccessFail() {
+    public void givenClientContextAndNotAllowPublishToTopic_whenValidateClientAccess_thenFailure() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
-        when(ctx.getAuthRulePatterns()).thenReturn(List.of(AuthRulePatterns.newInstance(Collections.emptyList())));
         mqttPublishHandler.validateClientAccess(ctx, "topic/1");
     }
 
     @Test
-    public void testProcessPubAckResponse() {
+    public void givenProcessedQos1Msg_whenProcessPubAckResponse_thenSendPubAckMsg() {
         mqttPublishHandler.processAtLeastOnce(ctx, 1);
 
         mqttPublishHandler.processPubAckResponse(ctx, 1);
 
         verify(mqttMessageGenerator, times(1)).createPubAckMsg(1, null);
+        verify(ctx, times(2)).getChannel();
     }
 
     @Test
-    public void testProcessPubRecResponse() {
+    public void givenProcessedQos2Msg_whenProcessPubRecResponse_thenSendPubRecMsg() {
         mqttPublishHandler.processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
 
         mqttPublishHandler.processPubRecResponse(ctx, 1);
 
         verify(mqttMessageGenerator, times(1)).createPubRecMsg(1, null);
+        verify(ctx, times(2)).getChannel();
+    }
+
+    @Test(expected = MqttException.class)
+    public void givenUnauthorizedPublishAndMqttV3_whenValidatePubMsg_thenThrowException() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+
+        PublishMsg publishMsg = getPublishMsg(1, "test/1", 1);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
     }
 
     @Test
-    public void testProcess() {
+    public void givenUnauthorizedPublishAndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/2", 2);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+
+        verify(mqttMessageGenerator, times(1)).createPubRecMsg(2, NOT_AUTHORIZED);
+    }
+
+    @Test
+    public void givenPubMsg_whenProcessPubMsg_thenVerifySuccess() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
 
         PublishMsg publishMsg = getPublishMsg(1, 2);
@@ -137,7 +156,7 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
-    public void testProcessRetainMsg() {
+    public void givenRetainPubMsg_whenProcessPubMsg_thenVerifySuccess() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
 
         PublishMsg publishMsg = getPublishMsg(1, 2, true);
@@ -153,11 +172,20 @@ public class MqttPublishHandlerTest {
         return new MqttPublishMsg(UUID.randomUUID(), publishMsg);
     }
 
+    private PublishMsg getPublishMsg(int packetId, String topic, int qos) {
+        return getPublishMsg(packetId, topic, qos, false);
+    }
+
     private PublishMsg getPublishMsg(int packetId, int qos) {
         return getPublishMsg(packetId, qos, false);
     }
 
     private PublishMsg getPublishMsg(int packetId, int qos, boolean isRetained) {
-        return new PublishMsg(packetId, "test", "data".getBytes(), qos, isRetained, false);
+        return getPublishMsg(packetId, "test", qos, isRetained);
     }
+
+    private PublishMsg getPublishMsg(int packetId, String topic, int qos, boolean isRetained) {
+        return new PublishMsg(packetId, topic, "data".getBytes(), qos, isRetained, false);
+    }
+
 }
