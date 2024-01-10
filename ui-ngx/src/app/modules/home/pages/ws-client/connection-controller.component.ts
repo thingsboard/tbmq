@@ -31,14 +31,17 @@ import { ConnectionDetailed } from '@shared/models/ws-client.model';
 import { tap } from 'rxjs/operators';
 
 @Component({
-  selector: 'tb-ws-client-connections',
-  templateUrl: './connections.component.html',
-  styleUrls: ['./connections.component.scss']
+  selector: 'tb-ws-client-connection-controller',
+  templateUrl: './connection-controller.component.html',
+  styleUrls: ['./connection-controller.component.scss']
 })
-export class ConnectionsComponent implements OnInit, OnDestroy {
+export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   connections: any;
   connection: ConnectionDetailed;
+  actionLabel = 'action.connect';
+  actionTooltip = 'mqtt-client-session.disconnected';
+  isConnected: boolean;
 
   private destroy$ = new Subject<void>();
 
@@ -66,6 +69,7 @@ export class ConnectionsComponent implements OnInit, OnDestroy {
     this.wsClientService.selectedConnection$.subscribe(
       res => {
         this.connection = res;
+        this.update(res);
       }
     )
   }
@@ -74,7 +78,7 @@ export class ConnectionsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  addConnection() {
+  onAction() {
     const data = {
       connection: null
     };
@@ -92,5 +96,15 @@ export class ConnectionsComponent implements OnInit, OnDestroy {
           );*/
         }
       });
+  }
+
+  update(connection) {
+    if (this.connection.connected) {
+      this.isConnected = true;
+      this.actionLabel = 'ws-client.connections.disconnect';
+    } else {
+      this.isConnected = false;
+      this.actionLabel = 'ws-client.connections.connect';
+    }
   }
 }

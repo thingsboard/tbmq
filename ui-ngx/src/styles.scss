@@ -1278,3 +1278,22 @@ mat-label {
 .tb-fullscreen-backdrop {
   background-color: rgba(255,255,255,0.99);
 }
+
+
+// WebSocket Client
+
+.tb-ws-client-title-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.tb-ws-client-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.2px;
+  color: rgba(0, 0, 0, 0.76);
+}

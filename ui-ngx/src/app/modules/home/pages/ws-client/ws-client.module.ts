@@ -29,19 +29,27 @@ import { WsClientSubscriptionDialogComponent } from '@home/pages/ws-client/ws-cl
 import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
 import { WsClientSubscriptionsComponent } from "@home/pages/ws-client/ws-client-subscriptions.component";
 import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
+import { ConnectionControllerComponent } from '@home/pages/ws-client/connection-controller.component';
+import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/show-select-connection-popover.component';
+import { SelectConnectionComponent } from '@home/pages/ws-client/select-connection.component';
+import { ConnectionComponent } from '@home/pages/ws-client/connection.component';
 
 @NgModule({
   declarations: [
     WsClientComponent,
     WsClientMessangerComponent,
     ConnectionsComponent,
+    ConnectionControllerComponent,
     WsClientConnectionDialogComponent,
     WsClientSubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     MessagesComponent,
     WsClientTableComponent,
     WsClientSubscriptionsComponent,
-    PropertiesDialogComponent
+    PropertiesDialogComponent,
+    SelectConnectionComponent,
+    ShowSelectConnectionPopoverComponent,
+    ConnectionComponent
   ],
   imports: [
     CommonModule,
@@ -55,7 +63,8 @@ import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dial
     ConnectionWizardDialogComponent,
     WsClientTableComponent,
     WsClientSubscriptionsComponent,
-    PropertiesDialogComponent
+    PropertiesDialogComponent,
+    ShowSelectConnectionPopoverComponent
   ]
 })
 

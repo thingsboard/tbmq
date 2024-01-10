@@ -20,7 +20,31 @@
 </ng-container>
 
 <ng-template #connections>
-  <section class="tb-ws-client">
+  <div style="display: flex; height: 100%; gap: 12px" class="mat-padding">
+    <section class="container" style="width: 30%">
+      <section class="border-bg">
+        <tb-ws-client-connections></tb-ws-client-connections>
+      </section>
+      <section class="subscriptions border-bg">
+        <tb-ws-client-subscriptions></tb-ws-client-subscriptions>
+      </section>
+    </section>
+    <section class="container border-bg" style="width: 70%;">
+      <section class="border-bg">
+        <tb-ws-client-connection-controller></tb-ws-client-connection-controller>
+      </section>
+      <section class="border-bg">
+        <tb-ws-client-messanger [clients]="clients"
+                                [subscriptions]="subscriptions"
+                                [subscription]="subscription">
+        </tb-ws-client-messanger>
+      </section>
+    </section>
+  </div>
+
+
+
+  <!--<section class="tb-ws-client">
     <div fxFlex fxLayout="row" fxLayoutGap="8px">
       <div fxFlex="30" fxLayout="column" fxLayoutGap="8px" style="height: 90vh; max-height: 90vh;">
         <tb-ws-client-connections fxFlex></tb-ws-client-connections>
@@ -32,7 +56,7 @@
                               [subscription]="subscription">
       </tb-ws-client-messanger>
     </div>
-  </section>
+  </section>-->
 </ng-template>
 <ng-template #noConnections>
   <section style="width: 100%; height: 100%; background: #a9a8a8">

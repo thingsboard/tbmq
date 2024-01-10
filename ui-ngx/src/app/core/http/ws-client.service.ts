@@ -438,61 +438,61 @@ export class WsClientService {
       data: [
         {
           id: '1',
-          name: 'TBMQ 1',
+          name: 'WebSocket Connection  1',
           createdTime: 1701696568854,
-          connected: false
+          connected: true
         },
         {
           id: '2',
-          name: 'TBMQ 2',
+          name: 'WebSocket Connection  2',
           createdTime: 1701696566405,
           connected: true
         },
         {
           id: '3',
-          name: 'TBMQ 3',
+          name: 'WebSocket Connection  3',
           createdTime: 1701418253485,
           connected: false
         },
         {
           id: '4',
-          name: 'TBMQ 4',
+          name: 'WebSocket Connection  4',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '5',
-          name: 'TBMQ 5',
+          name: 'WebSocket Connection  5',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '6',
-          name: 'TBMQ 6',
+          name: 'WebSocket Connection  6',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '7',
-          name: 'TBMQ 7',
+          name: 'WebSocket Connection  7',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '8',
-          name: 'TBMQ 8',
+          name: 'WebSocket Connection  8',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '9',
-          name: 'TBMQ 9',
+          name: 'WebSocket Connection  9',
           createdTime: 1700486480079,
           connected: false
         },
         {
           id: '10',
-          name: 'TBMQ 10',
+          name: 'WebSocket Connection  10',
           createdTime: 1700486480079,
           connected: false
         }
@@ -509,16 +509,16 @@ export class WsClientService {
     const allData = [
       {
         id: '1',
-        name: 'TBMQ 1',
+        name: 'WebSocket Connection  1',
         createdTime: 1701696568854,
-        connected: false,
+        connected: true,
         clientId: 'tbmq_dev',
         username: 'tbmq_dev',
         password: 'tbmq_dev'
       },
       {
         id: '2',
-        name: 'TBMQ 2',
+        name: 'WebSocket Connection  2',
         createdTime: 1701696566405,
         connected: false,
         clientId: 'tbmq_dev2',
@@ -527,7 +527,7 @@ export class WsClientService {
       },
       {
         id: '3',
-        name: 'TBMQ 3',
+        name: 'WebSocket Connection  3',
         createdTime: 1701418253485,
         connected: false,
         clientId: 'tbmq_dev3',
@@ -536,7 +536,7 @@ export class WsClientService {
       },
       {
         id: '4',
-        name: 'TBMQ 4',
+        name: 'WebSocket Connection  4',
         createdTime: 1700486480079,
         connected: true,
         clientId: 'tbmq_dev4',
@@ -545,7 +545,7 @@ export class WsClientService {
       },
       {
         id: '5',
-        name: 'TBMQ 5',
+        name: 'WebSocket Connection  5',
         createdTime: 1700486480079,
         connected: false,
         clientId: 'tbmq_dev5',
@@ -583,7 +583,7 @@ export class WsClientService {
   public saveConnection(entity: any, config?: RequestConfig): Observable<ConnectionDetailed> {
     const id = {
       id: '62397b5f-d04c-4d2e-957b-29209348cad3',
-      name: 'TBMQ Device Demo',
+      name: 'WebSocket Connection  Device Demo',
       createdTime: 1701696568854
     };
     const result = {...entity, ...id};
@@ -641,6 +641,54 @@ export class WsClientService {
           {
             name: 'testtopic8',
             topic: 'testtopic8',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic9',
+            topic: 'testtopic9',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic10',
+            topic: 'testtopic10',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic11',
+            topic: 'testtopic11',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic12',
+            topic: 'testtopic12',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic13',
+            topic: 'testtopic13',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic14',
+            topic: 'testtopic14',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic15',
+            topic: 'testtopic15',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic16',
+            topic: 'testtopic16',
             color: 'orange',
             qos: 1
           }

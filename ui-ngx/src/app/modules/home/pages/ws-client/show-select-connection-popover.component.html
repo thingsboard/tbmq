@@ -1,0 +1,50 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!--<section fxLayout="row" fxLayoutAlign="space-between center" style="margin: 0 10px 4px; min-height: 36px">-->
+    <section class="tb-ws-client-title-toolbar mat-padding" style="min-height: 36px">
+      <span class="tb-ws-client-title" translate>ws-client.connections.select-connection</span>
+      <mat-icon class="material-icons" (click)="close()">close</mat-icon>
+    </section>
+
+<!--  <div style="font-weight: 500; letter-spacing: .25px" translate>ws-client.connections.select-connection</div>-->
+<!--  <mat-icon class="material-icons" (click)="close()">close</mat-icon>-->
+<!--</section>-->
+<ng-container *ngIf="loadConnection; else loadingConnections">
+  <div *ngIf="(connections$ | async).length; else emptyConnections" style="overflow: auto">
+    <div style="overflow: auto">
+      <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
+        <div *ngFor="let connection of (connections$ | async);">
+          <tb-connection [connection]="connection"></tb-connection>
+        </div>
+      </section>
+    </div>
+  </div>
+  <section fxLayoutAlign="center center" *ngIf="(connections$ | async).length">
+    <button fxFlex mat-button color="primary" (click)="addConnection($event)">
+      {{ 'ws-client.connections.add-connection' | translate }}
+    </button>
+  </section>
+</ng-container>
+<ng-template #emptyConnections>
+</ng-template>
+<ng-template #loadingConnections>
+  <div class="tb-no-data-available" style="margin: 20px; gap: 16px;">
+    <mat-spinner color="accent" diameter="65" strokeWidth="4"></mat-spinner>
+    <div class="tb-no-data-text" translate>ws-client.connections.loading-connections</div>
+  </div>
+</ng-template>

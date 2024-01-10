@@ -16,7 +16,34 @@
 @import 'constants';
 
 :host {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: inherit;
+    max-height: 100%;
+    width: 100%;
+    gap: 12px;
+
+    .border-bg {
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .subscriptions {
+      flex: 1 1 auto;
+      min-height: 0px;
+    }
+  }
+
+/*
   .tb-ws-client {
     height: 90vh;
 
@@ -52,5 +79,5 @@
       color: inherit;
       font-size: 24px;
     }
-  }
+  }*/
 }

@@ -778,7 +778,8 @@
       "additional-properties": "Additional settings",
       "connections": "Connections",
       "connect": "Connect",
-      "connection-details": "Connection details",
+      "connection-details": "Connection Details",
+      "connection-status": "Connection Status",
       "clear-connection-history": "Clear History",
       "delete-connection": "Delete Connection",
       "disconnect": "Disconnect",
@@ -811,6 +812,7 @@
       "clean-start-hint": " Set to false to receive QoS 1 and 2 messages while offline",
       "protocol": "Protocol",
       "receive-maximum": "Receive Maximum value",
+      "messages": "Messages",
       "maximum-packet-size": "Maximum Packet Size (bytes)",
       "maximum-packet-size-hint": "Maximum Packet Size the Client is willing to accept",
       "topic-alias": "Topic Alias",
@@ -827,7 +829,8 @@
       "user-properties": "User Properties",
       "session-expiry-interval": "Session Expiry Interval (seconds)",
       "password-warning": "The password is required for the selected Client Credentials.",
-      "set-from-existing-credentials": "Set from existing Client Credentials"
+      "set-from-existing-credentials": "Set from existing Client Credentials",
+      "select-connection": "Select Connection"
     },
     "last-will": {
       "last-will": "Last Will",

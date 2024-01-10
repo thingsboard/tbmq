@@ -15,7 +15,6 @@
     limitations under the License.
 
 -->
-<section class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
-  <span class="tb-ws-client-title">{{ connection?.name }}</span>
-  <tb-ws-client-select-connection></tb-ws-client-select-connection>
-</section>
+<button mat-icon-button #showConnectionsButton (click)="showConnections($event, showConnectionsButton)">
+  <mat-icon class="material-icons">expand_more</mat-icon>
+</button>

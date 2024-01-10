@@ -16,13 +16,22 @@
 
 -->
 <div fxFlex fxLayout="column" fxLayoutGap="8px">
-  <section fxLayout="row" style="padding-left: 16px">
-    <tb-toggle-select appearance="stroked"
-                      (ngModelChange)="onChange($event)"
-                      [ngModelOptions]="{ standalone: true }"
-                      [options]="headerOptions"
-                      [(ngModel)]="selectedOption">
-    </tb-toggle-select>
+  <section class="tb-ws-client-title-toolbar mat-padding">
+    <section class="tb-ws-client-title-toolbar">
+      <span class="tb-ws-client-title" translate>ws-client.connections.messages</span>
+      <tb-toggle-select appearance="stroked"
+                        (ngModelChange)="onChange($event)"
+                        [ngModelOptions]="{ standalone: true }"
+                        [options]="headerOptions"
+                        [(ngModel)]="selectedOption">
+      </tb-toggle-select>
+    </section>
+    <button mat-stroked-button color="primary"
+            [matTooltip]="'ws-client.connections.clear-connection-history' | translate"
+            (click)="clearHistory()"
+            aria-label="Clear history">
+      <span translate>ws-client.connections.clear-connection-history</span>
+    </button>
   </section>
   <div class="tb-ws-client-messages">
     <div class="messages-container" fxLayout="column" fxLayoutGap="12px">

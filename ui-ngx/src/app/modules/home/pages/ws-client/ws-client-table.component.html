@@ -15,55 +15,57 @@
     limitations under the License.
 
 -->
-<div class="table-container">
-  <div class="mat-table-toolbar-container">
-    <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
-      <div class="mat-toolbar-tools" fxLayoutGap="4px">
-        <h2 *ngIf="entitiesTableConfig.tableTitle">{{ entitiesTableConfig.tableTitle }}</h2>
-        <span fxFlex></span>
-        <button *ngIf="entitiesTableConfig.addEnabled" mat-icon-button
-                (click)="entitiesTableConfig.addEntity()"
-                [matTooltip]="'ws-client.connections.add-connection' | translate"
-                aria-label="Add Websocket Client Connection">
-          <mat-icon>add</mat-icon>
-        </button>
-        <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
-                [disabled]="isLoading$ | async" (click)="enterFilterMode()"
-                matTooltip="{{ translations.search | translate }}"
-                matTooltipPosition="above">
-          <mat-icon>search</mat-icon>
-        </button>
-      </div>
-    </mat-toolbar>
-    <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
-      <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="4px"
-           class="mat-toolbar-tools search-mode">
-        <button mat-icon-button
-                class="tb-mat-32"
-                matTooltip="{{ translations.search | translate }}"
-                matTooltipPosition="above">
-          <mat-icon class="home-page-material-icons">search</mat-icon>
-        </button>
-        <input #searchInput fxFlex
-               [(ngModel)]="pageLink.textSearch"
-               placeholder="{{ translations.search | translate }}"/>
-        <button mat-icon-button (click)="exitFilterMode()"
-                class="tb-mat-32"
-                matTooltip="{{ 'action.close' | translate }}"
-                matTooltipPosition="above">
-          <mat-icon class="home-page-material-icons">close</mat-icon>
-        </button>
-      </div>
-    </mat-toolbar>
-  </div>
+<!--TODO as Select Connection-->
+
+<div class="mat-table-toolbar-container sticky mat-padding">
+  <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
+    <div class="mat-toolbar-tools" fxLayoutGap="4px">
+      <h2 *ngIf="entitiesTableConfig.tableTitle">{{ entitiesTableConfig.tableTitle }}</h2>
+      <span fxFlex></span>
+      <button *ngIf="entitiesTableConfig.addEnabled" mat-icon-button
+              (click)="entitiesTableConfig.addEntity()"
+              [matTooltip]="'ws-client.connections.add-connection' | translate"
+              aria-label="Add Websocket Client Connection">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
+              [disabled]="isLoading$ | async" (click)="enterFilterMode()"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>search</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+  <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
+    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="4px"
+         class="mat-toolbar-tools search-mode">
+      <button mat-icon-button
+              class="tb-mat-32"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon class="home-page-material-icons">search</mat-icon>
+      </button>
+      <input #searchInput fxFlex
+             [(ngModel)]="pageLink.textSearch"
+             placeholder="{{ translations.search | translate }}"/>
+      <button mat-icon-button (click)="exitFilterMode()"
+              class="tb-mat-32"
+              matTooltip="{{ 'action.close' | translate }}"
+              matTooltipPosition="above">
+        <mat-icon class="home-page-material-icons">close</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+</div>
+<div class="container">
   <ng-container *ngIf="dataArray?.length; else noData">
     <ng-container *ngTemplateOutlet="data"></ng-container>
   </ng-container>
 </div>
 
 <ng-template #data>
-  <section>
-    <ul style="overflow: auto" [ngStyle]="{height: calcTableHeight()}" class="tb-side-menu"
+  <section style="height: 100%">
+    <ul style="overflow: auto" class="tb-side-menu"
         fxFlex fxLayout="column" fxLayoutAlign="flex-start stretch" fxLayoutGap="8px">
       <li [ngClass]="{'active': (index === selectedRow && selectionEnabled)}"
           *ngFor="let entity of dataArray; index as index">
@@ -117,7 +119,7 @@
 </ng-template>
 <ng-template #noData>
   <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px"
-           class="no-data" [ngStyle]="{height: calcTableHeight()}">
+           class="no-data">
     <img src="assets/home/no_data_bg.svg">
     <span *ngIf="entitiesTableConfig.noDataLabel">{{ entitiesTableConfig.noDataLabel | translate }}</span>
   </section>

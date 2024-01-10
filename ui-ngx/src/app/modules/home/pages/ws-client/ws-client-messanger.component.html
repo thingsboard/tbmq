@@ -16,21 +16,6 @@
 
 -->
 <section *ngIf="client">
-  <section class="toolbar" fxFlex fxLayoutGap="8px" fxLayoutAlign="flex-start center">
-    <span class="title">{{client?.name}}</span>
-    <span class="status" [ngClass]="{'disconnected': !client?.connected}">
-      {{(client?.connected ? 'mqtt-client-session.connected' : 'mqtt-client-session.disconnected') | translate}}
-    </span>
-    <span fxFlex></span>
-    <section fxLayoutGap="8px">
-      <button mat-stroked-button color="primary"
-              [matTooltip]="'ws-client.connections.clear-connection-history' | translate"
-              (click)="clearHistory()"
-              aria-label="Clear history">
-        <span translate>ws-client.connections.clear-connection-history</span>
-      </button>
-    </section>
-  </section>
   <div fxFlex fxLayout="column" fxLayoutGap="16px">
     <tb-ws-client-messages fxFlex></tb-ws-client-messages>
     <div class="container">

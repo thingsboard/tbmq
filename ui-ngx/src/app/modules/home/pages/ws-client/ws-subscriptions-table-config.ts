@@ -46,6 +46,7 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
     this.entityComponent = null;
     this.detailsPanelEnabled = false;
     this.selectionEnabled = false;
+    this.searchEnabled = false;
     this.addEnabled = true;
     this.showColorBadge = true;
     this.entitiesDeleteEnabled = false;

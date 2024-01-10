@@ -13,14 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host::ng-deep {
-  background-color: #fff;
-  border-radius: 4px;
-
-  .mat-toolbar {
-    background-color: #fff;
-  }
-  .container {
-    background-color: #fff;
-  }
+:host {
 }
