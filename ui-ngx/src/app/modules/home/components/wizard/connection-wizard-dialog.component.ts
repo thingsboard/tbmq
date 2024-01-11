@@ -83,8 +83,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private wsClientService: WsClientService,
               private breakpointObserver: BreakpointObserver,
               private fb: FormBuilder,
-              @Inject(MAT_DIALOG_DATA) public data: AddEntityDialogData<BaseData>,
-  ) {
+              @Inject(MAT_DIALOG_DATA) public data: AddEntityDialogData<BaseData>) {
     super(store, router, dialogRef);
 
     this.stepperOrientation = this.breakpointObserver.observe(MediaBreakpoints['gt-sm'])
@@ -124,7 +123,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         userProperties: [null, []]
       }
     );
-
   }
 
   cancel(): void {

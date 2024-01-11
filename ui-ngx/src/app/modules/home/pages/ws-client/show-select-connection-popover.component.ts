@@ -26,7 +26,7 @@ import { WsClientService } from '@core/http/ws-client.service';
 import { Connection } from '@shared/models/ws-client.model';
 
 @Component({
-  selector: 'tb-show-notification-popover',
+  selector: 'tb-show-connections-popover',
   templateUrl: './show-select-connection-popover.component.html',
   styleUrls: []
 })
@@ -42,7 +42,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   // private notificationCountSubscriber: Subscription;
 
   connections$: Observable<Connection[]>;
-  loadConnection = true;
+  loadConnection = false;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,

@@ -33,9 +33,10 @@ import { SessionFilterConfigComponent } from "@home/pages/sessions/session-filte
     SessionTableHeaderComponent,
     SessionFilterConfigComponent
   ],
-  exports: [
-    SessionsDetailsDialogComponent
-  ],
+    exports: [
+        SessionsDetailsDialogComponent,
+        SubscriptionsComponent
+    ],
   imports: [
     CommonModule,
     SharedModule,

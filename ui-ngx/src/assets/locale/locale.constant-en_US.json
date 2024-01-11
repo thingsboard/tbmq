@@ -780,8 +780,10 @@
       "connect": "Connect",
       "connection-details": "Connection Details",
       "connection-status": "Connection Status",
-      "clear-connection-history": "Clear History",
+      "clear-connection-history": "Clear messages",
       "delete-connection": "Delete Connection",
+      "delete-connection-title": "Are you sure you want to delete the connection '{{connectionName}}'?",
+      "delete-connection-text": "Be careful, after the confirmation the '{{connectionName}}' connection and all related data will become unrecoverable.",
       "disconnect": "Disconnect",
       "properties": "Properties",
       "show-meta": "Show meta settings",
@@ -857,6 +859,8 @@
     "subscriptions": {
       "add-subscription": "Add Subscription",
       "delete-subscription": "Delete Subscription",
+      "delete-subscription-title": "Are you sure you want to delete the topic '{{topic}}'?",
+      "delete-subscription-text": "Be careful, after the confirmation the '{{topic}}' topic and all related data will become unrecoverable.",
       "subscriptions": "Subscriptions",
       "topic": "Topic",
       "topic-required": "Topic is required.",
@@ -875,7 +879,8 @@
       "color": "Color",
       "search-subscription": "Search by Topic",
       "no-subscriptions": "No Subscriptions yet",
-      "retain-details": "Retained messages"
+      "retain-details": "Retained messages",
+      "loading-subscriptions": "Loading subscriptions..."
     }
   }
 }

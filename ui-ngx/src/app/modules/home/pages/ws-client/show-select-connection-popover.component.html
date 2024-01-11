@@ -15,15 +15,11 @@
     limitations under the License.
 
 -->
-<!--<section fxLayout="row" fxLayoutAlign="space-between center" style="margin: 0 10px 4px; min-height: 36px">-->
-    <section class="tb-ws-client-title-toolbar mat-padding" style="min-height: 36px">
-      <span class="tb-ws-client-title" translate>ws-client.connections.select-connection</span>
-      <mat-icon class="material-icons" (click)="close()">close</mat-icon>
-    </section>
+<section class="tb-ws-client-title-toolbar mat-padding" style="min-height: 36px">
+  <span class="tb-ws-client-title" translate>ws-client.connections.select-connection</span>
+  <mat-icon class="material-icons" (click)="close()">close</mat-icon>
+</section>
 
-<!--  <div style="font-weight: 500; letter-spacing: .25px" translate>ws-client.connections.select-connection</div>-->
-<!--  <mat-icon class="material-icons" (click)="close()">close</mat-icon>-->
-<!--</section>-->
 <ng-container *ngIf="loadConnection; else loadingConnections">
   <div *ngIf="(connections$ | async).length; else emptyConnections" style="overflow: auto">
     <div style="overflow: auto">
@@ -34,8 +30,9 @@
       </section>
     </div>
   </div>
-  <section fxLayoutAlign="center center" *ngIf="(connections$ | async).length">
-    <button fxFlex mat-button color="primary" (click)="addConnection($event)">
+  <section style="padding: 8px" fxLayoutAlign="center center">
+    <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
+      <mat-icon class="material-icons">add</mat-icon>
       {{ 'ws-client.connections.add-connection' | translate }}
     </button>
   </section>

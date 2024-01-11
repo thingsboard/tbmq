@@ -15,7 +15,7 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import {Connection, ConnectionDetailed} from '@shared/models/ws-client.model';
+import {Connection, ConnectionDetailed, SubscriptionTopicFilter} from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
@@ -24,24 +24,27 @@ import {MatDialog} from "@angular/material/dialog";
 import {DialogService} from "@core/services/dialog.service";
 import {ConnectionWizardDialogComponent} from "@home/components/wizard/connection-wizard-dialog.component";
 import {isDefinedAndNotNull} from "@core/utils";
+import {
+  AddWsClientSubscriptionDialogData,
+  WsClientSubscriptionDialogComponent
+} from "@home/pages/ws-client/ws-client-subscription-dialog.component";
 
 @Component({
-  selector: 'tb-connection',
-  templateUrl: './connection.component.html',
-  styleUrls: ['./connection.component.scss']
+  selector: 'tb-subscription',
+  templateUrl: './subscription.component.html',
+  styleUrls: ['./subscription.component.scss']
 })
-export class ConnectionComponent implements OnInit {
+export class SubscriptionComponent implements OnInit {
 
   @Input()
-  connection: Connection;
+  subscription: SubscriptionTopicFilter;
 
   @Output()
-  connectionDeleted = new EventEmitter<Connection>();
+  subscriptionDeleted = new EventEmitter<SubscriptionTopicFilter>();
 
   @Output()
-  connectionEdited = new EventEmitter<Connection>();
+  subscriptionEdited = new EventEmitter<SubscriptionTopicFilter>();
 
-  selectedConnection: Connection;
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
 
@@ -53,11 +56,6 @@ export class ConnectionComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.wsClientService.selectedConnection$.subscribe(
-      res => {
-        this.selectedConnection = res;
-      }
-    );
   }
 
   onCommentMouseEnter(): void {
@@ -68,8 +66,8 @@ export class ConnectionComponent implements OnInit {
     this.showActions = false;
   }
 
-  private configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
-    const actions: Array<CellActionDescriptor<Connection>> = [];
+  private configureCellHiddenActions(): Array<CellActionDescriptor<SubscriptionTopicFilter>> {
+    const actions: Array<CellActionDescriptor<SubscriptionTopicFilter>> = [];
     actions.push(
       {
         name: this.translate.instant('action.edit'),
@@ -87,47 +85,40 @@ export class ConnectionComponent implements OnInit {
     return actions;
   }
 
-  private delete($event: Event, entity: Connection) {
+  private delete($event: Event, entity: SubscriptionTopicFilter) {
     if ($event) {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('ws-client.connections.delete-connection-title', {connectionName: this.connection.name}),
-      this.translate.instant('ws-client.connections.delete-connection-text', {connectionName: this.connection.name}),
+      this.translate.instant('ws-client.subscriptions.delete-subscription-title', {topic: this.subscription.topic}),
+      this.translate.instant('ws-client.subscriptions.delete-subscription-text', {topic: this.subscription.topic}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
     ).subscribe((result) => {
       if (result) {
-        if (this.selectedConnection.id === this.connection.id) {
-          this.connectionDeleted.emit(this.connection);
-          // TODO move implementation to the select-connection-component
-          /*this.wsClientService.selectFirstConnection().subscribe(
-            () => {
-              this.wsClientService.deleteConnection(this.connection.id).subscribe();
-            }
-          );*/
-        }
+        this.subscriptionDeleted.emit(this.subscription);
       }
     });
   }
 
-  private edit($event: Event, entity: Connection) {
+  private edit($event: Event, entity: SubscriptionTopicFilter) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<ConnectionWizardDialogComponent, any>(ConnectionWizardDialogComponent, {
+    const data = {
+      subscription: null
+    };
+    this.dialog.open<WsClientSubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(WsClientSubscriptionDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        isEdit: true // TODO implement edit wizard
-      }
+      data
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
           this.wsClientService.saveConnection(res).subscribe(
-            (connection) => {
-              this.connectionEdited.emit(connection);
+            () => {
+              // this.updateData()
             }
           );
         }

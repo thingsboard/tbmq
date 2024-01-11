@@ -14,12 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import {ChangeDetectorRef, Component } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection } from '@shared/models/ws-client.model';
+import {Connection, SubscriptionTopicFilter} from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
 import { WsSubscriptionsTableConfig } from "@home/pages/ws-client/ws-subscriptions-table-config";
+import {mergeMap, Observable, ReplaySubject, Subscription} from "rxjs";
+import {map, share, tap} from "rxjs/operators";
 
 @Component({
   selector: 'tb-ws-client-subscriptions',
@@ -28,21 +30,45 @@ import { WsSubscriptionsTableConfig } from "@home/pages/ws-client/ws-subscriptio
 })
 export class WsClientSubscriptionsComponent {
 
-  connection: Connection;
-  wsSubscriptionsTableConfig: WsSubscriptionsTableConfig
+  subscriptions$: Observable<SubscriptionTopicFilter[]>;
 
+  loadSubscriptions = false;
   constructor(private dialog: MatDialog,
               private wsClientService: WsClientService,
+              private cd: ChangeDetectorRef,
               private translate: TranslateService) {
+  }
 
-    wsClientService.selectedConnection$.subscribe(
+  ngOnInit() {
+    this.wsClientService.selectedConnection$.subscribe(
       res => {
-        if (res) {
-          this.connection = res;
-          this.wsSubscriptionsTableConfig = new WsSubscriptionsTableConfig(this.wsClientService, this.translate, this.dialog, res.id);
-        }
+        this.loadSubscriptions = true;
+        this.fetchSubcription(res);
       }
     );
+  }
+
+  fetchSubcription(connection) {
+    this.subscriptions$ = this.wsClientService.getSubscriptionsV2(connection.id).pipe(
+      map(res => {
+        if (res.length) {
+          return res;
+        }
+        return [];
+      }),
+      share({
+        connector: () => new ReplaySubject(1)
+      }),
+      tap(() => setTimeout(() => this.cd.markForCheck()))
+    );
+    // this.subscriptions$.subscribe();
+  }
+
+  addSubscription($event: Event) {
+  }
+
+  trackById(index: number, item: Connection): string {
+    return item.id;
   }
 }
 

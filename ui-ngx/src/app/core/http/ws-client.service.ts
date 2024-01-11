@@ -733,6 +733,143 @@ export class WsClientService {
     return of(result);
   }
 
+  public getSubscriptionsV2(connectionId: any,config?: RequestConfig): Observable<SubscriptionTopicFilter[]> {
+    // return this.http.get<PageData<any>>(`/api/`, defaultHttpOptionsFromConfig(config));
+    const allData = [
+      {
+        id: 1,
+        data: [
+          {
+            name: 'testtopic88',
+            topic: 'testtopic88',
+            color: 'blue',
+            qos: 1
+          },
+          {
+            name: 'testtopic2',
+            topic: 'testtopic2',
+            color: 'green',
+            qos: 1
+          },
+          {
+            name: 'testtopic3',
+            topic: 'testtopic3',
+            color: 'green',
+            qos: 1
+          },
+          {
+            name: 'testtopic4',
+            topic: 'testtopic4',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic5',
+            topic: 'testtopic5',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic6',
+            topic: 'testtopic6',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic7',
+            topic: 'testtopic7',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic8',
+            topic: 'testtopic8',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic9',
+            topic: 'testtopic9',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic10',
+            topic: 'testtopic10',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic11',
+            topic: 'testtopic11',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic12',
+            topic: 'testtopic12',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic13',
+            topic: 'testtopic13',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic14',
+            topic: 'testtopic14',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic15',
+            topic: 'testtopic15',
+            color: 'orange',
+            qos: 1
+          },
+          {
+            name: 'testtopic16',
+            topic: 'testtopic16',
+            color: 'orange',
+            qos: 1
+          }
+        ]
+      },
+      {
+        id: 2,
+        data: [
+          {
+            name: '2testtopic',
+            topic: '2testtopic',
+            color: 'pink',
+            qos: 1
+          }
+        ]
+      },
+      {
+        id: 3,
+        data: [
+          {
+            name: '3testtopic1',
+            topic: '3testtopic1',
+            color: 'blue',
+            qos: 1
+          },
+          {
+            name: '3testtopic2',
+            topic: '3testtopic2',
+            color: 'yellow',
+            qos: 1
+          }
+        ]
+      }
+    ];
+    const target = allData.find(el => el.id == connectionId);
+    return of(target?.data);
+  }
+
   public saveSubscription(): Observable<SubscriptionTopicFilterDetailed> {
     const result = {
         topic: 'testtopic',
