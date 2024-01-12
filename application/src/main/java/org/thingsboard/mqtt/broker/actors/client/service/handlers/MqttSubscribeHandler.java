@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
@@ -47,8 +48,8 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
+import org.thingsboard.mqtt.broker.util.MqttReasonCodeUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +83,7 @@ public class MqttSubscribeHandler {
                     ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
         }
 
-        List<MqttReasonCode> codes = collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> codes = collectMqttReasonCodes(ctx, msg);
         if (CollectionUtils.isEmpty(codes)) {
             return;
         }
@@ -94,20 +95,20 @@ public class MqttSubscribeHandler {
         startProcessingSharedSubscriptions(ctx, validTopicSubscriptions, currentSharedSubscriptions);
     }
 
-    private List<TopicSubscription> collectValidSubscriptions(List<TopicSubscription> topicSubscriptions, List<MqttReasonCode> codes) {
+    private List<TopicSubscription> collectValidSubscriptions(List<TopicSubscription> topicSubscriptions, List<MqttReasonCodes.SubAck> codes) {
         List<TopicSubscription> validTopicSubscriptions = new ArrayList<>();
         for (int i = 0; i < codes.size(); i++) {
-            if (MqttReasonCode.getGrantedQosList().contains(codes.get(i))) {
+            if (MqttReasonCodeUtil.getGrantedQosList().contains(codes.get(i))) {
                 validTopicSubscriptions.add(topicSubscriptions.get(i));
             }
         }
         return validTopicSubscriptions;
     }
 
-    List<MqttReasonCode> collectMqttReasonCodes(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+    List<MqttReasonCodes.SubAck> collectMqttReasonCodes(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        List<MqttReasonCode> codes = populateReasonCodesIfSubscriptionIdPresent(ctx, msg);
+        List<MqttReasonCodes.SubAck> codes = populateReasonCodesIfSubscriptionIdPresent(ctx, msg);
         if (!codes.isEmpty()) {
             return codes;
         }
@@ -148,20 +149,20 @@ public class MqttSubscribeHandler {
                 }
             }
 
-            codes.add(MqttReasonCode.valueOf(subscription.getQos()));
+            codes.add(MqttReasonCodeUtil.qosValueToReasonCode(subscription.getQos()));
         }
         return codes;
     }
 
-    private List<MqttReasonCode> populateReasonCodesIfSubscriptionIdPresent(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+    private List<MqttReasonCodes.SubAck> populateReasonCodesIfSubscriptionIdPresent(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         var subscriptionsCount = msg.getTopicSubscriptions().size();
-        List<MqttReasonCode> codes = new ArrayList<>(subscriptionsCount);
+        List<MqttReasonCodes.SubAck> codes = new ArrayList<>(subscriptionsCount);
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             MqttProperties.MqttProperty subscriptionIdProperty = MqttPropertiesUtil.getSubscriptionIdProperty(msg.getProperties());
             if (subscriptionIdProperty != null) {
                 log.warn("[{}] Subscription id MQTT property present, server not support this!", ctx.getClientId());
                 for (int i = 0; i < subscriptionsCount; i++) {
-                    codes.add(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED);
+                    codes.add(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED);
                 }
             }
         }
@@ -203,7 +204,7 @@ public class MqttSubscribeHandler {
     }
 
     private boolean isSubscriptionIdNotSupportedCodePresent(MqttSubAckMessage subAckMessage) {
-        return subAckMessage.payload().reasonCodes().contains(MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED.intValue());
+        return subAckMessage.payload().reasonCodes().contains(MqttReasonCodeUtil.byteToInt(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byteValue()));
     }
 
     private void processRetainedMessages(ClientSessionCtx ctx,

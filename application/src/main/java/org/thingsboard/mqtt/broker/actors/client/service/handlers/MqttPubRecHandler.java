@@ -16,15 +16,16 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 @Service
@@ -36,16 +37,31 @@ public class MqttPubRecHandler {
     private final RetransmissionService retransmissionService;
     private final MqttMessageGenerator mqttMessageGenerator;
 
-    public void process(ClientSessionCtx ctx, int messageId) throws MqttException {
+    public void process(ClientSessionCtx ctx, MqttPubRecMsg msg) throws MqttException {
+        int messageId = msg.getMessageId();
         if (log.isTraceEnabled()) {
             log.trace("[{}][{}] Received PUBREC msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         }
+
+        if (reasonCodeFailure(msg)) {
+            ctx.ackInFlightMsg(messageId);
+            if (ctx.getSessionInfo().isPersistent()) {
+                msgPersistenceManager.processPubRecNoPubRelDelivery(ctx, messageId);
+            }
+            return;
+        }
+
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubRec(ctx, messageId);
         } else {
-            MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
+            MqttReasonCodes.PubRel code = MqttReasonCodeResolver.pubRelSuccess(ctx);
             MqttMessage pubRelMsg = mqttMessageGenerator.createPubRelMsg(messageId, code);
             retransmissionService.onPubRecReceived(ctx, pubRelMsg);
         }
     }
+
+    boolean reasonCodeFailure(MqttPubRecMsg msg) {
+        return Byte.toUnsignedInt(msg.getReasonCode().byteValue()) >= Byte.toUnsignedInt(MqttReasonCodes.PubRec.UNSPECIFIED_ERROR.byteValue());
+    }
+
 }

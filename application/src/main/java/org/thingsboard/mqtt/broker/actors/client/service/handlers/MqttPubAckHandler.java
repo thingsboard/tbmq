@@ -36,6 +36,7 @@ public class MqttPubAckHandler {
         if (isTraceEnabled) {
             log.trace("[{}][{}] Received PUBACK msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         }
+        ctx.ackInFlightMsg(messageId);
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubAck(ctx, messageId);
         }

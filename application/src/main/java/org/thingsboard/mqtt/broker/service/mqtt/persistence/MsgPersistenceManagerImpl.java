@@ -238,12 +238,19 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void processPubRec(ClientSessionCtx clientSessionCtx, int packetId) {
-        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
-        String clientId = clientInfo.getClientId();
-        if (clientInfo.getType() == APPLICATION) {
+        if (clientSessionCtx.getClientType() == APPLICATION) {
             applicationPersistenceProcessor.processPubRec(clientSessionCtx, packetId);
-        } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.processPubRec(clientId, packetId);
+        } else if (clientSessionCtx.getClientType() == DEVICE) {
+            devicePersistenceProcessor.processPubRec(clientSessionCtx.getClientId(), packetId);
+        }
+    }
+
+    @Override
+    public void processPubRecNoPubRelDelivery(ClientSessionCtx clientSessionCtx, int packetId) {
+        if (clientSessionCtx.getClientType() == APPLICATION) {
+            applicationPersistenceProcessor.processPubRecNoPubRelDelivery(clientSessionCtx, packetId);
+        } else if (clientSessionCtx.getClientType() == DEVICE) {
+            devicePersistenceProcessor.processPubRecNoPubRelDelivery(clientSessionCtx.getClientId(), packetId);
         }
     }
 

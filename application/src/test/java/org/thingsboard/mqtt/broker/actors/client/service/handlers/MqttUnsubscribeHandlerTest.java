@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +29,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +75,7 @@ public class MqttUnsubscribeHandlerTest {
 
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
-        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCode.SUCCESS)));
+        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCodes.UnsubAck.SUCCESS)));
         verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
     }
 
@@ -92,8 +92,8 @@ public class MqttUnsubscribeHandlerTest {
         verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
     }
 
-    private List<MqttReasonCode> getList() {
-        List<MqttReasonCode> value = new ArrayList<>();
+    private List<MqttReasonCodes.UnsubAck> getList() {
+        List<MqttReasonCodes.UnsubAck> value = new ArrayList<>();
         value.add(null);
         return value;
     }

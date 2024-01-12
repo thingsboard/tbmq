@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.After;
 import org.junit.Before;
@@ -49,7 +50,6 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -373,7 +373,7 @@ public class MqttSubscribeHandlerTest {
         mqttSubscribeHandler.process(ctx, msg);
 
         verify(mqttMessageGenerator, times(1)).createSubAckMessage(
-                eq(1), eq(List.of(MqttReasonCode.GRANTED_QOS_0, MqttReasonCode.GRANTED_QOS_1, MqttReasonCode.GRANTED_QOS_2))
+                eq(1), eq(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_0, MqttReasonCodes.SubAck.GRANTED_QOS_1, MqttReasonCodes.SubAck.GRANTED_QOS_2))
         );
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
         verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
@@ -388,9 +388,9 @@ public class MqttSubscribeHandlerTest {
 
         List<TopicSubscription> topicSubscriptions = getTopicSubscriptions();
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
-        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCode.FAILURE, MqttReasonCode.NOT_AUTHORIZED, MqttReasonCode.GRANTED_QOS_2), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.UNSPECIFIED_ERROR, MqttReasonCodes.SubAck.NOT_AUTHORIZED, MqttReasonCodes.SubAck.GRANTED_QOS_2), reasonCodes);
     }
 
     @Test
@@ -404,9 +404,9 @@ public class MqttSubscribeHandlerTest {
 
         List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf1", 1, "g1"));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
-        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCode.IMPLEMENTATION_SPECIFIC_ERROR), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.IMPLEMENTATION_SPECIFIC_ERROR), reasonCodes);
     }
 
     @Test
@@ -420,9 +420,9 @@ public class MqttSubscribeHandlerTest {
 
         List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf1", 1, "g1"));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
-        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
-        assertEquals(List.of(MqttReasonCode.GRANTED_QOS_1), reasonCodes);
+        assertEquals(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_1), reasonCodes);
     }
 
     @Test
@@ -432,7 +432,7 @@ public class MqttSubscribeHandlerTest {
         List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf", 1, "g",
                 new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE)));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
-        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
         assertTrue(reasonCodes.isEmpty());
         verify(clientMqttActorManager, times(1)).disconnect(any(), any());
@@ -443,13 +443,13 @@ public class MqttSubscribeHandlerTest {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         MqttSubscribeMsg msg = getMqttSubscribeMsg();
-        List<MqttReasonCode> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
+        List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
         assertEquals(
                 List.of(
-                        MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED,
-                        MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED,
-                        MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED),
+                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED),
                 reasonCodes);
     }
 

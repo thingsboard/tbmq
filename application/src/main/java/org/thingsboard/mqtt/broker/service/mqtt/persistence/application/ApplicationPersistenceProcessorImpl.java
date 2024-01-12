@@ -176,28 +176,55 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             if (isDebugEnabled) {
                 log.debug("[{}] Cannot find main processing context for client on PubRec. PacketId - {}.", clientId, packetId);
             }
-            processPubRecInSharedCtx(clientSessionCtx, packetId, "[{}] Cannot find processing contexts for client on PubRec. PacketId - {}.");
+            processPubRecInSharedCtx(clientSessionCtx, packetId,
+                    "[{}] Cannot find processing contexts for client on PubRec. PacketId - {}.", true);
         } else {
-            var ack = processingContext.onPubRec(packetId);
+            var ack = processingContext.onPubRec(packetId, true);
             if (ack) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubRec packet [{}] processed successfully from main context", clientId, packetId);
                 }
                 return;
             }
-            processPubRecInSharedCtx(clientSessionCtx, packetId, "[{}] Cannot find shared subscriptions processing contexts for client on PubRec. PacketId - {}.");
+            processPubRecInSharedCtx(clientSessionCtx, packetId,
+                    "[{}] Cannot find shared subscriptions processing contexts for client on PubRec. PacketId - {}.", true);
         }
     }
 
-    private void processPubRecInSharedCtx(ClientSessionCtx clientSessionCtx, int packetId, String format) {
+    @Override
+    public void processPubRecNoPubRelDelivery(ClientSessionCtx clientSessionCtx, int packetId) {
+        String clientId = clientSessionCtx.getClientId();
+        ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
+        if (processingContext == null) {
+            if (isDebugEnabled) {
+                log.debug("[{}] Cannot find main processing context for client on PubRec. PacketId - {}.", clientId, packetId);
+            }
+            processPubRecInSharedCtx(clientSessionCtx, packetId,
+                    "[{}] Cannot find processing contexts for client on PubRec. PacketId - {}.", false);
+        } else {
+            var ack = processingContext.onPubRec(packetId, false);
+            if (ack) {
+                if (isDebugEnabled) {
+                    log.debug("[{}] PubRec packet [{}] processed successfully from main context", clientId, packetId);
+                }
+                return;
+            }
+            processPubRecInSharedCtx(clientSessionCtx, packetId,
+                    "[{}] Cannot find shared subscriptions processing contexts for client on PubRec. PacketId - {}.", false);
+        }
+    }
+
+    private void processPubRecInSharedCtx(ClientSessionCtx clientSessionCtx, int packetId, String format, boolean sendPubRelMsg) {
         Set<ApplicationSharedSubscriptionCtx> contexts = sharedSubscriptionsPackProcessingCtxMap.get(clientSessionCtx.getClientId());
         if (CollectionUtils.isEmpty(contexts)) {
             log.warn(format, clientSessionCtx.getClientId(), packetId);
-            publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+            if (sendPubRelMsg) {
+                publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+            }
             return;
         }
         for (ApplicationSharedSubscriptionCtx ctx : contexts) {
-            var acknowledged = ctx.getPackProcessingCtx().onPubRec(packetId);
+            var acknowledged = ctx.getPackProcessingCtx().onPubRec(packetId, sendPubRelMsg);
             if (acknowledged) {
                 if (isDebugEnabled) {
                     log.debug("[{}] PubRec packet [{}] processed successfully from shared contexts", clientSessionCtx.getClientId(), packetId);
@@ -205,7 +232,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 return;
             }
         }
-        publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+        if (sendPubRelMsg) {
+            publishMsgDeliveryService.sendPubRelMsgToClient(clientSessionCtx, packetId);
+        }
     }
 
     @Override

@@ -19,11 +19,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -45,7 +45,7 @@ import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.List;
 import java.util.UUID;
@@ -69,9 +69,9 @@ public class NettyMqttConverter {
                 .stream()
                 .map(mqttTopicSubscription ->
                         new TopicSubscription(
-                                getTopicName(mqttTopicSubscription.topicName()),
+                                getTopicName(mqttTopicSubscription.topicFilter()),
                                 mqttTopicSubscription.qualityOfService().value(),
-                                getShareName(mqttTopicSubscription.topicName()),
+                                getShareName(mqttTopicSubscription.topicFilter()),
                                 SubscriptionOptions.newInstance(mqttTopicSubscription.option())))
                 .collect(Collectors.toList());
         MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
@@ -107,20 +107,24 @@ public class NettyMqttConverter {
         return new MqttPublishMsg(sessionId, extractPublishMsg(nettyPublishMsg));
     }
 
-    public static MqttPubAckMsg createMqttPubAckMsg(UUID sessionId, MqttPubAckMessage nettyPubAckMsg) {
-        return new MqttPubAckMsg(sessionId, nettyPubAckMsg.variableHeader().messageId());
+    public static MqttPubAckMsg createMqttPubAckMsg(UUID sessionId, MqttPubReplyMessageVariableHeader variableHeader) {
+        MqttReasonCodes.PubAck pubAckReasonCode = MqttReasonCodes.PubAck.valueOf(variableHeader.reasonCode());
+        return new MqttPubAckMsg(sessionId, variableHeader.messageId(), pubAckReasonCode);
     }
 
-    public static MqttPubRecMsg createMqttPubRecMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubRecMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
+    public static MqttPubRecMsg createMqttPubRecMsg(UUID sessionId, MqttPubReplyMessageVariableHeader variableHeader) {
+        MqttReasonCodes.PubRec pubRecReasonCode = MqttReasonCodes.PubRec.valueOf(variableHeader.reasonCode());
+        return new MqttPubRecMsg(sessionId, variableHeader.messageId(), variableHeader.properties(), pubRecReasonCode);
     }
 
-    public static MqttPubRelMsg createMqttPubRelMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubRelMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
+    public static MqttPubRelMsg createMqttPubRelMsg(UUID sessionId, MqttPubReplyMessageVariableHeader variableHeader) {
+        MqttReasonCodes.PubRel pubRelReasonCode = MqttReasonCodes.PubRel.valueOf(variableHeader.reasonCode());
+        return new MqttPubRelMsg(sessionId, variableHeader.messageId(), variableHeader.properties(), pubRelReasonCode);
     }
 
-    public static MqttPubCompMsg createMqttPubCompMsg(UUID sessionId, MqttMessageIdVariableHeader nettyMessageIdVariableHeader) {
-        return new MqttPubCompMsg(sessionId, nettyMessageIdVariableHeader.messageId(), nettyMessageIdVariableHeader.withEmptyProperties().properties());
+    public static MqttPubCompMsg createMqttPubCompMsg(UUID sessionId, MqttPubReplyMessageVariableHeader variableHeader) {
+        MqttReasonCodes.PubComp pubCompReasonCode = MqttReasonCodes.PubComp.valueOf(variableHeader.reasonCode());
+        return new MqttPubCompMsg(sessionId, variableHeader.messageId(), variableHeader.properties(), pubCompReasonCode);
     }
 
     public static MqttDisconnectMsg createMqttDisconnectMsg(ClientSessionCtx ctx, MqttMessage msg) {
@@ -137,7 +141,7 @@ public class NettyMqttConverter {
             }
 
             var reasonCode = variableHeader.reasonCode();
-            if (MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value() == reasonCode) {
+            if (MqttReasonCodes.Disconnect.DISCONNECT_WITH_WILL_MESSAGE.byteValue() == reasonCode) {
                 return new MqttDisconnectMsg(ctx.getSessionId(), getDisconnectReason(DisconnectReasonType.ON_DISCONNECT_AND_WILL_MSG), properties);
             }
         }
@@ -145,8 +149,7 @@ public class NettyMqttConverter {
     }
 
     private static int getSessionExpiryInterval(MqttProperties properties) {
-        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
-                .getProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
+        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(properties);
         if (property != null) {
             return property.value();
         }
@@ -191,4 +194,5 @@ public class NettyMqttConverter {
         inbound.getBytes(readerIndex, bytes);
         return bytes;
     }
+
 }

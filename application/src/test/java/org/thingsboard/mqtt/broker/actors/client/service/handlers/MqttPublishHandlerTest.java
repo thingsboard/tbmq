@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +49,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MqttPublishHandler.class)
@@ -136,7 +136,7 @@ public class MqttPublishHandlerTest {
         PublishMsg publishMsg = getPublishMsg(2, "test/2", 2);
         mqttPublishHandler.validatePubMsg(ctx, publishMsg);
 
-        verify(mqttMessageGenerator, times(1)).createPubRecMsg(2, NOT_AUTHORIZED);
+        verify(mqttMessageGenerator, times(1)).createPubRecMsg(2, MqttReasonCodes.PubRec.NOT_AUTHORIZED);
     }
 
     @Test

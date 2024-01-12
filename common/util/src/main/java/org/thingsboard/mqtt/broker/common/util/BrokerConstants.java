@@ -51,9 +51,13 @@ public class BrokerConstants {
     public static final String WS_PATH = "/mqtt";
 
     public static final int DEFAULT_PAGE_SIZE = 1000;
+    public static final int MAX_IN_FLIGHT_MESSAGES = DEFAULT_PAGE_SIZE;
+    public static final int DELAYED_MSG_QUEUE_MAX_SIZE = DEFAULT_PAGE_SIZE;
 
     public static final String MQTT_PROTOCOL_NAME = "MQTT";
     public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";
+
+    public static final int DEFAULT_RECEIVE_MAXIMUM = 65535;
 
     public static final char TOPIC_DELIMITER = '/';
     public static final String MULTI_LEVEL_WILDCARD = "#";
@@ -77,6 +81,7 @@ public class BrokerConstants {
     public static final int WILL_DELAY_INTERVAL_PROP_ID = 24;
     public static final int REQUEST_RESPONSE_INFO_PROP_ID = 25;
     public static final int RESPONSE_INFORMATION_PROP_ID = 26;
+    public static final int RECEIVE_MAXIMUM_PROP_ID = 33;
     public static final int TOPIC_ALIAS_MAX_PROP_ID = 34;
     public static final int TOPIC_ALIAS_PROP_ID = 35;
     public static final int MAXIMUM_QOS_PROP_ID = 36;
@@ -105,4 +110,5 @@ public class BrokerConstants {
 
     public static final int BLANK_PACKET_ID = -1;
     public static final long BLANK_SERIAL_NUMBER = -1L;
+
 }

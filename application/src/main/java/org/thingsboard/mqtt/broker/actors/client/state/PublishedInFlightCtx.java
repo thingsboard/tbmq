@@ -15,18 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
-import java.util.UUID;
+public interface PublishedInFlightCtx {
 
-/**
- * not thread-safe
- */
-public interface ClientActorState extends ClientActorStateUpdater {
+    boolean addInFlightMsg(MqttPublishMessage mqttPubMsg);
 
-    void setStopActorCommandId(UUID commandId);
+    void ackInFlightMsg(int msgId);
 
-    void clearStopActorCommandId();
-
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
+    boolean processMsg(long ttlMs);
 }

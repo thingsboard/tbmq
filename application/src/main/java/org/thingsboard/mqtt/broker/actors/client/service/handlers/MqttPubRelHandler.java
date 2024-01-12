@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 @Slf4j
@@ -41,7 +41,7 @@ public class MqttPubRelHandler {
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubCompMsg(messageId, code));
     }
 
-    MqttReasonCode completePubRel(ClientSessionCtx ctx, int messageId) {
+    MqttReasonCodes.PubComp completePubRel(ClientSessionCtx ctx, int messageId) {
         boolean completed = ctx.getAwaitingPubRelPacketsCtx().complete(ctx.getClientId(), messageId);
         if (!completed) {
             if (log.isDebugEnabled()) {
@@ -49,6 +49,7 @@ public class MqttPubRelHandler {
             }
             return MqttReasonCodeResolver.packetIdNotFound(ctx);
         }
-        return MqttReasonCodeResolver.success(ctx);
+        return MqttReasonCodeResolver.pubCompSuccess(ctx);
     }
+
 }

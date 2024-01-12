@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.handlers;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-@Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Getter
-public class MqttMessageHandlers {
+public class PacketReceivedNoDeliveryEventMsg implements TbActorMsg {
 
-    private final MqttSubscribeHandler subscribeHandler;
-    private final MqttUnsubscribeHandler unsubscribeHandler;
-    private final MqttPublishHandler publishHandler;
-    private final MqttPingHandler pingHandler;
-    private final MqttPubAckHandler pubAckHandler;
-    private final MqttPubRecHandler pubRecHandler;
-    private final MqttPubRelHandler pubRelHandler;
-    private final MqttPubCompHandler pubCompHandler;
+    private final int packetId;
 
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.PACKET_RECEIVED_NO_DELIVERY_EVENT_MSG;
+    }
 }

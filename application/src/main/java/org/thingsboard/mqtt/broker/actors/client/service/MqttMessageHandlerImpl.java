@@ -62,7 +62,7 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
                 messageHandlers.getPubAckHandler().process(clientSessionCtx, ((MqttPubAckMsg) msg).getMessageId());
                 break;
             case MQTT_PUBREC_MSG:
-                messageHandlers.getPubRecHandler().process(clientSessionCtx, ((MqttPubRecMsg) msg).getMessageId());
+                messageHandlers.getPubRecHandler().process(clientSessionCtx, ((MqttPubRecMsg) msg));
                 break;
             case MQTT_PUBREL_MSG:
                 messageHandlers.getPubRelHandler().process(clientSessionCtx, ((MqttPubRelMsg) msg).getMessageId());

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.util;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -27,22 +28,6 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.ADMINISTRATIVE_ACTION;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.FAILURE;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.KEEP_ALIVE_TIMEOUT;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MALFORMED_PACKET;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MESSAGE_RATE_TOO_HIGH;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.NOT_AUTHORIZED;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_ID_NOT_FOUND;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PACKET_TOO_LARGE;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.PROTOCOL_ERROR;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.QUOTA_EXCEEDED;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SESSION_TAKEN_OVER;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUBSCRIPTION_ID_NOT_SUPPORTED;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.SUCCESS;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.TOPIC_ALIAS_INVALID;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.TOPIC_NAME_INVALID;
 
 public final class MqttReasonCodeResolver {
 
@@ -62,59 +47,71 @@ public final class MqttReasonCodeResolver {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_QUOTA_EXCEEDED : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
     }
 
-    public static MqttReasonCode packetIdNotFound(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? PACKET_ID_NOT_FOUND : null;
+    public static MqttReasonCodes.PubComp packetIdNotFound(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubComp.PACKET_IDENTIFIER_NOT_FOUND : null;
     }
 
-    public static MqttReasonCode success(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? SUCCESS : null;
+    public static MqttReasonCodes.PubAck pubAckSuccess(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubAck.SUCCESS : null;
     }
 
-    public static MqttReasonCode topicNameInvalid(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? TOPIC_NAME_INVALID : null;
+    public static MqttReasonCodes.PubRec pubRecSuccess(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRec.SUCCESS : null;
     }
 
-    public static MqttReasonCode notAuthorized(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? NOT_AUTHORIZED : null;
+    public static MqttReasonCodes.PubRel pubRelSuccess(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRel.SUCCESS : null;
     }
 
-    public static MqttReasonCode notAuthorizedSubscribe(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? NOT_AUTHORIZED : failure();
+    public static MqttReasonCodes.PubComp pubCompSuccess(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubComp.SUCCESS : null;
     }
 
-    public static MqttReasonCode implementationSpecificError(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? IMPLEMENTATION_SPECIFIC_ERROR : failure();
+    public static MqttReasonCodes.UnsubAck unsubAckSuccess(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.UnsubAck.SUCCESS : null;
     }
 
-    public static MqttReasonCode failure() {
-        return FAILURE;
+    public static MqttReasonCodes.PubAck pubAckTopicNameInvalid(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubAck.TOPIC_NAME_INVALID : null;
     }
 
-    public static MqttReasonCode disconnect(DisconnectReasonType type) {
-        switch (type) {
-            case ON_CONFLICTING_SESSIONS:
-                return SESSION_TAKEN_OVER;
-            case ON_CHANNEL_CLOSED:
-                return ADMINISTRATIVE_ACTION;
-            case ON_RATE_LIMITS:
-                return MESSAGE_RATE_TOO_HIGH;
-            case ON_KEEP_ALIVE:
-                return KEEP_ALIVE_TIMEOUT;
-            case ON_MALFORMED_PACKET:
-                return MALFORMED_PACKET;
-            case ON_PROTOCOL_ERROR:
-                return PROTOCOL_ERROR;
-            case TOPIC_ALIAS_INVALID:
-                return TOPIC_ALIAS_INVALID;
-            case ON_QUOTA_EXCEEDED:
-                return QUOTA_EXCEEDED;
-            case ON_SUBSCRIPTION_ID_NOT_SUPPORTED:
-                return SUBSCRIPTION_ID_NOT_SUPPORTED;
-            case ON_PACKET_TOO_LARGE:
-                return PACKET_TOO_LARGE;
-            case ON_ERROR:
-            default:
-                return FAILURE;
-        }
+    public static MqttReasonCodes.PubAck pubAckNotAuthorized(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubAck.NOT_AUTHORIZED : null;
+    }
+
+    public static MqttReasonCodes.PubRec pubRecTopicNameInvalid(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRec.TOPIC_NAME_INVALID : null;
+    }
+
+    public static MqttReasonCodes.PubRec pubRecNotAuthorized(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRec.NOT_AUTHORIZED : null;
+    }
+
+    public static MqttReasonCodes.SubAck notAuthorizedSubscribe(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.SubAck.NOT_AUTHORIZED : failure();
+    }
+
+    public static MqttReasonCodes.SubAck implementationSpecificError(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.SubAck.IMPLEMENTATION_SPECIFIC_ERROR : failure();
+    }
+
+    public static MqttReasonCodes.SubAck failure() {
+        return MqttReasonCodes.SubAck.UNSPECIFIED_ERROR;
+    }
+
+    public static MqttReasonCodes.Disconnect disconnect(DisconnectReasonType type) {
+        return switch (type) {
+            case ON_CONFLICTING_SESSIONS -> MqttReasonCodes.Disconnect.SESSION_TAKEN_OVER;
+            case ON_CHANNEL_CLOSED -> MqttReasonCodes.Disconnect.ADMINISTRATIVE_ACTION;
+            case ON_RATE_LIMITS -> MqttReasonCodes.Disconnect.MESSAGE_RATE_TOO_HIGH;
+            case ON_KEEP_ALIVE -> MqttReasonCodes.Disconnect.KEEP_ALIVE_TIMEOUT;
+            case ON_MALFORMED_PACKET -> MqttReasonCodes.Disconnect.MALFORMED_PACKET;
+            case ON_PROTOCOL_ERROR -> MqttReasonCodes.Disconnect.PROTOCOL_ERROR;
+            case TOPIC_ALIAS_INVALID -> MqttReasonCodes.Disconnect.TOPIC_ALIAS_INVALID;
+            case ON_QUOTA_EXCEEDED -> MqttReasonCodes.Disconnect.QUOTA_EXCEEDED;
+            case ON_SUBSCRIPTION_ID_NOT_SUPPORTED -> MqttReasonCodes.Disconnect.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED;
+            case ON_PACKET_TOO_LARGE -> MqttReasonCodes.Disconnect.PACKET_TOO_LARGE;
+            default -> MqttReasonCodes.Disconnect.UNSPECIFIED_ERROR;
+        };
     }
 }

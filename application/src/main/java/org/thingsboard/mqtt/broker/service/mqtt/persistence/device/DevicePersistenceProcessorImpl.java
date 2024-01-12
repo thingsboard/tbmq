@@ -58,6 +58,11 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     @Override
+    public void processPubRecNoPubRelDelivery(String clientId, int packetId) {
+        deviceActorManager.notifyPacketReceivedNoDelivery(clientId, packetId);
+    }
+
+    @Override
     public void processPubComp(String clientId, int packetId) {
         deviceActorManager.notifyPacketCompleted(clientId, packetId);
     }

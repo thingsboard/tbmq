@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.service.mqtt.flow.control;
 
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 
-import java.util.UUID;
+public interface FlowControlService {
 
-/**
- * not thread-safe
- */
-public interface ClientActorState extends ClientActorStateUpdater {
+    void addToMap(String clientId, PublishedInFlightCtx ctx);
 
-    void setStopActorCommandId(UUID commandId);
+    void removeFromMap(String clientId);
 
-    void clearStopActorCommandId();
-
-    void setClientSessionCtx(ClientSessionCtx clientSessionCtx);
 }

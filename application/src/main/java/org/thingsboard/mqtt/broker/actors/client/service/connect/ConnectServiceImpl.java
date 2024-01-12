@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
@@ -83,6 +84,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final MqttMessageHandler messageHandler;
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final RateLimitService rateLimitService;
+    private final FlowControlService flowControlService;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -95,9 +97,10 @@ public class ConnectServiceImpl implements ConnectService {
     private int maxExpiryInterval;
     @Value("${mqtt.topic.alias-max:10}")
     private int maxTopicAlias;
-    @Setter
-    @Value("${mqtt.response-info:}")
-    private String serverResponseInfo;
+    @Value("${mqtt.flow-control.enabled:true}")
+    private boolean flowControlEnabled;
+    @Value("${mqtt.flow-control.delayed-queue-max-size:1000}")
+    private int delayedQueueMaxSize;
 
     @PostConstruct
     public void init() {
@@ -127,6 +130,11 @@ public class ConnectServiceImpl implements ConnectService {
                 getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
                         sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getAddress())
         );
+
+        if (flowControlEnabled) {
+            int receiveMaxValue = MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties());
+            sessionCtx.initPublishedInFlightCtx(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
+        }
 
         sessionCtx.setTopicAliasCtx(getTopicAliasCtx(msg));
         int keepAliveSeconds = getKeepAliveSeconds(actorState, msg);

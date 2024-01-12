@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
@@ -36,7 +37,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -91,7 +91,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
                 .atMost(30, TimeUnit.SECONDS)
                 .until(pubClient::isConnected);
 
-        pubClient.disconnect(0, null, null, MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value(), new MqttProperties()).waitForCompletion();
+        pubClient.disconnect(0, null, null, MqttReasonCodes.Disconnect.DISCONNECT_WITH_WILL_MESSAGE.byteValue(), new MqttProperties()).waitForCompletion();
         pubClient.close();
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
@@ -212,7 +212,7 @@ public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
 
         MqttProperties disconnectProperties = new MqttProperties();
         disconnectProperties.setSessionExpiryInterval(5L);
-        pubClient.disconnect(0, null, null, MqttReasonCode.DISCONNECT_WITH_WILL_MSG.value(), disconnectProperties).waitForCompletion();
+        pubClient.disconnect(0, null, null, MqttReasonCodes.Disconnect.DISCONNECT_WITH_WILL_MESSAGE.byteValue(), disconnectProperties).waitForCompletion();
 
         boolean await = latch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(await);
