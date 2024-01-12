@@ -17,9 +17,14 @@
   .connection {
     display: block;
     padding: 3px 16px 3px 16px;
+    cursor: pointer;
 
     &:hover {
       background: rgba(0, 0, 0, 0.04);
+    }
+
+    &:active {
+      background: rgba(0, 0, 0, 0.12);
     }
   }
 
@@ -31,6 +36,18 @@
     width: 8px;
     height: 8px;
     border-radius: 8px
+  }
+
+  .label {
+    color: rgba(0, 0, 0, 0.87);
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.15px;
+    display: inline-block;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .action-buttons {

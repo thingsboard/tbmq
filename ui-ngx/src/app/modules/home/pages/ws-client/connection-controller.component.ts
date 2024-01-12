@@ -37,11 +37,12 @@ import { tap } from 'rxjs/operators';
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
-  connections: any;
   connection: ConnectionDetailed;
-  actionLabel = 'action.connect';
-  actionTooltip = 'mqtt-client-session.disconnected';
+
   isConnected: boolean;
+  actionLabel: string;
+  password: string;
+  isPasswordRequired: boolean;
 
   private destroy$ = new Subject<void>();
 
@@ -69,6 +70,8 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.wsClientService.selectedConnection$.subscribe(
       res => {
         this.connection = res;
+        this.isConnected = res.connected;
+        this.isPasswordRequired = !!res.password?.length;
         this.update(res);
       }
     )
@@ -79,6 +82,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   onAction() {
+    if (this.isConnected) {
+      this.disconnect();
+    }
     const data = {
       connection: null
     };
@@ -106,5 +112,13 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       this.isConnected = false;
       this.actionLabel = 'ws-client.connections.connect';
     }
+  }
+
+  connect() {
+
+  }
+
+  disconnect() {
+
   }
 }

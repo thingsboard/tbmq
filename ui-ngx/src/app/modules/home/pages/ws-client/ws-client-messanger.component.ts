@@ -29,8 +29,14 @@ import { isDefinedAndNotNull } from '@core/utils';
 import { MessagesDisplayData } from './messages.component';
 import { MatDialog } from '@angular/material/dialog';
 import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
-import { PublishMessageProperties } from '@shared/models/ws-client.model';
+import {
+  Connection,
+  ConnectionDetailed,
+  PublishMessageProperties,
+  SubscriptionTopicFilter
+} from '@shared/models/ws-client.model';
 import mqtt from 'mqtt';
+import { map } from "rxjs/operators";
 
 @Component({
   selector: 'tb-ws-client-messanger',
@@ -39,36 +45,31 @@ import mqtt from 'mqtt';
 })
 export class WsClientMessangerComponent implements OnInit {
 
-  client: any;
-
-  @Input()
-  subscription: any = null;
-
-  @Input()
-  subscriptions: any = null;
-
-  @Input()
-  clients: any = null;
-
-  @Input()
-  alarmActivityOnly: boolean = false;
-
+  connection: ConnectionDetailed;
+  connections: Connection[];
+  subscriptions: SubscriptionTopicFilter[];
   messangerFormGroup: UntypedFormGroup;
   mqttJsClients: any[] = [];
-
-  alarmComments: Array<any>;
-
-  displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
-
-  alarmCommentSortOrder: SortOrder = {
-    property: 'createdTime',
-    direction: Direction.DESC
-  };
-
   editMode: boolean = false;
-
   mqttJsClient: any;
   mqttQoSTypes = mqttQoSTypes;
+  headerOptions = [
+    {
+      name: 'All',
+      value: 'all'
+    },
+    {
+      name: 'Received',
+      value: 'received'
+    },
+    {
+      name: 'Published',
+      value: 'published'
+    }
+  ];
+  selectedOption = 'all';
+
+  displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -95,7 +96,7 @@ export class WsClientMessangerComponent implements OnInit {
         if (isDefinedAndNotNull(value)) {
           this.wsClientService.getConnection(value.id).subscribe(
             res => {
-              this.client = res;
+              this.connection = res;
               /*this.wsClientService.connectClient(res);
               this.connectMqttJsClient(this.wsClientService.getMqttJsClient());
               this.subscribeForTopics(res.subscriptions);*/
@@ -143,7 +144,7 @@ export class WsClientMessangerComponent implements OnInit {
   }
 
   private initSubs(subs: any) {
-    const host = this.client?.protocol + this.client?.host + ":" + this.client?.port + this.client?.path;
+    const host = this.connection?.protocol + this.connection?.host + ":" + this.connection?.port + this.connection?.path;
     const options = {
       keepalive: 3660,
       clientId: 'tbmq_dev', // this.client?.clientId,
@@ -187,7 +188,7 @@ export class WsClientMessangerComponent implements OnInit {
 
   connectMqttJsClient(client) {
     client.on('connect', (e) => {
-      console.log(`Client connected: ${this.client?.clientId}`, e)
+      console.log(`Client connected: ${this.connection?.clientId}`, e)
       /*client.subscribe(this.messangerFormGroup.get('topic').value, { qos: 1 }, (mess) => {
         if (mess) {
           this.displayData.push(mess);
@@ -198,7 +199,7 @@ export class WsClientMessangerComponent implements OnInit {
     client.on('message', (topic, message, packet) => {
       const comment: MessagesDisplayData = {
         commentId: '123',
-        displayName: this.client?.clientId,
+        displayName: this.connection?.clientId,
         createdTime: this.datePipe.transform(Date.now()),
         createdDateAgo: topic,
         edit: false,
@@ -208,7 +209,7 @@ export class WsClientMessangerComponent implements OnInit {
         showActions: false,
         commentText: new TextDecoder("utf-8").decode(message),
         isSystemComment: false,
-        avatarBgColor: this.subscription?.color,
+        avatarBgColor: 'red', // this.subscription?.color,
         type: 'sub'
       }
       // this.displayData.push(comment);
@@ -250,18 +251,9 @@ export class WsClientMessangerComponent implements OnInit {
   }
 
   unsubscribeClient() {
-    this.mqttJsClient.unsubscribe(this.client?.topic, (e) => {
+    /*this.mqttJsClient.unsubscribe(this.subscription?.topic, (e) => {
       console.log('Unsubscribed', e);
-    });
-  }
-
-  loadAlarmComments(comment: MessagesDisplayData = null): void {
-    if (comment) {
-      this.displayData.push(comment);
-      this.alarmComments = this.displayData;
-    } else {
-      this.displayData.length = 0;
-    }
+    });*/
   }
 
   publishMessage(): void {
@@ -316,7 +308,7 @@ export class WsClientMessangerComponent implements OnInit {
   }
 
   clearHistory() {
-    this.wsClientService.clearHistory(this.client.id).subscribe();
+    this.wsClientService.clearHistory(this.connection.id).subscribe();
   }
 
   openPublishMessageProperties() {
@@ -330,4 +322,24 @@ export class WsClientMessangerComponent implements OnInit {
         }
       });
   }
+
+  onChange(e) {
+    this.wsClientService.getConnectionMessages()
+      .pipe(map(el => el.data))
+      .subscribe(messages => {
+          switch (e) {
+            case 'all':
+              this.displayData = messages;
+              break;
+            case 'published':
+              this.displayData = messages.filter(el => el.type === 'pub');
+              break;
+            case 'received':
+              this.displayData = messages.filter(el => el.type === 'sub');
+              break;
+          }
+        }
+      );
+  }
+
 }

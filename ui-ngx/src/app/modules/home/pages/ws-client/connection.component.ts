@@ -68,6 +68,10 @@ export class ConnectionComponent implements OnInit {
     this.showActions = false;
   }
 
+  selectConnection() {
+    this.wsClientService.selectConnection(this.connection);
+  }
+
   private configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
     const actions: Array<CellActionDescriptor<Connection>> = [];
     actions.push(

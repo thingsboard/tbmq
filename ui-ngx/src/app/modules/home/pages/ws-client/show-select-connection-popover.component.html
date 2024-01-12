@@ -15,9 +15,11 @@
     limitations under the License.
 
 -->
-<section class="tb-ws-client-title-toolbar mat-padding" style="min-height: 36px">
+<section class="tb-ws-client-title-toolbar" style="min-height: 36px; padding: 0 16px 0 16px">
   <span class="tb-ws-client-title" translate>ws-client.connections.select-connection</span>
-  <mat-icon class="material-icons" (click)="close()">close</mat-icon>
+  <button mat-icon-button (click)="close()">
+    <mat-icon class="material-icons">close</mat-icon>
+  </button>
 </section>
 
 <ng-container *ngIf="loadConnection; else loadingConnections">
@@ -30,7 +32,7 @@
       </section>
     </div>
   </div>
-  <section style="padding: 8px" fxLayoutAlign="center center">
+  <section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
     <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
       <mat-icon class="material-icons">add</mat-icon>
       {{ 'ws-client.connections.add-connection' | translate }}

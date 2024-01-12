@@ -21,6 +21,12 @@ $border: 1px solid rgba(0,0,0,0.15);
 
 
 :host {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0px;
+  flex-direction: column;
+  height: 100%;
+
   .tb-ws-client-messages {
     background-color: rgba(244,245,246,1);
     width: 100%;
@@ -28,9 +34,9 @@ $border: 1px solid rgba(0,0,0,0.15);
     .messages-container {
       border: $border;
       border-radius: unset;
-      overflow: auto;
+      //overflow: auto;
       padding: 16px;
-      height: 400px;
+      height: auto;
     }
     .message-container {
       max-width: 50%;

@@ -32,6 +32,11 @@
     font-size: 16px;
     line-height: 24px;
     letter-spacing: 0.15px;
+    display: inline-block;
+    max-width: 250px; //TODO make flex
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .label-color {

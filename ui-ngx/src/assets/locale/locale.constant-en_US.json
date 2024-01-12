@@ -773,6 +773,9 @@
     "pub": "Publish",
     "sub": "Subscribe",
     "options": "Options",
+    "messages": {
+      "retained": "Retained"
+    },
     "connections": {
       "add-connection": "Add Connection",
       "additional-properties": "Additional settings",

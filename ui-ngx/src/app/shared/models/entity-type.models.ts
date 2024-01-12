@@ -27,7 +27,8 @@ export enum EntityType {
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
   KAFKA_BROKER = 'KAFKA_BROKER',
   WS_CONNECTION = 'WS_CONNECTION',
-  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION'
+  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
+  WS_MESSAGE = 'WS_MESSAGE' // TODO add mappings
 }
 
 export interface EntityTypeTranslation {
@@ -201,6 +202,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         search: 'ws-client.subscriptions.search-subscription',
         selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
       }
+    ],
+    [
+      EntityType.WS_MESSAGE,
+      {
+        type: 'ws-client.subscriptions.subscription',
+        typePlural: 'ws-client.subscriptions.subscription',
+        list: 'ws-client.subscriptions.list-of-subscriptions',
+        nameStartsWith: 'ws-client.subscriptions.subscription-starts-with',
+        details: 'ws-client.subscriptions.details',
+        add: 'ws-client.subscriptions.add-subscription',
+        noEntities: 'ws-client.subscriptions.no-subscriptions-text',
+        search: 'ws-client.subscriptions.search-subscription',
+        selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
+      }
     ]
   ]
 );
@@ -241,6 +256,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.RETAINED_MESSAGE,
       {
         helpLinkId: 'retainedMessages'
+      }
+    ],
+    [
+      EntityType.WS_MESSAGE,
+      {
+        helpLinkId: 'wsMessage'
       }
     ]
   ]

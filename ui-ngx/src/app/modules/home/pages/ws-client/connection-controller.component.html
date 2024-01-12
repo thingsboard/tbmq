@@ -34,8 +34,15 @@
   </button>
 </ng-template>
 <ng-template #disconnected>
-  <button mat-raised-button (click)="onAction()"
-          [color]="!isConnected ? 'primary' : 'warn'">
-    <span translate>{{ actionLabel }}</span>
-  </button>
+  <section fxLayout="row" fxLayoutGap="8px">
+    <mat-form-field *ngIf="isPasswordRequired" appearance="outline" subscriptSizing="dynamic">
+      <mat-label translate>mqtt-client-credentials.password</mat-label>
+      <input matInput [(ngModel)]="password" required>
+    </mat-form-field>
+    <button mat-raised-button (click)="onAction()"
+            [disabled]="isPasswordRequired && !password?.length"
+            [color]="!isConnected ? 'primary' : 'warn'">
+      <span translate>{{ actionLabel }}</span>
+    </button>
+  </section>
 </ng-template>

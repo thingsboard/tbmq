@@ -23,7 +23,7 @@ import {
   Connection,
   ConnectionDetailed,
   SubscriptionTopicFilter,
-  SubscriptionTopicFilterDetailed
+  SubscriptionTopicFilterDetailed, WsMessage
 } from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
 import mqtt from 'mqtt';
@@ -432,6 +432,92 @@ export class WsClientService {
     });
   }
 
+  public getMessages(): Observable<PageData<WsMessage>> {
+    return of({
+      'totalPages': 1,
+      'totalElements': 2,
+      'hasNext': false,
+      data: [
+        {
+          createdTime: 45745745745,
+          retain: true,
+          payload: null,
+          qos: 1,
+          topic: 'abc/topic/abc/topic/abc/topic/abc/topic',
+          userProperties: 'present',
+          color: 'green'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic/abc/topic',
+          color: 'green'
+        },
+        {
+          createdTime: 54645673457,
+          retain: true,
+          payload: "{temp: 2}",
+          qos: 3,
+          topic: 'cde/topic',
+          color: 'blue'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic4',
+          color: 'green'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 1, humidity: 2, air: 2, time: 3, state: 'ok', state: 'ok', state: 'ok', state: 'ok', state: 'ok', state: 'ok', state: 'ok', state: 'ok', state: 'ok'}",
+          qos: 2,
+          topic: 'cde/topic',
+          color: 'orange'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic',
+          color: 'orange'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic'
+        },
+        {
+          createdTime: 54645673457,
+          retain: false,
+          payload: "{temp: 2}",
+          qos: 2,
+          topic: 'cde/topic'
+        }]
+    });
+  }
+
   public getConnections(pageLink?: PageLink, config?: RequestConfig): Observable<PageData<Connection>> {
     // return this.http.get<PageData<Connection>>(`/api/`, defaultHttpOptionsFromConfig(config));
     const mockData = {
@@ -440,61 +526,55 @@ export class WsClientService {
           id: '1',
           name: 'WebSocket Connection  1',
           createdTime: 1701696568854,
-          connected: true
+          connected: false,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: null
         },
         {
           id: '2',
           name: 'WebSocket Connection  2',
           createdTime: 1701696566405,
-          connected: true
+          connected: true,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: 'tbmq_dev2'
         },
         {
           id: '3',
-          name: 'WebSocket Connection  3',
+          name: 'WebSocket Connection 3 WO pass',
           createdTime: 1701418253485,
-          connected: false
+          connected: false,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: 'tbmq_dev2'
         },
         {
           id: '4',
           name: 'WebSocket Connection  4',
           createdTime: 1700486480079,
-          connected: false
+          connected: false,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: 'tbmq_dev2'
         },
         {
           id: '5',
           name: 'WebSocket Connection  5',
           createdTime: 1700486480079,
-          connected: false
+          connected: false,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: 'tbmq_dev2'
         },
         {
           id: '6',
           name: 'WebSocket Connection  6',
           createdTime: 1700486480079,
-          connected: false
-        },
-        {
-          id: '7',
-          name: 'WebSocket Connection  7',
-          createdTime: 1700486480079,
-          connected: false
-        },
-        {
-          id: '8',
-          name: 'WebSocket Connection  8',
-          createdTime: 1700486480079,
-          connected: false
-        },
-        {
-          id: '9',
-          name: 'WebSocket Connection  9',
-          createdTime: 1700486480079,
-          connected: false
-        },
-        {
-          id: '10',
-          name: 'WebSocket Connection  10',
-          createdTime: 1700486480079,
-          connected: false
+          connected: false,
+          clientId: 'tbmq_dev2',
+          username: 'tbmq_dev2',
+          password: 'tbmq_dev2'
         }
       ],
       'totalPages': 2,
@@ -511,23 +591,23 @@ export class WsClientService {
         id: '1',
         name: 'WebSocket Connection  1',
         createdTime: 1701696568854,
-        connected: true,
+        connected: false,
         clientId: 'tbmq_dev',
         username: 'tbmq_dev',
-        password: 'tbmq_dev'
+        password: null
       },
       {
         id: '2',
         name: 'WebSocket Connection  2',
         createdTime: 1701696566405,
-        connected: false,
+        connected: true,
         clientId: 'tbmq_dev2',
         username: 'tbmq_dev2',
         password: 'tbmq_dev2'
       },
       {
         id: '3',
-        name: 'WebSocket Connection  3',
+        name: 'WebSocket Connection 3 Has password',
         createdTime: 1701418253485,
         connected: false,
         clientId: 'tbmq_dev3',
@@ -538,7 +618,7 @@ export class WsClientService {
         id: '4',
         name: 'WebSocket Connection  4',
         createdTime: 1700486480079,
-        connected: true,
+        connected: false,
         clientId: 'tbmq_dev4',
         username: 'tbmq_dev4',
         password: 'tbmq_dev4'
@@ -551,6 +631,15 @@ export class WsClientService {
         clientId: 'tbmq_dev5',
         username: 'tbmq_dev5',
         password: 'tbmq_dev5'
+      },
+      {
+        id: '6',
+        name: 'WebSocket Connection 6',
+        createdTime: 1700486480079,
+        connected: false,
+        clientId: 'tbmq_dev6',
+        username: 'tbmq_dev6',
+        password: 'tbmq_dev6'
       }
     ];
     const mockConnection = {
@@ -721,6 +810,18 @@ export class WsClientService {
             qos: 1
           }
         ]
+      },
+      {
+        id: 4,
+        data: []
+      },
+      {
+        id: 5,
+        data: []
+      },
+      {
+        id: 6,
+        data: []
       }
     ];
     const target = allData.find(el => el.id == connectionId);
@@ -741,7 +842,7 @@ export class WsClientService {
         data: [
           {
             name: 'testtopic88',
-            topic: 'testtopic88',
+            topic: 'testtopic88/testtopic88/#/testtopic88#/testtopic88',
             color: 'blue',
             qos: 1
           },

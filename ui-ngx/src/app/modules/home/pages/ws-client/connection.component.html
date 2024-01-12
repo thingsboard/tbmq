@@ -16,6 +16,7 @@
 
 -->
 <section fxLayout="row" fxLayoutAlign="space-between start" class="connection"
+         (click)="selectConnection()"
          [ngClass]="{'active': (connection?.id === selectedConnection?.id)}">
   <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
            (mouseenter)="onCommentMouseEnter()"

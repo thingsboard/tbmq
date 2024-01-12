@@ -33,7 +33,8 @@ import { ConnectionControllerComponent } from '@home/pages/ws-client/connection-
 import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/show-select-connection-popover.component';
 import { SelectConnectionComponent } from '@home/pages/ws-client/select-connection.component';
 import { ConnectionComponent } from '@home/pages/ws-client/connection.component';
-import {SubscriptionComponent} from "@home/pages/ws-client/subscriptions/subscription.component";
+import { SubscriptionComponent } from "@home/pages/ws-client/subscriptions/subscription.component";
+import { EntitiesTableWsComponent } from "@home/components/entity/entities-table-ws.component";
 
 @NgModule({
   declarations: [
@@ -51,7 +52,8 @@ import {SubscriptionComponent} from "@home/pages/ws-client/subscriptions/subscri
     SelectConnectionComponent,
     ShowSelectConnectionPopoverComponent,
     ConnectionComponent,
-    SubscriptionComponent
+    SubscriptionComponent,
+    EntitiesTableWsComponent
   ],
   imports: [
     CommonModule,

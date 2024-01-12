@@ -43,9 +43,9 @@
 </section>
 
 <ng-container *ngIf="loadSubscriptions; else loadingSubscriptions">
-  <div *ngIf="(subscriptions$ | async).length; else emptySubscriptions" style="overflow: auto">
+  <div *ngIf="(subscriptions$ | async)?.length; else emptySubscriptions" style="overflow: auto">
     <div style="overflow: auto">
-      <section style="overflow: auto; padding: 0 12px 0 12px;">
+      <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
         <div *ngFor="let subscription of (subscriptions$ | async);">
           <tb-subscription [subscription]="subscription"></tb-subscription>
         </div>

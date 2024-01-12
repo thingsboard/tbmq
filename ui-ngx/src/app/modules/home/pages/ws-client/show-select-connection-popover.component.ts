@@ -24,6 +24,9 @@ import { map, share, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { WsClientService } from '@core/http/ws-client.service';
 import { Connection } from '@shared/models/ws-client.model';
+import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
+import { isDefinedAndNotNull } from "@core/utils";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
   selector: 'tb-show-connections-popover',
@@ -42,10 +45,11 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   // private notificationCountSubscriber: Subscription;
 
   connections$: Observable<Connection[]>;
-  loadConnection = false;
+  loadConnection = true;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,
+              private dialog: MatDialog,
               private zone: NgZone,
               private cd: ChangeDetectorRef,
               private router: Router) {
@@ -78,11 +82,23 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
     this.onClose();
   }
 
-  markAsRead(id: string) {
-  }
-
   addConnection($event: Event) {
-
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<ConnectionWizardDialogComponent, any>(ConnectionWizardDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+    }).afterClosed()
+      .subscribe((res) => {
+        if (isDefinedAndNotNull(res)) {
+          this.wsClientService.saveConnection(res).subscribe(
+            () => {
+              // this.updateData()
+            }
+          );
+        }
+      });
   }
 
   trackById(index: number, item: Connection): string {

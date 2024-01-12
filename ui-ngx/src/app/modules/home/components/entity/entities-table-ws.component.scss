@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
-@import '../../../../../theme';
 
 :host {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0px;
-  flex-direction: column;
-  height: 100%;
+}
 
-  ::ng-deep {
-    .mat-mdc-slide-toggle.mat-mdc-slide-toggle-checked:not(.mat-disabled) {
-      .mdc-switch__shadow {
-        background-color: $tb-primary-color;
-      }
-      .mdc-switch__track::after {
-        background-color: $tb-primary-color !important;
-      }
+:host ::ng-deep {
+  table > thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    overflow-y: unset;
+  }
+
+  .mat-mdc-row {
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }

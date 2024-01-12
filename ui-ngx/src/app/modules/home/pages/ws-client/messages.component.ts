@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { MqttQoS } from '@shared/models/session.model';
 import { DialogService } from '@core/services/dialog.service';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
@@ -24,6 +24,11 @@ import { DateAgoPipe } from '@app/shared/pipe/date-ago.pipe';
 import { map } from "rxjs/operators";
 import { isLiteralObject } from '@core/utils';
 import { UserProperties } from '@shared/models/retained-message.model';
+import { EntitiesTableComponent } from "@home/components/entity/entities-table.component";
+import { RetainedMessagesTableConfig } from "@home/pages/retained-messages/retained-messages-table-config";
+import { MessagesTableConfig } from "@home/pages/ws-client/messages/messages-table-config";
+import { MatDialog } from "@angular/material/dialog";
+import { DatePipe } from "@angular/common";
 
 export interface MessagesDisplayData {
   commentId?: string,
@@ -55,7 +60,7 @@ export class MessagesComponent implements OnInit {
   @ViewChild('eventContentEditor', {static: true})
   eventContentEditorElmRef: ElementRef;
 
-  headerOptions = [
+  /*headerOptions = [
     {
       name: 'All',
       value: 'all'
@@ -70,7 +75,7 @@ export class MessagesComponent implements OnInit {
     }
   ];
 
-  selectedOption = 'all';
+  selectedOption = 'all';*/
 
   editMode: boolean = false;
 
@@ -79,11 +84,56 @@ export class MessagesComponent implements OnInit {
 
   connection;
 
+  @Input()
+  detailsMode: boolean;
+
+  activeValue = false;
+  dirtyValue = false;
+  entityIdValue: string;
+
+  @Input()
+  set active(active: boolean) {
+    if (this.activeValue !== active) {
+      this.activeValue = active;
+      if (this.activeValue && this.dirtyValue) {
+        this.dirtyValue = false;
+        this.entitiesTable.updateData();
+      }
+    }
+  }
+
+  @Input()
+  set entityId(entityId: string) {
+    this.entityIdValue = entityId;
+    if (this.messagesTableConfig && this.messagesTableConfig.entityId !== entityId) {
+      this.messagesTableConfig.entityId = entityId;
+      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      if (!this.activeValue) {
+        this.dirtyValue = true;
+      }
+    }
+  }
+
+  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+
+  messagesTableConfig: MessagesTableConfig;
+
   constructor(private dialogService: DialogService,
               private fb: UntypedFormBuilder,
               private wsClientService: WsClientService,
+              public dialog: MatDialog,
+              public datePipe: DatePipe,
               public dateAgoPipe: DateAgoPipe,
               private translate: TranslateService) {
+    this.messagesTableConfig = new MessagesTableConfig(
+      this.dialogService,
+      this.wsClientService,
+      this.translate,
+      this.dialog,
+      this.datePipe,
+      this.entityIdValue
+    );
+
     this.wsClientService.selectedConnection$.subscribe(
       res => {
         this.connection = res;
@@ -118,7 +168,7 @@ export class MessagesComponent implements OnInit {
   }
 
   onChange(e) {
-    this.wsClientService.getConnectionMessages(this.connection.id)
+    this.wsClientService.getConnectionMessages(this.connection?.id)
       .pipe(map(el => el.data))
       .subscribe(messages => {
         switch (e) {

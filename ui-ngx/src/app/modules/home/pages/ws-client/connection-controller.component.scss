@@ -27,4 +27,22 @@
       background: rgba(209, 39, 48, 0.06);
     }
   }
+
+  ::ng-deep {
+    .mat-mdc-text-field-wrapper {
+      height: 36px;
+
+      &.mdc-text-field--outlined .mat-mdc-form-field-infix {
+        padding-top: 6px;
+      }
+    }
+
+    .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
+      top: 17px;
+    }
+
+    .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline--upgraded .mdc-floating-label--float-above {
+      top: 28px;
+    }
+  }
 }

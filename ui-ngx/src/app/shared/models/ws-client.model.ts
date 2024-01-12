@@ -55,11 +55,13 @@ export interface ConnectionWill {
 
 }
 
-export interface PublishMessage extends PublishMessageProperties {
+export interface WsMessage extends PublishMessageProperties {
+  createdTime: number;
   topic: string;
   qos: number;
   retain: boolean;
   payload: any;
+  color?: string;
 }
 
 export interface PublishMessageProperties {
@@ -70,7 +72,7 @@ export interface PublishMessageProperties {
   subscriptionIdentifier?: number;
   correlationData?: string;
   responseTopic?: string;
-  userProperties?: UserProperties;
+  userProperties?: any
 }
 
 export interface SubscriptionTopicFilter extends BaseData {

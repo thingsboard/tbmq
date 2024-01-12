@@ -290,6 +290,12 @@ export const connectedStateCell = (connectionState: string, color: string): stri
   `<span style="vertical-align: bottom; font-size: 32px; color: ${color}">&#8226;</span>
    <span style="color: ${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
 
+export const colorIcon = (icon: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
+  `<mat-icon class="material-icons mat-icon"
+                  style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
+          ${icon}
+        </mat-icon>`;
+
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) {
     return '0 B';
