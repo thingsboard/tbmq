@@ -37,6 +37,7 @@ import {
 } from '@shared/models/ws-client.model';
 import mqtt from 'mqtt';
 import { map } from "rxjs/operators";
+import { ValueType } from '@shared/models/constants';
 
 @Component({
   selector: 'tb-ws-client-messanger',
@@ -53,6 +54,16 @@ export class WsClientMessangerComponent implements OnInit {
   editMode: boolean = false;
   mqttJsClient: any;
   mqttQoSTypes = mqttQoSTypes;
+  valueTypes = [
+    {
+      value: ValueType.JSON,
+      name: 'value.json'
+    },
+    {
+      value: ValueType.STRING,
+      name: 'value.string'
+    }
+  ];
   headerOptions = [
     {
       name: 'All',
@@ -68,6 +79,7 @@ export class WsClientMessangerComponent implements OnInit {
     }
   ];
   selectedOption = 'all';
+  messages: any[] = [];
 
   displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
 
@@ -84,9 +96,10 @@ export class WsClientMessangerComponent implements OnInit {
   ngOnInit() {
     this.messangerFormGroup = this.fb.group(
       {
-        value: [null, []],
-        topic: ['testtopic', []],
+        value: [{temperature: 25}, []],
+        topic: ['sensors/temperature', []],
         qos: [MqttQoS.AT_LEAST_ONCE, []],
+        format: [ValueType.JSON, []],
         retain: [true, []],
         meta: [null, []]
       }
@@ -254,6 +267,14 @@ export class WsClientMessangerComponent implements OnInit {
     /*this.mqttJsClient.unsubscribe(this.subscription?.topic, (e) => {
       console.log('Unsubscribed', e);
     });*/
+  }
+
+
+  publishMessageV2(message: any): void {
+    if (this.messages.length >= 1000) {
+      this.messages.shift(); // Remove the first element if array length is >= 1000
+    }
+    this.messages.push(message); // Add new message to the end of the array
   }
 
   publishMessage(): void {

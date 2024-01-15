@@ -15,6 +15,7 @@
 ///
 
 import {
+  arrowIcon,
   CellActionDescriptor,
   CellActionDescriptorType, cellWithBackground, colorIcon,
   DateEntityTableColumn,
@@ -71,17 +72,16 @@ export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
     this.columns.push(
       new EntityTableColumn<WsMessage>('color', null, '30px', (entity) => {
         const messageReceived = !!entity?.color?.length;
-        const icon = messageReceived ? 'download' : 'publish';
         const color = entity?.color || 'rgba(0, 0, 0, 0.38)';
-        return colorIcon(icon, color);
+        return arrowIcon(messageReceived, color);
       }, () => undefined, false),
-      new DateEntityTableColumn<WsMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<WsMessage>('topic', 'retained-message.topic', '40%'),
-      new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '10%'),
-      new EntityTableColumn<WsMessage>('retain', 'ws-client.messages.retained', '10%',
+      new DateEntityTableColumn<WsMessage>('createdTime', 'common.time', this.datePipe, '150px'),
+      new EntityTableColumn<WsMessage>('topic', 'retained-message.topic', '50%'),
+      new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '25%'),
+      new EntityTableColumn<WsMessage>('retain', 'ws-client.messages.retained', '25%',
           entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
-      new EntityTableColumn<WsMessage>('payload', 'retained-message.payload', '40%')
+      new EntityTableColumn<WsMessage>('payload', 'retained-message.payload', '200px')
     );
 
     this.entitiesFetchFunction = pageLink => this.wsClientService.getMessages();
