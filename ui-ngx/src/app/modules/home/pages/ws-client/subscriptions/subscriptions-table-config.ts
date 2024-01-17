@@ -29,10 +29,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import {
   AddWsClientSubscriptionDialogData,
-  WsClientSubscriptionDialogComponent
-} from "@home/pages/ws-client/ws-client-subscription-dialog.component";
+  SubscriptionDialogComponent
+} from "@home/pages/ws-client/subscriptions/subscription-dialog.component";
 
-export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTopicFilter, TimePageLink> {
+export class SubscriptionsTableConfig extends EntityTableConfig<SubscriptionTopicFilter, TimePageLink> {
 
   constructor(private wsClientService: WsClientService,
               private translate: TranslateService,
@@ -75,7 +75,7 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
     const data = {
       subscription: null
     };
-    this.dialog.open<WsClientSubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(WsClientSubscriptionDialogComponent, {
+    this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data

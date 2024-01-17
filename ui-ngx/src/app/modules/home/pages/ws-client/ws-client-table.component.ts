@@ -62,9 +62,9 @@ import { MediaBreakpoints } from '@shared/models/constants';
 import { homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { WsClientService } from '@core/http/ws-client.service';
-
+// TODO remove component
 @Component({
-  selector: 'tb-ws-client-table',
+  selector: 'tb-ws-client-table24124',
   templateUrl: './ws-client-table.component.html',
   styleUrls: ['./ws-client-table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

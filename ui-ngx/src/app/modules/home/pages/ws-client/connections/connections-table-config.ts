@@ -30,7 +30,7 @@ import { of } from 'rxjs';
 import { tap } from "rxjs/operators";
 import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
 
-export class WsConnectionsTableConfig extends EntityTableConfig<Connection, TimePageLink> {
+export class ConnectionsTableConfig extends EntityTableConfig<Connection, TimePageLink> {
 
   constructor(private wsClientService: WsClientService,
               private translate: TranslateService,

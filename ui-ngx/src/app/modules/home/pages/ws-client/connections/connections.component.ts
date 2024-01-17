@@ -23,7 +23,7 @@ import { Connection } from '@shared/models/ws-client.model';
 import { tap } from 'rxjs/operators';
 
 @Component({
-  selector: 'tb-ws-client-connections',
+  selector: 'tb-connections',
   templateUrl: './connections.component.html',
   styleUrls: ['./connections.component.scss']
 })

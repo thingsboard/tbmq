@@ -121,7 +121,7 @@ import { TbPopoverService } from '@shared/components/popover.service';
 import { HelpMarkdownComponent } from '@shared/components/help-markdown.component';
 import { TbComponentOutletDirective } from '@shared/components/directives/component-outlet.directive';
 import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
-import { WsJsonObjectEditComponent } from '@home/pages/ws-client/ws-json-object-edit.component';
+import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-json-object-edit.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;

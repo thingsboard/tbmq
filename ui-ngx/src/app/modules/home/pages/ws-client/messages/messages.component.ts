@@ -20,7 +20,7 @@ import { DialogService } from '@core/services/dialog.service';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import { DateAgoPipe } from '@app/shared/pipe/date-ago.pipe';
+import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { map } from "rxjs/operators";
 import { isLiteralObject } from '@core/utils';
 import { UserProperties } from '@shared/models/retained-message.model';
@@ -51,7 +51,7 @@ export interface MessagesDisplayData {
 }
 
 @Component({
-  selector: 'tb-ws-client-messages',
+  selector: 'tb-messages',
   templateUrl: './messages.component.html',
   styleUrls: ['./messages.component.scss']
 })

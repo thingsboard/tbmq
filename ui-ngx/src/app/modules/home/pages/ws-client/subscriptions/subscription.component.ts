@@ -24,8 +24,8 @@ import { DialogService } from '@core/services/dialog.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import {
   AddWsClientSubscriptionDialogData,
-  WsClientSubscriptionDialogComponent
-} from '@home/pages/ws-client/ws-client-subscription-dialog.component';
+  SubscriptionDialogComponent
+} from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 
 @Component({
   selector: 'tb-subscription',
@@ -107,7 +107,7 @@ export class SubscriptionComponent implements OnInit {
     const data = {
       subscription: null
     };
-    this.dialog.open<WsClientSubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(WsClientSubscriptionDialogComponent, {
+    this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data

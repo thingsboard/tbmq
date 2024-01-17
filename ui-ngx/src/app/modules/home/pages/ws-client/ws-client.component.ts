@@ -22,6 +22,8 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { WsClientService } from '@core/http/ws-client.service';
 import { MatDialog } from '@angular/material/dialog';
+import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-ws-client',
@@ -31,18 +33,11 @@ import { MatDialog } from '@angular/material/dialog';
 export class WsClientComponent extends PageComponent {
 
   clients:any = [];
-  client: any;
-
-  subscriptions: any = [];
-  subscription: any;
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
               private wsClientService: WsClientService) {
     super(store);
-    this.wsClientService.allConnections$.subscribe(value => {
-      this.clients = value;
-    })
     this.wsClientService.getConnections().subscribe(value => {
       const data = value.data;
       this.clients = data;
@@ -54,44 +49,27 @@ export class WsClientComponent extends PageComponent {
     });
   }
 
-  addConnection() {
-    /*const data = {
-      connection: {
-        "name": "Works 33",
-        "uri": "ws://",
-        "host": "localhost",
-        "port": 8084,
-        "path": "/mqtt",
-        "clientId": null,
-        "username": null,
-        "password": "tbmq_dev",
-        "keepalive": 60,
-        "reconnectPeriod": 1000,
-        "connectTimeout": 30000,
-        "clean": true,
-        "protocolVersion": "5",
-        "properties": {
-          "sessionExpiryInterval": null,
-          "receiveMaximum": null,
-          "maximumPacketSize": null,
-          "topicAliasMaximum": null,
-          "requestResponseInformation": null,
-          "requestProblemInformation": null,
-          "userProperties": null
-        },
-        "userProperties": null,
-        "will": null
-      }
-    };
-    this.dialog.open<WsClientConnectionDialogComponent, AddWsClientConnectionDialogData>(WsClientConnectionDialogComponent, {
+  addConnection($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data
+      data: {
+        connectionsTotal: 0
+      }
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.addConnection(res);
+          /*this.wsClientService.saveConnection(res).subscribe(
+            () => {
+              // this.updateData()
+            }
+          );*/
+        } else {
+          // this.onClose();
         }
-      });*/
+      });
   }
 }

@@ -26,7 +26,7 @@ import { WsClientService } from '@core/http/ws-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MessagesDisplayData } from './messages.component';
 import { MatDialog } from '@angular/material/dialog';
-import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
+import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
 import {
   Connection,
   PublishMessageProperties,
@@ -37,11 +37,11 @@ import { map } from "rxjs/operators";
 import { ValueType } from '@shared/models/constants';
 
 @Component({
-  selector: 'tb-ws-client-messanger',
-  templateUrl: './ws-client-messanger.component.html',
-  styleUrls: ['./ws-client-messanger.component.scss']
+  selector: 'tb-messanger',
+  templateUrl: './messanger.component.html',
+  styleUrls: ['./messanger.component.scss']
 })
-export class WsClientMessangerComponent implements OnInit {
+export class MessangerComponent implements OnInit {
 
   connection: Connection;
   connections: Connection[];

@@ -31,10 +31,10 @@ import { select, Store } from '@ngrx/store';
 import { selectIsAuthenticated } from '@core/auth/auth.selectors';
 import { AppState } from '@core/core.state';
 import { WsClientService } from '@core/http/ws-client.service';
-import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/show-select-connection-popover.component';
+import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
 
 @Component({
-  selector: 'tb-ws-client-select-connection',
+  selector: 'tb-select-connection',
   templateUrl: './select-connection.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

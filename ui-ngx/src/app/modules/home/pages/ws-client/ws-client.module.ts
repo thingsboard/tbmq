@@ -20,32 +20,30 @@ import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
 import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
-import { WsClientMessangerComponent } from '@home/pages/ws-client/ws-client-messanger.component';
-import { ConnectionsComponent } from '@home/pages/ws-client/connections.component';
-import { MessagesComponent } from '@home/pages/ws-client/messages.component';
-import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.component';
-import { WsClientSubscriptionDialogComponent } from '@home/pages/ws-client/ws-client-subscription-dialog.component';
+import { MessangerComponent } from '@home/pages/ws-client/messages/messanger.component';
+import { ConnectionsComponent } from '@home/pages/ws-client/connections/connections.component';
+import { MessagesComponent } from '@home/pages/ws-client/messages/messages.component';
+import { SubscriptionDialogComponent } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
-import { WsClientSubscriptionsComponent } from "@home/pages/ws-client/ws-client-subscriptions.component";
-import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
-import { ConnectionControllerComponent } from '@home/pages/ws-client/connection-controller.component';
-import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/show-select-connection-popover.component';
-import { SelectConnectionComponent } from '@home/pages/ws-client/select-connection.component';
-import { ConnectionComponent } from '@home/pages/ws-client/connection.component';
+import { SubscriptionsComponent } from "@home/pages/ws-client/subscriptions/subscriptions.component";
+import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
+import { ConnectionControllerComponent } from '@home/pages/ws-client/connections/connection-controller.component';
+import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
+import { SelectConnectionComponent } from '@home/pages/ws-client/connections/select-connection.component';
+import { ConnectionComponent } from '@home/pages/ws-client/connections/connection.component';
 import { SubscriptionComponent } from "@home/pages/ws-client/subscriptions/subscription.component";
 import { EntitiesTableWsComponent } from "@home/components/entity/entities-table-ws.component";
 
 @NgModule({
   declarations: [
     WsClientComponent,
-    WsClientMessangerComponent,
+    MessangerComponent,
     ConnectionsComponent,
     ConnectionControllerComponent,
-    WsClientSubscriptionDialogComponent,
+    SubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     MessagesComponent,
-    WsClientTableComponent,
-    WsClientSubscriptionsComponent,
+    SubscriptionsComponent,
     PropertiesDialogComponent,
     SelectConnectionComponent,
     ShowSelectConnectionPopoverComponent,
@@ -60,10 +58,9 @@ import { EntitiesTableWsComponent } from "@home/components/entity/entities-table
     WsClientRoutingModule
   ],
   exports: [
-    WsClientSubscriptionDialogComponent,
+    SubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
-    WsClientTableComponent,
-    WsClientSubscriptionsComponent,
+    SubscriptionsComponent,
     PropertiesDialogComponent,
     ShowSelectConnectionPopoverComponent
   ]

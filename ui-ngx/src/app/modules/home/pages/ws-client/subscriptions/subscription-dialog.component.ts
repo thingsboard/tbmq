@@ -33,11 +33,11 @@ export interface AddWsClientSubscriptionDialogData {
 }
 
 @Component({
-  selector: 'tb-ws-client-subscription',
-  templateUrl: './ws-client-subscription-dialog.component.html',
-  styleUrls: ['./ws-client-subscription-dialog.component.scss']
+  selector: 'tb-subscription-dialog',
+  templateUrl: './subscription-dialog.component.html',
+  styleUrls: ['./subscription-dialog.component.scss']
 })
-export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClientSubscriptionDialogComponent>
+export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
@@ -57,7 +57,7 @@ export class WsClientSubscriptionDialogComponent extends DialogComponent<WsClien
               protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: any,
-              public dialogRef: MatDialogRef<WsClientSubscriptionDialogComponent>,
+              public dialogRef: MatDialogRef<SubscriptionDialogComponent>,
               private wsClientService: WsClientService,
               private translate: TranslateService) {
     super(store, router, dialogRef);

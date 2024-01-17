@@ -29,7 +29,7 @@ import {
 } from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
 import mqtt from 'mqtt';
-import { MessagesDisplayData } from '@home/pages/ws-client/messages.component';
+import { MessagesDisplayData } from '@home/pages/ws-client/messages/messages.component';
 import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { DatePipe } from '@angular/common';
 

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
 
 :host {
   height: 100%;
@@ -40,6 +39,33 @@
     .subscriptions {
       flex: 1 1 auto;
       min-height: 0px;
+    }
+  }
+
+  .add-connection-container {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+
+    .add-connection-btn {
+      padding: 16px 24px 16px 16px;
+      border: 2px dashed rgba(0, 0, 0, 0.16);
+      border-radius: 8px;
+      color: rgba(0, 0, 0, 0.38);
+
+      &:hover {
+        cursor: pointer;
+        color: rgba(0, 0, 0, 0.54);
+        border: 2px dashed rgba(0, 0, 0, 0.38);
+      }
+
+      span {
+        color: inherit;
+        font-size: 24px;
+      }
     }
   }
 

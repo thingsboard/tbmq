@@ -19,16 +19,16 @@ import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import {Connection, SubscriptionTopicFilter} from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
-import { WsSubscriptionsTableConfig } from "@home/pages/ws-client/ws-subscriptions-table-config";
+import { SubscriptionsTableConfig } from "@home/pages/ws-client/subscriptions/subscriptions-table-config";
 import {mergeMap, Observable, ReplaySubject, Subscription} from "rxjs";
 import {map, share, tap} from "rxjs/operators";
 
 @Component({
-  selector: 'tb-ws-client-subscriptions',
-  templateUrl: './ws-client-subscriptions.component.html',
-  styleUrls: ['./ws-client-subscriptions.component.scss']
+  selector: 'tb-subscriptions',
+  templateUrl: './subscriptions.component.html',
+  styleUrls: ['./subscriptions.component.scss']
 })
-export class WsClientSubscriptionsComponent {
+export class SubscriptionsComponent {
 
   subscriptions$: Observable<SubscriptionTopicFilter[]>;
 
